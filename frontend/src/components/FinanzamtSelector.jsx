@@ -1,332 +1,145 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
 import './FinanzamtSelector.css';
 
-const FinanzamtSelector = ({ 
-  value, 
-  onChange, 
-  placeholder = "Finanzamt suchen...",
-  className = "",
-  disabled = false 
+const FinanzamtSelector = ({
+  value,
+  onChange,
+  placeholder = 'Finanzamt suchen...',
 }) => {
   const [finanzaemter, setFinanzaemter] = useState([]);
-  const [filteredFinanzaemter, setFilteredFinanzaemter] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [bundeslaender, setBundeslaender] = useState([]);
   const [selectedBundesland, setSelectedBundesland] = useState('');
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newFinanzamt, setNewFinanzamt] = useState({
-    name: '',
-    ort: '',
-    bundesland: '',
-    plz: '',
-    strasse: '',
-    telefon: '',
-    email: '',
-    finanzamtnummer: ''
-  });
 
-  const dropdownRef = useRef(null);
-  const inputRef = useRef(null);
+  const rootRef = useRef(null);
 
-  // Lade Finanzämter beim Mount
+  // Load data once on mount
   useEffect(() => {
-    loadFinanzaemter();
-    loadBundeslaender();
-  }, []);
-
-  // Lade Finanzämter basierend auf Suchterm und Bundesland
-  useEffect(() => {
-    filterFinanzaemter();
-  }, [searchTerm, selectedBundesland, finanzaemter]);
-
-  // Schließe Dropdown wenn außerhalb geklickt wird
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-        setShowCreateForm(false);
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [listRes, blRes] = await Promise.all([
+          fetchWithAuth('/api/finanzaemter'),
+          fetchWithAuth('/api/finanzaemter/bundeslaender'),
+        ]);
+        if (listRes.ok) setFinanzaemter(await listRes.json());
+        if (blRes.ok) setBundeslaender(await blRes.json());
+      } catch (err) {
+        console.error('Fehler beim Laden der Finanzämter:', err);
+      } finally {
+        setLoading(false);
       }
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    load();
   }, []);
 
-  // Setze Suchterm wenn value sich ändert
+  // Sync display value when parent changes value
   useEffect(() => {
-    if (value && typeof value === 'object') {
-      setSearchTerm(`${value.name}, ${value.ort}`);
-    } else if (typeof value === 'string') {
+    if (typeof value === 'string') {
       setSearchTerm(value);
+    } else if (value && typeof value === 'object') {
+      setSearchTerm(`${value.name}, ${value.ort}`);
     }
   }, [value]);
 
-  const loadFinanzaemter = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/finanzaemter');
-      setFinanzaemter(response.data);
-    } catch (error) {
-      console.error('Fehler beim Laden der Finanzämter:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadBundeslaender = async () => {
-    try {
-      const response = await axios.get('/finanzaemter/bundeslaender');
-      setBundeslaender(response.data);
-    } catch (error) {
-      console.error('Fehler beim Laden der Bundesländer:', error);
-    }
-  };
-
-  const filterFinanzaemter = () => {
-    let filtered = finanzaemter;
-
-    // Filter nach Bundesland
+  // Filter list whenever search term or bundesland changes
+  useEffect(() => {
+    let list = finanzaemter;
     if (selectedBundesland) {
-      filtered = filtered.filter(fa => fa.bundesland === selectedBundesland);
+      list = list.filter(f => f.bundesland === selectedBundesland);
     }
-
-    // Filter nach Suchterm
     if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(fa => 
-        fa.name.toLowerCase().includes(searchLower) ||
-        fa.ort.toLowerCase().includes(searchLower) ||
-        fa.bundesland.toLowerCase().includes(searchLower)
+      const ql = searchTerm.toLowerCase();
+      list = list.filter(
+        f =>
+          f.name.toLowerCase().includes(ql) ||
+          f.ort.toLowerCase().includes(ql) ||
+          f.bundesland.toLowerCase().includes(ql)
       );
     }
+    setFilteredList(list.slice(0, 60));
+  }, [searchTerm, selectedBundesland, finanzaemter]);
 
-    setFilteredFinanzaemter(filtered.slice(0, 50)); // Limit für Performance
-  };
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   const handleInputChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
+    setSearchTerm(e.target.value);
     setIsOpen(true);
-    setShowCreateForm(false);
-    
-    // Wenn Input geleert wird, auch den Wert zurücksetzen
-    if (!value) {
-      onChange(null);
+    if (!e.target.value) {
+      onChange('');
     }
   };
 
-  const handleFinanzamtSelect = (finanzamt) => {
-    setSearchTerm(`${finanzamt.name}, ${finanzamt.ort}`);
-    onChange(finanzamt);
+  const handleSelect = (finanzamt) => {
+    const displayName = `${finanzamt.name}, ${finanzamt.ort}`;
+    setSearchTerm(displayName);
+    onChange(displayName);
     setIsOpen(false);
-    setShowCreateForm(false);
-  };
-
-  const handleCreateFinanzamt = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      const response = await axios.post('/finanzaemter', newFinanzamt);
-      
-      // Neues Finanzamt zur Liste hinzufügen
-      const createdFinanzamt = response.data.finanzamt;
-      setFinanzaemter(prev => [...prev, createdFinanzamt]);
-      
-      // Neues Finanzamt auswählen
-      handleFinanzamtSelect(createdFinanzamt);
-      
-      // Form zurücksetzen
-      setNewFinanzamt({
-        name: '',
-        ort: '',
-        bundesland: '',
-        plz: '',
-        strasse: '',
-        telefon: '',
-        email: '',
-        finanzamtnummer: ''
-      });
-      
-      alert('Finanzamt erfolgreich angelegt!');
-    } catch (error) {
-      console.error('Fehler beim Anlegen des Finanzamts:', error);
-      alert('Fehler beim Anlegen des Finanzamts: ' + (error.response?.data?.error || error.message));
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      setIsOpen(false);
-      setShowCreateForm(false);
-    }
+    if (e.key === 'Escape') setIsOpen(false);
   };
 
   return (
-    <div className={`finanzamt-selector ${className}`} ref={dropdownRef}>
-      <div className="finanzamt-input-container">
-        <input
-          ref={inputRef}
-          type="text"
-          value={searchTerm}
-          onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          className="finanzamt-input"
-        />
-        <div className="finanzamt-filters">
-          <select
-            value={selectedBundesland}
-            onChange={(e) => setSelectedBundesland(e.target.value)}
-            className="bundesland-filter"
-          >
-            <option value="">Alle Bundesländer</option>
-            {bundeslaender.map(bundesland => (
-              <option key={bundesland} value={bundesland}>
-                {bundesland}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+    <div className="finanzamt-selector" ref={rootRef}>
+      <input
+        type="text"
+        className="finanzamt-input"
+        value={searchTerm}
+        onChange={handleInputChange}
+        onFocus={() => setIsOpen(true)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
 
       {isOpen && (
         <div className="finanzamt-dropdown">
-          {loading ? (
-            <div className="loading">Lade Finanzämter...</div>
-          ) : (
-            <>
-              {filteredFinanzaemter.length > 0 ? (
-                <div className="finanzamt-list">
-                  {filteredFinanzaemter.map(finanzamt => (
-                    <div
-                      key={finanzamt.id}
-                      className="finanzamt-item"
-                      onClick={() => handleFinanzamtSelect(finanzamt)}
-                    >
-                      <div className="finanzamt-name">{finanzamt.name}</div>
-                      <div className="finanzamt-details">
-                        {finanzamt.ort}, {finanzamt.bundesland}
-                        {finanzamt.finanzamtnummer && (
-                          <span className="finanzamt-nummer"> (#{finanzamt.finanzamtnummer})</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="no-results">
-                  <p>Keine Finanzämter gefunden</p>
-                </div>
-              )}
+          <div className="finanzamt-dropdown-filter">
+            <select
+              className="finanzamt-bl-select"
+              value={selectedBundesland}
+              onChange={(e) => setSelectedBundesland(e.target.value)}
+            >
+              <option value="">Alle Bundesländer</option>
+              {bundeslaender.map(bl => (
+                <option key={bl} value={bl}>{bl}</option>
+              ))}
+            </select>
+          </div>
 
-              <div className="finanzamt-actions">
-                <button
-                  type="button"
-                  className="create-finanzamt-btn"
-                  onClick={() => setShowCreateForm(!showCreateForm)}
+          <div className="finanzamt-list">
+            {loading ? (
+              <div className="finanzamt-loading">Lade Finanzämter…</div>
+            ) : filteredList.length === 0 ? (
+              <div className="finanzamt-empty">Keine Finanzämter gefunden</div>
+            ) : (
+              filteredList.map(f => (
+                <div
+                  key={f.id}
+                  className="finanzamt-item"
+                  onMouseDown={(e) => { e.preventDefault(); handleSelect(f); }}
                 >
-                  + Finanzamt nicht vorhanden? Anlegen
-                </button>
-              </div>
-
-              {showCreateForm && (
-                <div className="create-finanzamt-form">
-                  <h4>Neues Finanzamt anlegen</h4>
-                  <form onSubmit={handleCreateFinanzamt}>
-                    <div className="form-row">
-                      <input
-                        type="text"
-                        placeholder="Name des Finanzamts *"
-                        value={newFinanzamt.name}
-                        onChange={(e) => setNewFinanzamt(prev => ({ ...prev, name: e.target.value }))}
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Ort *"
-                        value={newFinanzamt.ort}
-                        onChange={(e) => setNewFinanzamt(prev => ({ ...prev, ort: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    
-                    <div className="form-row">
-                      <select
-                        value={newFinanzamt.bundesland}
-                        onChange={(e) => setNewFinanzamt(prev => ({ ...prev, bundesland: e.target.value }))}
-                        required
-                      >
-                        <option value="">Bundesland auswählen *</option>
-                        {bundeslaender.map(bundesland => (
-                          <option key={bundesland} value={bundesland}>
-                            {bundesland}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="text"
-                        placeholder="PLZ"
-                        value={newFinanzamt.plz}
-                        onChange={(e) => setNewFinanzamt(prev => ({ ...prev, plz: e.target.value }))}
-                      />
-                    </div>
-
-                    <div className="form-row">
-                      <input
-                        type="text"
-                        placeholder="Straße und Hausnummer"
-                        value={newFinanzamt.strasse}
-                        onChange={(e) => setNewFinanzamt(prev => ({ ...prev, strasse: e.target.value }))}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Telefon"
-                        value={newFinanzamt.telefon}
-                        onChange={(e) => setNewFinanzamt(prev => ({ ...prev, telefon: e.target.value }))}
-                      />
-                    </div>
-
-                    <div className="form-row">
-                      <input
-                        type="email"
-                        placeholder="E-Mail"
-                        value={newFinanzamt.email}
-                        onChange={(e) => setNewFinanzamt(prev => ({ ...prev, email: e.target.value }))}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Finanzamt-Nummer"
-                        value={newFinanzamt.finanzamtnummer}
-                        onChange={(e) => setNewFinanzamt(prev => ({ ...prev, finanzamtnummer: e.target.value }))}
-                      />
-                    </div>
-
-                    <div className="form-actions">
-                      <button type="submit" className="save-btn" disabled={loading}>
-                        {loading ? 'Wird angelegt...' : 'Finanzamt anlegen'}
-                      </button>
-                      <button 
-                        type="button" 
-                        className="cancel-btn"
-                        onClick={() => setShowCreateForm(false)}
-                      >
-                        Abbrechen
-                      </button>
-                    </div>
-                  </form>
+                  <span className="finanzamt-item-name">{f.name}</span>
+                  <span className="finanzamt-item-detail">{f.ort} · {f.bundesland}</span>
                 </div>
-              )}
-            </>
-          )}
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>

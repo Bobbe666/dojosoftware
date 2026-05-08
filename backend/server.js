@@ -962,6 +962,10 @@ try {
     });
 }
 
+// FINANZAEMTER ROUTES (Statische Liste aller deutschen Finanzämter — keine Auth erforderlich)
+app.use('/api/finanzaemter', require('./routes/finanzaemter'));
+logger.success('Route geladen', { path: '/api/finanzaemter' });
+
 // 2.4 KURSE ROUTES (Course Management)
 try {
   const kurseRoutes = require('./routes/kurse');
@@ -1677,18 +1681,7 @@ try {
     });
 }
 
-// 12.6. FINANZÄMTER (Finanzamt-Datenbank für Dojo-Steuereinstellungen) - NEU
-try {
-  const finanzaemterRouter = require(path.join(__dirname, "routes", "finanzaemter.js"));
-  app.use("/api/finanzaemter", finanzaemterRouter);
-  logger.success('Route gemountet', { path: '/api/finanzaemter' });
-} catch (error) {
-  logger.error('Fehler beim Laden der Route', {
-      route: 'finanzaemter',
-      error: error.message,
-      stack: error.stack
-    });
-}
+// 12.6. FINANZÄMTER — Route wird früher (ohne Auth) registriert, siehe oben
 
 // 13. DOJO BANKEN (Mehrere Bankverbindungen pro Dojo) - NEU
 try {

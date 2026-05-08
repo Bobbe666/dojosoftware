@@ -13,6 +13,7 @@ import config from '../config/config.js';
 import '../styles/MitgliedDetail.css';
 import '../styles/DojoEdit.css';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import FinanzamtSelector from './FinanzamtSelector';
 
 const SECTIONS = [
   { key: 'info', label: 'Dojo-Info', icon: '🏯', sub: [
@@ -989,7 +990,11 @@ const DojoEdit = () => {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Finanzamt</label>
-                    <input type="text" value={formData.finanzamt_name} onChange={(e) => setFormData({ ...formData, finanzamt_name: e.target.value, finanzamt: null })} placeholder="z.B. Finanzamt München" />
+                    <FinanzamtSelector
+                      value={formData.finanzamt_name}
+                      onChange={(name) => setFormData({ ...formData, finanzamt_name: name, finanzamt: null })}
+                      placeholder="Finanzamt suchen..."
+                    />
                   </div>
                   <div className="form-group">
                     <label>Steuernummer</label>
