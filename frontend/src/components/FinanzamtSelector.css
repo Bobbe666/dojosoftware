@@ -1,120 +1,41 @@
-/* FinanzamtSelector — dark-theme dropdown selector */
-
+/* FinanzamtSelector.css */
 .finanzamt-selector {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   width: 100%;
 }
 
-/* ── Input field ── */
-.finanzamt-input {
+.fa-select {
   width: 100%;
-  box-sizing: border-box;
   padding: 0.75rem 1rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--comp-radius-md, 8px);
-  color: var(--text-1, #ffffff);
-  font-size: inherit;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.finanzamt-input:focus {
-  outline: none;
-  border-color: var(--primary, #ffd700);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
-}
-
-.finanzamt-input::placeholder {
-  color: rgba(255, 255, 255, 0.45);
-}
-
-/* ── Dropdown panel ── */
-.finanzamt-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 500;
-  background: var(--surface-1, #1a1a2e);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--comp-radius-md, 8px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  max-height: 320px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ── Bundesland filter row ── */
-.finanzamt-dropdown-filter {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  flex-shrink: 0;
-}
-
-.finanzamt-bl-select {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.4rem 0.6rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--comp-radius-md, 6px);
-  color: var(--text-1, #ffffff);
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-
-.finanzamt-bl-select:focus {
-  outline: none;
-  border-color: var(--primary, #ffd700);
-}
-
-.finanzamt-bl-select option {
-  background: #1a1a2e;
-  color: #ffffff;
-}
-
-/* ── Scrollable list ── */
-.finanzamt-list {
-  overflow-y: auto;
-  flex: 1;
-}
-
-/* ── Individual item ── */
-.finanzamt-item {
-  display: flex;
-  flex-direction: column;
-  padding: 0.6rem 0.75rem;
-  cursor: pointer;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  transition: background 0.15s;
-}
-
-.finanzamt-item:last-child {
-  border-bottom: none;
-}
-
-.finanzamt-item:hover {
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.finanzamt-item-name {
-  font-weight: 600;
+  border-radius: var(--comp-radius-md);
+  color: var(--text-1);
   font-size: 0.9rem;
-  color: var(--text-1, #ffffff);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  padding-right: 2.2rem;
 }
 
-.finanzamt-item-detail {
-  font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.55);
-  margin-top: 1px;
+.fa-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-alpha-15);
 }
 
-/* ── States ── */
-.finanzamt-loading,
-.finanzamt-empty {
-  padding: 1rem 0.75rem;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.875rem;
+.fa-select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.fa-select option {
+  background: #1a1a2e;
+  color: #fff;
 }

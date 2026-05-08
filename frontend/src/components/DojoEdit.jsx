@@ -987,26 +987,25 @@ const DojoEdit = () => {
                     </div>
                   )}
                 </div>
+                <div className="form-group">
+                  <label>Finanzamt</label>
+                  <FinanzamtSelector
+                    value={formData.finanzamt_name}
+                    onChange={(name) => setFormData({ ...formData, finanzamt_name: name, finanzamt: null })}
+                  />
+                </div>
                 <div className="form-row">
-                  <div className="form-group">
-                    <label>Finanzamt</label>
-                    <FinanzamtSelector
-                      value={formData.finanzamt_name}
-                      onChange={(name) => setFormData({ ...formData, finanzamt_name: name, finanzamt: null })}
-                      placeholder="Finanzamt suchen..."
-                    />
-                  </div>
                   <div className="form-group">
                     <label>Steuernummer</label>
                     <input type="text" value={formData.steuernummer} onChange={(e) => setFormData({ ...formData, steuernummer: e.target.value })} />
                   </div>
+                  {formData.steuer_status === 'regelbesteuerung' && (
+                    <div className="form-group">
+                      <label>USt-IdNr.</label>
+                      <input type="text" value={formData.ust_id} onChange={(e) => setFormData({ ...formData, ust_id: e.target.value })} placeholder="DE123456789" />
+                    </div>
+                  )}
                 </div>
-                {formData.steuer_status === 'regelbesteuerung' && (
-                  <div className="form-group">
-                    <label>USt-IdNr.</label>
-                    <input type="text" value={formData.ust_id} onChange={(e) => setFormData({ ...formData, ust_id: e.target.value })} placeholder="DE123456789" />
-                  </div>
-                )}
               </div>
 
               <div className="form-section" id="fs-versicherungen" style={{display: subVisible('fs-versicherungen') ? 'block' : 'none'}}>
