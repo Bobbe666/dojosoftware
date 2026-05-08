@@ -720,7 +720,7 @@ const DojoEdit = () => {
                   </div>
                   <div className="form-group">
                     <label>Rechtsform</label>
-                    <select value={formData.rechtsform} onChange={(e) => setFormData({ ...formData, rechtsform: e.target.value })}>
+                    <select className="form-select" value={formData.rechtsform} onChange={(e) => setFormData({ ...formData, rechtsform: e.target.value })}>
                       <option value="Verein">Eingetragener Verein (e.V.)</option>
                       <option value="GmbH">GmbH</option>
                       <option value="Einzelunternehmen">Einzelunternehmen</option>
