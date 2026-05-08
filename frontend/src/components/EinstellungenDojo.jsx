@@ -12,6 +12,7 @@ import "../styles/components.css";
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import { useTheme, THEMES } from '../context/ThemeContext';
+import { useDojoContext } from '../context/DojoContext';
 
 
 /* ─────────────────────────────────────────────────────────────
@@ -208,6 +209,9 @@ const DesignTab = () => {
 };
 
 const EinstellungenDojo = () => {
+  const { activeDojo } = useDojoContext();
+  const withDojo = (url) => activeDojo?.id ? `${url}${url.includes('?') ? '&' : '?'}dojo_id=${activeDojo.id}` : url;
+
   // Theme-Context nutzen
   const { theme, setTheme, currentTheme, themes: contextThemes, isDarkMode } = useTheme();
 
@@ -410,8 +414,8 @@ const EinstellungenDojo = () => {
     setMessage("");
     
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojo`);
-      
+      const response = await fetchWithAuth(withDojo(`${config.apiBaseUrl}/dojo`));
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -479,9 +483,9 @@ const EinstellungenDojo = () => {
         finanzamt: dojo.finanzamt ? JSON.stringify(dojo.finanzamt) : null
       };
 
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojo`, {
+      const response = await fetchWithAuth(withDojo(`${config.apiBaseUrl}/dojo`), {
         method: "PUT",
-        headers: { 
+        headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify(dojoData)
