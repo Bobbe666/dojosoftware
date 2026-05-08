@@ -4,11 +4,11 @@
 // Admin-Komponente für PayPal, SumUp, LexOffice, DATEV Konfiguration
 // ============================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
   Settings, CreditCard, FileText, Calculator, Save, Eye, EyeOff,
-  CheckCircle, AlertCircle, RefreshCw, ExternalLink, Smartphone
+  CheckCircle, AlertCircle, RefreshCw, ExternalLink, Smartphone, Copy, Link2
 } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
 import { useSubscription } from '../context/SubscriptionContext';
@@ -24,6 +24,8 @@ const IntegrationsEinstellungen = () => {
   const [status, setStatus] = useState(null);
   const [showSecrets, setShowSecrets] = useState({});
   const [testResults, setTestResults] = useState({});
+  const [sumupPartnerUrl, setSumupPartnerUrl] = useState(null);
+  const [copiedPartner, setCopiedPartner] = useState(false);
 
   const [config, setConfig] = useState({
     // Stripe
@@ -51,12 +53,22 @@ const IntegrationsEinstellungen = () => {
   // Subdomain-Check für Messenger (verfügbar wenn Dojo eine Subdomain hat)
   const hasMessenger = !!(activeDojo && activeDojo !== 'super-admin' && activeDojo.subdomain);
 
+  const loadSumupPartnerUrl = useCallback(async () => {
+    try {
+      const response = await axios.get('/integrations/sumup-partner');
+      setSumupPartnerUrl(response.data.partner_url || null);
+    } catch (err) {
+      console.error('Fehler beim Laden der SumUp Partner-URL:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (dojoId && dojoId !== 'super-admin') {
       loadConfig();
       loadStatus();
+      loadSumupPartnerUrl();
     }
-  }, [dojoId]);
+  }, [dojoId, loadSumupPartnerUrl]);
 
   const loadConfig = async () => {
     try {
@@ -116,6 +128,24 @@ const IntegrationsEinstellungen = () => {
 
   const toggleSecret = (key) => {
     setShowSecrets(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const copyPartnerUrl = () => {
+    if (!sumupPartnerUrl) return;
+    navigator.clipboard.writeText(sumupPartnerUrl).then(() => {
+      setCopiedPartner(true);
+      setTimeout(() => setCopiedPartner(false), 2000);
+    }).catch(() => {
+      // Fallback für ältere Browser
+      const el = document.createElement('textarea');
+      el.value = sumupPartnerUrl;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopiedPartner(true);
+      setTimeout(() => setCopiedPartner(false), 2000);
+    });
   };
 
   if (loading) {
@@ -415,6 +445,47 @@ const IntegrationsEinstellungen = () => {
           result={testResults.sumup}
           disabled={!config.sumup_api_key && (!config.sumup_client_id || !config.sumup_client_secret)}
         />
+
+        {/* SumUp Partner-Programm */}
+        <div className="ie-partner-section">
+          <div className="ie-section-header" style={{ marginTop: '1.25rem' }}>
+            <Link2 size={20} color="#00b5ad" />
+            <h4 className="ie-section-title" style={{ fontSize: '1rem' }}>Partner-Programm</h4>
+          </div>
+          <div className="ie-info-box">
+            <p>
+              Teile diesen Link mit neuen Dojos — sie erhalten Vorteile beim SumUp-Einstieg
+              und du profitierst als Partner.
+            </p>
+          </div>
+          {sumupPartnerUrl ? (
+            <div className="ie-partner-url-row" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={sumupPartnerUrl}
+                readOnly
+                className="ie-input"
+                style={{ flex: 1, minWidth: 220, background: 'rgba(0,181,173,0.06)', cursor: 'text' }}
+              />
+              <button
+                className="ie-test-button"
+                onClick={copyPartnerUrl}
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                {copiedPartner
+                  ? <><CheckCircle size={16} color="#22c55e" /> Kopiert!</>
+                  : <><Copy size={16} /> Link kopieren</>
+                }
+              </button>
+            </div>
+          ) : (
+            <div className="ie-info-box" style={{ color: '#64748b' }}>
+              <p>
+                Kein Partner-Code konfiguriert. Bitte SUMUP_PARTNER_CODE in der Server-.env setzen.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* LexOffice Section */}

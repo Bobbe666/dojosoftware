@@ -1268,6 +1268,21 @@ try {
     });
 }
 
+// 8.2 GOCARDLESS (SEPA Direct Debit)
+try {
+  const gocardlessRouter = require(path.join(__dirname, "routes", "gocardless.js"));
+  // Webhook-Pfad braucht raw body für HMAC-Signaturprüfung
+  app.use("/api/gocardless/webhook", express.raw({ type: 'application/json' }), gocardlessRouter);
+  app.use("/api/gocardless", gocardlessRouter);
+  logger.success('Route gemountet', { path: '/api/gocardless' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'gocardless',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 9. AUSWERTUNGEN (Analytics & Reports) - NEU
 try {
   const auswertungenRouter = require(path.join(__dirname, "routes", "auswertungen.js"));
@@ -1974,6 +1989,7 @@ const skipFiles = [
   "integrations.js",
   "member-payments.js",
   "sumup.js",
+  "gocardless.js",
   // Sicherheit: nicht automatisch mounten
   "neuesmitgliedanlegen.js",
   "public-checkin.js",

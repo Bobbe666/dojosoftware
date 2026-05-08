@@ -731,4 +731,22 @@ router.put('/config', async (req, res) => {
     }
 });
 
+// ============================================================================
+// SUMUP PARTNER PROGRAM
+// ============================================================================
+
+/**
+ * GET /api/integrations/sumup-partner
+ * Gibt den SumUp-Partner-Referral-Link zurück (env-gesteuert)
+ */
+router.get('/sumup-partner', (req, res) => {
+    const code = process.env.SUMUP_PARTNER_CODE || null;
+    if (!code) {
+        return res.json({ partner_url: null, code: null });
+    }
+    const partnerUrl = `https://sumup.com/r/${code}`;
+    logger.info('SumUp Partner-URL abgerufen', { code });
+    res.json({ partner_url: partnerUrl, code });
+});
+
 module.exports = router;
