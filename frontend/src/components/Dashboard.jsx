@@ -292,7 +292,8 @@ function Dashboard() {
     { id: 'verwaltung', label: t('tabs.verwaltung'), icon: '🏯' },
     { id: 'berichte', label: t('tabs.berichte'), icon: '📄' },
     { id: 'schnellaktionen', label: t('tabs.schnellaktionen'), icon: '⚡' },
-    ...(hasFeature('support') ? [{ id: 'hilfe-support', label: t('tabs.hilfeSupport'), icon: '❓' }] : [])
+    ...(hasFeature('support') ? [{ id: 'hilfe-support', label: t('tabs.hilfeSupport'), icon: '❓' }] : []),
+    { id: 'einstellungen', label: 'Einstellungen', icon: '⚙️' }
   ];
 
   const tabs = baseTabs;
@@ -525,6 +526,13 @@ function Dashboard() {
 
   // ✨ Einstellungen - System-Konfiguration ✨
   const einstellungenCards = [
+    {
+      icon: '⚙️',
+      title: 'Dojo-Einstellungen',
+      description: 'Grunddaten, Kontakt, Finanzen, Verträge, Räume & Rechtliches',
+      path: '/dashboard/einstellungen',
+      featured: true
+    },
     {
       icon: '🏯',
       title: 'Dojo-Verwaltung',

@@ -385,14 +385,20 @@ const DojoSwitcher = () => {
             </div>
 
             {/* Footer */}
-            {isSuperAdmin && (
-              <div className="dropdown-footer">
+            <div className="dropdown-footer">
+              {!isSuperAdmin && (
+                <a href="/dashboard/einstellungen" className="footer-link" onClick={() => setIsOpen(false)}>
+                  <Settings size={12} />
+                  Dojo-Einstellungen
+                </a>
+              )}
+              {isSuperAdmin && (
                 <a href="/dashboard/dojos" className="footer-link" onClick={() => setIsOpen(false)}>
                   <Settings size={12} />
                   Dojos verwalten
                 </a>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </>,
         document.body
