@@ -369,7 +369,7 @@ const EinstellungenDojo = () => {
     vertragsbedingungen_text: ""
   });
 
-  const [activeTab, setActiveTab] = useState("grunddaten");
+  const [activeTab, setActiveTab] = useState("info");
   const [activeRechtlichesTab, setActiveRechtlichesTab] = useState("agb");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -381,22 +381,14 @@ const EinstellungenDojo = () => {
 
   // Tab-Konfiguration
   const tabs = [
-    { id: "grunddaten", label: "Grunddaten", icon: Building, color: "#8B0000" },
-    { id: "kontakt", label: "Kontakt & Adresse", icon: Globe, color: "#10B981" },
-    { id: "raeume", label: "Räume", icon: MapPin, color: "#7C3AED" },
-    { id: "steuer", label: "Steuern & Recht", icon: FileText, color: "#F59E0B" },
-    { id: "bank", label: "Bankdaten", icon: CreditCard, color: "#8B5CF6" },
-    { id: "versicherung", label: "Versicherungen", icon: Shield, color: "#EF4444" },
-    { id: "vertraege", label: "Vertragsmodell", icon: FileSignature, color: "#14B8A6" },
-    { id: "sport", label: "Sport & Verband", icon: Award, color: "#06B6D4" },
-    { id: "rechtliches", label: "Rechtliches & Regeln", icon: BookOpen, color: "#DC2626" },
-    { id: "zeiten", label: "Öffnungszeiten", icon: Clock, color: "#84CC16" },
-    { id: "admins", label: "Admin-Accounts", icon: UserCog, color: "#DC2626" },
-    { id: "subscription", label: "Plan & Abo", icon: Zap, color: "#8B5CF6" },
-    { id: "system", label: "System", icon: Settings, color: "#6B7280" },
-    { id: "design", label: "Design", icon: Palette, color: "#EC4899" },
-    { id: "socialmedia", label: "Social Media", icon: Globe, color: "#1877F2" },
-    { id: "webintegration", label: "Website & Integration", icon: Code, color: "#0EA5E9" }
+    { id: "info",          label: "Dojo-Info",           icon: Building,      color: "#8B0000" },
+    { id: "raeume",        label: "Räume & Kurse",        icon: MapPin,        color: "#7C3AED" },
+    { id: "finanzen",      label: "Finanzen & Steuern",   icon: CreditCard,    color: "#8B5CF6" },
+    { id: "vertraege",     label: "Vertragsmodell",       icon: FileSignature, color: "#14B8A6" },
+    { id: "sport",         label: "Sport & Betrieb",      icon: Award,         color: "#06B6D4" },
+    { id: "rechtliches",   label: "Rechtliches & Regeln", icon: BookOpen,      color: "#DC2626" },
+    { id: "kommunikation", label: "Kommunikation",        icon: Globe,         color: "#1877F2" },
+    { id: "system",        label: "Benutzer & System",    icon: Settings,      color: "#6B7280" },
   ];
 
   // Daten laden (Theme wird jetzt vom ThemeContext verwaltet)
@@ -527,7 +519,7 @@ const EinstellungenDojo = () => {
   // Tab-Content rendern
   const renderTabContent = () => {
     switch (activeTab) {
-      case "grunddaten":
+      case "info":
         return (
           <div className="tab-content">
             <h3>🏯 Grundlegende Dojo-Informationen</h3>
@@ -606,12 +598,9 @@ const EinstellungenDojo = () => {
                 </select>
               </div>
             </div>
-          </div>
-        );
 
-      case "kontakt":
-        return (
-          <div className="tab-content">
+            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
+
             <h3>📍 Kontakt & Adresse</h3>
             
             <div className="form-section">
@@ -803,7 +792,7 @@ const EinstellungenDojo = () => {
       case "raeume":
         return <RaumVerwaltung />;
 
-      case "steuer":
+      case "finanzen":
         return (
           <div className="tab-content">
             <h3>⚖️ Steuerliche & Rechtliche Angaben</h3>
@@ -941,14 +930,11 @@ const EinstellungenDojo = () => {
                 </div>
               </div>
             )}
-          </div>
-        );
 
-      case "bank":
-        return (
-          <div className="tab-content">
+            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
+
             <h3>🏦 Bankverbindung & Zahlungen</h3>
-            
+
             <div className="form-section">
               <h4>Hauptkonto</h4>
               <div className="form-grid">
@@ -1086,14 +1072,11 @@ const EinstellungenDojo = () => {
                 </div>
               </div>
             </div>
-          </div>
-        );
 
-      case "versicherung":
-        return (
-          <div className="tab-content">
+            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
+
             <h3>🛡️ Versicherungen & Schutz</h3>
-            
+
             <div className="form-section">
               <h4>Haftpflichtversicherung</h4>
               <div className="form-grid">
@@ -1418,12 +1401,9 @@ const EinstellungenDojo = () => {
                 </div>
               </div>
             </div>
-          </div>
-        );
 
-      case "zeiten":
-        return (
-          <div className="tab-content">
+            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
+
             <h3>🕐 Öffnungszeiten & Betrieb</h3>
 
             <div className="form-section">
@@ -1512,15 +1492,17 @@ const EinstellungenDojo = () => {
           </div>
         );
 
-      case "admins":
-        return <AdminVerwaltung />;
-
-      case "subscription":
-        return <PlanUpgradeSection />;
-
       case "system":
         return (
           <div className="tab-content">
+            <AdminVerwaltung />
+
+            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
+
+            <PlanUpgradeSection />
+
+            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
+
             <h3>⚙️ System-Einstellungen</h3>
 
             <div className="form-section">
@@ -1668,13 +1650,7 @@ const EinstellungenDojo = () => {
           </div>
         );
 
-      case "design":
-        return <DesignTab />;
-
-      case "socialmedia":
-        return <MarketingAktionen />;
-
-      case "webintegration": {
+      case "kommunikation": {
         const dojoId = dojo.id || '';
         const baseUrl = 'https://app.tda-vib.de/api/public/news';
         const embedCode = `<iframe src="${baseUrl}/widget?dojo_id=${dojoId}" width="100%" height="480" frameborder="0" style="border-radius:8px;"></iframe>`;
@@ -1685,6 +1661,14 @@ const EinstellungenDojo = () => {
         };
         return (
           <div className="tab-content">
+            <DesignTab />
+
+            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
+
+            <MarketingAktionen />
+
+            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
+
             <h3>🌐 Website & Integration</h3>
             <p className="section-description">
               Binde deine aktuellen News auf deiner eigenen Homepage ein — per Iframe-Widget, RSS-Feed oder JSON-API.
@@ -1764,8 +1748,8 @@ const EinstellungenDojo = () => {
         <form onSubmit={handleSave}>
           {renderTabContent()}
 
-          {/* Action Buttons - Nur anzeigen wenn nicht Admin, Räume, Subscription oder Design Tab */}
-          {activeTab !== 'admins' && activeTab !== 'raeume' && activeTab !== 'subscription' && activeTab !== 'design' && (
+          {/* Action Buttons - Nur anzeigen wenn nicht Räume, Kommunikation oder System Tab */}
+          {activeTab !== 'raeume' && activeTab !== 'kommunikation' && activeTab !== 'system' && (
             <div className="form-actions">
               {!isEditing ? (
                 <button

@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
 import { useSubscription } from '../context/SubscriptionContext';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+import configModule from '../config/config.js';
 import StripeConnectSetup from './StripeConnectSetup';
 import MessengerKonfiguration from './MessengerKonfiguration';
 import '../styles/IntegrationsEinstellungen.css';
@@ -26,6 +28,23 @@ const IntegrationsEinstellungen = () => {
   const [testResults, setTestResults] = useState({});
   const [sumupPartnerUrl, setSumupPartnerUrl] = useState(null);
   const [copiedPartner, setCopiedPartner] = useState(false);
+
+  // --- Zahlungsanbieter state ---
+  const [paymentProvider, setPaymentProvider] = useState('manual_sepa');
+  const [providerStatus, setProviderStatus] = useState(null);
+  const [paymentProviderLoading, setPaymentProviderLoading] = useState(true);
+  const [paymentProviderSaving, setPaymentProviderSaving] = useState(false);
+  const [paymentProviderError, setPaymentProviderError] = useState('');
+  const [paymentProviderSuccess, setPaymentProviderSuccess] = useState('');
+  const [stripeConfig, setStripeConfig] = useState({
+    stripe_secret_key: '',
+    stripe_publishable_key: ''
+  });
+  const [datevConfig, setDatevConfig] = useState({
+    datev_api_key: '',
+    datev_consultant_number: '',
+    datev_client_number: ''
+  });
 
   const [config, setConfig] = useState({
     // Stripe
@@ -61,6 +80,66 @@ const IntegrationsEinstellungen = () => {
       console.error('Fehler beim Laden der SumUp Partner-URL:', err);
     }
   }, []);
+
+  const loadPaymentProvider = useCallback(async () => {
+    try {
+      setPaymentProviderLoading(true);
+      const response = await fetchWithAuth(`${configModule.apiBaseUrl}/payment-provider/status`);
+      if (!response.ok) throw new Error('Fehler beim Laden der Einstellungen');
+      const data = await response.json();
+      setProviderStatus(data);
+      setPaymentProvider(data.current_provider);
+      if (data.current_provider === 'stripe_datev') {
+        setStripeConfig({
+          stripe_secret_key: '••••••••••••••••',
+          stripe_publishable_key: data.stripe_publishable_key || ''
+        });
+        setDatevConfig({
+          datev_api_key: '••••••••••••••••',
+          datev_consultant_number: data.datev_consultant_number || '',
+          datev_client_number: data.datev_client_number || ''
+        });
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden der Zahlungseinstellungen:', err);
+      setPaymentProviderError('Fehler beim Laden der aktuellen Zahlungseinstellungen');
+    } finally {
+      setPaymentProviderLoading(false);
+    }
+  }, []);
+
+  const savePaymentProvider = async () => {
+    try {
+      setPaymentProviderSaving(true);
+      setPaymentProviderError('');
+      setPaymentProviderSuccess('');
+      const configData = {
+        payment_provider: paymentProvider,
+        ...stripeConfig,
+        ...datevConfig
+      };
+      const response = await fetchWithAuth(`${configModule.apiBaseUrl}/payment-provider/configure`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configData)
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Speichern der Konfiguration');
+      }
+      setPaymentProviderSuccess('Zahlungssystem erfolgreich konfiguriert!');
+      await loadPaymentProvider();
+    } catch (err) {
+      console.error('Fehler beim Speichern:', err);
+      setPaymentProviderError(err.message);
+    } finally {
+      setPaymentProviderSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPaymentProvider();
+  }, [loadPaymentProvider]);
 
   useEffect(() => {
     if (dojoId && dojoId !== 'super-admin') {
@@ -200,6 +279,173 @@ const IntegrationsEinstellungen = () => {
           />
         </div>
       )}
+
+      {/* Zahlungsanbieter Section */}
+      <div className="ie-section">
+        <div className="ie-section-header">
+          <span style={{ fontSize: 24 }}>💳</span>
+          <h3 className="ie-section-title">Zahlungsanbieter</h3>
+        </div>
+
+        <div className="ie-info-box">
+          <p>Wählen Sie das bevorzugte Zahlungssystem für Mitgliedsbeiträge und Rechnungen.</p>
+        </div>
+
+        {paymentProviderError && (
+          <div className="ie-info-box" style={{ borderColor: '#ef4444', color: '#ef4444' }}>
+            <AlertCircle size={16} /> {paymentProviderError}
+          </div>
+        )}
+        {paymentProviderSuccess && (
+          <div className="ie-info-box" style={{ borderColor: '#22c55e', color: '#22c55e' }}>
+            <CheckCircle size={16} /> {paymentProviderSuccess}
+          </div>
+        )}
+
+        {providerStatus && (
+          <div className="ie-info-box" style={{ marginBottom: '1rem' }}>
+            <strong>Aktuelles System:</strong> {providerStatus.provider_name} &nbsp;
+            <span style={{ color: providerStatus.is_configured ? '#22c55e' : '#f59e0b' }}>
+              {providerStatus.is_configured ? '✅ Konfiguriert' : '⚠️ Nicht vollständig konfiguriert'}
+            </span>
+          </div>
+        )}
+
+        {/* Provider Selection */}
+        <div className="ie-form-row" style={{ flexDirection: 'column', gap: '0.75rem' }}>
+          <label className="ie-checkbox-label" style={{ alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+            <input
+              type="radio"
+              value="manual_sepa"
+              checked={paymentProvider === 'manual_sepa'}
+              onChange={(e) => { setPaymentProvider(e.target.value); setPaymentProviderError(''); setPaymentProviderSuccess(''); }}
+              style={{ marginTop: '0.2rem' }}
+            />
+            <div>
+              <strong>🏪 Manuelle SEPA-Abwicklung</strong>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted, #94a3b8)' }}>
+                Bestehende manuelle Lastschrift-Verwaltung mit SEPA-Mandaten. Keine Transaktionskosten, aber manueller Zeitaufwand.
+              </p>
+            </div>
+          </label>
+          <label className="ie-checkbox-label" style={{ alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+            <input
+              type="radio"
+              value="stripe_datev"
+              checked={paymentProvider === 'stripe_datev'}
+              onChange={(e) => { setPaymentProvider(e.target.value); setPaymentProviderError(''); setPaymentProviderSuccess(''); }}
+              style={{ marginTop: '0.2rem' }}
+            />
+            <div>
+              <strong>💳 Stripe + DATEV Integration</strong>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted, #94a3b8)' }}>
+                Professionelle Zahlungsabwicklung mit automatischer DATEV-Buchhaltung. Gebühren: 0,35€ + 1,4% pro Transaktion.
+              </p>
+            </div>
+          </label>
+        </div>
+
+        {/* Stripe + DATEV config fields */}
+        {paymentProvider === 'stripe_datev' && (
+          <>
+            <div style={{ marginTop: '1.25rem' }}>
+              <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.95rem', color: 'var(--text-primary, #f1f5f9)' }}>
+                🔑 Stripe Konfiguration
+              </h4>
+              <div className="ie-form-row">
+                <div className="ie-form-group">
+                  <label className="ie-label">Secret Key (sk_...)</label>
+                  <div className="ie-secret-input">
+                    <input
+                      type={showSecrets.zp_stripe_secret ? 'text' : 'password'}
+                      value={stripeConfig.stripe_secret_key}
+                      onChange={(e) => setStripeConfig({ ...stripeConfig, stripe_secret_key: e.target.value })}
+                      className="ie-input"
+                      placeholder="sk_test_... oder sk_live_..."
+                    />
+                    <button className="ie-eye-button" onClick={() => toggleSecret('zp_stripe_secret')}>
+                      {showSecrets.zp_stripe_secret ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <small style={{ color: 'var(--text-muted, #94a3b8)' }}>Geheimer Schlüssel für Server-side API Aufrufe</small>
+                </div>
+                <div className="ie-form-group">
+                  <label className="ie-label">Publishable Key (pk_...)</label>
+                  <input
+                    type="text"
+                    value={stripeConfig.stripe_publishable_key}
+                    onChange={(e) => setStripeConfig({ ...stripeConfig, stripe_publishable_key: e.target.value })}
+                    className="ie-input"
+                    placeholder="pk_test_... oder pk_live_..."
+                  />
+                  <small style={{ color: 'var(--text-muted, #94a3b8)' }}>Öffentlicher Schlüssel für Frontend-Integration</small>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.25rem' }}>
+              <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.95rem', color: 'var(--text-primary, #f1f5f9)' }}>
+                📊 DATEV Konfiguration
+              </h4>
+              <div className="ie-form-row">
+                <div className="ie-form-group">
+                  <label className="ie-label">DATEV API Key</label>
+                  <div className="ie-secret-input">
+                    <input
+                      type={showSecrets.zp_datev_api ? 'text' : 'password'}
+                      value={datevConfig.datev_api_key}
+                      onChange={(e) => setDatevConfig({ ...datevConfig, datev_api_key: e.target.value })}
+                      className="ie-input"
+                      placeholder="DATEV API Schlüssel"
+                    />
+                    <button className="ie-eye-button" onClick={() => toggleSecret('zp_datev_api')}>
+                      {showSecrets.zp_datev_api ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <small style={{ color: 'var(--text-muted, #94a3b8)' }}>API-Schlüssel für DATEV-Integration</small>
+                </div>
+                <div className="ie-form-group">
+                  <label className="ie-label">Beraternummer</label>
+                  <input
+                    type="text"
+                    value={datevConfig.datev_consultant_number}
+                    onChange={(e) => setDatevConfig({ ...datevConfig, datev_consultant_number: e.target.value })}
+                    className="ie-input"
+                    placeholder="12345"
+                  />
+                  <small style={{ color: 'var(--text-muted, #94a3b8)' }}>DATEV Beraternummer</small>
+                </div>
+                <div className="ie-form-group">
+                  <label className="ie-label">Mandantennummer</label>
+                  <input
+                    type="text"
+                    value={datevConfig.datev_client_number}
+                    onChange={(e) => setDatevConfig({ ...datevConfig, datev_client_number: e.target.value })}
+                    className="ie-input"
+                    placeholder="123"
+                  />
+                  <small style={{ color: 'var(--text-muted, #94a3b8)' }}>DATEV Mandantennummer</small>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="ie-test-section" style={{ marginTop: '1.25rem' }}>
+          <button
+            className="ie-save-button"
+            onClick={savePaymentProvider}
+            disabled={paymentProviderSaving || paymentProviderLoading}
+            style={{ width: 'auto' }}
+          >
+            {paymentProviderSaving ? (
+              <><RefreshCw size={18} className="spinning" /> Speichere...</>
+            ) : (
+              <><Save size={18} /> Zahlungsanbieter speichern</>
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Stripe Section */}
       <div className="ie-section">
