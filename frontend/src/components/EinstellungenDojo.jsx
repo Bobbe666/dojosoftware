@@ -391,7 +391,7 @@ const EinstellungenDojo = () => {
     { id: "sport",         label: "Sport & Betrieb",      icon: Award,         color: "#06B6D4" },
     { id: "rechtliches",   label: "Rechtliches & Regeln", icon: BookOpen,      color: "#DC2626" },
     { id: "kommunikation", label: "Kommunikation",        icon: Globe,         color: "#1877F2" },
-    { id: "system",        label: "Benutzer & System",    icon: Settings,      color: "#6B7280" },
+    { id: "system",        label: "System",               icon: Settings,      color: "#6B7280" },
   ];
 
   // Daten laden sobald activeDojo.id bekannt ist
@@ -787,6 +787,105 @@ const EinstellungenDojo = () => {
                     onChange={handleChange}
                     disabled={!isEditing}
                     placeholder="0170 1234567"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
+
+            <h3>🎨 Design & Darstellung</h3>
+
+            <div className="form-section">
+              <h4>Tab-Design</h4>
+              <DesignTab />
+            </div>
+
+            <div className="form-section">
+              <h4>Theme-Auswahl</h4>
+              <div className="theme-selector-section">
+                <div className="current-theme-display">
+                  <label>Aktuelles Theme</label>
+                  <div className="current-theme-card glass-card">
+                    <div
+                      className="theme-preview-gradient"
+                      style={{ '--theme-preview': currentTheme?.preview || 'linear-gradient(135deg, #0f0f23, #16213e)' }}
+                    >
+                      <div className="preview-overlay">
+                        {isDarkMode ? '🌙' : '☀️'}
+                      </div>
+                    </div>
+                    <div className="theme-info">
+                      <h5>{currentTheme?.name || "Midnight Blue"}</h5>
+                      <p>{currentTheme?.description}</p>
+                      <span className={`theme-mode-badge ${isDarkMode ? 'dark' : 'light'}`}>
+                        {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="theme-selector-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setShowThemeSelector(!showThemeSelector)}
+                  >
+                    <Palette size={18} />
+                    Theme wechseln
+                  </button>
+                </div>
+                {showThemeSelector && (
+                  <div className="theme-grid">
+                    {themes.map(t => (
+                      <div
+                        key={t.id}
+                        className={`theme-option glass-card ${theme === t.id ? 'active' : ''}`}
+                        onClick={() => handleThemeChange(t.id)}
+                      >
+                        <div
+                          className="theme-preview-gradient small"
+                          style={{ '--theme-preview': t.preview }}
+                        >
+                          <div className="preview-overlay">
+                            {t.isDark ? '🌙' : '☀️'}
+                          </div>
+                        </div>
+                        <div className="theme-details">
+                          <h6>{t.name}</h6>
+                          <p>{t.description}</p>
+                          {theme === t.id && (
+                            <span className="active-badge">✓ Aktiv</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="form-section">
+              <h4>Branding</h4>
+              <div className="form-grid">
+                <div className="form-group short">
+                  <label>Akzentfarbe</label>
+                  <input
+                    name="theme_farbe"
+                    type="color"
+                    value={dojo.theme_farbe || "#8B0000"}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Logo URL</label>
+                  <input
+                    name="logo_url"
+                    type="url"
+                    value={dojo.logo_url || ""}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    placeholder="https://dojo.de/logo.png"
                   />
                 </div>
               </div>
@@ -1219,10 +1318,6 @@ const EinstellungenDojo = () => {
       case "system":
         return (
           <div className="tab-content">
-            <AdminVerwaltung />
-
-            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
-
             <PlanUpgradeSection />
 
             <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
@@ -1230,94 +1325,8 @@ const EinstellungenDojo = () => {
             <h3>⚙️ System-Einstellungen</h3>
 
             <div className="form-section">
-              <h4>🎨 Design & Theme-Auswahl</h4>
-              <div className="theme-selector-section">
-                <div className="current-theme-display">
-                  <label>Aktuelles Theme</label>
-                  <div className="current-theme-card glass-card">
-                    <div
-                      className="theme-preview-gradient"
-                      style={{ '--theme-preview': currentTheme?.preview || 'linear-gradient(135deg, #0f0f23, #16213e)' }}
-                    >
-                      <div className="preview-overlay">
-                        {isDarkMode ? '🌙' : '☀️'}
-                      </div>
-                    </div>
-                    <div className="theme-info">
-                      <h5>{currentTheme?.name || "Midnight Blue"}</h5>
-                      <p>{currentTheme?.description}</p>
-                      <span className={`theme-mode-badge ${isDarkMode ? 'dark' : 'light'}`}>
-                        {isDarkMode ? 'Dark Mode' : 'Light Mode'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="theme-selector-actions">
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => setShowThemeSelector(!showThemeSelector)}
-                  >
-                    <Palette size={18} />
-                    Theme wechseln
-                  </button>
-                </div>
-
-                {showThemeSelector && (
-                  <div className="theme-grid">
-                    {themes.map(t => (
-                      <div
-                        key={t.id}
-                        className={`theme-option glass-card ${theme === t.id ? 'active' : ''}`}
-                        onClick={() => handleThemeChange(t.id)}
-                      >
-                        <div
-                          className="theme-preview-gradient small"
-                          style={{ '--theme-preview': t.preview }}
-                        >
-                          <div className="preview-overlay">
-                            {t.isDark ? '🌙' : '☀️'}
-                          </div>
-                        </div>
-                        <div className="theme-details">
-                          <h6>{t.name}</h6>
-                          <p>{t.description}</p>
-                          {theme === t.id && (
-                            <span className="active-badge">✓ Aktiv</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="form-section">
-              <h4>Weitere Einstellungen</h4>
+              <h4>Lokalisierung</h4>
               <div className="form-grid">
-                <div className="form-group short">
-                  <label>Akzentfarbe</label>
-                  <input
-                    name="theme_farbe"
-                    type="color"
-                    value={dojo.theme_farbe || "#8B0000"}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Logo URL</label>
-                  <input
-                    name="logo_url"
-                    type="url"
-                    value={dojo.logo_url || ""}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    placeholder="https://dojo.de/logo.png"
-                  />
-                </div>
                 <div className="form-group short">
                   <label>Sprache</label>
                   <select
@@ -1385,10 +1394,6 @@ const EinstellungenDojo = () => {
         };
         return (
           <div className="tab-content">
-            <DesignTab />
-
-            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
-
             <MarketingAktionen />
 
             <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
@@ -1481,7 +1486,7 @@ const EinstellungenDojo = () => {
 
           <form onSubmit={handleSave}>
             {/* Action Buttons — oben sticky */}
-            {activeTab !== 'raeume' && activeTab !== 'kommunikation' && activeTab !== 'system' && (
+            {activeTab !== 'raeume' && activeTab !== 'kommunikation' && (
             <div className="form-actions">
               {!isEditing ? (
                 <button
