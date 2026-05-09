@@ -751,16 +751,17 @@ input:checked + .slider:before {
   display: flex !important;
   gap: 1rem !important;
   justify-content: flex-end !important;
-  padding-top: 1.5rem !important;
+  padding: 1rem 2rem !important;
   border-top: 1px solid var(--primary-alpha-20) !important;
-  margin-top: var(--ui-section-gap) !important;
-  position: relative !important;
-  z-index: 2 !important;
-  animation: none !important;
-  background: transparent !important;
-  backdrop-filter: none !important;
+  margin-top: 0 !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 10 !important;
+  background: var(--bg-secondary, #1a1a2e) !important;
+  backdrop-filter: blur(8px) !important;
   border-radius: 0 !important;
-  box-shadow: none !important;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.3) !important;
+  animation: none !important;
 }
 
 .einstellungen-dojo .button-group,
