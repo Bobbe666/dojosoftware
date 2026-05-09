@@ -1762,9 +1762,7 @@ const EinstellungenDojo = () => {
           )}
 
           <form onSubmit={handleSave}>
-            {renderTabContent()}
-
-            {/* Action Buttons */}
+            {/* Action Buttons — oben sticky */}
             {activeTab !== 'raeume' && activeTab !== 'kommunikation' && activeTab !== 'system' && (
             <div className="form-actions">
               {!isEditing ? (
@@ -1800,6 +1798,8 @@ const EinstellungenDojo = () => {
               )}
             </div>
           )}
+
+            {renderTabContent()}
           </form>
         </div>
       </div>
