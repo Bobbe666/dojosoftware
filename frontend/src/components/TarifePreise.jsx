@@ -61,6 +61,22 @@ const TarifePreise = () => {
   const [individuellCollapsed, setIndividuellCollapsed] = useState(false);
   const [alteTarifeCollapsed, setAlteTarifeCollapsed] = useState(true);
   const [showNewIndividuell, setShowNewIndividuell] = useState(false);
+  const [dojoSettings, setDojoSettings] = useState({
+    vertragsmodell: 'gesetzlich',
+    beitragsgarantie_bei_nichtverlaengerung: 'aktueller_tarif',
+    verlaengerung_erinnerung_tage: 60,
+    verlaengerung_erinnerung2_tage: 30,
+    verlaengerung_erinnerung3_tage: 14,
+    kuendigungsfrist_monate: 3,
+    mindestlaufzeit_monate: 12,
+    verlaengerung_monate: 12,
+    ruhepause_max_monate: 3,
+    kuendigung_nur_monatsende: false,
+    kuendigung_schriftlich: false
+  });
+  const [isEditingSettings, setIsEditingSettings] = useState(false);
+  const [settingsCollapsed, setSettingsCollapsed] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Ermittle die dojo_id aus dem aktivem Dojo
   const getDojoId = () => {
@@ -104,6 +120,7 @@ const TarifePreise = () => {
 
   useEffect(() => {
     loadTarifeUndRabatte();
+    loadDojoSettings();
   }, [activeDojo]); // Neu laden wenn sich das aktive Dojo ändert
 
   const loadTarifeUndRabatte = async () => {
@@ -182,6 +199,41 @@ const TarifePreise = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadDojoSettings = async () => {
+    const dojoId = getDojoId();
+    if (!dojoId) return;
+    try {
+      const res = await axios.get(`/dojo${dojoId ? `?dojo_id=${dojoId}` : ''}`);
+      if (res.data?.success && res.data?.dojo) {
+        const d = res.data.dojo;
+        setDojoSettings({
+          vertragsmodell: d.vertragsmodell || 'gesetzlich',
+          beitragsgarantie_bei_nichtverlaengerung: d.beitragsgarantie_bei_nichtverlaengerung || 'aktueller_tarif',
+          verlaengerung_erinnerung_tage: d.verlaengerung_erinnerung_tage || 60,
+          verlaengerung_erinnerung2_tage: d.verlaengerung_erinnerung2_tage || 30,
+          verlaengerung_erinnerung3_tage: d.verlaengerung_erinnerung3_tage || 14,
+          kuendigungsfrist_monate: d.kuendigungsfrist_monate || 3,
+          mindestlaufzeit_monate: d.mindestlaufzeit_monate || 12,
+          verlaengerung_monate: d.verlaengerung_monate || 12,
+          ruhepause_max_monate: d.ruhepause_max_monate || 3,
+          kuendigung_nur_monatsende: !!d.kuendigung_nur_monatsende,
+          kuendigung_schriftlich: !!d.kuendigung_schriftlich
+        });
+      }
+    } catch (e) {}
+  };
+
+  const saveDojoSettings = async () => {
+    const dojoId = getDojoId();
+    if (!dojoId) return;
+    setSavingSettings(true);
+    try {
+      await axios.put(`/dojo${dojoId ? `?dojo_id=${dojoId}` : ''}`, dojoSettings);
+      setIsEditingSettings(false);
+    } catch (e) {}
+    setSavingSettings(false);
   };
 
   // Berechne Brutto-Beitrag
@@ -1088,6 +1140,174 @@ const TarifePreise = () => {
           </div>
         </div>
       )}
+
+      {/* Vertragsmodell & Vertragsbedingungen */}
+      <div className="section">
+        <div
+          className="section-header collapsible"
+          onClick={() => setSettingsCollapsed(!settingsCollapsed)}
+          style={{ cursor: 'pointer' }}
+        >
+          <h2>
+            <span style={{ marginRight: '0.5rem' }}>📋</span>
+            Vertragsmodell & Vertragsbedingungen
+          </h2>
+          <div className="header-actions">
+            {!isEditingSettings ? (
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={(e) => { e.stopPropagation(); setIsEditingSettings(true); setSettingsCollapsed(false); }}
+              >
+                Bearbeiten
+              </button>
+            ) : (
+              <>
+                <button
+                  className="btn btn-sm btn-secondary"
+                  onClick={(e) => { e.stopPropagation(); setIsEditingSettings(false); loadDojoSettings(); }}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={(e) => { e.stopPropagation(); saveDojoSettings(); }}
+                  disabled={savingSettings}
+                >
+                  {savingSettings ? 'Speichern...' : 'Speichern'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {!settingsCollapsed && (
+          <div style={{ padding: '1.5rem' }}>
+            {/* Vertragsmodell */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>🔄 Vertragsmodell</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <label style={{ display: 'flex', gap: '0.75rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: `1px solid ${dojoSettings.vertragsmodell === 'gesetzlich' ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}`, cursor: isEditingSettings ? 'pointer' : 'default' }}>
+                  <input
+                    type="radio"
+                    name="vertragsmodell"
+                    value="gesetzlich"
+                    checked={dojoSettings.vertragsmodell === 'gesetzlich'}
+                    onChange={(e) => setDojoSettings({ ...dojoSettings, vertragsmodell: e.target.value })}
+                    disabled={!isEditingSettings}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 600 }}>📜 Gesetzliche Verlängerung (Standard)</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      Vertrag verlängert sich automatisch. Nach der Verlängerung kann das Mitglied jederzeit mit <strong>1 Monat Frist</strong> kündigen.
+                    </div>
+                  </div>
+                </label>
+                <label style={{ display: 'flex', gap: '0.75rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: `1px solid ${dojoSettings.vertragsmodell === 'beitragsgarantie' ? '#14B8A6' : 'rgba(255,255,255,0.08)'}`, cursor: isEditingSettings ? 'pointer' : 'default' }}>
+                  <input
+                    type="radio"
+                    name="vertragsmodell"
+                    value="beitragsgarantie"
+                    checked={dojoSettings.vertragsmodell === 'beitragsgarantie'}
+                    onChange={(e) => setDojoSettings({ ...dojoSettings, vertragsmodell: e.target.value })}
+                    disabled={!isEditingSettings}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 600 }}>💰 Beitragsgarantie-Modell</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      Mitglied muss <strong>aktiv verlängern</strong>, um seinen aktuellen Beitrag zu behalten.
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Allgemeine Vertragseinstellungen */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>📝 Allgemeine Vertragsbedingungen</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+                {[
+                  { label: 'Kündigungsfrist (Monate)', key: 'kuendigungsfrist_monate', min: 1, max: 3 },
+                  { label: 'Mindestlaufzeit (Monate)', key: 'mindestlaufzeit_monate', min: 1, max: 24 },
+                  { label: 'Verlängerungszeitraum (Monate)', key: 'verlaengerung_monate', min: 1, max: 12 },
+                  { label: 'Max. Ruhepause (Monate)', key: 'ruhepause_max_monate', min: 1, max: 12 }
+                ].map(({ label, key, min, max }) => (
+                  <div key={key}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>{label}</label>
+                    <input
+                      type="number"
+                      min={min}
+                      max={max}
+                      value={dojoSettings[key]}
+                      onChange={(e) => setDojoSettings({ ...dojoSettings, [key]: parseInt(e.target.value) || min })}
+                      disabled={!isEditingSettings}
+                      style={{ width: '100%', padding: '0.5rem', background: 'var(--input-bg, rgba(255,255,255,0.05))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--text-primary)', opacity: isEditingSettings ? 1 : 0.7 }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {[
+                  { label: 'Kündigung nur zum Monatsende möglich', key: 'kuendigung_nur_monatsende' },
+                  { label: 'Kündigung muss schriftlich erfolgen', key: 'kuendigung_schriftlich' }
+                ].map(({ label, key }) => (
+                  <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isEditingSettings ? 'pointer' : 'default' }}>
+                    <input
+                      type="checkbox"
+                      checked={dojoSettings[key]}
+                      onChange={(e) => setDojoSettings({ ...dojoSettings, [key]: e.target.checked })}
+                      disabled={!isEditingSettings}
+                    />
+                    <span style={{ fontSize: '0.9rem' }}>{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Beitragsgarantie Einstellungen */}
+            {dojoSettings.vertragsmodell === 'beitragsgarantie' && (
+              <div style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.3)', borderRadius: '8px', padding: '1.25rem' }}>
+                <h4 style={{ marginBottom: '1rem', color: '#14B8A6' }}>⚙️ Beitragsgarantie-Einstellungen</h4>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>Bei Nicht-Verlängerung</label>
+                  <select
+                    value={dojoSettings.beitragsgarantie_bei_nichtverlaengerung}
+                    onChange={(e) => setDojoSettings({ ...dojoSettings, beitragsgarantie_bei_nichtverlaengerung: e.target.value })}
+                    disabled={!isEditingSettings}
+                    style={{ padding: '0.5rem', background: 'var(--input-bg, rgba(255,255,255,0.05))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--text-primary)' }}
+                  >
+                    <option value="aktueller_tarif">Automatisch aktueller Tarifpreis</option>
+                    <option value="vertrag_endet">Vertrag endet</option>
+                  </select>
+                </div>
+                <h5 style={{ marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>📧 Erinnerungs-E-Mails</h5>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                  {[
+                    { label: '1. Erinnerung', key: 'verlaengerung_erinnerung_tage' },
+                    { label: '2. Erinnerung', key: 'verlaengerung_erinnerung2_tage' },
+                    { label: 'Letzte Erinnerung', key: 'verlaengerung_erinnerung3_tage' }
+                  ].map(({ label, key }) => (
+                    <div key={key}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>{label}</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input
+                          type="number"
+                          min={0}
+                          max={90}
+                          value={dojoSettings[key]}
+                          onChange={(e) => setDojoSettings({ ...dojoSettings, [key]: parseInt(e.target.value) || 0 })}
+                          disabled={!isEditingSettings}
+                          style={{ width: '70px', padding: '0.5rem', background: 'var(--input-bg, rgba(255,255,255,0.05))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--text-primary)' }}
+                        />
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Tage vorher</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Neuer Tarif Modal */}
       {showNewTarif && (
