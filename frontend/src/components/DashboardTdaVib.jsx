@@ -270,15 +270,6 @@ function DashboardTdaVib() {
         <div className="dashboard-header-right">
           {role === 'admin' && <DojoSwitcher />}
           {role === 'admin' && <StandortSwitcher />}
-          <a
-            href="https://academy.tda-intl.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="dashboard-button"
-            style={{ textDecoration: 'none' }}
-          >
-            🎓 Academy
-          </a>
           {!isMainDashboard && (
             <button onClick={() => navigate('/dashboard-tda-vib')} className="dashboard-button">
               ← Dashboard
