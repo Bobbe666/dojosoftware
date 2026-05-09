@@ -108,7 +108,8 @@ router.get('/', async (req, res) => {
         d.bank_bic,
         d.bank_inhaber,
         d.bank_name,
-        d.aktualisiert_am
+        d.aktualisiert_am,
+        d.subdomain
       FROM dojo d
       ${whereClause}
       ORDER BY d.sortierung ASC, d.id ASC
