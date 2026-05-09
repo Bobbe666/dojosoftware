@@ -378,6 +378,7 @@ const EinstellungenDojo = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [socialAccounts, setSocialAccounts] = useState([]);
 
   // Theme-Konfiguration aus Context (THEMES wird von ThemeContext importiert)
   const themes = Object.values(contextThemes);
@@ -397,6 +398,10 @@ const EinstellungenDojo = () => {
   useEffect(() => {
     if (activeDojo?.id) {
       loadDojoData();
+      fetchWithAuth(`/api/marketing-aktionen/accounts?dojo_id=${activeDojo.id}`)
+        .then(r => r.ok ? r.json() : [])
+        .then(data => { if (Array.isArray(data)) setSocialAccounts(data); })
+        .catch(() => {});
     }
   }, [activeDojo?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1391,34 +1396,123 @@ const EinstellungenDojo = () => {
         const copyToClipboard = (text) => {
           navigator.clipboard.writeText(text).catch(() => {});
         };
+        const fbAccounts = socialAccounts.filter(a => a.platform === 'facebook');
+        const igAccounts = socialAccounts.filter(a => a.platform === 'instagram');
         return (
           <div className="tab-content">
-            <h3>🌐 Website & Integration</h3>
-            <p className="section-description">
-              Binde deine aktuellen News auf deiner eigenen Homepage ein — per Iframe-Widget, RSS-Feed oder JSON-API.
-            </p>
 
-            <div className="integration-section">
-              <div className="integration-block">
-                <label className="integration-label">Iframe Embed-Code</label>
-                <p className="integration-hint">Kopiere diesen Code in deine Homepage, um aktuelle News einzubetten.</p>
+            {/* ── Social Media ── */}
+            <div className="integration-group">
+              <div className="integration-group-header">
+                <span className="integration-group-icon" style={{background:'rgba(24,119,242,0.12)',color:'#1877f2'}}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </span>
+                <div>
+                  <div className="integration-group-title">Facebook</div>
+                  <div className="integration-group-sub">Facebook-Seite auf deiner Homepage einbetten</div>
+                </div>
+              </div>
+              {fbAccounts.length === 0 ? (
+                <div className="integration-no-account">
+                  Kein Facebook-Konto verbunden — verbinde es unter <strong>Marketing → Social Media</strong>.
+                </div>
+              ) : fbAccounts.map(acc => {
+                const fbEmbed = `<div id="fb-root"></div>\n<script async defer crossorigin="anonymous" src="https://connect.facebook.net/de_DE/sdk.js#xfbml=1&version=v19.0"></` + `script>\n<div class="fb-page" data-href="https://www.facebook.com/${acc.page_id}" data-tabs="timeline" data-width="" data-small-header="false" data-adapt-container-width="true" data-hide-cover="false" data-show-facepile="true"></div>`;
+                return (
+                  <div key={acc.id} className="integration-block integration-block--facebook">
+                    <label className="integration-label">
+                      <span className="integration-platform-dot" style={{background:'#1877f2'}} />
+                      {acc.page_name || acc.account_name}
+                      <span className="integration-badge" style={{background:'rgba(24,119,242,0.2)',color:'#60a5fa'}}>Page Plugin</span>
+                    </label>
+                    <p className="integration-hint">Füge diesen Code in deine Homepage ein, um die Pinnwand einzubetten.</p>
+                    <div className="integration-code-row">
+                      <code className="integration-code">{fbEmbed}</code>
+                      <button className="btn-copy btn-copy--facebook" onClick={() => copyToClipboard(fbEmbed)}>Kopieren</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Instagram ── */}
+            <div className="integration-group">
+              <div className="integration-group-header">
+                <span className="integration-group-icon" style={{background:'rgba(225,48,108,0.12)',color:'#e1306c'}}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                </span>
+                <div>
+                  <div className="integration-group-title">Instagram</div>
+                  <div className="integration-group-sub">Instagram-Profil auf deiner Homepage verlinken</div>
+                </div>
+              </div>
+              {igAccounts.length === 0 ? (
+                <div className="integration-no-account">
+                  Kein Instagram-Konto verbunden — verbinde es unter <strong>Marketing → Social Media</strong>.
+                </div>
+              ) : igAccounts.map(acc => {
+                const igLink = `<a href="https://www.instagram.com/${acc.account_name || acc.page_id}/" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:#e1306c;color:#fff;border-radius:8px;font-family:sans-serif;font-weight:600;text-decoration:none;">📸 Folge uns auf Instagram</a>`;
+                return (
+                  <div key={acc.id} className="integration-block integration-block--instagram">
+                    <label className="integration-label">
+                      <span className="integration-platform-dot" style={{background:'linear-gradient(135deg,#f09433,#dc2743,#bc1888)'}} />
+                      {acc.page_name || acc.account_name}
+                      <span className="integration-badge" style={{background:'rgba(225,48,108,0.2)',color:'#f472b6'}}>Follow-Button</span>
+                    </label>
+                    <p className="integration-hint">Füge diesen Link-Button in deine Homepage ein.</p>
+                    <div className="integration-code-row">
+                      <code className="integration-code">{igLink}</code>
+                      <button className="btn-copy btn-copy--instagram" onClick={() => copyToClipboard(igLink)}>Kopieren</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── News-Widget ── */}
+            <div className="integration-group">
+              <div className="integration-group-header">
+                <span className="integration-group-icon" style={{background:'rgba(255,215,0,0.1)',color:'var(--primary)'}}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+                </span>
+                <div>
+                  <div className="integration-group-title">News-Widget</div>
+                  <div className="integration-group-sub">Aktuelle Vereinsnachrichten auf deiner Homepage einbetten</div>
+                </div>
+              </div>
+
+              <div className="integration-block integration-block--news">
+                <label className="integration-label">
+                  <span className="integration-platform-dot" style={{background:'#3b82f6'}} />
+                  Iframe Embed
+                  <span className="integration-badge">Homepage</span>
+                </label>
+                <p className="integration-hint">Kopiere diesen Code in deine Homepage — zeigt die letzten News als eingebettetes Widget.</p>
                 <div className="integration-code-row">
                   <code className="integration-code">{embedCode}</code>
                   <button className="btn-copy" onClick={() => copyToClipboard(embedCode)}>Kopieren</button>
                 </div>
               </div>
 
-              <div className="integration-block">
-                <label className="integration-label">RSS Feed URL</label>
-                <p className="integration-hint">Für RSS-Reader und CMS-Systeme (WordPress, Typo3 etc.)</p>
+              <div className="integration-block integration-block--news">
+                <label className="integration-label">
+                  <span className="integration-platform-dot" style={{background:'#f97316'}} />
+                  RSS Feed
+                  <span className="integration-badge" style={{background:'rgba(249,115,22,0.2)',color:'#fb923c'}}>WordPress · Typo3</span>
+                </label>
+                <p className="integration-hint">Für RSS-Reader und CMS-Systeme.</p>
                 <div className="integration-code-row">
                   <code className="integration-code">{rssUrl}</code>
                   <button className="btn-copy" onClick={() => copyToClipboard(rssUrl)}>Kopieren</button>
                 </div>
               </div>
 
-              <div className="integration-block">
-                <label className="integration-label">JSON API <span className="integration-badge">Entwickler</span></label>
+              <div className="integration-block integration-block--news">
+                <label className="integration-label">
+                  <span className="integration-platform-dot" style={{background:'#8b5cf6'}} />
+                  JSON API
+                  <span className="integration-badge">Entwickler</span>
+                </label>
                 <p className="integration-hint">Für eigene Entwickler-Lösungen — liefert die letzten 10 News als JSON.</p>
                 <div className="integration-code-row">
                   <code className="integration-code">{jsonUrl}</code>
