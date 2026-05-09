@@ -109,10 +109,15 @@ router.get('/', async (req, res) => {
         d.bank_inhaber,
         d.bank_name,
         d.aktualisiert_am,
-        d.subdomain
+        d.subdomain,
+        CASE WHEN d.id = 2 OR d.id NOT IN (
+          SELECT DISTINCT au.dojo_id FROM admin_users au
+          WHERE au.dojo_id IS NOT NULL AND au.dojo_id != 2
+          AND au.rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
+        ) THEN 1 ELSE 0 END as is_managed
       FROM dojo d
       ${whereClause}
-      ORDER BY d.sortierung ASC, d.id ASC
+      ORDER BY d.ist_hauptdojo DESC, d.sortierung ASC, d.id ASC
     `;
 
     const [results] = await req.db.promise().query(query, queryParams);

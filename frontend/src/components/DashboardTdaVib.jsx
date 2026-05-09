@@ -268,7 +268,7 @@ function DashboardTdaVib() {
           <h2>{headerTitle}</h2>
         </div>
         <div className="dashboard-header-right">
-          {role === 'admin' && <DojoSwitcher filterDojos={(d) => !d.subdomain} />}
+          {role === 'admin' && <DojoSwitcher filterDojos={(d) => !!d.is_managed} />}
           {role === 'admin' && <StandortSwitcher />}
           {!isMainDashboard && (
             <button onClick={() => navigate('/dashboard-tda-vib')} className="dashboard-button">
