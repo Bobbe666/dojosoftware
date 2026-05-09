@@ -4,7 +4,6 @@ import RaumVerwaltung from "./RaumVerwaltung";
 import FinanzamtSelector from "./FinanzamtSelector";
 import AdminVerwaltung from "./AdminVerwaltung";
 import PlanUpgradeSection from "./PlanUpgradeSection";
-import MarketingAktionen from "./MarketingAktionen";
 import "../styles/EinstellungenDojo.css";
 import "../styles/designsystem.css";
 import "../styles/themes.css";
@@ -390,7 +389,7 @@ const EinstellungenDojo = () => {
     { id: "finanzen",      label: "Finanzen & Steuern",   icon: CreditCard,    color: "#8B5CF6" },
     { id: "sport",         label: "Sport & Betrieb",      icon: Award,         color: "#06B6D4" },
     { id: "rechtliches",   label: "Rechtliches & Regeln", icon: BookOpen,      color: "#DC2626" },
-    { id: "kommunikation", label: "Kommunikation",        icon: Globe,         color: "#1877F2" },
+    { id: "kommunikation", label: "Website & Integration", icon: Globe,         color: "#1877F2" },
     { id: "system",        label: "System",               icon: Settings,      color: "#6B7280" },
   ];
 
@@ -1394,10 +1393,6 @@ const EinstellungenDojo = () => {
         };
         return (
           <div className="tab-content">
-            <MarketingAktionen />
-
-            <hr style={{margin:'1.5rem 0',borderColor:'rgba(255,255,255,0.1)'}} />
-
             <h3>🌐 Website & Integration</h3>
             <p className="section-description">
               Binde deine aktuellen News auf deiner eigenen Homepage ein — per Iframe-Widget, RSS-Feed oder JSON-API.
