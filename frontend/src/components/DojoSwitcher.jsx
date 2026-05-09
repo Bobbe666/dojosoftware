@@ -6,7 +6,7 @@ import { useDojoContext } from '../context/DojoContext';
 import { useAuth } from '../context/AuthContext';
 import '../styles/DojoSwitcher.css';
 
-const DojoSwitcher = () => {
+const DojoSwitcher = ({ filterDojos } = {}) => {
   const { dojos, activeDojo, switchDojo, loading, filter, setFilter, refreshDojos } = useDojoContext();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -137,7 +137,10 @@ const DojoSwitcher = () => {
 
   // Filter dojos by search query
   const filteredDojos = Array.isArray(dojos)
-    ? dojos.filter(d => d.dojoname?.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? dojos.filter(d =>
+        d.dojoname?.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        (!filterDojos || filterDojos(d))
+      )
     : [];
 
   const handleToggle = (e) => {
