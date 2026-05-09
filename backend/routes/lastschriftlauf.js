@@ -1395,11 +1395,16 @@ router.post("/stripe/execute", async (req, res) => {
                                 'UPDATE beitraege SET bezahlt = 1, zahlungsart = ? WHERE beitrag_id = ?',
                                 ['Stripe SEPA', beitrag.beitrag_id]
                             );
-                            // Verknüpfte Rechnung als bezahlt markieren
+                            // Verknüpfte Rechnung + Prüfung als bezahlt markieren
                             if (beitrag.rechnung_id) {
                                 await queryAsync(
                                     `UPDATE rechnungen SET status = 'bezahlt', bezahlt_am = CURDATE(), zahlungsart = 'Stripe SEPA'
                                      WHERE rechnung_id = ?`,
+                                    [beitrag.rechnung_id]
+                                );
+                                await queryAsync(
+                                    `UPDATE pruefungen SET gebuehr_bezahlt = 1, gebuehr_bezahlt_am = CURDATE()
+                                     WHERE gebuehr_rechnung_id = ? AND gebuehr_bezahlt = 0`,
                                     [beitrag.rechnung_id]
                                 );
                             }
@@ -1802,6 +1807,13 @@ router.post("/stripe/retry-single", async (req, res) => {
                     'UPDATE beitraege SET bezahlt = 1, zahlungsart = ? WHERE beitrag_id = ?',
                     ['Stripe SEPA', b.beitrag_id]
                 );
+                if (b.rechnung_id) {
+                    await queryAsync(
+                        `UPDATE pruefungen SET gebuehr_bezahlt = 1, gebuehr_bezahlt_am = CURDATE()
+                         WHERE gebuehr_rechnung_id = ? AND gebuehr_bezahlt = 0`,
+                        [b.rechnung_id]
+                    );
+                }
             }
         }
 

@@ -398,6 +398,14 @@ router.post("/:id/abschliessen", async (req, res) => {
                     [id, ...validIds]
                 );
                 markedCount = upd.affectedRows;
+                // Sync: Prüfungsgebühr-Status in pruefungen aktualisieren
+                await queryAsync(
+                    `UPDATE pruefungen p
+                     JOIN beitraege b ON b.rechnung_id = p.gebuehr_rechnung_id
+                     SET p.gebuehr_bezahlt = 1, p.gebuehr_bezahlt_am = CURDATE()
+                     WHERE b.beitrag_id IN (${placeholders}) AND p.gebuehr_bezahlt = 0`,
+                    [...validIds]
+                );
             }
         } else if (monat && jahr) {
             // Fallback: alle offenen SEPA-Beiträge des Monats markieren
@@ -419,6 +427,17 @@ router.post("/:id/abschliessen", async (req, res) => {
                   ${dojoFilter}
             `, params);
             markedCount = upd.affectedRows;
+            // Sync: Prüfungsgebühr-Status in pruefungen aktualisieren
+            await queryAsync(`
+                UPDATE pruefungen p
+                JOIN beitraege b ON b.rechnung_id = p.gebuehr_rechnung_id
+                JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+                SET p.gebuehr_bezahlt = 1, p.gebuehr_bezahlt_am = CURDATE()
+                WHERE b.bezahlt = 1
+                  AND b.zahlungsdatum >= ? AND b.zahlungsdatum <= ?
+                  AND p.gebuehr_bezahlt = 0
+                  ${dojoFilter}
+            `, dojo_id ? [monatStart, monatEnde, dojo_id] : [monatStart, monatEnde]);
         }
 
         res.json({
