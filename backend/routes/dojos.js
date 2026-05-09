@@ -21,7 +21,24 @@ router.get('/', async (req, res) => {
   const userRole = req.user?.role || req.user?.rolle;
   // Super-Admin: entweder explizit 'super_admin' ODER role='admin' ohne eigenes dojo_id
   const isSuperAdmin = userRole === 'super_admin' || (userRole === 'admin' && !userDojoId);
-  const { filter } = req.query;
+  const { filter, managed_only } = req.query;
+
+  // managed_only=1 → nur TDA (id=2) + Hauptdojo, immer, auch für Super-Admins
+  if (managed_only === '1') {
+    try {
+      const [rows] = await req.db.promise().query(
+        `SELECT d.id, d.dojoname, d.farbe, d.ist_hauptdojo, d.sortierung, d.steuer_status,
+                d.ust_satz, d.kleinunternehmer_grenze, d.jahresumsatz_vorjahr, d.subdomain,
+                COALESCE((SELECT SUM(v.monatsbeitrag*12) FROM vertraege v WHERE v.dojo_id=d.id AND v.status='aktiv'),0) as jahresumsatz_aktuell
+         FROM dojo d
+         WHERE d.ist_aktiv = TRUE AND (d.id = 2 OR d.ist_hauptdojo = 1)
+         ORDER BY d.ist_hauptdojo DESC, d.sortierung ASC, d.id ASC`
+      );
+      return res.json(rows);
+    } catch (err) {
+      return res.status(500).json({ error: 'Fehler beim Laden der verwalteten Dojos' });
+    }
+  }
 
   try {
     // Step 1: Check if user has specific dojo assignments in admin_user_dojos

@@ -6,16 +6,29 @@ import { useDojoContext } from '../context/DojoContext';
 import { useAuth } from '../context/AuthContext';
 import '../styles/DojoSwitcher.css';
 
-const DojoSwitcher = ({ filterDojos } = {}) => {
+const DojoSwitcher = ({ filterDojos, managedOnly } = {}) => {
   const { dojos, activeDojo, switchDojo, loading, filter, setFilter, refreshDojos } = useDojoContext();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [managedDojos, setManagedDojos] = useState(null);
   const triggerRef = useRef(null);
   const searchInputRef = useRef(null);
   const showAllDojos = filter === 'all';
+
+  // Wenn managedOnly: eigener Fetch unabhängig vom DojoContext
+  useEffect(() => {
+    if (!managedOnly || !token) return;
+    const authToken = token || localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    fetch('/api/dojos?managed_only=1', {
+      headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' }
+    })
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setManagedDojos(data); })
+      .catch(() => {});
+  }, [managedOnly, token]);
 
   // Focus search input when modal opens
   useEffect(() => {
@@ -135,9 +148,10 @@ const DojoSwitcher = ({ filterDojos } = {}) => {
   const isInMarketingMode = activeDojo === 'marketing';
   const isInLizenzenMode = window.location.pathname === '/dashboard/lizenzen';
 
-  // Filter dojos by search query
-  const filteredDojos = Array.isArray(dojos)
-    ? dojos.filter(d =>
+  // Filter dojos by search query (managedOnly verwendet eigenen Fetch statt DojoContext)
+  const sourceDojos = managedOnly ? (managedDojos || []) : dojos;
+  const filteredDojos = Array.isArray(sourceDojos)
+    ? sourceDojos.filter(d =>
         d.dojoname?.toLowerCase().includes(searchQuery.toLowerCase()) &&
         (!filterDojos || filterDojos(d))
       )
