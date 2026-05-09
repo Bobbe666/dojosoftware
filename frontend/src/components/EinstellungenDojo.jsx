@@ -1038,32 +1038,7 @@ const EinstellungenDojo = () => {
             </div>
 
             <div className="form-section">
-              <h4>Beitragssätze & Gebühren</h4>
               <div className="form-grid">
-                <div className="form-group short">
-                  <label>Beitrag Erwachsene (€/Monat)</label>
-                  <input
-                    name="beitrag_erwachsene"
-                    type="number"
-                    step="0.01"
-                    value={dojo.beitrag_erwachsene || ""}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    placeholder="45.00"
-                  />
-                </div>
-                <div className="form-group short">
-                  <label>Beitrag Kinder (€/Monat)</label>
-                  <input
-                    name="beitrag_kinder"
-                    type="number"
-                    step="0.01"
-                    value={dojo.beitrag_kinder || ""}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    placeholder="25.00"
-                  />
-                </div>
                 <div className="form-group short">
                   <label>Kündigungsfrist (Monate)</label>
                   <input
