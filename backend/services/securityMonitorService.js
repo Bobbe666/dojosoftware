@@ -19,7 +19,7 @@ const SQL_INJECTION_PATTERNS = [
 const XSS_PATTERNS = [
   /<script\b[^>]*>[\s\S]*?<\/script>/gi,
   /javascript\s*:/gi,
-  /on\w+\s*=\s*["']?[^"']*["']?/gi,
+  /\bon\w+\s*=\s*["']?[^"']*["']?/gi,
   /<iframe\b/gi,
   /<object\b/gi,
   /<embed\b/gi,

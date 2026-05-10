@@ -600,6 +600,17 @@ router.get('/subscription-status', authenticateToken, async (req, res) => {
   try {
     const dojoId = req.user.dojo_id;
 
+    // Super-Admin (dojo_id = null) hat keine eigene Subscription
+    if (!dojoId) {
+      return res.json({
+        is_super_admin: true,
+        plan_type: 'super_admin',
+        plan_display_name: 'Super Admin',
+        status: 'active',
+        available_upgrades: [],
+      });
+    }
+
     const [sub] = await db.promise().query(
       `SELECT ds.*, d.dojoname, sp.display_name as plan_display_name
        FROM dojo_subscriptions ds
