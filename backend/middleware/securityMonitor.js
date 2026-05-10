@@ -33,8 +33,6 @@ const SAFE_PATH_PREFIXES = [
   '/api/entwicklungsziele',  // Ziele & Planung (Enum-Werte wie 'global' triggern keine SQL-Injection)
   '/api/artikelgruppen',
   '/api/errors/',   // Error-Reporting
-  '/api/finanzcockpit',  // Finanzcockpit (months=3 = XSS false positive)
-  '/api/buchhaltung'    // Buchhaltung (monat= in URL triggert false-positive XSS durch on\w+=)
 ];
 
 /**
