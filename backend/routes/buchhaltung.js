@@ -1197,18 +1197,16 @@ router.get('/euer', requireBuchhaltungAccess, (req, res) => {
     ORDER BY kategorie, quelle
   `;
 
-  // Ausgaben - Einzelne Buchungen für Details
+  // Ausgaben - Einzelne Buchungen für Details (inkl. Beleg-Dateiinfo)
   const ausgabenDetailsSql = `
-    SELECT
-      kategorie,
-      quelle,
-      datum,
-      betrag_brutto,
-      beschreibung,
-      referenz_id
-    FROM v_euer_ausgaben
-    WHERE ${dateFilter} ${orgFilter}
-    ORDER BY kategorie, quelle, datum DESC
+    SELECT a.*, b.datei_name
+    FROM (
+      SELECT kategorie, quelle, datum, betrag_brutto, beschreibung, referenz_id
+      FROM v_euer_ausgaben
+      WHERE ${dateFilter} ${orgFilter}
+    ) a
+    LEFT JOIN buchhaltung_belege b ON a.quelle = 'Beleg' AND a.referenz_id = b.beleg_id
+    ORDER BY a.kategorie, a.quelle, a.datum DESC
   `;
 
   Promise.all([
@@ -1313,7 +1311,8 @@ router.get('/euer', requireBuchhaltungAccess, (req, res) => {
           betrag: parseFloat(d.betrag_brutto),
           beschreibung: d.beschreibung,
           referenz_id: d.referenz_id,
-          quelle: d.quelle
+          quelle: d.quelle,
+          datei_name: d.datei_name || null
         }));
 
       ausgabenNachKategorie[row.kategorie].details.push({

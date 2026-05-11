@@ -2186,6 +2186,19 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                       <span className="einzelbuchung-indent">
                                         {new Date(buchung.datum).toLocaleDateString('de-DE')} – {buchung.beschreibung || 'Keine Beschreibung'}
                                       </span>
+                                      {buchung.datei_name && (
+                                        <a
+                                          href={`/api/buchhaltung/belege/${buchung.referenz_id}/datei`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="btn-icon-xs btn-ghost"
+                                          title={`Beleg anzeigen: ${buchung.datei_name}`}
+                                          onClick={e => e.stopPropagation()}
+                                          style={{ marginLeft: 6, display: 'inline-flex', alignItems: 'center' }}
+                                        >
+                                          <FileText size={12} />
+                                        </a>
+                                      )}
                                       {isEditing && (
                                         <span className="buchung-edit-inline" onClick={e => e.stopPropagation()}>
                                           <select
