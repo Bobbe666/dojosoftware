@@ -211,9 +211,20 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       mitglied.full_name ||
       `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim();
 
-    // Warenkorb leeren bevor Mitglied gewechselt wird —
-    // sonst bleiben Artikel vom vorherigen Mitglied im Cart.
-    // Der localStorage-Lade-Effekt lädt dann ggf. den gespeicherten Cart für das neue Mitglied.
+    // Warenkorb leeren bevor Mitglied gewechselt wird.
+    // Zusätzlich den localStorage des neuen Mitglieds sofort validieren —
+    // falls er durch einen alten Bug mit fremden Artikeln befüllt wurde, wird er bereinigt.
+    if (mitglied.mitglied_id) {
+      try {
+        const savedRaw = localStorage.getItem(`vk_warenkorb_${mitglied.mitglied_id}`);
+        if (savedRaw) {
+          const savedParsed = JSON.parse(savedRaw);
+          if (savedParsed?.memberId !== mitglied.mitglied_id) {
+            localStorage.removeItem(`vk_warenkorb_${mitglied.mitglied_id}`);
+          }
+        }
+      } catch { localStorage.removeItem(`vk_warenkorb_${mitglied.mitglied_id}`); }
+    }
     setWarenkorb([]);
     setManualRabatt({ aktiv: false, typ: 'prozent', wert: '', bestaetigt: false });
 
@@ -766,8 +777,13 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       const saved = localStorage.getItem(`vk_warenkorb_${personId}`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setWarenkorb(parsed);
+        // Sicherheitscheck: memberId muss mit personId übereinstimmen
+        // (verhindert Cross-Member-Kontamination durch alten Bug)
+        const items = parsed?.memberId === personId ? parsed.items : null;
+        if (Array.isArray(items) && items.length > 0) {
+          setWarenkorb(items);
+        } else if (parsed?.memberId !== personId) {
+          localStorage.removeItem(`vk_warenkorb_${personId}`);
         }
       }
     } catch {}
@@ -781,7 +797,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       localStorage.removeItem(`vk_warenkorb_${personId}`);
     } else {
       try {
-        localStorage.setItem(`vk_warenkorb_${personId}`, JSON.stringify(warenkorb));
+        localStorage.setItem(`vk_warenkorb_${personId}`, JSON.stringify({ memberId: personId, items: warenkorb }));
       } catch {}
     }
   }, [warenkorb, aktivePerson?.mitglied_id]);
