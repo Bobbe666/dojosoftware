@@ -3432,6 +3432,17 @@ router.post("/check-duplicate", (req, res) => {
 
 // 🆕 API: Neues Mitglied erstellen (erweitert) + DOJO-ID PFLICHTFELD! (KRITISCH!)
 router.post("/",
+    (req, res, next) => {
+        // Für Geschäftskunden ist geburtsdatum optional (Default: 1900-01-01)
+        if (req.body.ist_firma && !req.body.geburtsdatum) {
+            req.body.geburtsdatum = '1900-01-01';
+        }
+        // Für Firmen: nachname = firmenname falls leer
+        if (req.body.ist_firma && !req.body.nachname && req.body.firmenname) {
+            req.body.nachname = req.body.firmenname;
+        }
+        next();
+    },
     requireFields(['vorname', 'nachname', 'geburtsdatum', 'dojo_id']),
     sanitizeStrings(['vorname', 'nachname', 'email', 'strasse', 'ort', 'bemerkungen']),
     (req, res) => {
@@ -3571,7 +3582,8 @@ router.post("/",
         'dojo_id',  // 🔒 KRITISCH: dojo_id MUSS als erstes kommen!
         'vorname', 'nachname', 'geburtsdatum', 'geschlecht', 'schueler_student', 'gewicht',
         'email', 'telefon', 'telefon_mobil', 'strasse', 'hausnummer',
-        'plz', 'ort', 'iban', 'bic', 'bankname', 'kontoinhaber',
+        'plz', 'ort', 'ist_firma', 'firmenname', 'ust_id', 'ansprechpartner',
+        'iban', 'bic', 'bankname', 'kontoinhaber',
         'allergien', 'medizinische_hinweise', 'notfallkontakt_name',
         'notfallkontakt_telefon', 'notfallkontakt_verhaeltnis',
         'hausordnung_akzeptiert', 'hausordnung_akzeptiert_am',

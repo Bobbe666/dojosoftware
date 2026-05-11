@@ -1466,3 +1466,63 @@
   gap: 0.5rem;
   margin-top: 1.25rem;
 }
+
+.re-inline-modal--wide {
+  max-width: 560px;
+}
+.re-modal-row--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.re-modal-row--addr {
+  grid-template-columns: 1fr auto;
+}
+.re-modal-field--hausnr {
+  width: 80px;
+}
+.re-modal-field--plz {
+  width: 110px;
+}
+.re-modal-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary, rgba(255,255,255,0.4));
+  margin: 1rem 0 0.5rem;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 0.75rem;
+}
+.re-modal-textarea {
+  resize: vertical;
+  min-height: 52px;
+  font-family: inherit;
+}
+
+/* Privatperson / Geschäftskunde Toggle */
+.re-kunden-typ-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.25rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.re-typ-btn {
+  flex: 1;
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.45);
+  transition: background 0.15s, color 0.15s;
+}
+.re-typ-btn.active {
+  background: rgba(59,130,246,0.2);
+  color: #93c5fd;
+}
+.re-typ-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.7);
+}
