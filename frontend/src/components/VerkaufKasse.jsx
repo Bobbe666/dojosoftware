@@ -129,6 +129,13 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   // Manueller Rabatt
   const [manualRabatt, setManualRabatt] = useState({ aktiv: false, typ: 'prozent', wert: '', bestaetigt: false });
 
+  // Warenkorb Modal
+  const [showWarenkorb, setShowWarenkorb] = useState(false);
+
+  // Pro-Artikel Rabatt
+  const [itemRabattOffen, setItemRabattOffen] = useState(null); // unique_id des Items
+  const [itemRabattEingabe, setItemRabattEingabe] = useState({ typ: 'prozent', wert: '' });
+
   // Gutschein
   const [gutscheinInput, setGutscheinInput] = useState('');
   const [gutscheinInfo, setGutscheinInfo] = useState(null); // validated voucher
@@ -613,6 +620,40 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     setRabattDialog(null);
   };
 
+  const applyItemRabatt = (uniqueId) => {
+    const wert = parseFloat(itemRabattEingabe.wert) || 0;
+    if (wert <= 0) { setItemRabattOffen(null); return; }
+    setWarenkorb(prev => prev.map(item => {
+      const key = item.unique_id || String(item.artikel_id);
+      if (key !== uniqueId) return item;
+      const basisPreis = item.preis_vor_item_rabatt ?? item.verkaufspreis_euro;
+      const neuerPreis = itemRabattEingabe.typ === 'prozent'
+        ? Math.max(0, basisPreis * (1 - wert / 100))
+        : Math.max(0, basisPreis - wert);
+      return {
+        ...item,
+        verkaufspreis_euro: Math.round(neuerPreis * 100) / 100,
+        preis_vor_item_rabatt: basisPreis,
+        item_rabatt: { typ: itemRabattEingabe.typ, wert }
+      };
+    }));
+    setItemRabattOffen(null);
+    setItemRabattEingabe({ typ: 'prozent', wert: '' });
+  };
+
+  const removeItemRabatt = (uniqueId) => {
+    setWarenkorb(prev => prev.map(item => {
+      const key = item.unique_id || String(item.artikel_id);
+      if (key !== uniqueId) return item;
+      return {
+        ...item,
+        verkaufspreis_euro: item.preis_vor_item_rabatt ?? item.verkaufspreis_euro,
+        preis_vor_item_rabatt: undefined,
+        item_rabatt: null
+      };
+    }));
+  };
+
   const removeFromWarenkorb = (artikelId, uniqueId = null) => {
     setWarenkorb(prev => prev.filter(item => {
       if (uniqueId) {
@@ -836,76 +877,126 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   
   const renderWarenkorb = () => (
     <div className="warenkorb">
-      <div className="warenkorb-header">
-        <h3>Warenkorb</h3>
-        <button 
-          className="btn btn-sm btn-danger"
-          onClick={clearWarenkorb}
-          disabled={warenkorb.length === 0}
-        >
-          🗑️ Leeren
-        </button>
-      </div>
-      
       <div className="warenkorb-items">
         {warenkorb.map(item => {
           const itemKey = item.unique_id || String(item.artikel_id);
           const isEditing = editingItemId === itemKey;
           return (
-            <div
-              key={itemKey}
-              className={`warenkorb-item${isEditing ? ' warenkorb-item--editing' : ''}`}
-              onClick={() => setEditingItemId(isEditing ? null : itemKey)}
-            >
-              <div className="item-info">
-                <div className="item-name">
-                  {item.name}
-                  {item.rabatt_angewendet > 0 && (
-                    <span style={{ marginLeft: '0.4rem', fontSize: '0.72rem', background: 'rgba(255,215,0,0.2)', color: 'var(--gold,#ffd700)', borderRadius: '4px', padding: '0.1rem 0.35rem' }}>
-                      -{item.rabatt_angewendet}%
-                    </span>
-                  )}
-                </div>
-                <div className="item-details">
-                  <span className="item-preis">
-                    {item.verkaufspreis_euro?.toFixed(2) || '0.00'}€
-                    {item.original_preis_euro && (
-                      <span style={{ marginLeft: '0.3rem', textDecoration: 'line-through', fontSize: '0.78rem', opacity: 0.5 }}>
-                        {item.original_preis_euro.toFixed(2)}€
+            <div key={itemKey} className="warenkorb-item-wrapper">
+              <div
+                className={`warenkorb-item${isEditing ? ' warenkorb-item--editing' : ''}`}
+                onClick={() => setEditingItemId(isEditing ? null : itemKey)}
+              >
+                <div className="item-info">
+                  <div className="item-name">
+                    {item.name}
+                    {item.rabatt_angewendet > 0 && (
+                      <span style={{ marginLeft: '0.4rem', fontSize: '0.72rem', background: 'rgba(255,215,0,0.2)', color: 'var(--gold,#ffd700)', borderRadius: '4px', padding: '0.1rem 0.35rem' }}>
+                        -{item.rabatt_angewendet}%
                       </span>
                     )}
-                  </span>
-                  {!isEditing && (
-                    <>
-                      <span className="item-separator">×</span>
-                      <span className="item-menge-display">{item.menge}</span>
-                    </>
-                  )}
+                  </div>
+                  <div className="item-details">
+                    <span className="item-preis">
+                      {item.verkaufspreis_euro?.toFixed(2) || '0.00'}€
+                      {item.preis_vor_item_rabatt && (
+                        <span style={{ marginLeft: '0.3rem', textDecoration: 'line-through', fontSize: '0.78rem', opacity: 0.5 }}>
+                          {item.preis_vor_item_rabatt.toFixed(2)}€
+                        </span>
+                      )}
+                      {!item.preis_vor_item_rabatt && item.original_preis_euro && (
+                        <span style={{ marginLeft: '0.3rem', textDecoration: 'line-through', fontSize: '0.78rem', opacity: 0.5 }}>
+                          {item.original_preis_euro.toFixed(2)}€
+                        </span>
+                      )}
+                    </span>
+                    {!isEditing && (
+                      <>
+                        <span className="item-separator">×</span>
+                        <span className="item-menge-display">{item.menge}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
+
+                {/* Pro-Artikel Rabatt Button */}
+                <button
+                  className={`item-rabatt-btn${item.item_rabatt ? ' item-rabatt-btn--aktiv' : ''}`}
+                  onClick={e => {
+                    e.stopPropagation();
+                    if (item.item_rabatt) {
+                      removeItemRabatt(itemKey);
+                    } else {
+                      setItemRabattOffen(itemRabattOffen === itemKey ? null : itemKey);
+                      setItemRabattEingabe({ typ: 'prozent', wert: '' });
+                    }
+                  }}
+                  title={item.item_rabatt ? 'Rabatt entfernen' : 'Rabatt vergeben'}
+                >
+                  {item.item_rabatt
+                    ? (item.item_rabatt.typ === 'prozent' ? `-${item.item_rabatt.wert}%` : `-${item.item_rabatt.wert}€`)
+                    : '%'}
+                </button>
+
+                {isEditing ? (
+                  <div className="item-menge-controls" onClick={e => e.stopPropagation()}>
+                    <button className="item-menge-btn" onClick={() => updateMenge(item.artikel_id, item.menge - 1, item.unique_id)}>−</button>
+                    <span className="item-menge-val">{item.menge}</span>
+                    <button className="item-menge-btn" onClick={() => updateMenge(item.artikel_id, item.menge + 1, item.unique_id)}>+</button>
+                    {item.hat_varianten && item.unique_id && (
+                      <button className="item-menge-btn item-variant-btn" onClick={() => handleEditVariant(item)} title="Variante ändern">↻</button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="item-summe">
+                    {((item.verkaufspreis_euro || 0) * item.menge).toFixed(2)}€
+                  </div>
+                )}
+
+                <button
+                  className="item-remove-btn"
+                  onClick={e => { e.stopPropagation(); removeFromWarenkorb(item.artikel_id, item.unique_id); }}
+                  title="Entfernen"
+                >
+                  ×
+                </button>
               </div>
 
-              {isEditing ? (
-                <div className="item-menge-controls" onClick={e => e.stopPropagation()}>
-                  <button className="item-menge-btn" onClick={() => updateMenge(item.artikel_id, item.menge - 1, item.unique_id)}>−</button>
-                  <span className="item-menge-val">{item.menge}</span>
-                  <button className="item-menge-btn" onClick={() => updateMenge(item.artikel_id, item.menge + 1, item.unique_id)}>+</button>
-                  {item.hat_varianten && item.unique_id && (
-                    <button className="item-menge-btn item-variant-btn" onClick={() => handleEditVariant(item)} title="Variante ändern">↻</button>
-                  )}
-                </div>
-              ) : (
-                <div className="item-summe">
-                  {((item.verkaufspreis_euro || 0) * item.menge).toFixed(2)}€
+              {/* Inline Rabatt-Formular */}
+              {itemRabattOffen === itemKey && !item.item_rabatt && (
+                <div className="item-rabatt-form" onClick={e => e.stopPropagation()}>
+                  <div className="item-rabatt-form-row">
+                    <button
+                      className={`wk-rabatt-typ${itemRabattEingabe.typ === 'prozent' ? ' active' : ''}`}
+                      onClick={() => setItemRabattEingabe(r => ({ ...r, typ: 'prozent', wert: '' }))}
+                    >%</button>
+                    <button
+                      className={`wk-rabatt-typ${itemRabattEingabe.typ === 'betrag' ? ' active' : ''}`}
+                      onClick={() => setItemRabattEingabe(r => ({ ...r, typ: 'betrag', wert: '' }))}
+                    >€</button>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="wk-rabatt-input"
+                      placeholder={itemRabattEingabe.typ === 'prozent' ? 'z.B. 10' : 'z.B. 5.00'}
+                      value={itemRabattEingabe.wert}
+                      onChange={e => setItemRabattEingabe(r => ({ ...r, wert: e.target.value }))}
+                      autoFocus
+                      onKeyDown={e => e.key === 'Enter' && applyItemRabatt(itemKey)}
+                    />
+                    <button
+                      className="wk-rabatt-bestaetigen"
+                      onClick={() => applyItemRabatt(itemKey)}
+                      disabled={!itemRabattEingabe.wert || parseFloat(itemRabattEingabe.wert) <= 0}
+                    >✓</button>
+                    <button
+                      className="wk-rabatt-clear"
+                      onClick={() => { setItemRabattOffen(null); setItemRabattEingabe({ typ: 'prozent', wert: '' }); }}
+                    >×</button>
+                  </div>
                 </div>
               )}
-
-              <button
-                className="item-remove-btn"
-                onClick={e => { e.stopPropagation(); removeFromWarenkorb(item.artikel_id, item.unique_id); }}
-                title="Entfernen"
-              >
-                ×
-              </button>
             </div>
           );
         })}
@@ -1644,12 +1735,46 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
           {renderArtikelGrid()}
         </div>
         
-        {/* Warenkorb */}
-        <div className="warenkorb-section">
-          {renderWarenkorb()}
         </div>
-        </div>
-        
+
+        {/* Floating Warenkorb-Button */}
+        <button
+          className={`vk-cart-fab${warenkorb.length > 0 ? ' vk-cart-fab--aktiv' : ''}`}
+          onClick={() => setShowWarenkorb(true)}
+        >
+          <ShoppingCart size={24} />
+          {warenkorb.length > 0 && (
+            <>
+              <span className="vk-cart-fab-count">{warenkorb.reduce((s, i) => s + i.menge, 0)}</span>
+              <span className="vk-cart-fab-summe">{effektivSumme.toFixed(2)}€</span>
+            </>
+          )}
+        </button>
+
+        {/* Warenkorb Modal */}
+        {showWarenkorb && (
+          <div className="vk-cart-overlay" onClick={() => setShowWarenkorb(false)}>
+            <div className="vk-cart-modal" onClick={e => e.stopPropagation()}>
+              <div className="vk-cart-modal-header">
+                <h3>Warenkorb</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={clearWarenkorb}
+                    disabled={warenkorb.length === 0}
+                  >
+                    Leeren
+                  </button>
+                  <button className="vk-cart-modal-close" onClick={() => setShowWarenkorb(false)}>×</button>
+                </div>
+              </div>
+              <div className="vk-cart-modal-body">
+                {renderWarenkorb()}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Zahlungsmodal */}
         {showZahlung && renderZahlung()}
 
