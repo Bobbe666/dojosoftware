@@ -1017,12 +1017,20 @@ const requireBuchhaltungAccess = (req, res, next) => {
   return next();
 };
 
-// Baut SQL-Filter: dojo_id für Dojo-Admins, organisation_name für Super-Admin
+// Org-Name → dojo_id Mapping (robuster als String-Match auf organisation_name)
+const ORG_TO_DOJO_ID = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
+const DOJO_ID_TO_ORG = { 2: 'TDA International', 3: 'Kampfkunstschule Schreiner' };
+
+// Baut SQL-Filter: dojo_id für Dojo-Admins, dojo_id-Lookup für Super-Admin
 const buildOrgFilter = (req, organisation) => {
   if (req.buchhaltungDojoId !== null && req.buchhaltungDojoId !== undefined) {
     return { sql: 'AND dojo_id = ?', params: [req.buchhaltungDojoId] };
   }
   if (organisation && organisation !== 'alle') {
+    const orgDojoId = ORG_TO_DOJO_ID[organisation];
+    if (orgDojoId) {
+      return { sql: 'AND dojo_id = ?', params: [orgDojoId] };
+    }
     return { sql: 'AND organisation_name = ?', params: [organisation] };
   }
   return { sql: '', params: [] };
@@ -1663,7 +1671,7 @@ router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
     // Dojo ID: Dojo-Admin nutzt eigene dojo_id, Super-Admin nutzt dojo_id aus Body/Query oder organisation_name
     const _orgMapBeleg = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
     const dojoId = effectiveDojoId || _orgMapBeleg[organisation_name] || null;
-    const effectiveOrgName = organisation_name || `Dojo ${dojoId}`;
+    const effectiveOrgName = organisation_name || DOJO_ID_TO_ORG[dojoId] || `Dojo ${dojoId}`;
     const jahr = new Date(buchungsdatum || beleg_datum).getFullYear();
 
     // Generiere Belegnummer
