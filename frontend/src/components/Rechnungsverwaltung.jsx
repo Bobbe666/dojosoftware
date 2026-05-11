@@ -207,10 +207,13 @@ const Rechnungsverwaltung = () => {
     if (!modalRechnung) return;
     try {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${modalRechnung.rechnung_id}/vorschau`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const html = await res.text();
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       setVorschauOverlay(URL.createObjectURL(blob));
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      alert('Vorschau konnte nicht geladen werden: ' + (e.message || e));
+    }
   };
 
   const closeVorschauOverlay = () => {
@@ -304,17 +307,24 @@ const Rechnungsverwaltung = () => {
   };
 
   const openVorschau = async (rechnung_id, doPrint = false) => {
+    // Fenster SYNCHRON öffnen (vor dem await) — sonst blockt der Browser es als Popup
+    const win = window.open('', '_blank');
     try {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}/vorschau`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const html = await res.text();
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
-      const w = window.open(url, '_blank');
-      if (doPrint && w) {
-        w.addEventListener('load', () => { w.focus(); w.print(); });
+      if (win) {
+        win.location.href = url;
+        if (doPrint) {
+          win.addEventListener('load', () => { win.focus(); win.print(); });
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 15000);
       }
     } catch (e) {
-      alert('Fehler beim Laden der Vorschau');
+      if (win) win.close();
+      alert('Fehler beim Laden der Vorschau: ' + (e.message || e));
     }
   };
 
