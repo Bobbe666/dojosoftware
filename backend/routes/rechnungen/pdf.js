@@ -392,4 +392,27 @@ router.patch('/:id/empfaenger-email', async (req, res) => {
   }
 });
 
+// PATCH /:id/positionen-kategorien — Buchungskategorie pro Position + globaler Default speichern
+router.patch('/:id/positionen-kategorien', async (req, res) => {
+  const { id } = req.params;
+  const { buchungskategorie_default, positionen_kategorien } = req.body;
+  try {
+    await queryAsync(
+      'UPDATE rechnungen SET buchungskategorie_default = ? WHERE rechnung_id = ?',
+      [buchungskategorie_default || null, id]
+    );
+    if (Array.isArray(positionen_kategorien)) {
+      for (const pos of positionen_kategorien) {
+        await queryAsync(
+          'UPDATE rechnungspositionen SET buchungskategorie = ? WHERE position_id = ?',
+          [pos.buchungskategorie || null, pos.position_id]
+        );
+      }
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

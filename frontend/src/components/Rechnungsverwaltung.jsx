@@ -31,6 +31,26 @@ import "../styles/Rechnungsverwaltung.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 
+const BUCHUNGSKATEGORIEN = [
+  { id: 'betriebseinnahmen', name: 'Betriebseinnahmen' },
+  { id: 'wareneingang', name: 'Wareneingang' },
+  { id: 'personalkosten', name: 'Personalkosten' },
+  { id: 'raumkosten', name: 'Raumkosten' },
+  { id: 'versicherungen', name: 'Versicherungen' },
+  { id: 'kfz_kosten', name: 'KFZ-Kosten' },
+  { id: 'werbekosten', name: 'Werbekosten' },
+  { id: 'reisekosten', name: 'Reisekosten' },
+  { id: 'telefon_internet', name: 'Telefon/Internet' },
+  { id: 'software', name: 'Software / IT' },
+  { id: 'buerokosten', name: 'Bürokosten' },
+  { id: 'fortbildung', name: 'Fortbildung' },
+  { id: 'abschreibungen', name: 'Abschreibungen' },
+  { id: 'bankgebuehren', name: 'Kontoführungsgebühren' },
+  { id: 'ausstattung', name: 'Betriebs-/Geschäftsausstattung' },
+  { id: 'sonstige_kosten', name: 'Sonstige Kosten' },
+  { id: 'steuerzahlungen', name: 'Steuerzahlungen / Finanzamt' },
+];
+
 const Rechnungsverwaltung = () => {
   const { t } = useTranslation(['finance', 'common']);
   const navigate = useNavigate();
@@ -43,6 +63,9 @@ const Rechnungsverwaltung = () => {
   const [modalRechnung, setModalRechnung] = useState(null);
   const [modalActiveTab, setModalActiveTab] = useState('details');
   const [vorschauOverlay, setVorschauOverlay] = useState(null); // blob URL für Vollbild-Overlay
+  const [posKategorien, setPosKategorien] = useState({}); // position_id → buchungskategorie
+  const [defaultKategorie, setDefaultKategorie] = useState('');
+  const [posKatSaving, setPosKatSaving] = useState(false);
   const [statistiken, setStatistiken] = useState({
     gesamt_rechnungen: 0,
     offene_rechnungen: 0,
@@ -155,8 +178,14 @@ const Rechnungsverwaltung = () => {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}`);
       if (res.ok) {
         const data = await res.json();
-        setModalRechnung(data.data);
+        const r = data.data;
+        setModalRechnung(r);
         setModalActiveTab('details');
+        // Kategorie-Zustände initialisieren
+        setDefaultKategorie(r.buchungskategorie_default || '');
+        const map = {};
+        (r.positionen || []).forEach(p => { map[p.position_id] = p.buchungskategorie || ''; });
+        setPosKategorien(map);
         setShowModal(true);
       }
     } catch (error) {
@@ -190,6 +219,29 @@ const Rechnungsverwaltung = () => {
 
   const [emailSending, setEmailSending] = useState(null);
   const [emailModal, setEmailModal] = useState(null); // { rechnung, inputEmail, step: 'input'|'save-prompt', sentEmail }
+
+  const savePosKategorien = async () => {
+    if (!modalRechnung) return;
+    setPosKatSaving(true);
+    try {
+      const positionen_kategorien = (modalRechnung.positionen || []).map(p => ({
+        position_id: p.position_id,
+        buchungskategorie: posKategorien[p.position_id] || null
+      }));
+      await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${modalRechnung.rechnung_id}/positionen-kategorien`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ buchungskategorie_default: defaultKategorie || null, positionen_kategorien })
+      });
+      // Lokalen Zustand aktualisieren
+      setModalRechnung(r => ({
+        ...r,
+        buchungskategorie_default: defaultKategorie || null,
+        positionen: (r.positionen || []).map(p => ({ ...p, buchungskategorie: posKategorien[p.position_id] || null }))
+      }));
+    } catch (e) { /* ignore */ }
+    setPosKatSaving(false);
+  };
 
   const handleEmailSenden = (rechnung) => {
     if (rechnung.email) {
@@ -639,26 +691,70 @@ const Rechnungsverwaltung = () => {
 
               {modalActiveTab === 'positionen' && (
                 <div className="detail-section">
-                  <h3>{t('invoices.tabs.positions')}</h3>
+                  {/* Gesamtzuordnung */}
+                  <div style={{ background: 'var(--surface-2)', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                      <label style={{ fontWeight: 600, whiteSpace: 'nowrap', minWidth: 160 }}>Gesamtzuordnung (alle):</label>
+                      <select
+                        value={defaultKategorie}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setDefaultKategorie(val);
+                          if (val) {
+                            const updated = {};
+                            (modalRechnung.positionen || []).forEach(p => { updated[p.position_id] = val; });
+                            setPosKategorien(updated);
+                          }
+                        }}
+                        style={{ flex: 1, minWidth: 200, background: 'var(--surface-1)', color: 'var(--text-1)', border: '1px solid var(--primary-alpha-20)', borderRadius: 6, padding: '6px 8px' }}
+                      >
+                        <option value="">— Kategorie wählen —</option>
+                        {BUCHUNGSKATEGORIEN.map(k => (
+                          <option key={k.id} value={k.id}>{k.name}</option>
+                        ))}
+                      </select>
+                      <button className="btn btn-primary" onClick={savePosKategorien} disabled={posKatSaving} style={{ whiteSpace: 'nowrap' }}>
+                        <Save size={14} /> {posKatSaving ? 'Speichert…' : 'Speichern'}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                      Kategorie für alle Positionen setzen — oder unten pro Position individuell zuweisen.
+                    </p>
+                  </div>
+
+                  {/* Positionen-Tabelle mit per-Position Kategorie */}
                   {modalRechnung.positionen && modalRechnung.positionen.length > 0 ? (
                     <table className="rechnungen-table">
                       <thead>
                         <tr>
-                          <th>{t('invoices.positionsTable.position')}</th>
-                          <th>{t('invoices.positionsTable.description')}</th>
-                          <th>{t('invoices.positionsTable.quantity')}</th>
-                          <th>{t('invoices.positionsTable.unitPrice')}</th>
-                          <th>{t('invoices.positionsTable.total')}</th>
+                          <th style={{ width: 36 }}>#</th>
+                          <th>Bezeichnung</th>
+                          <th style={{ width: 60 }}>Menge</th>
+                          <th style={{ width: 90 }}>Einzelpr.</th>
+                          <th style={{ width: 90 }}>Gesamt</th>
+                          <th style={{ minWidth: 180 }}>Buchungskategorie</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {modalRechnung.positionen.map((pos, idx) => (
-                          <tr key={idx}>
+                        {modalRechnung.positionen.map((pos) => (
+                          <tr key={pos.position_id}>
                             <td>{pos.position_nr}</td>
                             <td>{pos.bezeichnung}</td>
                             <td>{pos.menge}</td>
                             <td>{formatCurrency(pos.einzelpreis)}</td>
                             <td><strong>{formatCurrency(pos.gesamtpreis || (pos.menge * pos.einzelpreis))}</strong></td>
+                            <td>
+                              <select
+                                value={posKategorien[pos.position_id] || ''}
+                                onChange={e => setPosKategorien(m => ({ ...m, [pos.position_id]: e.target.value }))}
+                                style={{ width: '100%', background: 'var(--surface-1)', color: 'var(--text-1)', border: '1px solid var(--primary-alpha-20)', borderRadius: 6, padding: '4px 6px', fontSize: '0.82rem' }}
+                              >
+                                <option value="">— wählen —</option>
+                                {BUCHUNGSKATEGORIEN.map(k => (
+                                  <option key={k.id} value={k.id}>{k.name}</option>
+                                ))}
+                              </select>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
