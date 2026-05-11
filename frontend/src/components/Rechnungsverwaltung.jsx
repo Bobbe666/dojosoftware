@@ -66,6 +66,7 @@ const Rechnungsverwaltung = () => {
   const [posKategorien, setPosKategorien] = useState({}); // position_id → buchungskategorie
   const [defaultKategorie, setDefaultKategorie] = useState('');
   const [posKatSaving, setPosKatSaving] = useState(false);
+  const [posKatStatus, setPosKatStatus] = useState(null); // 'ok' | 'error'
   const [statistiken, setStatistiken] = useState({
     gesamt_rechnungen: 0,
     offene_rechnungen: 0,
@@ -223,23 +224,29 @@ const Rechnungsverwaltung = () => {
   const savePosKategorien = async () => {
     if (!modalRechnung) return;
     setPosKatSaving(true);
+    setPosKatStatus(null);
     try {
       const positionen_kategorien = (modalRechnung.positionen || []).map(p => ({
         position_id: p.position_id,
         buchungskategorie: posKategorien[p.position_id] || null
       }));
-      await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${modalRechnung.rechnung_id}/positionen-kategorien`, {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${modalRechnung.rechnung_id}/positionen-kategorien`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ buchungskategorie_default: defaultKategorie || null, positionen_kategorien })
       });
-      // Lokalen Zustand aktualisieren
+      if (!res.ok) throw new Error(await res.text());
       setModalRechnung(r => ({
         ...r,
         buchungskategorie_default: defaultKategorie || null,
         positionen: (r.positionen || []).map(p => ({ ...p, buchungskategorie: posKategorien[p.position_id] || null }))
       }));
-    } catch (e) { /* ignore */ }
+      setPosKatStatus('ok');
+      setTimeout(() => setPosKatStatus(null), 3000);
+    } catch (e) {
+      console.error('Kategorie-Speichern Fehler:', e);
+      setPosKatStatus('error');
+    }
     setPosKatSaving(false);
   };
 
@@ -717,9 +724,13 @@ const Rechnungsverwaltung = () => {
                         <Save size={14} /> {posKatSaving ? 'Speichert…' : 'Speichern'}
                       </button>
                     </div>
-                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6 }}>
-                      Kategorie für alle Positionen setzen — oder unten pro Position individuell zuweisen.
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        Kategorie für alle Positionen setzen — oder unten pro Position individuell zuweisen.
+                      </p>
+                      {posKatStatus === 'ok' && <span style={{ fontSize: '0.8rem', color: 'var(--erfolg-gruen, #27ae60)' }}>✓ Gespeichert</span>}
+                      {posKatStatus === 'error' && <span style={{ fontSize: '0.8rem', color: 'var(--danger, #e74c3c)' }}>✗ Fehler beim Speichern</span>}
+                    </div>
                   </div>
 
                   {/* Positionen-Tabelle mit per-Position Kategorie */}
@@ -731,6 +742,7 @@ const Rechnungsverwaltung = () => {
                           <th>Bezeichnung</th>
                           <th style={{ width: 60 }}>Menge</th>
                           <th style={{ width: 90 }}>Einzelpr.</th>
+                          <th style={{ width: 65 }}>MwSt.</th>
                           <th style={{ width: 90 }}>Gesamt</th>
                           <th style={{ minWidth: 180 }}>Buchungskategorie</th>
                         </tr>
@@ -742,6 +754,7 @@ const Rechnungsverwaltung = () => {
                             <td>{pos.bezeichnung}</td>
                             <td>{pos.menge}</td>
                             <td>{formatCurrency(pos.einzelpreis)}</td>
+                            <td>{parseFloat(pos.mwst_satz ?? 19).toFixed(0)} %</td>
                             <td><strong>{formatCurrency(pos.gesamtpreis || (pos.menge * pos.einzelpreis))}</strong></td>
                             <td>
                               <select

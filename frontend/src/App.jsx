@@ -467,20 +467,68 @@ const RootRedirect = () => {
 };
 
 // Screen Wake Lock: verhindert, dass das Display abschaltet solange die App geöffnet ist.
-// Lock wird nach Tab-Wechsel/Hintergrund automatisch neu angefordert.
+// Strategie 1: Wake Lock API (Chrome + Safari 16.4+)
+// Strategie 2: Fallback für älteres iOS — winziges silent <video> das in Schleife läuft
 function useWakeLock() {
   useEffect(() => {
-    if (!('wakeLock' in navigator)) return;
     let lock = null;
-    const acquire = async () => {
-      try { lock = await navigator.wakeLock.request('screen'); } catch (_) {}
+    let videoEl = null;
+    let intervalId = null;
+
+    const acquireNative = async () => {
+      if (!('wakeLock' in navigator)) return false;
+      try {
+        lock = await navigator.wakeLock.request('screen');
+        lock.addEventListener('release', () => { lock = null; });
+        return true;
+      } catch (_) { return false; }
     };
-    acquire();
-    const onVisible = () => { if (document.visibilityState === 'visible') acquire(); };
+
+    // iOS-Fallback: 0-Byte-Video in Schleife hält das Display wach
+    const startVideoFallback = () => {
+      if (videoEl) return;
+      videoEl = document.createElement('video');
+      videoEl.setAttribute('playsinline', '');
+      videoEl.setAttribute('muted', '');
+      videoEl.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none';
+      // Minimal-MP4 (1×1px, 1s stumm) als Data-URI
+      videoEl.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAs1tZGF0AAACrgYF//+q3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1MiByMjg1NCBlOWE1OTAzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTMgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAPZWxpYnMAAA==';
+      videoEl.loop = true;
+      document.body.appendChild(videoEl);
+      videoEl.play().catch(() => {});
+    };
+
+    const stopVideoFallback = () => {
+      if (videoEl) { videoEl.pause(); videoEl.remove(); videoEl = null; }
+    };
+
+    const setup = async () => {
+      const gotNative = await acquireNative();
+      if (!gotNative) startVideoFallback();
+    };
+
+    const onVisible = async () => {
+      if (document.visibilityState !== 'visible') return;
+      if (lock) return; // noch aktiv
+      const gotNative = await acquireNative();
+      if (!gotNative) startVideoFallback();
+    };
+
+    // Ersten Versuch sofort + nach erstem Tap (iOS braucht User Gesture)
+    setup();
     document.addEventListener('visibilitychange', onVisible);
+    const onInteraction = () => { if (!lock && !videoEl) setup(); };
+    document.addEventListener('touchstart', onInteraction, { once: true });
+    document.addEventListener('click', onInteraction, { once: true });
+
+    // Watchdog: alle 30s prüfen ob Lock noch aktiv
+    intervalId = setInterval(() => { if (!lock && !videoEl) setup(); }, 30000);
+
     return () => {
       document.removeEventListener('visibilitychange', onVisible);
+      clearInterval(intervalId);
       lock?.release();
+      stopVideoFallback();
     };
   }, []);
 }

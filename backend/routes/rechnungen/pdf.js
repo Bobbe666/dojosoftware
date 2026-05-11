@@ -114,43 +114,82 @@ function buildRechnungHTML(rechnung, positionen) {
 
     <h2 class="rechnung-title">Rechnung ${rechnung.rechnungsnummer}</h2>
 
+    ${(() => {
+      // Gruppiere Positionen nach MwSt-Satz
+      const rateLabels = {};
+      let labelIdx = 0;
+      const letters = ['A','B','C','D'];
+      positionen.forEach(pos => {
+        const rate = parseFloat(pos.mwst_satz ?? 19);
+        if (rateLabels[rate] === undefined) {
+          rateLabels[rate] = letters[labelIdx++] || String(labelIdx);
+        }
+      });
+      const multiRate = Object.keys(rateLabels).length > 1;
+
+      // Netto-Summen pro MwSt-Gruppe
+      const nettoPerRate = {};
+      positionen.forEach(pos => {
+        const rate = parseFloat(pos.mwst_satz ?? 19);
+        nettoPerRate[rate] = (nettoPerRate[rate] || 0) + parseFloat(pos.gesamtpreis || 0);
+      });
+
+      const totalNetto = Object.values(nettoPerRate).reduce((s, v) => s + v, 0);
+      let totalMwst = 0;
+      Object.entries(nettoPerRate).forEach(([rate, netto]) => {
+        totalMwst += netto * (parseFloat(rate) / 100);
+      });
+      const totalBrutto = totalNetto + totalMwst;
+
+      const posRows = positionen.map(pos => {
+        const rate = parseFloat(pos.mwst_satz ?? 19);
+        const label = rateLabels[rate];
+        return `<tr>
+          <td>${pos.position_nr}</td>
+          <td>${pos.bezeichnung}</td>
+          <td style="text-align:right">${pos.menge}</td>
+          <td style="text-align:right">${fmt(pos.einzelpreis)}</td>
+          ${multiRate ? `<td style="text-align:center">${label}</td>` : ''}
+          <td style="text-align:right">${fmt(pos.gesamtpreis)}</td>
+        </tr>`;
+      }).join('');
+
+      const mwstRows = Object.entries(nettoPerRate).map(([rate, netto]) => {
+        const label = rateLabels[parseFloat(rate)];
+        const mwstBetrag = netto * (parseFloat(rate) / 100);
+        return `<div class="totals-row">
+          <span>${multiRate ? `${label} ` : ''}${rate}% MwSt.:</span>
+          <span>${fmt(mwstBetrag)} &euro;</span>
+        </div>`;
+      }).join('');
+
+      return `
     <table>
       <thead>
         <tr>
           <th>Pos.</th>
           <th>Bezeichnung</th>
-          <th>Menge</th>
-          <th>Einzelpreis</th>
-          <th>Betrag EUR</th>
+          <th style="text-align:right">Menge</th>
+          <th style="text-align:right">Einzelpreis</th>
+          ${multiRate ? '<th style="text-align:center">St.</th>' : ''}
+          <th style="text-align:right">Betrag EUR</th>
         </tr>
       </thead>
-      <tbody>
-        ${positionen.map(pos => `
-          <tr>
-            <td>${pos.position_nr}</td>
-            <td>${pos.bezeichnung}</td>
-            <td>${pos.menge}</td>
-            <td>${fmt(pos.einzelpreis)}</td>
-            <td>${fmt(pos.gesamtpreis)}</td>
-          </tr>
-        `).join('')}
-      </tbody>
+      <tbody>${posRows}</tbody>
     </table>
-
+    ${multiRate ? `<div style="font-size:8pt;color:#666;margin-bottom:0.5rem">${Object.entries(rateLabels).map(([rate,lbl]) => `${lbl} = ${rate}% MwSt.`).join(' &nbsp;|&nbsp; ')}</div>` : ''}
     <div class="totals">
       <div class="totals-row">
         <span>Nettobetrag:</span>
-        <span>${fmt(rechnung.netto_betrag)} &euro;</span>
+        <span>${fmt(totalNetto)} &euro;</span>
       </div>
-      <div class="totals-row">
-        <span>${rechnung.mwst_satz || 19}% MwSt.:</span>
-        <span>${fmt(rechnung.mwst_betrag)} &euro;</span>
-      </div>
+      ${mwstRows}
       <div class="totals-row final">
         <span>Gesamtbetrag:</span>
-        <span>${fmt(rechnung.brutto_betrag || rechnung.betrag)} &euro;</span>
+        <span>${fmt(totalBrutto)} &euro;</span>
       </div>
-    </div>
+    </div>`;
+    })()}
 
     <div class="payment-terms">
       <p><strong>Zahlungsbedingung:</strong> Ohne Abzug bis zum ${datumFmt(rechnung.faelligkeitsdatum)}.</p>
