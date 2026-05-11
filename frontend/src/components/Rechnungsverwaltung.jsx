@@ -224,16 +224,17 @@ const Rechnungsverwaltung = () => {
   };
 
   // Edit-Modal öffnen
-  const handleBearbeiten = (rechnung) => {
-    setEditRechnung(rechnung);
-    setEditForm({
-      beschreibung: rechnung.beschreibung || '',
-      notizen: rechnung.notizen || '',
-      faelligkeitsdatum: rechnung.faelligkeitsdatum ? rechnung.faelligkeitsdatum.split('T')[0] : '',
-      zahlungsart: rechnung.zahlungsart || '',
-      betrag: rechnung.betrag ? parseFloat(rechnung.betrag).toFixed(2) : ''
-    });
-    setShowEditModal(true);
+  const handleBearbeiten = async (rechnung) => {
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung.rechnung_id}`);
+      if (!res.ok) throw new Error('Fehler beim Laden');
+      const data = await res.json();
+      navigate('/dashboard/rechnung-erstellen', {
+        state: { editMode: true, rechnung: data.data }
+      });
+    } catch (e) {
+      alert('Rechnung konnte nicht geladen werden');
+    }
   };
 
   const handleEditSave = async () => {

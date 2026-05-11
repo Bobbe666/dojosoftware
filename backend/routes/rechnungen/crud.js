@@ -423,13 +423,79 @@ router.post('/', (req, res) => {
 });
 
 // PUT /:id - Rechnung aktualisieren
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
   const secureDojoId = getSecureDojoId(req);
   const { id } = req.params;
-  const { status, beschreibung, notizen, bezahlt_am, zahlungsart, betrag, mwst_satz } = req.body;
+  const { status, beschreibung, notizen, bezahlt_am, zahlungsart, betrag, mwst_satz,
+          mitglied_id, datum, faelligkeitsdatum, positionen, pdfHtml } = req.body;
 
-  // Betrag-Felder neu berechnen wenn betrag übergeben
+  const pool = db.promise();
+
+  // Vollständige Bearbeitung wenn positionen übergeben werden
+  if (positionen && Array.isArray(positionen) && positionen.length > 0) {
+    try {
+      // Zugriffscheck
+      const [existing] = secureDojoId
+        ? await pool.query(
+            `SELECT rechnung_id FROM rechnungen r LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+             WHERE r.rechnung_id = ? AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))`,
+            [id, secureDojoId, secureDojoId]
+          )
+        : await pool.query(`SELECT rechnung_id FROM rechnungen WHERE rechnung_id = ?`, [id]);
+
+      if (existing.length === 0) {
+        return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden oder kein Zugriff' });
+      }
+
+      // Beträge aus Positionen neu berechnen
+      const mwst_satz_num = parseFloat(mwst_satz || 19.0);
+      let netto_betrag = 0;
+      positionen.forEach(pos => { netto_betrag += parseFloat(pos.gesamtpreis || 0); });
+      const mwst_betrag = netto_betrag * (mwst_satz_num / 100);
+      const brutto_betrag = netto_betrag + mwst_betrag;
+
+      // Rechnung-Header aktualisieren
+      await pool.query(
+        `UPDATE rechnungen SET
+          mitglied_id = ?, datum = ?, faelligkeitsdatum = ?,
+          betrag = ?, brutto_betrag = ?, netto_betrag = ?, mwst_betrag = ?, mwst_satz = ?,
+          beschreibung = ?, notizen = ?
+         WHERE rechnung_id = ?`,
+        [mitglied_id, datum, faelligkeitsdatum,
+         brutto_betrag, brutto_betrag, netto_betrag, mwst_betrag, mwst_satz_num,
+         beschreibung || 'Rechnung', notizen || null, id]
+      );
+
+      // Alte Positionen löschen und neu einfügen
+      await pool.query(`DELETE FROM rechnungspositionen WHERE rechnung_id = ?`, [id]);
+
+      for (let i = 0; i < positionen.length; i++) {
+        const pos = positionen[i];
+        await pool.query(
+          `INSERT INTO rechnungspositionen (rechnung_id, position_nr, bezeichnung, menge, einzelpreis, gesamtpreis, mwst_satz, beschreibung)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [id, i + 1, pos.bezeichnung, pos.menge || 1, pos.einzelpreis, pos.gesamtpreis, pos.mwst_satz || mwst_satz_num, pos.beschreibung || null]
+        );
+      }
+
+      // PDF neu generieren
+      if (pdfHtml) {
+        try {
+          await generatePDFFromHTML(parseInt(id), pdfHtml);
+        } catch (pdfErr) {
+          logger.error('PDF-Regenerierung fehlgeschlagen:', { error: pdfErr });
+        }
+      }
+
+      return res.json({ success: true, message: 'Rechnung aktualisiert' });
+    } catch (err) {
+      logger.error('Fehler beim vollständigen Update der Rechnung:', { error: err });
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  }
+
+  // Einfaches Metadaten-Update (Status, Notizen, etc.)
   let betragFields = '';
   const betragParams = [];
   if (betrag !== undefined && betrag !== null && betrag !== '') {
@@ -445,7 +511,6 @@ router.put('/:id', (req, res) => {
   let updateParams;
 
   if (secureDojoId) {
-    // Eigene Rechnung: über Mitglieder ODER Extern-Rechnung mit dojo_id
     updateQuery = `
       UPDATE rechnungen
       SET status = ?, beschreibung = ?, notizen = ?, bezahlt_am = ?, zahlungsart = ?${betragFields}
@@ -473,7 +538,6 @@ router.put('/:id', (req, res) => {
       return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden oder kein Zugriff' });
     }
 
-    // Wenn Rechnung auf bezahlt gesetzt: verknüpften Beitrag ebenfalls als bezahlt markieren
     if (status === 'bezahlt') {
       db.query(
         `UPDATE beitraege SET bezahlt = 1, zahlungsart = COALESCE(?, zahlungsart) WHERE rechnung_id = ? AND bezahlt = 0`,

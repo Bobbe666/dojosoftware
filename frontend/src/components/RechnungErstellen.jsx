@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useLocation, useNavigate } from 'react-router-dom';
 import config from '../config/config.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
@@ -10,6 +11,10 @@ import '../styles/RechnungErstellen.css';
 const RechnungErstellen = () => {
   const { token } = useAuth();
   const { activeDojo, dojos, switchDojo } = useDojoContext();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const editMode = location.state?.editMode || false;
+  const editRechnungData = location.state?.rechnung || null;
 
   // Dojo-Auswahl Modal State
   const [showDojoSelection, setShowDojoSelection] = useState(false);
@@ -126,6 +131,44 @@ const RechnungErstellen = () => {
       setDojoSelectionDone(true);
     }
   }, [dojos, dojoSelectionDone]);
+
+  // Edit-Mode: Formular mit bestehender Rechnung befüllen (nach mitglieder-Load)
+  useEffect(() => {
+    if (!editMode || !editRechnungData || loading) return;
+
+    const r = editRechnungData;
+
+    // Mitglied aus geladener Liste suchen
+    if (r.mitglied_id && mitglieder.length > 0) {
+      const found = mitglieder.find(m => m.mitglied_id === r.mitglied_id);
+      if (found) setSelectedMitglied(found);
+    }
+
+    // Datumsfelder
+    setRechnungsDaten(prev => ({
+      ...prev,
+      rechnungsnummer: r.rechnungsnummer,
+      belegdatum: r.datum ? r.datum.split('T')[0] : prev.belegdatum,
+      leistungsdatum: r.datum ? r.datum.split('T')[0] : prev.leistungsdatum,
+      zahlungsfrist: r.faelligkeitsdatum ? r.faelligkeitsdatum.split('T')[0] : prev.zahlungsfrist,
+    }));
+
+    // Positionen aus DB-Format in Formular-Format umwandeln
+    if (r.positionen && r.positionen.length > 0) {
+      setPositionen(r.positionen.map(p => ({
+        artikel_id: '',
+        bezeichnung: p.bezeichnung || '',
+        artikelnummer: '',
+        menge: parseFloat(p.menge) || 1,
+        einzelpreis: parseFloat(p.einzelpreis) || 0,
+        ust_prozent: parseFloat(p.mwst_satz) || 19,
+        ist_rabattfaehig: false,
+        rabatt_prozent: 0,
+        freitext: p.beschreibung || '',
+        leistungsdatum: ''
+      })));
+    }
+  }, [editMode, editRechnungData, loading, mitglieder]);
 
   // Lade Bankdaten und Logo neu, wenn sich activeDojo ändert
   useEffect(() => {
@@ -1020,68 +1063,87 @@ const RechnungErstellen = () => {
       return;
     }
 
-    // NEU: Serialisiere HTML für PDF-Generierung
     const serializedHTML = serializePreviewToHTML();
     if (!serializedHTML) {
       alert('Fehler beim Erstellen der PDF-Vorschau');
       return;
     }
 
-    const rechnungData = {
-      mitglied_id: selectedMitglied.mitglied_id,
-      datum: rechnungsDaten.belegdatum,
-      faelligkeitsdatum: rechnungsDaten.zahlungsfrist,
-      art: 'sonstiges',
-      beschreibung: 'Rechnung',
-      notizen: '',
-      positionen: positionen.map(pos => {
-        const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
-        const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
-        const nettoPreis = bruttoPreis - rabattBetrag;
+    const mappedPositionen = positionen.map(pos => {
+      const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
+      const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
+      const nettoPreis = bruttoPreis - rabattBetrag;
+      return {
+        bezeichnung: pos.bezeichnung,
+        menge: pos.menge,
+        einzelpreis: pos.einzelpreis,
+        gesamtpreis: nettoPreis,
+        mwst_satz: pos.ust_prozent,
+        ist_rabattfaehig: pos.ist_rabattfaehig || false,
+        rabatt_prozent: pos.rabatt_prozent || 0
+      };
+    });
 
-        return {
-          bezeichnung: pos.bezeichnung,
-          menge: pos.menge,
-          einzelpreis: pos.einzelpreis,
-          gesamtpreis: nettoPreis,
-          mwst_satz: pos.ust_prozent,
-          ist_rabattfaehig: pos.ist_rabattfaehig || false,
-          rabatt_prozent: pos.rabatt_prozent || 0
-        };
-      }),
-      mwst_satz: 19,
-      pdfHtml: serializedHTML  // NEU: HTML für PDF-Generierung
-    };
-
-    console.log('📤 Sende Rechnung:', { mitglied_id: rechnungData.mitglied_id, datum: rechnungData.datum, faelligkeitsdatum: rechnungData.faelligkeitsdatum, art: rechnungData.art, positionen_count: rechnungData.positionen?.length });
     try {
-      const response = await axios.post(`/rechnungen`, rechnungData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        alert(`Rechnung erfolgreich erstellt!\nRechnungsnummer: ${response.data.rechnungsnummer}`);
-        // Reset form
-        setSelectedMitglied(null);
-        setPositionen([]);
-        const neueDatum = new Date().toISOString().split('T')[0];
-        setRechnungsDaten({
-          rechnungsnummer: 'Wird geladen...',
-          kundennummer: '',
-          belegdatum: neueDatum,
-          leistungsdatum: neueDatum,
-          zahlungsfrist: calculateZahlungsfrist(neueDatum),
-          rabatt_prozent: 0,
-          rabatt_auf_betrag: 0
+      if (editMode && editRechnungData) {
+        // Bearbeiten: PUT
+        const response = await axios.put(`/rechnungen/${editRechnungData.rechnung_id}`, {
+          mitglied_id: selectedMitglied.mitglied_id,
+          datum: rechnungsDaten.belegdatum,
+          faelligkeitsdatum: rechnungsDaten.zahlungsfrist,
+          beschreibung: 'Rechnung',
+          notizen: '',
+          positionen: mappedPositionen,
+          mwst_satz: 19,
+          pdfHtml: serializedHTML
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        // Lade die nächste Rechnungsnummer
-        loadRechnungsnummer(neueDatum);
+
+        if (response.data.success) {
+          alert(`Rechnung ${editRechnungData.rechnungsnummer} erfolgreich aktualisiert!`);
+          navigate('/dashboard/rechnungen');
+        }
+      } else {
+        // Neu erstellen: POST
+        const rechnungData = {
+          mitglied_id: selectedMitglied.mitglied_id,
+          datum: rechnungsDaten.belegdatum,
+          faelligkeitsdatum: rechnungsDaten.zahlungsfrist,
+          art: 'sonstiges',
+          beschreibung: 'Rechnung',
+          notizen: '',
+          positionen: mappedPositionen,
+          mwst_satz: 19,
+          pdfHtml: serializedHTML
+        };
+
+        const response = await axios.post(`/rechnungen`, rechnungData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (response.data.success) {
+          alert(`Rechnung erfolgreich erstellt!\nRechnungsnummer: ${response.data.rechnungsnummer}`);
+          setSelectedMitglied(null);
+          setPositionen([]);
+          const neueDatum = new Date().toISOString().split('T')[0];
+          setRechnungsDaten({
+            rechnungsnummer: 'Wird geladen...',
+            kundennummer: '',
+            belegdatum: neueDatum,
+            leistungsdatum: neueDatum,
+            zahlungsfrist: calculateZahlungsfrist(neueDatum),
+            rabatt_prozent: 0,
+            rabatt_auf_betrag: 0
+          });
+          loadRechnungsnummer(neueDatum);
+        }
       }
     } catch (error) {
       const serverMsg = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Unbekannter Fehler';
       const status = error?.response?.status;
       console.error('Fehler beim Speichern:', error?.response?.data || error);
-      alert(`Fehler beim Erstellen der Rechnung (${status}): ${serverMsg}`);
+      alert(`Fehler beim ${editMode ? 'Aktualisieren' : 'Erstellen'} der Rechnung (${status}): ${serverMsg}`);
     }
   };
 
@@ -1281,13 +1343,17 @@ const RechnungErstellen = () => {
     <div className="rechnung-erstellen-container">
       {/* Action bar */}
       <div className="re-action-bar">
-        <span className="re-action-title">Rechnung erstellen</span>
+        <span className="re-action-title">
+          {editMode ? `Rechnung bearbeiten — ${editRechnungData?.rechnungsnummer || ''}` : 'Rechnung erstellen'}
+        </span>
         <div className="re-action-right">
           <label className="re-toggle-label">
             <input type="checkbox" checked={zeigArtikelNummer} onChange={e => setZeigArtikelNummer(e.target.checked)} className="re-pos-checkbox" />
             Artikelnummer
           </label>
-          <button onClick={handleSpeichern} className="btn-save">Rechnung speichern</button>
+          <button onClick={handleSpeichern} className="btn-save">
+            {editMode ? 'Änderungen speichern' : 'Rechnung speichern'}
+          </button>
         </div>
       </div>
 
