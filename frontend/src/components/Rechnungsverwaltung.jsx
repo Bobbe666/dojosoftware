@@ -42,6 +42,7 @@ const Rechnungsverwaltung = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalRechnung, setModalRechnung] = useState(null);
   const [modalActiveTab, setModalActiveTab] = useState('details');
+  const [vorschauUrl, setVorschauUrl] = useState(null);
   const [statistiken, setStatistiken] = useState({
     gesamt_rechnungen: 0,
     offene_rechnungen: 0,
@@ -166,6 +167,19 @@ const Rechnungsverwaltung = () => {
   const closeModal = () => {
     setShowModal(false);
     setModalRechnung(null);
+    if (vorschauUrl) { URL.revokeObjectURL(vorschauUrl); setVorschauUrl(null); }
+  };
+
+  const handleModalTab = async (tab) => {
+    setModalActiveTab(tab);
+    if (tab === 'vorschau' && !vorschauUrl && modalRechnung) {
+      try {
+        const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${modalRechnung.rechnung_id}/vorschau`);
+        const html = await res.text();
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        setVorschauUrl(URL.createObjectURL(blob));
+      } catch (e) { /* ignore */ }
+    }
   };
 
   const [emailSending, setEmailSending] = useState(null);
@@ -528,14 +542,17 @@ const Rechnungsverwaltung = () => {
             </div>
 
             <div className="tabs-container">
-              <button className={`tab ${modalActiveTab === 'details' ? 'active' : ''}`} onClick={() => setModalActiveTab('details')}>
+              <button className={`tab ${modalActiveTab === 'details' ? 'active' : ''}`} onClick={() => handleModalTab('details')}>
                 <FileText size={16} className="tab-icon" /><span className="tab-label">{t('invoices.tabs.details')}</span>
               </button>
-              <button className={`tab ${modalActiveTab === 'positionen' ? 'active' : ''}`} onClick={() => setModalActiveTab('positionen')}>
+              <button className={`tab ${modalActiveTab === 'positionen' ? 'active' : ''}`} onClick={() => handleModalTab('positionen')}>
                 <DollarSign size={16} className="tab-icon" /><span className="tab-label">{t('invoices.tabs.positions')}</span>
               </button>
-              <button className={`tab ${modalActiveTab === 'zahlungen' ? 'active' : ''}`} onClick={() => setModalActiveTab('zahlungen')}>
+              <button className={`tab ${modalActiveTab === 'zahlungen' ? 'active' : ''}`} onClick={() => handleModalTab('zahlungen')}>
                 <CheckCircle size={16} className="tab-icon" /><span className="tab-label">{t('invoices.tabs.payments')}</span>
+              </button>
+              <button className={`tab ${modalActiveTab === 'vorschau' ? 'active' : ''}`} onClick={() => handleModalTab('vorschau')}>
+                <Eye size={16} className="tab-icon" /><span className="tab-label">Vorschau</span>
               </button>
             </div>
 
@@ -675,6 +692,22 @@ const Rechnungsverwaltung = () => {
                     </table>
                   ) : (
                     <p className="info-text">{t('invoices.paymentsTable.noPayments')}</p>
+                  )}
+                </div>
+              )}
+
+              {modalActiveTab === 'vorschau' && (
+                <div className="detail-section" style={{ padding: 0 }}>
+                  {vorschauUrl ? (
+                    <iframe
+                      src={vorschauUrl}
+                      title="Rechnungsvorschau"
+                      style={{ width: '100%', height: '620px', border: 'none', display: 'block' }}
+                    />
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      Vorschau wird geladen…
+                    </div>
                   )}
                 </div>
               )}
