@@ -155,10 +155,11 @@ const RechnungErstellen = () => {
 
     // Positionen aus DB-Format in Formular-Format umwandeln
     if (r.positionen && r.positionen.length > 0) {
-      setPositionen(r.positionen.map(p => ({
+      setPositionen(r.positionen.map((p, i) => ({
         artikel_id: '',
+        pos: p.position_nr || i + 1,
         bezeichnung: p.bezeichnung || '',
-        artikelnummer: '',
+        artikelnummer: p.artikelnummer || '',
         menge: parseFloat(p.menge) || 1,
         einzelpreis: parseFloat(p.einzelpreis) || 0,
         ust_prozent: parseFloat(p.mwst_satz) || 19,
@@ -1075,6 +1076,7 @@ const RechnungErstellen = () => {
       const nettoPreis = bruttoPreis - rabattBetrag;
       return {
         bezeichnung: pos.bezeichnung,
+        artikelnummer: pos.artikelnummer || null,
         menge: pos.menge,
         einzelpreis: pos.einzelpreis,
         gesamtpreis: nettoPreis,

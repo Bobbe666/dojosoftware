@@ -368,14 +368,15 @@ router.post('/', (req, res) => {
         return new Promise((resolve, reject) => {
           const posQuery = `
             INSERT INTO rechnungspositionen (
-              rechnung_id, position_nr, bezeichnung, menge, einzelpreis, gesamtpreis, mwst_satz, beschreibung
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              rechnung_id, position_nr, bezeichnung, artikelnummer, menge, einzelpreis, gesamtpreis, mwst_satz, beschreibung
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `;
 
           db.query(posQuery, [
             rechnung_id,
             index + 1,
             pos.bezeichnung,
+            pos.artikelnummer || null,
             pos.menge || 1,
             pos.einzelpreis,
             pos.gesamtpreis,
@@ -473,9 +474,9 @@ router.put('/:id', async (req, res) => {
       for (let i = 0; i < positionen.length; i++) {
         const pos = positionen[i];
         await pool.query(
-          `INSERT INTO rechnungspositionen (rechnung_id, position_nr, bezeichnung, menge, einzelpreis, gesamtpreis, mwst_satz, beschreibung)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [id, i + 1, pos.bezeichnung, pos.menge || 1, pos.einzelpreis, pos.gesamtpreis, pos.mwst_satz || mwst_satz_num, pos.beschreibung || null]
+          `INSERT INTO rechnungspositionen (rechnung_id, position_nr, bezeichnung, artikelnummer, menge, einzelpreis, gesamtpreis, mwst_satz, beschreibung)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [id, i + 1, pos.bezeichnung, pos.artikelnummer || null, pos.menge || 1, pos.einzelpreis, pos.gesamtpreis, pos.mwst_satz || mwst_satz_num, pos.beschreibung || null]
         );
       }
 
