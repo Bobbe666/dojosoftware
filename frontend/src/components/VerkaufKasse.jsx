@@ -218,12 +218,9 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     if (!term || term.length < 2) { setMitgliederResults([]); return; }
     setSearchLoading(true);
     try {
-      // Super-Admin: activeDojo?.id liefert die gewählte Dojo-ID
-      // getSecureDojoId() liest dojo_id aus Query-Param für Super-Admin
-      const dojoId = activeDojo?.id;
-      const dojoParam = dojoId ? `&dojo_id=${dojoId}` : '';
-      const res = await apiCall(`/mitglieder?search=${encodeURIComponent(term)}&limit=10${dojoParam}`);
-      // Response ist direktes Array (kein Wrapper-Objekt)
+      // Kein dojo_id-Filter — Backend regelt Sichtbarkeit sicher über JWT:
+      // Normale Admins sehen nur ihr Dojo, Super-Admins alle.
+      const res = await apiCall(`/mitglieder?search=${encodeURIComponent(term)}&limit=20`);
       setMitgliederResults(Array.isArray(res) ? res : (res.mitglieder || res.data || []));
     } catch { setMitgliederResults([]); }
     finally { setSearchLoading(false); }
@@ -1459,7 +1456,10 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
                       setShowStartDialog(false);
                     }}
                   >
-                    <span className="vk-start-result-name">{m.vorname} {m.nachname}</span>
+                    <span className="vk-start-result-name">
+                      {m.vorname} {m.nachname}
+                      {m.dojoname && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #888)', fontWeight: 400, marginLeft: 6 }}>{m.dojoname}</span>}
+                    </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       {m.mitgliedsnummer && <span className="vk-start-result-nr">#{m.mitgliedsnummer}</span>}
                       {(() => {
