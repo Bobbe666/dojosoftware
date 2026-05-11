@@ -16,21 +16,29 @@ export default async function openApiBlob(url, { download = false, filename } = 
   // Führenden /api-Prefix entfernen, da Axios baseURL schon /api enthält
   const cleanUrl = url.replace(/^\/api\//, '/').replace(/^\/api$/, '/');
 
-  const res = await axios.get(cleanUrl, { responseType: 'blob' });
-  const mimeType = res.headers['content-type'] || 'application/octet-stream';
-  const blob = new Blob([res.data], { type: mimeType });
-  const blobUrl = URL.createObjectURL(blob);
+  // Fenster SYNCHRON öffnen (vor dem await) — sonst blockt der Browser es als Popup
+  const win = download ? null : window.open('', '_blank');
 
-  if (download) {
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = filename || 'download';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-  } else {
-    const win = window.open(blobUrl, '_blank');
-    if (win) win.addEventListener('load', () => URL.revokeObjectURL(blobUrl));
+  try {
+    const res = await axios.get(cleanUrl, { responseType: 'blob' });
+    const mimeType = res.headers['content-type'] || 'application/octet-stream';
+    const blob = new Blob([res.data], { type: mimeType });
+    const blobUrl = URL.createObjectURL(blob);
+
+    if (win) {
+      win.location.href = blobUrl;
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } else {
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename || 'download';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    }
+  } catch (err) {
+    if (win) win.close();
+    throw err;
   }
 }
