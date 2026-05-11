@@ -62,9 +62,13 @@ const securityMonitorMiddleware = async (req, res, next) => {
     }
 
     // 2. Prüfe auf SQL-Injection
+    // pdfHtml wird ausgeschlossen — enthält legitimes HTML/CSS das False-Positives auslöst
+    const bodyWithoutHtml = req.body && req.body.pdfHtml
+      ? { ...req.body, pdfHtml: '[HTML_EXCLUDED]' }
+      : req.body;
     const allInput = {
       query: req.query,
-      body: req.body,
+      body: bodyWithoutHtml,
       params: req.params,
       path: path
     };
