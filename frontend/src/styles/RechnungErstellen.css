@@ -1673,6 +1673,15 @@
   transition: color 0.1s;
 }
 .re-clear-article-btn:hover { color: #f87171; }
+.re-artikel-nr-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+}
 .re-btn-delete-position {
   width: 100%;
   padding: 0.4rem;

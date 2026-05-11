@@ -1722,7 +1722,12 @@ const RechnungErstellen = () => {
             {/* Artikel auswählen oder gewählten Artikel anzeigen */}
             {neuePosition.artikel_id ? (
               <div className="re-selected-article-row">
-                <span className="re-selected-article-name">{neuePosition.bezeichnung}</span>
+                <div style={{flex:1}}>
+                  <span className="re-selected-article-name">{neuePosition.bezeichnung}</span>
+                  {neuePosition.artikelnummer && (
+                    <span className="re-artikel-nr-badge">Nr. {neuePosition.artikelnummer}</span>
+                  )}
+                </div>
                 <button type="button" className="re-clear-article-btn"
                   onClick={() => setNeuePosition(p => ({...p, artikel_id: '', bezeichnung: '', artikelnummer: '', einzelpreis: 0, ust_prozent: 19}))}>
                   × Artikel ändern
@@ -1739,10 +1744,17 @@ const RechnungErstellen = () => {
                   </select>
                   <button className="btn-inline-create" onClick={() => { setModalError(''); loadArtikelGruppen(); setShowNeuerArtikelModal(true); }}>+ Neu</button>
                 </div>
-                <div className="re-modal-field">
-                  <label>Oder freie Bezeichnung *</label>
-                  <input className="re-input-sm" value={neuePosition.bezeichnung}
-                    onChange={e => setNeuePosition(p => ({...p, bezeichnung: e.target.value}))} placeholder="z. B. Sonderleistung" />
+                <div className="re-modal-row">
+                  <div className="re-modal-field">
+                    <label>Freie Bezeichnung *</label>
+                    <input className="re-input-sm" value={neuePosition.bezeichnung}
+                      onChange={e => setNeuePosition(p => ({...p, bezeichnung: e.target.value}))} placeholder="z. B. Sonderleistung" />
+                  </div>
+                  <div className="re-modal-field">
+                    <label>Artikelnummer</label>
+                    <input className="re-input-sm" value={neuePosition.artikelnummer}
+                      onChange={e => setNeuePosition(p => ({...p, artikelnummer: e.target.value}))} placeholder="optional" />
+                  </div>
                 </div>
               </>
             )}
