@@ -127,7 +127,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   const [editingItemId, setEditingItemId] = useState(null);
 
   // Manueller Rabatt
-  const [manualRabatt, setManualRabatt] = useState({ aktiv: false, typ: 'prozent', wert: '' });
+  const [manualRabatt, setManualRabatt] = useState({ aktiv: false, typ: 'prozent', wert: '', bestaetigt: false });
 
   // Gutschein
   const [gutscheinInput, setGutscheinInput] = useState('');
@@ -329,7 +329,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       }));
       // Manuellen Rabatt inline berechnen (TDZ-sicher bei Vite-Prod-Build)
       const _base = warenkorb.reduce((s, i) => s + (i.verkaufspreis_euro || 0) * i.menge, 0);
-      const _rabatt = manualRabatt.aktiv && manualRabatt.wert
+      const _rabatt = manualRabatt.aktiv && manualRabatt.bestaetigt && manualRabatt.wert
         ? (manualRabatt.typ === 'prozent'
           ? Math.min(_base * (parseFloat(manualRabatt.wert) || 0) / 100, _base)
           : Math.min(parseFloat(manualRabatt.wert) || 0, _base))
@@ -373,7 +373,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         setKundeName('');
         setMitgliedId('');
         setBemerkung('');
-        setManualRabatt({ aktiv: false, typ: 'prozent', wert: '' });
+        setManualRabatt({ aktiv: false, typ: 'prozent', wert: '', bestaetigt: false });
         setGutscheinInput(''); setGutscheinInfo(null); setGutscheinFehler('');
         setShowZahlung(false);
         setError(null);
@@ -687,7 +687,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   const gesamtSteuer = Object.values(steuerBerechnung).reduce((sum, s) => sum + s.steuer, 0);
 
   const rabattBetrag = (() => {
-    if (!manualRabatt.aktiv || !manualRabatt.wert) return 0;
+    if (!manualRabatt.aktiv || !manualRabatt.bestaetigt || !manualRabatt.wert) return 0;
     const wert = parseFloat(manualRabatt.wert) || 0;
     if (manualRabatt.typ === 'prozent') return Math.min(warenkorbSummeEuro * wert / 100, warenkorbSummeEuro);
     return Math.min(wert, warenkorbSummeEuro);
@@ -769,7 +769,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     setKundeName('');
     setMitgliedId('');
     setWarenkorb([]);
-    setManualRabatt({ aktiv: false, typ: 'prozent', wert: '' });
+    setManualRabatt({ aktiv: false, typ: 'prozent', wert: '', bestaetigt: false });
     setMitgliederSuche('');
     setMitgliederResults([]);
     setStartModus(null);
@@ -923,12 +923,14 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
           {!manualRabatt.aktiv ? (
             <button
               className="wk-rabatt-btn"
-              onClick={() => setManualRabatt(r => ({ ...r, aktiv: true }))}
+              onClick={() => setManualRabatt(r => ({ ...r, aktiv: true, bestaetigt: false }))}
             >
-              % Rabatt hinzufügen
+              <span className="wk-rabatt-btn-icon">%</span>
+              Rabatt vergeben
             </button>
-          ) : (
+          ) : !manualRabatt.bestaetigt ? (
             <div className="wk-rabatt-row">
+              <div className="wk-rabatt-label">Rabatt eingeben:</div>
               <div className="wk-rabatt-inputs">
                 <button
                   className={`wk-rabatt-typ${manualRabatt.typ === 'prozent' ? ' active' : ''}`}
@@ -944,23 +946,38 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
                   max={manualRabatt.typ === 'prozent' ? 100 : undefined}
                   step="0.01"
                   className="wk-rabatt-input"
-                  placeholder={manualRabatt.typ === 'prozent' ? '0 %' : '0.00 €'}
+                  placeholder={manualRabatt.typ === 'prozent' ? 'z.B. 10' : 'z.B. 5.00'}
                   value={manualRabatt.wert}
                   onChange={e => setManualRabatt(r => ({ ...r, wert: e.target.value }))}
                   autoFocus
                   onClick={e => e.stopPropagation()}
+                  onKeyDown={e => { if (e.key === 'Enter' && manualRabatt.wert) setManualRabatt(r => ({ ...r, bestaetigt: true })); }}
                 />
                 <button
+                  className="wk-rabatt-bestaetigen"
+                  disabled={!manualRabatt.wert || parseFloat(manualRabatt.wert) <= 0}
+                  onClick={() => setManualRabatt(r => ({ ...r, bestaetigt: true }))}
+                  title="Rabatt übernehmen"
+                >✓</button>
+                <button
                   className="wk-rabatt-clear"
-                  onClick={() => setManualRabatt({ aktiv: false, typ: 'prozent', wert: '' })}
+                  onClick={() => setManualRabatt({ aktiv: false, typ: 'prozent', wert: '', bestaetigt: false })}
                 >×</button>
               </div>
-              {rabattBetrag > 0 && (
-                <div className="summe-row wk-rabatt-display">
-                  <span>Nachlass</span>
-                  <span style={{ color: '#22c55e' }}>−{rabattBetrag.toFixed(2)}€</span>
-                </div>
-              )}
+            </div>
+          ) : (
+            <div className="wk-rabatt-aktiv">
+              <div className="wk-rabatt-aktiv-info">
+                <span className="wk-rabatt-aktiv-badge">
+                  {manualRabatt.typ === 'prozent' ? `${parseFloat(manualRabatt.wert)}% Rabatt` : `${parseFloat(manualRabatt.wert).toFixed(2)}€ Nachlass`}
+                </span>
+                <span className="wk-rabatt-aktiv-betrag">−{rabattBetrag.toFixed(2)}€</span>
+              </div>
+              <button
+                className="wk-rabatt-aktiv-entfernen"
+                onClick={() => setManualRabatt({ aktiv: false, typ: 'prozent', wert: '', bestaetigt: false })}
+                title="Rabatt entfernen"
+              >×</button>
             </div>
           )}
 

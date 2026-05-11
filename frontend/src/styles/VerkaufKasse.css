@@ -1895,14 +1895,18 @@
    ============================================ */
 
 .wk-rabatt-btn {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   width: 100%;
-  padding: 0.45rem 0.75rem;
-  background: transparent;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 0.75rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.35);
   border-radius: 8px;
-  color: var(--text-muted);
-  font-size: 0.82rem;
+  color: #4ade80;
+  font-size: 0.83rem;
+  font-weight: 600;
   cursor: pointer;
   text-align: center;
   margin-bottom: 0.75rem;
@@ -1910,20 +1914,44 @@
 }
 
 .wk-rabatt-btn:hover {
-  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.6);
   color: #22c55e;
-  background: rgba(34, 197, 94, 0.05);
+}
+
+.wk-rabatt-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  background: rgba(34, 197, 94, 0.2);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .wk-rabatt-row {
   margin-bottom: 0.75rem;
+  background: rgba(34, 197, 94, 0.05);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+}
+
+.wk-rabatt-label {
+  font-size: 0.75rem;
+  color: #4ade80;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .wk-rabatt-inputs {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  margin-bottom: 0.4rem;
 }
 
 .wk-rabatt-typ {
@@ -1947,8 +1975,8 @@
 .wk-rabatt-input {
   flex: 1;
   padding: 0.3rem 0.6rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   color: var(--text-primary, #fff);
   font-size: 0.9rem;
@@ -1957,7 +1985,29 @@
 
 .wk-rabatt-input:focus {
   outline: none;
-  border-color: rgba(34, 197, 94, 0.5);
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.wk-rabatt-bestaetigen {
+  padding: 0.3rem 0.5rem;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  border-radius: 6px;
+  color: #22c55e;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wk-rabatt-bestaetigen:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.35);
+}
+
+.wk-rabatt-bestaetigen:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .wk-rabatt-clear {
@@ -1970,6 +2020,51 @@
 }
 
 .wk-rabatt-clear:hover { color: var(--text-primary); }
+
+/* Aktiver Rabatt Badge */
+.wk-rabatt-aktiv {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  border-radius: 8px;
+  padding: 0.45rem 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.wk-rabatt-aktiv-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.wk-rabatt-aktiv-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.15);
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+}
+
+.wk-rabatt-aktiv-betrag {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #22c55e;
+}
+
+.wk-rabatt-aktiv-entfernen {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  line-height: 1;
+}
+
+.wk-rabatt-aktiv-entfernen:hover { color: #f87171; }
 
 .wk-rabatt-display {
   font-size: 0.85rem;
