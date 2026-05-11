@@ -42,7 +42,7 @@ const Rechnungsverwaltung = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalRechnung, setModalRechnung] = useState(null);
   const [modalActiveTab, setModalActiveTab] = useState('details');
-  const [vorschauUrl, setVorschauUrl] = useState(null);
+  const [vorschauOverlay, setVorschauOverlay] = useState(null); // blob URL für Vollbild-Overlay
   const [statistiken, setStatistiken] = useState({
     gesamt_rechnungen: 0,
     offene_rechnungen: 0,
@@ -167,19 +167,25 @@ const Rechnungsverwaltung = () => {
   const closeModal = () => {
     setShowModal(false);
     setModalRechnung(null);
-    if (vorschauUrl) { URL.revokeObjectURL(vorschauUrl); setVorschauUrl(null); }
   };
 
-  const handleModalTab = async (tab) => {
+  const handleModalTab = (tab) => {
     setModalActiveTab(tab);
-    if (tab === 'vorschau' && !vorschauUrl && modalRechnung) {
-      try {
-        const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${modalRechnung.rechnung_id}/vorschau`);
-        const html = await res.text();
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        setVorschauUrl(URL.createObjectURL(blob));
-      } catch (e) { /* ignore */ }
-    }
+  };
+
+  const openVorschauOverlay = async () => {
+    if (!modalRechnung) return;
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${modalRechnung.rechnung_id}/vorschau`);
+      const html = await res.text();
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      setVorschauOverlay(URL.createObjectURL(blob));
+    } catch (e) { /* ignore */ }
+  };
+
+  const closeVorschauOverlay = () => {
+    if (vorschauOverlay) { URL.revokeObjectURL(vorschauOverlay); }
+    setVorschauOverlay(null);
   };
 
   const [emailSending, setEmailSending] = useState(null);
@@ -551,9 +557,6 @@ const Rechnungsverwaltung = () => {
               <button className={`tab ${modalActiveTab === 'zahlungen' ? 'active' : ''}`} onClick={() => handleModalTab('zahlungen')}>
                 <CheckCircle size={16} className="tab-icon" /><span className="tab-label">{t('invoices.tabs.payments')}</span>
               </button>
-              <button className={`tab ${modalActiveTab === 'vorschau' ? 'active' : ''}`} onClick={() => handleModalTab('vorschau')}>
-                <Eye size={16} className="tab-icon" /><span className="tab-label">Vorschau</span>
-              </button>
             </div>
 
             <div className="modal-body">
@@ -696,21 +699,6 @@ const Rechnungsverwaltung = () => {
                 </div>
               )}
 
-              {modalActiveTab === 'vorschau' && (
-                <div className="detail-section" style={{ padding: 0 }}>
-                  {vorschauUrl ? (
-                    <iframe
-                      src={vorschauUrl}
-                      title="Rechnungsvorschau"
-                      style={{ width: '100%', height: '620px', border: 'none', display: 'block' }}
-                    />
-                  ) : (
-                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      Vorschau wird geladen…
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             <div className="modal-footer">
@@ -725,6 +713,9 @@ const Rechnungsverwaltung = () => {
                 <Mail size={15} />
                 {emailSending === modalRechnung.rechnung_id ? 'Sendet…' : 'E-Mail senden'}
               </button>
+              <button className="btn btn-secondary" onClick={openVorschauOverlay}>
+                <Eye size={15} /> Vorschau
+              </button>
               <button className="btn btn-secondary" onClick={() => handlePdfOeffnen(modalRechnung.rechnung_id)}>
                 <FileDown size={15} /> PDF
               </button>
@@ -736,6 +727,29 @@ const Rechnungsverwaltung = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Vollbild-Vorschau-Overlay */}
+      {vorschauOverlay && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          display: 'flex', flexDirection: 'column', background: '#fff'
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+            padding: '8px 16px', background: 'var(--bg-card, #1a1a2e)',
+            borderBottom: '1px solid var(--border-color, #333)', flexShrink: 0
+          }}>
+            <button className="btn btn-secondary" onClick={closeVorschauOverlay} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <X size={15} /> Schließen
+            </button>
+          </div>
+          <iframe
+            src={vorschauOverlay}
+            title="Rechnungsvorschau"
+            style={{ flex: 1, border: 'none', width: '100%' }}
+          />
         </div>
       )}
 
