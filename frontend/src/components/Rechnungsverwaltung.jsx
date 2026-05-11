@@ -169,20 +169,37 @@ const Rechnungsverwaltung = () => {
   };
 
   const [emailSending, setEmailSending] = useState(null);
+  const [emailModal, setEmailModal] = useState(null); // { rechnung, inputEmail, step: 'input'|'save-prompt', sentEmail }
 
-  const handleEmailSenden = async (rechnung_id, mitglied_name) => {
-    if (!window.confirm(`Rechnung per E-Mail an ${mitglied_name} senden?`)) return;
-    setEmailSending(rechnung_id);
+  const handleEmailSenden = (rechnung) => {
+    if (rechnung.email) {
+      // E-Mail bekannt → direkt zum Bestätigungs-Schritt
+      setEmailModal({ rechnung, inputEmail: rechnung.email, step: 'confirm', sentEmail: '' });
+    } else {
+      // Keine E-Mail → Eingabe anfordern
+      setEmailModal({ rechnung, inputEmail: '', step: 'input', sentEmail: '' });
+    }
+  };
+
+  const doSendEmail = async () => {
+    const { rechnung, inputEmail } = emailModal;
+    if (!inputEmail || !inputEmail.includes('@')) return;
+    setEmailSending(rechnung.rechnung_id);
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}/email-senden`, {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung.rechnung_id}/email-senden`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
+        body: JSON.stringify({ an_email: inputEmail })
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || 'E-Mail erfolgreich gesendet');
-        loadData(); // Vermerke aktualisieren
+        // Wenn die E-Mail neu eingegeben wurde → Speichern anbieten
+        if (!rechnung.email) {
+          setEmailModal(m => ({ ...m, step: 'save-prompt', sentEmail: inputEmail }));
+        } else {
+          setEmailModal(null);
+          loadData();
+        }
       } else {
         alert(`Fehler: ${data.error || 'E-Mail konnte nicht gesendet werden'}`);
       }
@@ -191,6 +208,20 @@ const Rechnungsverwaltung = () => {
     } finally {
       setEmailSending(null);
     }
+  };
+
+  const doSaveEmail = async (save) => {
+    if (save) {
+      try {
+        await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${emailModal.rechnung.rechnung_id}/empfaenger-email`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailModal.sentEmail })
+        });
+      } catch (e) { /* ignorieren */ }
+    }
+    setEmailModal(null);
+    loadData();
   };
 
   const openVorschau = async (rechnung_id, doPrint = false) => {
@@ -454,7 +485,7 @@ const Rechnungsverwaltung = () => {
                       </button>
                       <button
                         className="btn-icon btn-primary"
-                        onClick={() => handleEmailSenden(rechnung.rechnung_id, rechnung.mitglied_name)}
+                        onClick={() => handleEmailSenden(rechnung)}
                         title="Per E-Mail senden"
                         disabled={emailSending === rechnung.rechnung_id}
                       >
@@ -655,7 +686,7 @@ const Rechnungsverwaltung = () => {
               </button>
               <button
                 className="btn btn-primary"
-                onClick={() => handleEmailSenden(modalRechnung.rechnung_id, modalRechnung.mitglied_name)}
+                onClick={() => handleEmailSenden(modalRechnung)}
                 disabled={emailSending === modalRechnung.rechnung_id}
               >
                 <Mail size={15} />
@@ -670,6 +701,91 @@ const Rechnungsverwaltung = () => {
               <button className="btn btn-secondary" onClick={closeModal}>
                 {t('common:buttons.close')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* E-Mail-Versand-Modal */}
+      {emailModal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEmailModal(null)}>
+          <div className="modal-container" style={{ maxWidth: 420 }}>
+            <div className="modal-header">
+              <h2><Mail size={18} style={{ marginRight: 8 }} />Rechnung per E-Mail senden</h2>
+              <button className="modal-close" onClick={() => setEmailModal(null)}><X size={18} /></button>
+            </div>
+            <div className="modal-body">
+              {emailModal.step === 'input' && (
+                <>
+                  <p style={{ marginBottom: 12, color: 'var(--text-sekundaer)' }}>
+                    Für <strong>{emailModal.rechnung.mitglied_name}</strong> ist keine E-Mail-Adresse hinterlegt.
+                    Bitte Adresse eingeben:
+                  </p>
+                  <input
+                    className="form-input"
+                    type="email"
+                    placeholder="name@beispiel.de"
+                    value={emailModal.inputEmail}
+                    onChange={e => setEmailModal(m => ({ ...m, inputEmail: e.target.value }))}
+                    onKeyDown={e => e.key === 'Enter' && doSendEmail()}
+                    autoFocus
+                    style={{ width: '100%' }}
+                  />
+                </>
+              )}
+              {emailModal.step === 'confirm' && (
+                <p style={{ marginBottom: 4 }}>
+                  Rechnung <strong>{emailModal.rechnung.rechnungsnummer}</strong> an{' '}
+                  <strong>{emailModal.inputEmail}</strong> senden?
+                </p>
+              )}
+              {emailModal.step === 'save-prompt' && (
+                <>
+                  <p style={{ color: 'var(--erfolg-gruen, #27ae60)', marginBottom: 12 }}>
+                    ✓ E-Mail erfolgreich gesendet.
+                  </p>
+                  <p>
+                    Soll <strong>{emailModal.sentEmail}</strong> bei{' '}
+                    <strong>{emailModal.rechnung.mitglied_name}</strong> als E-Mail-Adresse hinterlegt werden?
+                  </p>
+                </>
+              )}
+            </div>
+            <div className="modal-footer">
+              {emailModal.step === 'input' && (
+                <>
+                  <button className="btn btn-secondary" onClick={() => setEmailModal(null)}>Abbrechen</button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={doSendEmail}
+                    disabled={!emailModal.inputEmail.includes('@') || emailSending === emailModal.rechnung.rechnung_id}
+                  >
+                    <Mail size={15} />
+                    {emailSending === emailModal.rechnung.rechnung_id ? 'Sendet…' : 'Senden'}
+                  </button>
+                </>
+              )}
+              {emailModal.step === 'confirm' && (
+                <>
+                  <button className="btn btn-secondary" onClick={() => setEmailModal(null)}>Abbrechen</button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={doSendEmail}
+                    disabled={emailSending === emailModal.rechnung.rechnung_id}
+                  >
+                    <Mail size={15} />
+                    {emailSending === emailModal.rechnung.rechnung_id ? 'Sendet…' : 'Senden'}
+                  </button>
+                </>
+              )}
+              {emailModal.step === 'save-prompt' && (
+                <>
+                  <button className="btn btn-secondary" onClick={() => doSaveEmail(false)}>Nein</button>
+                  <button className="btn btn-primary" onClick={() => doSaveEmail(true)}>
+                    Ja, hinterlegen
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

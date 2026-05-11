@@ -373,4 +373,23 @@ router.post('/:id/email-senden', async (req, res) => {
   }
 });
 
+// PATCH /:id/empfaenger-email — E-Mail-Adresse am Empfänger hinterlegen
+router.patch('/:id/empfaenger-email', async (req, res) => {
+  const { id } = req.params;
+  const { email } = req.body;
+  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
+  try {
+    const rows = await queryAsync('SELECT mitglied_id FROM rechnungen WHERE rechnung_id = ?', [id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Rechnung nicht gefunden' });
+    if (rows[0].mitglied_id) {
+      await queryAsync('UPDATE mitglieder SET email = ? WHERE mitglied_id = ?', [email, rows[0].mitglied_id]);
+    } else {
+      await queryAsync('UPDATE rechnungen SET extern_email = ? WHERE rechnung_id = ?', [email, id]);
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
