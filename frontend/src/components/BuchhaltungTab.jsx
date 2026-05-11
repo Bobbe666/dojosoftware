@@ -2186,19 +2186,6 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                       <span className="einzelbuchung-indent">
                                         {new Date(buchung.datum).toLocaleDateString('de-DE')} – {buchung.beschreibung || 'Keine Beschreibung'}
                                       </span>
-                                      {buchung.datei_name && (
-                                        <a
-                                          href={`/api/buchhaltung/belege/${buchung.referenz_id}/datei`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="btn-icon-xs btn-ghost"
-                                          title={`Beleg anzeigen: ${buchung.datei_name}`}
-                                          onClick={e => e.stopPropagation()}
-                                          style={{ marginLeft: 6, display: 'inline-flex', alignItems: 'center' }}
-                                        >
-                                          <FileText size={12} />
-                                        </a>
-                                      )}
                                       {isEditing && (
                                         <span className="buchung-edit-inline" onClick={e => e.stopPropagation()}>
                                           <select
@@ -2216,14 +2203,23 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                         </span>
                                       )}
                                     </td>
-                                    <td className="right">
+                                    <td className="right" style={{ whiteSpace: 'nowrap' }}>
+                                      {buchung.datei_name && (
+                                        <button
+                                          className="btn-beleg-anzeigen"
+                                          title={`Beleg anzeigen: ${buchung.datei_name}`}
+                                          onClick={e => { e.stopPropagation(); openApiBlob(`/buchhaltung/belege/${buchung.referenz_id}/datei`); }}
+                                        >
+                                          <FileText size={13} /> Beleg
+                                        </button>
+                                      )}
                                       {canEdit && !isEditing && (
                                         <button
-                                          className="btn-icon-xs btn-ghost"
+                                          className="btn-kategorie-edit"
                                           title="Kategorie ändern"
                                           onClick={e => { e.stopPropagation(); setEditingBuchung({ key: buchKey, quelle: buchung.quelle, referenz_id: buchung.referenz_id }); setEditingBuchungKat(kat); }}
                                         >
-                                          <Edit size={12} />
+                                          <Edit size={13} /> Kat.
                                         </button>
                                       )}
                                       {formatCurrency(buchung.betrag)}

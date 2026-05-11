@@ -3984,3 +3984,37 @@
 .btn-icon-xs.btn-success:hover { background: rgba(52,211,153,0.12); }
 .btn-icon-xs.btn-ghost { opacity: 0; transition: opacity 0.15s; }
 .euer-table .einzelbuchung-row:hover .btn-icon-xs.btn-ghost { opacity: 1; }
+
+.btn-beleg-anzeigen {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; margin-right: 6px;
+  font-size: 11px; font-weight: 600;
+  border: 1px solid rgba(99,179,237,0.5);
+  border-radius: 4px;
+  background: rgba(99,179,237,0.12);
+  color: #63b3ed;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-beleg-anzeigen:hover {
+  background: rgba(99,179,237,0.22);
+  border-color: #63b3ed;
+}
+
+.btn-kategorie-edit {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; margin-right: 6px;
+  font-size: 11px; font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text-secondary, #a0aec0);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-kategorie-edit:hover {
+  background: rgba(255,255,255,0.12);
+  color: var(--text-primary, #f7fafc);
+}
