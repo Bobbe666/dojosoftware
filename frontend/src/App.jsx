@@ -466,6 +466,25 @@ const RootRedirect = () => {
   return <Navigate to="/dashboard" replace />;
 };
 
+// Screen Wake Lock: verhindert, dass das Display abschaltet solange die App geöffnet ist.
+// Lock wird nach Tab-Wechsel/Hintergrund automatisch neu angefordert.
+function useWakeLock() {
+  useEffect(() => {
+    if (!('wakeLock' in navigator)) return;
+    let lock = null;
+    const acquire = async () => {
+      try { lock = await navigator.wakeLock.request('screen'); } catch (_) {}
+    };
+    acquire();
+    const onVisible = () => { if (document.visibilityState === 'visible') acquire(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      lock?.release();
+    };
+  }, []);
+}
+
 // Safari-Fix: input[type="date"] feuert onChange nicht zuverlässig bei nativer Datumsauswahl.
 // Globaler input-Listener feuert ein synthetisches change-Event nach, das React aufgreift.
 function useSafariDateFix() {
@@ -498,6 +517,7 @@ const SupportPortalBranch = () => (
 // Haupt-App Komponente
 const App = () => {
   useSafariDateFix();
+  useWakeLock();
 
   // Support-Portal auf dedizierter Subdomain
   if (window.location.hostname === 'support.tda-intl.org') {
