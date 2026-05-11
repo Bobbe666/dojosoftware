@@ -67,6 +67,15 @@ const RechnungErstellen = () => {
   const [selectedArtikelForVariant, setSelectedArtikelForVariant] = useState(null);
   const [selectedVariante, setSelectedVariante] = useState({ groesse: '', farbe: '', material: '', preiskategorie: '' });
 
+  // Inline-Anlegen
+  const [showNeuerArtikelModal, setShowNeuerArtikelModal] = useState(false);
+  const [showNeuerKundeModal, setShowNeuerKundeModal] = useState(false);
+  const [neuerArtikelForm, setNeuerArtikelForm] = useState({ name: '', verkaufspreis_euro: '', mwst_prozent: 19, kategorie_id: '' });
+  const [neuerKundeForm, setNeuerKundeForm] = useState({ vorname: '', nachname: '', geburtsdatum: '', email: '' });
+  const [artikelGruppen, setArtikelGruppen] = useState([]);
+  const [savingModal, setSavingModal] = useState(false);
+  const [modalError, setModalError] = useState('');
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -193,6 +202,61 @@ const RechnungErstellen = () => {
     } catch (error) {
       console.error('Fehler beim Laden der Artikel:', error);
     }
+  };
+
+  const loadArtikelGruppen = async () => {
+    try {
+      const dojoId = activeDojo?.dojo_id || activeDojo?.id;
+      const url = dojoId ? `/artikel/kategorien?dojo_id=${dojoId}` : `/artikel/kategorien`;
+      const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+      setArtikelGruppen(res.data.data || res.data || []);
+    } catch {}
+  };
+
+  const saveNeuerArtikel = async () => {
+    if (!neuerArtikelForm.name.trim() || !neuerArtikelForm.verkaufspreis_euro || !neuerArtikelForm.kategorie_id) {
+      setModalError('Bitte Name, Preis und Kategorie ausfüllen.');
+      return;
+    }
+    setSavingModal(true);
+    setModalError('');
+    try {
+      const res = await axios.post(`/artikel`, neuerArtikelForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await loadArtikel();
+      const newId = res.data?.artikel_id;
+      if (newId) handleArtikelChange(String(newId));
+      setShowNeuerArtikelModal(false);
+      setNeuerArtikelForm({ name: '', verkaufspreis_euro: '', mwst_prozent: 19, kategorie_id: '' });
+    } catch (err) {
+      setModalError(err.response?.data?.detail ? JSON.stringify(err.response.data.detail) : (err.response?.data?.error || 'Fehler beim Speichern.'));
+    }
+    setSavingModal(false);
+  };
+
+  const saveNeuerKunde = async () => {
+    if (!neuerKundeForm.vorname.trim() || !neuerKundeForm.nachname.trim() || !neuerKundeForm.geburtsdatum) {
+      setModalError('Bitte Vorname, Nachname und Geburtsdatum ausfüllen.');
+      return;
+    }
+    setSavingModal(true);
+    setModalError('');
+    try {
+      const dojoId = activeDojo?.dojo_id || activeDojo?.id;
+      const res = await axios.post(`/mitglieder`, {
+        ...neuerKundeForm,
+        dojo_id: dojoId,
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      await loadMitglieder();
+      const newId = res.data?.mitglied_id;
+      if (newId) handleMitgliedChange(String(newId));
+      setShowNeuerKundeModal(false);
+      setNeuerKundeForm({ vorname: '', nachname: '', geburtsdatum: '', email: '' });
+    } catch (err) {
+      setModalError(err.response?.data?.error || err.response?.data?.message || 'Fehler beim Speichern.');
+    }
+    setSavingModal(false);
   };
 
   const loadBankDaten = async () => {
@@ -1136,14 +1200,21 @@ const RechnungErstellen = () => {
 
           <div className="form-section">
             <h3>Kunde</h3>
-            <select onChange={(e) => handleMitgliedChange(e.target.value)} value={selectedMitglied?.mitglied_id || ''}>
-              <option value="">Bitte wählen...</option>
-              {mitglieder.map(m => (
-                <option key={m.mitglied_id} value={m.mitglied_id}>
-                  {m.vorname} {m.nachname}
-                </option>
-              ))}
-            </select>
+            <div className="re-inline-create-row">
+              <select onChange={(e) => handleMitgliedChange(e.target.value)} value={selectedMitglied?.mitglied_id || ''} style={{flex:1}}>
+                <option value="">Bitte wählen...</option>
+                {mitglieder.map(m => (
+                  <option key={m.mitglied_id} value={m.mitglied_id}>
+                    {m.vorname} {m.nachname}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="btn-inline-create"
+                onClick={() => { setModalError(''); setShowNeuerKundeModal(true); }}
+                title="Neuen Kunden anlegen"
+              >+ Neu</button>
+            </div>
           </div>
 
           <div className="form-section">
@@ -1189,18 +1260,26 @@ const RechnungErstellen = () => {
           <div className="form-section">
             <h3>Position hinzufügen</h3>
             <div className="position-input">
-              <select
-                onChange={(e) => handleArtikelChange(e.target.value)}
-                value={neuePosition.artikel_id}
-                className="re-input-sm"
-              >
-                <option value="">Artikel wählen...</option>
-                {artikel.map(a => (
-                  <option key={a.artikel_id} value={a.artikel_id}>
-                    {a.name} - {(a.verkaufspreis_cent / 100).toFixed(2)} €
-                  </option>
-                ))}
-              </select>
+              <div className="re-inline-create-row" style={{flex:1}}>
+                <select
+                  onChange={(e) => handleArtikelChange(e.target.value)}
+                  value={neuePosition.artikel_id}
+                  className="re-input-sm"
+                  style={{flex:1}}
+                >
+                  <option value="">Artikel wählen...</option>
+                  {artikel.map(a => (
+                    <option key={a.artikel_id} value={a.artikel_id}>
+                      {a.name} - {(a.verkaufspreis_cent / 100).toFixed(2)} €
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="btn-inline-create"
+                  onClick={() => { setModalError(''); loadArtikelGruppen(); setShowNeuerArtikelModal(true); }}
+                  title="Neuen Artikel anlegen"
+                >+ Neu</button>
+              </div>
               <input
                 type="number"
                 placeholder="Menge"
@@ -1667,6 +1746,95 @@ const RechnungErstellen = () => {
 
       {/* Varianten-Modal */}
       {renderVariantenModal()}
+
+      {/* Neuer Artikel Modal */}
+      {showNeuerArtikelModal && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowNeuerArtikelModal(false); }}>
+          <div className="re-inline-modal">
+            <h3>Neuen Artikel anlegen</h3>
+            {modalError && <div className="re-modal-error">{modalError}</div>}
+            <div className="re-modal-field">
+              <label>Name *</label>
+              <input className="re-input-sm" value={neuerArtikelForm.name}
+                onChange={e => setNeuerArtikelForm(f => ({...f, name: e.target.value}))}
+                placeholder="Artikelname" autoFocus />
+            </div>
+            <div className="re-modal-field">
+              <label>Verkaufspreis (€) *</label>
+              <input className="re-input-sm" type="number" step="0.01" min="0"
+                value={neuerArtikelForm.verkaufspreis_euro}
+                onChange={e => setNeuerArtikelForm(f => ({...f, verkaufspreis_euro: e.target.value}))}
+                placeholder="0.00" />
+            </div>
+            <div className="re-modal-field">
+              <label>MwSt. (%)</label>
+              <select className="re-input-sm" value={neuerArtikelForm.mwst_prozent}
+                onChange={e => setNeuerArtikelForm(f => ({...f, mwst_prozent: parseFloat(e.target.value)}))}>
+                <option value={19}>19 %</option>
+                <option value={7}>7 %</option>
+                <option value={0}>0 %</option>
+              </select>
+            </div>
+            <div className="re-modal-field">
+              <label>Kategorie *</label>
+              <select className="re-input-sm" value={neuerArtikelForm.kategorie_id}
+                onChange={e => setNeuerArtikelForm(f => ({...f, kategorie_id: e.target.value}))}>
+                <option value="">— Kategorie wählen —</option>
+                {artikelGruppen.map(g => (
+                  <option key={g.id || g.kategorie_id} value={g.id || g.kategorie_id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="re-modal-actions">
+              <button className="btn-secondary" onClick={() => setShowNeuerArtikelModal(false)} disabled={savingModal}>Abbrechen</button>
+              <button className="btn-primary" onClick={saveNeuerArtikel} disabled={savingModal}>
+                {savingModal ? 'Wird gespeichert…' : 'Artikel anlegen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Neuer Kunde Modal */}
+      {showNeuerKundeModal && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowNeuerKundeModal(false); }}>
+          <div className="re-inline-modal">
+            <h3>Neuen Kunden anlegen</h3>
+            {modalError && <div className="re-modal-error">{modalError}</div>}
+            <div className="re-modal-row">
+              <div className="re-modal-field">
+                <label>Vorname *</label>
+                <input className="re-input-sm" value={neuerKundeForm.vorname}
+                  onChange={e => setNeuerKundeForm(f => ({...f, vorname: e.target.value}))}
+                  placeholder="Vorname" autoFocus />
+              </div>
+              <div className="re-modal-field">
+                <label>Nachname *</label>
+                <input className="re-input-sm" value={neuerKundeForm.nachname}
+                  onChange={e => setNeuerKundeForm(f => ({...f, nachname: e.target.value}))}
+                  placeholder="Nachname" />
+              </div>
+            </div>
+            <div className="re-modal-field">
+              <label>Geburtsdatum *</label>
+              <input className="re-input-sm" type="date" value={neuerKundeForm.geburtsdatum}
+                onChange={e => setNeuerKundeForm(f => ({...f, geburtsdatum: e.target.value}))} />
+            </div>
+            <div className="re-modal-field">
+              <label>E-Mail</label>
+              <input className="re-input-sm" type="email" value={neuerKundeForm.email}
+                onChange={e => setNeuerKundeForm(f => ({...f, email: e.target.value}))}
+                placeholder="email@beispiel.de" />
+            </div>
+            <div className="re-modal-actions">
+              <button className="btn-secondary" onClick={() => setShowNeuerKundeModal(false)} disabled={savingModal}>Abbrechen</button>
+              <button className="btn-primary" onClick={saveNeuerKunde} disabled={savingModal}>
+                {savingModal ? 'Wird gespeichert…' : 'Kunden anlegen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Dojo-Auswahl Modal */}
       {showDojoSelection && (
