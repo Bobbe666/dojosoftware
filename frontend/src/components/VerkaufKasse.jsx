@@ -210,6 +210,13 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     const name =
       mitglied.full_name ||
       `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim();
+
+    // Warenkorb leeren bevor Mitglied gewechselt wird —
+    // sonst bleiben Artikel vom vorherigen Mitglied im Cart.
+    // Der localStorage-Lade-Effekt lädt dann ggf. den gespeicherten Cart für das neue Mitglied.
+    setWarenkorb([]);
+    setManualRabatt({ aktiv: false, typ: 'prozent', wert: '', bestaetigt: false });
+
     setSelectedMitglied(mitglied);
     setKundeName(name);
     setMitgliedId(mitglied.mitglied_id || '');
