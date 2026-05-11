@@ -22,6 +22,7 @@ const ArtikelFormular = ({ mode }) => {
   const [selectedHauptkategorieId, setSelectedHauptkategorieId] = useState('');
   const [activeTab, setActiveTab] = useState('basis');
   const [preisTab, setPreisTab] = useState('einzelkalkulation'); // 'groessenabhaengig' | 'einzelkalkulation'
+  const [vkBruttoInput, setVkBruttoInput] = useState('');
   const [editingGroesse, setEditingGroesse] = useState(null); // { old: 'Gros', new: 'Groß' }
 
   // Modal State für neue Artikelgruppe/Unterkategorie
@@ -892,6 +893,51 @@ const ArtikelFormular = ({ mode }) => {
 
           {/* Eingabebereich */}
           <div className="preis-eingabe-section af3-preis-eingabe-section">
+
+            {/* SCHNELLEINGABE VK BRUTTO — ohne EK */}
+            {(() => {
+              const mwst = parseFloat(formData.mwst_prozent) || 19;
+              const netto = vkBruttoInput ? parseFloat(vkBruttoInput) / (1 + mwst / 100) : null;
+              const hasVk = parseFloat(formData.verkaufspreis_euro) > 0;
+              return (
+                <div className="af3-schnell-box">
+                  <div className="af3-schnell-label">
+                    ⚡ VK Brutto direkt eingeben
+                    {hasVk && (
+                      <span className="af3-schnell-saved">
+                        Gespeichert: {(parseFloat(formData.verkaufspreis_euro) * (1 + mwst / 100)).toFixed(2)} € brutto
+                      </span>
+                    )}
+                  </div>
+                  <div className="af3-schnell-row">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="z.B. 29,99"
+                      value={vkBruttoInput}
+                      onChange={e => setVkBruttoInput(e.target.value)}
+                      className="af3-schnell-input"
+                    />
+                    <span className="af3-schnell-unit">€ Brutto</span>
+                    {netto !== null && netto > 0 && (
+                      <span className="af3-schnell-netto">= {netto.toFixed(2)} € netto</span>
+                    )}
+                    <button
+                      type="button"
+                      disabled={!netto || netto <= 0}
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, verkaufspreis_euro: netto.toFixed(2) }));
+                        setVkBruttoInput('');
+                      }}
+                      className="af3-schnell-btn"
+                    >
+                      Übernehmen
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* TAB-AUSWAHL */}
             <div className="af3-preis-tab-bar">
