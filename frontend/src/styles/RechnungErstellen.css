@@ -11,9 +11,7 @@
 }
 
 .rechnung-editor {
-  display: grid;
-  grid-template-columns: 480px 1fr;
-  gap: 0.5rem;
+  display: block;
   max-width: 100%;
   margin: 0;
   padding: 0;
@@ -642,6 +640,8 @@
 .invoice-logo {
   display: block;
   margin-left: auto;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 /* ============================================
@@ -1317,9 +1317,10 @@
 
 /* Invoice logo img */
 .re-invoice-logo {
-  max-width: 200px;
-  max-height: 100px;
-  object-fit: contain;
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 /* Invoice h1 override */
@@ -1424,12 +1425,13 @@
 
 /* Inline-Anlegen Modal */
 .re-inline-modal {
-  background: var(--card-bg, #1a2744);
+  background: #1a2744;
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 12px;
   padding: 1.5rem;
   width: 90%;
   max-width: 420px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
 }
 .re-inline-modal h3 {
   margin: 0 0 1.25rem;
@@ -1538,4 +1540,223 @@
 .re-typ-btn:hover:not(.active) {
   background: rgba(255,255,255,0.09);
   color: rgba(255,255,255,0.7);
+}
+
+/* ── Full-width preview mode ── */
+.rechnung-preview--fullwidth {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Action bar */
+.re-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: rgba(26,26,46,0.95);
+  border-radius: var(--comp-radius-md, 8px);
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.re-action-title {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.re-action-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Editable areas in PDF */
+.re-editable {
+  cursor: pointer;
+  transition: outline 0.12s, background 0.12s;
+  outline: 1.5px dashed transparent;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.re-editable:hover {
+  outline-color: rgba(59,130,246,0.55);
+  background: rgba(59,130,246,0.04);
+}
+.re-edit-hint {
+  color: #e53e3e;
+  font-style: italic;
+  font-size: 9pt;
+  font-weight: 500;
+}
+
+/* Position table rows */
+.re-pos-row:hover td {
+  background: rgba(59,130,246,0.06);
+}
+.re-add-position-row {
+  cursor: pointer;
+}
+.re-add-position-cell {
+  text-align: center !important;
+  color: #e53e3e;
+  font-size: 8.5pt;
+  font-weight: 600;
+  padding: 0.4rem !important;
+  border-bottom: none !important;
+}
+.re-add-position-row:hover .re-add-position-cell {
+  color: #c53030;
+}
+
+/* Rabatt/Skonto add hint */
+.re-rabatt-add-hint {
+  text-align: right;
+  font-size: 8pt;
+  color: #aaa;
+  padding: 0.25rem 0;
+  margin-top: 0.15rem;
+}
+.re-rabatt-add-hint:hover {
+  color: #3b82f6;
+}
+
+/* Customer popup */
+.re-customer-popup {
+  max-width: 420px !important;
+  width: 100%;
+}
+.re-customer-list {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+}
+.re-customer-item {
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  transition: background 0.1s;
+}
+.re-customer-item:last-child { border-bottom: none; }
+.re-customer-item:hover { background: rgba(59,130,246,0.12); }
+.re-customer-item.selected { background: rgba(59,130,246,0.18); }
+.re-customer-name { font-size: 0.88rem; color: rgba(255,255,255,0.9); }
+.re-customer-addr { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 1px; }
+
+/* Position popup */
+.re-position-popup { max-width: 520px !important; }
+.re-selected-article-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 7px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.9rem;
+}
+.re-selected-article-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+}
+.re-clear-article-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  transition: color 0.1s;
+}
+.re-clear-article-btn:hover { color: #f87171; }
+.re-btn-delete-position {
+  width: 100%;
+  padding: 0.4rem;
+  margin: 0.5rem 0;
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  text-align: left;
+  transition: background 0.1s;
+}
+.re-btn-delete-position:hover { background: rgba(239,68,68,0.22); }
+
+/* Section title row with inline toggle */
+.re-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+.re-section-title-row h3 {
+  margin: 0 !important;
+}
+.re-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  user-select: none;
+}
+.re-toggle-label input {
+  cursor: pointer;
+}
+
+/* Per-position extras: freitext + leistungsdatum */
+.re-position-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.re-pos-freitext {
+  width: 100%;
+  resize: vertical;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.5rem;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+.re-pos-freitext::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+.re-pos-leistungsdatum-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.re-pos-leistungsdatum-label {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+}
+
+/* PDF preview: freitext + leistungsdatum rendering */
+.re-pdf-freitext {
+  font-size: 8pt;
+  color: #444;
+  margin-top: 2px;
+  white-space: pre-wrap;
+  line-height: 1.35;
+}
+.re-pdf-leistungsdatum {
+  font-size: 7.5pt;
+  color: #666;
+  margin-top: 1px;
+  font-style: italic;
 }

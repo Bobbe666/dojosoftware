@@ -58,9 +58,12 @@ const RechnungErstellen = () => {
     einzelpreis: 0,
     ust_prozent: 19,
     ist_rabattfaehig: false,
-    rabatt_prozent: 0
+    rabatt_prozent: 0,
+    freitext: '',
+    leistungsdatum: ''
   });
   const [showRabattHinweis, setShowRabattHinweis] = useState(false);
+  const [zeigArtikelNummer, setZeigArtikelNummer] = useState(true);
 
   // Varianten-Modal State
   const [showVariantenModal, setShowVariantenModal] = useState(false);
@@ -85,6 +88,14 @@ const RechnungErstellen = () => {
   const [artikelGruppen, setArtikelGruppen] = useState([]);
   const [savingModal, setSavingModal] = useState(false);
   const [modalError, setModalError] = useState('');
+
+  // Click-to-edit popup state
+  const [showCustomerPopup, setShowCustomerPopup] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showPositionPopup, setShowPositionPopup] = useState(false);
+  const [editingPositionIndex, setEditingPositionIndex] = useState(null);
+  const [showRabattSkontoPopup, setShowRabattSkontoPopup] = useState(false);
+  const [showMetaPopup, setShowMetaPopup] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -276,6 +287,30 @@ const RechnungErstellen = () => {
       setModalError(err.response?.data?.error || err.response?.data?.message || 'Fehler beim Speichern.');
     }
     setSavingModal(false);
+  };
+
+  const openPositionEdit = (index) => {
+    if (index === null) {
+      setNeuePosition({ artikel_id: '', bezeichnung: '', artikelnummer: '', menge: 1, einzelpreis: 0, ust_prozent: 19, ist_rabattfaehig: false, rabatt_prozent: 0, freitext: '', leistungsdatum: '' });
+    } else {
+      setNeuePosition({ ...positionen[index] });
+    }
+    setEditingPositionIndex(index);
+    setShowPositionPopup(true);
+  };
+
+  const savePositionEdit = () => {
+    if (!neuePosition.bezeichnung || Number(neuePosition.menge) <= 0) return;
+    if (editingPositionIndex === null) {
+      setPositionen([...positionen, { ...neuePosition, pos: positionen.length + 1, menge: Number(neuePosition.menge), einzelpreis: Number(neuePosition.einzelpreis), ust_prozent: Number(neuePosition.ust_prozent), ist_rabattfaehig: neuePosition.ist_rabattfaehig, rabatt_prozent: Number(neuePosition.rabatt_prozent) || 0 }]);
+    } else {
+      const updated = [...positionen];
+      updated[editingPositionIndex] = { ...neuePosition, pos: editingPositionIndex + 1, menge: Number(neuePosition.menge), einzelpreis: Number(neuePosition.einzelpreis), ust_prozent: Number(neuePosition.ust_prozent), ist_rabattfaehig: neuePosition.ist_rabattfaehig, rabatt_prozent: Number(neuePosition.rabatt_prozent) || 0 };
+      setPositionen(updated);
+    }
+    setShowPositionPopup(false);
+    setEditingPositionIndex(null);
+    setNeuePosition({ artikel_id: '', bezeichnung: '', artikelnummer: '', menge: 1, einzelpreis: 0, ust_prozent: 19, ist_rabattfaehig: false, rabatt_prozent: 0, freitext: '', leistungsdatum: '' });
   };
 
   const loadBankDaten = async () => {
@@ -558,7 +593,9 @@ const RechnungErstellen = () => {
         einzelpreis: Number(neuePosition.einzelpreis),
         ust_prozent: Number(neuePosition.ust_prozent),
         ist_rabattfaehig: neuePosition.ist_rabattfaehig,
-        rabatt_prozent: Number(neuePosition.rabatt_prozent) || 0
+        rabatt_prozent: Number(neuePosition.rabatt_prozent) || 0,
+        freitext: neuePosition.freitext || '',
+        leistungsdatum: neuePosition.leistungsdatum || ''
       }]);
     }
 
@@ -571,7 +608,9 @@ const RechnungErstellen = () => {
       einzelpreis: 0,
       ust_prozent: 19,
       ist_rabattfaehig: false,
-      rabatt_prozent: 0
+      rabatt_prozent: 0,
+      freitext: '',
+      leistungsdatum: ''
     });
   };
 
@@ -685,7 +724,7 @@ const RechnungErstellen = () => {
   };
 
   // Funktion: Extrahiere CSS für PDF-Generierung
-  const getInvoiceCSS = () => {
+  const getInvoiceCSS = (mitArtikelNummer = true) => {
     return `
       * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -753,6 +792,16 @@ const RechnungErstellen = () => {
         color: #666;
       }
 
+      .invoice-logo {
+        display: block;
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin-left: auto;
+        margin-bottom: 1rem;
+      }
+
       .invoice-numbers {
         font-size: 9pt;
         line-height: 1.8;
@@ -795,11 +844,11 @@ const RechnungErstellen = () => {
         font-size: 8pt;
       }
 
-      .invoice-table th:nth-child(3),
-      .invoice-table th:nth-child(4),
-      .invoice-table th:nth-child(6),
-      .invoice-table th:nth-child(7),
-      .invoice-table th:nth-child(8) {
+      .invoice-table th:nth-child(${mitArtikelNummer ? 3 : 2}),
+      .invoice-table th:nth-child(${mitArtikelNummer ? 4 : 3}),
+      .invoice-table th:nth-child(${mitArtikelNummer ? 6 : 5}),
+      .invoice-table th:nth-child(${mitArtikelNummer ? 7 : 6}),
+      .invoice-table th:nth-child(${mitArtikelNummer ? 8 : 7}) {
         text-align: right;
       }
 
@@ -808,11 +857,11 @@ const RechnungErstellen = () => {
         border-bottom: 1px solid #e5e7eb;
       }
 
-      .invoice-table td:nth-child(3),
-      .invoice-table td:nth-child(4),
-      .invoice-table td:nth-child(6),
-      .invoice-table td:nth-child(7),
-      .invoice-table td:nth-child(8) {
+      .invoice-table td:nth-child(${mitArtikelNummer ? 3 : 2}),
+      .invoice-table td:nth-child(${mitArtikelNummer ? 4 : 3}),
+      .invoice-table td:nth-child(${mitArtikelNummer ? 6 : 5}),
+      .invoice-table td:nth-child(${mitArtikelNummer ? 7 : 6}),
+      .invoice-table td:nth-child(${mitArtikelNummer ? 8 : 7}) {
         text-align: right;
       }
 
@@ -883,6 +932,21 @@ const RechnungErstellen = () => {
         background: white;
       }
 
+      .re-pdf-freitext {
+        font-size: 8pt;
+        color: #444;
+        margin-top: 2px;
+        white-space: pre-wrap;
+        line-height: 1.35;
+      }
+
+      .re-pdf-leistungsdatum {
+        font-size: 7.5pt;
+        color: #666;
+        margin-top: 1px;
+        font-style: italic;
+      }
+
       @page {
         margin: 0;
         size: A4 portrait;
@@ -936,7 +1000,7 @@ const RechnungErstellen = () => {
     });
 
     // Hole CSS und erstelle vollständiges HTML-Dokument
-    const cssContent = getInvoiceCSS();
+    const cssContent = getInvoiceCSS(zeigArtikelNummer);
     const fullHTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -989,6 +1053,7 @@ const RechnungErstellen = () => {
       pdfHtml: serializedHTML  // NEU: HTML für PDF-Generierung
     };
 
+    console.log('📤 Sende Rechnung:', { mitglied_id: rechnungData.mitglied_id, datum: rechnungData.datum, faelligkeitsdatum: rechnungData.faelligkeitsdatum, art: rechnungData.art, positionen_count: rechnungData.positionen?.length });
     try {
       const response = await axios.post(`/rechnungen`, rechnungData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -1013,8 +1078,10 @@ const RechnungErstellen = () => {
         loadRechnungsnummer(neueDatum);
       }
     } catch (error) {
-      console.error('Fehler beim Speichern:', error);
-      alert('Fehler beim Erstellen der Rechnung');
+      const serverMsg = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Unbekannter Fehler';
+      const status = error?.response?.status;
+      console.error('Fehler beim Speichern:', error?.response?.data || error);
+      alert(`Fehler beim Erstellen der Rechnung (${status}): ${serverMsg}`);
     }
   };
 
@@ -1212,261 +1279,20 @@ const RechnungErstellen = () => {
 
   return (
     <div className="rechnung-erstellen-container">
-      <div className="rechnung-editor">
-        {/* Eingabeformular */}
-        <div className="rechnung-form">
-          <h2>Neue Rechnung erstellen</h2>
-
-          <div className="form-section">
-            <h3>Kunde</h3>
-            <div className="re-inline-create-row">
-              <select onChange={(e) => handleMitgliedChange(e.target.value)} value={selectedMitglied?.mitglied_id || ''} style={{flex:1}}>
-                <option value="">Bitte wählen...</option>
-                {mitglieder.map(m => (
-                  <option key={m.mitglied_id} value={m.mitglied_id}>
-                    {m.vorname} {m.nachname}
-                  </option>
-                ))}
-              </select>
-              <button
-                className="btn-inline-create"
-                onClick={() => { setModalError(''); setShowNeuerKundeModal(true); }}
-                title="Neuen Kunden anlegen"
-              >+ Neu</button>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3 className="re-h3-rechnungsdaten">Rechnungsdaten</h3>
-            <div className="form-grid">
-              <div className="re-field-col">
-                <label className="re-label-sm">Belegdatum</label>
-                <input
-                  type="date"
-                  value={rechnungsDaten.belegdatum}
-                  onChange={(e) => {
-                    const neuesBelegdatum = e.target.value;
-                    setRechnungsDaten({
-                      ...rechnungsDaten, 
-                      belegdatum: neuesBelegdatum,
-                      zahlungsfrist: calculateZahlungsfrist(neuesBelegdatum)
-                    });
-                  }}
-                  className="re-input-sm"
-                />
-              </div>
-              <div className="re-field-col">
-                <label className="re-label-sm">Leistungsdatum</label>
-                <input
-                  type="date"
-                  value={rechnungsDaten.leistungsdatum}
-                  onChange={(e) => setRechnungsDaten({...rechnungsDaten, leistungsdatum: e.target.value})}
-                  className="re-input-sm"
-                />
-              </div>
-              <div className="re-field-col--zahlungsfrist">
-                <label className="re-label-sm">Zahlungsfrist</label>
-                <input
-                  type="date"
-                  value={rechnungsDaten.zahlungsfrist}
-                  onChange={(e) => setRechnungsDaten({...rechnungsDaten, zahlungsfrist: e.target.value})}
-                  className="re-input-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3>Position hinzufügen</h3>
-            <div className="position-input">
-              <div className="re-inline-create-row" style={{flex:1}}>
-                <select
-                  onChange={(e) => handleArtikelChange(e.target.value)}
-                  value={neuePosition.artikel_id}
-                  className="re-input-sm"
-                  style={{flex:1}}
-                >
-                  <option value="">Artikel wählen...</option>
-                  {artikel.map(a => (
-                    <option key={a.artikel_id} value={a.artikel_id}>
-                      {a.name} - {(a.verkaufspreis_cent / 100).toFixed(2)} €
-                    </option>
-                  ))}
-                </select>
-                <button
-                  className="btn-inline-create"
-                  onClick={() => { setModalError(''); loadArtikelGruppen(); setShowNeuerArtikelModal(true); }}
-                  title="Neuen Artikel anlegen"
-                >+ Neu</button>
-              </div>
-              <input
-                type="number"
-                placeholder="Menge"
-                value={neuePosition.menge}
-                onChange={(e) => setNeuePosition({...neuePosition, menge: parseInt(e.target.value)})}
-                min="1"
-                className="re-menge-input"
-              />
-              <button onClick={addPosition} className="btn-add">Hinzufügen</button>
-            </div>
-
-            {/* Rabattfähigkeit */}
-            <div className="re-rabatt-row">
-              <label className="re-checkbox-label-wrap">
-                <input
-                  type="checkbox"
-                  checked={neuePosition.ist_rabattfaehig}
-                  onChange={(e) => setNeuePosition({...neuePosition, ist_rabattfaehig: e.target.checked, rabatt_prozent: e.target.checked ? neuePosition.rabatt_prozent : 0})}
-                  className="re-checkbox"
-                />
-                <span className="checkbox-label re-checkbox-label-text">Rabattfähig</span>
-              </label>
-
-              {neuePosition.ist_rabattfaehig && (
-                <div className="re-rabatt-box">
-                  <label className="re-rabatt-label">Rabatt %:</label>
-                  <input
-                    type="number"
-                    value={neuePosition.rabatt_prozent}
-                    onChange={(e) => setNeuePosition({...neuePosition, rabatt_prozent: parseFloat(e.target.value) || 0})}
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    className="re-rabatt-input"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Hinzugefügte Positionen */}
-            {positionen.length > 0 && (
-              <div className="re-positions-list">
-                {positionen.map((pos, index) => (
-                  <div key={index} className="position-item">
-                    {/* Zeile 1: Artikelname + X-Button */}
-                    <div className="re-position-header">
-                      <span className="re-position-name">
-                        <strong>{pos.bezeichnung}</strong> - {pos.menge}x {Number(pos.einzelpreis).toFixed(2)} €
-                        {pos.ist_rabattfaehig && pos.rabatt_prozent > 0 && (
-                          <span className="re-rabatt-badge">(-{pos.rabatt_prozent}%)</span>
-                        )}
-                      </span>
-                      <button onClick={() => removePosition(index)} className="re-btn-remove">×</button>
-                    </div>
-                    {/* Zeile 2: Rabatt-Checkbox + Eingabe */}
-                    <div className="re-position-footer">
-                      <label className="re-position-rabatt-label">
-                        <input
-                          type="checkbox"
-                          checked={pos.ist_rabattfaehig || false}
-                          onChange={(e) => {
-                            const updatedPositionen = [...positionen];
-                            updatedPositionen[index] = {
-                              ...updatedPositionen[index],
-                              ist_rabattfaehig: e.target.checked,
-                              rabatt_prozent: e.target.checked ? (updatedPositionen[index].rabatt_prozent || 0) : 0
-                            };
-                            setPositionen(updatedPositionen);
-                          }}
-                          className="re-pos-checkbox"
-                        />
-                        Rabatt
-                      </label>
-                      {pos.ist_rabattfaehig && (
-                        <div className="re-pos-rabatt-wrap">
-                          <input
-                            type="number"
-                            value={pos.rabatt_prozent || 0}
-                            onChange={(e) => {
-                              const updatedPositionen = [...positionen];
-                              updatedPositionen[index] = { ...updatedPositionen[index], rabatt_prozent: parseFloat(e.target.value) || 0 };
-                              setPositionen(updatedPositionen);
-                            }}
-                            min="0" max="100" step="0.5"
-                            className="re-pos-rabatt-input"
-                          />
-                          <span className="re-percent-symbol">%</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="form-section">
-            <h3>Rabatt & Skonto</h3>
-            <div className="form-grid">
-              <div className="re-field-col--overflow">
-                <div className="re-rabatt-label-row">
-                  <label className="re-label-sm">Rabatt %</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowRabattHinweis(!showRabattHinweis)}
-                    className="re-btn-info"
-                    title="Info anzeigen"
-                  >
-                    ?
-                  </button>
-                </div>
-                {showRabattHinweis && (
-                  <div className="re-tooltip-modal">
-                    <strong>Globaler Rabatt:</strong> Dieser Rabatt wird auf die gesamte Rechnung angewendet.
-                    <br /><br />
-                    Für <strong>einzelne Positionen</strong> können Sie den Rabatt oben in der Positionsliste festlegen.
-                    <button
-                      onClick={() => setShowRabattHinweis(false)}
-                      className="re-btn-tooltip-close"
-                    >
-                      Verstanden
-                    </button>
-                  </div>
-                )}
-                {showRabattHinweis && (
-                  <div className="re-tooltip-overlay" onClick={() => setShowRabattHinweis(false)} />
-                )}
-                <input
-                  type="number"
-                  value={rechnungsDaten.rabatt_prozent}
-                  onChange={(e) => setRechnungsDaten({...rechnungsDaten, rabatt_prozent: parseFloat(e.target.value) || 0})}
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  className="re-input-sm"
-                />
-              </div>
-              <div className="re-field-col">
-                <label className="re-label-sm">Skonto %</label>
-                <input
-                  type="number"
-                  value={rechnungsDaten.skonto_prozent}
-                  onChange={(e) => setRechnungsDaten({...rechnungsDaten, skonto_prozent: parseFloat(e.target.value) || 0})}
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  className="re-input-sm"
-                />
-              </div>
-              <div className="re-field-col">
-                <label className="re-label-sm">Skonto Tage</label>
-                <input
-                  type="number"
-                  value={rechnungsDaten.skonto_tage}
-                  readOnly
-                  min="0"
-                  placeholder="Automatisch aus Zahlungsziel"
-                  className="re-input-readonly"
-                />
-              </div>
-            </div>
-          </div>
-
+      {/* Action bar */}
+      <div className="re-action-bar">
+        <span className="re-action-title">Rechnung erstellen</span>
+        <div className="re-action-right">
+          <label className="re-toggle-label">
+            <input type="checkbox" checked={zeigArtikelNummer} onChange={e => setZeigArtikelNummer(e.target.checked)} className="re-pos-checkbox" />
+            Artikelnummer
+          </label>
           <button onClick={handleSpeichern} className="btn-save">Rechnung speichern</button>
         </div>
+      </div>
 
-        {/* Rechnungsvorschau */}
-        <div className="rechnung-preview">
+        {/* Rechnungsvorschau — full width, click-to-edit */}
+        <div className="rechnung-preview rechnung-preview--fullwidth">
           <div className="invoice-page">
             {/* Header */}
             <div className="invoice-header">
@@ -1474,20 +1300,29 @@ const RechnungErstellen = () => {
                 <div className="company-small">
                   {activeDojo?.dojoname} | {activeDojo?.strasse} {activeDojo?.hausnummer} | {activeDojo?.plz} {activeDojo?.ort}
                 </div>
-                <div className="recipient-address">
+                <div className="recipient-address re-editable" title="Empfänger wählen" onClick={() => { setCustomerSearch(''); setShowCustomerPopup(true); }}>
                   {selectedMitglied ? (
                     <>
-                      <div>Herrn/Frau</div>
-                      <div>{selectedMitglied.vorname} {selectedMitglied.nachname}</div>
-                      <div>{selectedMitglied.adresse} {selectedMitglied.hausnummer}</div>
+                      {selectedMitglied.ist_firma ? (
+                        <>
+                          <div>{selectedMitglied.firmenname || `${selectedMitglied.vorname} ${selectedMitglied.nachname}`}</div>
+                          {selectedMitglied.ansprechpartner && <div>z.Hd. {selectedMitglied.ansprechpartner}</div>}
+                        </>
+                      ) : (
+                        <>
+                          <div>Herrn/Frau</div>
+                          <div>{selectedMitglied.vorname} {selectedMitglied.nachname}</div>
+                        </>
+                      )}
+                      <div>{selectedMitglied.adresse || selectedMitglied.strasse} {selectedMitglied.hausnummer}</div>
                       <div>{selectedMitglied.plz} {selectedMitglied.ort}</div>
                     </>
                   ) : (
-                    <div className="re-no-customer">Bitte Kunde wählen</div>
+                    <div className="re-edit-hint">▸ Empfänger wählen</div>
                   )}
                 </div>
               </div>
-              <div className="invoice-meta">
+              <div className="invoice-meta re-editable" title="Datumsangaben bearbeiten" onClick={() => setShowMetaPopup(true)}>
                 {dojoLogo ? (
                   <img
                     src={dojoLogo}
@@ -1518,7 +1353,7 @@ const RechnungErstellen = () => {
                 <tr>
                   <th>Pos.</th>
                   <th>Bezeichnung</th>
-                  <th>Artikelnummer</th>
+                  {zeigArtikelNummer && <th>Artikelnummer</th>}
                   <th>Menge</th>
                   <th>Einheit</th>
                   <th>Preis</th>
@@ -1534,10 +1369,18 @@ const RechnungErstellen = () => {
                   const nettoPreis = bruttoPreis - rabattBetrag;
 
                   return (
-                    <tr key={index}>
+                    <tr key={index} className="re-pos-row re-editable" title="Position bearbeiten" onClick={() => openPositionEdit(index)}>
                       <td>{pos.pos}</td>
-                      <td>{pos.bezeichnung}</td>
-                      <td>{pos.artikelnummer}</td>
+                      <td>
+                        <div>{pos.bezeichnung}</div>
+                        {pos.freitext && (
+                          <div className="re-pdf-freitext">{pos.freitext}</div>
+                        )}
+                        {pos.leistungsdatum && (
+                          <div className="re-pdf-leistungsdatum">Leistungsdatum: {formatDateDDMMYYYY(pos.leistungsdatum)}</div>
+                        )}
+                      </td>
+                      {zeigArtikelNummer && <td>{pos.artikelnummer}</td>}
                       <td>{pos.menge}</td>
                       <td>Stk.</td>
                       <td>{Number(pos.einzelpreis).toFixed(2)}</td>
@@ -1547,6 +1390,9 @@ const RechnungErstellen = () => {
                     </tr>
                   );
                 })}
+                <tr className="re-add-position-row re-editable" onClick={() => openPositionEdit(null)}>
+                  <td colSpan={zeigArtikelNummer ? 9 : 8} className="re-add-position-cell">+ Position hinzufügen</td>
+                </tr>
               </tbody>
             </table>
 
@@ -1557,7 +1403,7 @@ const RechnungErstellen = () => {
                 <span>{calculateZwischensumme().toFixed(2)}</span>
               </div>
               {rechnungsDaten.rabatt_prozent > 0 && (
-                <div className="totals-row">
+                <div className="totals-row re-editable" title="Rabatt bearbeiten" onClick={() => setShowRabattSkontoPopup(true)}>
                   <span>{rechnungsDaten.rabatt_prozent.toFixed(2)} % Rabatt auf EUR {(rechnungsDaten.rabatt_auf_betrag || calculateZwischensumme()).toFixed(2)}:</span>
                   <span>-{calculateRabatt().toFixed(2)}</span>
                 </div>
@@ -1573,6 +1419,15 @@ const RechnungErstellen = () => {
               <div className="totals-row total-final">
                 <span>Endbetrag:</span>
                 <span>{calculateEndbetrag().toFixed(2)}</span>
+              </div>
+              {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 && (
+                <div className="totals-row re-editable" title="Skonto bearbeiten" onClick={() => setShowRabattSkontoPopup(true)}>
+                  <span>{Number(rechnungsDaten.skonto_prozent).toFixed(2)} % Skonto ({rechnungsDaten.skonto_tage} Tage):</span>
+                  <span>-{calculateSkonto().toFixed(2)}</span>
+                </div>
+              )}
+              <div className="re-rabatt-add-hint re-editable" title="Rabatt / Skonto bearbeiten" onClick={() => setShowRabattSkontoPopup(true)}>
+                {rechnungsDaten.rabatt_prozent > 0 || rechnungsDaten.skonto_prozent > 0 ? '✎ Rabatt / Skonto' : '+ Rabatt / Skonto'}
               </div>
             </div>
 
@@ -1761,7 +1616,187 @@ const RechnungErstellen = () => {
             </div>
           </div>
         </div>
-      </div>
+
+      {/* ── Customer selection popup ── */}
+      {showCustomerPopup && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowCustomerPopup(false); }}>
+          <div className="re-inline-modal re-customer-popup">
+            <h3>Empfänger wählen</h3>
+            <div className="re-inline-create-row">
+              <input autoFocus className="re-input-sm" style={{flex:1}} placeholder="Name suchen…"
+                value={customerSearch} onChange={e => setCustomerSearch(e.target.value)} />
+              <button className="btn-inline-create" onClick={() => { setShowCustomerPopup(false); setModalError(''); setShowNeuerKundeModal(true); }}>+ Neu</button>
+            </div>
+            <div className="re-customer-list">
+              {mitglieder.filter(m => {
+                const q = customerSearch.toLowerCase();
+                return !q || `${m.vorname} ${m.nachname}`.toLowerCase().includes(q) || (m.firmenname && m.firmenname.toLowerCase().includes(q));
+              }).map(m => (
+                <div key={m.mitglied_id}
+                  className={`re-customer-item${selectedMitglied?.mitglied_id === m.mitglied_id ? ' selected' : ''}`}
+                  onClick={() => { handleMitgliedChange(m.mitglied_id); setShowCustomerPopup(false); }}
+                >
+                  <div className="re-customer-name">{m.ist_firma ? (m.firmenname || `${m.vorname} ${m.nachname}`) : `${m.vorname} ${m.nachname}`}</div>
+                  {(m.plz || m.ort) && <div className="re-customer-addr">{m.plz} {m.ort}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Position edit popup ── */}
+      {showPositionPopup && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) { setShowPositionPopup(false); setEditingPositionIndex(null); } }}>
+          <div className="re-inline-modal re-inline-modal--wide re-position-popup">
+            <h3>{editingPositionIndex === null ? 'Position hinzufügen' : 'Position bearbeiten'}</h3>
+
+            {/* Artikel auswählen oder gewählten Artikel anzeigen */}
+            {neuePosition.artikel_id ? (
+              <div className="re-selected-article-row">
+                <span className="re-selected-article-name">{neuePosition.bezeichnung}</span>
+                <button type="button" className="re-clear-article-btn"
+                  onClick={() => setNeuePosition(p => ({...p, artikel_id: '', bezeichnung: '', artikelnummer: '', einzelpreis: 0, ust_prozent: 19}))}>
+                  × Artikel ändern
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="re-inline-create-row">
+                  <select autoFocus className="re-input-sm" style={{flex:1}}
+                    onChange={e => handleArtikelChange(e.target.value)}
+                    defaultValue="">
+                    <option value="">Artikel wählen…</option>
+                    {artikel.map(a => <option key={a.artikel_id} value={a.artikel_id}>{a.name} – {(a.verkaufspreis_cent/100).toFixed(2)} €</option>)}
+                  </select>
+                  <button className="btn-inline-create" onClick={() => { setModalError(''); loadArtikelGruppen(); setShowNeuerArtikelModal(true); }}>+ Neu</button>
+                </div>
+                <div className="re-modal-field">
+                  <label>Oder freie Bezeichnung *</label>
+                  <input className="re-input-sm" value={neuePosition.bezeichnung}
+                    onChange={e => setNeuePosition(p => ({...p, bezeichnung: e.target.value}))} placeholder="z. B. Sonderleistung" />
+                </div>
+              </>
+            )}
+            <div className="re-modal-row re-modal-row--3">
+              <div className="re-modal-field">
+                <label>Menge</label>
+                <input className="re-input-sm" type="number" min="1" value={neuePosition.menge}
+                  onChange={e => setNeuePosition(p => ({...p, menge: parseInt(e.target.value) || 1}))} />
+              </div>
+              <div className="re-modal-field">
+                <label>Einzelpreis (€)</label>
+                <input className="re-input-sm" type="number" step="0.01" min="0" value={neuePosition.einzelpreis}
+                  onChange={e => setNeuePosition(p => ({...p, einzelpreis: parseFloat(e.target.value) || 0}))} />
+              </div>
+              <div className="re-modal-field">
+                <label>USt.</label>
+                <select className="re-input-sm" value={neuePosition.ust_prozent}
+                  onChange={e => setNeuePosition(p => ({...p, ust_prozent: parseFloat(e.target.value)}))}>
+                  <option value={19}>19 %</option>
+                  <option value={7}>7 %</option>
+                  <option value={0}>0 %</option>
+                </select>
+              </div>
+            </div>
+            <div className="re-modal-field">
+              <label>Leistungsdatum</label>
+              <input className="re-input-sm" type="date" value={neuePosition.leistungsdatum || ''}
+                onChange={e => setNeuePosition(p => ({...p, leistungsdatum: e.target.value}))} />
+            </div>
+            <div className="re-modal-field">
+              <label>Freitext (erscheint in PDF)</label>
+              <textarea className="re-input-sm re-modal-textarea" rows={2}
+                value={neuePosition.freitext || ''}
+                onChange={e => setNeuePosition(p => ({...p, freitext: e.target.value}))}
+                placeholder="Optionaler Zusatztext" />
+            </div>
+            <div className="re-modal-row" style={{alignItems:'center',gap:'1rem'}}>
+              <label className="re-checkbox-label-wrap">
+                <input type="checkbox" className="re-pos-checkbox"
+                  checked={neuePosition.ist_rabattfaehig}
+                  onChange={e => setNeuePosition(p => ({...p, ist_rabattfaehig: e.target.checked, rabatt_prozent: e.target.checked ? p.rabatt_prozent : 0}))} />
+                <span>Rabattfähig</span>
+              </label>
+              {neuePosition.ist_rabattfaehig && (
+                <div className="re-modal-field" style={{marginBottom:0}}>
+                  <label>Rabatt %</label>
+                  <input className="re-input-sm" type="number" min="0" max="100" step="0.5"
+                    value={neuePosition.rabatt_prozent}
+                    onChange={e => setNeuePosition(p => ({...p, rabatt_prozent: parseFloat(e.target.value) || 0}))} />
+                </div>
+              )}
+            </div>
+            {editingPositionIndex !== null && (
+              <button className="re-btn-delete-position" onClick={() => { removePosition(editingPositionIndex); setShowPositionPopup(false); setEditingPositionIndex(null); }}>
+                🗑 Position entfernen
+              </button>
+            )}
+            <div className="re-modal-actions">
+              <button className="btn-secondary" onClick={() => { setShowPositionPopup(false); setEditingPositionIndex(null); }}>Abbrechen</button>
+              <button className="btn-primary" onClick={savePositionEdit} disabled={!neuePosition.bezeichnung}>
+                {editingPositionIndex === null ? 'Hinzufügen' : 'Speichern'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Invoice meta (dates) popup ── */}
+      {showMetaPopup && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowMetaPopup(false); }}>
+          <div className="re-inline-modal">
+            <h3>Rechnungsdaten</h3>
+            <div className="re-modal-row re-modal-row--3">
+              <div className="re-modal-field">
+                <label>Belegdatum</label>
+                <input type="date" className="re-input-sm" value={rechnungsDaten.belegdatum}
+                  onChange={e => { const nd = e.target.value; setRechnungsDaten(prev => ({...prev, belegdatum: nd, zahlungsfrist: calculateZahlungsfrist(nd)})); }} />
+              </div>
+              <div className="re-modal-field">
+                <label>Leistungsdatum</label>
+                <input type="date" className="re-input-sm" value={rechnungsDaten.leistungsdatum}
+                  onChange={e => setRechnungsDaten(prev => ({...prev, leistungsdatum: e.target.value}))} />
+              </div>
+              <div className="re-modal-field">
+                <label>Zahlungsfrist</label>
+                <input type="date" className="re-input-sm" value={rechnungsDaten.zahlungsfrist}
+                  onChange={e => setRechnungsDaten(prev => ({...prev, zahlungsfrist: e.target.value}))} />
+              </div>
+            </div>
+            <div className="re-modal-actions">
+              <button className="btn-primary" onClick={() => setShowMetaPopup(false)}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Rabatt / Skonto popup ── */}
+      {showRabattSkontoPopup && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowRabattSkontoPopup(false); }}>
+          <div className="re-inline-modal">
+            <h3>Rabatt &amp; Skonto</h3>
+            <div className="re-modal-row">
+              <div className="re-modal-field">
+                <label>Globaler Rabatt %</label>
+                <input type="number" className="re-input-sm" min="0" max="100" step="0.01"
+                  value={rechnungsDaten.rabatt_prozent}
+                  onChange={e => setRechnungsDaten(prev => ({...prev, rabatt_prozent: parseFloat(e.target.value) || 0}))} />
+              </div>
+              <div className="re-modal-field">
+                <label>Skonto %</label>
+                <input type="number" className="re-input-sm" min="0" max="100" step="0.01"
+                  value={rechnungsDaten.skonto_prozent}
+                  onChange={e => setRechnungsDaten(prev => ({...prev, skonto_prozent: parseFloat(e.target.value) || 0}))} />
+              </div>
+            </div>
+            <div className="re-modal-actions">
+              <button className="btn-secondary" onClick={() => { setRechnungsDaten(prev => ({...prev, rabatt_prozent: 0, skonto_prozent: 0})); setShowRabattSkontoPopup(false); }}>Zurücksetzen</button>
+              <button className="btn-primary" onClick={() => setShowRabattSkontoPopup(false)}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Varianten-Modal */}
       {renderVariantenModal()}
