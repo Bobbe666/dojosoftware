@@ -2822,7 +2822,7 @@ const runAutoMatching = async (transaktionId, dojoId) => {
 // 📋 GET /api/buchhaltung/bank-import/transaktionen - Transaktionen abrufen
 // ===================================================================
 router.get('/bank-import/transaktionen', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
-  const { status, import_id, organisation, von, bis, seite = 1, limit = 50 } = req.query;
+  const { status, import_id, organisation, von, bis, jahr, seite = 1, limit = 50 } = req.query;
   const offset = (parseInt(seite) - 1) * parseInt(limit);
 
   let whereClause = '1=1';
@@ -2842,6 +2842,11 @@ router.get('/bank-import/transaktionen', requireFeature('kontoauszug'), requireB
   if (_orgFilter.sql) {
     whereClause += ' ' + _orgFilter.sql;
     params.push(..._orgFilter.params);
+  }
+
+  if (jahr) {
+    whereClause += ' AND YEAR(buchungsdatum) = ?';
+    params.push(parseInt(jahr));
   }
 
   if (von) {

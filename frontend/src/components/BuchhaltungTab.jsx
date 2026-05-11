@@ -629,6 +629,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           organisation: selectedOrg !== 'alle' ? selectedOrg : undefined,
+          jahr: selectedJahr,
           status: bankStatusFilter || undefined,
           seite: bankLimit === 0 ? 1 : bankPage,
           limit: bankLimit === 0 ? 10000 : bankLimit
@@ -701,6 +702,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           organisation: selectedOrg !== 'alle' ? selectedOrg : undefined,
+          jahr: selectedJahr,
           status: 'vorgeschlagen',
           seite: 1,
           limit: 10000
