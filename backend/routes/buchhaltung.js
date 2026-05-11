@@ -1642,11 +1642,15 @@ router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
       lieferant_kunde,
       rechnungsnummer_extern,
       ist_gwg = 0,
-      privatanteil_prozent = 0
+      privatanteil_prozent = 0,
+      dojo_id: body_dojo_id,
     } = req.body;
 
+    // Super-Admin sendet dojo_id im Body/Query statt organisation_name
+    const effectiveDojoId = req.buchhaltungDojoId || parseInt(body_dojo_id || req.query.dojo_id) || null;
+
     // Validierung
-    if (!(organisation_name || req.buchhaltungDojoId) || !buchungsart || !beleg_datum || !betrag_netto || !kategorie || !beschreibung) {
+    if (!(organisation_name || effectiveDojoId) || !buchungsart || !beleg_datum || !betrag_netto || !kategorie || !beschreibung) {
       return res.status(400).json({ message: 'Pflichtfelder fehlen' });
     }
 
@@ -1656,9 +1660,9 @@ router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
     const mwstBetrag = Math.round(netto * (mwst / 100) * 100) / 100;
     const brutto = Math.round((netto + mwstBetrag) * 100) / 100;
 
-    // Dojo ID: Dojo-Admin nutzt eigene dojo_id, Super-Admin nutzt Organisation
+    // Dojo ID: Dojo-Admin nutzt eigene dojo_id, Super-Admin nutzt dojo_id aus Body/Query oder organisation_name
     const _orgMapBeleg = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
-    const dojoId = req.buchhaltungDojoId || _orgMapBeleg[organisation_name] || null;
+    const dojoId = effectiveDojoId || _orgMapBeleg[organisation_name] || null;
     const effectiveOrgName = organisation_name || `Dojo ${dojoId}`;
     const jahr = new Date(buchungsdatum || beleg_datum).getFullYear();
 
