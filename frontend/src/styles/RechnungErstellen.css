@@ -1470,6 +1470,19 @@
 .re-inline-modal--wide {
   max-width: 560px;
 }
+
+.re-inline-modal input,
+.re-inline-modal select,
+.re-inline-modal textarea {
+  background: #fff;
+  color: #111;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+.re-inline-modal input::placeholder,
+.re-inline-modal textarea::placeholder {
+  color: #999;
+}
 .re-modal-row--3 {
   grid-template-columns: 1fr 1fr 1fr;
 }
