@@ -629,10 +629,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [activeStyleTab, setActiveStyleTab] = useState(0);
   const [stilDropdownOpen, setStilDropdownOpen] = useState(false);
   const [activeExamTab, setActiveExamTab] = useState(0);
-  const [financeSubTab, setFinanceSubTab] = useState("finanzübersicht");
-  // Redirect: "zahlungshistorie" tab was merged into "beitraege" — auto-switch if still in session state
+  const [financeSubTab, setFinanceSubTab] = useState("beitraege");
+  // Redirect: merged tabs auto-switch if still in session state
   useEffect(() => {
-    if (financeSubTab === "zahlungshistorie") setFinanceSubTab("beitraege");
+    if (financeSubTab === "zahlungshistorie" || financeSubTab === "finanzübersicht") setFinanceSubTab("beitraege");
   }, [financeSubTab]);
   const [mitgliedschaftSubTab, setMitgliedschaftSubTab] = useState("vertrag");
   const [gesundheitSubTab, setGesundheitSubTab] = useState("medizinisch");
@@ -4213,7 +4213,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           {activeTab === "mitgliedschaft" && (
             <div className="finance-sub-tabs mds-finance-sub-tabs-row mds-tabs--l1">
               <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "vertrag" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("vertrag")}>📄 Vertrag</button>
-              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" && financeSubTab === "finanzübersicht" ? "active" : ""}`} onClick={() => { setMitgliedschaftSubTab("finanzen"); setFinanceSubTab("finanzübersicht"); }}>💰 Finanzübersicht</button>
               <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" && financeSubTab === "beitraege" ? "active" : ""}`} onClick={() => { setMitgliedschaftSubTab("finanzen"); setFinanceSubTab("beitraege"); }}>💳 Beiträge</button>
               <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" && financeSubTab === "bank" ? "active" : ""}`} onClick={() => { setMitgliedschaftSubTab("finanzen"); setFinanceSubTab("bank"); }}>🏦 Bank & SEPA</button>
               <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" && financeSubTab === "einkäufe" ? "active" : ""}`} onClick={() => { setMitgliedschaftSubTab("finanzen"); setFinanceSubTab("einkäufe"); }}>🛒 Einkäufe</button>
@@ -4679,206 +4678,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           {activeTab === "mitgliedschaft" && mitgliedschaftSubTab === "finanzen" && (
             <div className="finance-management-container">
 
-              {financeSubTab === "finanzübersicht" && (
-                <div className="finanzübersicht-sub-tab-content">
-                  {(() => {
-                    // Berechnungen für die Finanzübersicht
-                    const _heute = new Date(); _heute.setHours(23, 59, 59, 999);
-                    const bezahlteZahlungen = finanzDaten.filter(f => f.bezahlt);
-                    // Fällige (vergangene) offene Zahlungen = echte Forderungen
-                    const offeneZahlungen = finanzDaten.filter(f => !f.bezahlt && new Date(f.zahlungsdatum || f.datum || 0) <= _heute);
-                    // Geplante (zukünftige) Zahlungen
-                    const geplanteZahlungen = finanzDaten.filter(f => !f.bezahlt && new Date(f.zahlungsdatum || f.datum || '9999-12-31') > _heute);
-                    const gesamtBezahlt = bezahlteZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
-                    const gesamtOffen = offeneZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
-                    const gesamtGeplant = geplanteZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
-                    const gesamtBetrag = gesamtBezahlt + gesamtOffen;
-                    const durchschnittBeitrag = finanzDaten.length > 0 ? gesamtBetrag / finanzDaten.length : 0;
-                    const aufnahmegebuehren = verträge && verträge.length > 0 
-                      ? verträge.reduce((sum, v) => sum + (v.aufnahmegebuehr_cents || 0), 0) / 100 
-                      : 0;
-                    
-                    // Letzte Zahlung
-                    const letzteZahlung = bezahlteZahlungen.length > 0
-                      ? bezahlteZahlungen.sort((a, b) => new Date(b.zahlungsdatum || b.datum) - new Date(a.zahlungsdatum || a.datum))[0]
-                      : null;
-                    
-                    // Kommende Zahlung (nächste ausstehende)
-                    const kommendeZahlung = offeneZahlungen.length > 0
-                      ? offeneZahlungen.sort((a, b) => {
-                          const dateA = new Date(a.datum || a.zahlungsdatum);
-                          const dateB = new Date(b.datum || b.zahlungsdatum);
-                          return dateA - dateB;
-                        })[0]
-                      : null;
-                    
-                    // Jahresstatistiken
-                    const jetzt = new Date();
-                    const aktuellesJahr = jetzt.getFullYear();
-                    const jahresZahlungen = bezahlteZahlungen.filter(f => {
-                      const date = new Date(f.zahlungsdatum || f.datum);
-                      return date.getFullYear() === aktuellesJahr;
-                    });
-                    const jahresEinnahmen = jahresZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
-                    
-                    // Durchschnittliche Zahlungsdauer (Tage zwischen Fälligkeit und Zahlung)
-                    // Nur für generierte Einträge relevant (haben datum/faelligkeitsdatum)
-                    const zahlungenMitDauer = bezahlteZahlungen
-                      .filter(f => f.datum && f.zahlungsdatum && f.generiert)
-                      .map(f => {
-                        const faellig = new Date(f.datum); // Bei generierten ist datum = faelligkeitsdatum
-                        const bezahlt = new Date(f.zahlungsdatum);
-                        return Math.max(0, Math.floor((bezahlt - faellig) / (1000 * 60 * 60 * 24)));
-                      });
-                    const durchschnittlicheZahlungsdauer = zahlungenMitDauer.length > 0
-                      ? Math.round(zahlungenMitDauer.reduce((a, b) => a + b, 0) / zahlungenMitDauer.length)
-                      : 0;
-                    
-                    return (
-                      <div className="mds2-flex-col-15">
-                        {/* KPI-Karten */}
-                        <div className="mds-kpi-grid">
-                          <div className="finance-kpi-card mds-kpi-card-success">
-                            <div className="mds-flex-row-mb">
-                              <span className="mds2-fs-2">📅</span>
-                              <h4 className="mds2-label-bold">
-                                Geplante Einzüge
-                              </h4>
-                            </div>
-                            <div className="mds-kpi-value-success">
-                              {gesamtGeplant.toFixed(2)} €
-                            </div>
-                            <div className="mds-text-secondary-sm">
-                              {geplanteZahlungen.length} kommende Beiträge
-                            </div>
-                          </div>
-
-                          {(gesamtOffen > 0 || (ruecklastschriftenStats?.offen_anzahl > 0)) && (
-                            <div className="finance-kpi-card mds-kpi-card-danger">
-                              <div className="mds-flex-row-mb">
-                                <span className="mds2-fs-2">⚠️</span>
-                                <h4 className="mds2-label-bold">
-                                  Offene Forderungen
-                                </h4>
-                              </div>
-                              <div className="mds-kpi-value-danger">
-                                {(gesamtOffen + parseFloat(ruecklastschriftenStats?.offen_betrag || 0)).toFixed(2)} €
-                              </div>
-                              <div className="mds-text-secondary-sm">
-                                {offeneZahlungen.length > 0 && <span>{offeneZahlungen.length} überfällig</span>}
-                                {offeneZahlungen.length > 0 && ruecklastschriftenStats?.offen_anzahl > 0 && <span> · </span>}
-                                {ruecklastschriftenStats?.offen_anzahl > 0 && <span style={{ color: '#fca5a5' }}>{ruecklastschriftenStats.offen_anzahl} Rücklastschrift{ruecklastschriftenStats.offen_anzahl !== 1 ? 'en' : ''}</span>}
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="finance-kpi-card mds-kpi-card-primary">
-                            <div className="mds-flex-row-mb">
-                              <span className="mds2-fs-2">📊</span>
-                              <h4 className="mds2-label-bold">
-                                Ø Beitrag
-                              </h4>
-                            </div>
-                            <div className="mds-kpi-value-primary">
-                              {durchschnittBeitrag.toFixed(2)} €
-                            </div>
-                            <div className="mds-text-secondary-sm">
-                              Pro Zahlung
-                            </div>
-                          </div>
-
-                          {letzteZahlung && (
-                            <div className="finance-kpi-card mds-kpi-card-success">
-                              <div className="mds-flex-row-mb">
-                                <span className="mds2-fs-2">✅</span>
-                                <h4 className="mds2-label-bold">
-                                  Letzte Zahlung
-                                </h4>
-                              </div>
-                              <div className="mds-kpi-value-success">
-                                {parseFloat(letzteZahlung.betrag || 0).toFixed(2)} €
-                              </div>
-                              <div className="mds-text-secondary-sm">
-                                {new Date(letzteZahlung.zahlungsdatum || letzteZahlung.datum).toLocaleDateString("de-DE")}
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="finance-kpi-card mds-kpi-card-info">
-                            <div className="mds-flex-row-mb">
-                              <span className="mds2-fs-2">📅</span>
-                              <h4 className="mds2-label-bold">
-                                Nächste Zahlung
-                              </h4>
-                            </div>
-                            {kommendeZahlung ? (
-                              <>
-                                <div className="mds2-stat-value">
-                                  {parseFloat(kommendeZahlung.betrag || 0).toFixed(2)} €
-                                </div>
-                                <div className="mds-text-secondary-sm">
-                                  {new Date(kommendeZahlung.datum || kommendeZahlung.zahlungsdatum).toLocaleDateString("de-DE")}
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div className="mds2-stat-value">
-                                  -
-                                </div>
-                                <div className="mds-text-secondary-sm">
-                                  Keine ausstehenden Zahlungen
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Detaillierte Statistiken */}
-                        <div className="mds-finance-stats-grid">
-                          <MitgliedVerkaufsCard mitgliedId={id} activeDojo={activeDojo} />
-                          <div className="field-group card">
-                            <h3 className="mds-finance-section-title">
-                              Zahlungsinformationen
-                            </h3>
-                            <div className="finance-stats">
-                              <div className="stat-item">
-                                <label>Zahlungsmethode:</label>
-                                <span className="stat-value">
-                                  {mitglied?.zahlungsmethode || "Nicht angegeben"}
-                                </span>
-                              </div>
-                              {letzteZahlung && (
-                                <div className="stat-item">
-                                  <label>Letzter Zahlungseingang:</label>
-                                  <span className="stat-value">
-                                    {new Date(letzteZahlung.zahlungsdatum || letzteZahlung.datum).toLocaleDateString("de-DE")}
-                                  </span>
-                                </div>
-                              )}
-                              {durchschnittlicheZahlungsdauer > 0 && (
-                                <div className="stat-item">
-                                  <label>Ø Zahlungsdauer:</label>
-                                  <span className="stat-value">
-                                    {durchschnittlicheZahlungsdauer} Tage
-                                  </span>
-                                </div>
-                              )}
-                              {aufnahmegebuehren > 0 && (
-                                <div className="stat-item">
-                                  <label>Aufnahmegebühren:</label>
-                                  <span className="stat-value mds-secondary-color">
-                                    {aufnahmegebuehren.toFixed(2)} €
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
 
               {financeSubTab === "beitraege" && (
                 <div className="beitraege-sub-tab-content">
@@ -5235,45 +5034,91 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                 )}
                               </div>
                             )}
-                            {/* ── Stats ── */}
-                            {alleBeitraege.length > 0 && (() => {
-                              const _btrHeute = new Date(); _btrHeute.setHours(23, 59, 59, 999);
-                              const isPz = b => b.bezahlt === true || b.bezahlt === 1 || String(b.bezahlt) === '1';
-                              const totalAll   = alleBeitraege.reduce((s, b) => s + parseFloat(b.betrag || 0), 0);
-                              const totalPaid  = alleBeitraege.reduce((s, b) => isPz(b) ? s + parseFloat(b.betrag || 0) : s, 0);
-                              const totalUeberfaellig = alleBeitraege.reduce((s, b) => {
-                                if (isPz(b)) return s;
-                                const d = new Date(b.datum || b.zahlungsdatum || 0);
-                                return d <= _btrHeute ? s + parseFloat(b.betrag || 0) : s;
-                              }, 0);
-                              const totalGeplant = alleBeitraege.reduce((s, b) => {
-                                if (isPz(b)) return s;
-                                const d = new Date(b.datum || b.zahlungsdatum || '9999-12-31');
-                                return d > _btrHeute ? s + parseFloat(b.betrag || 0) : s;
-                              }, 0);
+                            {/* ── KPI-Karten (aus ehem. Finanzübersicht) ── */}
+                            {(() => {
+                              const _kpiHeute = new Date(); _kpiHeute.setHours(23, 59, 59, 999);
+                              const bezahlteZahlungen = finanzDaten.filter(f => f.bezahlt);
+                              const offeneZahlungen = finanzDaten.filter(f => !f.bezahlt && new Date(f.zahlungsdatum || f.datum || 0) <= _kpiHeute);
+                              const geplanteZahlungen = finanzDaten.filter(f => !f.bezahlt && new Date(f.zahlungsdatum || f.datum || '9999-12-31') > _kpiHeute);
+                              const gesamtBezahlt = bezahlteZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
+                              const gesamtOffen = offeneZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
+                              const gesamtGeplant = geplanteZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
+                              const gesamtBetrag = gesamtBezahlt + gesamtOffen;
+                              const durchschnittBeitrag = finanzDaten.length > 0 ? gesamtBetrag / finanzDaten.length : 0;
+                              const letzteZahlung = bezahlteZahlungen.length > 0
+                                ? [...bezahlteZahlungen].sort((a, b) => new Date(b.zahlungsdatum || b.datum) - new Date(a.zahlungsdatum || a.datum))[0]
+                                : null;
+                              const kommendeZahlung = offeneZahlungen.length > 0
+                                ? [...offeneZahlungen].sort((a, b) => new Date(a.datum || a.zahlungsdatum) - new Date(b.datum || b.zahlungsdatum))[0]
+                                : null;
                               return (
-                                <div className="btr-stats-row">
-                                  <div className="btr-stat">
-                                    <div className="btr-stat-label">Bezahlt</div>
-                                    <div className="btr-stat-value btr-green">{totalPaid.toFixed(2)} €</div>
+                                <div className="mds-kpi-grid">
+                                  <div className="finance-kpi-card mds-kpi-card-success">
+                                    <div className="mds-flex-row-mb">
+                                      <span className="mds2-fs-2">📅</span>
+                                      <h4 className="mds2-label-bold">Geplante Einzüge</h4>
+                                    </div>
+                                    <div className="mds-kpi-value-success">{gesamtGeplant.toFixed(2)} €</div>
+                                    <div className="mds-text-secondary-sm">{geplanteZahlungen.length} kommende Beiträge</div>
                                   </div>
-                                  <div className="btr-stat">
-                                    <div className="btr-stat-label">Geplante Einzüge</div>
-                                    <div className="btr-stat-value btr-green">{totalGeplant.toFixed(2)} €</div>
-                                  </div>
-                                  {totalUeberfaellig > 0 && (
-                                    <div className="btr-stat">
-                                      <div className="btr-stat-label">Überfällig</div>
-                                      <div className="btr-stat-value btr-red">{totalUeberfaellig.toFixed(2)} €</div>
+
+                                  {(gesamtOffen > 0 || (ruecklastschriftenStats?.offen_anzahl > 0)) && (
+                                    <div className="finance-kpi-card mds-kpi-card-danger">
+                                      <div className="mds-flex-row-mb">
+                                        <span className="mds2-fs-2">⚠️</span>
+                                        <h4 className="mds2-label-bold">Offene Forderungen</h4>
+                                      </div>
+                                      <div className="mds-kpi-value-danger">
+                                        {(gesamtOffen + parseFloat(ruecklastschriftenStats?.offen_betrag || 0)).toFixed(2)} €
+                                      </div>
+                                      <div className="mds-text-secondary-sm">
+                                        {offeneZahlungen.length > 0 && <span>{offeneZahlungen.length} überfällig</span>}
+                                        {offeneZahlungen.length > 0 && ruecklastschriftenStats?.offen_anzahl > 0 && <span> · </span>}
+                                        {ruecklastschriftenStats?.offen_anzahl > 0 && <span style={{ color: '#fca5a5' }}>{ruecklastschriftenStats.offen_anzahl} Rücklastschrift{ruecklastschriftenStats.offen_anzahl !== 1 ? 'en' : ''}</span>}
+                                      </div>
                                     </div>
                                   )}
-                                  <div className="btr-stat">
-                                    <div className="btr-stat-label">Gesamt</div>
-                                    <div className="btr-stat-value">{totalAll.toFixed(2)} €</div>
+
+                                  <div className="finance-kpi-card mds-kpi-card-primary">
+                                    <div className="mds-flex-row-mb">
+                                      <span className="mds2-fs-2">📊</span>
+                                      <h4 className="mds2-label-bold">Ø Beitrag</h4>
+                                    </div>
+                                    <div className="mds-kpi-value-primary">{durchschnittBeitrag.toFixed(2)} €</div>
+                                    <div className="mds-text-secondary-sm">Pro Zahlung</div>
                                   </div>
-                                  <div className="btr-stat">
-                                    <div className="btr-stat-label">Einträge</div>
-                                    <div className="btr-stat-value">{alleBeitraege.length}</div>
+
+                                  {letzteZahlung && (
+                                    <div className="finance-kpi-card mds-kpi-card-success">
+                                      <div className="mds-flex-row-mb">
+                                        <span className="mds2-fs-2">✅</span>
+                                        <h4 className="mds2-label-bold">Letzte Zahlung</h4>
+                                      </div>
+                                      <div className="mds-kpi-value-success">{parseFloat(letzteZahlung.betrag || 0).toFixed(2)} €</div>
+                                      <div className="mds-text-secondary-sm">
+                                        {new Date(letzteZahlung.zahlungsdatum || letzteZahlung.datum).toLocaleDateString("de-DE")}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="finance-kpi-card mds-kpi-card-info">
+                                    <div className="mds-flex-row-mb">
+                                      <span className="mds2-fs-2">📅</span>
+                                      <h4 className="mds2-label-bold">Nächste Zahlung</h4>
+                                    </div>
+                                    {kommendeZahlung ? (
+                                      <>
+                                        <div className="mds2-stat-value">{parseFloat(kommendeZahlung.betrag || 0).toFixed(2)} €</div>
+                                        <div className="mds-text-secondary-sm">
+                                          {new Date(kommendeZahlung.datum || kommendeZahlung.zahlungsdatum).toLocaleDateString("de-DE")}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="mds2-stat-value">-</div>
+                                        <div className="mds-text-secondary-sm">Keine ausstehenden Zahlungen</div>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               );
