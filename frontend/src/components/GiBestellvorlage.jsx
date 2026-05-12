@@ -59,7 +59,7 @@ const LABEL_LANG   = ['Deutsch', 'Englisch', 'Französisch', 'Japanisch'];
 const LABEL_ART    = ['Gewebtes Etikett', 'Gedrucktes Etikett', 'Eingestickt'];
 const LABEL_POS    = ['Nacken (innen)', 'Seitennaht', 'Hosenbund (innen)'];
 
-export default function GiBestellvorlage({ artikel = null, vorlage = null, onClose = null }) {
+export default function GiBestellvorlage({ artikel = null, vorlage = null, onClose = null, initEditingId = null, initFormdata = null }) {
   const { activeDojo } = useDojoContext();
   const [lieferanten, setLieferanten] = useState([]);
   const [generating, setGenerating] = useState(false);
@@ -73,12 +73,22 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [uploadingFile, setUploadingFile] = useState(false);
   const [bestellungen, setBestellungen] = useState([]);
   const [historieSichtbar, setHistorieSichtbar] = useState(false);
+  const [editingBestellungId, setEditingBestellungId] = useState(initEditingId);
   const fileInputRef = useRef(null);
   const uploadTagRef = useRef(null);
 
   const fixUtf8 = (s) => { try { return decodeURIComponent(escape(s)); } catch { return s; } };
 
   const buildInitialForm = () => {
+    if (initFormdata) {
+      return {
+        ...EMPTY,
+        ...initFormdata,
+        spezifikation: { ...EMPTY_SPEZ, ...(initFormdata.spezifikation || {}) },
+        mengenKids:  initFormdata.mengenKids  ? { ...EMPTY_MENGEN(initFormdata.model || '128'), ...initFormdata.mengenKids }  : EMPTY_MENGEN(initFormdata.model || '128'),
+        mengenAdult: initFormdata.mengenAdult ? { ...EMPTY_MENGEN(initFormdata.model || '128'), ...initFormdata.mengenAdult } : EMPTY_MENGEN(initFormdata.model || '128'),
+      };
+    }
     if (vorlage) {
       let stickereiPos = vorlage.stickerei_pos;
       if (typeof stickereiPos === 'string') {
@@ -240,19 +250,24 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       const origin = window.location.origin;
       const djId = vorlage?.dojo_id || dojoId;
 
-      // Bestellung in DB speichern
-      let neueBestellungId = null;
+      // Bestellung in DB speichern oder überschreiben
+      let neueBestellungId = editingBestellungId;
       if (djId) {
+        const payload = {
+          vorlage_id:     vorlage?.vorlage_id || null,
+          lieferant_id:   form.lieferantId ? Number(form.lieferantId) : null,
+          lieferant_name: form.lieferantFreitext || null,
+          bestelldatum:   form.bestelldatum || null,
+          lieferdatum:    form.lieferdatum  || null,
+          formdata:       { ...form, spezifikation: form.spezifikation, mengenKids: form.mengenKids, mengenAdult: form.mengenAdult },
+        };
         try {
-          const bRes = await axios.post(`/gi-bestellungen?dojo_id=${djId}`, {
-            vorlage_id:    vorlage?.vorlage_id || null,
-            lieferant_id:  form.lieferantId ? Number(form.lieferantId) : null,
-            lieferant_name: form.lieferantFreitext || null,
-            bestelldatum:  form.bestelldatum || null,
-            lieferdatum:   form.lieferdatum  || null,
-            formdata:      { ...form, spezifikation: form.spezifikation, mengenKids: form.mengenKids, mengenAdult: form.mengenAdult },
-          });
-          neueBestellungId = bRes.data?.bestellung_id;
+          if (editingBestellungId) {
+            await axios.put(`/gi-bestellungen/${editingBestellungId}?dojo_id=${djId}`, payload);
+          } else {
+            const bRes = await axios.post(`/gi-bestellungen?dojo_id=${djId}`, payload);
+            neueBestellungId = bRes.data?.bestellung_id;
+          }
           await loadBestellungen();
         } catch {}
       }
@@ -306,6 +321,22 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       setLtForm({ ...LT_EMPTY });
     } catch { setLtError('Fehler beim Speichern.'); }
     finally { setLtSaving(false); }
+  };
+
+  const loadBestellungIntoForm = (b) => {
+    try {
+      const fd = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
+      if (!fd) return;
+      setForm({
+        ...EMPTY,
+        ...fd,
+        spezifikation: { ...EMPTY_SPEZ, ...(fd.spezifikation || {}) },
+        mengenKids:  fd.mengenKids  ? { ...EMPTY_MENGEN(fd.model || '128'), ...fd.mengenKids }  : EMPTY_MENGEN(fd.model || '128'),
+        mengenAdult: fd.mengenAdult ? { ...EMPTY_MENGEN(fd.model || '128'), ...fd.mengenAdult } : EMPTY_MENGEN(fd.model || '128'),
+      });
+      setEditingBestellungId(b.bestellung_id);
+      setHistorieSichtbar(false);
+    } catch {}
   };
 
   const saveVorlage = async () => {
@@ -372,7 +403,13 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           <div className="gv-title">
             {vorlage ? vorlage.name : artikel ? `Bestellvorlage: ${artikel.name}` : 'Karate-Gi Bestellvorlage'}
           </div>
-          <div className="gv-sub">Vorauswahl treffen → PDF generieren → drucken</div>
+          {editingBestellungId ? (
+            <div className="gv-edit-banner">
+              Bearbeitung von Bestellung #{String(editingBestellungId).padStart(4, '0')} — PDF überschreibt diese Bestellung
+            </div>
+          ) : (
+            <div className="gv-sub">Vorauswahl treffen → PDF generieren → drucken</div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexShrink: 0 }}>
           {saveMsg && (
@@ -380,13 +417,18 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               {saveMsg}
             </span>
           )}
+          {editingBestellungId && (
+            <button className="gv-btn-back" onClick={() => setEditingBestellungId(null)}>
+              Bearbeitung abbrechen
+            </button>
+          )}
           {vorlage?.vorlage_id && (
             <button className="gv-btn-save" onClick={saveVorlage} disabled={saving}>
               {saving ? 'Speichert…' : 'Einstellungen speichern'}
             </button>
           )}
           <button className="gv-btn-pdf" onClick={generatePdf} disabled={generating}>
-            {generating ? 'Erstelle PDF…' : 'PDF generieren & drucken'}
+            {generating ? 'Erstelle PDF…' : editingBestellungId ? 'PDF aktualisieren & drucken' : 'PDF generieren & drucken'}
           </button>
         </div>
         {bestellungen.length > 0 && (
@@ -418,11 +460,14 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                       <option value="geliefert">Geliefert</option>
                       <option value="storniert">Storniert</option>
                     </select>
+                    <button className="gv-historie-edit" title="Bearbeiten"
+                      onClick={() => loadBestellungIntoForm(b)}>✎</button>
                     <button className="gv-historie-del" title="Löschen" onClick={async () => {
                       const djId = vorlage?.dojo_id || dojoId;
                       try {
                         await axios.delete(`/gi-bestellungen/${b.bestellung_id}?dojo_id=${djId}`);
                         setBestellungen(prev => prev.filter(x => x.bestellung_id !== b.bestellung_id));
+                        if (editingBestellungId === b.bestellung_id) setEditingBestellungId(null);
                       } catch {}
                     }}>✕</button>
                   </div>

@@ -5,14 +5,30 @@
 // =====================================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import GiBestellvorlage from './GiBestellvorlage';
+import { useDojoContext } from '../context/DojoContext';
 import '../styles/BestellungenTab.css';
 
+const STATUS_LABELS_DOJO = {
+  bestellt: 'Bestellt', bestaetigt: 'Bestätigt', geliefert: 'Geliefert', storniert: 'Storniert',
+};
+
 const BestellungenTab = () => {
+  const { activeDojo } = useDojoContext();
+
   // =====================================================================================
   // STATE
   // =====================================================================================
+
+  const [activeSubTab, setActiveSubTab] = useState('shop');
+
+  // Dojo-Bestellungen (gi_bestellungen)
+  const [dojoBestellungen, setDojoBestellungen] = useState([]);
+  const [dojoLoading, setDojoLoading] = useState(false);
+  const [giOverlay, setGiOverlay] = useState(null); // { vorlage, editingId, formdata }
 
   const [lowStockItems, setLowStockItems] = useState([]);
   const [bestellungen, setBestellungen] = useState([]);
@@ -92,6 +108,34 @@ const BestellungenTab = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const loadDojoBestellungen = useCallback(async () => {
+    const djId = activeDojo?.id;
+    if (!djId) return;
+    setDojoLoading(true);
+    try {
+      const res = await axios.get(`/gi-bestellungen?dojo_id=${djId}`);
+      setDojoBestellungen(res.data?.data || []);
+    } catch {}
+    finally { setDojoLoading(false); }
+  }, [activeDojo?.id]);
+
+  useEffect(() => {
+    if (activeSubTab === 'dojo') loadDojoBestellungen();
+  }, [activeSubTab, loadDojoBestellungen]);
+
+  const openGiBestellung = async (b) => {
+    const djId = activeDojo?.id;
+    try {
+      let vorlage = null;
+      if (b.vorlage_id && djId) {
+        const res = await axios.get(`/bestellvorlagen/${b.vorlage_id}?dojo_id=${djId}`);
+        vorlage = res.data?.data || null;
+      }
+      const formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
+      setGiOverlay({ vorlage, editingId: b.bestellung_id, formdata });
+    } catch {}
+  };
 
   // =====================================================================================
   // HANDLERS
@@ -403,6 +447,122 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
 
   return (
     <div className="bestellungen-tab">
+
+      {/* GI-Bestellvorlage Overlay */}
+      {giOverlay && (
+        <div style={{ position: 'absolute', inset: 0, background: 'var(--bg-main,#0f0f1a)', zIndex: 20, overflowY: 'auto', padding: '1.25rem', borderRadius: 'inherit' }}>
+          <GiBestellvorlage
+            vorlage={giOverlay.vorlage}
+            initEditingId={giOverlay.editingId}
+            initFormdata={giOverlay.formdata}
+            onClose={() => { setGiOverlay(null); loadDojoBestellungen(); }}
+          />
+        </div>
+      )}
+
+      {/* Sub-Tab Switcher */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.75rem' }}>
+        <button
+          onClick={() => setActiveSubTab('shop')}
+          style={{ padding: '0.35rem 1rem', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
+            background: activeSubTab === 'shop' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.05)',
+            color: activeSubTab === 'shop' ? 'rgba(212,175,55,1)' : 'rgba(255,255,255,0.5)',
+            borderBottom: activeSubTab === 'shop' ? '2px solid rgba(212,175,55,0.7)' : '2px solid transparent',
+          }}
+        >Kunden / Shop</button>
+        <button
+          onClick={() => setActiveSubTab('dojo')}
+          style={{ padding: '0.35rem 1rem', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
+            background: activeSubTab === 'dojo' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.05)',
+            color: activeSubTab === 'dojo' ? 'rgba(212,175,55,1)' : 'rgba(255,255,255,0.5)',
+            borderBottom: activeSubTab === 'dojo' ? '2px solid rgba(212,175,55,0.7)' : '2px solid transparent',
+          }}
+        >Dojo-Bestellungen (GI)</button>
+      </div>
+
+      {/* ── DOJO-BESTELLUNGEN TAB ── */}
+      {activeSubTab === 'dojo' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>Dojo-Bestellungen (Karate-Gi)</h2>
+            <button onClick={loadDojoBestellungen} style={{ padding: '0.3rem 0.8rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '0.78rem', cursor: 'pointer' }}>
+              Aktualisieren
+            </button>
+          </div>
+          {dojoLoading ? (
+            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', padding: '1rem 0' }}>Lädt…</div>
+          ) : dojoBestellungen.length === 0 ? (
+            <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem', padding: '1rem 0' }}>
+              Noch keine Dojo-Bestellungen. Bestellungen werden beim PDF-Generieren in der GI-Bestellvorlage gespeichert.
+            </div>
+          ) : (
+            <div className="bestellungen-table-container">
+              <table className="bestellungen-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Vorlage</th>
+                    <th>Lieferant</th>
+                    <th>Bestelldatum</th>
+                    <th>Lieferdatum</th>
+                    <th>Status</th>
+                    <th>Gespeichert</th>
+                    <th>Aktionen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dojoBestellungen.map(b => (
+                    <tr key={b.bestellung_id}>
+                      <td className="order-number" style={{ fontFamily: 'monospace', color: 'rgba(212,175,55,0.8)' }}>
+                        #{String(b.bestellung_id).padStart(4, '0')}
+                      </td>
+                      <td style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>
+                        {b.vorlage_id ? `Vorlage #${b.vorlage_id}` : '—'}
+                      </td>
+                      <td>{b.lieferant_name || b.lieferant_firmenname || '—'}</td>
+                      <td style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>{b.bestelldatum || '—'}</td>
+                      <td style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>{b.lieferdatum || '—'}</td>
+                      <td>
+                        <select
+                          style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', borderRadius: '4px', fontSize: '0.75rem', padding: '0.15rem 0.3rem' }}
+                          value={b.status}
+                          onChange={async (e) => {
+                            try {
+                              await axios.patch(`/gi-bestellungen/${b.bestellung_id}/status?dojo_id=${activeDojo?.id}`, { status: e.target.value });
+                              setDojoBestellungen(prev => prev.map(x => x.bestellung_id === b.bestellung_id ? { ...x, status: e.target.value } : x));
+                            } catch {}
+                          }}
+                        >
+                          {Object.entries(STATUS_LABELS_DOJO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                        </select>
+                      </td>
+                      <td style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
+                        {b.erstellt_am ? new Date(b.erstellt_am).toLocaleDateString('de-DE') : '—'}
+                      </td>
+                      <td className="actions">
+                        <button className="action-btn view" onClick={() => openGiBestellung(b)}>Öffnen</button>
+                        <button className="action-btn" style={{ color: 'rgba(255,80,80,0.7)', background: 'none', border: '1px solid rgba(255,80,80,0.2)' }}
+                          onClick={async () => {
+                            if (!window.confirm(`Bestellung #${String(b.bestellung_id).padStart(4,'0')} wirklich löschen?`)) return;
+                            try {
+                              await axios.delete(`/gi-bestellungen/${b.bestellung_id}?dojo_id=${activeDojo?.id}`);
+                              setDojoBestellungen(prev => prev.filter(x => x.bestellung_id !== b.bestellung_id));
+                            } catch {}
+                          }}
+                        >Löschen</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── SHOP-BESTELLUNGEN TAB ── */}
+      {activeSubTab === 'shop' && <>
+
       {/* Fehler-Anzeige */}
       {error && (
         <div className="error-message">
@@ -880,6 +1040,9 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
           </div>
         </div>
       )}
+
+      </> /* end activeSubTab === 'shop' */}
+
     </div>
   );
 };

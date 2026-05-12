@@ -47,6 +47,33 @@ router.post('/', (req, res) => {
   );
 });
 
+// PUT /:id — Bestellung überschreiben (gleiche ID, neues formdata)
+router.put('/:id', (req, res) => {
+  const dojoId = getSecureDojoId(req);
+  if (!dojoId) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
+
+  const { lieferant_id, lieferant_name, bestelldatum, lieferdatum, status, formdata } = req.body;
+
+  db.query(
+    `UPDATE gi_bestellungen
+     SET lieferant_id=?, lieferant_name=?, bestelldatum=?, lieferdatum=?,
+         ${status ? 'status=?,' : ''} formdata=?
+     WHERE bestellung_id=? AND dojo_id=?`,
+    [
+      lieferant_id || null, lieferant_name || null,
+      bestelldatum || null, lieferdatum || null,
+      ...(status ? [status] : []),
+      formdata ? JSON.stringify(formdata) : null,
+      req.params.id, dojoId,
+    ],
+    (err, result) => {
+      if (err) return res.status(500).json({ success: false, message: 'Datenbankfehler', error: err.message });
+      if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Bestellung nicht gefunden' });
+      res.json({ success: true });
+    }
+  );
+});
+
 // PATCH /:id/status — Status aktualisieren
 router.patch('/:id/status', (req, res) => {
   const dojoId = getSecureDojoId(req);
