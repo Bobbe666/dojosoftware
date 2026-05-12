@@ -17,7 +17,7 @@ const STATUS_LABELS_DOJO = {
 };
 
 const BestellungenTab = () => {
-  const { activeDojo } = useDojoContext();
+  const { activeDojo, dojos } = useDojoContext();
 
   // =====================================================================================
   // STATE
@@ -29,6 +29,7 @@ const BestellungenTab = () => {
   const [dojoBestellungen, setDojoBestellungen] = useState([]);
   const [dojoLoading, setDojoLoading] = useState(false);
   const [giOverlay, setGiOverlay] = useState(null); // { vorlage, editingId, formdata }
+  const [filterDojoId, setFilterDojoId] = useState(null); // null = aus activeDojo
 
   const [lowStockItems, setLowStockItems] = useState([]);
   const [bestellungen, setBestellungen] = useState([]);
@@ -111,13 +112,17 @@ const BestellungenTab = () => {
 
   const [dojoFehler, setDojoFehler] = useState('');
 
-  const loadDojoBestellungen = useCallback(async () => {
+  const loadDojoBestellungen = useCallback(async (overrideDjId) => {
     setDojoLoading(true);
     setDojoFehler('');
     try {
-      const djId = activeDojo?.id;
-      const url = djId ? `/gi-bestellungen?dojo_id=${djId}` : '/gi-bestellungen';
-      const res = await axios.get(url);
+      const djId = overrideDjId !== undefined ? overrideDjId : (filterDojoId || activeDojo?.id);
+      if (!djId) {
+        setDojoFehler('Bitte ein Dojo auswählen');
+        setDojoBestellungen([]);
+        return;
+      }
+      const res = await axios.get(`/gi-bestellungen?dojo_id=${djId}`);
       if (!res.data?.success) {
         setDojoFehler(res.data?.message || 'Unbekannter Fehler');
       }
@@ -126,11 +131,17 @@ const BestellungenTab = () => {
       setDojoFehler(e?.response?.data?.message || e?.message || 'Netzwerkfehler');
     }
     finally { setDojoLoading(false); }
-  }, [activeDojo?.id]);
+  }, [activeDojo?.id, filterDojoId]);
 
   useEffect(() => {
-    if (activeSubTab === 'dojo') loadDojoBestellungen();
-  }, [activeSubTab, loadDojoBestellungen]);
+    if (activeSubTab === 'dojo') {
+      // Initial-Dojo setzen wenn noch keins gewählt
+      if (!filterDojoId && activeDojo?.id) {
+        setFilterDojoId(activeDojo.id);
+      }
+      loadDojoBestellungen();
+    }
+  }, [activeSubTab, loadDojoBestellungen]); // eslint-disable-line
 
   const openGiBestellung = async (b) => {
     try {
@@ -492,11 +503,29 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
       {/* ── DOJO-BESTELLUNGEN TAB ── */}
       {activeSubTab === 'dojo' && (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '0.75rem', flexWrap: 'wrap' }}>
             <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>Dojo-Bestellungen (Karate-Gi)</h2>
-            <button onClick={loadDojoBestellungen} style={{ padding: '0.3rem 0.8rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '0.78rem', cursor: 'pointer' }}>
-              Aktualisieren
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {dojos && dojos.length > 1 && (
+                <select
+                  value={filterDojoId || ''}
+                  onChange={(e) => {
+                    const id = e.target.value ? Number(e.target.value) : null;
+                    setFilterDojoId(id);
+                    if (id) loadDojoBestellungen(id);
+                  }}
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.85)', borderRadius: '6px', fontSize: '0.8rem', padding: '0.3rem 0.6rem', cursor: 'pointer' }}
+                >
+                  <option value="">— Dojo wählen —</option>
+                  {dojos.map(d => (
+                    <option key={d.id} value={d.id}>{d.dojoname || d.name || `Dojo ${d.id}`}</option>
+                  ))}
+                </select>
+              )}
+              <button onClick={() => loadDojoBestellungen()} style={{ padding: '0.3rem 0.8rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '0.78rem', cursor: 'pointer' }}>
+                Aktualisieren
+              </button>
+            </div>
           </div>
           {dojoFehler && (
             <div style={{ background: 'rgba(255,50,50,0.12)', border: '1px solid rgba(255,50,50,0.3)', borderRadius: '6px', padding: '0.6rem 0.9rem', fontSize: '0.82rem', color: '#f87171', marginBottom: '0.75rem' }}>
@@ -542,7 +571,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                           value={b.status}
                           onChange={async (e) => {
                             try {
-                              const djId2 = activeDojo?.id;
+                              const djId2 = filterDojoId || activeDojo?.id;
                               await axios.patch(`/gi-bestellungen/${b.bestellung_id}/status${djId2 ? `?dojo_id=${djId2}` : ''}`, { status: e.target.value });
                               setDojoBestellungen(prev => prev.map(x => x.bestellung_id === b.bestellung_id ? { ...x, status: e.target.value } : x));
                             } catch {}
@@ -560,7 +589,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                           onClick={async () => {
                             if (!window.confirm(`Bestellung #${String(b.bestellung_id).padStart(4,'0')} wirklich löschen?`)) return;
                             try {
-                              const djId3 = activeDojo?.id;
+                              const djId3 = filterDojoId || activeDojo?.id;
                               await axios.delete(`/gi-bestellungen/${b.bestellung_id}${djId3 ? `?dojo_id=${djId3}` : ''}`);
                               setDojoBestellungen(prev => prev.filter(x => x.bestellung_id !== b.bestellung_id));
                             } catch {}
