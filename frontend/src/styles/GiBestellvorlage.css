@@ -466,6 +466,86 @@ select.gv-input { cursor: pointer; }
 }
 .gv-datei-del:hover { color: rgba(255,80,80,0.95); }
 
+/* PER-POSITION UPLOADS */
+.gv-pos-upload-block, .gv-waetikett-block {
+  margin-top: 0.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.gv-pos-upload-head {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  margin-bottom: 0.45rem;
+}
+.gv-pos-upload-row {
+  display: grid;
+  grid-template-columns: 9rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.28rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.gv-pos-upload-row:last-child { border-bottom: none; }
+.gv-pos-upload-label {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.6);
+  white-space: nowrap;
+}
+.gv-pos-upload-file {
+  font-size: 0.75rem;
+  color: rgba(212,175,55,0.8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gv-pos-upload-hint {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.2);
+  font-style: italic;
+}
+.gv-pos-upload-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 5px;
+  color: rgba(255,255,255,0.55);
+  font-size: 0.73rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+.gv-pos-upload-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.gv-pos-upload-btn:disabled { opacity: 0.4; cursor: default; }
+.gv-pos-upload-del {
+  background: none; border: none;
+  color: rgba(255,80,80,0.5); font-size: 0.8rem;
+  cursor: pointer; padding: 0.1rem 0.2rem;
+}
+.gv-pos-upload-del:hover { color: rgba(255,80,80,0.95); }
+
+.gv-waetikett-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+.gv-waetikett-file {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: rgba(212,175,55,0.8);
+  margin-top: 1.1rem;
+  max-width: 180px;
+}
+.gv-waetikett-file span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* BESTELLHISTORIE */
 .gv-historie-bar {
   padding: 0 1.5rem 0.75rem;

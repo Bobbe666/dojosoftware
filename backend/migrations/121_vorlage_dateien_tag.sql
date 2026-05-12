@@ -1,0 +1,2 @@
+ALTER TABLE vorlage_dateien
+  ADD COLUMN IF NOT EXISTS tag VARCHAR(100) NULL;

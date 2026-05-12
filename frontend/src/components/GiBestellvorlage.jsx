@@ -14,6 +14,7 @@ const EMPTY_MENGEN = (model) =>
 const EMPTY_SPEZ = {
   material: [], materialText: '', webart: [],
   grammaturKids: [], grammaturAdult: [],
+  waeschetikett: '',
   labelText: '', labelSprachen: ['Deutsch', 'Englisch'],
   labelArt: [], labelPosition: [], labelZusatz: '',
 };
@@ -49,7 +50,7 @@ const EMPTY = {
 
 const POSITIONEN = [
   'Linkes Revers', 'Rechtes Revers', 'Rücken oben', 'Rücken Mitte',
-  'Linker Ärmel', 'Rechter Ärmel', 'Hosenbein', 'Kragen',
+  'Linker Ärmel', 'Rechter Ärmel', 'Hosenbein links', 'Hosenbein rechts', 'Kragen',
 ];
 const MATERIALIEN  = ['100% Baumwolle', 'Baumwolle/Polyester', 'Canvas', 'Synthetik'];
 const WEBARTEN     = ['Single Weave', 'Double Weave', 'Kata', 'Kumite / Leicht'];
@@ -73,6 +74,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [bestellungen, setBestellungen] = useState([]);
   const [historieSichtbar, setHistorieSichtbar] = useState(false);
   const fileInputRef = useRef(null);
+  const uploadTagRef = useRef(null);
 
   const buildInitialForm = () => {
     if (vorlage) {
@@ -142,20 +144,31 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 
   useEffect(() => { loadBestellungen(); }, [vorlage?.vorlage_id, dojoId]); // eslint-disable-line
 
+  const triggerUpload = (tag = null) => {
+    uploadTagRef.current = tag;
+    fileInputRef.current?.click();
+  };
+
   const uploadDatei = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !vorlage?.vorlage_id) return;
-    setUploadingFile(true);
+    const tag = uploadTagRef.current;
+    setUploadingFile(tag || true);
     try {
       const fd = new FormData();
       fd.append('datei', file);
+      if (tag) fd.append('tag', tag);
       const res = await axios.post(
         `/bestellvorlagen/${vorlage.vorlage_id}/dateien?dojo_id=${dojoId}`,
         fd, { headers: { 'Content-Type': 'multipart/form-data' } }
       );
       if (res.data?.datei) setDateien(prev => [...prev, res.data.datei]);
     } catch {}
-    finally { setUploadingFile(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
+    finally {
+      setUploadingFile(false);
+      uploadTagRef.current = null;
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const deleteDatei = async (dateiId) => {
@@ -582,6 +595,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         {/* ── STICKEREI ── */}
         <div className="gv-section">
           <div className="gv-section-title">Stickerei & Branding</div>
+
+          {/* Positions-Checkboxen */}
           <div className="gv-pos-grid">
             {POSITIONEN.map(pos => (
               <label key={pos} className={`gv-pos-item ${form.stickereiPos.includes(pos) ? 'active' : ''}`}>
@@ -590,7 +605,9 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               </label>
             ))}
           </div>
-          <div className="gv-grid3" style={{ marginTop: '0.75rem' }}>
+
+          {/* Allgemeine Stickerei-Felder */}
+          <div className="gv-grid3" style={{ marginTop: '0.65rem' }}>
             <div className="gv-field">
               <label className="gv-label">Schriftzug / Text</label>
               <input className="gv-input" value={form.stickereiSchriftzug} onChange={f('stickereiSchriftzug')} placeholder="z. B. Kampfkunstschule Schreiner · TDA" />
@@ -600,28 +617,92 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               <input className="gv-input" value={form.stickereiGarnfarben} onChange={f('stickereiGarnfarben')} />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Stickerei-Datei</label>
+              <label className="gv-label">Bemerkung / Referenz-Datei</label>
               <input className="gv-input" value={form.stickereiBemerkung} onChange={f('stickereiBemerkung')} placeholder="z. B. TDA_logo_v2.dst" />
+            </div>
+          </div>
+
+          {/* Datei je Position */}
+          {form.stickereiPos.length > 0 && (
+            <div className="gv-pos-upload-block">
+              <div className="gv-pos-upload-head">Datei je Position</div>
+              {/* Gemeinsamer file-input für alle Positions-Uploads */}
+              <input ref={fileInputRef} type="file" style={{ display: 'none' }}
+                accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
+                onChange={uploadDatei} />
+              {form.stickereiPos.map(pos => {
+                const posDatei = dateien.find(d => d.tag === pos);
+                const uploading = uploadingFile === pos;
+                return (
+                  <div key={pos} className="gv-pos-upload-row">
+                    <span className="gv-pos-upload-label">{pos}</span>
+                    {posDatei ? (
+                      <>
+                        <span className="gv-pos-upload-file" title={posDatei.original_name}>
+                          {posDatei.original_name}
+                        </span>
+                        <button className="gv-pos-upload-del" onClick={() => deleteDatei(posDatei.datei_id)} title="Löschen">✕</button>
+                      </>
+                    ) : vorlage?.vorlage_id ? (
+                      <button className="gv-pos-upload-btn" onClick={() => triggerUpload(pos)} disabled={!!uploadingFile}>
+                        {uploading ? 'Lädt…' : '+ Datei hochladen'}
+                      </button>
+                    ) : (
+                      <span className="gv-pos-upload-hint">erst Vorlage speichern</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Wäscheetikett Innen Kragen */}
+          <div className="gv-waetikett-block">
+            <div className="gv-pos-upload-head">Wäscheetikett (Innen Kragen)</div>
+            <div className="gv-waetikett-row">
+              <div className="gv-field" style={{ flex: 1 }}>
+                <label className="gv-label">Platzierung / Bemerkung</label>
+                <input className="gv-input" value={spez.waeschetikett || ''} onChange={fSpez('waeschetikett')}
+                  placeholder="z. B. Mitte Nacken, 2 cm unter Kragen" />
+              </div>
+              {vorlage?.vorlage_id ? (() => {
+                const wtDatei = dateien.find(d => d.tag === '__waetikett__');
+                const uploading = uploadingFile === '__waetikett__';
+                return wtDatei ? (
+                  <div className="gv-waetikett-file">
+                    <span title={wtDatei.original_name}>{wtDatei.original_name}</span>
+                    <button className="gv-pos-upload-del" onClick={() => deleteDatei(wtDatei.datei_id)}>✕</button>
+                  </div>
+                ) : (
+                  <button className="gv-pos-upload-btn" style={{ marginTop: '1.1rem' }}
+                    onClick={() => triggerUpload('__waetikett__')} disabled={!!uploadingFile}>
+                    {uploading ? 'Lädt…' : '+ Etikett-Datei'}
+                  </button>
+                );
+              })() : null}
             </div>
           </div>
         </div>
 
-        {/* ── LOGOS & DATEIEN ── */}
+        {/* ── LOGOS & DATEIEN (allgemein, ohne Tag) ── */}
         <div className="gv-section">
-          <div className="gv-section-title">Logos &amp; Branding-Dateien</div>
+          <div className="gv-section-title">Logos &amp; Allgemeine Dateien</div>
           {vorlage?.vorlage_id ? (
             <>
-              <div className="gv-upload-zone" onClick={() => fileInputRef.current?.click()}>
+              {/* Gemeinsamer file-input wenn kein Stickerei-Pos ausgewählt (dann ist er oben) */}
+              {form.stickereiPos.length === 0 && (
                 <input ref={fileInputRef} type="file" style={{ display: 'none' }}
                   accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
                   onChange={uploadDatei} />
-                {uploadingFile
+              )}
+              <div className="gv-upload-zone" onClick={() => triggerUpload(null)}>
+                {uploadingFile === true
                   ? <span className="gv-upload-hint">Wird hochgeladen…</span>
-                  : <span className="gv-upload-hint">+ Datei hochladen (Logos, Stickerei-Dateien, PDFs …)</span>}
+                  : <span className="gv-upload-hint">+ Datei hochladen (Logos, Referenz-PDFs, allgemeine Dateien)</span>}
               </div>
-              {dateien.length > 0 && (
+              {dateien.filter(d => !d.tag).length > 0 && (
                 <div className="gv-datei-list">
-                  {dateien.map(d => {
+                  {dateien.filter(d => !d.tag).map(d => {
                     const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name);
                     return (
                       <div key={d.datei_id} className="gv-datei-item">

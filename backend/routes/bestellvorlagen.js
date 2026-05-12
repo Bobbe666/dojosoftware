@@ -244,10 +244,11 @@ router.post('/:id/dateien', upload.single('datei'), (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: 'Keine Datei empfangen' });
 
   const relPath = `/uploads/vorlage/${req.params.id}/${req.file.filename}`;
+  const tag = req.body?.tag || null;
 
   db.query(
-    'INSERT INTO vorlage_dateien (vorlage_id, dojo_id, original_name, gespeicherter_name, pfad, mime_type, groesse_bytes) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [req.params.id, dojoId, req.file.originalname, req.file.filename, relPath, req.file.mimetype, req.file.size],
+    'INSERT INTO vorlage_dateien (vorlage_id, dojo_id, original_name, gespeicherter_name, pfad, mime_type, groesse_bytes, tag) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [req.params.id, dojoId, req.file.originalname, req.file.filename, relPath, req.file.mimetype, req.file.size, tag],
     (err, result) => {
       if (err) return res.status(500).json({ success: false, message: 'Datenbankfehler', error: err.message });
       res.json({
@@ -260,6 +261,7 @@ router.post('/:id/dateien', upload.single('datei'), (req, res) => {
           pfad: relPath,
           mime_type: req.file.mimetype,
           groesse_bytes: req.file.size,
+          tag,
         }
       });
     }
