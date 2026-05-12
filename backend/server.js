@@ -833,7 +833,16 @@ try {
     });
 }
 
-// 2.2. ARTIKEL BESTELLUNGEN ROUTES - BESTELLSYSTEM
+// 2.2. GI BESTELLUNGEN ROUTES
+try {
+  const giBestellungenRoutes = require('./routes/giBestellungen');
+  app.use('/api/gi-bestellungen', giBestellungenRoutes);
+  logger.success('Route geladen', { path: '/api/gi-bestellungen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'gi-bestellungen', error: error.message });
+}
+
+// 2.3. ARTIKEL BESTELLUNGEN ROUTES - BESTELLSYSTEM
 try {
   const artikelBestellungenRoutes = require('./routes/artikelBestellungen');
   app.use('/api/artikel-bestellungen', artikelBestellungenRoutes);

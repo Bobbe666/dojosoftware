@@ -463,6 +463,42 @@ select.gv-input { cursor: pointer; }
 }
 .gv-datei-del:hover { color: rgba(255,80,80,0.95); }
 
+/* BESTELLHISTORIE */
+.gv-historie-bar {
+  padding: 0 1.5rem 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.gv-historie-toggle {
+  background: none; border: none;
+  color: rgba(255,215,0,0.7); font-size: 0.78rem; cursor: pointer;
+  padding: 0.4rem 0; letter-spacing: 0.03em;
+  transition: color 0.12s;
+}
+.gv-historie-toggle:hover { color: rgba(255,215,0,1); }
+.gv-historie-list {
+  display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.5rem;
+}
+.gv-historie-row {
+  display: grid;
+  grid-template-columns: 3.5rem 6rem 1fr 9rem 1.8rem;
+  align-items: center; gap: 0.5rem;
+  background: rgba(255,255,255,0.04); border-radius: 6px;
+  padding: 0.35rem 0.6rem; font-size: 0.78rem;
+}
+.gv-historie-nr  { color: rgba(255,215,0,0.7); font-weight: 700; font-family: monospace; }
+.gv-historie-datum { color: rgba(255,255,255,0.5); }
+.gv-historie-lt  { color: rgba(255,255,255,0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gv-historie-status {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.8); border-radius: 4px; font-size: 0.75rem;
+  padding: 0.15rem 0.3rem; width: 100%;
+}
+.gv-historie-del {
+  background: none; border: none; color: rgba(255,80,80,0.5);
+  font-size: 0.85rem; cursor: pointer; padding: 0; line-height: 1; text-align: center;
+}
+.gv-historie-del:hover { color: rgba(255,80,80,0.95); }
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .gv-grid2 { grid-template-columns: 1fr; }

@@ -69,6 +69,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [ltError, setLtError] = useState('');
   const [dateien, setDateien] = useState([]);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [bestellungen, setBestellungen] = useState([]);
+  const [historieSichtbar, setHistorieSichtbar] = useState(false);
   const fileInputRef = useRef(null);
 
   const buildInitialForm = () => {
@@ -127,6 +129,17 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         .catch(() => {});
     }
   }, [vorlage?.vorlage_id, dojoId]);
+
+  const loadBestellungen = async () => {
+    const djId = vorlage?.dojo_id || dojoId;
+    if (!djId || !vorlage?.vorlage_id) return;
+    try {
+      const res = await axios.get(`/gi-bestellungen?vorlage_id=${vorlage.vorlage_id}&dojo_id=${djId}`);
+      setBestellungen(res.data?.data || []);
+    } catch {}
+  };
+
+  useEffect(() => { loadBestellungen(); }, [vorlage?.vorlage_id, dojoId]); // eslint-disable-line
 
   const uploadDatei = async (e) => {
     const file = e.target.files?.[0];
@@ -208,6 +221,25 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     setGenerating(true);
     try {
       const origin = window.location.origin;
+      const djId = vorlage?.dojo_id || dojoId;
+
+      // Bestellung in DB speichern
+      let neueBestellungId = null;
+      if (djId) {
+        try {
+          const bRes = await axios.post(`/gi-bestellungen?dojo_id=${djId}`, {
+            vorlage_id:    vorlage?.vorlage_id || null,
+            lieferant_id:  form.lieferantId ? Number(form.lieferantId) : null,
+            lieferant_name: form.lieferantFreitext || null,
+            bestelldatum:  form.bestelldatum || null,
+            lieferdatum:   form.lieferdatum  || null,
+            formdata:      { ...form, spezifikation: form.spezifikation, mengenKids: form.mengenKids, mengenAdult: form.mengenAdult },
+          });
+          neueBestellungId = bRes.data?.bestellung_id;
+          await loadBestellungen();
+        } catch {}
+      }
+
       let eingebetteteDateien = [];
       if (vorlage?.vorlage_id && dojoId) {
         try {
@@ -222,7 +254,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           }));
         } catch {}
       }
-      const html = buildPdfHtml(form, origin, eingebetteteDateien);
+      const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId);
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const url  = URL.createObjectURL(blob);
       const win  = window.open(url, '_blank');
@@ -340,6 +372,48 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             {generating ? 'Erstelle PDF…' : 'PDF generieren & drucken'}
           </button>
         </div>
+        {bestellungen.length > 0 && (
+          <div className="gv-historie-bar">
+            <button className="gv-historie-toggle" onClick={() => setHistorieSichtbar(v => !v)}>
+              {bestellungen.length} gespeicherte Bestellung{bestellungen.length !== 1 ? 'en' : ''}
+              {historieSichtbar ? ' ▲' : ' ▼'}
+            </button>
+            {historieSichtbar && (
+              <div className="gv-historie-list">
+                {bestellungen.map(b => (
+                  <div key={b.bestellung_id} className="gv-historie-row">
+                    <span className="gv-historie-nr">#{String(b.bestellung_id).padStart(4, '0')}</span>
+                    <span className="gv-historie-datum">{b.erstellt_am ? new Date(b.erstellt_am).toLocaleDateString('de-DE') : '—'}</span>
+                    <span className="gv-historie-lt">{b.lieferant_name || b.lieferant_firmenname || '—'}</span>
+                    <select
+                      className="gv-historie-status"
+                      value={b.status}
+                      onChange={async (e) => {
+                        const djId = vorlage?.dojo_id || dojoId;
+                        try {
+                          await axios.patch(`/gi-bestellungen/${b.bestellung_id}/status?dojo_id=${djId}`, { status: e.target.value });
+                          setBestellungen(prev => prev.map(x => x.bestellung_id === b.bestellung_id ? { ...x, status: e.target.value } : x));
+                        } catch {}
+                      }}
+                    >
+                      <option value="bestellt">Bestellt</option>
+                      <option value="bestaetigt">Bestätigt</option>
+                      <option value="geliefert">Geliefert</option>
+                      <option value="storniert">Storniert</option>
+                    </select>
+                    <button className="gv-historie-del" title="Löschen" onClick={async () => {
+                      const djId = vorlage?.dojo_id || dojoId;
+                      try {
+                        await axios.delete(`/gi-bestellungen/${b.bestellung_id}?dojo_id=${djId}`);
+                        setBestellungen(prev => prev.filter(x => x.bestellung_id !== b.bestellung_id));
+                      } catch {}
+                    }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="gv-body">
@@ -813,7 +887,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 // ═══════════════════════════════════════════════════════
 //  PDF-HTML-GENERATOR
 // ═══════════════════════════════════════════════════════
-function buildPdfHtml(form, origin, eingebetteteDateien = []) {
+function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungId = null) {
   const sizes = SIZES[form.model];
   const img128 = `${origin}/gi-charts/modell-128.jpg`;
   const img188 = `${origin}/gi-charts/modell-188.jpg`;
@@ -909,7 +983,7 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 <div class="ph">
   <div><h1>Karate-Gi</h1><div class="sub">Bestellvorlage · Kampfkunstschule Schreiner</div></div>
   <div class="ph-r">
-    <div class="onr">Nr.&nbsp;<input type="text" value="" style="width:80px;border:none;font-size:10pt;font-weight:700;background:transparent;"></div><br>
+    <div class="onr">Nr.&nbsp;<strong>${bestellungId ? String(bestellungId).padStart(4, '0') : '____'}</strong></div><br>
     <span>Datum: ${form.bestelldatum}</span>
   </div>
 </div>
