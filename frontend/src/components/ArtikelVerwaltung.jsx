@@ -102,7 +102,7 @@ const ArtikelVerwaltung = () => {
   // =====================================================================================
   
   const openVorlageForArtikel = async (item) => {
-    const dojoId = activeDojo?.id;
+    const dojoId = activeDojo?.id || item.dojo_id;
     const dojoQuery = dojoId ? `?dojo_id=${dojoId}` : '';
     try {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/bestellvorlagen/${item.vorlage_id}${dojoQuery}`);

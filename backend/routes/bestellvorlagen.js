@@ -72,21 +72,24 @@ router.get('/', (req, res) => {
 // GET /:id — eine Vorlage + zugeordnete artikel_ids
 router.get('/:id', (req, res) => {
   const dojoId = getSecureDojoId(req);
-  if (!dojoId) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
 
-  db.query(
-    'SELECT bv.*, l.firmenname AS lieferant_name FROM bestellvorlagen bv LEFT JOIN lieferanten l ON bv.lieferant_id = l.lieferant_id WHERE bv.vorlage_id = ? AND bv.dojo_id = ?',
-    [req.params.id, dojoId],
-    (err, results) => {
+  // Super-Admin ohne dojo_id: nur nach vorlage_id filtern
+  const sql = dojoId
+    ? 'SELECT bv.*, l.firmenname AS lieferant_name FROM bestellvorlagen bv LEFT JOIN lieferanten l ON bv.lieferant_id = l.lieferant_id WHERE bv.vorlage_id = ? AND bv.dojo_id = ?'
+    : 'SELECT bv.*, l.firmenname AS lieferant_name FROM bestellvorlagen bv LEFT JOIN lieferanten l ON bv.lieferant_id = l.lieferant_id WHERE bv.vorlage_id = ?';
+  const params = dojoId ? [req.params.id, dojoId] : [req.params.id];
+
+  db.query(sql, params, (err, results) => {
       if (err) return res.status(500).json({ success: false, message: 'Datenbankfehler' });
       if (!results.length) return res.status(404).json({ success: false, message: 'Vorlage nicht gefunden' });
 
       const vorlage = results[0];
+      const artikelSql = dojoId
+        ? 'SELECT artikel_id FROM artikel WHERE vorlage_id = ? AND dojo_id = ?'
+        : 'SELECT artikel_id FROM artikel WHERE vorlage_id = ?';
+      const artikelParams = dojoId ? [req.params.id, dojoId] : [req.params.id];
 
-      db.query(
-        'SELECT artikel_id FROM artikel WHERE vorlage_id = ? AND dojo_id = ?',
-        [req.params.id, dojoId],
-        (err2, artikelRows) => {
+      db.query(artikelSql, artikelParams, (err2, artikelRows) => {
           if (err2) return res.status(500).json({ success: false, message: 'Datenbankfehler' });
           vorlage.artikel_ids = artikelRows.map(r => r.artikel_id);
           res.json({ success: true, data: vorlage });
