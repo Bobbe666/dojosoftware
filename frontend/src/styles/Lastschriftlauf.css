@@ -1053,13 +1053,13 @@
 .ll-td-expand { text-align: center; cursor: pointer; padding: 0.5rem; }
 .ll-badge-mr { margin-right: 0.5rem; }
 .ll-details-td {
-  padding: 0;
+  padding: 0 !important;
   background: rgba(255,255,255,0.03);
   border-top: 1px solid rgba(255,255,255,0.06);
   border-bottom: 2px solid rgba(255,255,255,0.08);
 }
 .ll-details-inner {
-  padding: 1.25rem 2rem 1.25rem 3rem;
+  padding: 1.25rem 2rem 1.25rem 2rem;
   font-size: 0.88rem;
 }
 .ll-details-heading {
@@ -1068,56 +1068,68 @@
   gap: 0.75rem;
   margin-bottom: 0.875rem;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.4);
 }
 .ll-details-count {
   font-weight: 400;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   background: rgba(255,255,255,0.08);
   padding: 0.15rem 0.5rem;
   border-radius: 20px;
   text-transform: none;
   letter-spacing: 0;
 }
-.ll-details-table {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
+.ll-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
-.ll-details-thead-row th {
-  font-size: 0.75rem;
+.ll-details-list-header {
+  display: flex;
+  align-items: center;
+  padding: 0.3rem 0.75rem 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.72rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.35);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 0 0.75rem 0.5rem 0.75rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.3);
 }
-.ll-details-th-datum { width: 110px; }
-.ll-details-th-betrag { width: 100px; }
-.ll-details-beitrag-row { border-bottom: 1px solid rgba(255,255,255,0.05); }
-.ll-details-beitrag-row:last-child { border-bottom: none; }
-.ll-details-td-desc {
+.ll-details-list-row {
+  display: flex;
+  align-items: center;
   padding: 0.6rem 0.75rem;
-  color: rgba(255,255,255,0.85);
-  line-height: 1.4;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: background 0.15s;
 }
-.ll-details-td-datum {
-  padding: 0.6rem 0.75rem;
-  color: rgba(255,255,255,0.55);
-  white-space: nowrap;
+.ll-details-list-row:last-child { border-bottom: none; }
+.ll-details-list-row:hover { background: rgba(255,255,255,0.04); }
+.ll-details-col-desc {
+  flex: 1;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.45;
+  padding-right: 1.5rem;
+}
+.ll-details-col-datum {
   width: 110px;
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.82rem;
 }
-.ll-details-td-betrag {
-  padding: 0.6rem 0.75rem;
-  text-align: right;
-  font-weight: 600;
-  color: #d4af37;
-  white-space: nowrap;
+.ll-details-col-betrag {
   width: 100px;
+  flex-shrink: 0;
+  text-align: right;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.82rem;
+}
+.ll-details-col-betrag--val {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #d4af37;
 }
 
 /* Filter & Sortierung */

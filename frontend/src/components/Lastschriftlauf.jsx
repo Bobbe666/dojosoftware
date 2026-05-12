@@ -1260,24 +1260,20 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                               <span>Einzelne Beiträge</span>
                               <span className="ll-details-count">{item.beitraege.length} Position{item.beitraege.length !== 1 ? 'en' : ''}</span>
                             </div>
-                            <table className="ll-details-table">
-                              <thead>
-                                <tr className="ll-details-thead-row">
-                                  <th className="ll-td-left">Beschreibung</th>
-                                  <th className="ll-td-left ll-details-th-datum">Datum</th>
-                                  <th className="ll-td-right ll-details-th-betrag">Betrag</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {item.beitraege.map((beitrag, bIdx) => (
-                                  <tr key={bIdx} className="ll-details-beitrag-row">
-                                    <td className="ll-details-td-desc">{beitrag.beschreibung || beitrag.monat}</td>
-                                    <td className="ll-details-td-datum">{beitrag.datum}</td>
-                                    <td className="ll-details-td-betrag">{formatCurrency(beitrag.betrag)}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                            <div className="ll-details-list">
+                              <div className="ll-details-list-header">
+                                <span className="ll-details-col-desc">Beschreibung</span>
+                                <span className="ll-details-col-datum">Datum</span>
+                                <span className="ll-details-col-betrag">Betrag</span>
+                              </div>
+                              {item.beitraege.map((beitrag, bIdx) => (
+                                <div key={bIdx} className="ll-details-list-row">
+                                  <span className="ll-details-col-desc">{beitrag.beschreibung || beitrag.monat}</span>
+                                  <span className="ll-details-col-datum">{beitrag.datum}</span>
+                                  <span className="ll-details-col-betrag ll-details-col-betrag--val">{formatCurrency(beitrag.betrag)}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </td>
                       </tr>
