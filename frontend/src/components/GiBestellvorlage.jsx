@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import '../styles/GiBestellvorlage.css';
@@ -67,6 +67,9 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [ltForm, setLtForm] = useState({ ...LT_EMPTY });
   const [ltSaving, setLtSaving] = useState(false);
   const [ltError, setLtError] = useState('');
+  const [dateien, setDateien] = useState([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef(null);
 
   const buildInitialForm = () => {
     if (vorlage) {
@@ -91,8 +94,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         stickereiGarnfarben: vorlage.stickerei_farben || 'Gold, Schwarz',
         stickereiBemerkung: vorlage.stickerei_datei || '',
         bemerkungen: vorlage.bemerkungen || '',
-        mengenKids: EMPTY_MENGEN(vorlage.modell || '128'),
-        mengenAdult: EMPTY_MENGEN(vorlage.modell || '128'),
+        mengenKids:  spez.mengenKids  ? { ...EMPTY_MENGEN(vorlage.modell || '128'), ...spez.mengenKids  } : EMPTY_MENGEN(vorlage.modell || '128'),
+        mengenAdult: spez.mengenAdult ? { ...EMPTY_MENGEN(vorlage.modell || '128'), ...spez.mengenAdult } : EMPTY_MENGEN(vorlage.modell || '128'),
         spezifikation: spez,
       };
     }
@@ -115,6 +118,38 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   }, [dojoId]);
 
   useEffect(() => { loadLieferanten(); }, [loadLieferanten]);
+
+  useEffect(() => {
+    if (vorlage?.vorlage_id && dojoId) {
+      axios.get(`/bestellvorlagen/${vorlage.vorlage_id}/dateien?dojo_id=${dojoId}`)
+        .then(res => setDateien(res.data?.data || []))
+        .catch(() => {});
+    }
+  }, [vorlage?.vorlage_id, dojoId]);
+
+  const uploadDatei = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !vorlage?.vorlage_id) return;
+    setUploadingFile(true);
+    try {
+      const fd = new FormData();
+      fd.append('datei', file);
+      const res = await axios.post(
+        `/bestellvorlagen/${vorlage.vorlage_id}/dateien?dojo_id=${dojoId}`,
+        fd, { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      if (res.data?.datei) setDateien(prev => [...prev, res.data.datei]);
+    } catch {}
+    finally { setUploadingFile(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
+  };
+
+  const deleteDatei = async (dateiId) => {
+    if (!vorlage?.vorlage_id) return;
+    try {
+      await axios.delete(`/bestellvorlagen/${vorlage.vorlage_id}/dateien/${dateiId}?dojo_id=${dojoId}`);
+      setDateien(prev => prev.filter(d => d.datei_id !== dateiId));
+    } catch {}
+  };
 
   const f   = (key) => (e) => setForm(p => ({ ...p, [key]: e.target.value }));
   const fb  = (key) => (e) => setForm(p => ({ ...p, [key]: e.target.checked }));
@@ -230,7 +265,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         stickerei_farben: form.stickereiGarnfarben,
         stickerei_datei: form.stickereiBemerkung,
         bemerkungen: form.bemerkungen,
-        spezifikation: JSON.stringify(form.spezifikation),
+        spezifikation: JSON.stringify({ ...form.spezifikation, mengenKids: form.mengenKids, mengenAdult: form.mengenAdult }),
         artikel_ids: vorlage.artikel_ids || [],
       });
       setSaveMsg('Gespeichert ✓');
@@ -472,6 +507,53 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               <input className="gv-input" value={form.stickereiBemerkung} onChange={f('stickereiBemerkung')} placeholder="z. B. TDA_logo_v2.dst" />
             </div>
           </div>
+        </div>
+
+        {/* ── LOGOS & DATEIEN ── */}
+        <div className="gv-section">
+          <div className="gv-section-title">Logos &amp; Branding-Dateien</div>
+          {vorlage?.vorlage_id ? (
+            <>
+              <div className="gv-upload-zone" onClick={() => fileInputRef.current?.click()}>
+                <input ref={fileInputRef} type="file" style={{ display: 'none' }}
+                  accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
+                  onChange={uploadDatei} />
+                {uploadingFile
+                  ? <span className="gv-upload-hint">Wird hochgeladen…</span>
+                  : <span className="gv-upload-hint">+ Datei hochladen (Logos, Stickerei-Dateien, PDFs …)</span>}
+              </div>
+              {dateien.length > 0 && (
+                <div className="gv-datei-list">
+                  {dateien.map(d => {
+                    const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name);
+                    return (
+                      <div key={d.datei_id} className="gv-datei-item">
+                        {isImg
+                          ? <img className="gv-datei-thumb" src={d.pfad} alt={d.original_name} />
+                          : <div className="gv-datei-icon">📎</div>}
+                        <div className="gv-datei-info">
+                          <div className="gv-datei-name">{d.original_name}</div>
+                          <div className="gv-datei-size">
+                            {d.groesse_bytes > 1024*1024 ? `${(d.groesse_bytes/1024/1024).toFixed(1)} MB` : `${Math.round(d.groesse_bytes/1024)} KB`}
+                          </div>
+                        </div>
+                        <button className="gv-datei-del" onClick={() => deleteDatei(d.datei_id)} title="Löschen">×</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {dateien.length === 0 && !uploadingFile && (
+                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.25rem' }}>
+                  Noch keine Dateien hinterlegt. Dateien werden im PDF eingebettet.
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)' }}>
+              Dateien können nur über eine gespeicherte Vorlage hochgeladen werden.
+            </div>
+          )}
         </div>
 
         {/* ── PFLEGEKENNZEICHNUNG & LABEL ── */}
