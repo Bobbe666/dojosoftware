@@ -42,6 +42,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+  const [ltModal, setLtModal] = useState(false);
+  const [ltForm, setLtForm] = useState({ firmenname: '', ansprechpartner: '', email: '', telefon: '', website: '', land: 'Deutschland' });
+  const [ltSaving, setLtSaving] = useState(false);
+  const [ltError, setLtError] = useState('');
 
   // Initialisierung: vorlage hat Vorrang, dann artikel, dann EMPTY
   const buildInitialForm = () => {
@@ -179,6 +183,31 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     }
   };
 
+  const saveLieferant = async () => {
+    if (!ltForm.firmenname.trim()) { setLtError('Firmenname ist Pflichtfeld.'); return; }
+    setLtSaving(true); setLtError('');
+    const dojoId = vorlage?.dojo_id || activeDojo?.id;
+    try {
+      const res = await axios.post(`/lieferanten?dojo_id=${dojoId}`, ltForm);
+      const newId = res.data?.lieferant_id;
+      await loadLieferanten();
+      if (newId) {
+        setForm(p => ({
+          ...p,
+          lieferantId: String(newId),
+          lieferantFreitext: ltForm.firmenname,
+          ansprechpartnerLieferant: ltForm.ansprechpartner || '',
+        }));
+      }
+      setLtModal(false);
+      setLtForm({ firmenname: '', ansprechpartner: '', email: '', telefon: '', website: '', land: 'Deutschland' });
+    } catch {
+      setLtError('Fehler beim Speichern.');
+    } finally {
+      setLtSaving(false);
+    }
+  };
+
   const saveVorlage = async () => {
     if (!vorlage?.vorlage_id) return;
     setSaving(true); setSaveMsg('');
@@ -290,7 +319,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           <div className="gv-section-title">Bestelldaten</div>
           <div className="gv-grid2">
             <div className="gv-field">
-              <label className="gv-label">Lieferant (aus Liste)</label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <label className="gv-label" style={{ margin: 0 }}>Lieferant (aus Liste)</label>
+                <button className="gv-btn-lt-new" onClick={() => { setLtModal(true); setLtError(''); }}>+ Neu anlegen</button>
+              </div>
               <select className="gv-input" value={form.lieferantId} onChange={onLieferantChange}>
                 <option value="">— manuell eingeben —</option>
                 {lieferanten.map(l => (
@@ -443,6 +475,72 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         </div>
 
       </div>{/* /gv-body */}
+
+      {/* ── LIEFERANT SCHNELLERFASSUNG MODAL ── */}
+      {ltModal && (
+        <div className="gv-lt-modal-backdrop" onClick={() => setLtModal(false)}>
+          <div className="gv-lt-modal" onClick={e => e.stopPropagation()}>
+            <div className="gv-lt-modal-header">
+              <span>Lieferant anlegen</span>
+              <button className="gv-lt-modal-close" onClick={() => setLtModal(false)}>×</button>
+            </div>
+
+            {ltError && <div className="gv-lt-modal-err">{ltError}</div>}
+
+            <div className="gv-grid2" style={{ gap: '0.6rem 1rem' }}>
+              <div className="gv-field" style={{ gridColumn: '1 / -1' }}>
+                <label className="gv-label">Firmenname *</label>
+                <input className="gv-input" value={ltForm.firmenname}
+                  onChange={e => setLtForm(p => ({ ...p, firmenname: e.target.value }))}
+                  placeholder="z. B. Hayashi GmbH" autoFocus />
+              </div>
+              <div className="gv-field">
+                <label className="gv-label">Ansprechpartner</label>
+                <input className="gv-input" value={ltForm.ansprechpartner}
+                  onChange={e => setLtForm(p => ({ ...p, ansprechpartner: e.target.value }))}
+                  placeholder="Name / Abteilung" />
+              </div>
+              <div className="gv-field">
+                <label className="gv-label">E-Mail</label>
+                <input className="gv-input" type="email" value={ltForm.email}
+                  onChange={e => setLtForm(p => ({ ...p, email: e.target.value }))}
+                  placeholder="bestellung@lieferant.de" />
+              </div>
+              <div className="gv-field">
+                <label className="gv-label">Telefon</label>
+                <input className="gv-input" value={ltForm.telefon}
+                  onChange={e => setLtForm(p => ({ ...p, telefon: e.target.value }))} />
+              </div>
+              <div className="gv-field">
+                <label className="gv-label">Website</label>
+                <input className="gv-input" value={ltForm.website}
+                  onChange={e => setLtForm(p => ({ ...p, website: e.target.value }))}
+                  placeholder="www.lieferant.de" />
+              </div>
+              <div className="gv-field" style={{ gridColumn: '1 / -1' }}>
+                <label className="gv-label">Land</label>
+                <select className="gv-input" value={ltForm.land}
+                  onChange={e => setLtForm(p => ({ ...p, land: e.target.value }))}>
+                  <option>Deutschland</option>
+                  <option>Österreich</option>
+                  <option>Schweiz</option>
+                  <option>Japan</option>
+                  <option>China</option>
+                  <option>Sonstige</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="gv-lt-modal-footer">
+              <button className="gv-btn-back" onClick={() => setLtModal(false)}>Abbrechen</button>
+              <button className="gv-btn-pdf" onClick={saveLieferant} disabled={ltSaving}>
+                {ltSaving ? 'Speichert…' : 'Lieferant anlegen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
