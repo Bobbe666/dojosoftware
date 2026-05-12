@@ -630,6 +630,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [stilDropdownOpen, setStilDropdownOpen] = useState(false);
   const [activeExamTab, setActiveExamTab] = useState(0);
   const [financeSubTab, setFinanceSubTab] = useState("finanzübersicht");
+  // Redirect: "zahlungshistorie" tab was merged into "beitraege" — auto-switch if still in session state
+  useEffect(() => {
+    if (financeSubTab === "zahlungshistorie") setFinanceSubTab("beitraege");
+  }, [financeSubTab]);
   const [mitgliedschaftSubTab, setMitgliedschaftSubTab] = useState("vertrag");
   const [gesundheitSubTab, setGesundheitSubTab] = useState("medizinisch");
   const [entwicklungSubTab, setEntwicklungSubTab] = useState("anwesenheit");
@@ -4677,12 +4681,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   💰 Finanzübersicht
                 </button>
                 <button
-                  className={`finance-sub-tab-btn ${financeSubTab === "zahlungshistorie" ? "active" : ""}`}
-                  onClick={() => setFinanceSubTab("zahlungshistorie")}
-                >
-                  📊 Zahlungshistorie
-                </button>
-                <button
                   className={`finance-sub-tab-btn ${financeSubTab === "beitraege" ? "active" : ""}`}
                   onClick={() => setFinanceSubTab("beitraege")}
                 >
@@ -4914,126 +4912,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   })()}
                 </div>
               )}
-
-              {financeSubTab === "zahlungshistorie" && (() => {
-                const isPaid = p => p.bezahlt === true || p.bezahlt === 1 || p.bezahlt === "1" || String(p.bezahlt) === "1";
-                const _zhpHeute = new Date(); _zhpHeute.setHours(23, 59, 59, 999);
-                const paidList = finanzDaten.filter(isPaid);
-                const offenList = finanzDaten.filter(p => !isPaid(p));
-                const ueberfaelligList = offenList.filter(p => new Date(p.zahlungsdatum || p.datum || 0) <= _zhpHeute);
-                const geplanteList = offenList.filter(p => new Date(p.zahlungsdatum || p.datum || '9999-12-31') > _zhpHeute);
-                const totalBezahlt    = paidList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
-                const totalOffen      = offenList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
-                const totalUeberfaellig = ueberfaelligList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
-                const totalGeplant    = geplanteList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
-                const letzteZahlung = [...paidList].sort((a,b) => new Date(b.zahlungsdatum) - new Date(a.zahlungsdatum))[0];
-                const sorted = [...finanzDaten].sort((a,b) => new Date(b.zahlungsdatum||b.datum) - new Date(a.zahlungsdatum||a.datum));
-                const fmt = n => parseFloat(n||0).toLocaleString('de-DE', {minimumFractionDigits:2});
-                const uniqueMonths = new Set(paidList.map(p => {
-                  const d = new Date(p.zahlungsdatum||p.datum); return `${d.getFullYear()}-${d.getMonth()}`;
-                })).size;
-                const avgMonth = uniqueMonths > 0 ? totalBezahlt / uniqueMonths : 0;
-                const methodStr = art => {
-                  const a = (art||'').toLowerCase();
-                  if (a.includes('lastschrift')||a.includes('direct')) return 'Lastschrift';
-                  if (a.includes('überweisung')) return 'Überweisung';
-                  if (a.includes('bar')) return 'Bar';
-                  if (a.includes('paypal')) return 'PayPal';
-                  return art || '—';
-                };
-                const byYear = {};
-                sorted.forEach(p => {
-                  const y = String(new Date(p.zahlungsdatum||p.datum||Date.now()).getFullYear());
-                  (byYear[y] = byYear[y]||[]).push(p);
-                });
-                const toggleYear = y => setOpenYears(prev => {
-                  const n = new Set(prev); n.has(y) ? n.delete(y) : n.add(y); return n;
-                });
-
-                return (
-                  <div className="zhp-wrap">
-
-                    {/* ── Linke Spalte: Statistik-Kacheln ── */}
-                    <div className="zhp-left">
-                      <div className="zhp-tile">
-                        <div className="zhp-tile-label">Gesamt bezahlt</div>
-                        <div className="zhp-tile-value zhp-green">{fmt(totalBezahlt)} €</div>
-                        <div className="zhp-tile-sub">{paidList.length} Zahlungen</div>
-                      </div>
-                      <div className="zhp-tile">
-                        <div className="zhp-tile-label">Geplante Einzüge</div>
-                        <div className={`zhp-tile-value ${totalGeplant > 0 ? 'zhp-green' : 'zhp-dim'}`}>{fmt(totalGeplant)} €</div>
-                        <div className="zhp-tile-sub">{geplanteList.length > 0 ? `${geplanteList.length} kommende` : '–'}</div>
-                      </div>
-                      {totalUeberfaellig > 0 && (
-                        <div className="zhp-tile">
-                          <div className="zhp-tile-label">Überfällig</div>
-                          <div className="zhp-tile-value zhp-red">{fmt(totalUeberfaellig)} €</div>
-                          <div className="zhp-tile-sub">{ueberfaelligList.length} ausstehend</div>
-                        </div>
-                      )}
-                      <div className="zhp-tile">
-                        <div className="zhp-tile-label">Ø pro Monat</div>
-                        <div className="zhp-tile-value zhp-gold">{fmt(avgMonth)} €</div>
-                        <div className="zhp-tile-sub">über {uniqueMonths} Monate</div>
-                      </div>
-                      <div className="zhp-tile">
-                        <div className="zhp-tile-label">Letzte Zahlung</div>
-                        <div className="zhp-tile-value zhp-dim-lg">
-                          {letzteZahlung ? new Date(letzteZahlung.zahlungsdatum).toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'}) : '—'}
-                        </div>
-                        <div className="zhp-tile-sub">{letzteZahlung ? `${fmt(letzteZahlung.betrag)} €` : ''}</div>
-                      </div>
-                    </div>
-
-                    {/* ── Rechte Spalte: Aufklappbare Jahresliste ── */}
-                    <div className="zhp-right">
-                      {sorted.length === 0 ? (
-                        <div className="zhp-empty">Keine Zahlungen erfasst</div>
-                      ) : Object.keys(byYear).sort((a,b) => b-a).map(year => {
-                        const isOpen = openYears.has(year);
-                        const yearSum = byYear[year].filter(isPaid).reduce((s,p) => s+parseFloat(p.betrag||0), 0);
-                        return (
-                          <div key={year} className="zhp-year">
-
-                            {/* Jahr-Header: klickbar */}
-                            <button className="zhp-year-btn" onClick={() => toggleYear(year)}>
-                              <div className="zhp-year-left">
-                                <div className="zhp-year-chevron">{isOpen ? '▾' : '▸'}</div>
-                                <div className="zhp-year-name">{year}</div>
-                                <div className="zhp-year-count">{byYear[year].length} Einträge</div>
-                              </div>
-                              <div className="zhp-year-sum">{fmt(yearSum)} €</div>
-                            </button>
-
-                            {/* Einträge */}
-                            {isOpen && byYear[year].map((p, i) => {
-                              const paid = isPaid(p);
-                              const refDate = p.zahlungsdatum || p.datum;
-                              const d = refDate ? new Date(refDate) : null;
-                              const isFuture = !paid && d && d > _zhpHeute;
-                              return (
-                                <div key={p.beitrag_id||i} className="zhp-entry">
-                                  <div className={`zhp-dot ${paid ? 'zhp-dot-paid' : isFuture ? 'zhp-dot-future' : 'zhp-dot-open'}`} />
-                                  <div className="zhp-entry-date">
-                                    {d ? d.toLocaleDateString('de-DE', {day:'2-digit', month:'short'}) : '—'}
-                                  </div>
-                                  <div className="zhp-entry-method">{methodStr(p.zahlungsart)}</div>
-                                  <div className="zhp-entry-amount">{fmt(p.betrag)} €</div>
-                                  <div className={`zhp-entry-badge ${paid ? 'zhp-badge-paid' : isFuture ? 'zhp-badge-future' : 'zhp-badge-open'}`}>
-                                    {paid ? 'Bezahlt' : isFuture ? 'Geplant' : 'Offen'}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                  </div>
-                );
-              })()}
 
               {financeSubTab === "beitraege" && (
                 <div className="beitraege-sub-tab-content">
@@ -5430,6 +5308,133 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                     <div className="btr-stat-label">Einträge</div>
                                     <div className="btr-stat-value">{alleBeitraege.length}</div>
                                   </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* ── Statistik & Jahresübersicht (ehemals eigener Tab) ── */}
+                            {(() => {
+                              const _zhpIsOpen = collapsedPeriods['statistik'] === true;
+                              const _zhpToggle = () => setCollapsedPeriods(prev => ({...prev, statistik: !prev['statistik']}));
+                              const isPaid = p => p.bezahlt === true || p.bezahlt === 1 || p.bezahlt === "1" || String(p.bezahlt) === "1";
+                              const _zhpHeute = new Date(); _zhpHeute.setHours(23, 59, 59, 999);
+                              const paidList = finanzDaten.filter(isPaid);
+                              const offenList = finanzDaten.filter(p => !isPaid(p));
+                              const ueberfaelligList = offenList.filter(p => new Date(p.zahlungsdatum || p.datum || 0) <= _zhpHeute);
+                              const geplanteList = offenList.filter(p => new Date(p.zahlungsdatum || p.datum || '9999-12-31') > _zhpHeute);
+                              const totalBezahlt = paidList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
+                              const totalUeberfaellig = ueberfaelligList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
+                              const totalGeplant = geplanteList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
+                              const letzteZahlung = [...paidList].sort((a,b) => new Date(b.zahlungsdatum) - new Date(a.zahlungsdatum))[0];
+                              const sorted = [...finanzDaten].sort((a,b) => new Date(b.zahlungsdatum||b.datum) - new Date(a.zahlungsdatum||a.datum));
+                              const fmt = n => parseFloat(n||0).toLocaleString('de-DE', {minimumFractionDigits:2});
+                              const uniqueMonths = new Set(paidList.map(p => {
+                                const d = new Date(p.zahlungsdatum||p.datum); return `${d.getFullYear()}-${d.getMonth()}`;
+                              })).size;
+                              const avgMonth = uniqueMonths > 0 ? totalBezahlt / uniqueMonths : 0;
+                              const methodStr = art => {
+                                const a = (art||'').toLowerCase();
+                                if (a.includes('lastschrift')||a.includes('direct')) return 'Lastschrift';
+                                if (a.includes('überweisung')) return 'Überweisung';
+                                if (a.includes('bar')) return 'Bar';
+                                if (a.includes('paypal')) return 'PayPal';
+                                return art || '—';
+                              };
+                              const byYear = {};
+                              sorted.forEach(p => {
+                                const y = String(new Date(p.zahlungsdatum||p.datum||Date.now()).getFullYear());
+                                (byYear[y] = byYear[y]||[]).push(p);
+                              });
+                              const toggleYear = y => setOpenYears(prev => {
+                                const n = new Set(prev); n.has(y) ? n.delete(y) : n.add(y); return n;
+                              });
+                              return (
+                                <div className="btr-period" style={{ marginBottom: '0.5rem' }}>
+                                  <button className="btr-period-btn" onClick={_zhpToggle}>
+                                    <div className="btr-period-left">
+                                      <div className="btr-period-chevron">{_zhpIsOpen ? '⌄' : '›'}</div>
+                                      <div className="btr-period-name" style={{ color: '#d4af37' }}>📊 Statistik &amp; Jahresübersicht</div>
+                                    </div>
+                                    <div className="btr-period-right" />
+                                  </button>
+                                  {_zhpIsOpen && (
+                                    <div style={{ padding: '0.5rem 0 0.25rem' }}>
+                                      <div className="zhp-wrap">
+                                        {/* ── Linke Spalte: Statistik-Kacheln ── */}
+                                        <div className="zhp-left">
+                                          <div className="zhp-tile">
+                                            <div className="zhp-tile-label">Gesamt bezahlt</div>
+                                            <div className="zhp-tile-value zhp-green">{fmt(totalBezahlt)} €</div>
+                                            <div className="zhp-tile-sub">{paidList.length} Zahlungen</div>
+                                          </div>
+                                          <div className="zhp-tile">
+                                            <div className="zhp-tile-label">Geplante Einzüge</div>
+                                            <div className={`zhp-tile-value ${totalGeplant > 0 ? 'zhp-green' : 'zhp-dim'}`}>{fmt(totalGeplant)} €</div>
+                                            <div className="zhp-tile-sub">{geplanteList.length > 0 ? `${geplanteList.length} kommende` : '–'}</div>
+                                          </div>
+                                          {totalUeberfaellig > 0 && (
+                                            <div className="zhp-tile">
+                                              <div className="zhp-tile-label">Überfällig</div>
+                                              <div className="zhp-tile-value zhp-red">{fmt(totalUeberfaellig)} €</div>
+                                              <div className="zhp-tile-sub">{ueberfaelligList.length} ausstehend</div>
+                                            </div>
+                                          )}
+                                          <div className="zhp-tile">
+                                            <div className="zhp-tile-label">Ø pro Monat</div>
+                                            <div className="zhp-tile-value zhp-gold">{fmt(avgMonth)} €</div>
+                                            <div className="zhp-tile-sub">über {uniqueMonths} Monate</div>
+                                          </div>
+                                          <div className="zhp-tile">
+                                            <div className="zhp-tile-label">Letzte Zahlung</div>
+                                            <div className="zhp-tile-value zhp-dim-lg">
+                                              {letzteZahlung ? new Date(letzteZahlung.zahlungsdatum).toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'}) : '—'}
+                                            </div>
+                                            <div className="zhp-tile-sub">{letzteZahlung ? `${fmt(letzteZahlung.betrag)} €` : ''}</div>
+                                          </div>
+                                        </div>
+                                        {/* ── Rechte Spalte: Aufklappbare Jahresliste ── */}
+                                        <div className="zhp-right">
+                                          {sorted.length === 0 ? (
+                                            <div className="zhp-empty">Keine Zahlungen erfasst</div>
+                                          ) : Object.keys(byYear).sort((a,b) => b-a).map(year => {
+                                            const isOpen = openYears.has(year);
+                                            const yearSum = byYear[year].filter(isPaid).reduce((s,p) => s+parseFloat(p.betrag||0), 0);
+                                            return (
+                                              <div key={year} className="zhp-year">
+                                                <button className="zhp-year-btn" onClick={() => toggleYear(year)}>
+                                                  <div className="zhp-year-left">
+                                                    <div className="zhp-year-chevron">{isOpen ? '▾' : '▸'}</div>
+                                                    <div className="zhp-year-name">{year}</div>
+                                                    <div className="zhp-year-count">{byYear[year].length} Einträge</div>
+                                                  </div>
+                                                  <div className="zhp-year-sum">{fmt(yearSum)} €</div>
+                                                </button>
+                                                {isOpen && byYear[year].map((p, i) => {
+                                                  const paid = isPaid(p);
+                                                  const refDate = p.zahlungsdatum || p.datum;
+                                                  const d = refDate ? new Date(refDate) : null;
+                                                  const isFuture = !paid && d && d > _zhpHeute;
+                                                  return (
+                                                    <div key={p.beitrag_id||i} className="zhp-entry">
+                                                      <div className={`zhp-dot ${paid ? 'zhp-dot-paid' : isFuture ? 'zhp-dot-future' : 'zhp-dot-open'}`} />
+                                                      <div className="zhp-entry-date">
+                                                        {d ? d.toLocaleDateString('de-DE', {day:'2-digit', month:'short'}) : '—'}
+                                                      </div>
+                                                      <div className="zhp-entry-method">{methodStr(p.zahlungsart)}</div>
+                                                      <div className="zhp-entry-amount">{fmt(p.betrag)} €</div>
+                                                      <div className={`zhp-entry-badge ${paid ? 'zhp-badge-paid' : isFuture ? 'zhp-badge-future' : 'zhp-badge-open'}`}>
+                                                        {paid ? 'Bezahlt' : isFuture ? 'Geplant' : 'Offen'}
+                                                      </div>
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })()}
