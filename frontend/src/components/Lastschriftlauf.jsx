@@ -1254,7 +1254,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                     {/* Details-Zeile - nur anzeigen wenn expandiert */}
                     {expandedRows.has(item.mitglied_id) && item.beitraege && item.beitraege.length > 0 && (
                       <tr className="details-row">
-                        <td colSpan={8} className="ll-details-td">
+                        <td colSpan={100} className="ll-details-td">
                           <div className="ll-details-inner">
                             <div className="ll-details-heading">
                               <span>Einzelne Beiträge</span>

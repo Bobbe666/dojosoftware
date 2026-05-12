@@ -1054,11 +1054,14 @@
 .ll-badge-mr { margin-right: 0.5rem; }
 .ll-details-td {
   padding: 0 !important;
+  width: 100% !important;
   background: rgba(255,255,255,0.03);
   border-top: 1px solid rgba(255,255,255,0.06);
   border-bottom: 2px solid rgba(255,255,255,0.08);
 }
 .ll-details-inner {
+  width: 100%;
+  box-sizing: border-box;
   padding: 1.25rem 2rem 1.25rem 2rem;
   font-size: 0.88rem;
 }
@@ -1086,6 +1089,8 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 .ll-details-list-header {
   display: flex;
