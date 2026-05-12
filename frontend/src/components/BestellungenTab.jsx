@@ -109,14 +109,22 @@ const BestellungenTab = () => {
     loadData();
   }, [loadData]);
 
+  const [dojoFehler, setDojoFehler] = useState('');
+
   const loadDojoBestellungen = useCallback(async () => {
     setDojoLoading(true);
+    setDojoFehler('');
     try {
       const djId = activeDojo?.id;
       const url = djId ? `/gi-bestellungen?dojo_id=${djId}` : '/gi-bestellungen';
       const res = await axios.get(url);
+      if (!res.data?.success) {
+        setDojoFehler(res.data?.message || 'Unbekannter Fehler');
+      }
       setDojoBestellungen(res.data?.data || []);
-    } catch {}
+    } catch (e) {
+      setDojoFehler(e?.response?.data?.message || e?.message || 'Netzwerkfehler');
+    }
     finally { setDojoLoading(false); }
   }, [activeDojo?.id]);
 
@@ -490,6 +498,11 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
               Aktualisieren
             </button>
           </div>
+          {dojoFehler && (
+            <div style={{ background: 'rgba(255,50,50,0.12)', border: '1px solid rgba(255,50,50,0.3)', borderRadius: '6px', padding: '0.6rem 0.9rem', fontSize: '0.82rem', color: '#f87171', marginBottom: '0.75rem' }}>
+              Fehler: {dojoFehler}
+            </div>
+          )}
           {dojoLoading ? (
             <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', padding: '1rem 0' }}>Lädt…</div>
           ) : dojoBestellungen.length === 0 ? (
