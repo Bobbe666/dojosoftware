@@ -77,6 +77,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [dojoAuswahl, setDojoAuswahl] = useState(overrideDojoId || null); // für Super-Admin
   const [dojoAuswahlModal, setDojoAuswahlModal] = useState(false);
   const fileInputRef = useRef(null);
+  const pendingLangRef = useRef('de');
   const uploadTagRef = useRef(null);
 
   const fixUtf8 = (s) => { try { return decodeURIComponent(escape(s)); } catch { return s; } };
@@ -247,6 +248,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const grandTotal = () => totalFor('mengenKids') + totalFor('mengenAdult');
 
   const generatePdf = async (forcedDojoId) => {
+    const lang = pendingLangRef.current || 'de';
     const djId = forcedDojoId || dojoAuswahl || vorlage?.dojo_id || dojoId;
     if (!djId && dojos && dojos.length > 1) {
       setDojoAuswahlModal(true);
@@ -293,7 +295,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           }));
         } catch {}
       }
-      const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId);
+      const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId, lang);
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const url  = URL.createObjectURL(blob);
       const win  = window.open(url, '_blank');
@@ -434,8 +436,12 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               {saving ? 'Speichert…' : 'Einstellungen speichern'}
             </button>
           )}
-          <button className="gv-btn-pdf" onClick={generatePdf} disabled={generating}>
+          <button className="gv-btn-pdf" onClick={() => { pendingLangRef.current = 'de'; generatePdf(); }} disabled={generating}>
             {generating ? 'Erstelle PDF…' : editingBestellungId ? 'PDF aktualisieren & drucken' : 'PDF generieren & drucken'}
+          </button>
+          <button className="gv-btn-pdf" style={{ background: 'rgba(212,175,55,0.15)', fontSize: '0.82rem' }}
+            onClick={() => { pendingLangRef.current = 'en'; generatePdf(); }} disabled={generating}>
+            PDF (EN)
           </button>
         </div>
         {bestellungen.length > 0 && (
@@ -1067,7 +1073,134 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 // ═══════════════════════════════════════════════════════
 //  PDF-HTML-GENERATOR
 // ═══════════════════════════════════════════════════════
-export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungId = null) {
+export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungId = null, lang = 'de') {
+  const de = lang !== 'en';
+  const T = {
+    docTitle:       de ? 'Karate-Gi Bestellvorlage – Kampfkunstschule Schreiner' : 'Karate-Gi Order Form – Martial Arts School Schreiner',
+    h1:             'Karate-Gi',
+    sub:            de ? 'Bestellvorlage · Kampfkunstschule Schreiner' : 'Order Form · Martial Arts School Schreiner',
+    nr:             de ? 'Nr.' : 'No.',
+    datum:          de ? 'Datum:' : 'Date:',
+    pageHeader:     de ? 'Karate-Gi Bestellvorlage – Kampfkunstschule Schreiner' : 'Karate-Gi Order Form – Martial Arts School Schreiner',
+    tolerance:      de ? 'Toleranz ±1,5 cm' : 'Tolerance ±1.5 cm',
+    selectedModel:  de ? '← Gewähltes Modell' : '← Selected Model',
+    // Sections
+    s1: de ? 'Modellauswahl' : 'Model Selection',
+    s2: de ? 'Bestelldaten' : 'Order Details',
+    s3: de ? 'Produktspezifikation' : 'Product Specification',
+    s4: de ? 'Kategorie & Mengenbestellung' : 'Category & Quantity Order',
+    s5: de ? 'Stickerei & Branding' : 'Embroidery & Branding',
+    s6: de ? 'Pflegekennzeichnung (Care Label)' : 'Care Instructions (Care Label)',
+    s7: de ? 'Bemerkungen' : 'Remarks',
+    s8: de ? 'Freigabe & Unterschrift' : 'Approval & Signature',
+    s9: de ? 'Maßtabellen & Größenübersicht' : 'Size Charts & Measurements',
+    s9sub: de ? 'Beide Modelle – Referenz-Maßzeichnungen' : 'Both Models — Reference Size Drawings',
+    // Fields
+    modellbez:   de ? 'Modellbezeichnung' : 'Model Name',
+    artikelNr:   de ? 'Artikel-Nr.' : 'Article No.',
+    besteller:   de ? 'Besteller' : 'Purchaser',
+    lieferant:   de ? 'Hersteller / Lieferant' : 'Manufacturer / Supplier',
+    apBesteller: de ? 'Ansprechpartner Besteller' : 'Contact Person (Buyer)',
+    apLieferant: de ? 'Ansprechpartner Lieferant' : 'Contact Person (Supplier)',
+    bestelldat:  de ? 'Bestelldatum' : 'Order Date',
+    lieferdat:   de ? 'Gewünschtes Lieferdatum' : 'Requested Delivery Date',
+    projekt:     de ? 'Projekt / Verwendungszweck' : 'Project / Purpose',
+    farbe:       de ? 'Farbe / Ausführung' : 'Colour / Finish',
+    // Spec
+    material:     de ? 'Material' : 'Material',
+    cotton:       de ? '100% Baumwolle' : '100% Cotton',
+    cottonPoly:   de ? 'Baumwolle/Polyester' : 'Cotton/Polyester',
+    canvas:       'Canvas',
+    synthetik:    de ? 'Synthetik' : 'Synthetic',
+    webart:       de ? 'Webart' : 'Weave Type',
+    gramKids:     de ? 'Grammatur Kinder' : 'Weight (Kids)',
+    gramAdult:    de ? 'Grammatur Erwachsene' : 'Weight (Adults)',
+    wkf:          de ? 'WKF-Zulassung' : 'WKF Approval',
+    wkfApproved:  de ? 'WKF-zugelassen' : 'WKF approved',
+    kataList:     de ? 'Kata-Liste' : 'Kata List',
+    notRequired:  de ? 'Nicht erforderlich' : 'Not required',
+    // Qty
+    catLabel:     de ? 'Kategorie:' : 'Category:',
+    kids:         de ? 'Kinder / Kids' : 'Kids',
+    adults:       de ? 'Erwachsene' : 'Adults',
+    catSize:      de ? 'Kategorie \\ Größe' : 'Category \\ Size',
+    total:        de ? 'Gesamt' : 'Total',
+    pcsTotal:     de ? 'Stück gesamt' : 'pieces total',
+    // Embroidery
+    embPos:       de ? 'Stickerei-Positionen:' : 'Embroidery Positions:',
+    posLL:        de ? 'Linkes Revers (vorne links)' : 'Left Lapel (front left)',
+    posRL:        de ? 'Rechtes Revers (vorne rechts)' : 'Right Lapel (front right)',
+    posRO:        de ? 'Rücken — oberer Bereich' : 'Back — upper area',
+    posRM:        de ? 'Rücken — Mitte / großes Motiv' : 'Back — centre / large motif',
+    posLA:        de ? 'Linker Ärmel (außen)' : 'Left Sleeve (outside)',
+    posRA:        de ? 'Rechter Ärmel (außen)' : 'Right Sleeve (outside)',
+    posHB:        de ? 'Hosenbein (links/rechts)' : 'Trouser Leg (left/right)',
+    posKr:        de ? 'Kragen / Nackenbereich' : 'Collar / Neck area',
+    logoDesc:     de ? 'Logo / Motiv-Beschreibung' : 'Logo / Motif Description',
+    embFile:      de ? 'Stickerei-Datei' : 'Embroidery File',
+    embText:      de ? 'Schriftzug / Text' : 'Text / Lettering',
+    threadCol:    de ? 'Garnfarben' : 'Thread Colours',
+    embSize:      de ? 'Größe Stickerei (B × H)' : 'Embroidery Size (W × H)',
+    font:         de ? 'Schriftart' : 'Font',
+    fontLatin:    de ? 'Lateinisch / Block' : 'Latin / Block',
+    fontKanji:    de ? 'Kanji / Japanisch' : 'Kanji / Japanese',
+    fontItalic:   de ? 'Kursiv' : 'Italic',
+    fontCustom:   'Custom',
+    personal:     de ? 'Individualisierung je Stück' : 'Personalisation per piece',
+    persName:     de ? 'Mitgliedsname' : 'Member Name',
+    persBelt:     de ? 'Gurtgrad' : 'Belt Grade',
+    persNum:      de ? 'Nummerierung' : 'Numbering',
+    persNone:     de ? 'Keine' : 'None',
+    piping:       de ? 'Einfassung / Revers-Farbe' : 'Piping / Lapel Colour',
+    white:        de ? 'Weiß' : 'White',
+    black:        de ? 'Schwarz' : 'Black',
+    gold:         'Gold',
+    sameColour:   de ? 'Wie Grundfarbe' : 'Same as base colour',
+    embFiles:     de ? 'Bereitgestellte Logo- & Branding-Dateien:' : 'Provided Logo & Branding Files:',
+    // Care
+    careSymbols:  de ? 'Pflegesymbole (ISO 3758):' : 'Care Symbols (ISO 3758):',
+    care30:       de ? 'Schonwäsche 30°C' : 'Gentle wash 30°C',
+    careNoBleach: de ? 'Nicht bleichen' : 'Do not bleach',
+    careNoDryer:  de ? 'Nicht im Trockner' : 'Do not tumble dry',
+    careDryFlat:  de ? 'Liegend trocknen' : 'Dry flat',
+    careIron:     de ? 'Bügeln max. 110°C' : 'Iron max. 110°C',
+    careNoDry:    de ? 'Keine chem. Reinigung' : 'No dry cleaning',
+    careNote:     de ? '<strong>Waschanleitung:</strong> Karate-Gi bei max. 30°C waschen. Kein Weichspüler. Nicht im Trockner. Liegend lufttrocknen. Weiße Gis alternativ bei 60°C. Bei Bedarf auf links bügeln.'
+                     : '<strong>Care Instructions:</strong> Wash Karate-Gi at max. 30°C. No fabric softener. Do not tumble dry. Air dry flat. White Gis may be washed at 60°C. Iron inside out if needed.',
+    labelSpec:    de ? 'Label-Spezifikation:' : 'Label Specification:',
+    labelMat:     de ? 'Material (Label-Text)' : 'Material (Label Text)',
+    labelLang:    de ? 'Label-Sprachen' : 'Label Languages',
+    langDE:       de ? 'Deutsch' : 'German',
+    langEN:       de ? 'Englisch' : 'English',
+    langFR:       de ? 'Französisch' : 'French',
+    langJA:       de ? 'Japanisch' : 'Japanese',
+    labelType:    de ? 'Label-Art' : 'Label Type',
+    labelWoven:   de ? 'Gewebtes Etikett' : 'Woven Label',
+    labelPrinted: de ? 'Gedrucktes Etikett' : 'Printed Label',
+    labelEmb:     de ? 'Eingestickt' : 'Embroidered',
+    labelPos:     de ? 'Label-Position' : 'Label Position',
+    labelNeck:    de ? 'Nacken (innen)' : 'Neck (inside)',
+    labelSeam:    de ? 'Seitennaht' : 'Side seam',
+    labelWaist:   de ? 'Hosenbund (innen)' : 'Waistband (inside)',
+    labelExtra:   de ? 'Zusatztext auf Label' : 'Additional text on label',
+    labelExtraHint: de ? 'z. B. Made exclusively for Kampfkunstschule Schreiner · TDA' : 'e.g. Made exclusively for Martial Arts School Schreiner · TDA',
+    // Signature
+    qty:         de ? 'Gesamtmenge' : 'Total Quantity',
+    orderVal:    de ? 'Auftragswert (netto)' : 'Order Value (net)',
+    payTerms:    de ? 'Zahlungsziel / Incoterms' : 'Payment Terms / Incoterms',
+    pcs:         de ? 'Stück' : 'pcs',
+    sigDate:     de ? 'Datum & Ort' : 'Date & Place',
+    sigBuyer:    de ? 'Unterschrift Besteller' : "Buyer's Signature",
+    sigBuyerSub: de ? 'Kampfkunstschule Schreiner' : 'Martial Arts School Schreiner',
+    sigSupplier: de ? 'Bestätigung Lieferant' : 'Supplier Confirmation',
+    sigStamp:    de ? 'Stempel + Unterschrift' : 'Stamp + Signature',
+    // Misc
+    printBtn:    de ? '🖨 PDF drucken' : '🖨 Print PDF',
+    refPoints:   de ? 'Masspunkte: 1=Rückenlänge Jacke · 2=Rückenbreite · 3=Spannweite gesamt · 4=Ärmellänge · 5=Schulterbreite · A=Hosenlänge · B=Bundbreite (½) · C=Saumbreite (½)'
+                    : 'Reference points: 1=Jacket back length · 2=Back width · 3=Total wingspan · 4=Sleeve length · 5=Shoulder width · A=Trouser length · B=Waistband width (½) · C=Hem width (½)',
+    page:        (n, t) => de ? `Seite ${n} / ${t}` : `Page ${n} / ${t}`,
+  };
+
   const sizes = SIZES[form.model];
   const img128 = `${origin}/gi-charts/modell-128.jpg`;
   const img188 = `${origin}/gi-charts/modell-188.jpg`;
@@ -1085,8 +1218,9 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
   const posChecked = (pos) => form.stickereiPos.includes(pos) ? 'checked' : '';
 
   const qtyRow = (row, label) => {
-    if ((label === 'Kinder / Kids' && !form.katKids) || (label === 'Erwachsene' && !form.katAdult)) return '';
-    const vals  = row === 'kids' ? form.mengenKids : form.mengenAdult;
+    const isKids = row === 'kids';
+    if ((isKids && !form.katKids) || (!isKids && !form.katAdult)) return '';
+    const vals  = isKids ? form.mengenKids : form.mengenAdult;
     const total = Object.values(vals).reduce((s, v) => s + (parseInt(v) || 0), 0);
     const cells = sizes.map(s => `<td><input type="number" value="${parseInt(vals[s]) || ''}" style="width:100%;border:none;text-align:center;font-size:10pt;padding:3px 0;background:transparent;"></td>`).join('');
     return `<tr><td class="rl">${label}</td>${cells}<td class="sm" style="font-weight:700;background:#f0f0f0;">${total}</td></tr>`;
@@ -1098,8 +1232,8 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
   const selectedLtInfo = form.lieferantFreitext || '—';
 
   return `<!DOCTYPE html>
-<html lang="de"><head><meta charset="UTF-8">
-<title>Karate-Gi Bestellvorlage – Kampfkunstschule Schreiner</title>
+<html lang="${lang}"><head><meta charset="UTF-8">
+<title>${T.docTitle}</title>
 <style>
 :root{--gold:#c9a227;--dark:#1a1a2e;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -1162,52 +1296,52 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 <!-- SEITE 1 -->
 <div class="page">
 <div class="ph">
-  <div><h1>Karate-Gi</h1><div class="sub">Bestellvorlage · Kampfkunstschule Schreiner</div></div>
+  <div><h1>${T.h1}</h1><div class="sub">${T.sub}</div></div>
   <div class="ph-r">
-    <div class="onr">Nr.&nbsp;<strong>${bestellungId ? String(bestellungId).padStart(4, '0') : '____'}</strong></div><br>
-    <span>Datum: ${form.bestelldatum}</span>
+    <div class="onr">${T.nr}&nbsp;<strong>${bestellungId ? String(bestellungId).padStart(4, '0') : '____'}</strong></div><br>
+    <span>${T.datum} ${form.bestelldatum}</span>
   </div>
 </div>
 
 <div class="sec">
-  <div class="st"><span class="n">1</span> Modellauswahl</div>
+  <div class="st"><span class="n">1</span> ${T.s1}</div>
   <div class="mc-row">
     <div class="mc ${form.model==='128'?'sel':''}"><div class="mc-n">Modell 128</div><div class="mc-d">11 Größen · 140–200 cm</div></div>
     <div class="mc ${form.model==='188'?'sel':''}"><div class="mc-n">Modell 188</div><div class="mc-d">8 Größen · 130–200 cm</div></div>
     <div style="flex:2;padding:3mm;">
-      <div class="f"><span class="lbl">Modellbezeichnung</span><input class="val" type="text" value="${form.modelName}"></div>
-      <div class="f" style="margin-top:3mm;"><span class="lbl">Artikel-Nr.</span><input class="val" type="text" value="${form.artikelNr}"></div>
+      <div class="f"><span class="lbl">${T.modellbez}</span><input class="val" type="text" value="${form.modelName}"></div>
+      <div class="f" style="margin-top:3mm;"><span class="lbl">${T.artikelNr}</span><input class="val" type="text" value="${form.artikelNr}"></div>
     </div>
   </div>
 </div>
 
 <div class="sec">
-  <div class="st"><span class="n">2</span> Bestelldaten</div>
+  <div class="st"><span class="n">2</span> ${T.s2}</div>
   <div class="fg2">
-    <div class="f"><span class="lbl">Besteller</span><input class="val" type="text" value="${form.besteller}"></div>
-    <div class="f"><span class="lbl">Hersteller / Lieferant</span><input class="val" type="text" value="${selectedLtInfo}"></div>
-    <div class="f"><span class="lbl">Ansprechpartner Besteller</span><input class="val" type="text" value="${form.ansprechpartnerBesteller}"></div>
-    <div class="f"><span class="lbl">Ansprechpartner Lieferant</span><input class="val" type="text" value="${form.ansprechpartnerLieferant}"></div>
-    <div class="f"><span class="lbl">Bestelldatum</span><input class="val" type="text" value="${form.bestelldatum}"></div>
-    <div class="f"><span class="lbl">Gewünschtes Lieferdatum</span><input class="val" type="text" value="${form.lieferdatum}"></div>
-    <div class="f"><span class="lbl">Projekt / Verwendungszweck</span><input class="val" type="text" value="${form.projekt}"></div>
-    <div class="f"><span class="lbl">Farbe / Ausführung</span><input class="val" type="text" value="${form.farbe}"></div>
+    <div class="f"><span class="lbl">${T.besteller}</span><input class="val" type="text" value="${form.besteller}"></div>
+    <div class="f"><span class="lbl">${T.lieferant}</span><input class="val" type="text" value="${selectedLtInfo}"></div>
+    <div class="f"><span class="lbl">${T.apBesteller}</span><input class="val" type="text" value="${form.ansprechpartnerBesteller}"></div>
+    <div class="f"><span class="lbl">${T.apLieferant}</span><input class="val" type="text" value="${form.ansprechpartnerLieferant}"></div>
+    <div class="f"><span class="lbl">${T.bestelldat}</span><input class="val" type="text" value="${form.bestelldatum}"></div>
+    <div class="f"><span class="lbl">${T.lieferdat}</span><input class="val" type="text" value="${form.lieferdatum}"></div>
+    <div class="f"><span class="lbl">${T.projekt}</span><input class="val" type="text" value="${form.projekt}"></div>
+    <div class="f"><span class="lbl">${T.farbe}</span><input class="val" type="text" value="${form.farbe}"></div>
   </div>
 </div>
 
 <div class="sec">
-  <div class="st"><span class="n">3</span> Produktspezifikation</div>
+  <div class="st"><span class="n">3</span> ${T.s3}</div>
   <div class="fg2">
-    <div class="f"><span class="lbl">Material</span>
+    <div class="f"><span class="lbl">${T.material}</span>
       <div class="tags">
-        <label class="tag"><input type="checkbox" ${matIn('100% Baumwolle')}> 100% Baumwolle</label>
-        <label class="tag"><input type="checkbox" ${matIn('Baumwolle/Polyester')}> Baumwolle/Polyester</label>
-        <label class="tag"><input type="checkbox" ${matIn('Canvas')}> Canvas</label>
-        <label class="tag"><input type="checkbox" ${matIn('Synthetik')}> Synthetik</label>
+        <label class="tag"><input type="checkbox" ${matIn('100% Baumwolle')}> ${T.cotton}</label>
+        <label class="tag"><input type="checkbox" ${matIn('Baumwolle/Polyester')}> ${T.cottonPoly}</label>
+        <label class="tag"><input type="checkbox" ${matIn('Canvas')}> ${T.canvas}</label>
+        <label class="tag"><input type="checkbox" ${matIn('Synthetik')}> ${T.synthetik}</label>
       </div>
       <input class="val" type="text" value="${spez.materialText || ''}" placeholder="Exakte Zusammensetzung" style="margin-top:2mm;">
     </div>
-    <div class="f"><span class="lbl">Webart</span>
+    <div class="f"><span class="lbl">${T.webart}</span>
       <div class="tags">
         <label class="tag"><input type="checkbox" ${webIn('Single Weave')}> Single Weave</label>
         <label class="tag"><input type="checkbox" ${webIn('Double Weave')}> Double Weave</label>
@@ -1215,7 +1349,7 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
         <label class="tag"><input type="checkbox" ${webIn('Kumite / Leicht')}> Kumite / Leicht</label>
       </div>
     </div>
-    <div class="f"><span class="lbl">Grammatur Kinder</span>
+    <div class="f"><span class="lbl">${T.gramKids}</span>
       <div class="tags">
         <label class="tag"><input type="checkbox" ${gramKIn('8 oz (~270 g/m²)')}> 8 oz (~270 g/m²)</label>
         <label class="tag"><input type="checkbox" ${gramKIn('10 oz (~340 g/m²)')}> 10 oz (~340 g/m²)</label>
@@ -1223,7 +1357,7 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
         <label class="tag"><input type="checkbox" ${gramKIn('14 oz (~470 g/m²)')}> 14 oz (~470 g/m²)</label>
       </div>
     </div>
-    <div class="f"><span class="lbl">Grammatur Erwachsene</span>
+    <div class="f"><span class="lbl">${T.gramAdult}</span>
       <div class="tags">
         <label class="tag"><input type="checkbox" ${gramAIn('8 oz (~270 g/m²)')}> 8 oz (~270 g/m²)</label>
         <label class="tag"><input type="checkbox" ${gramAIn('10 oz (~340 g/m²)')}> 10 oz (~340 g/m²)</label>
@@ -1231,11 +1365,11 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
         <label class="tag"><input type="checkbox" ${gramAIn('14 oz (~470 g/m²)')}> 14 oz (~470 g/m²)</label>
       </div>
     </div>
-    <div class="f"><span class="lbl">WKF-Zulassung</span>
+    <div class="f"><span class="lbl">${T.wkf}</span>
       <div class="tags">
-        <label class="tag"><input type="checkbox" ${checked(form.wkf)}> WKF-zugelassen</label>
-        <label class="tag"><input type="checkbox"> Kata-Liste</label>
-        <label class="tag"><input type="checkbox" ${checked(!form.wkf)}> Nicht erforderlich</label>
+        <label class="tag"><input type="checkbox" ${checked(form.wkf)}> ${T.wkfApproved}</label>
+        <label class="tag"><input type="checkbox"> ${T.kataList}</label>
+        <label class="tag"><input type="checkbox" ${checked(!form.wkf)}> ${T.notRequired}</label>
       </div>
     </div>
   </div>
@@ -1244,25 +1378,25 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 
 <!-- SEITE 2 -->
 <div class="page">
-<div class="ch"><span>Karate-Gi Bestellvorlage – Kampfkunstschule Schreiner</span><span>Seite 2 / 4</span></div>
+<div class="ch"><span>${T.pageHeader}</span><span>${T.page(2,4)}</span></div>
 
 <div class="sec">
-  <div class="st"><span class="n">4</span> Kategorie &amp; Mengenbestellung</div>
+  <div class="st"><span class="n">4</span> ${T.s4}</div>
   <div style="display:flex;gap:4mm;align-items:center;margin-bottom:4mm;flex-wrap:wrap;">
-    <span style="font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#aaa;">Kategorie:</span>
+    <span style="font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#aaa;">${T.catLabel}</span>
     <label style="display:flex;align-items:center;gap:2mm;padding:3mm 6mm;border:1.5px solid ${form.katKids?'var(--gold)':'#ddd'};border-radius:4px;font-size:9.5pt;font-weight:600;background:${form.katKids?'#fffbf0':'white'};">
-      <input type="checkbox" ${checked(form.katKids)}> Kinder / Kids
+      <input type="checkbox" ${checked(form.katKids)}> ${T.kids}
     </label>
     <label style="display:flex;align-items:center;gap:2mm;padding:3mm 6mm;border:1.5px solid ${form.katAdult?'var(--gold)':'#ddd'};border-radius:4px;font-size:9.5pt;font-weight:600;background:${form.katAdult?'#fffbf0':'white'};">
-      <input type="checkbox" ${checked(form.katAdult)}> Erwachsene
+      <input type="checkbox" ${checked(form.katAdult)}> ${T.adults}
     </label>
   </div>
   <div class="qt-wrap">
     <table class="qt">
-      <thead><tr><th class="rh">Kategorie \\ Größe</th>${thCells}<th style="background:#2d3d2d;min-width:36px;">Σ</th></tr></thead>
-      <tbody>${qtyRow('kids','Kinder / Kids')}${qtyRow('adult','Erwachsene')}</tbody>
-      <tfoot><tr><td class="rl">Gesamt</td>
-        <td colspan="${sizes.length}" style="text-align:right;padding-right:8px;">${grandTotal} Stück gesamt</td>
+      <thead><tr><th class="rh">${T.catSize}</th>${thCells}<th style="background:#2d3d2d;min-width:36px;">Σ</th></tr></thead>
+      <tbody>${qtyRow('kids', T.kids)}${qtyRow('adult', T.adults)}</tbody>
+      <tfoot><tr><td class="rl">${T.total}</td>
+        <td colspan="${sizes.length}" style="text-align:right;padding-right:8px;">${grandTotal} ${T.pcsTotal}</td>
         <td>${grandTotal}</td>
       </tr></tfoot>
     </table>
@@ -1270,52 +1404,52 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 </div>
 
 <div class="sec">
-  <div class="st"><span class="n">5</span> Stickerei &amp; Branding</div>
-  <span class="lbl" style="display:block;margin-bottom:2mm;">Stickerei-Positionen:</span>
+  <div class="st"><span class="n">5</span> ${T.s5}</div>
+  <span class="lbl" style="display:block;margin-bottom:2mm;">${T.embPos}</span>
   <div class="chk-grid">
-    <label class="chk-item"><input type="checkbox" ${posChecked('Linkes Revers')}> Linkes Revers (vorne links)</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Rechtes Revers')}> Rechtes Revers (vorne rechts)</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Rücken oben')}> Rücken — oberer Bereich</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Rücken Mitte')}> Rücken — Mitte / großes Motiv</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Linker Ärmel')}> Linker Ärmel (außen)</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Rechter Ärmel')}> Rechter Ärmel (außen)</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Hosenbein')}> Hosenbein (links/rechts)</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Kragen')}> Kragen / Nackenbereich</label>
+    <label class="chk-item"><input type="checkbox" ${posChecked('Linkes Revers')}> ${T.posLL}</label>
+    <label class="chk-item"><input type="checkbox" ${posChecked('Rechtes Revers')}> ${T.posRL}</label>
+    <label class="chk-item"><input type="checkbox" ${posChecked('Rücken oben')}> ${T.posRO}</label>
+    <label class="chk-item"><input type="checkbox" ${posChecked('Rücken Mitte')}> ${T.posRM}</label>
+    <label class="chk-item"><input type="checkbox" ${posChecked('Linker Ärmel')}> ${T.posLA}</label>
+    <label class="chk-item"><input type="checkbox" ${posChecked('Rechter Ärmel')}> ${T.posRA}</label>
+    <label class="chk-item"><input type="checkbox" ${posChecked('Hosenbein')}> ${T.posHB}</label>
+    <label class="chk-item"><input type="checkbox" ${posChecked('Kragen')}> ${T.posKr}</label>
   </div>
   <div class="fg2">
-    <div class="f"><span class="lbl">Logo / Motiv-Beschreibung</span><input class="val" type="text" placeholder="z. B. TDA Vereinslogo, Yin-Yang, Kanji Karate"></div>
-    <div class="f"><span class="lbl">Stickerei-Datei</span><input class="val" type="text" value="${form.stickereiBemerkung}" placeholder="z. B. TDA_logo_stickerei_v2.dst"></div>
-    <div class="f"><span class="lbl">Schriftzug / Text</span><input class="val" type="text" value="${form.stickereiSchriftzug}"></div>
-    <div class="f"><span class="lbl">Garnfarben</span><input class="val" type="text" value="${form.stickereiGarnfarben}"></div>
-    <div class="f"><span class="lbl">Größe Stickerei (B × H)</span><input class="val" type="text" placeholder="z. B. 8 × 6 cm (Revers)"></div>
-    <div class="f"><span class="lbl">Schriftart</span>
+    <div class="f"><span class="lbl">${T.logoDesc}</span><input class="val" type="text" placeholder="z. B. TDA Vereinslogo, Yin-Yang, Kanji Karate"></div>
+    <div class="f"><span class="lbl">${T.embFile}</span><input class="val" type="text" value="${form.stickereiBemerkung}" placeholder="z. B. TDA_logo_stickerei_v2.dst"></div>
+    <div class="f"><span class="lbl">${T.embText}</span><input class="val" type="text" value="${form.stickereiSchriftzug}"></div>
+    <div class="f"><span class="lbl">${T.threadCol}</span><input class="val" type="text" value="${form.stickereiGarnfarben}"></div>
+    <div class="f"><span class="lbl">${T.embSize}</span><input class="val" type="text" placeholder="z. B. 8 × 6 cm (Revers)"></div>
+    <div class="f"><span class="lbl">${T.font}</span>
       <div class="tags">
-        <label class="tag"><input type="checkbox"> Lateinisch / Block</label>
-        <label class="tag"><input type="checkbox"> Kanji / Japanisch</label>
-        <label class="tag"><input type="checkbox"> Kursiv</label>
-        <label class="tag"><input type="checkbox"> Custom</label>
+        <label class="tag"><input type="checkbox"> ${T.fontLatin}</label>
+        <label class="tag"><input type="checkbox"> ${T.fontKanji}</label>
+        <label class="tag"><input type="checkbox"> ${T.fontItalic}</label>
+        <label class="tag"><input type="checkbox"> ${T.fontCustom}</label>
       </div>
     </div>
-    <div class="f"><span class="lbl">Individualisierung je Stück</span>
+    <div class="f"><span class="lbl">${T.personal}</span>
       <div class="tags">
-        <label class="tag"><input type="checkbox"> Mitgliedsname</label>
-        <label class="tag"><input type="checkbox"> Gurtgrad</label>
-        <label class="tag"><input type="checkbox"> Nummerierung</label>
-        <label class="tag"><input type="checkbox"> Keine</label>
+        <label class="tag"><input type="checkbox"> ${T.persName}</label>
+        <label class="tag"><input type="checkbox"> ${T.persBelt}</label>
+        <label class="tag"><input type="checkbox"> ${T.persNum}</label>
+        <label class="tag"><input type="checkbox"> ${T.persNone}</label>
       </div>
     </div>
-    <div class="f"><span class="lbl">Einfassung / Revers-Farbe</span>
+    <div class="f"><span class="lbl">${T.piping}</span>
       <div class="tags">
-        <label class="tag"><input type="checkbox"> Weiß</label>
-        <label class="tag"><input type="checkbox"> Schwarz</label>
-        <label class="tag"><input type="checkbox"> Gold</label>
-        <label class="tag"><input type="checkbox"> Wie Grundfarbe</label>
+        <label class="tag"><input type="checkbox"> ${T.white}</label>
+        <label class="tag"><input type="checkbox"> ${T.black}</label>
+        <label class="tag"><input type="checkbox"> ${T.gold}</label>
+        <label class="tag"><input type="checkbox"> ${T.sameColour}</label>
       </div>
     </div>
   </div>
   ${eingebetteteDateien.length > 0 ? `
   <div style="margin-top:5mm;">
-    <span class="lbl" style="display:block;margin-bottom:3mm;">Bereitgestellte Logo- &amp; Branding-Dateien:</span>
+    <span class="lbl" style="display:block;margin-bottom:3mm;">${T.embFiles}</span>
     <div style="display:flex;flex-wrap:wrap;gap:5mm;align-items:flex-start;">
       ${eingebetteteDateien.filter(d => d.dataUrl).map(d => `
         <div style="text-align:center;max-width:55mm;">
@@ -1330,69 +1464,69 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 
 <!-- SEITE 3 -->
 <div class="page">
-<div class="ch"><span>Karate-Gi Bestellvorlage – Kampfkunstschule Schreiner</span><span>Seite 3 / 4</span></div>
+<div class="ch"><span>${T.pageHeader}</span><span>${T.page(3,4)}</span></div>
 
 <div class="sec">
-  <div class="st"><span class="n">6</span> Pflegekennzeichnung (Care Label)</div>
+  <div class="st"><span class="n">6</span> ${T.s6}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6mm 10mm;">
     <div>
-      <span class="lbl" style="display:block;margin-bottom:3mm;">Pflegesymbole (ISO 3758):</span>
+      <span class="lbl" style="display:block;margin-bottom:3mm;">${T.careSymbols}</span>
       <div class="care-row">
-        <div class="ci"><svg viewBox="0 0 44 40" fill="none"><path d="M4 14 L8 36 L36 36 L40 14 Z" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><text x="22" y="30" text-anchor="middle" font-size="11" font-weight="800" fill="#1a1a2e" font-family="sans-serif">30°</text><line x1="13" y1="24" x2="31" y2="24" stroke="#1a1a2e" stroke-width="1.5" stroke-dasharray="3,2"/></svg><span>Schonwäsche 30°C</span></div>
-        <div class="ci"><svg viewBox="0 0 44 40" fill="none"><polygon points="22,4 40,36 4,36" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><line x1="12" y1="16" x2="32" y2="32" stroke="#1a1a2e" stroke-width="2.5"/><line x1="32" y1="16" x2="12" y2="32" stroke="#1a1a2e" stroke-width="2.5"/></svg><span>Nicht bleichen</span></div>
-        <div class="ci"><svg viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="3" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><circle cx="22" cy="22" r="11" stroke="#1a1a2e" stroke-width="1.5" fill="white"/><line x1="9" y1="9" x2="35" y2="35" stroke="#1a1a2e" stroke-width="2.5"/></svg><span>Nicht im Trockner</span></div>
-        <div class="ci"><svg viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="3" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><line x1="10" y1="22" x2="34" y2="22" stroke="#1a1a2e" stroke-width="3"/></svg><span>Liegend trocknen</span></div>
-        <div class="ci"><svg viewBox="0 0 52 40" fill="none"><path d="M6 30 Q6 18 20 17 L40 17 Q46 17 46 23 L46 30 Z" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><rect x="16" y="30" width="26" height="5" rx="1" stroke="#1a1a2e" stroke-width="1.5" fill="#eee"/><line x1="26" y1="17" x2="26" y2="10" stroke="#1a1a2e" stroke-width="2.5"/><line x1="26" y1="10" x2="16" y2="10" stroke="#1a1a2e" stroke-width="2.5"/><line x1="16" y1="10" x2="16" y2="15" stroke="#1a1a2e" stroke-width="2.5"/><circle cx="26" cy="24" r="2.5" fill="#1a1a2e"/></svg><span>Bügeln max. 110°C</span></div>
-        <div class="ci"><svg viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="17" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><text x="22" y="28" text-anchor="middle" font-size="15" font-weight="800" fill="#1a1a2e" font-family="serif">P</text><line x1="8" y1="8" x2="36" y2="36" stroke="#1a1a2e" stroke-width="2.5"/></svg><span>Keine chem. Reinigung</span></div>
+        <div class="ci"><svg viewBox="0 0 44 40" fill="none"><path d="M4 14 L8 36 L36 36 L40 14 Z" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><text x="22" y="30" text-anchor="middle" font-size="11" font-weight="800" fill="#1a1a2e" font-family="sans-serif">30°</text><line x1="13" y1="24" x2="31" y2="24" stroke="#1a1a2e" stroke-width="1.5" stroke-dasharray="3,2"/></svg><span>${T.care30}</span></div>
+        <div class="ci"><svg viewBox="0 0 44 40" fill="none"><polygon points="22,4 40,36 4,36" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><line x1="12" y1="16" x2="32" y2="32" stroke="#1a1a2e" stroke-width="2.5"/><line x1="32" y1="16" x2="12" y2="32" stroke="#1a1a2e" stroke-width="2.5"/></svg><span>${T.careNoBleach}</span></div>
+        <div class="ci"><svg viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="3" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><circle cx="22" cy="22" r="11" stroke="#1a1a2e" stroke-width="1.5" fill="white"/><line x1="9" y1="9" x2="35" y2="35" stroke="#1a1a2e" stroke-width="2.5"/></svg><span>${T.careNoDryer}</span></div>
+        <div class="ci"><svg viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="3" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><line x1="10" y1="22" x2="34" y2="22" stroke="#1a1a2e" stroke-width="3"/></svg><span>${T.careDryFlat}</span></div>
+        <div class="ci"><svg viewBox="0 0 52 40" fill="none"><path d="M6 30 Q6 18 20 17 L40 17 Q46 17 46 23 L46 30 Z" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><rect x="16" y="30" width="26" height="5" rx="1" stroke="#1a1a2e" stroke-width="1.5" fill="#eee"/><line x1="26" y1="17" x2="26" y2="10" stroke="#1a1a2e" stroke-width="2.5"/><line x1="26" y1="10" x2="16" y2="10" stroke="#1a1a2e" stroke-width="2.5"/><line x1="16" y1="10" x2="16" y2="15" stroke="#1a1a2e" stroke-width="2.5"/><circle cx="26" cy="24" r="2.5" fill="#1a1a2e"/></svg><span>${T.careIron}</span></div>
+        <div class="ci"><svg viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="17" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><text x="22" y="28" text-anchor="middle" font-size="15" font-weight="800" fill="#1a1a2e" font-family="serif">P</text><line x1="8" y1="8" x2="36" y2="36" stroke="#1a1a2e" stroke-width="2.5"/></svg><span>${T.careNoDry}</span></div>
       </div>
-      <div class="ibox"><strong>Waschanleitung:</strong> Karate-Gi bei max. 30°C waschen. Kein Weichspüler. Nicht im Trockner. Liegend lufttrocknen. Weiße Gis alternativ bei 60°C. Bei Bedarf auf links bügeln.</div>
+      <div class="ibox">${T.careNote}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:4mm;">
-      <span class="lbl" style="display:block;">Label-Spezifikation:</span>
-      <div class="f"><span class="lbl">Material (Label-Text)</span><input class="val" type="text" value="${spez.labelText || ''}" placeholder="z. B. 100% Baumwolle / 100% Cotton"></div>
-      <div class="f"><span class="lbl">Label-Sprachen</span>
+      <span class="lbl" style="display:block;">${T.labelSpec}</span>
+      <div class="f"><span class="lbl">${T.labelMat}</span><input class="val" type="text" value="${spez.labelText || ''}" placeholder="z. B. 100% Baumwolle / 100% Cotton"></div>
+      <div class="f"><span class="lbl">${T.labelLang}</span>
         <div class="tags">
-          <label class="tag"><input type="checkbox" ${langIn('Deutsch')}> Deutsch</label>
-          <label class="tag"><input type="checkbox" ${langIn('Englisch')}> Englisch</label>
-          <label class="tag"><input type="checkbox" ${langIn('Französisch')}> Französisch</label>
-          <label class="tag"><input type="checkbox" ${langIn('Japanisch')}> Japanisch</label>
+          <label class="tag"><input type="checkbox" ${langIn('Deutsch')}> ${T.langDE}</label>
+          <label class="tag"><input type="checkbox" ${langIn('Englisch')}> ${T.langEN}</label>
+          <label class="tag"><input type="checkbox" ${langIn('Französisch')}> ${T.langFR}</label>
+          <label class="tag"><input type="checkbox" ${langIn('Japanisch')}> ${T.langJA}</label>
         </div>
       </div>
-      <div class="f"><span class="lbl">Label-Art</span>
+      <div class="f"><span class="lbl">${T.labelType}</span>
         <div class="tags">
-          <label class="tag"><input type="checkbox" ${artIn('Gewebtes Etikett')}> Gewebtes Etikett</label>
-          <label class="tag"><input type="checkbox" ${artIn('Gedrucktes Etikett')}> Gedrucktes Etikett</label>
-          <label class="tag"><input type="checkbox" ${artIn('Eingestickt')}> Eingestickt</label>
+          <label class="tag"><input type="checkbox" ${artIn('Gewebtes Etikett')}> ${T.labelWoven}</label>
+          <label class="tag"><input type="checkbox" ${artIn('Gedrucktes Etikett')}> ${T.labelPrinted}</label>
+          <label class="tag"><input type="checkbox" ${artIn('Eingestickt')}> ${T.labelEmb}</label>
         </div>
       </div>
-      <div class="f"><span class="lbl">Label-Position</span>
+      <div class="f"><span class="lbl">${T.labelPos}</span>
         <div class="tags">
-          <label class="tag"><input type="checkbox" ${posLIn('Nacken (innen)')}> Nacken (innen)</label>
-          <label class="tag"><input type="checkbox" ${posLIn('Seitennaht')}> Seitennaht</label>
-          <label class="tag"><input type="checkbox" ${posLIn('Hosenbund (innen)')}> Hosenbund (innen)</label>
+          <label class="tag"><input type="checkbox" ${posLIn('Nacken (innen)')}> ${T.labelNeck}</label>
+          <label class="tag"><input type="checkbox" ${posLIn('Seitennaht')}> ${T.labelSeam}</label>
+          <label class="tag"><input type="checkbox" ${posLIn('Hosenbund (innen)')}> ${T.labelWaist}</label>
         </div>
       </div>
-      <div class="f"><span class="lbl">Zusatztext auf Label</span><input class="val" type="text" value="${spez.labelZusatz || ''}" placeholder="z. B. Made exclusively for Kampfkunstschule Schreiner · TDA"></div>
+      <div class="f"><span class="lbl">${T.labelExtra}</span><input class="val" type="text" value="${spez.labelZusatz || ''}" placeholder="${T.labelExtraHint}"></div>
     </div>
   </div>
 </div>
 
 <div class="sec">
-  <div class="st"><span class="n">7</span> Bemerkungen</div>
+  <div class="st"><span class="n">7</span> ${T.s7}</div>
   <textarea style="border:1px solid #ccc;border-radius:3px;padding:4px 6px;width:100%;font-size:9pt;font-family:inherit;resize:vertical;min-height:16mm;" rows="3">${form.bemerkungen}</textarea>
 </div>
 
 <div class="sec">
-  <div class="st"><span class="n">8</span> Freigabe &amp; Unterschrift</div>
+  <div class="st"><span class="n">8</span> ${T.s8}</div>
   <div class="fg3" style="margin-bottom:5mm;">
-    <div class="f"><span class="lbl">Gesamtmenge</span><input class="val" type="text" value="${grandTotal} Stück" style="font-weight:800;font-size:13pt;"></div>
-    <div class="f"><span class="lbl">Auftragswert (netto)</span><input class="val" type="text" placeholder="€ ___________"></div>
-    <div class="f"><span class="lbl">Zahlungsziel / Incoterms</span><input class="val" type="text" placeholder="z. B. 30 Tage / DAP"></div>
+    <div class="f"><span class="lbl">${T.qty}</span><input class="val" type="text" value="${grandTotal} ${T.pcs}" style="font-weight:800;font-size:13pt;"></div>
+    <div class="f"><span class="lbl">${T.orderVal}</span><input class="val" type="text" placeholder="€ ___________"></div>
+    <div class="f"><span class="lbl">${T.payTerms}</span><input class="val" type="text" placeholder="z. B. 30 Tage / DAP"></div>
   </div>
   <div class="sig-row">
-    <div><div class="sig-area"></div><div class="sig-cap">Datum &amp; Ort</div></div>
-    <div><div class="sig-area"></div><div class="sig-cap">Unterschrift Besteller<br><small>Kampfkunstschule Schreiner</small></div></div>
-    <div><div class="sig-area"></div><div class="sig-cap">Bestätigung Lieferant<br><small>Stempel + Unterschrift</small></div></div>
+    <div><div class="sig-area"></div><div class="sig-cap">${T.sigDate}</div></div>
+    <div><div class="sig-area"></div><div class="sig-cap">${T.sigBuyer}<br><small>${T.sigBuyerSub}</small></div></div>
+    <div><div class="sig-area"></div><div class="sig-cap">${T.sigSupplier}<br><small>${T.sigStamp}</small></div></div>
   </div>
 </div>
 </div>
@@ -1400,26 +1534,26 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 <!-- SEITE 4 -->
 <div class="page">
 <div class="ph">
-  <div><h1 style="font-size:15pt;">Maßtabellen &amp; Größenübersicht</h1><div class="sub">Beide Modelle – Referenz-Maßzeichnungen</div></div>
-  <div style="font-size:8pt;color:#999;text-align:right;">Seite 4 / 4<br>Toleranz ±1,5 cm</div>
+  <div><h1 style="font-size:15pt;">${T.s9}</h1><div class="sub">${T.s9sub}</div></div>
+  <div style="font-size:8pt;color:#999;text-align:right;">${T.page(4,4)}<br>${T.tolerance}</div>
 </div>
 <div class="chart-block">
   <div class="chart-label" style="${form.model==='128'?'border-color:var(--gold);':'border-color:#ddd;color:#999;'}">
-    Modell 128 &nbsp;·&nbsp; 11 Größen (140–200 cm) ${form.model==='128'?' ← Gewähltes Modell':''}
+    Modell 128 &nbsp;·&nbsp; 11 Größen (140–200 cm)${form.model==='128'?' '+T.selectedModel:''}
   </div>
   <img src="${img128}" alt="Größentabelle Modell 128">
 </div>
 <div class="chart-block">
   <div class="chart-label" style="${form.model==='188'?'border-color:var(--gold);':'border-color:#ddd;color:#999;'}">
-    Modell 188 &nbsp;·&nbsp; 8 Größen (130–200 cm) ${form.model==='188'?' ← Gewähltes Modell':''}
+    Modell 188 &nbsp;·&nbsp; 8 Größen (130–200 cm)${form.model==='188'?' '+T.selectedModel:''}
   </div>
   <img src="${img188}" alt="Größentabelle Modell 188">
 </div>
 <div style="font-size:7.5pt;color:#999;text-align:center;margin:3mm 0;font-style:italic;">
-  Masspunkte: 1=Rückenlänge Jacke · 2=Rückenbreite · 3=Spannweite gesamt · 4=Ärmellänge · 5=Schulterbreite · A=Hosenlänge · B=Bundbreite (½) · C=Saumbreite (½)
+  ${T.refPoints}
 </div>
 </div>
 
-<button class="print-btn" onclick="window.print()">&#128438; PDF drucken</button>
+<button class="print-btn" onclick="window.print()">${T.printBtn}</button>
 </body></html>`;
 }
