@@ -110,11 +110,11 @@ const BestellungenTab = () => {
   }, [loadData]);
 
   const loadDojoBestellungen = useCallback(async () => {
-    const djId = activeDojo?.id;
-    if (!djId) return;
     setDojoLoading(true);
     try {
-      const res = await axios.get(`/gi-bestellungen?dojo_id=${djId}`);
+      const djId = activeDojo?.id;
+      const url = djId ? `/gi-bestellungen?dojo_id=${djId}` : '/gi-bestellungen';
+      const res = await axios.get(url);
       setDojoBestellungen(res.data?.data || []);
     } catch {}
     finally { setDojoLoading(false); }
@@ -125,11 +125,12 @@ const BestellungenTab = () => {
   }, [activeSubTab, loadDojoBestellungen]);
 
   const openGiBestellung = async (b) => {
-    const djId = activeDojo?.id;
     try {
       let vorlage = null;
-      if (b.vorlage_id && djId) {
-        const res = await axios.get(`/bestellvorlagen/${b.vorlage_id}?dojo_id=${djId}`);
+      if (b.vorlage_id) {
+        const djId = activeDojo?.id;
+        const url = djId ? `/bestellvorlagen/${b.vorlage_id}?dojo_id=${djId}` : `/bestellvorlagen/${b.vorlage_id}`;
+        const res = await axios.get(url);
         vorlage = res.data?.data || null;
       }
       const formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
@@ -528,7 +529,8 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                           value={b.status}
                           onChange={async (e) => {
                             try {
-                              await axios.patch(`/gi-bestellungen/${b.bestellung_id}/status?dojo_id=${activeDojo?.id}`, { status: e.target.value });
+                              const djId2 = activeDojo?.id;
+                              await axios.patch(`/gi-bestellungen/${b.bestellung_id}/status${djId2 ? `?dojo_id=${djId2}` : ''}`, { status: e.target.value });
                               setDojoBestellungen(prev => prev.map(x => x.bestellung_id === b.bestellung_id ? { ...x, status: e.target.value } : x));
                             } catch {}
                           }}
@@ -545,7 +547,8 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                           onClick={async () => {
                             if (!window.confirm(`Bestellung #${String(b.bestellung_id).padStart(4,'0')} wirklich löschen?`)) return;
                             try {
-                              await axios.delete(`/gi-bestellungen/${b.bestellung_id}?dojo_id=${activeDojo?.id}`);
+                              const djId3 = activeDojo?.id;
+                              await axios.delete(`/gi-bestellungen/${b.bestellung_id}${djId3 ? `?dojo_id=${djId3}` : ''}`);
                               setDojoBestellungen(prev => prev.filter(x => x.bestellung_id !== b.bestellung_id));
                             } catch {}
                           }}
