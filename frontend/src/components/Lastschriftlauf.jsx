@@ -1254,24 +1254,26 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                     {/* Details-Zeile - nur anzeigen wenn expandiert */}
                     {expandedRows.has(item.mitglied_id) && item.beitraege && item.beitraege.length > 0 && (
                       <tr className="details-row">
-                        <td></td>
-                        <td colSpan={7} className="ll-details-td">
+                        <td colSpan={8} className="ll-details-td">
                           <div className="ll-details-inner">
-                            <strong className="ll-details-heading">Einzelne Beiträge:</strong>
+                            <div className="ll-details-heading">
+                              <span>Einzelne Beiträge</span>
+                              <span className="ll-details-count">{item.beitraege.length} Position{item.beitraege.length !== 1 ? 'en' : ''}</span>
+                            </div>
                             <table className="ll-details-table">
                               <thead>
                                 <tr className="ll-details-thead-row">
                                   <th className="ll-td-left">Beschreibung</th>
-                                  <th className="ll-td-left">Datum</th>
-                                  <th className="ll-td-right">Betrag</th>
+                                  <th className="ll-td-left ll-details-th-datum">Datum</th>
+                                  <th className="ll-td-right ll-details-th-betrag">Betrag</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {item.beitraege.map((beitrag, bIdx) => (
                                   <tr key={bIdx} className="ll-details-beitrag-row">
-                                    <td className="ll-td-pad">{beitrag.beschreibung || beitrag.monat}</td>
-                                    <td className="ll-td-pad">{beitrag.datum}</td>
-                                    <td className="ll-td-right">{formatCurrency(beitrag.betrag)}</td>
+                                    <td className="ll-details-td-desc">{beitrag.beschreibung || beitrag.monat}</td>
+                                    <td className="ll-details-td-datum">{beitrag.datum}</td>
+                                    <td className="ll-details-td-betrag">{formatCurrency(beitrag.betrag)}</td>
                                   </tr>
                                 ))}
                               </tbody>

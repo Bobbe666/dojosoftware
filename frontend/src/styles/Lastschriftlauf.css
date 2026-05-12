@@ -1052,12 +1052,73 @@
 .ll-th-expand { width: 30px; }
 .ll-td-expand { text-align: center; cursor: pointer; padding: 0.5rem; }
 .ll-badge-mr { margin-right: 0.5rem; }
-.ll-details-td { padding: 0.5rem 1rem; background-color: rgba(255,255,255,0.05); }
-.ll-details-inner { font-size: 0.85rem; }
-.ll-details-heading { margin-bottom: 0.5rem; display: block; }
-.ll-details-table { width: 100%; margin-top: 0.5rem; }
-.ll-details-thead-row { font-size: 0.8rem; color: var(--text-secondary); }
-.ll-details-beitrag-row { border-bottom: 1px solid rgba(255,255,255,0.1); }
+.ll-details-td {
+  padding: 0;
+  background: rgba(255,255,255,0.03);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 2px solid rgba(255,255,255,0.08);
+}
+.ll-details-inner {
+  padding: 1.25rem 2rem 1.25rem 3rem;
+  font-size: 0.88rem;
+}
+.ll-details-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.5);
+}
+.ll-details-count {
+  font-weight: 400;
+  font-size: 0.75rem;
+  background: rgba(255,255,255,0.08);
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ll-details-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.ll-details-thead-row th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 0.75rem 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.ll-details-th-datum { width: 110px; }
+.ll-details-th-betrag { width: 100px; }
+.ll-details-beitrag-row { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.ll-details-beitrag-row:last-child { border-bottom: none; }
+.ll-details-td-desc {
+  padding: 0.6rem 0.75rem;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.4;
+}
+.ll-details-td-datum {
+  padding: 0.6rem 0.75rem;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap;
+  width: 110px;
+}
+.ll-details-td-betrag {
+  padding: 0.6rem 0.75rem;
+  text-align: right;
+  font-weight: 600;
+  color: #d4af37;
+  white-space: nowrap;
+  width: 100px;
+}
 
 /* Filter & Sortierung */
 .ll-filter-bar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
