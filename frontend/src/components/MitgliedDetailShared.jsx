@@ -121,16 +121,25 @@ function IbanRechner({ onUebernehmen }) {
       </div>
 
       {result && result.ok && (
-        <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: 'monospace', color: '#4caf82', fontWeight: 700, fontSize: '0.9rem', letterSpacing: '0.05em' }}>{result.iban}</span>
-          {result.bankname && <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>{result.bankname}{result.bic ? ` · ${result.bic}` : ''}</span>}
-          <button
-            type="button"
-            onClick={() => { onUebernehmen(result); setOpen(false); }}
-            style={{ marginLeft: 'auto', background: 'rgba(76,175,130,0.2)', border: '1px solid rgba(76,175,130,0.5)', borderRadius: '6px', color: '#4caf82', padding: '0.3rem 0.7rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
-          >
-            ✓ Übernehmen
-          </button>
+        <div style={{ marginTop: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: 'monospace', color: '#4caf82', fontWeight: 700, fontSize: '0.9rem', letterSpacing: '0.05em' }}>{result.iban}</span>
+            {result.bic && result.bankname !== 'Unbekannte Bank' && (
+              <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>{result.bankname} · {result.bic}</span>
+            )}
+            <button
+              type="button"
+              onClick={() => { onUebernehmen(result); setOpen(false); }}
+              style={{ marginLeft: 'auto', background: 'rgba(76,175,130,0.2)', border: '1px solid rgba(76,175,130,0.5)', borderRadius: '6px', color: '#4caf82', padding: '0.3rem 0.7rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
+            >
+              ✓ Übernehmen
+            </button>
+          </div>
+          {(!result.bic || result.bankname === 'Unbekannte Bank') && (
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,200,100,0.8)', marginTop: '0.3rem' }}>
+              ℹ IBAN korrekt berechnet. Bank nicht in Datenbank — BIC bitte manuell eintragen.
+            </div>
+          )}
         </div>
       )}
       {result && !result.ok && (
