@@ -448,9 +448,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         {/* ── BESTELLDATEN ── */}
         <div className="gv-section">
           <div className="gv-section-title">Bestelldaten</div>
-          <div className="gv-grid2">
-            <div className="gv-field">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+          <div className="gv-grid4">
+            {/* Zeile 1: Lieferant (2 Spalten) + Hersteller + Farbe */}
+            <div className="gv-field gv-col-2">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
                 <label className="gv-label" style={{ margin: 0 }}>Lieferant (aus Liste)</label>
                 <button className="gv-btn-lt-new" onClick={() => { setLtModal(true); setLtError(''); }}>+ Neu anlegen</button>
               </div>
@@ -464,29 +465,37 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               <input className="gv-input" value={form.lieferantFreitext} onChange={f('lieferantFreitext')} placeholder="Name des Herstellers" />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Ansprechpartner Lieferant</label>
+              <label className="gv-label">Farbe / Ausführung</label>
+              <input className="gv-input" value={form.farbe} onChange={f('farbe')} />
+            </div>
+            {/* Zeile 2: 4 kleine Felder */}
+            <div className="gv-field">
+              <label className="gv-label">AP Lieferant</label>
               <input className="gv-input" value={form.ansprechpartnerLieferant} onChange={f('ansprechpartnerLieferant')}
-                placeholder={selectedLt?.email ? `E-Mail: ${selectedLt.email}` : 'Name / Abteilung'} />
+                placeholder={selectedLt?.email ? selectedLt.email : 'Name / Abteilung'} />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Ansprechpartner Besteller</label>
+              <label className="gv-label">AP Besteller</label>
               <input className="gv-input" value={form.ansprechpartnerBesteller} onChange={f('ansprechpartnerBesteller')} />
             </div>
             <div className="gv-field">
               <label className="gv-label">Bestelldatum</label>
-              <input className="gv-input" value={form.bestelldatum} onChange={f('bestelldatum')} />
+              <input className="gv-input" value={form.bestelldatum} onChange={f('bestelldatum')} placeholder="TT.MM.JJJJ" />
             </div>
             <div className="gv-field">
               <label className="gv-label">Gewünschtes Lieferdatum</label>
               <input className="gv-input" value={form.lieferdatum} onChange={f('lieferdatum')} placeholder="TT.MM.JJJJ" />
             </div>
-            <div className="gv-field">
+            {/* Zeile 3: Projekt + WKF */}
+            <div className="gv-field gv-col-3">
               <label className="gv-label">Projekt / Verwendungszweck</label>
               <input className="gv-input" value={form.projekt} onChange={f('projekt')} placeholder="z. B. Vereinsausstattung 2026" />
             </div>
-            <div className="gv-field">
-              <label className="gv-label">Farbe / Ausführung</label>
-              <input className="gv-input" value={form.farbe} onChange={f('farbe')} />
+            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0.1rem' }}>
+              <label className="gv-check-row" style={{ margin: 0 }}>
+                <input type="checkbox" checked={form.wkf} onChange={fb('wkf')} />
+                WKF-zugelassen
+              </label>
             </div>
           </div>
           {selectedLt && (
@@ -499,16 +508,12 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               {selectedLt.waehrung && selectedLt.waehrung !== 'EUR' && <span className="gv-lt-warn">⚠ {selectedLt.waehrung}</span>}
             </div>
           )}
-          <label className="gv-check-row">
-            <input type="checkbox" checked={form.wkf} onChange={fb('wkf')} />
-            WKF-zugelassen / WKF Approved
-          </label>
         </div>
 
         {/* ── PRODUKTSPEZIFIKATION ── */}
         <div className="gv-section">
           <div className="gv-section-title">Produktspezifikation</div>
-          <div className="gv-grid2">
+          <div className="gv-grid3">
             <div className="gv-field">
               <label className="gv-label">Material</label>
               <SpezChip options={MATERIALIEN} field="material" />
