@@ -552,176 +552,169 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
       {/* Neues Bestellung Modal */}
       {showOrderModal && (
         <div className="modal-overlay" onClick={() => setShowOrderModal(false)}>
-          <div className="modal-content order-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header om-header">
-              <div className="om-header__left">
-                <span className="om-header__icon">📦</span>
-                <div>
-                  <h2 className="om-header__title">Neue Bestellung</h2>
-                  <p className="om-header__sub">Bestellformular & PDF-Generierung</p>
-                </div>
+          <div className="om-modal" onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div className="om-modal__header">
+              <div className="om-modal__title-group">
+                <span className="om-modal__title">Neue Bestellung</span>
+                <span className="om-modal__count">
+                  {orderForm.positionen.length} {orderForm.positionen.length === 1 ? 'Position' : 'Positionen'}
+                </span>
               </div>
-              <button className="close-btn" onClick={() => setShowOrderModal(false)}>✕</button>
+              <button className="om-modal__close" onClick={() => setShowOrderModal(false)}>✕</button>
             </div>
 
-            <div className="modal-body">
-              {/* Lieferant Info */}
-              <div className="form-section om-section">
-                <h3 className="om-section__title">🏭 Lieferant</h3>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Lieferantenname</label>
-                    <input
-                      type="text"
-                      value={orderForm.lieferant_name}
-                      onChange={e => setOrderForm(prev => ({ ...prev, lieferant_name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Land</label>
-                    <input
-                      type="text"
-                      value={orderForm.lieferant_land}
-                      onChange={e => setOrderForm(prev => ({ ...prev, lieferant_land: e.target.value }))}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>E-Mail</label>
-                    <input
-                      type="email"
-                      value={orderForm.lieferant_email}
-                      onChange={e => setOrderForm(prev => ({ ...prev, lieferant_email: e.target.value }))}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Telefon</label>
-                    <input
-                      type="text"
-                      value={orderForm.lieferant_telefon}
-                      onChange={e => setOrderForm(prev => ({ ...prev, lieferant_telefon: e.target.value }))}
-                    />
-                  </div>
+            {/* Two-column body */}
+            <div className="om-modal__body">
+
+              {/* LEFT: Lieferant + Bemerkungen */}
+              <div className="om-col">
+                <p className="om-col__label">Lieferant</p>
+
+                <div className="om-field">
+                  <label className="om-field__label">Name</label>
+                  <input className="om-field__input" type="text"
+                    value={orderForm.lieferant_name}
+                    onChange={e => setOrderForm(prev => ({ ...prev, lieferant_name: e.target.value }))}
+                  />
                 </div>
-              </div>
-
-              {/* Artikel mit niedrigem Bestand */}
-              {lowStockItems.length > 0 && (
-                <div className="form-section om-section">
-                  <h3 className="om-section__title">⚠️ Nachzubestellende Artikel</h3>
-                  <div className="low-stock-select">
-                    {lowStockItems.map(item => {
-                      const isAdded = orderForm.positionen.some(p => p.artikel_id === item.artikel_id);
-                      return (
-                        <div
-                          key={item.artikel_id}
-                          className={`selectable-item ${isAdded ? 'selected' : ''}`}
-                          onClick={() => !isAdded && handleAddToOrder(item)}
-                        >
-                          <span className="item-name">{item.artikel_name}</span>
-                          <span className="item-stock">Bestand: {item.lagerbestand}</span>
-                          {isAdded && <span className="check-mark">✓</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="om-field">
+                  <label className="om-field__label">Land</label>
+                  <input className="om-field__input" type="text"
+                    value={orderForm.lieferant_land}
+                    onChange={e => setOrderForm(prev => ({ ...prev, lieferant_land: e.target.value }))}
+                  />
                 </div>
-              )}
-
-              {/* Bestellpositionen */}
-              {orderForm.positionen.length > 0 && (
-                <div className="form-section om-section">
-                  <h3 className="om-section__title">🛒 Bestellpositionen</h3>
-                  {orderForm.positionen.map((position, posIndex) => (
-                    <div key={posIndex} className="position-card">
-                      <div className="position-header">
-                        {position.bild_url && (
-                          <img
-                            src={position.bild_url}
-                            alt={position.artikel_name}
-                            style={{width:40,height:40,objectFit:'contain',border:'1px solid var(--border-color)',borderRadius:4,background:'var(--bg-secondary)',flexShrink:0}}
-                            onError={e => e.target.style.display='none'}
-                          />
-                        )}
-                        <span className="position-name">{position.artikel_name}</span>
-                        {position.artikel_nummer && (
-                          <span className="position-number">#{position.artikel_nummer}</span>
-                        )}
-                        <button
-                          className="remove-btn"
-                          onClick={() => handleRemovePosition(posIndex)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      <div className="size-quantity-grid">
-                        {Object.entries(position.groessen_mengen).map(([size, qty]) => (
-                          <div key={size} className="size-input-group">
-                            <label>{size}</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={qty}
-                              onChange={e => handleQuantityChange(posIndex, size, e.target.value)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="position-price">
-                        <label>Stückpreis (EUR):</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={position.stueckpreis_euro}
-                          onChange={e => {
-                            const newPositionen = [...orderForm.positionen];
-                            newPositionen[posIndex].stueckpreis_euro = parseFloat(e.target.value) || 0;
-                            setOrderForm(prev => ({ ...prev, positionen: newPositionen }));
-                          }}
-                        />
-                      </div>
-
-                      <div className="position-note">
-                        <label>Anmerkung:</label>
-                        <input
-                          type="text"
-                          placeholder="Besondere Hinweise..."
-                          value={position.bemerkung}
-                          onChange={e => {
-                            const newPositionen = [...orderForm.positionen];
-                            newPositionen[posIndex].bemerkung = e.target.value;
-                            setOrderForm(prev => ({ ...prev, positionen: newPositionen }));
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                <div className="om-field">
+                  <label className="om-field__label">E-Mail</label>
+                  <input className="om-field__input" type="email"
+                    value={orderForm.lieferant_email}
+                    onChange={e => setOrderForm(prev => ({ ...prev, lieferant_email: e.target.value }))}
+                  />
                 </div>
-              )}
+                <div className="om-field">
+                  <label className="om-field__label">Telefon</label>
+                  <input className="om-field__input" type="text"
+                    value={orderForm.lieferant_telefon}
+                    onChange={e => setOrderForm(prev => ({ ...prev, lieferant_telefon: e.target.value }))}
+                  />
+                </div>
 
-              {/* Bemerkungen */}
-              <div className="form-section om-section">
-                <h3 className="om-section__title">📝 Bemerkungen</h3>
-                <textarea
+                <p className="om-col__label" style={{marginTop:'1.25rem'}}>Bemerkungen</p>
+                <textarea className="om-field__textarea"
                   rows="4"
-                  placeholder="Zusätzliche Hinweise für den Lieferanten..."
+                  placeholder="Hinweise für den Lieferanten..."
                   value={orderForm.bemerkungen}
                   onChange={e => setOrderForm(prev => ({ ...prev, bemerkungen: e.target.value }))}
-                ></textarea>
+                />
+              </div>
+
+              {/* RIGHT: Artikel-Auswahl + Positionen */}
+              <div className="om-col om-col--right">
+                {/* Nachzubestellende Artikel als Chips */}
+                {lowStockItems.length > 0 && (
+                  <>
+                    <p className="om-col__label">Verfügbare Artikel</p>
+                    <div className="om-chips">
+                      {lowStockItems.map(item => {
+                        const isAdded = orderForm.positionen.some(p => p.artikel_id === item.artikel_id);
+                        return (
+                          <button
+                            key={item.artikel_id}
+                            className={`om-chip ${isAdded ? 'om-chip--added' : ''}`}
+                            onClick={() => !isAdded && handleAddToOrder(item)}
+                            disabled={isAdded}
+                          >
+                            {isAdded && <span className="om-chip__check">✓</span>}
+                            <span>{item.artikel_name}</span>
+                            <span className="om-chip__stock">Bestand: {item.lagerbestand}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* Bestellpositionen */}
+                <p className="om-col__label" style={{marginTop: lowStockItems.length > 0 ? '1.25rem' : 0}}>
+                  Positionen
+                </p>
+                {orderForm.positionen.length === 0 ? (
+                  <div className="om-empty">
+                    Noch keine Artikel hinzugefügt
+                  </div>
+                ) : (
+                  <div className="om-positions">
+                    {orderForm.positionen.map((position, posIndex) => (
+                      <div key={posIndex} className="om-position">
+                        <div className="om-position__head">
+                          {position.bild_url && (
+                            <img src={position.bild_url} alt={position.artikel_name}
+                              className="om-position__img"
+                              onError={e => e.target.style.display='none'}
+                            />
+                          )}
+                          <span className="om-position__name">{position.artikel_name}</span>
+                          {position.artikel_nummer && (
+                            <span className="om-position__nr">#{position.artikel_nummer}</span>
+                          )}
+                          <button className="om-position__remove" onClick={() => handleRemovePosition(posIndex)}>✕</button>
+                        </div>
+
+                        {Object.keys(position.groessen_mengen).length > 0 && (
+                          <div className="om-position__sizes">
+                            {Object.entries(position.groessen_mengen).map(([size, qty]) => (
+                              <div key={size} className="om-position__size-row">
+                                <span className="om-position__size-label">{size}</span>
+                                <input className="om-position__size-input" type="number" min="0"
+                                  value={qty}
+                                  onChange={e => handleQuantityChange(posIndex, size, e.target.value)}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="om-position__meta">
+                          <div className="om-field om-field--inline">
+                            <label className="om-field__label">Stückpreis €</label>
+                            <input className="om-field__input" type="number" step="0.01"
+                              value={position.stueckpreis_euro}
+                              onChange={e => {
+                                const p = [...orderForm.positionen];
+                                p[posIndex].stueckpreis_euro = parseFloat(e.target.value) || 0;
+                                setOrderForm(prev => ({ ...prev, positionen: p }));
+                              }}
+                            />
+                          </div>
+                          <div className="om-field om-field--inline">
+                            <label className="om-field__label">Anmerkung</label>
+                            <input className="om-field__input" type="text" placeholder="Hinweise..."
+                              value={position.bemerkung}
+                              onChange={e => {
+                                const p = [...orderForm.positionen];
+                                p[posIndex].bemerkung = e.target.value;
+                                setOrderForm(prev => ({ ...prev, positionen: p }));
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="modal-footer om-footer">
-              <button className="cancel-btn" onClick={() => setShowOrderModal(false)}>
+            {/* Footer */}
+            <div className="om-modal__footer">
+              <button className="om-btn om-btn--cancel" onClick={() => setShowOrderModal(false)}>
                 Abbrechen
               </button>
-              <button
-                className="submit-btn"
-                onClick={handleCreateOrder}
-                disabled={orderForm.positionen.length === 0}
-              >
-                📄 Bestellung erstellen & PDF
+              <button className="om-btn om-btn--submit" onClick={handleCreateOrder}
+                disabled={orderForm.positionen.length === 0}>
+                Bestellung erstellen & PDF
               </button>
             </div>
           </div>
