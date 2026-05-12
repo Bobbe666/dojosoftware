@@ -114,7 +114,7 @@ router.post('/', async (req, res) => {
   const dojoId = getSecureDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Keine Berechtigung' });
 
-  const { mitglied_id, betrag, beschreibung, rueckgabe_code, datum } = req.body;
+  const { mitglied_id, betrag, beschreibung, rueckgabe_code, datum, beitrag_id } = req.body;
 
   if (!betrag || !beschreibung) {
     return res.status(400).json({ error: 'Betrag und Beschreibung sind Pflichtfelder' });
@@ -137,7 +137,44 @@ router.post('/', async (req, res) => {
       `, [rueckgabeBeschreibung, mitglied_id]).catch(() => {});
     }
 
-    res.json({ success: true, id: result.insertId, message: 'Rücklastschrift erfasst' });
+    // Beitrag, Rechnung und Verkauf zurücksetzen
+    // Explizite beitrag_id hat Vorrang; sonst suchen wir den passenden bezahlten Lastschrift-Beitrag
+    let reversedBeitragId = beitrag_id || null;
+    if (!reversedBeitragId && mitglied_id) {
+      const [matchRows] = await pool.query(`
+        SELECT b.beitrag_id FROM beitraege b
+        JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+        WHERE b.mitglied_id = ? AND b.bezahlt = 1
+          AND ABS(b.betrag - ?) < 0.01 AND m.dojo_id = ?
+        ORDER BY b.zahllauf_id DESC, b.beitrag_id DESC LIMIT 1
+      `, [mitglied_id, parseFloat(betrag), dojoId]);
+      if (matchRows.length > 0) reversedBeitragId = matchRows[0].beitrag_id;
+    }
+
+    let reversalInfo = null;
+    if (reversedBeitragId) {
+      await pool.query(`UPDATE beitraege SET bezahlt = 0, zahllauf_id = NULL WHERE beitrag_id = ?`, [reversedBeitragId]);
+      const [[bRow]] = await pool.query(`SELECT rechnung_id FROM beitraege WHERE beitrag_id = ?`, [reversedBeitragId]);
+      if (bRow?.rechnung_id) {
+        await pool.query(`UPDATE rechnungen SET status = 'offen', bezahlt_am = NULL WHERE rechnung_id = ? AND status = 'bezahlt'`, [bRow.rechnung_id]);
+        // Verkauf zurücksetzen via bon_nummer aus magicline_description
+        await pool.query(`
+          UPDATE verkaeufe v JOIN beitraege b ON b.magicline_description LIKE CONCAT('%Bon: ', v.bon_nummer, '%')
+          SET v.zahlungsstatus = 'offen'
+          WHERE b.beitrag_id = ? AND v.zahlungsart = 'lastschrift'
+        `, [reversedBeitragId]);
+        reversalInfo = { beitrag_id: reversedBeitragId, rechnung_id: bRow.rechnung_id };
+      } else {
+        reversalInfo = { beitrag_id: reversedBeitragId };
+      }
+    }
+
+    res.json({
+      success: true,
+      id: result.insertId,
+      message: 'Rücklastschrift erfasst' + (reversalInfo ? ' — Rechnung und Beitrag zurückgesetzt' : ''),
+      reversal: reversalInfo
+    });
 
   } catch (err) {
     logger.error('Rücklastschrift anlegen:', { error: err.message });
