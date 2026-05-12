@@ -234,7 +234,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     setLtSaving(true); setLtError('');
     const djId = vorlage?.dojo_id || activeDojo?.id;
     try {
-      const res = await axios.post(`/lieferanten?dojo_id=${djId}`, ltForm);
+      const NUMERIC = ['zahlungsziel_tage', 'skonto_prozent', 'skonto_tage', 'mindestbestellwert_cent', 'lieferzeit_tage'];
+      const payload = { ...ltForm };
+      NUMERIC.forEach(k => { payload[k] = payload[k] !== '' && payload[k] !== undefined ? Number(payload[k]) : null; });
+      const res = await axios.post(`/lieferanten?dojo_id=${djId}`, payload);
       const newId = res.data?.lieferant_id;
       await loadLieferanten();
       if (newId) {
