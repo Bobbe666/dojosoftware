@@ -76,12 +76,15 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const fileInputRef = useRef(null);
   const uploadTagRef = useRef(null);
 
+  const fixUtf8 = (s) => { try { return decodeURIComponent(escape(s)); } catch { return s; } };
+
   const buildInitialForm = () => {
     if (vorlage) {
       let stickereiPos = vorlage.stickerei_pos;
       if (typeof stickereiPos === 'string') {
         try { stickereiPos = JSON.parse(stickereiPos); } catch { stickereiPos = []; }
       }
+      if (Array.isArray(stickereiPos)) stickereiPos = stickereiPos.map(fixUtf8);
       let spez = { ...EMPTY_SPEZ };
       if (vorlage.spezifikation) {
         try { spez = { ...EMPTY_SPEZ, ...JSON.parse(vorlage.spezifikation) }; } catch {}
