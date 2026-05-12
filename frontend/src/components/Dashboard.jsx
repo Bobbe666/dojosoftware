@@ -359,6 +359,20 @@ function Dashboard() {
       count: stats.interessenten || 0
     },
     {
+      icon: '🎖️',
+      title: 'Stil-Verwaltung',
+      description: 'Kampfkunst-Stile, Prüfungen & Techniken',
+      path: '/dashboard/stile',
+      count: stats.stile || 0
+    },
+    {
+      icon: '🥋',
+      title: 'Gürtel-Massenzuweisung',
+      description: 'Gürtel für viele Mitglieder auf einmal vergeben',
+      path: '/dashboard/guertel-massenzuweisung',
+      featured: true
+    },
+    {
       icon: '🔑',
       title: 'Passwörter',
       description: 'Passwörter für Dojo-Mitglieder zurücksetzen',
@@ -376,16 +390,6 @@ function Dashboard() {
       path: '/dashboard/kurse',
       count: stats.kurse,
       featured: true
-    },
-    // ✨ NEUE STIL-VERWALTUNG ✨
-    {
-      icon: '🎖️',
-      title: 'Stil-Verwaltung',
-      description: 'Kampfkunst-Stile, Prüfungen & Techniken',
-      path: '/dashboard/stile',
-      badge: 'NEU',
-      featured: true,
-      count: stats.stile || 0
     },
     {
       icon: '📍',
