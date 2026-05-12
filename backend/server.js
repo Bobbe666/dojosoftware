@@ -262,6 +262,33 @@ app.get('/api-docs.json', (req, res) => {
 
 logger.info('Swagger UI available at /api-docs');
 
+// Cache-Bereinigungsseite — löscht alle SW-Caches + HTTP-Cache im Browser und leitet weiter
+app.get('/update', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aktualisieren...</title></head><body>
+<p style="font-family:sans-serif;padding:2rem">App wird aktualisiert...</p>
+<script>
+(async () => {
+  try {
+    // Alle Service Worker deregistrieren
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    // Alle Caches löschen
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch(e) {}
+  // Zur App weiterleiten (ohne Cache)
+  window.location.replace('/?nocache=' + Date.now());
+})();
+</script></body></html>`);
+});
+
 // =============================================
 // JWT AUTHENTICATION MIDDLEWARE
 // =============================================
