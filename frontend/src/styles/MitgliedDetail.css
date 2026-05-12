@@ -5064,8 +5064,11 @@ h1, h2, h3, h4, h5, h6,
   border-bottom: 2px solid rgba(255,255,255,0.07);
   margin-bottom: 1.75rem;
   padding-bottom: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.mds-tabs--l1::-webkit-scrollbar { display: none; }
 
 .mds-tabs--l1 .finance-sub-tab-btn {
   background: transparent;

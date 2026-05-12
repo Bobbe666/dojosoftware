@@ -4213,7 +4213,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           {activeTab === "mitgliedschaft" && (
             <div className="finance-sub-tabs mds-finance-sub-tabs-row mds-tabs--l1">
               <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "vertrag" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("vertrag")}>📄 Vertrag</button>
-              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("finanzen")}>💰 Finanzen</button>
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" && financeSubTab === "finanzübersicht" ? "active" : ""}`} onClick={() => { setMitgliedschaftSubTab("finanzen"); setFinanceSubTab("finanzübersicht"); }}>💰 Finanzübersicht</button>
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" && financeSubTab === "beitraege" ? "active" : ""}`} onClick={() => { setMitgliedschaftSubTab("finanzen"); setFinanceSubTab("beitraege"); }}>💳 Beiträge</button>
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" && financeSubTab === "bank" ? "active" : ""}`} onClick={() => { setMitgliedschaftSubTab("finanzen"); setFinanceSubTab("bank"); }}>🏦 Bank & SEPA</button>
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" && financeSubTab === "einkäufe" ? "active" : ""}`} onClick={() => { setMitgliedschaftSubTab("finanzen"); setFinanceSubTab("einkäufe"); }}>🛒 Einkäufe</button>
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" && financeSubTab === "ratenzahlung" ? "active" : ""}`} onClick={() => { setMitgliedschaftSubTab("finanzen"); setFinanceSubTab("ratenzahlung"); }}>📋 Ratenzahlung</button>
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" && financeSubTab === "gutscheine" ? "active" : ""}`} onClick={() => { setMitgliedschaftSubTab("finanzen"); setFinanceSubTab("gutscheine"); }}>🎁 Gutscheine</button>
               <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "familie" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("familie")}>👨‍👩‍👧‍👦 Familie</button>
             </div>
           )}
@@ -4673,44 +4678,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
           {activeTab === "mitgliedschaft" && mitgliedschaftSubTab === "finanzen" && (
             <div className="finance-management-container">
-              <div className="finance-sub-tabs mds-finance-sub-tabs-row mds-tabs--l2">
-                <button
-                  className={`finance-sub-tab-btn ${financeSubTab === "finanzübersicht" ? "active" : ""}`}
-                  onClick={() => setFinanceSubTab("finanzübersicht")}
-                >
-                  💰 Finanzübersicht
-                </button>
-                <button
-                  className={`finance-sub-tab-btn ${financeSubTab === "beitraege" ? "active" : ""}`}
-                  onClick={() => setFinanceSubTab("beitraege")}
-                >
-                  💳 Beiträge
-                </button>
-                <button
-                  className={`finance-sub-tab-btn ${financeSubTab === "bank" ? "active" : ""}`}
-                  onClick={() => setFinanceSubTab("bank")}
-                >
-                  🏦 Bank & SEPA
-                </button>
-                <button
-                  className={`finance-sub-tab-btn ${financeSubTab === "einkäufe" ? "active" : ""}`}
-                  onClick={() => setFinanceSubTab("einkäufe")}
-                >
-                  🛒 Einkäufe
-                </button>
-                <button
-                  className={`finance-sub-tab-btn ${financeSubTab === "ratenzahlung" ? "active" : ""}`}
-                  onClick={() => setFinanceSubTab("ratenzahlung")}
-                >
-                  📋 Ratenzahlung
-                </button>
-                <button
-                  className={`finance-sub-tab-btn ${financeSubTab === "gutscheine" ? "active" : ""}`}
-                  onClick={() => setFinanceSubTab("gutscheine")}
-                >
-                  🎁 Gutscheine
-                </button>
-              </div>
 
               {financeSubTab === "finanzübersicht" && (
                 <div className="finanzübersicht-sub-tab-content">
