@@ -19,6 +19,7 @@ import BestellungenTab from './BestellungenTab';
 import VerbandRabatteTab from './VerbandRabatteTab';
 import Rabattsystem from './Rabattsystem';
 import InventurTab from './InventurTab';
+import LieferantenTab from './LieferantenTab';
 
 
 const ArtikelVerwaltung = () => {
@@ -1223,6 +1224,12 @@ const ArtikelVerwaltung = () => {
         >
           Inventur
         </button>
+        <button
+          className={`sub-tab-btn ${mainTab === 'lieferanten' ? 'active' : ''}`}
+          onClick={() => setMainTab('lieferanten')}
+        >
+          Lieferanten
+        </button>
         {isVerbandLevel && (
           <button
             className={`sub-tab-btn ${mainTab === 'verbandrabatte' ? 'active' : ''}`}
@@ -1246,6 +1253,11 @@ const ArtikelVerwaltung = () => {
       {/* Inventur Tab */}
       {mainTab === 'inventur' && (
         <InventurTab />
+      )}
+
+      {/* Lieferanten Tab */}
+      {mainTab === 'lieferanten' && (
+        <LieferantenTab />
       )}
 
       {/* Verbands-Rabatte Tab - nur SuperAdmin + Verband */}

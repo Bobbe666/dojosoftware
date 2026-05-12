@@ -1,0 +1,266 @@
+/* =====================================================================================
+   LIEFERANTEN TAB
+   ===================================================================================== */
+
+/* ── List ─────────────────────────────────────────────────────────────── */
+
+.lt-list-page,
+.lt-form-page {
+  padding: 0;
+}
+
+.lt-list-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.lt-search {
+  flex: 1;
+  padding: 0.55rem 0.9rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.88rem;
+}
+
+.lt-search:focus { outline: none; border-color: rgba(255,255,255,0.22); }
+
+.lt-loading,
+.lt-empty {
+  padding: 2.5rem;
+  text-align: center;
+  color: rgba(255,255,255,0.25);
+  font-size: 0.88rem;
+  border: 1px dashed rgba(255,255,255,0.08);
+  border-radius: 10px;
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+
+.lt-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lt-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  transition: border-color 0.15s;
+}
+
+.lt-card:hover { border-color: rgba(255,255,255,0.14); }
+
+.lt-card__main { flex: 1; min-width: 0; }
+
+.lt-card__name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+  margin-bottom: 0.15rem;
+}
+
+.lt-card__contact {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 0.35rem;
+}
+
+.lt-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+
+.lt-card__contact-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.35);
+}
+
+.lt-link { color: rgba(255,255,255,0.4); text-decoration: none; }
+.lt-link:hover { color: rgba(255,255,255,0.7); }
+
+.lt-tag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.5);
+}
+
+.lt-tag--warn { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.25); color: rgba(251,191,36,0.8); }
+.lt-tag--dim  { color: rgba(255,255,255,0.3); }
+
+.lt-card__actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* ── Form ─────────────────────────────────────────────────────────────── */
+
+.lt-form-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.lt-form-title {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+}
+
+.lt-form-sub {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.3);
+  margin-top: 0.15rem;
+}
+
+.lt-form-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+.lt-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lt-form-col { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.lt-form-footer {}
+
+/* ── Sections ─────────────────────────────────────────────────────────── */
+
+.lt-section {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.lt-section-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin: 0 0 0.35rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding-bottom: 0.4rem;
+}
+
+.lt-section-sub {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.22);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0.25rem 0 0 0;
+}
+
+/* ── Fields ───────────────────────────────────────────────────────────── */
+
+.lt-field { display: flex; flex-direction: column; gap: 0.2rem; }
+.lt-field--full { width: 100%; }
+
+.lt-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.lt-label {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.35);
+}
+
+.lt-input {
+  padding: 0.45rem 0.65rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 7px;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.84rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.lt-input:focus { outline: none; border-color: rgba(255,255,255,0.25); }
+.lt-textarea { resize: vertical; }
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+
+.lt-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 7px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.lt-btn--primary {
+  background: rgba(212,175,55,0.82);
+  color: #111;
+  font-weight: 600;
+}
+.lt-btn--primary:hover { background: rgba(212,175,55,1); }
+
+.lt-btn--ghost {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.65);
+}
+.lt-btn--ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+.lt-btn--danger {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  color: rgba(239,68,68,0.75);
+}
+.lt-btn--danger:hover { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+.lt-btn--sm { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
+
+/* ── Alerts ───────────────────────────────────────────────────────────── */
+
+.lt-alert {
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  margin-bottom: 0.75rem;
+}
+.lt-alert--err { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: rgba(239,68,68,0.9); }
+.lt-alert--ok  { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25); color: rgba(74,222,128,0.9); }
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .lt-form-grid { grid-template-columns: 1fr; }
+}

@@ -846,6 +846,18 @@ try {
     });
 }
 
+try {
+  const lieferantenRoutes = require('./routes/lieferanten');
+  app.use('/api/lieferanten', lieferantenRoutes);
+  logger.success('Route geladen', { path: '/api/lieferanten' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'lieferanten routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 2.3. SHOP ROUTES — TDA + Dojo Shops (Public + Admin)
 try {
   const shopRoutes = require('./routes/shop');
