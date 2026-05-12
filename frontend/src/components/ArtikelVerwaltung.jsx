@@ -21,6 +21,7 @@ import Rabattsystem from './Rabattsystem';
 import InventurTab from './InventurTab';
 import LieferantenTab from './LieferantenTab';
 import GiBestellvorlage from './GiBestellvorlage';
+import BestellvorlagenTab from './BestellvorlagenTab';
 
 
 const ArtikelVerwaltung = () => {
@@ -1232,6 +1233,12 @@ const ArtikelVerwaltung = () => {
         >
           Lieferanten
         </button>
+        <button
+          className={`sub-tab-btn ${mainTab === 'bestellvorlagen' ? 'active' : ''}`}
+          onClick={() => setMainTab('bestellvorlagen')}
+        >
+          Bestellvorlagen
+        </button>
         {isVerbandLevel && (
           <button
             className={`sub-tab-btn ${mainTab === 'verbandrabatte' ? 'active' : ''}`}
@@ -1262,7 +1269,12 @@ const ArtikelVerwaltung = () => {
         <LieferantenTab />
       )}
 
-      {/* Gi-Bestellvorlage Overlay (über Artikel-Tab) */}
+      {/* Bestellvorlagen Tab */}
+      {mainTab === 'bestellvorlagen' && (
+        <BestellvorlagenTab />
+      )}
+
+      {/* Gi-Bestellvorlage Overlay (über Artikel-Tab, für direkte Artikel-Vorlagen) */}
       {giVorlageArtikel && (
         <div className="gv-overlay">
           <GiBestellvorlage
@@ -1461,7 +1473,9 @@ const ArtikelVerwaltung = () => {
                       {item.lager_tracking && (
                         <button className="sub-tab-btn av-btn-sm" onClick={() => handleLager(item)} title="Lagerbestand ändern">📦</button>
                       )}
-                      <button className="sub-tab-btn av-btn-sm" onClick={() => { setGiVorlageArtikel(item); setMainTab('artikel'); }} title="Bestellvorlage erstellen">📋</button>
+                      {item.vorlage_id && (
+                        <button className="sub-tab-btn av-btn-sm" onClick={() => setMainTab('bestellvorlagen')} title="Bestellvorlage öffnen">📋</button>
+                      )}
                       <button className="sub-tab-btn av-btn-sm" onClick={() => deleteArtikel(item.artikel_id)} title="Deaktivieren">🗑️</button>
                     </td>
                   </tr>

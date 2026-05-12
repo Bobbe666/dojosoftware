@@ -858,6 +858,14 @@ try {
     });
 }
 
+try {
+  const bestellvorlagenRouter = require('./routes/bestellvorlagen');
+  app.use('/api/bestellvorlagen', bestellvorlagenRouter);
+  logger.success('Route geladen', { path: '/api/bestellvorlagen' });
+} catch (e) {
+  console.error('bestellvorlagen route error:', e.message);
+}
+
 // 2.3. SHOP ROUTES — TDA + Dojo Shops (Public + Admin)
 try {
   const shopRoutes = require('./routes/shop');

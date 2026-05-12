@@ -36,16 +36,42 @@ const EMPTY = {
   bemerkungen: '',
 };
 
-export default function GiBestellvorlage({ artikel = null, onClose = null }) {
+export default function GiBestellvorlage({ artikel = null, vorlage = null, onClose = null }) {
   const { activeDojo } = useDojoContext();
   const [lieferanten, setLieferanten] = useState([]);
   const [generating, setGenerating] = useState(false);
 
-  const initialForm = artikel
-    ? { ...EMPTY, modelName: artikel.name || '', artikelNr: artikel.artikel_nummer || String(artikel.artikel_id || '') }
-    : EMPTY;
+  // Initialisierung: vorlage hat Vorrang, dann artikel, dann EMPTY
+  const buildInitialForm = () => {
+    if (vorlage) {
+      let stickereiPos = vorlage.stickerei_pos;
+      if (typeof stickereiPos === 'string') {
+        try { stickereiPos = JSON.parse(stickereiPos); } catch { stickereiPos = []; }
+      }
+      return {
+        ...EMPTY,
+        modelName: vorlage.modell_name || '',
+        artikelNr: vorlage.artikel_nr_vorl || '',
+        model: vorlage.modell || '128',
+        lieferantId: String(vorlage.lieferant_id || ''),
+        farbe: vorlage.farbe || 'Weiß',
+        wkf: !!vorlage.wkf,
+        stickereiPos: Array.isArray(stickereiPos) ? stickereiPos : [],
+        stickereiSchriftzug: vorlage.stickerei_text || '',
+        stickereiGarnfarben: vorlage.stickerei_farben || 'Gold, Schwarz',
+        stickereiBemerkung: vorlage.stickerei_datei || '',
+        bemerkungen: vorlage.bemerkungen || '',
+        mengenKids: EMPTY_MENGEN(vorlage.modell || '128'),
+        mengenAdult: EMPTY_MENGEN(vorlage.modell || '128'),
+      };
+    }
+    if (artikel) {
+      return { ...EMPTY, modelName: artikel.name || '', artikelNr: artikel.artikel_nummer || String(artikel.artikel_id || '') };
+    }
+    return EMPTY;
+  };
 
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(buildInitialForm);
 
   const dojoId = activeDojo?.id;
 
@@ -136,7 +162,7 @@ export default function GiBestellvorlage({ artikel = null, onClose = null }) {
             <button className="gv-btn-back" onClick={onClose}>← Zurück zu Artikel</button>
           )}
           <div className="gv-title">
-            Bestellvorlage{artikel ? `: ${artikel.name}` : ' — Karate-Gi'}
+            {vorlage ? vorlage.name : artikel ? `Bestellvorlage: ${artikel.name}` : 'Karate-Gi Bestellvorlage'}
           </div>
           <div className="gv-sub">Vorauswahl treffen → PDF generieren → drucken</div>
         </div>
