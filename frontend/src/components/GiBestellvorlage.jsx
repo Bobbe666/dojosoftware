@@ -59,8 +59,8 @@ const LABEL_LANG   = ['Deutsch', 'Englisch', 'Französisch', 'Japanisch'];
 const LABEL_ART    = ['Gewebtes Etikett', 'Gedrucktes Etikett', 'Eingestickt'];
 const LABEL_POS    = ['Nacken (innen)', 'Seitennaht', 'Hosenbund (innen)'];
 
-export default function GiBestellvorlage({ artikel = null, vorlage = null, onClose = null, initEditingId = null, initFormdata = null }) {
-  const { activeDojo } = useDojoContext();
+export default function GiBestellvorlage({ artikel = null, vorlage = null, onClose = null, initEditingId = null, initFormdata = null, overrideDojoId = null }) {
+  const { activeDojo, dojos } = useDojoContext();
   const [lieferanten, setLieferanten] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -74,6 +74,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [bestellungen, setBestellungen] = useState([]);
   const [historieSichtbar, setHistorieSichtbar] = useState(false);
   const [editingBestellungId, setEditingBestellungId] = useState(initEditingId);
+  const [dojoAuswahl, setDojoAuswahl] = useState(overrideDojoId || null); // für Super-Admin
+  const [dojoAuswahlModal, setDojoAuswahlModal] = useState(false);
   const fileInputRef = useRef(null);
   const uploadTagRef = useRef(null);
 
@@ -244,15 +246,20 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const totalFor   = (row) => Object.values(form[row]).reduce((s, v) => s + (parseInt(v) || 0), 0);
   const grandTotal = () => totalFor('mengenKids') + totalFor('mengenAdult');
 
-  const generatePdf = async () => {
+  const generatePdf = async (forcedDojoId) => {
+    const djId = forcedDojoId || dojoAuswahl || vorlage?.dojo_id || dojoId;
+    if (!djId && dojos && dojos.length > 1) {
+      setDojoAuswahlModal(true);
+      return;
+    }
     setGenerating(true);
     try {
       const origin = window.location.origin;
-      const djId = vorlage?.dojo_id || dojoId;
 
       // Bestellung in DB speichern oder überschreiben
+      const effectiveDjId = djId;
       let neueBestellungId = editingBestellungId;
-      if (djId) {
+      if (effectiveDjId) {
         const payload = {
           vorlage_id:     vorlage?.vorlage_id || null,
           lieferant_id:   form.lieferantId ? Number(form.lieferantId) : null,
@@ -818,6 +825,40 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 
       </div>{/* /gv-body */}
 
+      {/* ── DOJO-AUSWAHL MODAL (Super-Admin) ── */}
+      {dojoAuswahlModal && (
+        <div className="gv-lt-modal-backdrop" onClick={() => setDojoAuswahlModal(false)}>
+          <div className="gv-lt-modal" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
+            <div className="gv-lt-modal-header">
+              <span>Für welches Dojo?</span>
+              <button className="gv-lt-modal-close" onClick={() => setDojoAuswahlModal(false)}>×</button>
+            </div>
+            <div className="gv-lt-modal-body" style={{ padding: '1.25rem' }}>
+              <p style={{ fontSize: '0.83rem', color: 'rgba(255,255,255,0.55)', marginBottom: '0.75rem' }}>
+                Bitte wähle das Dojo, unter dem diese Bestellung gespeichert werden soll.
+              </p>
+              <select
+                className="gv-input"
+                value={dojoAuswahl || ''}
+                onChange={e => setDojoAuswahl(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">— Dojo wählen —</option>
+                {(dojos || []).map(d => (
+                  <option key={d.id} value={d.id}>{d.dojoname || d.name || `Dojo ${d.id}`}</option>
+                ))}
+              </select>
+            </div>
+            <div className="gv-lt-modal-footer">
+              <button className="gv-btn-back" onClick={() => setDojoAuswahlModal(false)}>Abbrechen</button>
+              <button className="gv-btn-pdf" disabled={!dojoAuswahl}
+                onClick={() => { setDojoAuswahlModal(false); generatePdf(dojoAuswahl); }}>
+                PDF generieren
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── LIEFERANT VOLLERFASSUNG MODAL ── */}
       {ltModal && (
         <div className="gv-lt-modal-backdrop" onClick={() => setLtModal(false)}>
@@ -1026,7 +1067,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 // ═══════════════════════════════════════════════════════
 //  PDF-HTML-GENERATOR
 // ═══════════════════════════════════════════════════════
-function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungId = null) {
+export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungId = null) {
   const sizes = SIZES[form.model];
   const img128 = `${origin}/gi-charts/modell-128.jpg`;
   const img188 = `${origin}/gi-charts/modell-188.jpg`;

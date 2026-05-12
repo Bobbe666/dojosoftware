@@ -8,7 +8,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
-import GiBestellvorlage from './GiBestellvorlage';
+import GiBestellvorlage, { buildPdfHtml } from './GiBestellvorlage';
 import { useDojoContext } from '../context/DojoContext';
 import '../styles/BestellungenTab.css';
 
@@ -143,6 +143,24 @@ const BestellungenTab = () => {
     }
   }, [activeSubTab, loadDojoBestellungen]); // eslint-disable-line
 
+  const previewGiPdf = (b) => {
+    try {
+      const formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
+      if (!formdata) return;
+      const html = buildPdfHtml(formdata, window.location.origin, [], b.bestellung_id);
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, '_blank');
+      if (win) {
+        setTimeout(() => { win.focus(); URL.revokeObjectURL(url); }, 2000);
+      } else {
+        const a = document.createElement('a');
+        a.href = url; a.download = `bestellung_${b.bestellung_id}.html`; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
+    } catch {}
+  };
+
   const openGiBestellung = async (b) => {
     try {
       let vorlage = null;
@@ -153,7 +171,7 @@ const BestellungenTab = () => {
         vorlage = res.data?.data || null;
       }
       const formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
-      setGiOverlay({ vorlage, editingId: b.bestellung_id, formdata });
+      setGiOverlay({ vorlage, editingId: b.bestellung_id, formdata, dojoId: b.dojo_id });
     } catch {}
   };
 
@@ -475,6 +493,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
             vorlage={giOverlay.vorlage}
             initEditingId={giOverlay.editingId}
             initFormdata={giOverlay.formdata}
+            overrideDojoId={giOverlay.dojoId || filterDojoId || null}
             onClose={() => { setGiOverlay(null); loadDojoBestellungen(); }}
           />
         </div>
@@ -584,7 +603,8 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                         {b.erstellt_am ? new Date(b.erstellt_am).toLocaleDateString('de-DE') : '—'}
                       </td>
                       <td className="actions">
-                        <button className="action-btn view" onClick={() => openGiBestellung(b)}>Öffnen</button>
+                        <button className="action-btn view" title="PDF-Vorschau" onClick={() => previewGiPdf(b)} style={{ fontSize: '1rem', padding: '0.25rem 0.5rem' }}>👁</button>
+                        <button className="action-btn view" onClick={() => openGiBestellung(b)}>Bearbeiten</button>
                         <button className="action-btn" style={{ color: 'rgba(255,80,80,0.7)', background: 'none', border: '1px solid rgba(255,80,80,0.2)' }}
                           onClick={async () => {
                             if (!window.confirm(`Bestellung #${String(b.bestellung_id).padStart(4,'0')} wirklich löschen?`)) return;
