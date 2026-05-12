@@ -42,9 +42,7 @@ function IbanDiagnostic({ iban }) {
   const cc = d.countryCode;
   const expected = IBAN_LENGTHS[cc];
   const actual = d.iban.length;
-
   const statusColor = d.ok ? '#4caf82' : '#e05c5c';
-  const statusIcon = d.ok ? '✓' : '✗';
 
   return (
     <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', fontFamily: 'monospace', background: 'rgba(0,0,0,0.25)', borderRadius: '6px', padding: '0.5rem 0.75rem', border: `1px solid ${statusColor}33` }}>
@@ -53,12 +51,92 @@ function IbanDiagnostic({ iban }) {
         <span style={{ color: /^\d{2}$/.test(d.checkDigits) ? '#4caf82' : '#e05c5c' }} title="Prüfziffern">{d.checkDigits}</span>
         <span style={{ color: 'rgba(255,255,255,0.55)' }} title="BBAN">{d.bban}</span>
         <span style={{ marginLeft: 'auto', color: statusColor, fontWeight: 600 }}>
-          {statusIcon} {actual} Zch{expected ? ` / ${expected} erw.` : ''}
+          {d.ok ? '✓' : '✗'} {actual} Zch{expected ? ` / ${expected} erw.` : ''}
         </span>
       </div>
       {d.errors.map((e, i) => (
         <div key={i} style={{ color: '#e05c5c', marginTop: '0.2rem' }}>⚠ {e}</div>
       ))}
+    </div>
+  );
+}
+
+function IbanRechner({ onUebernehmen }) {
+  const [blz, setBlz] = React.useState('');
+  const [kto, setKto] = React.useState('');
+  const [result, setResult] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
+
+  const berechnen = async () => {
+    if (!blz || !kto) return;
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await axios.post('/banken/kto-blz-to-iban', { kontonummer: kto, bankleitzahl: blz });
+      setResult({ ok: true, ...res.data });
+    } catch (e) {
+      setResult({ ok: false, error: e.response?.data?.error || 'Fehler bei der Berechnung' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        style={{ marginTop: '0.5rem', fontSize: '0.78rem', background: 'none', border: '1px dashed rgba(212,175,55,0.4)', borderRadius: '6px', color: 'rgba(212,175,55,0.8)', padding: '0.3rem 0.6rem', cursor: 'pointer', width: '100%' }}
+      >
+        🔢 IBAN aus BLZ + Kontonummer berechnen
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: '0.5rem', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: '8px', padding: '0.75rem' }}>
+      <div style={{ fontSize: '0.78rem', color: 'rgba(212,175,55,0.9)', marginBottom: '0.5rem', fontWeight: 600 }}>🔢 IBAN aus BLZ + Kontonummer berechnen</div>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <input
+          placeholder="BLZ (8 Stellen)"
+          value={blz}
+          onChange={e => setBlz(e.target.value.replace(/\D/g, '').slice(0, 8))}
+          style={{ flex: '1', minWidth: '110px', fontFamily: 'monospace', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '0.4rem 0.6rem', color: '#fff' }}
+        />
+        <input
+          placeholder="Kontonummer"
+          value={kto}
+          onChange={e => setKto(e.target.value.replace(/\D/g, '').slice(0, 10))}
+          style={{ flex: '1', minWidth: '110px', fontFamily: 'monospace', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '0.4rem 0.6rem', color: '#fff' }}
+        />
+        <button
+          type="button"
+          onClick={berechnen}
+          disabled={loading || blz.length !== 8 || !kto}
+          style={{ background: 'rgba(212,175,55,0.2)', border: '1px solid rgba(212,175,55,0.5)', borderRadius: '6px', color: '#d4af37', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, whiteSpace: 'nowrap' }}
+        >
+          {loading ? '…' : 'Berechnen'}
+        </button>
+      </div>
+
+      {result && result.ok && (
+        <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: 'monospace', color: '#4caf82', fontWeight: 700, fontSize: '0.9rem', letterSpacing: '0.05em' }}>{result.iban}</span>
+          {result.bankname && <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>{result.bankname}{result.bic ? ` · ${result.bic}` : ''}</span>}
+          <button
+            type="button"
+            onClick={() => { onUebernehmen(result); setOpen(false); }}
+            style={{ marginLeft: 'auto', background: 'rgba(76,175,130,0.2)', border: '1px solid rgba(76,175,130,0.5)', borderRadius: '6px', color: '#4caf82', padding: '0.3rem 0.7rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
+          >
+            ✓ Übernehmen
+          </button>
+        </div>
+      )}
+      {result && !result.ok && (
+        <div style={{ marginTop: '0.4rem', color: '#e05c5c', fontSize: '0.78rem' }}>⚠ {result.error}</div>
+      )}
+      <button type="button" onClick={() => setOpen(false)} style={{ marginTop: '0.4rem', fontSize: '0.72rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: 0 }}>Schließen</button>
     </div>
   );
 }
@@ -5584,6 +5662,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           ? <>
                               <input className="bnk-input bnk-mono" type="text" value={updatedData.iban || ''} onChange={e => handleChange(e, 'iban')} placeholder="DE89 3704 0044 0532 0130 00" style={{ width: '100%' }} />
                               <IbanDiagnostic iban={updatedData.iban} />
+                              <IbanRechner onUebernehmen={result => {
+                                setUpdatedData(prev => ({
+                                  ...prev,
+                                  iban: result.iban,
+                                  ...(result.bic ? { bic: result.bic } : {}),
+                                  ...(result.bankname ? { bankname: result.bankname } : {}),
+                                }));
+                              }} />
                             </>
                           : <>
                               <div className={`bnk-kv-value bnk-mono${mitglied.iban ? '' : ' bnk-empty'}`}>{mitglied.iban || '—'}</div>
