@@ -20,6 +20,7 @@ import VerbandRabatteTab from './VerbandRabatteTab';
 import Rabattsystem from './Rabattsystem';
 import InventurTab from './InventurTab';
 import LieferantenTab from './LieferantenTab';
+import GiBestellvorlage from './GiBestellvorlage';
 
 
 const ArtikelVerwaltung = () => {
@@ -1230,6 +1231,12 @@ const ArtikelVerwaltung = () => {
         >
           Lieferanten
         </button>
+        <button
+          className={`sub-tab-btn ${mainTab === 'givorlage' ? 'active' : ''}`}
+          onClick={() => setMainTab('givorlage')}
+        >
+          Gi-Bestellvorlage
+        </button>
         {isVerbandLevel && (
           <button
             className={`sub-tab-btn ${mainTab === 'verbandrabatte' ? 'active' : ''}`}
@@ -1258,6 +1265,11 @@ const ArtikelVerwaltung = () => {
       {/* Lieferanten Tab */}
       {mainTab === 'lieferanten' && (
         <LieferantenTab />
+      )}
+
+      {/* Gi-Bestellvorlage Tab */}
+      {mainTab === 'givorlage' && (
+        <GiBestellvorlage />
       )}
 
       {/* Verbands-Rabatte Tab - nur SuperAdmin + Verband */}

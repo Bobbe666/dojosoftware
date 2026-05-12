@@ -1,0 +1,290 @@
+/* =====================================================================================
+   GI-BESTELLVORLAGE
+   ===================================================================================== */
+
+.gv-page { padding: 0; }
+
+.gv-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.gv-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+}
+
+.gv-sub {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.3);
+  margin-top: 0.15rem;
+}
+
+.gv-btn-pdf {
+  padding: 0.55rem 1.25rem;
+  background: rgba(212,175,55,0.85);
+  border: none;
+  border-radius: 7px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #111;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.gv-btn-pdf:hover { background: rgba(212,175,55,1); }
+.gv-btn-pdf:disabled { opacity: 0.6; cursor: default; }
+
+.gv-body { display: flex; flex-direction: column; gap: 1rem; }
+
+/* SECTIONS */
+.gv-section {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+
+.gv-section-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin: 0 0 0.75rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding-bottom: 0.4rem;
+}
+
+.gv-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-wrap: wrap;
+}
+
+.gv-section-title-row .gv-section-title {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+/* FIELDS */
+.gv-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem; }
+.gv-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem 1rem; }
+.gv-field { display: flex; flex-direction: column; gap: 0.2rem; }
+.gv-label { font-size: 0.7rem; color: rgba(255,255,255,0.35); }
+.gv-input {
+  padding: 0.4rem 0.6rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.84rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.gv-input:focus { outline: none; border-color: rgba(255,255,255,0.25); }
+.gv-textarea {
+  padding: 0.4rem 0.6rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.84rem;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: inherit;
+}
+.gv-textarea:focus { outline: none; border-color: rgba(255,255,255,0.25); }
+select.gv-input { cursor: pointer; }
+
+/* MODEL CARDS */
+.gv-model-row { display: flex; gap: 0.75rem; align-items: stretch; }
+
+.gv-model-card {
+  flex: 1;
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s;
+  user-select: none;
+}
+.gv-model-card:hover { border-color: rgba(255,255,255,0.2); }
+.gv-model-card.active { border-color: rgba(212,175,55,0.7); background: rgba(212,175,55,0.07); }
+
+.gv-model-name { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.88); }
+.gv-model-detail { font-size: 0.78rem; color: rgba(255,255,255,0.45); margin-top: 0.15rem; }
+.gv-model-hint { font-size: 0.72rem; color: rgba(255,255,255,0.25); margin-top: 0.15rem; }
+
+.gv-model-fields {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  justify-content: center;
+  padding: 0.5rem 0.25rem;
+}
+
+/* LIEFERANT INFO */
+.gv-lt-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.35);
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255,255,255,0.02);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.gv-lt-warn { color: rgba(251,191,36,0.75); }
+
+/* CHECK ROW */
+.gv-check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  margin-top: 0.75rem;
+}
+.gv-check-row input { accent-color: rgba(212,175,55,0.9); width: 15px; height: 15px; }
+
+/* CATEGORY */
+.gv-cat-checks { display: flex; gap: 0.5rem; }
+.gv-cat-opt {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gv-cat-opt:has(input:checked) {
+  border-color: rgba(212,175,55,0.6);
+  color: rgba(255,255,255,0.85);
+  background: rgba(212,175,55,0.08);
+}
+.gv-cat-opt input { accent-color: rgba(212,175,55,0.9); }
+
+.gv-total-display {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+}
+.gv-total-display strong { color: rgba(255,255,255,0.8); font-size: 0.95rem; }
+
+/* QUANTITY TABLE */
+.gv-qty-wrap { overflow-x: auto; }
+
+.gv-qty-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.gv-qty-table thead th {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.55);
+  padding: 0.35rem 0.3rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.gv-qt-rh { text-align: left !important; padding-left: 0.6rem !important; min-width: 80px; }
+
+.gv-qty-table tbody td {
+  border: 1px solid rgba(255,255,255,0.06);
+  text-align: center;
+  padding: 0;
+}
+.gv-qt-rl {
+  background: rgba(255,255,255,0.03);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-align: left !important;
+  padding: 0.4rem 0.6rem !important;
+  color: rgba(255,255,255,0.65);
+  white-space: nowrap;
+}
+.gv-qty-table tbody td input[type="number"] {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.85);
+  text-align: center;
+  font-size: 0.9rem;
+  padding: 0.4rem 0;
+  outline: none;
+  -moz-appearance: textfield;
+  min-width: 36px;
+}
+.gv-qty-table tbody td input::-webkit-inner-spin-button,
+.gv-qty-table tbody td input::-webkit-outer-spin-button { opacity: 0; }
+.gv-qty-table tbody td input:focus { background: rgba(212,175,55,0.07); }
+.gv-qt-sum { background: rgba(255,255,255,0.04) !important; min-width: 36px; }
+.gv-qt-sum-cell {
+  font-weight: 700;
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.7);
+  padding: 0.4rem !important;
+}
+
+/* STICKEREI POSITIONS */
+.gv-pos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.gv-pos-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.55);
+  transition: all 0.15s;
+  user-select: none;
+}
+.gv-pos-item:hover { border-color: rgba(255,255,255,0.14); }
+.gv-pos-item.active {
+  border-color: rgba(212,175,55,0.5);
+  background: rgba(212,175,55,0.07);
+  color: rgba(255,255,255,0.82);
+}
+.gv-pos-item input { display: none; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .gv-grid2 { grid-template-columns: 1fr; }
+  .gv-grid3 { grid-template-columns: 1fr 1fr; }
+  .gv-model-row { flex-wrap: wrap; }
+  .gv-pos-grid { grid-template-columns: 1fr; }
+}
