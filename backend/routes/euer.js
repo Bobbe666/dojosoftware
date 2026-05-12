@@ -94,6 +94,21 @@ router.get('/dojo/:dojo_id', async (req, res) => {
     `;
     const ausgaben = await queryAsync(ausgabenQuery, [dojo_id, jahr]);
 
+    // 4b. Buchhaltungs-Belege Ausgaben (Beleg-Scanner / finanzen-app)
+    const belegeAusgabenQuery = `
+      SELECT
+        MONTH(beleg_datum) as monat,
+        SUM(ROUND(betrag_brutto * (1 - COALESCE(privatanteil_prozent, 0) / 100), 2)) as summe
+      FROM buchhaltung_belege
+      WHERE dojo_id = ?
+        AND YEAR(beleg_datum) = ?
+        AND buchungsart = 'ausgabe'
+        AND storniert = 0
+        AND kategorie NOT IN ('privateinlage', 'privatentnahme', 'anlagevermögen', 'betriebseinnahmen')
+      GROUP BY MONTH(beleg_datum)
+    `;
+    const belegeAusgaben = await queryAsync(belegeAusgabenQuery, [dojo_id, jahr]);
+
     // 5. Kassenbuch Ausgaben nach Kategorien
     const ausgabenKategorienQuery = `
       SELECT
@@ -132,13 +147,16 @@ router.get('/dojo/:dojo_id', async (req, res) => {
       const rechnungMonat = rechnungen.find(r => r.monat === m);
       const verkaufMonat = verkaeufe.find(v => v.monat === m);
       const ausgabeMonat = ausgaben.find(a => a.monat === m);
+      const belegeAusgabeMonat = belegeAusgaben.find(a => a.monat === m);
 
       const einnahmen_beitraege = parseFloat(beitragMonat?.summe || 0);
       const einnahmen_rechnungen = parseFloat(rechnungMonat?.summe || 0);
       const einnahmen_verkaeufe = centToEuro(verkaufMonat?.summe_cent || 0);
       const einnahmen_gesamt = einnahmen_beitraege + einnahmen_rechnungen + einnahmen_verkaeufe;
 
-      const ausgaben_gesamt = centToEuro(ausgabeMonat?.summe_cent || 0);
+      const ausgaben_kasse = centToEuro(ausgabeMonat?.summe_cent || 0);
+      const ausgaben_belege = parseFloat(belegeAusgabeMonat?.summe || 0);
+      const ausgaben_gesamt = ausgaben_kasse + ausgaben_belege;
       const ueberschuss = einnahmen_gesamt - ausgaben_gesamt;
 
       // Ausgaben nach Kategorien für diesen Monat
@@ -304,6 +322,21 @@ router.get('/tda', async (req, res) => {
     `;
     const ausgaben = await queryAsync(ausgabenQuery, [TDA_DOJO_ID, jahr]);
 
+    // 6b. Buchhaltungs-Belege Ausgaben (TDA — Beleg-Scanner)
+    const belegeAusgabenQuery = `
+      SELECT
+        MONTH(beleg_datum) as monat,
+        SUM(ROUND(betrag_brutto * (1 - COALESCE(privatanteil_prozent, 0) / 100), 2)) as summe
+      FROM buchhaltung_belege
+      WHERE dojo_id = ?
+        AND YEAR(beleg_datum) = ?
+        AND buchungsart = 'ausgabe'
+        AND storniert = 0
+        AND kategorie NOT IN ('privateinlage', 'privatentnahme', 'anlagevermögen', 'betriebseinnahmen')
+      GROUP BY MONTH(beleg_datum)
+    `;
+    const belegeAusgaben = await queryAsync(belegeAusgabenQuery, [TDA_DOJO_ID, jahr]);
+
     // Monatliche Zusammenfassung erstellen
     const monate = [];
     for (let m = 1; m <= 12; m++) {
@@ -313,6 +346,7 @@ router.get('/tda', async (req, res) => {
       const verbandMonat = verbandZahlungen.find(v => v.monat === m);
       const softwareMonat = softwareEinnahmen.find(s => s.monat === m);
       const ausgabeMonat = ausgaben.find(a => a.monat === m);
+      const belegeAusgabeMonat = belegeAusgaben.find(a => a.monat === m);
 
       const einnahmen_mitglieder = parseFloat(beitragMonat?.summe || 0);
       const einnahmen_rechnungen = parseFloat(rechnungMonat?.summe || 0);
@@ -323,7 +357,9 @@ router.get('/tda', async (req, res) => {
       const einnahmen_gesamt = einnahmen_mitglieder + einnahmen_rechnungen +
                                einnahmen_verkaeufe + einnahmen_verband + einnahmen_software;
 
-      const ausgaben_gesamt = centToEuro(ausgabeMonat?.summe_cent || 0);
+      const ausgaben_kasse = centToEuro(ausgabeMonat?.summe_cent || 0);
+      const ausgaben_belege = parseFloat(belegeAusgabeMonat?.summe || 0);
+      const ausgaben_gesamt = ausgaben_kasse + ausgaben_belege;
       const ueberschuss = einnahmen_gesamt - ausgaben_gesamt;
 
       monate.push({
