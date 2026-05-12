@@ -10,6 +10,7 @@ const ALLOWED_FIELDS = [
   'strasse', 'hausnummer', 'plz', 'ort', 'land',
   'ust_id', 'eori_nummer', 'handelsreg_nr', 'handelsreg_gericht',
   'zolltarifnummer', 'ursprungsland',
+  'incoterms', 'transportweg', 'spediteur', 'zollagent',
   'waehrung', 'zahlungsziel_tage', 'skonto_prozent', 'skonto_tage',
   'mindestbestellwert_cent', 'lieferzeit_tage',
   'bank_name', 'bank_iban', 'bank_bic', 'bank_kontoinhaber',

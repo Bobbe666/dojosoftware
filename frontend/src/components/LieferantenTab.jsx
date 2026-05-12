@@ -9,6 +9,7 @@ const EMPTY_FORM = {
   strasse: '', hausnummer: '', plz: '', ort: '', land: 'Deutschland',
   ust_id: '', eori_nummer: '', handelsreg_nr: '', handelsreg_gericht: '',
   zolltarifnummer: '', ursprungsland: '',
+  incoterms: '', transportweg: '', spediteur: '', zollagent: '',
   waehrung: 'EUR', zahlungsziel_tage: 30, skonto_prozent: 0, skonto_tage: 0,
   mindestbestellwert_cent: 0, lieferzeit_tage: '',
   bank_name: '', bank_iban: '', bank_bic: '', bank_kontoinhaber: '',
@@ -170,6 +171,33 @@ export default function LieferantenTab() {
                   <option value="">— nicht angegeben —</option>
                   {LAENDER.map(l => <option key={l} value={l}>{l}</option>)}
                 </select>
+              </div>
+            </Section>
+
+            <Section label="Logistik & Versand">
+              <div className="lt-row-2">
+                <div className="lt-field">
+                  <label className="lt-label">Incoterms 2020</label>
+                  <select className="lt-input" value={form.incoterms} onChange={f('incoterms')}>
+                    <option value="">— nicht angegeben —</option>
+                    {['EXW','FCA','CPT','CIP','DAP','DPU','DDP','FAS','FOB','CFR','CIF'].map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="lt-field">
+                  <label className="lt-label">Transportweg</label>
+                  <select className="lt-input" value={form.transportweg} onChange={f('transportweg')}>
+                    <option value="">— nicht angegeben —</option>
+                    {['Luftfracht','Seefracht','Landweg / LKW','Bahn','Kurierdienst','Kombiniert'].map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="lt-row-2">
+                <Field label="Spediteur" value={form.spediteur} onChange={f('spediteur')} placeholder="Speditionsunternehmen" />
+                <Field label="Zollagent / Zollspediteur" value={form.zollagent} onChange={f('zollagent')} />
               </div>
             </Section>
 

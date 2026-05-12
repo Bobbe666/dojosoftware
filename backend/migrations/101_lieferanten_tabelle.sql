@@ -29,6 +29,12 @@ CREATE TABLE IF NOT EXISTS lieferanten (
   zolltarifnummer        VARCHAR(20),
   ursprungsland          VARCHAR(100),
 
+  -- Logistik & Versand
+  incoterms              VARCHAR(5),
+  transportweg           VARCHAR(30),
+  spediteur              VARCHAR(100),
+  zollagent              VARCHAR(100),
+
   -- Konditionen
   waehrung               VARCHAR(10) DEFAULT 'EUR',
   zahlungsziel_tage      INT DEFAULT 30,
