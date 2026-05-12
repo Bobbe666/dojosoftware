@@ -12,7 +12,8 @@ const EMPTY_MENGEN = (model) =>
   SIZES[model].reduce((acc, s) => ({ ...acc, [s]: '' }), {});
 
 const EMPTY_SPEZ = {
-  material: [], materialText: '', webart: [], grammatur: [],
+  material: [], materialText: '', webart: [],
+  grammaturKids: [], grammaturAdult: [],
   labelText: '', labelSprachen: ['Deutsch', 'Englisch'],
   labelArt: [], labelPosition: [], labelZusatz: '',
 };
@@ -513,7 +514,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         {/* ── PRODUKTSPEZIFIKATION ── */}
         <div className="gv-section">
           <div className="gv-section-title">Produktspezifikation</div>
-          <div className="gv-grid3">
+          <div className="gv-grid4">
             <div className="gv-field">
               <label className="gv-label">Material</label>
               <SpezChip options={MATERIALIEN} field="material" />
@@ -525,8 +526,12 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               <SpezChip options={WEBARTEN} field="webart" />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Grammatur</label>
-              <SpezChip options={GRAMMATUREN} field="grammatur" />
+              <label className="gv-label">Grammatur Kinder</label>
+              <SpezChip options={GRAMMATUREN} field="grammaturKids" />
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Grammatur Erwachsene</label>
+              <SpezChip options={GRAMMATUREN} field="grammaturAdult" />
             </div>
           </div>
         </div>
@@ -900,7 +905,8 @@ function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungId = nul
   const spez    = form.spezifikation || {};
   const matIn   = (v) => (spez.material      || []).includes(v) ? 'checked' : '';
   const webIn   = (v) => (spez.webart        || []).includes(v) ? 'checked' : '';
-  const gramIn  = (v) => (spez.grammatur     || []).includes(v) ? 'checked' : '';
+  const gramKIn = (v) => (spez.grammaturKids  || spez.grammatur || []).includes(v) ? 'checked' : '';
+  const gramAIn = (v) => (spez.grammaturAdult || spez.grammatur || []).includes(v) ? 'checked' : '';
   const langIn  = (v) => (spez.labelSprachen || ['Deutsch','Englisch']).includes(v) ? 'checked' : '';
   const artIn   = (v) => (spez.labelArt      || []).includes(v) ? 'checked' : '';
   const posLIn  = (v) => (spez.labelPosition || []).includes(v) ? 'checked' : '';
@@ -1039,12 +1045,20 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
         <label class="tag"><input type="checkbox" ${webIn('Kumite / Leicht')}> Kumite / Leicht</label>
       </div>
     </div>
-    <div class="f"><span class="lbl">Grammatur</span>
+    <div class="f"><span class="lbl">Grammatur Kinder</span>
       <div class="tags">
-        <label class="tag"><input type="checkbox" ${gramIn('8 oz (~270 g/m²)')}> 8 oz (~270 g/m²)</label>
-        <label class="tag"><input type="checkbox" ${gramIn('10 oz (~340 g/m²)')}> 10 oz (~340 g/m²)</label>
-        <label class="tag"><input type="checkbox" ${gramIn('12 oz (~400 g/m²)')}> 12 oz (~400 g/m²)</label>
-        <label class="tag"><input type="checkbox" ${gramIn('14 oz (~470 g/m²)')}> 14 oz (~470 g/m²)</label>
+        <label class="tag"><input type="checkbox" ${gramKIn('8 oz (~270 g/m²)')}> 8 oz (~270 g/m²)</label>
+        <label class="tag"><input type="checkbox" ${gramKIn('10 oz (~340 g/m²)')}> 10 oz (~340 g/m²)</label>
+        <label class="tag"><input type="checkbox" ${gramKIn('12 oz (~400 g/m²)')}> 12 oz (~400 g/m²)</label>
+        <label class="tag"><input type="checkbox" ${gramKIn('14 oz (~470 g/m²)')}> 14 oz (~470 g/m²)</label>
+      </div>
+    </div>
+    <div class="f"><span class="lbl">Grammatur Erwachsene</span>
+      <div class="tags">
+        <label class="tag"><input type="checkbox" ${gramAIn('8 oz (~270 g/m²)')}> 8 oz (~270 g/m²)</label>
+        <label class="tag"><input type="checkbox" ${gramAIn('10 oz (~340 g/m²)')}> 10 oz (~340 g/m²)</label>
+        <label class="tag"><input type="checkbox" ${gramAIn('12 oz (~400 g/m²)')}> 12 oz (~400 g/m²)</label>
+        <label class="tag"><input type="checkbox" ${gramAIn('14 oz (~470 g/m²)')}> 14 oz (~470 g/m²)</label>
       </div>
     </div>
     <div class="f"><span class="lbl">WKF-Zulassung</span>
