@@ -221,6 +221,12 @@ const StilVerwaltung = () => {
   // API Base URL mit Fallback (apiBaseUrl enthält bereits /api)
   const API_BASE = config?.apiBaseUrl || '/api';
 
+  // Fetch-Wrapper mit automatischem Authorization-Header
+  const authFetch = (url, options = {}) => fetch(url, {
+    ...options,
+    headers: { Authorization: `Bearer ${token}`, ...options.headers },
+  });
+
   // Erweiterte Standard-Gürtel mit Primär- und Sekundärfarben für alle Kampfkünste
   const standardGuertel = [
     // === GRUNDSTUFE (Anfänger) ===
@@ -386,7 +392,7 @@ const StilVerwaltung = () => {
    * @param {Array} graduierungen - Array der Graduierungen mit neuer Reihenfolge
    */
   const updateGraduierungsReihenfolge = async (graduierungen) => {
-    const response = await fetch(`${API_BASE}/stile/${currentStil.stil_id}/graduierungen/reorder`, {
+    const response = await authFetch(`${API_BASE}/stile/${currentStil.stil_id}/graduierungen/reorder`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -429,7 +435,7 @@ const StilVerwaltung = () => {
 
       console.log('💾 Speichere Graduierung:', graduierungData);
 
-      const response = await fetch(`${API_BASE}/stile/graduierungen/${editingGraduierung.graduierung_id}`, {
+      const response = await authFetch(`${API_BASE}/stile/graduierungen/${editingGraduierung.graduierung_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(graduierungData)
@@ -538,7 +544,7 @@ const StilVerwaltung = () => {
     console.log('🔄 Lade Stile von:', `${API_BASE}/stile`);
     console.log('🔧 API_BASE ist:', API_BASE);
     try {
-      const response = await fetch(`${API_BASE}/stile`);
+      const response = await authFetch(`${API_BASE}/stile`);
       console.log('📡 API Response Status:', response.status);
       console.log('📡 API Response OK:', response.ok);
       
@@ -568,7 +574,7 @@ const StilVerwaltung = () => {
     if (!stilId) return;
     setKategorienLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien`);
+      const res = await authFetch(`${API_BASE}/stile/${stilId}/kategorien`);
       if (res.ok) {
         const data = await res.json();
         setStilKategorien(data.kategorien || []);
@@ -589,7 +595,7 @@ const StilVerwaltung = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile/${id}`);
+      const response = await authFetch(`${API_BASE}/stile/${id}`);
       if (response.ok) {
         const data = await response.json();
         setCurrentStil(data);
@@ -627,7 +633,7 @@ const StilVerwaltung = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile`, {
+      const response = await authFetch(`${API_BASE}/stile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -664,7 +670,7 @@ const StilVerwaltung = () => {
     try {
       console.log('📤 Sende Stil-Update:', updatedStilData);
 
-      const response = await fetch(`${API_BASE}/stile/${currentStil.stil_id}`, {
+      const response = await authFetch(`${API_BASE}/stile/${currentStil.stil_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedStilData)
@@ -711,7 +717,7 @@ const StilVerwaltung = () => {
       if (!confirmDelete) return;
       setLoading(true);
       try {
-        const response = await fetch(`${API_BASE}/stile/${stilId}`, { method: 'DELETE' });
+        const response = await authFetch(`${API_BASE}/stile/${stilId}`, { method: 'DELETE' });
         if (response.ok) {
           setStile(prev => prev.filter(s => s.stil_id !== stilId));
           setSuccess(`Stil "${stil.name}" wurde gelöscht.`);
@@ -746,7 +752,7 @@ const StilVerwaltung = () => {
       if (confirmDeactivate) {
         setLoading(true);
         try {
-          const response = await fetch(`${API_BASE}/stile/${stilId}`, {
+          const response = await authFetch(`${API_BASE}/stile/${stilId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -784,7 +790,7 @@ const StilVerwaltung = () => {
       if (confirmDelete) {
         setLoading(true);
         try {
-          const response = await fetch(`${API_BASE}/stile/${stilId}`, {
+          const response = await authFetch(`${API_BASE}/stile/${stilId}`, {
             method: 'DELETE'
           });
 
@@ -841,7 +847,7 @@ const StilVerwaltung = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile/${currentStil.stil_id}/graduierungen`, {
+      const response = await authFetch(`${API_BASE}/stile/${currentStil.stil_id}/graduierungen`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -893,7 +899,7 @@ const StilVerwaltung = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile/graduierungen/${graduierungData.graduierung_id}`, {
+      const response = await authFetch(`${API_BASE}/stile/graduierungen/${graduierungData.graduierung_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(graduierungData)
@@ -938,7 +944,7 @@ const StilVerwaltung = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile/graduierungen/${graduierungId}`, {
+      const response = await authFetch(`${API_BASE}/stile/graduierungen/${graduierungId}`, {
         method: 'DELETE'
       });
 
@@ -1086,7 +1092,7 @@ const StilVerwaltung = () => {
       };
 
       // API-Call zum Speichern
-      const response = await fetch(
+      const response = await authFetch(
         `${API_BASE}/stile/${currentStil.stil_id}/graduierungen/${selectedGraduierung.graduierung_id}/pruefungsinhalte`,
         {
           method: 'PUT',
@@ -1161,7 +1167,7 @@ const StilVerwaltung = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(
+      const response = await authFetch(
         `${API_BASE}/stile/${currentStil.stil_id}/graduierungen/${targetGrad.graduierung_id}/pruefungsinhalte`,
         {
           method: 'PUT',
@@ -1197,7 +1203,7 @@ const StilVerwaltung = () => {
   const handleShowPruefungsinhalte = async (graduierung) => {
     try {
       // Lade die Prüfungsinhalte für diese Graduierung vom Backend
-      const response = await fetch(`${API_BASE}/stile/${currentStil.stil_id}/graduierungen/${graduierung.graduierung_id}/pruefungsinhalte`);
+      const response = await authFetch(`${API_BASE}/stile/${currentStil.stil_id}/graduierungen/${graduierung.graduierung_id}/pruefungsinhalte`);
 
       if (response.ok) {
         const data = await response.json();
@@ -1240,7 +1246,7 @@ const StilVerwaltung = () => {
         [kategorie]: updatedInhalte
       };
 
-      const response = await fetch(
+      const response = await authFetch(
         `${API_BASE}/stile/${currentStil.stil_id}/graduierungen/${graduierung.graduierung_id}/pruefungsinhalte`,
         {
           method: 'PUT',
@@ -1297,13 +1303,13 @@ const StilVerwaltung = () => {
     setLoadingStats(true);
     try {
       // Stil-Statistiken laden (Schüler-Verteilung, Kategorien, etc.)
-      const stilStatsResponse = await fetch(`${API_BASE}/stile/${id}/statistiken`);
+      const stilStatsResponse = await authFetch(`${API_BASE}/stile/${id}/statistiken`);
       if (!stilStatsResponse.ok) throw new Error('Fehler beim Laden der Stil-Statistiken');
       const stilStats = await stilStatsResponse.json();
       setStatistiken(stilStats);
 
       // Prüfungs-Statistiken laden (mit Stil-Filter)
-      const pruefungsResponse = await fetch(`${API_BASE}/pruefungen/stats/statistiken`);
+      const pruefungsResponse = await authFetch(`${API_BASE}/pruefungen/stats/statistiken`);
       if (!pruefungsResponse.ok) throw new Error('Fehler beim Laden der Prüfungs-Statistiken');
       const pruefungsData = await pruefungsResponse.json();
       setPruefungsStats(pruefungsData.statistiken);
@@ -1380,7 +1386,7 @@ const StilVerwaltung = () => {
       console.log('  Current Stil:', stil.stil_id, 'to', prevReihenfolge);
       console.log('  Prev Stil:', prevStil.stil_id, 'to', currentReihenfolge);
 
-      const response = await fetch(`${API_BASE}/stile/reorder`, {
+      const response = await authFetch(`${API_BASE}/stile/reorder`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData)
@@ -1433,7 +1439,7 @@ const StilVerwaltung = () => {
       console.log('  Current Stil:', stil.stil_id, 'to', nextReihenfolge);
       console.log('  Next Stil:', nextStil.stil_id, 'to', currentReihenfolge);
 
-      const response = await fetch(`${API_BASE}/stile/reorder`, {
+      const response = await authFetch(`${API_BASE}/stile/reorder`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData)
@@ -1467,7 +1473,7 @@ const StilVerwaltung = () => {
     try {
       const params = new URLSearchParams();
       if (effectiveDojoId) params.set('dojo_id', effectiveDojoId);
-      const res = await fetch(
+      const res = await authFetch(
         `${API_BASE}/mitglieder/zuweisung/stil/${currentStil.stil_id}?${params}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -1483,7 +1489,7 @@ const StilVerwaltung = () => {
   const loadAlleDojMitglieder = useCallback(async () => {
     if (!effectiveDojoId) return; // Ohne Dojo-ID keine Mitglieder laden
     try {
-      const res = await fetch(`${API_BASE}/mitglieder?dojo_id=${effectiveDojoId}`, {
+      const res = await authFetch(`${API_BASE}/mitglieder?dojo_id=${effectiveDojoId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -1498,7 +1504,7 @@ const StilVerwaltung = () => {
     try {
       const params = new URLSearchParams();
       if (effectiveDojoId) params.set('dojo_id', effectiveDojoId);
-      const res = await fetch(`${API_BASE}/mitglieder/stil/${currentStil.stil_id}/assign?${params}`, {
+      const res = await authFetch(`${API_BASE}/mitglieder/stil/${currentStil.stil_id}/assign?${params}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ mitglied_id: mitgliedId })
@@ -1521,7 +1527,7 @@ const StilVerwaltung = () => {
     try {
       const params = new URLSearchParams();
       if (effectiveDojoId) params.set('dojo_id', effectiveDojoId);
-      const res = await fetch(
+      const res = await authFetch(
         `${API_BASE}/mitglieder/stil/${currentStil.stil_id}/remove/${mitgliedId}?${params}`,
         { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
       );
@@ -1546,7 +1552,7 @@ const StilVerwaltung = () => {
       }));
       const params = new URLSearchParams();
       if (effectiveDojoId) params.set('dojo_id', effectiveDojoId);
-      const res = await fetch(`${API_BASE}/mitglieder/bulk-graduierung?${params}`, {
+      const res = await authFetch(`${API_BASE}/mitglieder/bulk-graduierung?${params}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ stil_id: currentStil.stil_id, assignments })
@@ -1740,7 +1746,7 @@ const StilVerwaltung = () => {
 
                   console.log('🔄 Reaktiviere Stil:', stilData);
 
-                  const response = await fetch(`${API_BASE}/stile/${stil.stil_id}`, {
+                  const response = await authFetch(`${API_BASE}/stile/${stil.stil_id}`, {
                     method: 'PUT',
                     headers: {
                       'Content-Type': 'application/json',
@@ -2990,7 +2996,7 @@ const StilVerwaltung = () => {
       setSaving(true);
       setLocalError('');
       try {
-        const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien`, {
+        const res = await authFetch(`${API_BASE}/stile/${stilId}/kategorien`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ label: newLabel.trim(), icon: newIcon || '📋' })
@@ -3007,7 +3013,7 @@ const StilVerwaltung = () => {
       setSaving(true);
       setLocalError('');
       try {
-        const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien/${katId}`, {
+        const res = await authFetch(`${API_BASE}/stile/${stilId}/kategorien/${katId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ label: editLabel.trim(), icon: editIcon || '📋' })
@@ -3024,7 +3030,7 @@ const StilVerwaltung = () => {
       setSaving(true);
       setLocalError('');
       try {
-        const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien/${kat.kategorie_id}`, { method: 'DELETE' });
+        const res = await authFetch(`${API_BASE}/stile/${stilId}/kategorien/${kat.kategorie_id}`, { method: 'DELETE' });
         const data = await res.json();
         if (!res.ok) { setLocalError(data.error || 'Fehler'); }
         else { fetchStilKategorien(stilId); }
@@ -3054,7 +3060,7 @@ const StilVerwaltung = () => {
         k.kategorie_id === kat.kategorie_id ? { ...k, aktive_graduierung_ids: neueIds } : k
       ));
       try {
-        const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien/${kat.kategorie_id}/graduierungen`, {
+        const res = await authFetch(`${API_BASE}/stile/${stilId}/kategorien/${kat.kategorie_id}/graduierungen`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ aktive_graduierung_ids: neueIds })
@@ -3073,7 +3079,7 @@ const StilVerwaltung = () => {
       setStilKategorien(newOrder);
       const reorderData = newOrder.map((k, i) => ({ kategorie_id: k.kategorie_id, reihenfolge: i + 1 }));
       try {
-        const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien/reorder`, {
+        const res = await authFetch(`${API_BASE}/stile/${stilId}/kategorien/reorder`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ kategorien: reorderData })
@@ -3634,7 +3640,7 @@ const StilVerwaltung = () => {
 
                               // Nur aktualisieren wenn sich was geändert hat oder Kategorie gesetzt werden soll
                               if (newWaitTime !== grad.mindestzeit_monate || updateKategorie) {
-                                const response = await fetch(`${API_BASE}/stile/graduierungen/${grad.graduierung_id}`, {
+                                const response = await authFetch(`${API_BASE}/stile/graduierungen/${grad.graduierung_id}`, {
                                   method: 'PUT',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({
