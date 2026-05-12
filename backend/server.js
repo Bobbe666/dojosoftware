@@ -263,7 +263,7 @@ app.get('/api-docs.json', (req, res) => {
 logger.info('Swagger UI available at /api-docs');
 
 // Cache-Bereinigungsseite — löscht alle SW-Caches + HTTP-Cache im Browser und leitet weiter
-app.get('/update', (req, res) => {
+app.get('/api/update', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
