@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import GiBestellvorlage from './GiBestellvorlage';
@@ -47,6 +47,9 @@ export default function BestellvorlagenTab() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [search, setSearch] = useState('');
+  const [dateien, setDateien] = useState([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef(null);
 
   // ── Laden ────────────────────────────────────────────────────────────────
 
@@ -79,6 +82,14 @@ export default function BestellvorlagenTab() {
     } catch {}
   }, [dojoId]);
 
+  const loadDateien = useCallback(async (vorlagenId) => {
+    if (!dojoId || !vorlagenId) return;
+    try {
+      const res = await axios.get(`/bestellvorlagen/${vorlagenId}/dateien?dojo_id=${dojoId}`);
+      setDateien(res.data?.data || []);
+    } catch {}
+  }, [dojoId]);
+
   useEffect(() => { loadVorlagen(); }, [loadVorlagen]);
   useEffect(() => { loadArtikel(); loadLieferanten(); }, [loadArtikel, loadLieferanten]);
 
@@ -107,9 +118,41 @@ export default function BestellvorlagenTab() {
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
+  const uploadDatei = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedId) return;
+    setUploadingFile(true);
+    try {
+      const fd = new FormData();
+      fd.append('datei', file);
+      const res = await axios.post(
+        `/bestellvorlagen/${selectedId}/dateien?dojo_id=${dojoId}`,
+        fd,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      if (res.data?.datei) setDateien(prev => [...prev, res.data.datei]);
+    } catch {
+      setError('Datei konnte nicht hochgeladen werden.');
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const deleteDatei = async (dateiId) => {
+    if (!selectedId) return;
+    try {
+      await axios.delete(`/bestellvorlagen/${selectedId}/dateien/${dateiId}?dojo_id=${dojoId}`);
+      setDateien(prev => prev.filter(d => d.datei_id !== dateiId));
+    } catch {
+      setError('Datei konnte nicht gelöscht werden.');
+    }
+  };
+
   const openNew = () => {
     setForm(EMPTY_FORM);
     setSelectedId(null);
+    setDateien([]);
     setMode('new');
     setError('');
   };
@@ -141,6 +184,7 @@ export default function BestellvorlagenTab() {
       });
       setSelectedId(v.vorlage_id);
       setMode('edit');
+      await loadDateien(v.vorlage_id);
     } catch {
       setError('Vorlage konnte nicht geladen werden.');
     }
@@ -330,17 +374,70 @@ export default function BestellvorlagenTab() {
               </div>
 
               <div className="bvt-field">
-                <label className="bvt-label">Stickerei-Datei</label>
-                <input className="bvt-input" value={form.stickerei_datei} onChange={f('stickerei_datei')}
-                  placeholder="z. B. TDA_logo_v2.dst" />
-              </div>
-
-              <div className="bvt-field">
                 <label className="bvt-label">Bemerkungen</label>
                 <textarea className="bvt-textarea" rows="3" value={form.bemerkungen} onChange={f('bemerkungen')}
                   placeholder="Sonderwünsche, Verpackungsvorschriften …" />
               </div>
             </div>
+
+            {mode === 'edit' && (
+              <div className="bvt-section">
+                <p className="bvt-section-label">Logos &amp; Dateien</p>
+
+                <div className="bvt-upload-zone" onClick={() => fileInputRef.current?.click()}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    style={{ display: 'none' }}
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
+                    onChange={uploadDatei}
+                  />
+                  {uploadingFile
+                    ? <span className="bvt-upload-hint">Wird hochgeladen…</span>
+                    : <span className="bvt-upload-hint">+ Datei hochladen (Logos, Stickerei-Dateien, PDFs …)</span>
+                  }
+                </div>
+
+                {dateien.length > 0 && (
+                  <div className="bvt-datei-list">
+                    {dateien.map(d => {
+                      const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name);
+                      return (
+                        <div key={d.datei_id} className="bvt-datei-item">
+                          {isImg ? (
+                            <img
+                              className="bvt-datei-thumb"
+                              src={d.pfad}
+                              alt={d.original_name}
+                            />
+                          ) : (
+                            <div className="bvt-datei-icon">📎</div>
+                          )}
+                          <div className="bvt-datei-info">
+                            <div className="bvt-datei-name">{d.original_name}</div>
+                            <div className="bvt-datei-size">
+                              {d.groesse_bytes > 1024 * 1024
+                                ? `${(d.groesse_bytes / 1024 / 1024).toFixed(1)} MB`
+                                : `${Math.round(d.groesse_bytes / 1024)} KB`}
+                            </div>
+                          </div>
+                          <button
+                            className="bvt-datei-del"
+                            onClick={() => deleteDatei(d.datei_id)}
+                            title="Löschen"
+                          >×</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {mode === 'new' && (
+                  <div className="bvt-upload-hint" style={{ marginTop: '0.5rem', color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>
+                    Vorlage erst speichern, dann Dateien hochladen.
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="bvt-section">
               <p className="bvt-section-label">Artikel-Zuordnung</p>

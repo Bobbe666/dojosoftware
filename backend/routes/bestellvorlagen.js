@@ -3,6 +3,30 @@ const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../uploads/vorlage', String(req.params.id));
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = /\.(jpg|jpeg|png|gif|webp|svg|pdf|ai|eps|dst|pes|exp|jef|vp3)$/i;
+    cb(null, allowed.test(file.originalname));
+  },
+});
 
 const ALLOWED_FIELDS = [
   'name', 'typ', 'lieferant_id', 'modell', 'modell_name',
@@ -190,6 +214,73 @@ router.delete('/:id', (req, res) => {
           res.json({ success: true });
         }
       );
+    }
+  );
+});
+
+// GET /:id/dateien — alle Dateien einer Vorlage
+router.get('/:id/dateien', (req, res) => {
+  const dojoId = getSecureDojoId(req);
+  if (!dojoId) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
+
+  db.query(
+    'SELECT * FROM vorlage_dateien WHERE vorlage_id = ? AND dojo_id = ? ORDER BY erstellt_am ASC',
+    [req.params.id, dojoId],
+    (err, results) => {
+      if (err) return res.status(500).json({ success: false, message: 'Datenbankfehler' });
+      res.json({ success: true, data: results });
+    }
+  );
+});
+
+// POST /:id/dateien — Datei hochladen
+router.post('/:id/dateien', upload.single('datei'), (req, res) => {
+  const dojoId = getSecureDojoId(req);
+  if (!dojoId) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
+  if (!req.file) return res.status(400).json({ success: false, message: 'Keine Datei empfangen' });
+
+  const relPath = `/uploads/vorlage/${req.params.id}/${req.file.filename}`;
+
+  db.query(
+    'INSERT INTO vorlage_dateien (vorlage_id, dojo_id, original_name, gespeicherter_name, pfad, mime_type, groesse_bytes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [req.params.id, dojoId, req.file.originalname, req.file.filename, relPath, req.file.mimetype, req.file.size],
+    (err, result) => {
+      if (err) return res.status(500).json({ success: false, message: 'Datenbankfehler', error: err.message });
+      res.json({
+        success: true,
+        datei: {
+          datei_id: result.insertId,
+          vorlage_id: Number(req.params.id),
+          original_name: req.file.originalname,
+          gespeicherter_name: req.file.filename,
+          pfad: relPath,
+          mime_type: req.file.mimetype,
+          groesse_bytes: req.file.size,
+        }
+      });
+    }
+  );
+});
+
+// DELETE /:id/dateien/:dateiId — Datei löschen
+router.delete('/:id/dateien/:dateiId', (req, res) => {
+  const dojoId = getSecureDojoId(req);
+  if (!dojoId) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
+
+  db.query(
+    'SELECT * FROM vorlage_dateien WHERE datei_id = ? AND vorlage_id = ? AND dojo_id = ?',
+    [req.params.dateiId, req.params.id, dojoId],
+    (err, results) => {
+      if (err || !results.length) return res.status(404).json({ success: false, message: 'Datei nicht gefunden' });
+
+      const row = results[0];
+      const absPath = path.join(__dirname, '..', row.pfad);
+      fs.unlink(absPath, () => {});
+
+      db.query('DELETE FROM vorlage_dateien WHERE datei_id = ?', [row.datei_id], (err2) => {
+        if (err2) return res.status(500).json({ success: false, message: 'Datenbankfehler' });
+        res.json({ success: true });
+      });
     }
   );
 });

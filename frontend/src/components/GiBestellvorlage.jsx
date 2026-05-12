@@ -134,14 +134,47 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     Object.values(form[row]).reduce((s, v) => s + (parseInt(v) || 0), 0);
   const grandTotal = () => totalFor('mengenKids') + totalFor('mengenAdult');
 
-  const generatePdf = () => {
+  const generatePdf = async () => {
     setGenerating(true);
-    const origin = window.location.origin;
-    const html = buildPdfHtml(form, origin);
-    const win = window.open('', '_blank');
-    win.document.write(html);
-    win.document.close();
-    setTimeout(() => { win.focus(); setGenerating(false); }, 600);
+    try {
+      const origin = window.location.origin;
+
+      // Hochgeladene Dateien der Vorlage als Base64 laden (nur Bilder)
+      let eingebetteteDateien = [];
+      if (vorlage?.vorlage_id && dojoId) {
+        try {
+          const res = await axios.get(`/bestellvorlagen/${vorlage.vorlage_id}/dateien?dojo_id=${dojoId}`);
+          const alleDateien = res.data?.data || [];
+          const bildDateien = alleDateien.filter(d =>
+            /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name)
+          );
+          eingebetteteDateien = await Promise.all(
+            bildDateien.map(async (d) => {
+              try {
+                const imgRes = await fetch(`${origin}${d.pfad}`);
+                const blob = await imgRes.blob();
+                const b64 = await new Promise((resolve) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result);
+                  reader.readAsDataURL(blob);
+                });
+                return { ...d, dataUrl: b64 };
+              } catch {
+                return { ...d, dataUrl: null };
+              }
+            })
+          );
+        } catch {}
+      }
+
+      const html = buildPdfHtml(form, origin, eingebetteteDateien);
+      const win = window.open('', '_blank');
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => { win.focus(); }, 600);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const sizes = SIZES[form.model];
@@ -373,7 +406,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 // ═══════════════════════════════════════════════════════
 //  PDF-HTML-GENERATOR
 // ═══════════════════════════════════════════════════════
-function buildPdfHtml(form, origin) {
+function buildPdfHtml(form, origin, eingebetteteDateien = []) {
   const sizes = SIZES[form.model];
   const img128 = `${origin}/gi-charts/modell-128.jpg`;
   const img188 = `${origin}/gi-charts/modell-188.jpg`;
@@ -630,6 +663,18 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
       </div>
     </div>
   </div>
+  ${eingebetteteDateien.length > 0 ? `
+  <div style="margin-top:5mm;">
+    <span class="lbl" style="display:block;margin-bottom:3mm;">Bereitgestellte Logo- &amp; Branding-Dateien:</span>
+    <div style="display:flex;flex-wrap:wrap;gap:5mm;align-items:flex-start;">
+      ${eingebetteteDateien.filter(d => d.dataUrl).map(d => `
+        <div style="text-align:center;max-width:55mm;">
+          <img src="${d.dataUrl}" style="max-width:55mm;max-height:40mm;border:1px solid #eee;border-radius:4px;object-fit:contain;" alt="${d.original_name}">
+          <div style="font-size:6.5pt;color:#999;margin-top:2mm;word-break:break-all;">${d.original_name}</div>
+        </div>
+      `).join('')}
+    </div>
+  </div>` : ''}
 </div>
 </div>
 
