@@ -1478,10 +1478,12 @@ Extrahiere ALLE Einzelpositionen UND die Kopfdaten. Antworte NUR mit diesem JSON
 }
 
 Regeln:
-- Jede Zeile auf dem Kassenbon = eine Position in "positionen"
-- betrag je Position: Einzelpreis × Menge (inkl. MwSt)
+- Nur Warenpositionen/Artikel/Dienstleistungen als Einträge in "positionen" — KEINE Steuer-/MwSt-Zeilen
+- Steuerzeilen ("darin enthaltene MwSt", "USt 19%", "Mehrwertsteuer", "Steuerbetrag") WEGLASSEN — diese Information gehört in mwst_satz, nicht als eigene Position
+- betrag je Position: Einzelpreis × Menge (inkl. MwSt, also Bruttobetrag)
 - mwst_satz je Position: 19, 7 oder 0 (aus Beleg ablesen falls möglich, sonst 19)
-- betrag_brutto = Endsumme des gesamten Belegs
+- betrag_brutto = Endsumme des gesamten Belegs (was der Kunde tatsächlich gezahlt hat)
+- Die Summe aller betrag-Felder in positionen MUSS gleich betrag_brutto sein
 - Falls nur ein Gesamtbetrag sichtbar (keine Einzelpositionen): eine Position mit Gesamtbetrag anlegen
 - Unlesbare Werte: null`
           }
@@ -1514,6 +1516,24 @@ Regeln:
     // Falls keine Positionen erkannt: Fallback auf Gesamtbetrag als eine Position
     const fallbackBetrag = typeof parsed.betrag_brutto === 'number' && parsed.betrag_brutto > 0
       ? parsed.betrag_brutto : null;
+
+    // Sanity-Check: Positionen-Summe darf betrag_brutto nicht wesentlich überschreiten.
+    // Passiert z.B. bei Tankquittungen, wenn die KI "enthaltene MwSt"-Zeilen als eigene Position zurückgibt.
+    if (fallbackBetrag && positionen.length > 0) {
+      const positionenSumme = positionen.reduce((s, p) => s + p.betrag, 0);
+      if (positionenSumme > fallbackBetrag * 1.02) {
+        positionen.length = 0;
+        positionen.push({
+          id: 1,
+          beschreibung: typeof parsed.lieferant === 'string' && parsed.lieferant
+            ? parsed.lieferant
+            : 'Einkauf',
+          betrag: fallbackBetrag,
+          mwst_satz: [0, 7, 19].includes(Number(parsed.mwst_satz)) ? Number(parsed.mwst_satz) : 19,
+          typ: 'betrieb',
+        });
+      }
+    }
 
     if (positionen.length === 0 && fallbackBetrag) {
       positionen.push({
