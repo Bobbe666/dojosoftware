@@ -1176,9 +1176,22 @@ const ArtikelVerwaltung = () => {
 
   return (
     <div className="artikel-verwaltung">
-      <div className="page-header">
-        <h1>Artikelverwaltung</h1>
-        <p>Verwalten Sie Ihr Sortiment und Lagerbestände</p>
+      <div className="av-page-header">
+        <div className="av-page-header__icon">🛍️</div>
+        <div className="av-page-header__text">
+          <h1 className="av-page-header__title">Artikelverwaltung</h1>
+          <p className="av-page-header__sub">Sortiment, Lagerbestände & Bestellungen verwalten</p>
+        </div>
+        <div className="av-page-header__stats">
+          <div className="av-hstat">
+            <span className="av-hstat__num">{artikel.length}</span>
+            <span className="av-hstat__label">Artikel</span>
+          </div>
+          <div className="av-hstat">
+            <span className="av-hstat__num">{artikel.filter(a => a.aktiv).length}</span>
+            <span className="av-hstat__label">Aktiv</span>
+          </div>
+        </div>
       </div>
 
       {/* Haupt-Tab Navigation */}
