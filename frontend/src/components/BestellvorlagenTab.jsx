@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
-import GiBestellvorlage from './GiBestellvorlage';
 import '../styles/BestellvorlagenTab.css';
 
 const EMPTY_FORM = {
@@ -41,7 +40,6 @@ export default function BestellvorlagenTab() {
   const [lieferanten, setLieferanten] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedId, setSelectedId] = useState(null);
-  const [activeVorlage, setActiveVorlage] = useState(null); // für Bestellung aufgeben
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -228,19 +226,6 @@ export default function BestellvorlagenTab() {
       setError('Fehler beim Löschen.');
     }
   };
-
-  // ── Wenn "Bestellung aufgeben" geklickt wird ──────────────────────────────
-
-  if (activeVorlage) {
-    return (
-      <div className="bvt-overlay">
-        <GiBestellvorlage
-          vorlage={activeVorlage}
-          onClose={() => setActiveVorlage(null)}
-        />
-      </div>
-    );
-  }
 
   // ── Formular-Ansicht ──────────────────────────────────────────────────────
 
@@ -537,12 +522,6 @@ export default function BestellvorlagenTab() {
                   onClick={() => openEdit(v)}
                 >
                   Bearbeiten
-                </button>
-                <button
-                  className="bvt-btn-gold bvt-btn-gold--sm"
-                  onClick={() => setActiveVorlage(v)}
-                >
-                  Bestellung aufgeben
                 </button>
                 <button
                   className="bvt-btn bvt-btn--danger bvt-btn--sm"

@@ -353,11 +353,10 @@ select.gv-input { cursor: pointer; }
   background: rgba(26,26,46,0.99);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 12px;
-  padding: 1.25rem;
-  width: min(480px, 92vw);
+  width: min(700px, 96vw);
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
 }
 
 .gv-lt-modal-header {
@@ -367,7 +366,28 @@ select.gv-input { cursor: pointer; }
   font-size: 0.95rem;
   font-weight: 700;
   color: rgba(255,255,255,0.88);
+  padding: 1.1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
 }
+
+.gv-lt-modal-body {
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  flex: 1;
+}
+
+.gv-lt-section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  margin: 0.75rem 0 0.4rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.gv-lt-section-label:first-child { margin-top: 0; }
 
 .gv-lt-modal-close {
   background: none;
@@ -387,13 +407,16 @@ select.gv-input { cursor: pointer; }
   color: #fca5a5;
   font-size: 0.8rem;
   padding: 0.4rem 0.7rem;
+  margin-bottom: 0.75rem;
 }
 
 .gv-lt-modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
-  margin-top: 0.25rem;
+  padding: 0.75rem 1.25rem 1rem;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
 }
 
 /* RESPONSIVE */

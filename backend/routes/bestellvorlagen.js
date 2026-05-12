@@ -31,7 +31,8 @@ const upload = multer({
 const ALLOWED_FIELDS = [
   'name', 'typ', 'lieferant_id', 'modell', 'modell_name',
   'artikel_nr_vorl', 'farbe', 'wkf', 'stickerei_pos',
-  'stickerei_text', 'stickerei_farben', 'stickerei_datei', 'bemerkungen'
+  'stickerei_text', 'stickerei_farben', 'stickerei_datei', 'bemerkungen',
+  'spezifikation'
 ];
 
 function extractFields(body) {
