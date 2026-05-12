@@ -401,6 +401,19 @@ router.post('/', async (req, res) => {
 
         rechnungInfo = await createRechnungForVerkauf(verkauf_id, verkaufData);
         logger.info('Rechnung ${rechnungInfo.rechnungsnummer} für Verkauf #${verkauf_id} erstellt');
+
+        // Beitrag mit Rechnung verknüpfen (nur bei Lastschrift mit Mitglied)
+        if (zahlungsart === 'lastschrift' && mitglied_id && rechnungInfo?.rechnung_id) {
+          try {
+            const pool2 = db.promise();
+            await pool2.query(
+              `UPDATE beitraege SET rechnung_id = ? WHERE mitglied_id = ? AND art = 'artikel' AND bezahlt = 0 AND rechnung_id IS NULL AND magicline_description LIKE ? LIMIT 1`,
+              [rechnungInfo.rechnung_id, mitglied_id, `%Bon: ${bonNummer}%`]
+            );
+          } catch (linkErr) {
+            logger.error('Fehler beim Verknüpfen Beitrag-Rechnung:', linkErr);
+          }
+        }
       } catch (rechnungError) {
         logger.error('⚠️  Fehler bei automatischer Rechnungserstellung:', { error: rechnungError });
         // Verkauf wird trotzdem durchgeführt, Rechnung kann manuell nachträglich erstellt werden

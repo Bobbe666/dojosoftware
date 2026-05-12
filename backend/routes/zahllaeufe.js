@@ -348,6 +348,24 @@ router.post("/", async (req, res) => {
                     : [zahllauf_id, ...validIds];
                 const updateResult = await queryAsync(updateSql, updateParams);
                 markedCount = updateResult.affectedRows;
+
+                // Rechnungen und Verkaeufe auf bezahlt/eingezogen setzen
+                if (markedCount > 0) {
+                    await queryAsync(
+                        `UPDATE rechnungen r JOIN beitraege b ON b.rechnung_id = r.rechnung_id
+                         SET r.status = 'bezahlt', r.bezahlt_am = CURDATE()
+                         WHERE b.beitrag_id IN (${placeholders}) AND b.rechnung_id IS NOT NULL
+                           AND r.status NOT IN ('bezahlt','storniert')`,
+                        validIds
+                    );
+                    await queryAsync(
+                        `UPDATE verkaeufe v JOIN beitraege b ON b.magicline_description LIKE CONCAT('%Bon: ', v.bon_nummer, '%')
+                         SET v.zahlungsstatus = 'eingezogen'
+                         WHERE b.beitrag_id IN (${placeholders}) AND v.zahlungsart = 'lastschrift'
+                           AND v.zahlungsstatus IN ('offen','in_einzug')`,
+                        validIds
+                    );
+                }
             }
         }
 
@@ -406,6 +424,23 @@ router.post("/:id/abschliessen", async (req, res) => {
                      WHERE b.beitrag_id IN (${placeholders}) AND p.gebuehr_bezahlt = 0`,
                     [...validIds]
                 );
+                // Rechnungen und Verkaeufe auf bezahlt/eingezogen setzen
+                if (markedCount > 0) {
+                    await queryAsync(
+                        `UPDATE rechnungen r JOIN beitraege b ON b.rechnung_id = r.rechnung_id
+                         SET r.status = 'bezahlt', r.bezahlt_am = CURDATE()
+                         WHERE b.beitrag_id IN (${placeholders}) AND b.rechnung_id IS NOT NULL
+                           AND r.status NOT IN ('bezahlt','storniert')`,
+                        validIds
+                    );
+                    await queryAsync(
+                        `UPDATE verkaeufe v JOIN beitraege b ON b.magicline_description LIKE CONCAT('%Bon: ', v.bon_nummer, '%')
+                         SET v.zahlungsstatus = 'eingezogen'
+                         WHERE b.beitrag_id IN (${placeholders}) AND v.zahlungsart = 'lastschrift'
+                           AND v.zahlungsstatus IN ('offen','in_einzug')`,
+                        validIds
+                    );
+                }
             }
         } else if (monat && jahr) {
             // Fallback: alle offenen SEPA-Beiträge des Monats markieren
