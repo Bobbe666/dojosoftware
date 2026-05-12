@@ -56,6 +56,7 @@ const ArtikelVerwaltung = () => {
   const [expandedGruppen, setExpandedGruppen] = useState({}); // { [hauptId]: true/false }
   const [expandedRows, setExpandedRows] = useState(new Set()); // aufgeklappte Artikel-Zeilen
   const [giVorlageArtikel, setGiVorlageArtikel] = useState(null); // Artikel für Bestellvorlage-Overlay
+  const [giVorlageData, setGiVorlageData] = useState(null); // Vorlage-Objekt für direktes Overlay
 
   const toggleRow = (id) => {
     setExpandedRows(prev => {
@@ -100,6 +101,16 @@ const ArtikelVerwaltung = () => {
   // API FUNCTIONS
   // =====================================================================================
   
+  const openVorlageForArtikel = async (item) => {
+    const dojoId = activeDojo?.id;
+    const dojoQuery = dojoId ? `?dojo_id=${dojoId}` : '';
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/bestellvorlagen/${item.vorlage_id}${dojoQuery}`);
+      const data = await res.json();
+      if (data?.data) setGiVorlageData(data.data);
+    } catch {}
+  };
+
   const apiCall = async (endpoint, options = {}) => {
     try {
       const response = await fetchWithAuth(`${config.apiBaseUrl}/artikel${endpoint}`, {
@@ -1275,11 +1286,12 @@ const ArtikelVerwaltung = () => {
       )}
 
       {/* Gi-Bestellvorlage Overlay (über Artikel-Tab, für direkte Artikel-Vorlagen) */}
-      {giVorlageArtikel && (
+      {(giVorlageData || giVorlageArtikel) && (
         <div className="gv-overlay">
           <GiBestellvorlage
-            artikel={giVorlageArtikel}
-            onClose={() => setGiVorlageArtikel(null)}
+            vorlage={giVorlageData || null}
+            artikel={giVorlageData ? null : giVorlageArtikel}
+            onClose={() => { setGiVorlageData(null); setGiVorlageArtikel(null); }}
           />
         </div>
       )}
@@ -1474,7 +1486,7 @@ const ArtikelVerwaltung = () => {
                         <button className="sub-tab-btn av-btn-sm" onClick={() => handleLager(item)} title="Lagerbestand ändern">📦</button>
                       )}
                       {item.vorlage_id && (
-                        <button className="sub-tab-btn av-btn-sm" onClick={() => setMainTab('bestellvorlagen')} title="Bestellvorlage öffnen">📋</button>
+                        <button className="sub-tab-btn av-btn-sm" onClick={() => openVorlageForArtikel(item)} title="Bestellung aufgeben">📋</button>
                       )}
                       <button className="sub-tab-btn av-btn-sm" onClick={() => deleteArtikel(item.artikel_id)} title="Deaktivieren">🗑️</button>
                     </td>
