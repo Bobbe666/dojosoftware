@@ -173,35 +173,26 @@ if (BUILT_VERSION) {
   setTimeout(checkVersion, 10000);
 }
 
-// ── Service Worker: Push-Notifications + Auto-Update (event-getriggert, kein Polling) ──
+// ── Service Worker: Push-Notifications + Auto-Update ─────────────────────────
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const reg = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
-        updateViaCache: 'none', // sw.js nie aus Browser-Cache lesen
-      });
+  // SOFORT registrieren (nicht erst auf 'load' warten) damit controllerchange
+  // nicht verpasst wird falls der neue SW schon vor dem load-Event übernimmt
+  const hadController = !!navigator.serviceWorker.controller;
 
-      // Merken ob schon ein aktiver SW vorhanden war (= Update, nicht Erstinstall)
-      const hadController = !!navigator.serviceWorker.controller;
+  // Neuer SW übernimmt Kontrolle → Seite neu laden damit frische Dateien geladen werden
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) window.location.reload();
+  });
 
-      // Neuer SW übernimmt Kontrolle → Seite neu laden
-      // skipWaiting() in sw.js sorgt dafür dass das sofort passiert
-      // hadController-Check verhindert Reload beim allerersten Start
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (hadController) window.location.reload();
-      });
-
-      // SW-Update nur prüfen wenn User zum Tab zurückkehrt — kein Polling!
-      // Browser macht ohnehin einen bedingten GET (304 wenn unverändert = quasi kein Traffic)
-      const checkForUpdate = () => {
-        if (!document.hidden) reg.update().catch(() => {});
-      };
-      document.addEventListener('visibilitychange', checkForUpdate);
-      window.addEventListener('focus', checkForUpdate);
-
-    } catch (err) {
-      console.warn('[SW] Registrierung fehlgeschlagen:', err.message);
-    }
+  navigator.serviceWorker.register('/sw.js', {
+    scope: '/',
+    updateViaCache: 'none', // sw.js IMMER vom Netzwerk holen, nie aus Cache
+  }).then(reg => {
+    // SW-Update prüfen wenn User zum Tab zurückkommt
+    const checkForUpdate = () => { if (!document.hidden) reg.update().catch(() => {}); };
+    document.addEventListener('visibilitychange', checkForUpdate);
+    window.addEventListener('focus', checkForUpdate);
+  }).catch(err => {
+    console.warn('[SW] Registrierung fehlgeschlagen:', err.message);
   });
 }

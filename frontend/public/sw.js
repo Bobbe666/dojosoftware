@@ -9,7 +9,13 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    Promise.all([
+      // Alle alten Caches (z.B. von früherer PWA/Workbox) löschen
+      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))),
+      clients.claim(),
+    ])
+  );
 });
 
 // Kein fetch-Handler → kein Request-Interception, kein Caching, keine Update-Probleme
