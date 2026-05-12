@@ -553,18 +553,24 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
       {showOrderModal && (
         <div className="modal-overlay" onClick={() => setShowOrderModal(false)}>
           <div className="modal-content order-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Neue Bestellung erstellen</h2>
-              <button className="close-btn" onClick={() => setShowOrderModal(false)}>x</button>
+            <div className="modal-header om-header">
+              <div className="om-header__left">
+                <span className="om-header__icon">📦</span>
+                <div>
+                  <h2 className="om-header__title">Neue Bestellung</h2>
+                  <p className="om-header__sub">Bestellformular & PDF-Generierung</p>
+                </div>
+              </div>
+              <button className="close-btn" onClick={() => setShowOrderModal(false)}>✕</button>
             </div>
 
             <div className="modal-body">
               {/* Lieferant Info */}
-              <div className="form-section">
-                <h3>Supplier Information</h3>
+              <div className="form-section om-section">
+                <h3 className="om-section__title">🏭 Lieferant</h3>
                 <div className="form-grid">
                   <div className="form-group">
-                    <label>Supplier Name</label>
+                    <label>Lieferantenname</label>
                     <input
                       type="text"
                       value={orderForm.lieferant_name}
@@ -572,7 +578,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                     />
                   </div>
                   <div className="form-group">
-                    <label>Country</label>
+                    <label>Land</label>
                     <input
                       type="text"
                       value={orderForm.lieferant_land}
@@ -580,7 +586,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                     />
                   </div>
                   <div className="form-group">
-                    <label>Email</label>
+                    <label>E-Mail</label>
                     <input
                       type="email"
                       value={orderForm.lieferant_email}
@@ -588,7 +594,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                     />
                   </div>
                   <div className="form-group">
-                    <label>Phone</label>
+                    <label>Telefon</label>
                     <input
                       type="text"
                       value={orderForm.lieferant_telefon}
@@ -599,30 +605,32 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
               </div>
 
               {/* Artikel mit niedrigem Bestand */}
-              <div className="form-section">
-                <h3>Low Stock Items (Add to Order)</h3>
-                <div className="low-stock-select">
-                  {lowStockItems.map(item => {
-                    const isAdded = orderForm.positionen.some(p => p.artikel_id === item.artikel_id);
-                    return (
-                      <div
-                        key={item.artikel_id}
-                        className={`selectable-item ${isAdded ? 'selected' : ''}`}
-                        onClick={() => !isAdded && handleAddToOrder(item)}
-                      >
-                        <span className="item-name">{item.artikel_name}</span>
-                        <span className="item-stock">Stock: {item.lagerbestand}</span>
-                        {isAdded && <span className="check-mark">OK</span>}
-                      </div>
-                    );
-                  })}
+              {lowStockItems.length > 0 && (
+                <div className="form-section om-section">
+                  <h3 className="om-section__title">⚠️ Nachzubestellende Artikel</h3>
+                  <div className="low-stock-select">
+                    {lowStockItems.map(item => {
+                      const isAdded = orderForm.positionen.some(p => p.artikel_id === item.artikel_id);
+                      return (
+                        <div
+                          key={item.artikel_id}
+                          className={`selectable-item ${isAdded ? 'selected' : ''}`}
+                          onClick={() => !isAdded && handleAddToOrder(item)}
+                        >
+                          <span className="item-name">{item.artikel_name}</span>
+                          <span className="item-stock">Bestand: {item.lagerbestand}</span>
+                          {isAdded && <span className="check-mark">✓</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Bestellpositionen */}
               {orderForm.positionen.length > 0 && (
-                <div className="form-section">
-                  <h3>Order Items</h3>
+                <div className="form-section om-section">
+                  <h3 className="om-section__title">🛒 Bestellpositionen</h3>
                   {orderForm.positionen.map((position, posIndex) => (
                     <div key={posIndex} className="position-card">
                       <div className="position-header">
@@ -642,7 +650,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                           className="remove-btn"
                           onClick={() => handleRemovePosition(posIndex)}
                         >
-                          x
+                          ✕
                         </button>
                       </div>
 
@@ -661,7 +669,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                       </div>
 
                       <div className="position-price">
-                        <label>Unit Price (EUR):</label>
+                        <label>Stückpreis (EUR):</label>
                         <input
                           type="number"
                           step="0.01"
@@ -675,10 +683,10 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                       </div>
 
                       <div className="position-note">
-                        <label>Note:</label>
+                        <label>Anmerkung:</label>
                         <input
                           type="text"
-                          placeholder="Special instructions..."
+                          placeholder="Besondere Hinweise..."
                           value={position.bemerkung}
                           onChange={e => {
                             const newPositionen = [...orderForm.positionen];
@@ -693,27 +701,27 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
               )}
 
               {/* Bemerkungen */}
-              <div className="form-section">
-                <h3>Remarks</h3>
+              <div className="form-section om-section">
+                <h3 className="om-section__title">📝 Bemerkungen</h3>
                 <textarea
                   rows="4"
-                  placeholder="Additional remarks for the supplier..."
+                  placeholder="Zusätzliche Hinweise für den Lieferanten..."
                   value={orderForm.bemerkungen}
                   onChange={e => setOrderForm(prev => ({ ...prev, bemerkungen: e.target.value }))}
                 ></textarea>
               </div>
             </div>
 
-            <div className="modal-footer">
+            <div className="modal-footer om-footer">
               <button className="cancel-btn" onClick={() => setShowOrderModal(false)}>
-                Cancel
+                Abbrechen
               </button>
               <button
                 className="submit-btn"
                 onClick={handleCreateOrder}
                 disabled={orderForm.positionen.length === 0}
               >
-                Create Order & Generate PDF
+                📄 Bestellung erstellen & PDF
               </button>
             </div>
           </div>

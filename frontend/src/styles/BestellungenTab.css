@@ -333,93 +333,171 @@
 }
 
 .modal-content {
-  background: var(--modal-bg-dark);
-  border: 1px solid var(--primary-alpha-30);
-  border-radius: var(--comp-radius-xl);
+  background: linear-gradient(160deg, rgba(22,22,45,0.99) 0%, rgba(18,18,40,0.99) 100%);
+  border: 1px solid rgba(212,175,55,0.22);
+  border-radius: 16px;
   max-width: 900px;
   width: 100%;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,175,55,0.08);
 }
 
-.modal-header {
+/* Order Modal Header */
+.om-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 1.5rem;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  border-bottom: 2px solid var(--primary-alpha-30);
+  padding: 1.4rem 1.75rem;
+  background: linear-gradient(135deg, rgba(26,26,46,0.99) 0%, rgba(20,20,50,0.99) 100%);
+  border-bottom: 1px solid rgba(212,175,55,0.2);
+  position: relative;
+}
+
+.om-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #d4af37 0%, rgba(212,175,55,0.2) 60%, transparent 100%);
+}
+
+.om-header__left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.om-header__icon {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 2px 6px rgba(212,175,55,0.5));
+}
+
+.om-header__title {
+  margin: 0;
+  color: #d4af37;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.om-header__sub {
+  margin: 0.15rem 0 0 0;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.78rem;
 }
 
 .modal-header h2 {
   margin: 0;
-  color: var(--text-1);
-  font-size: 1.25rem;
+  color: #d4af37;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.modal-header .close-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  color: var(--text-2);
-  font-size: 1.5rem;
+.modal-header .close-btn,
+.om-header .close-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5);
+  font-size: 1rem;
   cursor: pointer;
-  border-radius: var(--comp-radius-sm);
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
 }
 
-.modal-header .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-1);
+.modal-header .close-btn:hover,
+.om-header .close-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-color: rgba(255,255,255,0.25);
 }
 
 .modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1.5rem 1.75rem;
 }
 
+/* Form Sections */
+.om-section {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.om-section__title {
+  color: rgba(255,255,255,0.75) !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0 0 1rem 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  padding-bottom: 0.6rem !important;
+}
+
+/* Footer */
+.om-footer,
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: var(--ui-form-gap);
-  padding: 1.25rem 1.5rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 0.75rem;
+  padding: 1.1rem 1.75rem;
+  background: rgba(0,0,0,0.25);
+  border-top: 1px solid rgba(255,255,255,0.07);
 }
 
 .cancel-btn, .close-btn-footer {
-  padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: var(--text-1);
-  border-radius: var(--comp-radius-md);
+  padding: 0.7rem 1.4rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.7);
+  border-radius: 8px;
   cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
 .cancel-btn:hover, .close-btn-footer:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
 }
 
 .submit-btn, .pdf-btn {
-  padding: 0.75rem 1.5rem;
-  background: var(--gradient-gold);
+  padding: 0.7rem 1.5rem;
+  background: linear-gradient(135deg, #d4af37 0%, #b8962e 100%);
   color: #1a1a2e;
   border: none;
-  border-radius: var(--comp-radius-md);
-  font-weight: 600;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
   cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 12px rgba(212,175,55,0.25);
 }
 
 .submit-btn:hover, .pdf-btn:hover {
-  box-shadow: 0 4px 12px var(--primary-alpha-30);
+  box-shadow: 0 4px 20px rgba(212,175,55,0.4);
+  transform: translateY(-1px);
 }
 
 .submit-btn:disabled, .pdf-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .print-btn {
@@ -445,11 +523,14 @@
 }
 
 .form-section h3 {
-  color: var(--primary);
-  margin: 0 0 var(--ui-form-gap) 0;
-  font-size: var(--ui-card-title);
-  border-bottom: 1px solid var(--primary-alpha-20);
-  padding-bottom: 0.5rem;
+  color: rgba(255,255,255,0.7);
+  margin: 0 0 1rem 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 0.6rem;
 }
 
 .form-grid {
