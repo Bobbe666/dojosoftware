@@ -3645,7 +3645,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     <label>Online-Portal:</label>
                     {editMode ? (
                       <CustomSelect
-                        value={updatedData.online_portal_aktiv || "0"}
+                        value={updatedData.online_portal_aktiv ? "1" : "0"}
                         onChange={(e) => handleChange(e, "online_portal_aktiv")}
                         options={[
                           { value: '1', label: 'Aktiv' },
