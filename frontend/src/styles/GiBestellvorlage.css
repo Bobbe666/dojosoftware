@@ -53,6 +53,22 @@
   margin-top: 0.15rem;
 }
 
+.gv-btn-save {
+  padding: 0.55rem 1.1rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 7px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.gv-btn-save:hover { background: rgba(255,255,255,0.14); color: #fff; }
+.gv-btn-save:disabled { opacity: 0.5; cursor: default; }
+
 .gv-btn-pdf {
   padding: 0.55rem 1.25rem;
   background: rgba(212,175,55,0.85);

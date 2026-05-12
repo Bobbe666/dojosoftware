@@ -40,6 +40,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const { activeDojo } = useDojoContext();
   const [lieferanten, setLieferanten] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
 
   // Initialisierung: vorlage hat Vorrang, dann artikel, dann EMPTY
   const buildInitialForm = () => {
@@ -177,6 +179,36 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     }
   };
 
+  const saveVorlage = async () => {
+    if (!vorlage?.vorlage_id) return;
+    setSaving(true); setSaveMsg('');
+    const dojoId = vorlage.dojo_id || activeDojo?.id;
+    try {
+      await axios.put(`/bestellvorlagen/${vorlage.vorlage_id}?dojo_id=${dojoId}`, {
+        name: vorlage.name,
+        typ: vorlage.typ || 'karate_gi',
+        lieferant_id: form.lieferantId ? Number(form.lieferantId) : null,
+        modell: form.model,
+        modell_name: form.modelName,
+        artikel_nr_vorl: form.artikelNr,
+        farbe: form.farbe,
+        wkf: form.wkf ? 1 : 0,
+        stickerei_pos: form.stickereiPos,
+        stickerei_text: form.stickereiSchriftzug,
+        stickerei_farben: form.stickereiGarnfarben,
+        stickerei_datei: form.stickereiBemerkung,
+        bemerkungen: form.bemerkungen,
+        artikel_ids: vorlage.artikel_ids || [],
+      });
+      setSaveMsg('Gespeichert ✓');
+      setTimeout(() => setSaveMsg(''), 3000);
+    } catch {
+      setSaveMsg('Fehler beim Speichern');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const sizes = SIZES[form.model];
   const POSITIONEN = [
     'Linkes Revers', 'Rechtes Revers', 'Rücken oben', 'Rücken Mitte',
@@ -199,9 +231,21 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           </div>
           <div className="gv-sub">Vorauswahl treffen → PDF generieren → drucken</div>
         </div>
-        <button className="gv-btn-pdf" onClick={generatePdf} disabled={generating}>
-          {generating ? 'Erstelle PDF…' : 'PDF generieren & drucken'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexShrink: 0 }}>
+          {saveMsg && (
+            <span style={{ fontSize: '0.8rem', color: saveMsg.includes('Fehler') ? '#f87171' : '#86efac' }}>
+              {saveMsg}
+            </span>
+          )}
+          {vorlage?.vorlage_id && (
+            <button className="gv-btn-save" onClick={saveVorlage} disabled={saving}>
+              {saving ? 'Speichert…' : 'Einstellungen speichern'}
+            </button>
+          )}
+          <button className="gv-btn-pdf" onClick={generatePdf} disabled={generating}>
+            {generating ? 'Erstelle PDF…' : 'PDF generieren & drucken'}
+          </button>
+        </div>
       </div>
 
       <div className="gv-body">
