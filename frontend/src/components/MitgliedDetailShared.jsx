@@ -5326,9 +5326,38 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           return dateB - dateA;
                         });
                         
-                        const grouped = groupBeiträge(alleBeitraege, beitraegeViewMode);
-                        const periodKeys = Object.keys(grouped).sort().reverse();
-                        
+                        // ── Semantische Sektionen ──────────────────────────────
+                        const _bN = new Date(); _bN.setHours(23,59,59,999);
+                        const _isPz = b => b.bezahlt===true||b.bezahlt===1||String(b.bezahlt)==='1';
+                        const _bDate = b => new Date(b.datum||b.zahlungsdatum||'9999-12-31');
+                        const _curMonthEnd = new Date(_bN.getFullYear(), _bN.getMonth()+1, 0, 23,59,59,999);
+
+                        // Aktuell: unbezahlt & fällig bis Monatsende (inkl. überfällig)
+                        const _sAktuell = alleBeitraege
+                          .filter(b => !_isPz(b) && _bDate(b) <= _curMonthEnd)
+                          .sort((a,b) => _bDate(a)-_bDate(b));
+
+                        // Bezahlt, neueste zuerst
+                        const _allPaid = alleBeitraege.filter(_isPz).sort((a,b)=>_bDate(b)-_bDate(a));
+                        const _sLetzte = _allPaid.slice(0,3);
+                        const _sAelter = _allPaid.slice(3);
+
+                        // Zukunft: unbezahlt nach Monatsende
+                        const _sZukunft = alleBeitraege
+                          .filter(b => !_isPz(b) && _bDate(b) > _curMonthEnd)
+                          .sort((a,b) => _bDate(a)-_bDate(b));
+
+                        const _sections = [
+                          { key:'aktuell', label:'Aktuelle Abbuchung',    icon:'⚡', entries:_sAktuell, color:'#d4af37' },
+                          { key:'letzte',  label:'Letzte 3 Abbuchungen',  icon:'✓',  entries:_sLetzte,  color:'#4caf82' },
+                          { key:'zukunft', label:'Geplante Beiträge',     icon:'🔮', entries:_sZukunft, color:'rgba(255,255,255,0.6)' },
+                          { key:'aelter',  label:'Ältere Beiträge',       icon:'📚', entries:_sAelter,  color:'rgba(255,255,255,0.35)' },
+                        ].filter(s => s.entries.length > 0);
+
+                        // collapsed by default: open only if collapsedPeriods[key] === true
+                        const _isSectionOpen = key => collapsedPeriods[key] === true;
+                        const _toggleSection = key => setCollapsedPeriods(prev => ({...prev, [key]: !prev[key]}));
+
                         return (
                           <div className="btr-wrap">
                             {/* ── Ratenplan-Banner ── */}
@@ -5405,33 +5434,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               );
                             })()}
 
-                            {/* ── Filter bar ── */}
-                            <div className="btr-filter-bar">
-                              <div className="btr-filter-group">
-                                {['monat', 'quartal', 'jahr'].map(mode => (
-                                  <button
-                                    key={mode}
-                                    className={`btr-filter-btn${beitraegeViewMode === mode ? ' btr-filter-btn--active' : ''}`}
-                                    onClick={() => setBeiträgeViewMode(mode)}
-                                  >
-                                    {mode === 'monat' ? 'Monat' : mode === 'quartal' ? 'Quartal' : 'Jahr'}
-                                  </button>
-                                ))}
-                              </div>
-                              <button
-                                className="btr-filter-btn btr-collapse-btn"
-                                onClick={() => {
-                                  const allCollapsed = periodKeys.length > 0 && periodKeys.every(k => collapsedPeriods[k] === true);
-                                  const s = {};
-                                  periodKeys.forEach(k => { s[k] = !allCollapsed; });
-                                  setCollapsedPeriods(s);
-                                }}
-                              >
-                                {periodKeys.length > 0 && periodKeys.every(k => collapsedPeriods[k] === true) ? '↕ Ausklappen' : '↕ Einklappen'}
-                              </button>
-                            </div>
-
-                            {/* ── List ── */}
+                            {/* ── Semantische Sektionen ── */}
                             <div className="btr-list">
                               {alleBeitraege.length === 0 ? (
                                 <div className="btr-empty">
@@ -5440,19 +5443,19 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                   <div className="btr-empty-sub">Noch keine Beiträge erfasst und kein aktiver Vertrag.</div>
                                 </div>
                               ) : (
-                                periodKeys.map(periodKey => {
-                                  const beitraege = grouped[periodKey];
+                                _sections.map(section => {
+                                  const beitraege = section.entries;
                                   const sums = calculatePeriodSums(beitraege);
-                                  const isCollapsed = collapsedPeriods[periodKey];
+                                  const isOpen = _isSectionOpen(section.key);
                                   return (
-                                    <div key={periodKey} className="btr-period">
+                                    <div key={section.key} className="btr-period">
                                       <button
                                         className="btr-period-btn"
-                                        onClick={() => setCollapsedPeriods(prev => ({ ...prev, [periodKey]: !prev[periodKey] }))}
+                                        onClick={() => _toggleSection(section.key)}
                                       >
                                         <div className="btr-period-left">
-                                          <div className="btr-period-chevron">{isCollapsed ? '›' : '⌄'}</div>
-                                          <div className="btr-period-name">{formatPeriodLabel(periodKey, beitraegeViewMode)}</div>
+                                          <div className="btr-period-chevron">{isOpen ? '⌄' : '›'}</div>
+                                          <div className="btr-period-name" style={{ color: section.color }}>{section.icon} {section.label}</div>
                                           <div className="btr-period-count">{beitraege.length}</div>
                                         </div>
                                         <div className="btr-period-right">
@@ -5462,7 +5465,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                           <div className="btr-period-sum">{sums.total.toFixed(2)} €</div>
                                         </div>
                                       </button>
-                                      {!isCollapsed && (
+                                      {isOpen && (
                                         <div className="btr-period-entries">
                                           {beitraege.map(beitrag => {
                                             const isExp = expandedBeitraege[beitrag.beitrag_id];
