@@ -122,6 +122,57 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 
+// ── Update-Banner: zeigt "Neue Version verfügbar" wenn Deploy stattgefunden hat ─
+// Nur beim Tab-Wechsel geprüft (kein Polling, kein Traffic), dann Banner einblenden.
+const BUILT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null;
+if (BUILT_VERSION) {
+  let bannerShown = false;
+
+  const showUpdateBanner = () => {
+    if (bannerShown) return;
+    bannerShown = true;
+    const banner = document.createElement('div');
+    banner.style.cssText = [
+      'position:fixed', 'bottom:1.5rem', 'left:50%', 'transform:translateX(-50%)',
+      'z-index:99999', 'display:flex', 'align-items:center', 'gap:1rem',
+      'background:linear-gradient(135deg,rgba(26,26,46,0.99) 0%,rgba(12,12,28,1) 100%)',
+      'border:1px solid rgba(212,175,55,0.5)', 'border-radius:12px',
+      'padding:0.875rem 1.25rem', 'box-shadow:0 8px 32px rgba(0,0,0,0.5)',
+      'backdrop-filter:blur(20px)', 'font-family:inherit', 'font-size:0.9rem',
+      'color:rgba(255,255,255,0.9)', 'max-width:90vw',
+    ].join(';');
+    banner.innerHTML = `
+      <span style="font-size:1.1rem">🔄</span>
+      <span>Neue Version verfügbar</span>
+      <button onclick="window.location.reload()" style="
+        background:rgba(212,175,55,0.2);border:1px solid rgba(212,175,55,0.6);
+        color:#d4af37;border-radius:8px;padding:0.4rem 0.9rem;cursor:pointer;
+        font-size:0.85rem;font-weight:600;white-space:nowrap;font-family:inherit;
+      ">Jetzt aktualisieren</button>
+      <button onclick="this.closest('div').remove()" style="
+        background:none;border:none;color:rgba(255,255,255,0.4);
+        cursor:pointer;font-size:1.1rem;padding:0 0.25rem;font-family:inherit;
+      ">✕</button>
+    `;
+    document.body.appendChild(banner);
+  };
+
+  const checkVersion = async () => {
+    if (bannerShown) return;
+    try {
+      const r = await fetch('/version.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return;
+      const { v } = await r.json();
+      if (v && v !== BUILT_VERSION) showUpdateBanner();
+    } catch {}
+  };
+
+  // Nur beim Tab-Rückkehr prüfen — kein Interval, kein unnötiger Traffic
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
+  // Einmal nach dem ersten Laden (verzögert, damit die App erst fertig geladen ist)
+  setTimeout(checkVersion, 10000);
+}
+
 // ── Service Worker: Push-Notifications + Auto-Update (event-getriggert, kein Polling) ──
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {

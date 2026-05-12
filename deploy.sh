@@ -98,8 +98,9 @@ if [[ "$MODE" == "all" || "$MODE" == "frontend" ]]; then
   node -e "
     const fs = require('fs'), p = 'dist/sw.js', v = '$VERSION';
     fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/Version: [^\n]+/, 'Version: ' + v));
+    fs.writeFileSync('dist/version.json', JSON.stringify({ v }));
   "
-  echo -e "  ${GREEN}✓ SW-Version gestempelt: $VERSION${NC}"
+  echo -e "  ${GREEN}✓ SW-Version + version.json gestempelt: $VERSION${NC}"
   echo ""
 
   echo -e "${YELLOW}  Frontend deployen (2 Webroots)...${NC}"
