@@ -249,11 +249,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       const res = await axios.post(`/lieferanten?dojo_id=${djId}`, payload);
       const newLt = res.data?.data;
       const newId = newLt?.lieferant_id;
-      if (newLt && newId) {
-        setLieferanten(prev => [...prev, newLt]);
+      setLieferanten(prev => newLt ? [...prev.filter(l => l.lieferant_id !== newId), newLt] : prev);
+      if (newId) {
         setForm(p => ({ ...p, lieferantId: String(newId), lieferantFreitext: ltForm.firmenname, ansprechpartnerLieferant: ltForm.ansprechpartner || '' }));
       }
-      loadLieferanten(djId);
       setLtModal(false);
       setLtForm({ ...LT_EMPTY });
     } catch { setLtError('Fehler beim Speichern.'); }
