@@ -109,10 +109,11 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 
   const dojoId = activeDojo?.id;
 
-  const loadLieferanten = useCallback(async () => {
-    if (!dojoId) return;
+  const loadLieferanten = useCallback(async (overrideId) => {
+    const id = overrideId || dojoId;
+    if (!id) return;
     try {
-      const res = await axios.get(`/lieferanten?dojo_id=${dojoId}`);
+      const res = await axios.get(`/lieferanten?dojo_id=${id}`);
       setLieferanten(res.data?.data || []);
     } catch {}
   }, [dojoId]);
@@ -222,10 +223,18 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         } catch {}
       }
       const html = buildPdfHtml(form, origin, eingebetteteDateien);
-      const win  = window.open('', '_blank');
-      win.document.write(html);
-      win.document.close();
-      setTimeout(() => win.focus(), 600);
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
+      const win  = window.open(url, '_blank');
+      if (win) {
+        setTimeout(() => { win.focus(); URL.revokeObjectURL(url); }, 2000);
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bestellvorlage_${form.name || 'vorlage'}.html`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
     } finally { setGenerating(false); }
   };
 
@@ -238,8 +247,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       const payload = { ...ltForm };
       NUMERIC.forEach(k => { payload[k] = payload[k] !== '' && payload[k] !== undefined ? Number(payload[k]) : null; });
       const res = await axios.post(`/lieferanten?dojo_id=${djId}`, payload);
-      const newId = res.data?.lieferant_id;
-      await loadLieferanten();
+      const newId = res.data?.data?.lieferant_id;
+      await loadLieferanten(djId);
       if (newId) {
         setForm(p => ({ ...p, lieferantId: String(newId), lieferantFreitext: ltForm.firmenname, ansprechpartnerLieferant: ltForm.ansprechpartner || '' }));
       }
