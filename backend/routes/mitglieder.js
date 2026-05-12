@@ -3086,25 +3086,74 @@ router.post("/:id/sepa-mandate",
     iban = iban.replace(/\s/g, '').toUpperCase();
     bic = bic.replace(/\s/g, '').toUpperCase();
 
-    // IBAN Format-Validierung + Modulo-97-Checksumme
-    const ibanRegex = /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/;
-    if (!ibanRegex.test(iban)) {
+    // IBAN Validierung mit detaillierter Diagnose
+    const IBAN_LENGTHS = {
+        AD:24,AE:23,AL:28,AT:20,AZ:28,BA:20,BE:16,BG:22,BH:22,BR:29,BY:28,
+        CH:21,CR:22,CY:28,CZ:24,DE:22,DJ:27,DK:18,DO:28,DZ:26,EE:20,EG:29,
+        ES:24,FI:18,FK:18,FO:18,FR:27,GB:22,GE:22,GI:23,GL:18,GR:27,GT:28,
+        HR:21,HU:28,IE:22,IL:23,IQ:23,IS:26,IT:27,JO:30,KW:30,KZ:20,LB:28,
+        LC:32,LI:21,LT:20,LU:20,LV:21,LY:25,MA:28,MC:27,MD:24,ME:22,MK:19,
+        MN:20,MR:27,MT:31,MU:30,MZ:25,NI:28,NL:18,NO:15,OM:23,PK:24,PL:28,
+        PS:29,PT:25,QA:29,RO:24,RS:22,RU:33,SA:24,SC:31,SD:18,SE:24,SI:19,
+        SK:24,SM:27,SO:23,ST:25,SV:28,TL:23,TN:24,TR:26,UA:29,VA:22,VG:24,
+        XK:20,
+    };
+    const ibanDiagnose = (raw) => {
+        const errors = [];
+        const countryCode = raw.slice(0, 2);
+        const checkDigits = raw.slice(2, 4);
+        const bban = raw.slice(4);
+
+        if (!/^[A-Z]{2}$/.test(countryCode)) {
+            errors.push(`Ungültiger Ländercode "${countryCode}" (muss 2 Großbuchstaben sein)`);
+        } else if (!IBAN_LENGTHS[countryCode]) {
+            errors.push(`Ländercode "${countryCode}" nicht im SEPA-Raum oder unbekannt`);
+        } else {
+            const expectedLen = IBAN_LENGTHS[countryCode];
+            if (raw.length !== expectedLen) {
+                errors.push(`Länge falsch: ${raw.length} Zeichen, erwartet ${expectedLen} für ${countryCode} (${raw.length < expectedLen ? `${expectedLen - raw.length} fehlen` : `${raw.length - expectedLen} zu viel`})`);
+            }
+        }
+
+        if (!/^\d{2}$/.test(checkDigits)) {
+            errors.push(`Prüfziffern "${checkDigits}" ungültig (müssen 2 Ziffern sein)`);
+        }
+
+        if (!/^[A-Z0-9]+$/.test(bban)) {
+            errors.push(`BBAN enthält ungültige Zeichen`);
+        }
+
+        // MOD-97 nur prüfen wenn Länge und Format stimmen
+        if (errors.length === 0) {
+            const digits = (raw.slice(4) + raw.slice(0, 4)).split('').map(c => {
+                const code = c.charCodeAt(0);
+                return code >= 65 ? (code - 55).toString() : c;
+            }).join('');
+            let rem = 0;
+            for (const ch of digits) { rem = (rem * 10 + parseInt(ch, 10)) % 97; }
+            if (rem !== 1) errors.push(`Prüfsumme (MOD-97) ungültig — IBAN enthält einen Tippfehler`);
+        }
+
+        return errors;
+    };
+
+    const ibanBasicRegex = /^[A-Z0-9]+$/;
+    if (iban.length < 5 || !ibanBasicRegex.test(iban)) {
         return res.status(400).json({
             success: false,
-            error: { message: "Ungültiges IBAN-Format", code: 400 }
+            error: { message: `Ungültiges IBAN-Format: "${iban}"`, code: 400 }
         });
     }
-    // Modulo-97 Prüfsumme (ISO 7064)
-    const ibanDigits = (iban.slice(4) + iban.slice(0, 4)).split('').map(c => {
-        const code = c.charCodeAt(0);
-        return code >= 65 ? (code - 55).toString() : c;
-    }).join('');
-    let remainder = 0;
-    for (const ch of ibanDigits) { remainder = (remainder * 10 + parseInt(ch, 10)) % 97; }
-    if (remainder !== 1) {
+    const ibanErrors = ibanDiagnose(iban);
+    if (ibanErrors.length > 0) {
         return res.status(400).json({
             success: false,
-            error: { message: "IBAN-Prüfsumme ungültig. Bitte IBAN prüfen.", code: 400 }
+            error: {
+                message: `IBAN ungültig: ${ibanErrors.join('; ')}`,
+                details: ibanErrors,
+                iban_submitted: iban,
+                code: 400
+            }
         });
     }
 

@@ -5,9 +5,30 @@ import axios from 'axios';
 import VertragFormular from './VertragFormular';
 import { useDojoContext } from '../context/DojoContext';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext';
+import { diagnoseIban, IBAN_LENGTHS } from '../utils/ibanValidator';
 import '../styles/NeuesMitgliedAnlegen.css';
 import "../styles/themes.css";
 import "../styles/components.css";
+
+function IbanDiagnostic({ iban }) {
+  const d = diagnoseIban(iban || '');
+  if (!d || d.iban.length < 5) return null;
+  const cc = d.countryCode;
+  const statusColor = d.ok ? '#4caf82' : '#e05c5c';
+  return (
+    <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', fontFamily: 'monospace', background: 'rgba(0,0,0,0.18)', borderRadius: '6px', padding: '0.5rem 0.75rem', border: `1px solid ${statusColor}44` }}>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: d.errors.length ? '0.4rem' : 0 }}>
+        <span style={{ color: /^[A-Z]{2}$/.test(cc) && IBAN_LENGTHS[cc] ? '#4caf82' : '#e05c5c' }}>{cc}</span>
+        <span style={{ color: /^\d{2}$/.test(d.checkDigits) ? '#4caf82' : '#e05c5c' }}>{d.checkDigits}</span>
+        <span style={{ color: 'rgba(255,255,255,0.55)' }}>{d.bban}</span>
+        <span style={{ marginLeft: 'auto', color: statusColor, fontWeight: 600 }}>
+          {d.ok ? '✓' : '✗'} {d.iban.length} Zch{d.expectedLength ? ` / ${d.expectedLength} erw.` : ''}
+        </span>
+      </div>
+      {d.errors.map((e, i) => <div key={i} style={{ color: '#e05c5c', marginTop: '0.2rem' }}>⚠ {e}</div>)}
+    </div>
+  );
+}
 
 // Custom DateInput Component mit Auto-Advance
 const DateInputAutoAdvance = ({ value, onChange, name, id, required }) => {
@@ -1985,6 +2006,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             placeholder="DE89 3704 0044 0532 0130 00"
             required
           />
+          <IbanDiagnostic iban={memberData.iban} />
           {ibanValidation && (
             <div>
               {ibanValidation.message}

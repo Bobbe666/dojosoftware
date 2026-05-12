@@ -32,6 +32,37 @@ import VorlagenSendenModal from './VorlagenSendenModal';
 import HofNominierungModal from './HofNominierungModal';
 import GuertelRechner from './GuertelRechner';
 
+// ── IBAN-Validator ─────────────────────────────────────────────────────────────
+import { diagnoseIban, IBAN_LENGTHS } from '../utils/ibanValidator';
+
+function IbanDiagnostic({ iban }) {
+  const d = diagnoseIban(iban || '');
+  if (!d || d.iban.length < 5) return null;
+
+  const cc = d.countryCode;
+  const expected = IBAN_LENGTHS[cc];
+  const actual = d.iban.length;
+
+  const statusColor = d.ok ? '#4caf82' : '#e05c5c';
+  const statusIcon = d.ok ? '✓' : '✗';
+
+  return (
+    <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', fontFamily: 'monospace', background: 'rgba(0,0,0,0.25)', borderRadius: '6px', padding: '0.5rem 0.75rem', border: `1px solid ${statusColor}33` }}>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: d.errors.length ? '0.4rem' : 0 }}>
+        <span style={{ color: /^[A-Z]{2}$/.test(cc) && IBAN_LENGTHS[cc] ? '#4caf82' : '#e05c5c' }} title="Ländercode">{cc}</span>
+        <span style={{ color: /^\d{2}$/.test(d.checkDigits) ? '#4caf82' : '#e05c5c' }} title="Prüfziffern">{d.checkDigits}</span>
+        <span style={{ color: 'rgba(255,255,255,0.55)' }} title="BBAN">{d.bban}</span>
+        <span style={{ marginLeft: 'auto', color: statusColor, fontWeight: 600 }}>
+          {statusIcon} {actual} Zch{expected ? ` / ${expected} erw.` : ''}
+        </span>
+      </div>
+      {d.errors.map((e, i) => (
+        <div key={i} style={{ color: '#e05c5c', marginTop: '0.2rem' }}>⚠ {e}</div>
+      ))}
+    </div>
+  );
+}
+
 // ── Versandhistorie-Sektion im Mitgliederprofil ────────────────────────────────
 function MitgliedVersandhistorie({ mitgliedId, activeDojo }) {
   const [eintraege, setEintraege] = useState([]);
@@ -5548,10 +5579,18 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                     <div className="bnk-kv">
                       <div className="bnk-kv-label">IBAN</div>
-                      {editMode
-                        ? <input className="bnk-input bnk-mono" type="text" value={updatedData.iban || ''} onChange={e => handleChange(e, 'iban')} placeholder="DE89 3704 0044 0532 0130 00" />
-                        : <div className={`bnk-kv-value bnk-mono${mitglied.iban ? '' : ' bnk-empty'}`}>{mitglied.iban || '—'}</div>
-                      }
+                      <div style={{ flex: 1 }}>
+                        {editMode
+                          ? <>
+                              <input className="bnk-input bnk-mono" type="text" value={updatedData.iban || ''} onChange={e => handleChange(e, 'iban')} placeholder="DE89 3704 0044 0532 0130 00" style={{ width: '100%' }} />
+                              <IbanDiagnostic iban={updatedData.iban} />
+                            </>
+                          : <>
+                              <div className={`bnk-kv-value bnk-mono${mitglied.iban ? '' : ' bnk-empty'}`}>{mitglied.iban || '—'}</div>
+                              {mitglied.iban && <IbanDiagnostic iban={mitglied.iban} />}
+                            </>
+                        }
+                      </div>
                     </div>
 
                     <div className="bnk-kv">
