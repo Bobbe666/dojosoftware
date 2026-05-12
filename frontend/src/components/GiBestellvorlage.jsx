@@ -118,7 +118,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     } catch {}
   }, [dojoId]);
 
-  useEffect(() => { loadLieferanten(); }, [loadLieferanten]);
+  useEffect(() => { loadLieferanten(vorlage?.dojo_id || undefined); }, [loadLieferanten, vorlage?.dojo_id]);
 
   useEffect(() => {
     if (vorlage?.vorlage_id && dojoId) {
@@ -247,11 +247,13 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       const payload = { ...ltForm };
       NUMERIC.forEach(k => { payload[k] = payload[k] !== '' && payload[k] !== undefined ? Number(payload[k]) : null; });
       const res = await axios.post(`/lieferanten?dojo_id=${djId}`, payload);
-      const newId = res.data?.data?.lieferant_id;
-      await loadLieferanten(djId);
-      if (newId) {
+      const newLt = res.data?.data;
+      const newId = newLt?.lieferant_id;
+      if (newLt && newId) {
+        setLieferanten(prev => [...prev, newLt]);
         setForm(p => ({ ...p, lieferantId: String(newId), lieferantFreitext: ltForm.firmenname, ansprechpartnerLieferant: ltForm.ansprechpartner || '' }));
       }
+      loadLieferanten(djId);
       setLtModal(false);
       setLtForm({ ...LT_EMPTY });
     } catch { setLtError('Fehler beim Speichern.'); }
@@ -381,7 +383,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               </div>
               <select className="gv-input" value={form.lieferantId} onChange={onLieferantChange}>
                 <option value="">— manuell eingeben —</option>
-                {lieferanten.map(l => <option key={l.lieferant_id} value={l.lieferant_id}>{l.firmenname}</option>)}
+                {lieferanten.map(l => <option key={l.lieferant_id} value={String(l.lieferant_id)}>{l.firmenname}</option>)}
               </select>
             </div>
             <div className="gv-field">
