@@ -36,11 +36,16 @@ const EMPTY = {
   bemerkungen: '',
 };
 
-export default function GiBestellvorlage() {
+export default function GiBestellvorlage({ artikel = null, onClose = null }) {
   const { activeDojo } = useDojoContext();
   const [lieferanten, setLieferanten] = useState([]);
-  const [form, setForm] = useState(EMPTY);
   const [generating, setGenerating] = useState(false);
+
+  const initialForm = artikel
+    ? { ...EMPTY, modelName: artikel.name || '', artikelNr: artikel.artikel_nummer || String(artikel.artikel_id || '') }
+    : EMPTY;
+
+  const [form, setForm] = useState(initialForm);
 
   const dojoId = activeDojo?.id;
 
@@ -127,7 +132,12 @@ export default function GiBestellvorlage() {
       {/* HEADER */}
       <div className="gv-header">
         <div>
-          <div className="gv-title">Karate-Gi Bestellvorlage</div>
+          {onClose && (
+            <button className="gv-btn-back" onClick={onClose}>← Zurück zu Artikel</button>
+          )}
+          <div className="gv-title">
+            Bestellvorlage{artikel ? `: ${artikel.name}` : ' — Karate-Gi'}
+          </div>
           <div className="gv-sub">Vorauswahl treffen → PDF generieren → drucken</div>
         </div>
         <button className="gv-btn-pdf" onClick={generatePdf} disabled={generating}>

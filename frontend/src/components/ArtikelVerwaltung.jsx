@@ -54,6 +54,7 @@ const ArtikelVerwaltung = () => {
   const [selectedGruppe, setSelectedGruppe] = useState(null); // null = Alle, id = Gruppe, 'none' = ohne Gruppe
   const [expandedGruppen, setExpandedGruppen] = useState({}); // { [hauptId]: true/false }
   const [expandedRows, setExpandedRows] = useState(new Set()); // aufgeklappte Artikel-Zeilen
+  const [giVorlageArtikel, setGiVorlageArtikel] = useState(null); // Artikel für Bestellvorlage-Overlay
 
   const toggleRow = (id) => {
     setExpandedRows(prev => {
@@ -1231,12 +1232,6 @@ const ArtikelVerwaltung = () => {
         >
           Lieferanten
         </button>
-        <button
-          className={`sub-tab-btn ${mainTab === 'givorlage' ? 'active' : ''}`}
-          onClick={() => setMainTab('givorlage')}
-        >
-          Gi-Bestellvorlage
-        </button>
         {isVerbandLevel && (
           <button
             className={`sub-tab-btn ${mainTab === 'verbandrabatte' ? 'active' : ''}`}
@@ -1267,9 +1262,14 @@ const ArtikelVerwaltung = () => {
         <LieferantenTab />
       )}
 
-      {/* Gi-Bestellvorlage Tab */}
-      {mainTab === 'givorlage' && (
-        <GiBestellvorlage />
+      {/* Gi-Bestellvorlage Overlay (über Artikel-Tab) */}
+      {giVorlageArtikel && (
+        <div className="gv-overlay">
+          <GiBestellvorlage
+            artikel={giVorlageArtikel}
+            onClose={() => setGiVorlageArtikel(null)}
+          />
+        </div>
       )}
 
       {/* Verbands-Rabatte Tab - nur SuperAdmin + Verband */}
@@ -1461,6 +1461,7 @@ const ArtikelVerwaltung = () => {
                       {item.lager_tracking && (
                         <button className="sub-tab-btn av-btn-sm" onClick={() => handleLager(item)} title="Lagerbestand ändern">📦</button>
                       )}
+                      <button className="sub-tab-btn av-btn-sm" onClick={() => { setGiVorlageArtikel(item); setMainTab('artikel'); }} title="Bestellvorlage erstellen">📋</button>
                       <button className="sub-tab-btn av-btn-sm" onClick={() => deleteArtikel(item.artikel_id)} title="Deaktivieren">🗑️</button>
                     </td>
                   </tr>

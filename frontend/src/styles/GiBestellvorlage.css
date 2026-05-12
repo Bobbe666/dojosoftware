@@ -2,6 +2,33 @@
    GI-BESTELLVORLAGE
    ===================================================================================== */
 
+/* OVERLAY — rendert über dem Artikel-Tab */
+.gv-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-main, #0f0f1a);
+  z-index: 10;
+  overflow-y: auto;
+  padding: 1.25rem;
+  border-radius: inherit;
+}
+
+.gv-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem 0.25rem 0.5rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.78rem;
+  cursor: pointer;
+  margin-bottom: 0.6rem;
+  transition: all 0.15s;
+}
+.gv-btn-back:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+
 .gv-page { padding: 0; }
 
 .gv-header {
