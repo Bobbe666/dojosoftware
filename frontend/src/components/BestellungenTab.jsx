@@ -117,12 +117,15 @@ const BestellungenTab = () => {
     try {
       const djId = activeDojo?.id;
       const url = djId ? `/gi-bestellungen?dojo_id=${djId}` : '/gi-bestellungen';
+      console.log('[DojoBestellungen] Lade:', url, '| activeDojo:', activeDojo);
       const res = await axios.get(url);
+      console.log('[DojoBestellungen] Antwort:', res.data);
       if (!res.data?.success) {
         setDojoFehler(res.data?.message || 'Unbekannter Fehler');
       }
       setDojoBestellungen(res.data?.data || []);
     } catch (e) {
+      console.error('[DojoBestellungen] Fehler:', e?.response?.data || e?.message);
       setDojoFehler(e?.response?.data?.message || e?.message || 'Netzwerkfehler');
     }
     finally { setDojoLoading(false); }
