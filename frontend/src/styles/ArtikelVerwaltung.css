@@ -3163,3 +3163,99 @@ body.dark-mode .lager-status.archived {
 [data-theme="light"] .detail-value {
   color: rgba(0,0,0,0.75);
 }
+
+/* ============================================
+   ARTIKELVERWALTUNG — GOLD DÄMPFUNG
+   Scoped Overrides: nur innerhalb .artikel-verwaltung
+   ============================================ */
+
+/* Tabs: aktiver Tab → dezentes Weiß statt Gold-Gradient */
+.artikel-verwaltung .sub-tab-btn {
+  flex: unset;
+  padding: 0.55rem 1.1rem;
+  background: transparent;
+  color: rgba(255,255,255,0.45);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.artikel-verwaltung .sub-tab-btn:hover {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.8);
+  border-color: rgba(255,255,255,0.18);
+  transform: none;
+  box-shadow: none;
+}
+
+.artikel-verwaltung .sub-tab-btn.active {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.92);
+  border-color: rgba(255,255,255,0.22);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Tab-Container */
+.artikel-verwaltung .sub-tabs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+}
+
+/* Bestellungen-Sektion: Titel & Button */
+.bestellungen-header h2 {
+  color: rgba(255,255,255,0.75) !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.new-order-btn {
+  padding: 0.55rem 1rem !important;
+  background: rgba(255,255,255,0.07) !important;
+  color: rgba(255,255,255,0.8) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 8px !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+.new-order-btn:hover {
+  background: rgba(255,255,255,0.11) !important;
+  color: #fff !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Tabellen-Header: kein Gold */
+.bestellungen-table-container {
+  border-color: rgba(255,255,255,0.08) !important;
+  background: rgba(0,0,0,0.2) !important;
+}
+
+.bestellungen-table th {
+  background: rgba(255,255,255,0.03) !important;
+  color: rgba(255,255,255,0.4) !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.07em !important;
+  border-bottom-color: rgba(255,255,255,0.07) !important;
+}
+
+.bestellungen-table .order-number {
+  color: rgba(255,255,255,0.85) !important;
+}
+
+.bestellungen-table tbody tr:hover {
+  background: rgba(255,255,255,0.03) !important;
+}
