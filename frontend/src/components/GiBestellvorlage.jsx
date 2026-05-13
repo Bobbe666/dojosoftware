@@ -367,15 +367,13 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         } catch {}
       }
       const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId, lang);
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
       if (win && !win.closed) {
-        win.document.open();
-        win.document.write(html);
-        win.document.close();
-        win.focus();
+        win.location.href = url;
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
       } else {
-        // Fallback: als HTML-Datei herunterladen
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        const url  = URL.createObjectURL(blob);
+        // Fallback: direkt herunterladen
         const a = document.createElement('a');
         a.href = url;
         a.download = `bestellvorlage_${form.name || 'vorlage'}.html`;
