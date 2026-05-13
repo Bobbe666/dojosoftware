@@ -21,6 +21,10 @@ const EMPTY_SPEZ = {
   labelText: '', labelSprachen: ['Deutsch', 'Englisch'],
   labelArt: [], labelPosition: [], labelZusatz: '',
   massTabelle: {},
+  stiche_cm: '', verstaerkungen: [],
+  gurtschlaufen_anzahl: '', gurtschlaufen_breite: '', nahtBemerkung: '',
+  verp_typ: '', verp_stueck_beutel: '1', verp_stueck_karton: '',
+  verp_label: '', verp_ean: false, verp_bemerkung: '',
 };
 
 const LT_EMPTY = {
@@ -50,6 +54,11 @@ const EMPTY = {
   stickereiPos: [], stickereiSchriftzug: '',
   stickereiGarnfarben: 'Gold, Schwarz', stickereiBemerkung: '',
   bemerkungen: '', spezifikation: { ...EMPTY_SPEZ },
+  schnittTyp: '', reversTyp: '', hosenbundTyp: '', schnittBemerkung: '',
+  muster_benoetigt: false, muster_groesse: '', muster_deadline: '',
+  muster_mitStickerei: false, muster_bemerkung: '',
+  zeitplan_sample: '', zeitplan_prod: '', zeitplan_schiff: '',
+  pantone_garn1: '', pantone_garn2: '', pantone_paspel: '', pantone_grundfarbe: '',
 };
 
 const POSITIONEN = [
@@ -62,6 +71,12 @@ const GRAMMATUREN  = ['8 oz (~270 g/m²)', '10 oz (~340 g/m²)', '12 oz (~400 g/
 const LABEL_LANG   = ['Deutsch', 'Englisch', 'Französisch', 'Japanisch'];
 const LABEL_ART    = ['Gewebtes Etikett', 'Gedrucktes Etikett', 'Eingestickt'];
 const LABEL_POS    = ['Nacken (innen)', 'Seitennaht', 'Hosenbund (innen)'];
+
+const SCHNITT_TYPEN   = ['Regular', 'Slim', 'Traditional', 'Competition-Cut'];
+const REVERS_TYPEN    = ['Breit (Standard)', 'Schmal', 'Competition-Flap'];
+const HOSENBUND_TYPEN = ['Kordel', 'Gummibund', 'Kordel + Gummi'];
+const VERSTAERKUNGEN  = ['Seitenabschluss', 'Gürtelschlaufen', 'Knotenbereich', 'Kragen-Ansatz', 'Ärmel-Saum', 'Hosenbund'];
+const VERP_TYPEN      = ['Gefaltet', 'Auf Hänger'];
 
 const MASSPUNKTE = [
   { key: 'rL', num: '①', label: 'Rückenlänge Jacke',  hint: 'Mitte Nacken bis Jackenende' },
@@ -642,6 +657,83 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           </div>
         </div>
 
+        {/* ── SCHNITT & PASSFORM ── */}
+        <div className="gv-section">
+          <div className="gv-section-title">Schnitt &amp; Passform</div>
+          <div className="gv-grid3">
+            <div className="gv-field">
+              <label className="gv-label">Schnitttyp</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.3rem' }}>
+                {SCHNITT_TYPEN.map(opt => {
+                  const active = form.schnittTyp === opt;
+                  return (
+                    <label key={opt} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                      padding: '0.2rem 0.55rem',
+                      border: `1px solid ${active ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.1)'}`,
+                      borderRadius: '20px', fontSize: '0.77rem',
+                      color: active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)',
+                      background: active ? 'rgba(212,175,55,0.08)' : 'transparent',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}>
+                      <input type="radio" style={{ display: 'none' }} checked={active} onChange={() => setForm(p => ({ ...p, schnittTyp: p.schnittTyp === opt ? '' : opt }))} />
+                      {opt}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Revers-Typ</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.3rem' }}>
+                {REVERS_TYPEN.map(opt => {
+                  const active = form.reversTyp === opt;
+                  return (
+                    <label key={opt} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                      padding: '0.2rem 0.55rem',
+                      border: `1px solid ${active ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.1)'}`,
+                      borderRadius: '20px', fontSize: '0.77rem',
+                      color: active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)',
+                      background: active ? 'rgba(212,175,55,0.08)' : 'transparent',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}>
+                      <input type="radio" style={{ display: 'none' }} checked={active} onChange={() => setForm(p => ({ ...p, reversTyp: p.reversTyp === opt ? '' : opt }))} />
+                      {opt}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Hosenbund</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.3rem' }}>
+                {HOSENBUND_TYPEN.map(opt => {
+                  const active = form.hosenbundTyp === opt;
+                  return (
+                    <label key={opt} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                      padding: '0.2rem 0.55rem',
+                      border: `1px solid ${active ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.1)'}`,
+                      borderRadius: '20px', fontSize: '0.77rem',
+                      color: active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)',
+                      background: active ? 'rgba(212,175,55,0.08)' : 'transparent',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}>
+                      <input type="radio" style={{ display: 'none' }} checked={active} onChange={() => setForm(p => ({ ...p, hosenbundTyp: p.hosenbundTyp === opt ? '' : opt }))} />
+                      {opt}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <div className="gv-field" style={{ marginTop: '0.65rem' }}>
+            <label className="gv-label">Schnitt-Bemerkung</label>
+            <input className="gv-input" value={form.schnittBemerkung} onChange={f('schnittBemerkung')} placeholder="z. B. Besondere Passform-Anforderungen" />
+          </div>
+        </div>
+
         {/* ── MENGEN ── */}
         <div className="gv-section">
           <div className="gv-section-title-row">
@@ -776,6 +868,26 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             </div>
           </div>
 
+          {/* Pantone-Codes */}
+          <div className="gv-grid4" style={{ marginTop: '0.65rem' }}>
+            <div className="gv-field">
+              <label className="gv-label">Grundfarbe Pantone</label>
+              <input className="gv-input" value={form.pantone_grundfarbe} onChange={f('pantone_grundfarbe')} placeholder="z. B. Pantone White / NTR" />
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Garn-Pantone 1</label>
+              <input className="gv-input" value={form.pantone_garn1} onChange={f('pantone_garn1')} placeholder="z. B. Pantone 116 C – Gold" />
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Garn-Pantone 2</label>
+              <input className="gv-input" value={form.pantone_garn2} onChange={f('pantone_garn2')} placeholder="z. B. Pantone Black C" />
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Paspel/Revers-Pantone</label>
+              <input className="gv-input" value={form.pantone_paspel} onChange={f('pantone_paspel')} placeholder="z. B. Pantone 116 C" />
+            </div>
+          </div>
+
           {/* Datei je Position */}
           {form.stickereiPos.length > 0 && (
             <div className="gv-pos-upload-block">
@@ -886,6 +998,136 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               Dateien können nur über eine gespeicherte Vorlage hochgeladen werden.
             </div>
           )}
+        </div>
+
+        {/* ── NAHT & VERARBEITUNG ── */}
+        <div className="gv-section">
+          <div className="gv-section-title">Naht &amp; Verarbeitung</div>
+          <div className="gv-grid4">
+            <div className="gv-field">
+              <label className="gv-label">Stiche/cm</label>
+              <input className="gv-input" type="number" min="0" value={spez.stiche_cm || ''} onChange={fSpez('stiche_cm')} placeholder="z. B. 5" />
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Gürtelschlaufen Anzahl</label>
+              <input className="gv-input" type="number" min="0" value={spez.gurtschlaufen_anzahl || ''} onChange={fSpez('gurtschlaufen_anzahl')} placeholder="z. B. 7" />
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Gürtelschlaufen Breite cm</label>
+              <input className="gv-input" value={spez.gurtschlaufen_breite || ''} onChange={fSpez('gurtschlaufen_breite')} placeholder="z. B. 4 cm" />
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Naht-Bemerkung</label>
+              <input className="gv-input" value={spez.nahtBemerkung || ''} onChange={fSpez('nahtBemerkung')} placeholder="z. B. Doppelnaht an Schulter" />
+            </div>
+          </div>
+          <div className="gv-field" style={{ marginTop: '0.65rem' }}>
+            <label className="gv-label">Verstärkungspunkte</label>
+            <SpezChip options={VERSTAERKUNGEN} field="verstaerkungen" />
+          </div>
+        </div>
+
+        {/* ── MUSTER-ANFORDERUNGEN ── */}
+        <div className="gv-section">
+          <div className="gv-section-title">Muster-Anforderungen</div>
+          <label className="gv-check-row">
+            <input type="checkbox" checked={form.muster_benoetigt} onChange={fb('muster_benoetigt')} />
+            PP-Sample / Muster benötigt
+          </label>
+          {form.muster_benoetigt && (
+            <div className="gv-muster-details">
+              <div className="gv-grid4">
+                <div className="gv-field">
+                  <label className="gv-label">Mustergröße</label>
+                  <input className="gv-input" value={form.muster_groesse} onChange={f('muster_groesse')} placeholder="z. B. 170" />
+                </div>
+                <div className="gv-field">
+                  <label className="gv-label">Muster bis (Deadline)</label>
+                  <input className="gv-input" type="date" value={form.muster_deadline} onChange={f('muster_deadline')} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0.1rem' }}>
+                  <label className="gv-check-row" style={{ margin: 0 }}>
+                    <input type="checkbox" checked={form.muster_mitStickerei} onChange={fb('muster_mitStickerei')} />
+                    Mit Stickerei
+                  </label>
+                </div>
+                <div className="gv-field">
+                  <label className="gv-label">Muster-Bemerkung</label>
+                  <input className="gv-input" value={form.muster_bemerkung} onChange={f('muster_bemerkung')} placeholder="z. B. Bitte mit allen Positionen" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── ZEITPLAN ── */}
+        <div className="gv-section">
+          <div className="gv-section-title">Zeitplan</div>
+          <div className="gv-grid3">
+            <div className="gv-field">
+              <label className="gv-label">Sample-Freigabe bis</label>
+              <input className="gv-input" type="date" value={form.zeitplan_sample} onChange={f('zeitplan_sample')} />
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Produktionsstart</label>
+              <input className="gv-input" type="date" value={form.zeitplan_prod} onChange={f('zeitplan_prod')} />
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Schiffsbereitschaft</label>
+              <input className="gv-input" type="date" value={form.zeitplan_schiff} onChange={f('zeitplan_schiff')} />
+            </div>
+          </div>
+        </div>
+
+        {/* ── VERPACKUNGSVORSCHRIFTEN ── */}
+        <div className="gv-section">
+          <div className="gv-section-title">Verpackungsvorschriften</div>
+          <div className="gv-grid4">
+            <div className="gv-field">
+              <label className="gv-label">Verpackungstyp</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.3rem' }}>
+                {VERP_TYPEN.map(opt => {
+                  const active = spez.verp_typ === opt;
+                  return (
+                    <label key={opt} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                      padding: '0.2rem 0.55rem',
+                      border: `1px solid ${active ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.1)'}`,
+                      borderRadius: '20px', fontSize: '0.77rem',
+                      color: active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)',
+                      background: active ? 'rgba(212,175,55,0.08)' : 'transparent',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}>
+                      <input type="radio" style={{ display: 'none' }} checked={active} onChange={() => setForm(p => ({ ...p, spezifikation: { ...p.spezifikation, verp_typ: p.spezifikation.verp_typ === opt ? '' : opt } }))} />
+                      {opt}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Stück/Beutel</label>
+              <input className="gv-input" type="number" min="1" value={spez.verp_stueck_beutel || ''} onChange={fSpez('verp_stueck_beutel')} />
+            </div>
+            <div className="gv-field">
+              <label className="gv-label">Stück/Karton</label>
+              <input className="gv-input" type="number" min="1" value={spez.verp_stueck_karton || ''} onChange={fSpez('verp_stueck_karton')} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0.1rem' }}>
+              <label className="gv-check-row" style={{ margin: 0 }}>
+                <input type="checkbox" checked={!!spez.verp_ean} onChange={() => setForm(p => ({ ...p, spezifikation: { ...p.spezifikation, verp_ean: !p.spezifikation.verp_ean } }))} />
+                EAN/Barcode erforderlich
+              </label>
+            </div>
+          </div>
+          <div className="gv-field" style={{ marginTop: '0.65rem' }}>
+            <label className="gv-label">Label-Text auf Karton</label>
+            <input className="gv-input" value={spez.verp_label || ''} onChange={fSpez('verp_label')} placeholder="z. B. KARATE-GI · Gr. XXX · Art. Nr. XXXX · Kampfkunstschule Schreiner" />
+          </div>
+          <div className="gv-field" style={{ marginTop: '0.5rem' }}>
+            <label className="gv-label">Verpackungs-Bemerkung</label>
+            <input className="gv-input" value={spez.verp_bemerkung || ''} onChange={fSpez('verp_bemerkung')} placeholder="z. B. Karton max. 20 kg" />
+          </div>
         </div>
 
         {/* ── PFLEGEKENNZEICHNUNG & LABEL ── */}
@@ -1287,6 +1529,40 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
     sigBuyerSub: de ? 'Kampfkunstschule Schreiner' : 'Martial Arts School Schreiner',
     sigSupplier: de ? 'Bestätigung Lieferant' : 'Supplier Confirmation',
     sigStamp:    de ? 'Stempel + Unterschrift' : 'Stamp + Signature',
+    // New sections
+    s_schnitt:    de ? 'Schnitt & Passform' : 'Cut & Fit',
+    s_schnittTyp: de ? 'Schnitttyp' : 'Cut Type',
+    s_revers:     de ? 'Revers-Typ' : 'Lapel Type',
+    s_hosenbund:  de ? 'Hosenbund' : 'Waistband',
+    s_schnittBem: de ? 'Schnitt-Bemerkung' : 'Cut Notes',
+    s_pantone:    de ? 'Pantone-Codes' : 'Pantone Codes',
+    s_pGrund:     de ? 'Grundfarbe Pantone' : 'Base Colour Pantone',
+    s_pGarn1:     de ? 'Garn-Pantone 1' : 'Thread Pantone 1',
+    s_pGarn2:     de ? 'Garn-Pantone 2' : 'Thread Pantone 2',
+    s_pPaspel:    de ? 'Paspel/Revers-Pantone' : 'Piping/Lapel Pantone',
+    s_naht:       de ? 'Naht & Verarbeitung' : 'Seam & Construction',
+    s_stiche:     de ? 'Stiche/cm' : 'Stitches/cm',
+    s_verst:      de ? 'Verstärkungspunkte' : 'Reinforcement Points',
+    s_gurtAnz:    de ? 'Gürtelschlaufen Anzahl' : 'Belt Loops Count',
+    s_gurtBr:     de ? 'Gürtelschlaufen Breite' : 'Belt Loop Width',
+    s_nahtBem:    de ? 'Naht-Bemerkung' : 'Seam Notes',
+    s_muster:     de ? 'Muster-Anforderungen' : 'Sampling Requirements',
+    s_musterBen:  de ? 'PP-Sample / Muster benötigt' : 'PP-Sample required',
+    s_musterGr:   de ? 'Mustergröße' : 'Sample Size',
+    s_musterDL:   de ? 'Muster bis' : 'Sample deadline',
+    s_musterEmb:  de ? 'Mit Stickerei' : 'With embroidery',
+    s_musterBem:  de ? 'Muster-Bemerkung' : 'Sample Notes',
+    s_zeitplan:   de ? 'Zeitplan' : 'Timeline',
+    s_zSample:    de ? 'Sample-Freigabe bis' : 'Sample approval by',
+    s_zProd:      de ? 'Produktionsstart' : 'Production start',
+    s_zSchiff:    de ? 'Schiffsbereitschaft' : 'Ready to ship',
+    s_verp:       de ? 'Verpackungsvorschriften' : 'Packaging Specifications',
+    s_verpTyp:    de ? 'Verpackungstyp' : 'Packaging Type',
+    s_verpBeutel: de ? 'Stück/Beutel' : 'Pcs/bag',
+    s_verpKarton: de ? 'Stück/Karton' : 'Pcs/carton',
+    s_verpEan:    de ? 'EAN/Barcode erforderlich' : 'EAN/Barcode required',
+    s_verpLabel:  de ? 'Label-Text auf Karton' : 'Carton label text',
+    s_verpBem:    de ? 'Verpackungs-Bemerkung' : 'Packaging notes',
     // Misc
     printBtn:    de ? '🖨 PDF drucken' : '🖨 Print PDF',
     refPoints:   de ? 'Masspunkte: 1=Rückenlänge Jacke · 2=Rückenbreite · 3=Spannweite gesamt · 4=Ärmellänge · 5=Schulterbreite · A=Hosenlänge · B=Bundbreite (½) · C=Saumbreite (½)'
@@ -1473,14 +1749,36 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
     </div>
   </div>
 </div>
+
+<div class="sec">
+  <div class="st"><span class="n">4</span> ${T.s_schnitt}</div>
+  <div class="fg3">
+    <div class="f"><span class="lbl">${T.s_schnittTyp}</span>
+      <div class="tags">
+        ${SCHNITT_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.schnittTyp === opt)}> ${opt}</label>`).join('')}
+      </div>
+    </div>
+    <div class="f"><span class="lbl">${T.s_revers}</span>
+      <div class="tags">
+        ${REVERS_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.reversTyp === opt)}> ${opt}</label>`).join('')}
+      </div>
+    </div>
+    <div class="f"><span class="lbl">${T.s_hosenbund}</span>
+      <div class="tags">
+        ${HOSENBUND_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.hosenbundTyp === opt)}> ${opt}</label>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="f" style="margin-top:3mm;"><span class="lbl">${T.s_schnittBem}</span><input class="val" type="text" value="${form.schnittBemerkung || ''}"></div>
+</div>
 </div>
 
 <!-- SEITE 2 -->
 <div class="page">
-<div class="ch"><span>${T.pageHeader}</span><span>${T.page(2,4)}</span></div>
+<div class="ch"><span>${T.pageHeader}</span><span>${T.page(2,6)}</span></div>
 
 <div class="sec">
-  <div class="st"><span class="n">4</span> ${T.s4}</div>
+  <div class="st"><span class="n">5</span> ${T.s4}</div>
   <div style="display:flex;gap:4mm;align-items:center;margin-bottom:4mm;flex-wrap:wrap;">
     <span style="font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#aaa;">${T.catLabel}</span>
     <label style="display:flex;align-items:center;gap:2mm;padding:3mm 6mm;border:1.5px solid ${form.katKids?'var(--gold)':'#ddd'};border-radius:4px;font-size:9.5pt;font-weight:600;background:${form.katKids?'#fffbf0':'white'};">
@@ -1503,7 +1801,7 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 </div>
 
 <div class="sec">
-  <div class="st"><span class="n">5</span> ${T.s5}</div>
+  <div class="st"><span class="n">6</span> ${T.s5}</div>
   <span class="lbl" style="display:block;margin-bottom:2mm;">${T.embPos}</span>
   <div class="chk-grid">
     <label class="chk-item"><input type="checkbox" ${posChecked('Linkes Revers')}> ${T.posLL}</label>
@@ -1558,15 +1856,81 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
       `).join('')}
     </div>
   </div>` : ''}
+  <div style="margin-top:5mm;">
+    <span class="lbl" style="display:block;margin-bottom:3mm;">${T.s_pantone}</span>
+    <div class="fg2">
+      <div class="f"><span class="lbl">${T.s_pGrund}</span><input class="val" type="text" value="${form.pantone_grundfarbe || ''}" placeholder="z. B. Pantone White / NTR"></div>
+      <div class="f"><span class="lbl">${T.s_pGarn1}</span><input class="val" type="text" value="${form.pantone_garn1 || ''}" placeholder="z. B. Pantone 116 C – Gold"></div>
+      <div class="f"><span class="lbl">${T.s_pGarn2}</span><input class="val" type="text" value="${form.pantone_garn2 || ''}" placeholder="z. B. Pantone Black C"></div>
+      <div class="f"><span class="lbl">${T.s_pPaspel}</span><input class="val" type="text" value="${form.pantone_paspel || ''}" placeholder="z. B. Pantone 116 C"></div>
+    </div>
+  </div>
 </div>
 </div>
 
-<!-- SEITE 3 -->
+<!-- SEITE 3 (NEU: Naht, Muster, Zeitplan, Verpackung) -->
 <div class="page">
-<div class="ch"><span>${T.pageHeader}</span><span>${T.page(3,4)}</span></div>
+<div class="ch"><span>${T.pageHeader}</span><span>${T.page(3,6)}</span></div>
 
 <div class="sec">
-  <div class="st"><span class="n">6</span> ${T.s6}</div>
+  <div class="st"><span class="n">7</span> ${T.s_naht}</div>
+  <div class="fg2">
+    <div class="f"><span class="lbl">${T.s_stiche}</span><input class="val" type="number" value="${spez.stiche_cm || ''}"></div>
+    <div class="f"><span class="lbl">${T.s_nahtBem}</span><input class="val" type="text" value="${spez.nahtBemerkung || ''}"></div>
+    <div class="f"><span class="lbl">${T.s_gurtAnz}</span><input class="val" type="number" value="${spez.gurtschlaufen_anzahl || ''}"></div>
+    <div class="f"><span class="lbl">${T.s_gurtBr}</span><input class="val" type="text" value="${spez.gurtschlaufen_breite || ''}"></div>
+  </div>
+  <div class="f" style="margin-top:3mm;"><span class="lbl">${T.s_verst}</span>
+    <div class="tags">
+      ${VERSTAERKUNGEN.map(opt => `<label class="tag"><input type="checkbox" ${checked((spez.verstaerkungen||[]).includes(opt))}> ${opt}</label>`).join('')}
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="st"><span class="n">8</span> ${T.s_muster}</div>
+  <label class="chk-item" style="display:inline-flex;margin-bottom:4mm;"><input type="checkbox" ${checked(form.muster_benoetigt)}> ${T.s_musterBen}</label>
+  ${form.muster_benoetigt ? `
+  <div class="fg2">
+    <div class="f"><span class="lbl">${T.s_musterGr}</span><input class="val" type="text" value="${form.muster_groesse || ''}"></div>
+    <div class="f"><span class="lbl">${T.s_musterDL}</span><input class="val" type="text" value="${form.muster_deadline || ''}"></div>
+    <div class="f"><span class="lbl">${T.s_musterBem}</span><input class="val" type="text" value="${form.muster_bemerkung || ''}"></div>
+    <div class="f" style="justify-content:flex-end;"><label class="chk-item"><input type="checkbox" ${checked(form.muster_mitStickerei)}> ${T.s_musterEmb}</label></div>
+  </div>` : ''}
+</div>
+
+<div class="sec">
+  <div class="st"><span class="n">9</span> ${T.s_zeitplan}</div>
+  <div class="fg3">
+    <div class="f"><span class="lbl">${T.s_zSample}</span><input class="val" type="text" value="${form.zeitplan_sample || ''}"></div>
+    <div class="f"><span class="lbl">${T.s_zProd}</span><input class="val" type="text" value="${form.zeitplan_prod || ''}"></div>
+    <div class="f"><span class="lbl">${T.s_zSchiff}</span><input class="val" type="text" value="${form.zeitplan_schiff || ''}"></div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="st"><span class="n">10</span> ${T.s_verp}</div>
+  <div class="fg2">
+    <div class="f"><span class="lbl">${T.s_verpTyp}</span>
+      <div class="tags">
+        ${VERP_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(spez.verp_typ === opt)}> ${opt}</label>`).join('')}
+      </div>
+    </div>
+    <div class="f"><span class="lbl">${T.s_verpBeutel}</span><input class="val" type="number" value="${spez.verp_stueck_beutel || ''}"></div>
+    <div class="f"><span class="lbl">${T.s_verpKarton}</span><input class="val" type="number" value="${spez.verp_stueck_karton || ''}"></div>
+    <div class="f"><label class="chk-item"><input type="checkbox" ${checked(spez.verp_ean)}> ${T.s_verpEan}</label></div>
+  </div>
+  <div class="f" style="margin-top:3mm;"><span class="lbl">${T.s_verpLabel}</span><input class="val" type="text" value="${spez.verp_label || ''}" placeholder="z. B. KARATE-GI · Gr. XXX · Art. Nr. XXXX · Kampfkunstschule Schreiner"></div>
+  <div class="f" style="margin-top:3mm;"><span class="lbl">${T.s_verpBem}</span><input class="val" type="text" value="${spez.verp_bemerkung || ''}"></div>
+</div>
+</div>
+
+<!-- SEITE 4 (alt: Seite 3): Pflegekennzeichnung, Bemerkungen, Freigabe -->
+<div class="page">
+<div class="ch"><span>${T.pageHeader}</span><span>${T.page(4,6)}</span></div>
+
+<div class="sec">
+  <div class="st"><span class="n">11</span> ${T.s6}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6mm 10mm;">
     <div>
       <span class="lbl" style="display:block;margin-bottom:3mm;">${T.careSymbols}</span>
@@ -1611,12 +1975,12 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 </div>
 
 <div class="sec">
-  <div class="st"><span class="n">7</span> ${T.s7}</div>
+  <div class="st"><span class="n">12</span> ${T.s7}</div>
   <textarea style="border:1px solid #ccc;border-radius:3px;padding:4px 6px;width:100%;font-size:9pt;font-family:inherit;resize:vertical;min-height:16mm;" rows="3">${form.bemerkungen}</textarea>
 </div>
 
 <div class="sec">
-  <div class="st"><span class="n">8</span> ${T.s8}</div>
+  <div class="st"><span class="n">13</span> ${T.s8}</div>
   <div class="fg3" style="margin-bottom:5mm;">
     <div class="f"><span class="lbl">${T.qty}</span><input class="val" type="text" value="${grandTotal} ${T.pcs}" style="font-weight:800;font-size:13pt;"></div>
     <div class="f"><span class="lbl">${T.orderVal}</span><input class="val" type="text" placeholder="€ ___________"></div>
@@ -1630,11 +1994,11 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 </div>
 </div>
 
-<!-- SEITE 4 -->
+<!-- SEITE 5 (alt: Seite 4): Größentabellen -->
 <div class="page">
 <div class="ph">
   <div><h1 style="font-size:15pt;">${T.s9}</h1><div class="sub">${T.s9sub}</div></div>
-  <div style="font-size:8pt;color:#999;text-align:right;">${T.page(4,4)}<br>${T.tolerance}</div>
+  <div style="font-size:8pt;color:#999;text-align:right;">${T.page(5,6)}<br>${T.tolerance}</div>
 </div>
 <div class="chart-block">
   <div class="chart-label" style="${form.model==='128'?'border-color:var(--gold);':'border-color:#ddd;color:#999;'}">
@@ -1653,11 +2017,11 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 </div>
 </div>
 
-<!-- SEITE 5 – MAßSPEZIFIKATION -->
+<!-- SEITE 6 (alt: Seite 5) – MAßSPEZIFIKATION -->
 <div class="page">
 <div class="ph">
   <div><h1 style="font-size:15pt;">${T.s10}</h1><div class="sub">${T.s10note}</div></div>
-  <div style="font-size:8pt;color:#999;text-align:right;">${T.page(5,5)}</div>
+  <div style="font-size:8pt;color:#999;text-align:right;">${T.page(6,6)}</div>
 </div>
 <style>
 table.ms{width:100%;border-collapse:collapse;font-size:8pt;}

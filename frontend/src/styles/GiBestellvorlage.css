@@ -701,6 +701,15 @@ select.gv-input { cursor: pointer; }
 .gv-mt-input:focus { background: rgba(212,175,55,0.07); }
 .gv-mt-input::placeholder { color: rgba(255,255,255,0.15); font-size: 0.75rem; }
 
+/* MUSTER CONDITIONAL BLOCK */
+.gv-muster-details {
+  padding: 0.6rem;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 7px;
+  background: rgba(255,255,255,0.02);
+  margin-top: 0.5rem;
+}
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .gv-grid2 { grid-template-columns: 1fr; }
