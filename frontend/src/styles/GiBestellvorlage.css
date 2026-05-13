@@ -890,6 +890,30 @@ select.gv-input { cursor: pointer; }
   margin-top: 0.5rem;
 }
 
+/* WÄHRUNGS-TOGGLE */
+.gv-currency-toggle {
+  display: flex;
+  gap: 0.2rem;
+  align-items: center;
+}
+.gv-currency-btn {
+  padding: 0.2rem 0.55rem;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.45);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gv-currency-btn:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.7); }
+.gv-currency-btn.active {
+  background: rgba(212,175,55,0.15);
+  border-color: rgba(212,175,55,0.5);
+  color: rgba(212,175,55,0.95);
+}
+
 /* PRODUKTBILD */
 .gv-produkt-preview-wrap {
   display: flex;

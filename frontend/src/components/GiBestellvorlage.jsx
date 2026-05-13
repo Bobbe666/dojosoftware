@@ -66,7 +66,7 @@ const EMPTY = {
   muster_mitStickerei: false, muster_bemerkung: '',
   zeitplan_sample: '', zeitplan_prod: '', zeitplan_schiff: '',
   pantone_garn1: '', pantone_garn2: '', pantone_paspel: '', pantone_grundfarbe: '',
-  preisKids: '', preisAdult: '',
+  preisKids: '', preisAdult: '', waehrung: 'EUR',
 };
 
 const POSITIONEN = [
@@ -156,6 +156,9 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         bemerkungen: vorlage.bemerkungen || '',
         mengenKids:  spez.mengenKids  ? { ...EMPTY_MENGEN_KIDS(), ...spez.mengenKids  } : EMPTY_MENGEN_KIDS(),
         mengenAdult: spez.mengenAdult ? { ...EMPTY_MENGEN_ADULT(), ...spez.mengenAdult } : EMPTY_MENGEN_ADULT(),
+        preisKids:  spez.preisKids  || '',
+        preisAdult: spez.preisAdult || '',
+        waehrung:   spez.waehrung   || 'EUR',
         spezifikation: spez,
       };
     }
@@ -434,7 +437,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         stickerei_farben: form.stickereiGarnfarben,
         stickerei_datei: form.stickereiBemerkung,
         bemerkungen: form.bemerkungen,
-        spezifikation: JSON.stringify({ ...form.spezifikation, mengenKids: form.mengenKids, mengenAdult: form.mengenAdult }),
+        spezifikation: JSON.stringify({ ...form.spezifikation, mengenKids: form.mengenKids, mengenAdult: form.mengenAdult, preisKids: form.preisKids, preisAdult: form.preisAdult, waehrung: form.waehrung }),
         artikel_ids: vorlage.artikel_ids || [],
       });
       setSaveMsg('Gespeichert ✓');
@@ -771,6 +774,14 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               <label className="gv-cat-opt"><input type="checkbox" checked={form.katAdult} onChange={fb('katAdult')} />Erwachsene</label>
             </div>
             <span className="gv-total-display">Gesamt: <strong>{grandTotal()} Stück</strong></span>
+            <div className="gv-currency-toggle">
+              {['EUR', 'USD'].map(c => (
+                <button key={c} className={`gv-currency-btn${form.waehrung === c ? ' active' : ''}`}
+                  onClick={() => setForm(p => ({ ...p, waehrung: c }))}>
+                  {c === 'EUR' ? '€ EUR' : '$ USD'}
+                </button>
+              ))}
+            </div>
           </div>
           {/* Kinder-Tabelle */}
           {form.katKids && (
@@ -797,10 +808,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                 <span className="gv-qty-price-label">Stückpreis Kinder</span>
                 <input className="gv-qty-price-input" type="number" min="0" step="0.01"
                   value={form.preisKids} onChange={f('preisKids')} placeholder="0.00" />
-                <span className="gv-qty-price-unit">€</span>
+                <span className="gv-qty-price-unit">{form.waehrung === 'USD' ? '$' : '€'}</span>
                 {form.preisKids > 0 && totalFor('mengenKids') > 0 && (
                   <span className="gv-qty-price-sum">
-                    = {(totalFor('mengenKids') * parseFloat(form.preisKids)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    = {(totalFor('mengenKids') * parseFloat(form.preisKids)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}
                   </span>
                 )}
               </div>
@@ -831,10 +842,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                 <span className="gv-qty-price-label">Stückpreis Erwachsene</span>
                 <input className="gv-qty-price-input" type="number" min="0" step="0.01"
                   value={form.preisAdult} onChange={f('preisAdult')} placeholder="0.00" />
-                <span className="gv-qty-price-unit">€</span>
+                <span className="gv-qty-price-unit">{form.waehrung === 'USD' ? '$' : '€'}</span>
                 {form.preisAdult > 0 && totalFor('mengenAdult') > 0 && (
                   <span className="gv-qty-price-sum">
-                    = {(totalFor('mengenAdult') * parseFloat(form.preisAdult)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    = {(totalFor('mengenAdult') * parseFloat(form.preisAdult)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}
                   </span>
                 )}
               </div>
@@ -847,7 +858,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               <span className="gv-qty-total-val">
                 {((totalFor('mengenKids') * parseFloat(form.preisKids || 0)) +
                   (totalFor('mengenAdult') * parseFloat(form.preisAdult || 0)))
-                  .toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                  .toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}
               </span>
               <span className="gv-qty-total-hint">{grandTotal()} Stück gesamt</span>
             </div>
@@ -1712,18 +1723,41 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
   const kidsTotal  = Object.values(form.mengenKids).reduce((s,v)=>s+(parseInt(v)||0),0);
   const adultTotal = Object.values(form.mengenAdult).reduce((s,v)=>s+(parseInt(v)||0),0);
   const grandTotal = kidsTotal + adultTotal;
+  const currSym    = form.waehrung === 'USD' ? '$' : '€';
+  const fmtPrice   = (n) => parseFloat(n||0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const kidsPriceRow = form.preisKids > 0 ? `
+  <div style="display:flex;align-items:center;gap:6mm;margin-top:2mm;margin-bottom:4mm;font-size:9pt;">
+    <span style="color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.07em;font-size:7.5pt;">Stückpreis Kinder</span>
+    <span style="font-weight:700;">${fmtPrice(form.preisKids)} ${currSym}</span>
+    ${kidsTotal > 0 ? `<span style="color:#888;">= <strong>${fmtPrice(kidsTotal * parseFloat(form.preisKids))} ${currSym}</strong></span>` : ''}
+  </div>` : '';
+
+  const adultPriceRow = form.preisAdult > 0 ? `
+  <div style="display:flex;align-items:center;gap:6mm;margin-top:2mm;margin-bottom:4mm;font-size:9pt;">
+    <span style="color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.07em;font-size:7.5pt;">Stückpreis Erwachsene</span>
+    <span style="font-weight:700;">${fmtPrice(form.preisAdult)} ${currSym}</span>
+    ${adultTotal > 0 ? `<span style="color:#888;">= <strong>${fmtPrice(adultTotal * parseFloat(form.preisAdult))} ${currSym}</strong></span>` : ''}
+  </div>` : '';
+
+  const gesamtpreisRow = (form.preisKids > 0 || form.preisAdult > 0) ? `
+  <div style="display:flex;align-items:center;gap:8mm;padding:3mm 5mm;background:#fffbf0;border:1.5px solid #c9a227;border-radius:4px;margin-top:2mm;font-size:9.5pt;">
+    <span style="font-weight:800;color:#1a1a2e;">Gesamtpreis</span>
+    <span style="font-weight:800;font-size:11pt;color:#c9a227;">${fmtPrice((kidsTotal * parseFloat(form.preisKids||0)) + (adultTotal * parseFloat(form.preisAdult||0)))} ${currSym}</span>
+    <span style="color:#888;font-size:8.5pt;">${grandTotal} Stück gesamt</span>
+  </div>` : '';
 
   const kidsRow = !form.katKids ? '' : `
-  <table class="qt" style="margin-bottom:4mm;">
+  <table class="qt" style="margin-bottom:2mm;">
     <thead><tr><th class="rh">${T.kids}</th>${SIZES_KIDS.map(s=>`<th>${s}</th>`).join('')}<th style="background:#2d3d2d;min-width:36px;">Σ</th></tr></thead>
     <tbody><tr><td class="rl">${T.kids}</td>${SIZES_KIDS.map(s=>`<td><input type="number" value="${parseInt(form.mengenKids[s])||''}" style="width:100%;border:none;text-align:center;font-size:10pt;padding:3px 0;background:transparent;"></td>`).join('')}<td class="sm" style="font-weight:700;background:#f0f0f0;">${kidsTotal}</td></tr></tbody>
-  </table>`;
+  </table>${kidsPriceRow}`;
 
   const adultRow = !form.katAdult ? '' : `
-  <table class="qt">
+  <table class="qt" style="margin-bottom:2mm;">
     <thead><tr><th class="rh">${T.adults}</th>${SIZES_ADULT.map(s=>`<th>${s}</th>`).join('')}<th style="background:#2d3d2d;min-width:36px;">Σ</th></tr></thead>
     <tbody><tr><td class="rl">${T.adults}</td>${SIZES_ADULT.map(s=>`<td><input type="number" value="${parseInt(form.mengenAdult[s])||''}" style="width:100%;border:none;text-align:center;font-size:10pt;padding:3px 0;background:transparent;"></td>`).join('')}<td class="sm" style="font-weight:700;background:#f0f0f0;">${adultTotal}</td></tr></tbody>
-  </table>`;
+  </table>${adultPriceRow}`;
 
   const selectedLtInfo = form.lieferantFreitext || '—';
 
@@ -1917,7 +1951,7 @@ ${(() => {
       <input type="checkbox" ${checked(form.katAdult)}> ${T.adults}
     </label>
   </div>
-  <div class="qt-wrap">${kidsRow}${adultRow}
+  <div class="qt-wrap">${kidsRow}${adultRow}${gesamtpreisRow}
     <div style="text-align:right;font-size:9pt;color:#666;margin-top:3mm;">${grandTotal} ${T.pcsTotal}</div>
   </div>
 </div>
@@ -2096,10 +2130,11 @@ ${(() => {
   </div>
 </div>
 
+${form.bemerkungen ? `
 <div class="sec">
   <div class="st"><span class="n">12</span> ${T.s7}</div>
   <textarea style="border:1px solid #ccc;border-radius:3px;padding:4px 6px;width:100%;font-size:9pt;font-family:inherit;resize:vertical;min-height:16mm;" rows="3">${form.bemerkungen}</textarea>
-</div>
+</div>` : ''}
 
 <div class="sec">
   <div class="st"><span class="n">13</span> ${T.s8}</div>
