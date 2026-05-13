@@ -4,7 +4,6 @@ import { useDojoContext } from '../context/DojoContext';
 import '../styles/GiBestellvorlage.css';
 
 const SIZES = {
-  '128': [140, 150, 160, 165, 170, 175, 180, 185, 190, 195, 200],
   '188': [130, 140, 150, 160, 170, 180, 190, 200],
 };
 
@@ -42,7 +41,7 @@ const LT_EMPTY = {
 };
 
 const EMPTY = {
-  model: '128', modelName: '', artikelNr: '',
+  model: '188', modelName: '', artikelNr: '',
   besteller: 'Kampfkunstschule Schreiner',
   lieferantId: '', lieferantFreitext: '',
   ansprechpartnerBesteller: 'Sascha Schreiner',
@@ -50,7 +49,7 @@ const EMPTY = {
   bestelldatum: new Date().toLocaleDateString('de-DE'),
   lieferdatum: '', projekt: '', farbe: 'Weiß', wkf: false,
   katKids: true, katAdult: true,
-  mengenKids: EMPTY_MENGEN('128'), mengenAdult: EMPTY_MENGEN('128'),
+  mengenKids: EMPTY_MENGEN('188'), mengenAdult: EMPTY_MENGEN('188'),
   stickereiPos: [], stickereiSchriftzug: '',
   stickereiGarnfarben: 'Gold, Schwarz', stickereiBemerkung: '',
   bemerkungen: '', spezifikation: { ...EMPTY_SPEZ },
@@ -119,8 +118,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         ...EMPTY,
         ...initFormdata,
         spezifikation: { ...EMPTY_SPEZ, ...(initFormdata.spezifikation || {}) },
-        mengenKids:  initFormdata.mengenKids  ? { ...EMPTY_MENGEN(initFormdata.model || '128'), ...initFormdata.mengenKids }  : EMPTY_MENGEN(initFormdata.model || '128'),
-        mengenAdult: initFormdata.mengenAdult ? { ...EMPTY_MENGEN(initFormdata.model || '128'), ...initFormdata.mengenAdult } : EMPTY_MENGEN(initFormdata.model || '128'),
+        mengenKids:  initFormdata.mengenKids  ? { ...EMPTY_MENGEN(initFormdata.model || '188'), ...initFormdata.mengenKids }  : EMPTY_MENGEN(initFormdata.model || '188'),
+        mengenAdult: initFormdata.mengenAdult ? { ...EMPTY_MENGEN(initFormdata.model || '188'), ...initFormdata.mengenAdult } : EMPTY_MENGEN(initFormdata.model || '188'),
       };
     }
     if (vorlage) {
@@ -137,7 +136,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         ...EMPTY,
         modelName: vorlage.modell_name || '',
         artikelNr: vorlage.artikel_nr_vorl || '',
-        model: vorlage.modell || '128',
+        model: vorlage.modell || '188',
         lieferantId: String(vorlage.lieferant_id || ''),
         farbe: vorlage.farbe || 'Weiß',
         wkf: !!vorlage.wkf,
@@ -146,8 +145,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         stickereiGarnfarben: vorlage.stickerei_farben || 'Gold, Schwarz',
         stickereiBemerkung: vorlage.stickerei_datei || '',
         bemerkungen: vorlage.bemerkungen || '',
-        mengenKids:  spez.mengenKids  ? { ...EMPTY_MENGEN(vorlage.modell || '128'), ...spez.mengenKids  } : EMPTY_MENGEN(vorlage.modell || '128'),
-        mengenAdult: spez.mengenAdult ? { ...EMPTY_MENGEN(vorlage.modell || '128'), ...spez.mengenAdult } : EMPTY_MENGEN(vorlage.modell || '128'),
+        mengenKids:  spez.mengenKids  ? { ...EMPTY_MENGEN(vorlage.modell || '188'), ...spez.mengenKids  } : EMPTY_MENGEN(vorlage.modell || '188'),
+        mengenAdult: spez.mengenAdult ? { ...EMPTY_MENGEN(vorlage.modell || '188'), ...spez.mengenAdult } : EMPTY_MENGEN(vorlage.modell || '188'),
         spezifikation: spez,
       };
     }
@@ -387,8 +386,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         ...EMPTY,
         ...fd,
         spezifikation: { ...EMPTY_SPEZ, ...(fd.spezifikation || {}) },
-        mengenKids:  fd.mengenKids  ? { ...EMPTY_MENGEN(fd.model || '128'), ...fd.mengenKids }  : EMPTY_MENGEN(fd.model || '128'),
-        mengenAdult: fd.mengenAdult ? { ...EMPTY_MENGEN(fd.model || '128'), ...fd.mengenAdult } : EMPTY_MENGEN(fd.model || '128'),
+        mengenKids:  fd.mengenKids  ? { ...EMPTY_MENGEN(fd.model || '188'), ...fd.mengenKids }  : EMPTY_MENGEN(fd.model || '188'),
+        mengenAdult: fd.mengenAdult ? { ...EMPTY_MENGEN(fd.model || '188'), ...fd.mengenAdult } : EMPTY_MENGEN(fd.model || '188'),
       });
       setEditingBestellungId(b.bestellung_id);
       setHistorieSichtbar(false);
@@ -542,14 +541,9 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 
         {/* ── MODELL ── */}
         <div className="gv-section">
-          <div className="gv-section-title">Modellauswahl</div>
+          <div className="gv-section-title">Modell</div>
           <div className="gv-model-row">
-            <div className={`gv-model-card ${form.model === '128' ? 'active' : ''}`} onClick={() => switchModel('128')}>
-              <div className="gv-model-name">Modell 128</div>
-              <div className="gv-model-detail">11 Größen · 140–200 cm</div>
-              <div className="gv-model-hint">Feinere Abstufung</div>
-            </div>
-            <div className={`gv-model-card ${form.model === '188' ? 'active' : ''}`} onClick={() => switchModel('188')}>
+            <div className="gv-model-card active" style={{ cursor: 'default', maxWidth: '200px' }}>
               <div className="gv-model-name">Modell 188</div>
               <div className="gv-model-detail">8 Größen · 130–200 cm</div>
               <div className="gv-model-hint">inkl. Kindergröße 130 cm</div>
@@ -1681,8 +1675,7 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 <div class="sec">
   <div class="st"><span class="n">1</span> ${T.s1}</div>
   <div class="mc-row">
-    <div class="mc ${form.model==='128'?'sel':''}"><div class="mc-n">Modell 128</div><div class="mc-d">11 Größen · 140–200 cm</div></div>
-    <div class="mc ${form.model==='188'?'sel':''}"><div class="mc-n">Modell 188</div><div class="mc-d">8 Größen · 130–200 cm</div></div>
+    <div class="mc sel"><div class="mc-n">Modell 188</div><div class="mc-d">8 Größen · 130–200 cm</div></div>
     <div style="flex:2;padding:3mm;">
       <div class="f"><span class="lbl">${T.modellbez}</span><input class="val" type="text" value="${form.modelName}"></div>
       <div class="f" style="margin-top:3mm;"><span class="lbl">${T.artikelNr}</span><input class="val" type="text" value="${form.artikelNr}"></div>
@@ -2001,14 +1994,8 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
   <div style="font-size:8pt;color:#999;text-align:right;">${T.page(5,6)}<br>${T.tolerance}</div>
 </div>
 <div class="chart-block">
-  <div class="chart-label" style="${form.model==='128'?'border-color:var(--gold);':'border-color:#ddd;color:#999;'}">
-    Modell 128 &nbsp;·&nbsp; 11 Größen (140–200 cm)${form.model==='128'?' '+T.selectedModel:''}
-  </div>
-  <img src="${img128}" alt="Größentabelle Modell 128">
-</div>
-<div class="chart-block">
-  <div class="chart-label" style="${form.model==='188'?'border-color:var(--gold);':'border-color:#ddd;color:#999;'}">
-    Modell 188 &nbsp;·&nbsp; 8 Größen (130–200 cm)${form.model==='188'?' '+T.selectedModel:''}
+  <div class="chart-label" style="border-color:var(--gold);">
+    Modell 188 &nbsp;·&nbsp; 8 Größen (130–200 cm)
   </div>
   <img src="${img188}" alt="Größentabelle Modell 188">
 </div>
