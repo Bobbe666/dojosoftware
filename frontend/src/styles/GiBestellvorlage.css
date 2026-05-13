@@ -69,6 +69,21 @@
 .gv-btn-save:hover { background: rgba(255,255,255,0.14); color: #fff; }
 .gv-btn-save:disabled { opacity: 0.5; cursor: default; }
 
+.gv-btn-proportional {
+  padding: 0.55rem 1.1rem;
+  background: rgba(212,175,55,0.1);
+  border: 1px solid rgba(212,175,55,0.35);
+  border-radius: 7px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(212,175,55,0.85);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.gv-btn-proportional:hover { background: rgba(212,175,55,0.2); color: rgba(212,175,55,1); }
+
 .gv-btn-pdf {
   padding: 0.55rem 1.25rem;
   background: rgba(212,175,55,0.85);

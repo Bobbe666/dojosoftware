@@ -285,6 +285,30 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     }));
   };
 
+  const berechneProportional = () => {
+    const massTab = form.spezifikation?.massTabelle || {};
+    // Referenzgröße = Größe mit den meisten ausgefüllten Werten
+    let refSize = null, maxFilled = 0;
+    for (const s of MASS_SIZES) {
+      const filled = MASSPUNKTE.filter(mp => parseFloat(massTab[s]?.[mp.key]) > 0).length;
+      if (filled > maxFilled) { maxFilled = filled; refSize = s; }
+    }
+    if (!refSize || maxFilled === 0) return;
+    const refRow = massTab[refSize] || {};
+    const newTab = { ...massTab };
+    for (const s of MASS_SIZES) {
+      if (s === refSize) continue;
+      const ratio = s / refSize;
+      const row = { ...(newTab[s] || {}) };
+      for (const mp of MASSPUNKTE) {
+        const ref = parseFloat(refRow[mp.key]);
+        if (ref > 0) row[mp.key] = String(Math.round(ref * ratio * 10) / 10);
+      }
+      newTab[s] = row;
+    }
+    setForm(p => ({ ...p, spezifikation: { ...p.spezifikation, massTabelle: newTab } }));
+  };
+
   const onLieferantChange = (e) => {
     const id = e.target.value;
     const lt = lieferanten.find(l => String(l.lieferant_id) === id);
@@ -886,6 +910,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             <span className="gv-section-title">Maßspezifikation für den Hersteller</span>
             <button className="gv-zeichnung-toggle" onClick={() => setZeichnungSichtbar(v => !v)}>
               {zeichnungSichtbar ? 'Zeichnung ▲' : 'Zeichnung zeigen ▼'}
+            </button>
+            <button className="gv-btn-proportional" onClick={berechneProportional}
+              title="Alle Größen proportional zur Referenzgröße berechnen">
+              ↕ Hochrechnen
             </button>
             {vorlage?.vorlage_id && (
               <button className="gv-btn-save" onClick={saveVorlage} disabled={saving} style={{ flexShrink: 0 }}>
