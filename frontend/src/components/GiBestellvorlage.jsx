@@ -370,9 +370,16 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const url  = URL.createObjectURL(blob);
       if (win && !win.closed) {
-        // Blob-URL → eigener Origin, kein CSP-Erbfall vom Parent
+        // Event-Listener vom Parent setzen — kein inline-JS im PDF-HTML nötig
+        win.addEventListener('load', function onLoad() {
+          win.removeEventListener('load', onLoad);
+          try {
+            const btn = win.document.getElementById('gv-print-btn');
+            if (btn) btn.addEventListener('click', () => win.print());
+          } catch {}
+          setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 5000);
+        });
         win.location.href = url;
-        setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 30000);
       } else {
         // Fallback: als HTML herunterladen
         const a = document.createElement('a');
@@ -2223,6 +2230,6 @@ table.ms tbody td.mp-val input{width:100%;border:none;text-align:center;font-siz
 </div>
 </div>
 
-<button class="print-btn" onclick="window.print()">${T.printBtn}</button>
+<button class="print-btn" id="gv-print-btn">${T.printBtn}</button>
 </body></html>`;
 }
