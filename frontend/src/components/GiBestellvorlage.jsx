@@ -323,6 +323,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       setDojoAuswahlModal(true);
       return;
     }
+    // Fenster SYNCHRON öffnen — Safari blockiert window.open() aus async-Kontext
+    const win = window.open('', '_blank');
     setGenerating(true);
     try {
       const origin = window.location.origin;
@@ -365,12 +367,15 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         } catch {}
       }
       const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId, lang);
-      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-      const url  = URL.createObjectURL(blob);
-      const win  = window.open(url, '_blank');
-      if (win) {
-        setTimeout(() => { win.focus(); URL.revokeObjectURL(url); }, 2000);
+      if (win && !win.closed) {
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+        win.focus();
       } else {
+        // Fallback: als HTML-Datei herunterladen
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const url  = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `bestellvorlage_${form.name || 'vorlage'}.html`;
@@ -1819,6 +1824,9 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
   .page{margin:0;padding:14mm 18mm;box-shadow:none;page-break-after:always;}
   .page:last-child{page-break-after:avoid;}
   input,select,textarea{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .print-btn{display:none!important;}
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button{display:none;}
 }
 .print-btn{position:fixed;bottom:20px;right:20px;background:var(--gold);color:var(--dark);border:none;padding:12px 28px;font-size:12pt;font-weight:800;border-radius:6px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35);z-index:999;}
 </style></head><body>
