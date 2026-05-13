@@ -1799,25 +1799,23 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
   </div>
 </div>
 
-<div class="sec">
-  <div class="st"><span class="n">1</span> ${T.s1}</div>
-  <div class="mc-row" style="align-items:flex-start;">
-    <div class="mc sel"><div class="mc-n">Modell 188</div><div class="mc-d">8 Größen · 130–200 cm</div></div>
-    <div style="flex:2;padding:3mm;">
-      <div class="f"><span class="lbl">${T.modellbez}</span><input class="val" type="text" value="${form.modelName}"></div>
-      <div class="f" style="margin-top:3mm;"><span class="lbl">${T.artikelNr}</span><input class="val" type="text" value="${form.artikelNr}"></div>
-    </div>
-  </div>
-</div>
-
 ${(() => {
   const pb = eingebetteteDateien.find(d => d.tag === '__produktbild__' && d.dataUrl);
   const pbSrc = pb ? pb.dataUrl : `${origin}/gi-charts/produkt-vorschau.jpg`;
   return `
 <div class="sec">
-  <div class="st"><span class="n">✦</span> Produktbild</div>
-  <div style="text-align:center;padding:3mm 0;">
-    <img src="${pbSrc}" style="max-height:135mm;max-width:100%;border-radius:6px;border:1px solid #ddd;object-fit:contain;" alt="Produktbild">
+  <div class="st"><span class="n">1</span> ${T.s1}</div>
+  <div style="display:flex;gap:6mm;align-items:flex-start;">
+    <div style="flex:1;min-width:0;">
+      <div class="mc-row" style="align-items:flex-start;margin-bottom:4mm;">
+        <div class="mc sel"><div class="mc-n">Modell 188</div><div class="mc-d">8 Größen · 130–200 cm</div></div>
+      </div>
+      <div class="f"><span class="lbl">${T.modellbez}</span><input class="val" type="text" value="${form.modelName}"></div>
+      <div class="f" style="margin-top:3mm;"><span class="lbl">${T.artikelNr}</span><input class="val" type="text" value="${form.artikelNr}"></div>
+    </div>
+    <div style="flex-shrink:0;text-align:center;">
+      <img src="${pbSrc}" style="max-height:110mm;max-width:85mm;border-radius:6px;border:1px solid #ddd;object-fit:contain;" alt="Produktbild">
+    </div>
   </div>
 </div>`;
 })()}
