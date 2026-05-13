@@ -596,10 +596,117 @@ select.gv-input { cursor: pointer; }
   display: inline-block;
 }
 
+/* ZEICHNUNG TOGGLE */
+.gv-zeichnung-toggle {
+  padding: 0.22rem 0.7rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 5px;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.gv-zeichnung-toggle:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.75); }
+
+/* MAßSPEZ LAYOUT */
+.gv-mass-layout {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.gv-zeichnung-img {
+  width: 220px;
+  min-width: 220px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  object-fit: contain;
+  background: rgba(255,255,255,0.03);
+}
+
+.gv-mass-wrap { flex: 1; overflow-x: auto; }
+
+/* MAß-TABELLE */
+.gv-mass-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.gv-mass-table thead th {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.5);
+  padding: 0.3rem 0.25rem;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.07);
+  white-space: nowrap;
+}
+.gv-mt-mp {
+  text-align: left !important;
+  min-width: 160px;
+  padding-left: 0.5rem !important;
+}
+
+.gv-mass-table tbody tr:nth-child(odd) { background: rgba(255,255,255,0.015); }
+
+.gv-mass-table tbody td {
+  border: 1px solid rgba(255,255,255,0.06);
+  text-align: center;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.gv-mt-label {
+  text-align: left !important;
+  padding: 0.3rem 0.5rem !important;
+  vertical-align: top !important;
+}
+.gv-mt-num {
+  font-weight: 900;
+  color: rgba(212,175,55,0.85);
+  margin-right: 0.3rem;
+  font-size: 0.82rem;
+}
+.gv-mt-name {
+  font-weight: 600;
+  color: rgba(255,255,255,0.75);
+  font-size: 0.78rem;
+}
+.gv-mt-hint {
+  display: block;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.3);
+  margin-top: 1px;
+}
+
+.gv-mt-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.82);
+  text-align: center;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.1rem;
+  outline: none;
+  -moz-appearance: textfield;
+  min-width: 30px;
+}
+.gv-mt-input::-webkit-inner-spin-button,
+.gv-mt-input::-webkit-outer-spin-button { opacity: 0; }
+.gv-mt-input:focus { background: rgba(212,175,55,0.07); }
+.gv-mt-input::placeholder { color: rgba(255,255,255,0.15); font-size: 0.75rem; }
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .gv-grid2 { grid-template-columns: 1fr; }
   .gv-grid3 { grid-template-columns: 1fr 1fr; }
   .gv-model-row { flex-wrap: wrap; }
   .gv-pos-grid { grid-template-columns: 1fr; }
+  .gv-mass-layout { flex-direction: column; }
+  .gv-zeichnung-img { width: 100%; min-width: unset; }
 }

@@ -17,6 +17,7 @@ const EMPTY_SPEZ = {
   waeschetikett: '',
   labelText: '', labelSprachen: ['Deutsch', 'Englisch'],
   labelArt: [], labelPosition: [], labelZusatz: '',
+  massTabelle: {},
 };
 
 const LT_EMPTY = {
@@ -59,6 +60,17 @@ const LABEL_LANG   = ['Deutsch', 'Englisch', 'Französisch', 'Japanisch'];
 const LABEL_ART    = ['Gewebtes Etikett', 'Gedrucktes Etikett', 'Eingestickt'];
 const LABEL_POS    = ['Nacken (innen)', 'Seitennaht', 'Hosenbund (innen)'];
 
+const MASSPUNKTE = [
+  { key: 'rL', num: '①', label: 'Rückenlänge Jacke',  hint: 'Mitte Nacken bis Jackenende' },
+  { key: 'rB', num: '②', label: 'Rückenbreite',        hint: 'zwischen den Schulterblättern' },
+  { key: 'sw', num: '③', label: 'Spannweite gesamt',   hint: 'Ärmel li + Rücken + Ärmel re' },
+  { key: 'aL', num: '④', label: 'Ärmellänge',          hint: 'Schulter außen bis Ärmelsaum' },
+  { key: 'sB', num: '⑤', label: 'Schulterbreite',      hint: 'Schulter außen – außen' },
+  { key: 'hL', num: 'Ⓐ', label: 'Hosenlänge',          hint: 'Bund bis Hosenende' },
+  { key: 'bB', num: 'Ⓑ', label: 'Bundbreite ½',        hint: 'halbe Bundweite flachgelegt' },
+  { key: 'sM', num: 'Ⓒ', label: 'Saumbreite ½',        hint: 'halbe Saumweite flachgelegt' },
+];
+
 export default function GiBestellvorlage({ artikel = null, vorlage = null, onClose = null, initEditingId = null, initFormdata = null, overrideDojoId = null }) {
   const { activeDojo, dojos } = useDojoContext();
   const [lieferanten, setLieferanten] = useState([]);
@@ -78,6 +90,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [dojoAuswahlModal, setDojoAuswahlModal] = useState(false);
   const fileInputRef = useRef(null);
   const pendingLangRef = useRef('de');
+  const [zeichnungSichtbar, setZeichnungSichtbar] = useState(true);
   const uploadTagRef = useRef(null);
 
   const fixUtf8 = (s) => { try { return decodeURIComponent(escape(s)); } catch { return s; } };
@@ -222,7 +235,17 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       newSizes.forEach(s => { next[s] = oldSizes.includes(s) ? (old[s] || '') : ''; });
       return next;
     };
-    setForm(p => ({ ...p, model, mengenKids: migrate(p.mengenKids), mengenAdult: migrate(p.mengenAdult) }));
+    setForm(p => {
+      const oldMass = p.spezifikation?.massTabelle || {};
+      const newMass = {};
+      newSizes.forEach(s => { newMass[s] = oldSizes.includes(s) ? (oldMass[s] || {}) : {}; });
+      return {
+        ...p, model,
+        mengenKids:  migrate(p.mengenKids),
+        mengenAdult: migrate(p.mengenAdult),
+        spezifikation: { ...p.spezifikation, massTabelle: newMass },
+      };
+    });
   };
 
   const onLieferantChange = (e) => {
@@ -244,6 +267,17 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   }));
 
   const setMenge   = (row, size, val) => setForm(p => ({ ...p, [row]: { ...p[row], [size]: val } }));
+  const setMassTabelle = (groesse, key, val) =>
+    setForm(p => ({
+      ...p,
+      spezifikation: {
+        ...p.spezifikation,
+        massTabelle: {
+          ...(p.spezifikation.massTabelle || {}),
+          [groesse]: { ...(p.spezifikation.massTabelle?.[groesse] || {}), [key]: val },
+        },
+      },
+    }));
   const totalFor   = (row) => Object.values(form[row]).reduce((s, v) => s + (parseInt(v) || 0), 0);
   const grandTotal = () => totalFor('mengenKids') + totalFor('mengenAdult');
 
@@ -650,6 +684,67 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* ── MAßSPEZIFIKATION ── */}
+        <div className="gv-section">
+          <div className="gv-section-title-row">
+            <span className="gv-section-title">Maßspezifikation für den Hersteller</span>
+            <button className="gv-zeichnung-toggle" onClick={() => setZeichnungSichtbar(v => !v)}>
+              {zeichnungSichtbar ? 'Zeichnung ▲' : 'Zeichnung zeigen ▼'}
+            </button>
+            {vorlage?.vorlage_id && (
+              <button className="gv-btn-save" onClick={saveVorlage} disabled={saving} style={{ flexShrink: 0 }}>
+                {saving ? 'Speichert…' : '💾 Maße speichern'}
+              </button>
+            )}
+          </div>
+          <div style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,0.3)', marginBottom: '0.65rem' }}>
+            Alle Angaben in cm · Masspunkte-Referenz in der Zeichnung · ①=Rückenlänge · ②=Rückenbreite · ③=Spannweite · ④=Ärmellänge · ⑤=Schulterbreite · Ⓐ=Hosenlänge · Ⓑ=Bundbreite(½) · Ⓒ=Saumbreite(½)
+          </div>
+          <div className="gv-mass-layout">
+            {zeichnungSichtbar && (
+              <img
+                className="gv-zeichnung-img"
+                src={`/gi-charts/modell-${form.model}.jpg`}
+                alt={`Maßzeichnung Modell ${form.model}`}
+              />
+            )}
+            <div className="gv-mass-wrap">
+              <table className="gv-mass-table">
+                <thead>
+                  <tr>
+                    <th className="gv-mt-mp">Masspunkt</th>
+                    {sizes.map(s => <th key={s}>{s}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {MASSPUNKTE.map(mp => (
+                    <tr key={mp.key}>
+                      <td className="gv-mt-label">
+                        <span className="gv-mt-num">{mp.num}</span>
+                        <span className="gv-mt-name">{mp.label}</span>
+                        <span className="gv-mt-hint">{mp.hint}</span>
+                      </td>
+                      {sizes.map(s => (
+                        <td key={s}>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            className="gv-mt-input"
+                            value={spez.massTabelle?.[s]?.[mp.key] || ''}
+                            onChange={e => setMassTabelle(s, mp.key, e.target.value)}
+                            placeholder="—"
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -1199,6 +1294,12 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
     refPoints:   de ? 'Masspunkte: 1=Rückenlänge Jacke · 2=Rückenbreite · 3=Spannweite gesamt · 4=Ärmellänge · 5=Schulterbreite · A=Hosenlänge · B=Bundbreite (½) · C=Saumbreite (½)'
                     : 'Reference points: 1=Jacket back length · 2=Back width · 3=Total wingspan · 4=Sleeve length · 5=Shoulder width · A=Trouser length · B=Waistband width (½) · C=Hem width (½)',
     page:        (n, t) => de ? `Seite ${n} / ${t}` : `Page ${n} / ${t}`,
+    // Mass spec
+    s10:         de ? 'Maßspezifikation (in cm)' : 'Measurement Specification (cm)',
+    s10note:     de ? 'Alle Angaben in cm · bitte vor Produktion vom Lieferanten bestätigen lassen'
+                    : 'All values in cm · please have supplier confirm before production',
+    mpLabel:     de ? 'Masspunkt' : 'Ref. Point',
+    mpSizes:     de ? 'Größen (cm-Größe in dieser Spalte)' : 'Sizes (cm size in this column)',
   };
 
   const sizes = SIZES[form.model];
@@ -1550,6 +1651,54 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
   <img src="${img188}" alt="Größentabelle Modell 188">
 </div>
 <div style="font-size:7.5pt;color:#999;text-align:center;margin:3mm 0;font-style:italic;">
+  ${T.refPoints}
+</div>
+</div>
+
+<!-- SEITE 5 – MAßSPEZIFIKATION -->
+<div class="page">
+<div class="ph">
+  <div><h1 style="font-size:15pt;">${T.s10}</h1><div class="sub">${T.s10note}</div></div>
+  <div style="font-size:8pt;color:#999;text-align:right;">${T.page(5,5)}</div>
+</div>
+<style>
+table.ms{width:100%;border-collapse:collapse;font-size:8pt;}
+table.ms thead th{background:var(--dark);color:white;padding:4px 5px;text-align:center;font-size:7.5pt;white-space:nowrap;}
+table.ms thead th.mp-hd{text-align:left;min-width:110px;background:#2d2d4e;padding-left:6px;}
+table.ms tbody tr:nth-child(odd){background:#fafafa;}
+table.ms tbody td{border:1px solid #e5e5e5;padding:2px 3px;text-align:center;}
+table.ms tbody td.mp-cell{text-align:left;padding:3px 6px;background:#f6f6f6;}
+table.ms tbody td.mp-cell .mp-num{font-weight:900;color:var(--gold);margin-right:3px;}
+table.ms tbody td.mp-cell .mp-name{font-weight:700;}
+table.ms tbody td.mp-cell .mp-hint{display:block;font-size:6.5pt;color:#aaa;margin-top:1px;}
+table.ms tbody td.mp-val{background:white;}
+table.ms tbody td.mp-val input{width:100%;border:none;text-align:center;font-size:9pt;background:transparent;padding:2px 0;}
+</style>
+<div style="overflow-x:auto;">
+<table class="ms">
+  <thead>
+    <tr>
+      <th class="mp-hd">${T.mpLabel}</th>
+      ${sizes.map(s => `<th>${s}</th>`).join('')}
+    </tr>
+  </thead>
+  <tbody>
+    ${MASSPUNKTE.map(mp => {
+      const cells = sizes.map(s => {
+        const val = (form.spezifikation?.massTabelle?.[s]?.[mp.key]) || '';
+        return `<td class="mp-val"><input type="number" value="${val}" style="width:100%;border:none;text-align:center;font-size:9pt;background:transparent;padding:2px 0;"></td>`;
+      }).join('');
+      return `<tr>
+        <td class="mp-cell">
+          <span class="mp-num">${mp.num}</span><span class="mp-name">${mp.label}</span>
+          <span class="mp-hint">${mp.hint}</span>
+        </td>${cells}
+      </tr>`;
+    }).join('')}
+  </tbody>
+</table>
+</div>
+<div style="font-size:7pt;color:#aaa;margin-top:5mm;border-top:1px solid #eee;padding-top:3mm;">
   ${T.refPoints}
 </div>
 </div>
