@@ -796,7 +796,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           </div>
           {/* Kinder-Tabelle */}
           {form.katKids && (
-            <div className="gv-qty-wrap" style={{ marginBottom: '0.35rem' }}>
+            <div className="gv-qty-wrap">
               <table className="gv-qty-table">
                 <thead>
                   <tr>
@@ -807,30 +807,32 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="gv-qt-rl">Kinder</td>
+                    <td className="gv-qt-rl-empty"></td>
                     {SIZES_KIDS.map(s => (
                       <td key={s}><input type="number" min="0" value={form.mengenKids[s] || ''} onChange={e => setMenge('mengenKids', s, e.target.value)} /></td>
                     ))}
                     <td className="gv-qt-sum-cell">{totalFor('mengenKids')}</td>
                   </tr>
                 </tbody>
+                <tfoot>
+                  <tr>
+                    <td className="gv-qt-price-lbl">Stückpreis</td>
+                    <td colSpan={SIZES_KIDS.length} className="gv-qt-price-inp">
+                      <input type="number" min="0" step="0.01" value={form.preisKids} onChange={f('preisKids')} placeholder="0.00" />
+                      <span className="gv-qt-price-sym">{form.waehrung === 'USD' ? '$' : '€'}</span>
+                      {form.preisKids > 0 && totalFor('mengenKids') > 0 && (
+                        <span className="gv-qt-price-sum">= {(totalFor('mengenKids') * parseFloat(form.preisKids)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}</span>
+                      )}
+                    </td>
+                    <td className="gv-qt-sum-cell"></td>
+                  </tr>
+                </tfoot>
               </table>
-              <div className="gv-qty-price-row">
-                <span className="gv-qty-price-label">Stückpreis Kinder</span>
-                <input className="gv-qty-price-input" type="number" min="0" step="0.01"
-                  value={form.preisKids} onChange={f('preisKids')} placeholder="0.00" />
-                <span className="gv-qty-price-unit">{form.waehrung === 'USD' ? '$' : '€'}</span>
-                {form.preisKids > 0 && totalFor('mengenKids') > 0 && (
-                  <span className="gv-qty-price-sum">
-                    = {(totalFor('mengenKids') * parseFloat(form.preisKids)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}
-                  </span>
-                )}
-              </div>
             </div>
           )}
           {/* Erwachsene-Tabelle */}
           {form.katAdult && (
-            <div className="gv-qty-wrap" style={{ marginBottom: '0.35rem' }}>
+            <div className="gv-qty-wrap" style={{ marginTop: '0.6rem' }}>
               <table className="gv-qty-table">
                 <thead>
                   <tr>
@@ -841,25 +843,27 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="gv-qt-rl">Erwachsene</td>
+                    <td className="gv-qt-rl-empty"></td>
                     {SIZES_ADULT.map(s => (
                       <td key={s}><input type="number" min="0" value={form.mengenAdult[s] || ''} onChange={e => setMenge('mengenAdult', s, e.target.value)} /></td>
                     ))}
                     <td className="gv-qt-sum-cell">{totalFor('mengenAdult')}</td>
                   </tr>
                 </tbody>
+                <tfoot>
+                  <tr>
+                    <td className="gv-qt-price-lbl">Stückpreis</td>
+                    <td colSpan={SIZES_ADULT.length} className="gv-qt-price-inp">
+                      <input type="number" min="0" step="0.01" value={form.preisAdult} onChange={f('preisAdult')} placeholder="0.00" />
+                      <span className="gv-qt-price-sym">{form.waehrung === 'USD' ? '$' : '€'}</span>
+                      {form.preisAdult > 0 && totalFor('mengenAdult') > 0 && (
+                        <span className="gv-qt-price-sum">= {(totalFor('mengenAdult') * parseFloat(form.preisAdult)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}</span>
+                      )}
+                    </td>
+                    <td className="gv-qt-sum-cell"></td>
+                  </tr>
+                </tfoot>
               </table>
-              <div className="gv-qty-price-row">
-                <span className="gv-qty-price-label">Stückpreis Erwachsene</span>
-                <input className="gv-qty-price-input" type="number" min="0" step="0.01"
-                  value={form.preisAdult} onChange={f('preisAdult')} placeholder="0.00" />
-                <span className="gv-qty-price-unit">{form.waehrung === 'USD' ? '$' : '€'}</span>
-                {form.preisAdult > 0 && totalFor('mengenAdult') > 0 && (
-                  <span className="gv-qty-price-sum">
-                    = {(totalFor('mengenAdult') * parseFloat(form.preisAdult)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}
-                  </span>
-                )}
-              </div>
             </div>
           )}
           {/* Gesamtpreis */}
