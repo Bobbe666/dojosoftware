@@ -1866,7 +1866,7 @@ ${(() => {
       <div class="f" style="margin-top:3mm;"><span class="lbl">${T.artikelNr}</span><input class="val" type="text" value="${form.artikelNr}"></div>
     </div>
     <div style="flex-shrink:0;text-align:center;">
-      <img src="${pbSrc}" style="max-height:110mm;max-width:85mm;border-radius:6px;border:1px solid #ddd;object-fit:contain;" alt="Produktbild">
+      <img src="${pbSrc}" style="max-height:140mm;max-width:95mm;border-radius:6px;border:1px solid #ddd;object-fit:contain;" alt="Produktbild">
     </div>
   </div>
 </div>`;
@@ -2018,18 +2018,6 @@ ${(() => {
       </div>
     </div>
   </div>
-  ${eingebetteteDateien.length > 0 ? `
-  <div style="margin-top:5mm;">
-    <span class="lbl" style="display:block;margin-bottom:3mm;">${T.embFiles}</span>
-    <div style="display:flex;flex-wrap:wrap;gap:5mm;align-items:flex-start;">
-      ${eingebetteteDateien.filter(d => d.dataUrl).map(d => `
-        <div style="text-align:center;max-width:55mm;">
-          <img src="${d.dataUrl}" style="max-width:55mm;max-height:40mm;border:1px solid #eee;border-radius:4px;object-fit:contain;" alt="${d.original_name}">
-          <div style="font-size:6.5pt;color:#999;margin-top:2mm;word-break:break-all;">${d.original_name}</div>
-        </div>
-      `).join('')}
-    </div>
-  </div>` : ''}
   <div style="margin-top:5mm;">
     <span class="lbl" style="display:block;margin-bottom:3mm;">${T.s_pantone}</span>
     <div class="fg2">
@@ -2233,6 +2221,27 @@ table.ms tbody td.mp-val input{width:100%;border:none;text-align:center;font-siz
   ${T.refPoints}
 </div>
 </div>
+
+${(() => {
+  const brandingDateien = eingebetteteDateien.filter(d => d.tag !== '__produktbild__' && d.dataUrl);
+  if (brandingDateien.length === 0) return '';
+  return `
+<!-- ANHANG: Logo & Branding -->
+<div class="page">
+<div class="ph">
+  <div><h1 style="font-size:15pt;">Logo &amp; Branding</h1><div class="sub">${de ? 'Bereitgestellte Dateien — Anhang' : 'Provided Files — Appendix'}</div></div>
+  <div style="font-size:8pt;color:#999;text-align:right;">Anhang</div>
+</div>
+<div style="display:grid;grid-template-columns:${brandingDateien.length === 1 ? '1fr' : '1fr 1fr'};gap:10mm;">
+  ${brandingDateien.map(d => `
+    <div style="text-align:center;border:1px solid #eee;border-radius:6px;padding:5mm;">
+      <img src="${d.dataUrl}" style="max-width:100%;max-height:110mm;object-fit:contain;" alt="${d.original_name}">
+      <div style="font-size:7pt;color:#888;margin-top:3mm;word-break:break-all;">${d.original_name}</div>
+    </div>
+  `).join('')}
+</div>
+</div>`;
+})()}
 
 </body></html>`;
 }
