@@ -66,6 +66,7 @@ const EMPTY = {
   muster_mitStickerei: false, muster_bemerkung: '',
   zeitplan_sample: '', zeitplan_prod: '', zeitplan_schiff: '',
   pantone_garn1: '', pantone_garn2: '', pantone_paspel: '', pantone_grundfarbe: '',
+  preisKids: '', preisAdult: '',
 };
 
 const POSITIONEN = [
@@ -752,7 +753,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           </div>
           {/* Kinder-Tabelle */}
           {form.katKids && (
-            <div className="gv-qty-wrap" style={{ marginBottom: '0.5rem' }}>
+            <div className="gv-qty-wrap" style={{ marginBottom: '0.35rem' }}>
               <table className="gv-qty-table">
                 <thead>
                   <tr>
@@ -771,11 +772,22 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                   </tr>
                 </tbody>
               </table>
+              <div className="gv-qty-price-row">
+                <span className="gv-qty-price-label">Stückpreis Kinder</span>
+                <input className="gv-qty-price-input" type="number" min="0" step="0.01"
+                  value={form.preisKids} onChange={f('preisKids')} placeholder="0.00" />
+                <span className="gv-qty-price-unit">€</span>
+                {form.preisKids > 0 && totalFor('mengenKids') > 0 && (
+                  <span className="gv-qty-price-sum">
+                    = {(totalFor('mengenKids') * parseFloat(form.preisKids)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                  </span>
+                )}
+              </div>
             </div>
           )}
           {/* Erwachsene-Tabelle */}
           {form.katAdult && (
-            <div className="gv-qty-wrap">
+            <div className="gv-qty-wrap" style={{ marginBottom: '0.35rem' }}>
               <table className="gv-qty-table">
                 <thead>
                   <tr>
@@ -794,6 +806,29 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                   </tr>
                 </tbody>
               </table>
+              <div className="gv-qty-price-row">
+                <span className="gv-qty-price-label">Stückpreis Erwachsene</span>
+                <input className="gv-qty-price-input" type="number" min="0" step="0.01"
+                  value={form.preisAdult} onChange={f('preisAdult')} placeholder="0.00" />
+                <span className="gv-qty-price-unit">€</span>
+                {form.preisAdult > 0 && totalFor('mengenAdult') > 0 && (
+                  <span className="gv-qty-price-sum">
+                    = {(totalFor('mengenAdult') * parseFloat(form.preisAdult)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          {/* Gesamtpreis */}
+          {(form.preisKids > 0 || form.preisAdult > 0) && (
+            <div className="gv-qty-total-bar">
+              <span className="gv-qty-total-label">Gesamtpreis</span>
+              <span className="gv-qty-total-val">
+                {((totalFor('mengenKids') * parseFloat(form.preisKids || 0)) +
+                  (totalFor('mengenAdult') * parseFloat(form.preisAdult || 0)))
+                  .toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+              </span>
+              <span className="gv-qty-total-hint">{grandTotal()} Stück gesamt</span>
             </div>
           )}
         </div>
@@ -818,7 +853,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             {zeichnungSichtbar && (
               <img
                 className="gv-zeichnung-img"
-                src={`/gi-charts/modell-${form.model}.png`}
+                src={`/gi-charts/modell-${form.model}.jpg`}
                 alt={`Maßzeichnung Modell ${form.model}`}
               />
             )}
@@ -1637,7 +1672,7 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
   };
 
   const img128 = `${origin}/gi-charts/modell-128.jpg`; // unused
-  const img188 = `${origin}/gi-charts/modell-188.png`;
+  const img188 = `${origin}/gi-charts/modell-188.jpg`;
 
   const spez    = form.spezifikation || {};
   const stickereiPosFixed = (form.stickereiPos || []).map(fixUtf8);
