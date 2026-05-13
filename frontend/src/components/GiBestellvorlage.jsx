@@ -861,14 +861,22 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 
         {/* ── STICKEREI ── */}
         <div className="gv-section">
-          <div className="gv-section-title">Stickerei & Branding</div>
+          <div className="gv-section-title-row">
+            <span className="gv-section-title">Stickerei & Branding</span>
+            {form.stickereiPos.length > 0 && (
+              <span className="gv-stickerei-badge">{form.stickereiPos.length} Position{form.stickereiPos.length !== 1 ? 'en' : ''} aktiv</span>
+            )}
+          </div>
 
-          {/* Positions-Checkboxen mit inline file upload */}
+          {/* Gemeinsamer file-input */}
           <input ref={fileInputRef} type="file" style={{ display: 'none' }}
             accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
             onChange={uploadDatei} />
+
+          {/* Positionen — Jacke */}
+          <div className="gv-pos-cat-label">Jacke</div>
           <div className="gv-pos-grid">
-            {POSITIONEN.map(pos => {
+            {POSITIONEN.filter(p => !p.startsWith('Hosenbein')).map(pos => {
               const posDatei = dateien.find(d => d.tag === pos);
               const isActive = form.stickereiPos.includes(pos);
               const uploading = uploadingFile === pos;
@@ -895,8 +903,39 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             })}
           </div>
 
-          {/* Allgemeine Stickerei-Felder */}
-          <div className="gv-grid3" style={{ marginTop: '0.65rem' }}>
+          {/* Positionen — Hose */}
+          <div className="gv-pos-cat-label" style={{ marginTop: '0.55rem' }}>Hose</div>
+          <div className="gv-pos-grid">
+            {POSITIONEN.filter(p => p.startsWith('Hosenbein')).map(pos => {
+              const posDatei = dateien.find(d => d.tag === pos);
+              const isActive = form.stickereiPos.includes(pos);
+              const uploading = uploadingFile === pos;
+              return (
+                <div key={pos} className={`gv-pos-item ${isActive ? 'active' : ''}`}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', flex: 1, minWidth: 0 }}>
+                    <input type="checkbox" checked={isActive} onChange={() => togglePos(pos)} />
+                    <span style={{ flex: 1 }}>{pos}</span>
+                  </label>
+                  {isActive && vorlage?.vorlage_id && (
+                    posDatei ? (
+                      <span className="gv-pos-inline-file" title={posDatei.original_name}>
+                        📎 {posDatei.original_name.length > 14 ? posDatei.original_name.slice(0, 12) + '…' : posDatei.original_name}
+                        <button className="gv-pos-inline-del" onClick={() => deleteDatei(posDatei.datei_id)} title="Löschen">✕</button>
+                      </span>
+                    ) : (
+                      <button className="gv-pos-inline-upload" onClick={() => triggerUpload(pos)} disabled={!!uploadingFile}>
+                        {uploading ? '⏳' : '+ Datei'}
+                      </button>
+                    )
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Branding-Details */}
+          <div className="gv-stick-divider">Branding-Details</div>
+          <div className="gv-grid3">
             <div className="gv-field">
               <label className="gv-label">Schriftzug / Text</label>
               <input className="gv-input" value={form.stickereiSchriftzug} onChange={f('stickereiSchriftzug')} placeholder="z. B. Kampfkunstschule Schreiner · TDA" />
@@ -906,57 +945,55 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               <input className="gv-input" value={form.stickereiGarnfarben} onChange={f('stickereiGarnfarben')} />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Bemerkung / Referenz-Datei</label>
+              <label className="gv-label">Referenz-Datei</label>
               <input className="gv-input" value={form.stickereiBemerkung} onChange={f('stickereiBemerkung')} placeholder="z. B. TDA_logo_v2.dst" />
             </div>
           </div>
 
           {/* Pantone-Codes */}
-          <div className="gv-grid4" style={{ marginTop: '0.65rem' }}>
+          <div className="gv-stick-divider">Pantone-Codes</div>
+          <div className="gv-grid4">
             <div className="gv-field">
-              <label className="gv-label">Grundfarbe Pantone</label>
-              <input className="gv-input" value={form.pantone_grundfarbe} onChange={f('pantone_grundfarbe')} placeholder="z. B. Pantone White / NTR" />
+              <label className="gv-label">Grundfarbe</label>
+              <input className="gv-input" value={form.pantone_grundfarbe} onChange={f('pantone_grundfarbe')} placeholder="z. B. White / NTR" />
             </div>
             <div className="gv-field">
               <label className="gv-label">Garn-Pantone 1</label>
-              <input className="gv-input" value={form.pantone_garn1} onChange={f('pantone_garn1')} placeholder="z. B. Pantone 116 C – Gold" />
+              <input className="gv-input" value={form.pantone_garn1} onChange={f('pantone_garn1')} placeholder="z. B. 116 C – Gold" />
             </div>
             <div className="gv-field">
               <label className="gv-label">Garn-Pantone 2</label>
-              <input className="gv-input" value={form.pantone_garn2} onChange={f('pantone_garn2')} placeholder="z. B. Pantone Black C" />
+              <input className="gv-input" value={form.pantone_garn2} onChange={f('pantone_garn2')} placeholder="z. B. Black C" />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Paspel/Revers-Pantone</label>
-              <input className="gv-input" value={form.pantone_paspel} onChange={f('pantone_paspel')} placeholder="z. B. Pantone 116 C" />
+              <label className="gv-label">Paspel / Revers</label>
+              <input className="gv-input" value={form.pantone_paspel} onChange={f('pantone_paspel')} placeholder="z. B. 116 C" />
             </div>
           </div>
 
-
-          {/* Wäscheetikett Innen Kragen */}
-          <div className="gv-waetikett-block">
-            <div className="gv-pos-upload-head">Wäscheetikett (Innen Kragen)</div>
-            <div className="gv-waetikett-row">
-              <div className="gv-field" style={{ flex: 1 }}>
-                <label className="gv-label">Platzierung / Bemerkung</label>
-                <input className="gv-input" value={spez.waeschetikett || ''} onChange={fSpez('waeschetikett')}
-                  placeholder="z. B. Mitte Nacken, 2 cm unter Kragen" />
-              </div>
-              {vorlage?.vorlage_id ? (() => {
-                const wtDatei = dateien.find(d => d.tag === '__waetikett__');
-                const uploading = uploadingFile === '__waetikett__';
-                return wtDatei ? (
-                  <div className="gv-waetikett-file">
-                    <span title={wtDatei.original_name}>{wtDatei.original_name}</span>
-                    <button className="gv-pos-upload-del" onClick={() => deleteDatei(wtDatei.datei_id)}>✕</button>
-                  </div>
-                ) : (
-                  <button className="gv-pos-upload-btn" style={{ marginTop: '1.1rem' }}
-                    onClick={() => triggerUpload('__waetikett__')} disabled={!!uploadingFile}>
-                    {uploading ? 'Lädt…' : '+ Etikett-Datei'}
-                  </button>
-                );
-              })() : null}
+          {/* Wäscheetikett */}
+          <div className="gv-stick-divider">Wäscheetikett (Innen Kragen)</div>
+          <div className="gv-waetikett-row">
+            <div className="gv-field" style={{ flex: 1 }}>
+              <label className="gv-label">Platzierung / Bemerkung</label>
+              <input className="gv-input" value={spez.waeschetikett || ''} onChange={fSpez('waeschetikett')}
+                placeholder="z. B. Mitte Nacken, 2 cm unter Kragen" />
             </div>
+            {vorlage?.vorlage_id ? (() => {
+              const wtDatei = dateien.find(d => d.tag === '__waetikett__');
+              const uploading = uploadingFile === '__waetikett__';
+              return wtDatei ? (
+                <div className="gv-waetikett-file">
+                  <span title={wtDatei.original_name}>{wtDatei.original_name}</span>
+                  <button className="gv-pos-upload-del" onClick={() => deleteDatei(wtDatei.datei_id)}>✕</button>
+                </div>
+              ) : (
+                <button className="gv-pos-upload-btn" style={{ marginTop: '1.1rem' }}
+                  onClick={() => triggerUpload('__waetikett__')} disabled={!!uploadingFile}>
+                  {uploading ? 'Lädt…' : '+ Etikett-Datei'}
+                </button>
+              );
+            })() : null}
           </div>
         </div>
 
