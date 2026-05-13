@@ -571,7 +571,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           <div className="gv-section-title">Modell</div>
           <div className="gv-model-row">
             <div className="gv-model-card active" style={{ cursor: 'default', maxWidth: '200px' }}>
-              <div className="gv-model-name">Modell 188</div>
+              <div className="gv-model-name">Modell Shoryu</div>
               <div className="gv-model-detail">8 Größen · 130–200 cm</div>
               <div className="gv-model-hint">inkl. Kindergröße 130 cm</div>
             </div>
@@ -1842,7 +1842,7 @@ ${(() => {
   <div style="display:flex;gap:6mm;align-items:flex-start;">
     <div style="flex:1;min-width:0;">
       <div class="mc-row" style="align-items:flex-start;margin-bottom:4mm;">
-        <div class="mc sel"><div class="mc-n">Modell 188</div><div class="mc-d">8 Größen · 130–200 cm</div></div>
+        <div class="mc sel"><div class="mc-n">Modell Shoryu</div><div class="mc-d">8 Größen · 130–200 cm</div></div>
       </div>
       <div class="f"><span class="lbl">${T.modellbez}</span><input class="val" type="text" value="${form.modelName}"></div>
       <div class="f" style="margin-top:3mm;"><span class="lbl">${T.artikelNr}</span><input class="val" type="text" value="${form.artikelNr}"></div>
@@ -2159,9 +2159,9 @@ ${form.bemerkungen ? `
 </div>
 <div class="chart-block">
   <div class="chart-label" style="border-color:var(--gold);">
-    Modell 188 &nbsp;·&nbsp; 8 Größen (130–200 cm)
+    Modell Shoryu &nbsp;·&nbsp; 8 Größen (130–200 cm)
   </div>
-  <img src="${img188}" alt="Größentabelle Modell 188">
+  <img src="${img188}" alt="Größentabelle Modell Shoryu">
 </div>
 <div style="font-size:7.5pt;color:#999;text-align:center;margin:3mm 0;font-style:italic;">
   ${T.refPoints}
