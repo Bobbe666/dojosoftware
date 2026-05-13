@@ -890,6 +890,53 @@ select.gv-input { cursor: pointer; }
   margin-top: 0.5rem;
 }
 
+/* PDF OVERLAY */
+.gv-pdf-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  background: #444;
+}
+.gv-pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #1a1a2e;
+  border-bottom: 2px solid rgba(212,175,55,0.4);
+  flex-shrink: 0;
+}
+.gv-pdf-print-btn {
+  padding: 0.45rem 1.2rem;
+  background: rgba(212,175,55,0.9);
+  color: #1a1a2e;
+  border: none;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.gv-pdf-print-btn:hover { background: rgba(212,175,55,1); }
+.gv-pdf-close-btn {
+  padding: 0.45rem 1rem;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gv-pdf-close-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
+.gv-pdf-frame {
+  flex: 1;
+  border: none;
+  width: 100%;
+}
+
 /* WÄHRUNGS-TOGGLE */
 .gv-currency-toggle {
   display: flex;

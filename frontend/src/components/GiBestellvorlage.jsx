@@ -116,6 +116,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [editingBestellungId, setEditingBestellungId] = useState(initEditingId);
   const [dojoAuswahl, setDojoAuswahl] = useState(overrideDojoId || null); // für Super-Admin
   const [dojoAuswahlModal, setDojoAuswahlModal] = useState(false);
+  const [pdfHtml, setPdfHtml] = useState(null);
+  const iframeRef = useRef(null);
   const fileInputRef = useRef(null);
   const pendingLangRef = useRef('de');
   const [zeichnungSichtbar, setZeichnungSichtbar] = useState(true);
@@ -316,15 +318,13 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const totalFor   = (row) => Object.values(form[row]).reduce((s, v) => s + (parseInt(v) || 0), 0);
   const grandTotal = () => totalFor('mengenKids') + totalFor('mengenAdult');
 
-  const generatePdf = async (forcedDojoId, preOpenedWin) => {
+  const generatePdf = async (forcedDojoId) => {
     const lang = pendingLangRef.current || 'de';
     const djId = forcedDojoId || dojoAuswahl || vorlage?.dojo_id || dojoId;
     if (!djId && dojos && dojos.length > 1) {
-      if (preOpenedWin) preOpenedWin.close();
       setDojoAuswahlModal(true);
       return;
     }
-    const win = preOpenedWin || null;
     setGenerating(true);
     try {
       const origin = window.location.origin;
@@ -367,27 +367,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         } catch {}
       }
       const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId, lang);
-      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-      const url  = URL.createObjectURL(blob);
-      if (win && !win.closed) {
-        // Event-Listener vom Parent setzen — kein inline-JS im PDF-HTML nötig
-        win.addEventListener('load', function onLoad() {
-          win.removeEventListener('load', onLoad);
-          try {
-            const btn = win.document.getElementById('gv-print-btn');
-            if (btn) btn.addEventListener('click', () => win.print());
-          } catch {}
-          setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 5000);
-        });
-        win.location.href = url;
-      } else {
-        // Fallback: als HTML herunterladen
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `bestellvorlage_${form.name || 'vorlage'}.html`;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-      }
+      setPdfHtml(html);
     } finally { setGenerating(false); }
   };
 
@@ -489,6 +469,26 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   return (
     <div className="gv-page">
 
+      {/* PDF OVERLAY */}
+      {pdfHtml && (
+        <div className="gv-pdf-overlay">
+          <div className="gv-pdf-toolbar">
+            <button className="gv-pdf-print-btn" onClick={() => iframeRef.current?.contentWindow?.print()}>
+              🖨 PDF drucken
+            </button>
+            <button className="gv-pdf-close-btn" onClick={() => setPdfHtml(null)}>
+              ✕ Schließen
+            </button>
+          </div>
+          <iframe
+            ref={iframeRef}
+            srcDoc={pdfHtml}
+            className="gv-pdf-frame"
+            title="Bestellvorlage PDF"
+          />
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="gv-header">
         <div>
@@ -520,11 +520,11 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               {saving ? 'Speichert…' : 'Einstellungen speichern'}
             </button>
           )}
-          <button className="gv-btn-pdf" onClick={() => { pendingLangRef.current = 'de'; const w = window.open('', '_blank'); generatePdf(undefined, w); }} disabled={generating}>
+          <button className="gv-btn-pdf" onClick={() => { pendingLangRef.current = 'de'; generatePdf(); }} disabled={generating}>
             {generating ? 'Erstelle PDF…' : editingBestellungId ? 'PDF aktualisieren & drucken' : 'PDF generieren & drucken'}
           </button>
           <button className="gv-btn-pdf" style={{ background: 'rgba(212,175,55,0.15)', fontSize: '0.82rem' }}
-            onClick={() => { pendingLangRef.current = 'en'; const w = window.open('', '_blank'); generatePdf(undefined, w); }} disabled={generating}>
+            onClick={() => { pendingLangRef.current = 'en'; generatePdf(); }} disabled={generating}>
             PDF (EN)
           </button>
         </div>
@@ -1330,7 +1330,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             <div className="gv-lt-modal-footer">
               <button className="gv-btn-back" onClick={() => setDojoAuswahlModal(false)}>Abbrechen</button>
               <button className="gv-btn-pdf" disabled={!dojoAuswahl}
-                onClick={() => { setDojoAuswahlModal(false); const w = window.open('', '_blank'); generatePdf(dojoAuswahl, w); }}>
+                onClick={() => { setDojoAuswahlModal(false); generatePdf(dojoAuswahl); }}>
                 PDF generieren
               </button>
             </div>
@@ -2230,6 +2230,5 @@ table.ms tbody td.mp-val input{width:100%;border:none;text-align:center;font-siz
 </div>
 </div>
 
-<button class="print-btn" id="gv-print-btn">${T.printBtn}</button>
 </body></html>`;
 }
