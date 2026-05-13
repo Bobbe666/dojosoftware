@@ -1891,7 +1891,7 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 .ibox{background:#fffbf0;border:1px solid #e8d080;border-radius:4px;padding:3mm 4mm;font-size:8pt;color:#7a5f00;margin:3mm 0;}
 @media print{
   body{background:white;}
-  .page{margin:0;padding:14mm 18mm;box-shadow:none;min-height:0;page-break-after:auto;break-after:auto;}
+  .page{margin:0;width:210mm;height:297mm;overflow:hidden;padding:14mm 18mm;box-sizing:border-box;box-shadow:none;display:block;}
   .page+.page{page-break-before:always;break-before:page;}
   input,select,textarea{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .print-btn{display:none!important;}
