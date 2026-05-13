@@ -11,7 +11,7 @@ const SIZES = {
 const MASS_SIZES = [100, 110, 120, 130, 140, 150, 160, 165, 170, 175, 180, 185, 190, 195, 200, 205, 210];
 
 const EMPTY_MENGEN = (model) =>
-  SIZES[model].reduce((acc, s) => ({ ...acc, [s]: '' }), {});
+  (SIZES[model] || SIZES['188']).reduce((acc, s) => ({ ...acc, [s]: '' }), {});
 
 const EMPTY_SPEZ = {
   material: [], materialText: '', webart: [],
@@ -245,8 +245,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     });
 
   const switchModel = (model) => {
-    const oldSizes = SIZES[form.model];
-    const newSizes = SIZES[model];
+    const oldSizes = SIZES[form.model] || SIZES['188'];
+    const newSizes = SIZES[model] || SIZES['188'];
     const migrate  = (old) => {
       const next = {};
       newSizes.forEach(s => { next[s] = oldSizes.includes(s) ? (old[s] || '') : ''; });
@@ -422,7 +422,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     finally { setSaving(false); }
   };
 
-  const sizes      = SIZES[form.model];
+  const sizes      = SIZES[form.model] || SIZES['188'];
   const selectedLt = lieferanten.find(l => String(l.lieferant_id) === form.lieferantId);
   const spez       = form.spezifikation || {};
 
@@ -1570,7 +1570,7 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
     mpSizes:     de ? 'Größen (cm-Größe in dieser Spalte)' : 'Sizes (cm size in this column)',
   };
 
-  const sizes = SIZES[form.model];
+  const sizes = SIZES[form.model] || SIZES['188'];
   const img128 = `${origin}/gi-charts/modell-128.jpg`;
   const img188 = `${origin}/gi-charts/modell-188.jpg`;
 
