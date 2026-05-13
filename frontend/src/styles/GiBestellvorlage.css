@@ -913,6 +913,21 @@ select.gv-input { cursor: pointer; }
 .gv-mt-input:focus { background: rgba(212,175,55,0.07); }
 .gv-mt-input::placeholder { color: rgba(255,255,255,0.15); font-size: 0.75rem; }
 
+/* Stickereimaße Trennzeile */
+.gv-mt-separator td {
+  background: rgba(212,175,55,0.12);
+  color: rgba(212,175,55,0.9);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 4px 8px;
+  border-top: 2px solid rgba(212,175,55,0.3);
+}
+.gv-mt-logo-kids td { background: rgba(100,180,255,0.04); }
+.gv-mt-logo-adult td { background: rgba(212,175,55,0.04); }
+.gv-mt-outofrange { opacity: 0.2; pointer-events: none; }
+
 /* MUSTER CONDITIONAL BLOCK */
 .gv-muster-details {
   padding: 0.6rem;

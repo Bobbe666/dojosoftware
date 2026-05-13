@@ -12,6 +12,8 @@ const SIZES_ADULT = [160, 170, 175, 180, 185, 190, 195, 200, 205, 210];
 
 // Maßtabelle: vollständige Größenrange unabhängig vom Modell
 const MASS_SIZES = [100, 110, 120, 130, 140, 150, 160, 165, 170, 175, 180, 185, 190, 195, 200, 205, 210];
+const LOGO_SIZES_KIDS  = MASS_SIZES.filter(s => s <= 160);
+const LOGO_SIZES_ADULT = MASS_SIZES.filter(s => s >= 160);
 
 const EMPTY_MENGEN = (model) =>
   (SIZES[model] || SIZES['188']).reduce((acc, s) => ({ ...acc, [s]: '' }), {});
@@ -97,6 +99,16 @@ const MASSPUNKTE = [
   { key: 'bB', num: 'B', label: 'Bundbreite ½',         hint: 'halbe Bundweite flachgelegt' },
   { key: 'sM', num: 'C', label: 'Saumbreite ½',         hint: 'halbe Saumweite flachgelegt' },
   { key: 'iL', num: 'D', label: 'Innenbeinlänge',       hint: 'Schritt bis Hosenende' },
+];
+
+// Stickereimaße — getrennt Kinder (100–160) und Erwachsene (160–210)
+const MASSPUNKTE_LOGO = [
+  { key: 'lBK', num: 'E', label: 'Logo Breite (Kinder)',      hint: 'max. Breite Stickerei auf Kids-Gi', forKids: true },
+  { key: 'lHK', num: 'F', label: 'Logo Höhe (Kinder)',        hint: 'max. Höhe Stickerei auf Kids-Gi',  forKids: true },
+  { key: 'tHK', num: 'G', label: 'Schrifthöhe (Kinder)',      hint: 'Höhe der Schriftzeichen auf Kids-Gi', forKids: true },
+  { key: 'lBA', num: 'H', label: 'Logo Breite (Erwachsene)',  hint: 'max. Breite Stickerei auf Adult-Gi', forKids: false },
+  { key: 'lHA', num: 'I', label: 'Logo Höhe (Erwachsene)',    hint: 'max. Höhe Stickerei auf Adult-Gi',  forKids: false },
+  { key: 'tHA', num: 'J', label: 'Schrifthöhe (Erwachsene)',  hint: 'Höhe der Schriftzeichen auf Adult-Gi', forKids: false },
 ];
 
 export default function GiBestellvorlage({ artikel = null, vorlage = null, onClose = null, initEditingId = null, initFormdata = null, overrideDojoId = null }) {
@@ -302,6 +314,32 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       for (const mp of MASSPUNKTE) {
         const ref = parseFloat(refRow[mp.key]);
         if (ref > 0) row[mp.key] = String(Math.round(ref * ratio * 10) / 10);
+      }
+      newTab[s] = row;
+    }
+    setForm(p => ({ ...p, spezifikation: { ...p.spezifikation, massTabelle: newTab } }));
+  };
+
+  // Stickereimaße proportional hochrechnen — separat für Kinder und Erwachsene
+  const berechneProportionalLogo = (forKids) => {
+    const sizes = forKids ? LOGO_SIZES_KIDS : LOGO_SIZES_ADULT;
+    const keys  = MASSPUNKTE_LOGO.filter(mp => mp.forKids === forKids).map(mp => mp.key);
+    const massTab = form.spezifikation?.massTabelle || {};
+    let refSize = null, maxFilled = 0;
+    for (const s of sizes) {
+      const filled = keys.filter(k => parseFloat(massTab[s]?.[k]) > 0).length;
+      if (filled > maxFilled) { maxFilled = filled; refSize = s; }
+    }
+    if (!refSize || maxFilled === 0) return;
+    const refRow = massTab[refSize] || {};
+    const newTab = { ...massTab };
+    for (const s of sizes) {
+      if (s === refSize) continue;
+      const ratio = s / refSize;
+      const row = { ...(newTab[s] || {}) };
+      for (const k of keys) {
+        const ref = parseFloat(refRow[k]);
+        if (ref > 0) row[k] = String(Math.round(ref * ratio * 10) / 10);
       }
       newTab[s] = row;
     }
@@ -919,8 +957,16 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               {zeichnungSichtbar ? 'Zeichnung ▲' : 'Zeichnung zeigen ▼'}
             </button>
             <button className="gv-btn-proportional" onClick={berechneProportional}
-              title="Alle Größen proportional zur Referenzgröße berechnen">
-              ↕ Hochrechnen
+              title="Körpermaße proportional zur Referenzgröße berechnen">
+              ↕ Maße hochrechnen
+            </button>
+            <button className="gv-btn-proportional" onClick={() => berechneProportionalLogo(true)}
+              title="Stickereimaße Kinder proportional hochrechnen (Größen 100–160)">
+              ↕ Logo Kinder
+            </button>
+            <button className="gv-btn-proportional" onClick={() => berechneProportionalLogo(false)}
+              title="Stickereimaße Erwachsene proportional hochrechnen (Größen 160–210)">
+              ↕ Logo Erwachsene
             </button>
             {vorlage?.vorlage_id && (
               <button className="gv-btn-save" onClick={saveVorlage} disabled={saving} style={{ flexShrink: 0 }}>
@@ -963,16 +1009,40 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                       {MASS_SIZES.map(s => (
                         <td key={s}>
                           <input
-                            type="number"
-                            min="0"
-                            step="0.5"
-                            className="gv-mt-input"
+                            type="number" min="0" step="0.5" className="gv-mt-input"
                             value={spez.massTabelle?.[s]?.[mp.key] || ''}
                             onChange={e => setMassTabelle(s, mp.key, e.target.value)}
                             placeholder="—"
                           />
                         </td>
                       ))}
+                    </tr>
+                  ))}
+                  <tr className="gv-mt-separator">
+                    <td colSpan={MASS_SIZES.length + 1}>Stickereimaße / Embroidery Dimensions (cm)</td>
+                  </tr>
+                  {MASSPUNKTE_LOGO.map(mp => (
+                    <tr key={mp.key} className={mp.forKids ? 'gv-mt-logo-kids' : 'gv-mt-logo-adult'}>
+                      <td className="gv-mt-label">
+                        <span className="gv-mt-num">{mp.num}</span>
+                        <span className="gv-mt-name">{mp.label}</span>
+                        <span className="gv-mt-hint">{mp.hint}</span>
+                      </td>
+                      {MASS_SIZES.map(s => {
+                        const inRange = mp.forKids ? s <= 160 : s >= 160;
+                        return (
+                          <td key={s} className={!inRange ? 'gv-mt-outofrange' : ''}>
+                            {inRange ? (
+                              <input
+                                type="number" min="0" step="0.1" className="gv-mt-input"
+                                value={spez.massTabelle?.[s]?.[mp.key] || ''}
+                                onChange={e => setMassTabelle(s, mp.key, e.target.value)}
+                                placeholder="—"
+                              />
+                            ) : ''}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>
@@ -2266,6 +2336,24 @@ table.ms tbody td.mp-val input{width:100%;border:none;text-align:center;font-siz
         <td class="mp-cell">
           <span class="mp-num">${mp.num}</span><span class="mp-name">${mp.label}</span>
           <span class="mp-hint">${MP_EN[mp.key] || ''}</span>
+        </td>${cells}
+      </tr>`;
+    }).join('')}
+    <tr><td colspan="${MASS_SIZES.length + 1}" style="background:#1a1a2e;color:#c9a227;font-size:7pt;font-weight:700;text-transform:uppercase;letter-spacing:.12em;padding:4px 6px;border-top:2px solid #c9a227;">Stickereimaße / Embroidery Dimensions (cm)</td></tr>
+    ${MASSPUNKTE_LOGO.map(mp => {
+      const cells = MASS_SIZES.map(s => {
+        const inRange = mp.forKids ? s <= 160 : s >= 160;
+        if (!inRange) return `<td style="background:#f9f9f9;"></td>`;
+        const val = (form.spezifikation?.massTabelle?.[s]?.[mp.key]) || '';
+        const bg = mp.forKids ? '#eef6ff' : '#fffbf0';
+        return `<td class="mp-val" style="background:${bg};"><input type="number" value="${val}" style="width:100%;border:none;text-align:center;font-size:9pt;background:transparent;padding:2px 0;"></td>`;
+      }).join('');
+      const logoEN = { lBK:'Logo width (kids)', lHK:'Logo height (kids)', tHK:'Text height (kids)',
+                       lBA:'Logo width (adults)', lHA:'Logo height (adults)', tHA:'Text height (adults)' };
+      return `<tr>
+        <td class="mp-cell" style="background:${mp.forKids ? '#eef6ff' : '#fffbf0'};">
+          <span class="mp-num">${mp.num}</span><span class="mp-name">${mp.label}</span>
+          <span class="mp-hint">${logoEN[mp.key] || ''}</span>
         </td>${cells}
       </tr>`;
     }).join('')}
