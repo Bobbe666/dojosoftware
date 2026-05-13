@@ -306,18 +306,57 @@ select.gv-input { cursor: pointer; }
   margin-bottom: 0.5rem;
 }
 
+/* INFO BUTTON TOOLTIP */
+.gv-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: rgba(212,175,55,0.12);
+  color: rgba(212,175,55,0.65);
+  font-size: 0.62rem;
+  cursor: help;
+  margin-left: 0.25rem;
+  position: relative;
+  vertical-align: middle;
+  user-select: none;
+  flex-shrink: 0;
+}
+.gv-info-btn::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26,26,46,0.99);
+  color: rgba(255,255,255,0.85);
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.71rem;
+  width: max-content;
+  max-width: 220px;
+  white-space: normal;
+  line-height: 1.4;
+  border: 1px solid rgba(212,175,55,0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 200;
+}
+.gv-info-btn:hover::after { opacity: 1; }
+
 .gv-pos-item {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.4rem 0.65rem;
+  padding: 0.3rem 0.55rem;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 6px;
-  cursor: pointer;
   font-size: 0.82rem;
   color: rgba(255,255,255,0.55);
   transition: all 0.15s;
-  user-select: none;
 }
 .gv-pos-item:hover { border-color: rgba(255,255,255,0.14); }
 .gv-pos-item.active {
@@ -326,6 +365,44 @@ select.gv-input { cursor: pointer; }
   color: rgba(255,255,255,0.82);
 }
 .gv-pos-item input { display: none; }
+
+.gv-pos-inline-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.69rem;
+  color: rgba(212,175,55,0.75);
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+.gv-pos-inline-del {
+  background: none;
+  border: none;
+  color: rgba(255,100,100,0.6);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.gv-pos-inline-del:hover { color: rgba(255,100,100,1); }
+.gv-pos-inline-upload {
+  background: rgba(212,175,55,0.08);
+  border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 4px;
+  color: rgba(212,175,55,0.7);
+  font-size: 0.69rem;
+  cursor: pointer;
+  padding: 0.1rem 0.4rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.gv-pos-inline-upload:hover { background: rgba(212,175,55,0.15); color: rgba(212,175,55,1); }
+.gv-pos-inline-upload:disabled { opacity: 0.5; cursor: default; }
 
 /* LIEFERANT NEU-BUTTON */
 .gv-btn-lt-new {

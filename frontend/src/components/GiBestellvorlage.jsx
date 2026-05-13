@@ -7,11 +7,19 @@ const SIZES = {
   '188': [130, 140, 150, 160, 170, 180, 190, 200],
 };
 
+const SIZES_KIDS  = [100, 110, 120, 130, 140, 150, 160];
+const SIZES_ADULT = [160, 170, 175, 180, 185, 190, 195, 200, 205, 210];
+
 // Maßtabelle: vollständige Größenrange unabhängig vom Modell
 const MASS_SIZES = [100, 110, 120, 130, 140, 150, 160, 165, 170, 175, 180, 185, 190, 195, 200, 205, 210];
 
 const EMPTY_MENGEN = (model) =>
   (SIZES[model] || SIZES['188']).reduce((acc, s) => ({ ...acc, [s]: '' }), {});
+
+const EMPTY_MENGEN_KIDS  = () => SIZES_KIDS.reduce((acc, s)  => ({ ...acc, [s]: '' }), {});
+const EMPTY_MENGEN_ADULT = () => SIZES_ADULT.reduce((acc, s) => ({ ...acc, [s]: '' }), {});
+
+const fixUtf8 = (s) => { try { return decodeURIComponent(escape(s)); } catch { return s; } };
 
 const EMPTY_SPEZ = {
   material: [], materialText: '', webart: [],
@@ -49,7 +57,7 @@ const EMPTY = {
   bestelldatum: new Date().toLocaleDateString('de-DE'),
   lieferdatum: '', projekt: '', farbe: 'Weiß', wkf: false,
   katKids: true, katAdult: true,
-  mengenKids: EMPTY_MENGEN('188'), mengenAdult: EMPTY_MENGEN('188'),
+  mengenKids: EMPTY_MENGEN_KIDS(), mengenAdult: EMPTY_MENGEN_ADULT(),
   stickereiPos: [], stickereiSchriftzug: '',
   stickereiGarnfarben: 'Gold, Schwarz', stickereiBemerkung: '',
   bemerkungen: '', spezifikation: { ...EMPTY_SPEZ },
@@ -78,14 +86,16 @@ const VERSTAERKUNGEN  = ['Seitenabschluss', 'Gürtelschlaufen', 'Knotenbereich',
 const VERP_TYPEN      = ['Gefaltet', 'Auf Hänger'];
 
 const MASSPUNKTE = [
-  { key: 'rL', num: '①', label: 'Rückenlänge Jacke',  hint: 'Mitte Nacken bis Jackenende' },
-  { key: 'rB', num: '②', label: 'Rückenbreite',        hint: 'zwischen den Schulterblättern' },
-  { key: 'sw', num: '③', label: 'Spannweite gesamt',   hint: 'Ärmel li + Rücken + Ärmel re' },
-  { key: 'aL', num: '④', label: 'Ärmellänge',          hint: 'Schulter außen bis Ärmelsaum' },
-  { key: 'sB', num: '⑤', label: 'Schulterbreite',      hint: 'Schulter außen – außen' },
-  { key: 'hL', num: 'Ⓐ', label: 'Hosenlänge',          hint: 'Bund bis Hosenende' },
-  { key: 'bB', num: 'Ⓑ', label: 'Bundbreite ½',        hint: 'halbe Bundweite flachgelegt' },
-  { key: 'sM', num: 'Ⓒ', label: 'Saumbreite ½',        hint: 'halbe Saumweite flachgelegt' },
+  { key: 'rL', num: '1', label: 'Rückenlänge Jacke',   hint: 'Mitte Nacken bis Jackenende' },
+  { key: 'rB', num: '2', label: 'Rückenbreite',         hint: 'zwischen den Schulterblättern' },
+  { key: 'sw', num: '3', label: 'Spannweite gesamt',    hint: 'Ärmel li + Rücken + Ärmel re' },
+  { key: 'aL', num: '4', label: 'Ärmellänge',           hint: 'Schulter außen bis Ärmelsaum' },
+  { key: 'sB', num: '5', label: 'Schulterbreite',       hint: 'Schulter außen – außen' },
+  { key: 'rv', num: '6', label: 'Revers-/Schosslänge',  hint: 'diagonale Länge des Revers' },
+  { key: 'hL', num: 'A', label: 'Hosenlänge',           hint: 'Bund bis Hosenende' },
+  { key: 'bB', num: 'B', label: 'Bundbreite ½',         hint: 'halbe Bundweite flachgelegt' },
+  { key: 'sM', num: 'C', label: 'Saumbreite ½',         hint: 'halbe Saumweite flachgelegt' },
+  { key: 'iL', num: 'D', label: 'Innenbeinlänge',       hint: 'Schritt bis Hosenende' },
 ];
 
 export default function GiBestellvorlage({ artikel = null, vorlage = null, onClose = null, initEditingId = null, initFormdata = null, overrideDojoId = null }) {
@@ -110,16 +120,14 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [zeichnungSichtbar, setZeichnungSichtbar] = useState(true);
   const uploadTagRef = useRef(null);
 
-  const fixUtf8 = (s) => { try { return decodeURIComponent(escape(s)); } catch { return s; } };
-
   const buildInitialForm = () => {
     if (initFormdata) {
       return {
         ...EMPTY,
         ...initFormdata,
         spezifikation: { ...EMPTY_SPEZ, ...(initFormdata.spezifikation || {}) },
-        mengenKids:  initFormdata.mengenKids  ? { ...EMPTY_MENGEN(initFormdata.model || '188'), ...initFormdata.mengenKids }  : EMPTY_MENGEN(initFormdata.model || '188'),
-        mengenAdult: initFormdata.mengenAdult ? { ...EMPTY_MENGEN(initFormdata.model || '188'), ...initFormdata.mengenAdult } : EMPTY_MENGEN(initFormdata.model || '188'),
+        mengenKids:  initFormdata.mengenKids  ? { ...EMPTY_MENGEN_KIDS(), ...initFormdata.mengenKids }  : EMPTY_MENGEN_KIDS(),
+        mengenAdult: initFormdata.mengenAdult ? { ...EMPTY_MENGEN_ADULT(), ...initFormdata.mengenAdult } : EMPTY_MENGEN_ADULT(),
       };
     }
     if (vorlage) {
@@ -145,8 +153,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         stickereiGarnfarben: vorlage.stickerei_farben || 'Gold, Schwarz',
         stickereiBemerkung: vorlage.stickerei_datei || '',
         bemerkungen: vorlage.bemerkungen || '',
-        mengenKids:  spez.mengenKids  ? { ...EMPTY_MENGEN(vorlage.modell || '188'), ...spez.mengenKids  } : EMPTY_MENGEN(vorlage.modell || '188'),
-        mengenAdult: spez.mengenAdult ? { ...EMPTY_MENGEN(vorlage.modell || '188'), ...spez.mengenAdult } : EMPTY_MENGEN(vorlage.modell || '188'),
+        mengenKids:  spez.mengenKids  ? { ...EMPTY_MENGEN_KIDS(), ...spez.mengenKids  } : EMPTY_MENGEN_KIDS(),
+        mengenAdult: spez.mengenAdult ? { ...EMPTY_MENGEN_ADULT(), ...spez.mengenAdult } : EMPTY_MENGEN_ADULT(),
         spezifikation: spez,
       };
     }
@@ -170,6 +178,17 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   }, [dojoId]);
 
   useEffect(() => { loadLieferanten(vorlage?.dojo_id || undefined); }, [loadLieferanten, vorlage?.dojo_id]);
+
+  useEffect(() => {
+    if (lieferanten.length > 0 && form.lieferantId && !form.lieferantFreitext) {
+      const lt = lieferanten.find(l => String(l.lieferant_id) === String(form.lieferantId));
+      if (lt) setForm(p => ({
+        ...p,
+        lieferantFreitext: lt.firmenname,
+        ansprechpartnerLieferant: p.ansprechpartnerLieferant || lt.ansprechpartner || '',
+      }));
+    }
+  }, [lieferanten]); // eslint-disable-line
 
   useEffect(() => {
     if (vorlage?.vorlage_id && dojoId) {
@@ -386,8 +405,9 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         ...EMPTY,
         ...fd,
         spezifikation: { ...EMPTY_SPEZ, ...(fd.spezifikation || {}) },
-        mengenKids:  fd.mengenKids  ? { ...EMPTY_MENGEN(fd.model || '188'), ...fd.mengenKids }  : EMPTY_MENGEN(fd.model || '188'),
-        mengenAdult: fd.mengenAdult ? { ...EMPTY_MENGEN(fd.model || '188'), ...fd.mengenAdult } : EMPTY_MENGEN(fd.model || '188'),
+        stickereiPos: Array.isArray(fd.stickereiPos) ? fd.stickereiPos.map(fixUtf8) : [],
+        mengenKids:  fd.mengenKids  ? { ...EMPTY_MENGEN_KIDS(),  ...fd.mengenKids  } : EMPTY_MENGEN_KIDS(),
+        mengenAdult: fd.mengenAdult ? { ...EMPTY_MENGEN_ADULT(), ...fd.mengenAdult } : EMPTY_MENGEN_ADULT(),
       });
       setEditingBestellungId(b.bestellung_id);
       setHistorieSichtbar(false);
@@ -422,7 +442,6 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     finally { setSaving(false); }
   };
 
-  const sizes      = SIZES[form.model] || SIZES['188'];
   const selectedLt = lieferanten.find(l => String(l.lieferant_id) === form.lieferantId);
   const spez       = form.spezifikation || {};
 
@@ -446,6 +465,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         );
       })}
     </div>
+  );
+
+  const InfoBtn = ({ text }) => (
+    <span className="gv-info-btn" data-tip={text}>ⓘ</span>
   );
 
   return (
@@ -602,17 +625,6 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               <label className="gv-label">Gewünschtes Lieferdatum</label>
               <input className="gv-input" value={form.lieferdatum} onChange={f('lieferdatum')} placeholder="TT.MM.JJJJ" />
             </div>
-            {/* Zeile 3: Projekt + WKF */}
-            <div className="gv-field gv-col-3">
-              <label className="gv-label">Projekt / Verwendungszweck</label>
-              <input className="gv-input" value={form.projekt} onChange={f('projekt')} placeholder="z. B. Vereinsausstattung 2026" />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0.1rem' }}>
-              <label className="gv-check-row" style={{ margin: 0 }}>
-                <input type="checkbox" checked={form.wkf} onChange={fb('wkf')} />
-                WKF-zugelassen
-              </label>
-            </div>
           </div>
           {selectedLt && (
             <div className="gv-lt-info">
@@ -631,21 +643,21 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           <div className="gv-section-title">Produktspezifikation</div>
           <div className="gv-grid4">
             <div className="gv-field">
-              <label className="gv-label">Material</label>
+              <label className="gv-label">Material <InfoBtn text="Grundmaterial des Gi. 100% Baumwolle = traditionell, Canvas = robuster. Exakte Zusammensetzung im Textfeld angeben." /></label>
               <SpezChip options={MATERIALIEN} field="material" />
               <input className="gv-input" style={{ marginTop: '0.4rem' }}
                 value={spez.materialText || ''} onChange={fSpez('materialText')} placeholder="Exakte Zusammensetzung" />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Webart</label>
+              <label className="gv-label">Webart <InfoBtn text="Single Weave: leicht & luftig, ideal für Kumite. Double Weave: schwer & stabil. Kata: verstärkte Schultern. Kumite/Leicht: max. Beweglichkeit." /></label>
               <SpezChip options={WEBARTEN} field="webart" />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Grammatur Kinder</label>
+              <label className="gv-label">Grammatur Kinder <InfoBtn text="Empfohlen 8–10 oz für Kinder: leichter, flexibler, geringerer Verschleiß." /></label>
               <SpezChip options={GRAMMATUREN} field="grammaturKids" />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Grammatur Erwachsene</label>
+              <label className="gv-label">Grammatur Erwachsene <InfoBtn text="Empfohlen 10–14 oz für Erwachsene: robuster, langlebiger. 14 oz für Wettkampf/WKF." /></label>
               <SpezChip options={GRAMMATUREN} field="grammaturAdult" />
             </div>
           </div>
@@ -738,37 +750,52 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             </div>
             <span className="gv-total-display">Gesamt: <strong>{grandTotal()} Stück</strong></span>
           </div>
-          <div className="gv-qty-wrap">
-            <table className="gv-qty-table">
-              <thead>
-                <tr>
-                  <th className="gv-qt-rh">Kategorie</th>
-                  {sizes.map(s => <th key={s}>{s}</th>)}
-                  <th className="gv-qt-sum">Σ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {form.katKids && (
+          {/* Kinder-Tabelle */}
+          {form.katKids && (
+            <div className="gv-qty-wrap" style={{ marginBottom: '0.5rem' }}>
+              <table className="gv-qty-table">
+                <thead>
+                  <tr>
+                    <th className="gv-qt-rh">Kinder / Kids</th>
+                    {SIZES_KIDS.map(s => <th key={s}>{s}</th>)}
+                    <th className="gv-qt-sum">Σ</th>
+                  </tr>
+                </thead>
+                <tbody>
                   <tr>
                     <td className="gv-qt-rl">Kinder</td>
-                    {sizes.map(s => (
-                      <td key={s}><input type="number" min="0" value={form.mengenKids[s]} onChange={e => setMenge('mengenKids', s, e.target.value)} /></td>
+                    {SIZES_KIDS.map(s => (
+                      <td key={s}><input type="number" min="0" value={form.mengenKids[s] || ''} onChange={e => setMenge('mengenKids', s, e.target.value)} /></td>
                     ))}
                     <td className="gv-qt-sum-cell">{totalFor('mengenKids')}</td>
                   </tr>
-                )}
-                {form.katAdult && (
+                </tbody>
+              </table>
+            </div>
+          )}
+          {/* Erwachsene-Tabelle */}
+          {form.katAdult && (
+            <div className="gv-qty-wrap">
+              <table className="gv-qty-table">
+                <thead>
+                  <tr>
+                    <th className="gv-qt-rh">Erwachsene</th>
+                    {SIZES_ADULT.map(s => <th key={s}>{s}</th>)}
+                    <th className="gv-qt-sum">Σ</th>
+                  </tr>
+                </thead>
+                <tbody>
                   <tr>
                     <td className="gv-qt-rl">Erwachsene</td>
-                    {sizes.map(s => (
-                      <td key={s}><input type="number" min="0" value={form.mengenAdult[s]} onChange={e => setMenge('mengenAdult', s, e.target.value)} /></td>
+                    {SIZES_ADULT.map(s => (
+                      <td key={s}><input type="number" min="0" value={form.mengenAdult[s] || ''} onChange={e => setMenge('mengenAdult', s, e.target.value)} /></td>
                     ))}
                     <td className="gv-qt-sum-cell">{totalFor('mengenAdult')}</td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* ── MAßSPEZIFIKATION ── */}
@@ -785,13 +812,13 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             )}
           </div>
           <div style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,0.3)', marginBottom: '0.65rem' }}>
-            Alle Angaben in cm · Masspunkte-Referenz in der Zeichnung · ①=Rückenlänge · ②=Rückenbreite · ③=Spannweite · ④=Ärmellänge · ⑤=Schulterbreite · Ⓐ=Hosenlänge · Ⓑ=Bundbreite(½) · Ⓒ=Saumbreite(½)
+            Alle Angaben in cm · 1=Rückenlänge · 2=Rückenbreite · 3=Spannweite · 4=Ärmellänge · 5=Schulterbreite · 6=Revers · A=Hosenlänge · B=Bundbreite(½) · C=Saumbreite(½) · D=Innenbeinlänge
           </div>
           <div className="gv-mass-layout">
             {zeichnungSichtbar && (
               <img
                 className="gv-zeichnung-img"
-                src={`/gi-charts/modell-${form.model}.jpg`}
+                src={`/gi-charts/modell-${form.model}.png`}
                 alt={`Maßzeichnung Modell ${form.model}`}
               />
             )}
@@ -836,14 +863,36 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         <div className="gv-section">
           <div className="gv-section-title">Stickerei & Branding</div>
 
-          {/* Positions-Checkboxen */}
+          {/* Positions-Checkboxen mit inline file upload */}
+          <input ref={fileInputRef} type="file" style={{ display: 'none' }}
+            accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
+            onChange={uploadDatei} />
           <div className="gv-pos-grid">
-            {POSITIONEN.map(pos => (
-              <label key={pos} className={`gv-pos-item ${form.stickereiPos.includes(pos) ? 'active' : ''}`}>
-                <input type="checkbox" checked={form.stickereiPos.includes(pos)} onChange={() => togglePos(pos)} />
-                {pos}
-              </label>
-            ))}
+            {POSITIONEN.map(pos => {
+              const posDatei = dateien.find(d => d.tag === pos);
+              const isActive = form.stickereiPos.includes(pos);
+              const uploading = uploadingFile === pos;
+              return (
+                <div key={pos} className={`gv-pos-item ${isActive ? 'active' : ''}`}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', flex: 1, minWidth: 0 }}>
+                    <input type="checkbox" checked={isActive} onChange={() => togglePos(pos)} />
+                    <span style={{ flex: 1 }}>{pos}</span>
+                  </label>
+                  {isActive && vorlage?.vorlage_id && (
+                    posDatei ? (
+                      <span className="gv-pos-inline-file" title={posDatei.original_name}>
+                        📎 {posDatei.original_name.length > 14 ? posDatei.original_name.slice(0, 12) + '…' : posDatei.original_name}
+                        <button className="gv-pos-inline-del" onClick={() => deleteDatei(posDatei.datei_id)} title="Löschen">✕</button>
+                      </span>
+                    ) : (
+                      <button className="gv-pos-inline-upload" onClick={() => triggerUpload(pos)} disabled={!!uploadingFile}>
+                        {uploading ? '⏳' : '+ Datei'}
+                      </button>
+                    )
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Allgemeine Stickerei-Felder */}
@@ -882,39 +931,6 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             </div>
           </div>
 
-          {/* Datei je Position */}
-          {form.stickereiPos.length > 0 && (
-            <div className="gv-pos-upload-block">
-              <div className="gv-pos-upload-head">Datei je Position</div>
-              {/* Gemeinsamer file-input für alle Positions-Uploads */}
-              <input ref={fileInputRef} type="file" style={{ display: 'none' }}
-                accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
-                onChange={uploadDatei} />
-              {form.stickereiPos.map(pos => {
-                const posDatei = dateien.find(d => d.tag === pos);
-                const uploading = uploadingFile === pos;
-                return (
-                  <div key={pos} className="gv-pos-upload-row">
-                    <span className="gv-pos-upload-label">{pos}</span>
-                    {posDatei ? (
-                      <>
-                        <span className="gv-pos-upload-file" title={posDatei.original_name}>
-                          {posDatei.original_name}
-                        </span>
-                        <button className="gv-pos-upload-del" onClick={() => deleteDatei(posDatei.datei_id)} title="Löschen">✕</button>
-                      </>
-                    ) : vorlage?.vorlage_id ? (
-                      <button className="gv-pos-upload-btn" onClick={() => triggerUpload(pos)} disabled={!!uploadingFile}>
-                        {uploading ? 'Lädt…' : '+ Datei hochladen'}
-                      </button>
-                    ) : (
-                      <span className="gv-pos-upload-hint">erst Vorlage speichern</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
 
           {/* Wäscheetikett Innen Kragen */}
           <div className="gv-waetikett-block">
@@ -949,12 +965,6 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           <div className="gv-section-title">Logos &amp; Allgemeine Dateien</div>
           {vorlage?.vorlage_id ? (
             <>
-              {/* Gemeinsamer file-input wenn kein Stickerei-Pos ausgewählt (dann ist er oben) */}
-              {form.stickereiPos.length === 0 && (
-                <input ref={fileInputRef} type="file" style={{ display: 'none' }}
-                  accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
-                  onChange={uploadDatei} />
-              )}
               <div className="gv-upload-zone" onClick={() => triggerUpload(null)}>
                 {uploadingFile === true
                   ? <span className="gv-upload-hint">Wird hochgeladen…</span>
@@ -999,15 +1009,15 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           <div className="gv-section-title">Naht &amp; Verarbeitung</div>
           <div className="gv-grid4">
             <div className="gv-field">
-              <label className="gv-label">Stiche/cm</label>
+              <label className="gv-label">Stiche/cm <InfoBtn text="Standard: 5 Stiche/cm. Mehr Stiche = dichter Nahtbild, höhere Reißfestigkeit." /></label>
               <input className="gv-input" type="number" min="0" value={spez.stiche_cm || ''} onChange={fSpez('stiche_cm')} placeholder="z. B. 5" />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Gürtelschlaufen Anzahl</label>
+              <label className="gv-label">Gürtelschlaufen Anzahl <InfoBtn text="Standard: 7 Schlaufen. WKF/Kata-Stile: oft 5 Schlaufen. Hosenbund je nach Stil." /></label>
               <input className="gv-input" type="number" min="0" value={spez.gurtschlaufen_anzahl || ''} onChange={fSpez('gurtschlaufen_anzahl')} placeholder="z. B. 7" />
             </div>
             <div className="gv-field">
-              <label className="gv-label">Gürtelschlaufen Breite cm</label>
+              <label className="gv-label">Gürtelschlaufen Breite cm <InfoBtn text="Empfohlen 3,5–4 cm Breite. Muss zur Gürtelbreite passen." /></label>
               <input className="gv-input" value={spez.gurtschlaufen_breite || ''} onChange={fSpez('gurtschlaufen_breite')} placeholder="z. B. 4 cm" />
             </div>
             <div className="gv-field">
@@ -1016,7 +1026,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             </div>
           </div>
           <div className="gv-field" style={{ marginTop: '0.65rem' }}>
-            <label className="gv-label">Verstärkungspunkte</label>
+            <label className="gv-label">Verstärkungspunkte <InfoBtn text="Kritische Belastungsstellen. Kragen-Ansatz und Seitenabschluss sind Mindestanforderung." /></label>
             <SpezChip options={VERSTAERKUNGEN} field="verstaerkungen" />
           </div>
         </div>
@@ -1122,6 +1132,25 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             <label className="gv-label">Verpackungs-Bemerkung</label>
             <input className="gv-input" value={spez.verp_bemerkung || ''} onChange={fSpez('verp_bemerkung')} placeholder="z. B. Karton max. 20 kg" />
           </div>
+          {vorlage?.vorlage_id && (() => {
+            const verpDatei = dateien.find(d => d.tag === '__verpackung__');
+            const uploading = uploadingFile === '__verpackung__';
+            return (
+              <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span className="gv-label" style={{ fontSize: '0.73rem' }}>Referenz-Datei (z. B. Verpackungszeichnung):</span>
+                {verpDatei ? (
+                  <span className="gv-pos-inline-file" title={verpDatei.original_name}>
+                    📎 {verpDatei.original_name}
+                    <button className="gv-pos-inline-del" onClick={() => deleteDatei(verpDatei.datei_id)}>✕</button>
+                  </span>
+                ) : (
+                  <button className="gv-pos-upload-btn" onClick={() => triggerUpload('__verpackung__')} disabled={!!uploadingFile}>
+                    {uploading ? 'Lädt…' : '+ Datei hochladen'}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* ── PFLEGEKENNZEICHNUNG & LABEL ── */}
@@ -1559,8 +1588,8 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
     s_verpBem:    de ? 'Verpackungs-Bemerkung' : 'Packaging notes',
     // Misc
     printBtn:    de ? '🖨 PDF drucken' : '🖨 Print PDF',
-    refPoints:   de ? 'Masspunkte: 1=Rückenlänge Jacke · 2=Rückenbreite · 3=Spannweite gesamt · 4=Ärmellänge · 5=Schulterbreite · A=Hosenlänge · B=Bundbreite (½) · C=Saumbreite (½)'
-                    : 'Reference points: 1=Jacket back length · 2=Back width · 3=Total wingspan · 4=Sleeve length · 5=Shoulder width · A=Trouser length · B=Waistband width (½) · C=Hem width (½)',
+    refPoints:   de ? 'Masspunkte: 1=Rückenlänge · 2=Rückenbreite · 3=Spannweite · 4=Ärmellänge · 5=Schulterbreite · 6=Revers · A=Hosenlänge · B=Bundbreite(½) · C=Saumbreite(½) · D=Innenbeinlänge'
+                    : 'Reference points: 1=Back length · 2=Back width · 3=Wingspan · 4=Sleeve length · 5=Shoulder width · 6=Lapel · A=Trouser length · B=Waistband(½) · C=Hem(½) · D=Inseam',
     page:        (n, t) => de ? `Seite ${n} / ${t}` : `Page ${n} / ${t}`,
     // Mass spec
     s10:         de ? 'Maßspezifikation (in cm)' : 'Measurement Specification (cm)',
@@ -1570,11 +1599,13 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
     mpSizes:     de ? 'Größen (cm-Größe in dieser Spalte)' : 'Sizes (cm size in this column)',
   };
 
-  const sizes = SIZES[form.model] || SIZES['188'];
-  const img128 = `${origin}/gi-charts/modell-128.jpg`;
-  const img188 = `${origin}/gi-charts/modell-188.jpg`;
+  const img128 = `${origin}/gi-charts/modell-128.jpg`; // unused
+  const img188 = `${origin}/gi-charts/modell-188.png`;
 
   const spez    = form.spezifikation || {};
+  const stickereiPosFixed = (form.stickereiPos || []).map(fixUtf8);
+  const posChecked = (pos) => stickereiPosFixed.includes(pos) ? 'checked' : '';
+
   const matIn   = (v) => (spez.material      || []).includes(v) ? 'checked' : '';
   const webIn   = (v) => (spez.webart        || []).includes(v) ? 'checked' : '';
   const gramKIn = (v) => (spez.grammaturKids  || spez.grammatur || []).includes(v) ? 'checked' : '';
@@ -1584,20 +1615,23 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
   const posLIn  = (v) => (spez.labelPosition || []).includes(v) ? 'checked' : '';
 
   const checked    = (val) => val ? 'checked' : '';
-  const posChecked = (pos) => form.stickereiPos.includes(pos) ? 'checked' : '';
 
-  const qtyRow = (row, label) => {
-    const isKids = row === 'kids';
-    if ((isKids && !form.katKids) || (!isKids && !form.katAdult)) return '';
-    const vals  = isKids ? form.mengenKids : form.mengenAdult;
-    const total = Object.values(vals).reduce((s, v) => s + (parseInt(v) || 0), 0);
-    const cells = sizes.map(s => `<td><input type="number" value="${parseInt(vals[s]) || ''}" style="width:100%;border:none;text-align:center;font-size:10pt;padding:3px 0;background:transparent;"></td>`).join('');
-    return `<tr><td class="rl">${label}</td>${cells}<td class="sm" style="font-weight:700;background:#f0f0f0;">${total}</td></tr>`;
-  };
+  const kidsTotal  = Object.values(form.mengenKids).reduce((s,v)=>s+(parseInt(v)||0),0);
+  const adultTotal = Object.values(form.mengenAdult).reduce((s,v)=>s+(parseInt(v)||0),0);
+  const grandTotal = kidsTotal + adultTotal;
 
-  const grandTotal = Object.values(form.mengenKids).reduce((s,v)=>s+(parseInt(v)||0),0)
-                   + Object.values(form.mengenAdult).reduce((s,v)=>s+(parseInt(v)||0),0);
-  const thCells        = sizes.map(s => `<th>${s}</th>`).join('');
+  const kidsRow = !form.katKids ? '' : `
+  <table class="qt" style="margin-bottom:4mm;">
+    <thead><tr><th class="rh">${T.kids}</th>${SIZES_KIDS.map(s=>`<th>${s}</th>`).join('')}<th style="background:#2d3d2d;min-width:36px;">Σ</th></tr></thead>
+    <tbody><tr><td class="rl">${T.kids}</td>${SIZES_KIDS.map(s=>`<td><input type="number" value="${parseInt(form.mengenKids[s])||''}" style="width:100%;border:none;text-align:center;font-size:10pt;padding:3px 0;background:transparent;"></td>`).join('')}<td class="sm" style="font-weight:700;background:#f0f0f0;">${kidsTotal}</td></tr></tbody>
+  </table>`;
+
+  const adultRow = !form.katAdult ? '' : `
+  <table class="qt">
+    <thead><tr><th class="rh">${T.adults}</th>${SIZES_ADULT.map(s=>`<th>${s}</th>`).join('')}<th style="background:#2d3d2d;min-width:36px;">Σ</th></tr></thead>
+    <tbody><tr><td class="rl">${T.adults}</td>${SIZES_ADULT.map(s=>`<td><input type="number" value="${parseInt(form.mengenAdult[s])||''}" style="width:100%;border:none;text-align:center;font-size:10pt;padding:3px 0;background:transparent;"></td>`).join('')}<td class="sm" style="font-weight:700;background:#f0f0f0;">${adultTotal}</td></tr></tbody>
+  </table>`;
+
   const selectedLtInfo = form.lieferantFreitext || '—';
 
   return `<!DOCTYPE html>
@@ -1692,7 +1726,6 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
     <div class="f"><span class="lbl">${T.apLieferant}</span><input class="val" type="text" value="${form.ansprechpartnerLieferant}"></div>
     <div class="f"><span class="lbl">${T.bestelldat}</span><input class="val" type="text" value="${form.bestelldatum}"></div>
     <div class="f"><span class="lbl">${T.lieferdat}</span><input class="val" type="text" value="${form.lieferdatum}"></div>
-    <div class="f"><span class="lbl">${T.projekt}</span><input class="val" type="text" value="${form.projekt}"></div>
     <div class="f"><span class="lbl">${T.farbe}</span><input class="val" type="text" value="${form.farbe}"></div>
   </div>
 </div>
@@ -1781,15 +1814,8 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
       <input type="checkbox" ${checked(form.katAdult)}> ${T.adults}
     </label>
   </div>
-  <div class="qt-wrap">
-    <table class="qt">
-      <thead><tr><th class="rh">${T.catSize}</th>${thCells}<th style="background:#2d3d2d;min-width:36px;">Σ</th></tr></thead>
-      <tbody>${qtyRow('kids', T.kids)}${qtyRow('adult', T.adults)}</tbody>
-      <tfoot><tr><td class="rl">${T.total}</td>
-        <td colspan="${sizes.length}" style="text-align:right;padding-right:8px;">${grandTotal} ${T.pcsTotal}</td>
-        <td>${grandTotal}</td>
-      </tr></tfoot>
-    </table>
+  <div class="qt-wrap">${kidsRow}${adultRow}
+    <div style="text-align:right;font-size:9pt;color:#666;margin-top:3mm;">${grandTotal} ${T.pcsTotal}</div>
   </div>
 </div>
 
