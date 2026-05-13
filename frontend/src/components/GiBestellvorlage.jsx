@@ -538,6 +538,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           )}
         </div>
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexShrink: 0 }}>
+          <span style={{ fontSize: '0.7rem', opacity: 0.45, fontFamily: 'monospace', flexShrink: 0 }}>v13.05-B</span>
           {saveMsg && (
             <span style={{ fontSize: '0.8rem', color: saveMsg.includes('Fehler') ? '#f87171' : '#86efac' }}>
               {saveMsg}
