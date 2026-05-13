@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import '../styles/GiBestellvorlage.css';
@@ -117,8 +116,6 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [editingBestellungId, setEditingBestellungId] = useState(initEditingId);
   const [dojoAuswahl, setDojoAuswahl] = useState(overrideDojoId || null); // für Super-Admin
   const [dojoAuswahlModal, setDojoAuswahlModal] = useState(false);
-  const [pdfHtml, setPdfHtml] = useState(null);
-  const iframeRef = useRef(null);
   const fileInputRef = useRef(null);
   const pendingLangRef = useRef('de');
   const [zeichnungSichtbar, setZeichnungSichtbar] = useState(true);
@@ -205,18 +202,6 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     }
   }, [vorlage?.vorlage_id, dojoId]);
 
-  // Cmd+P / Ctrl+P abfangen wenn PDF-Overlay offen → Iframe drucken statt Hauptseite
-  useEffect(() => {
-    if (!pdfHtml) return;
-    const onKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
-        e.preventDefault();
-        iframeRef.current?.contentWindow?.print();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [pdfHtml]);
 
   const loadBestellungen = async () => {
     const djId = vorlage?.dojo_id || dojoId;
@@ -356,28 +341,38 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const totalFor   = (row) => Object.values(form[row]).reduce((s, v) => s + (parseInt(v) || 0), 0);
   const grandTotal = () => totalFor('mengenKids') + totalFor('mengenAdult');
 
-  const generatePdf = async (forcedDojoId) => {
-    const lang = pendingLangRef.current || 'de';
-    const djId = forcedDojoId || dojoAuswahl || vorlage?.dojo_id || dojoId;
+  // Öffnet Fenster SYNCHRON (kein Popup-Blocker), füllt es dann async mit HTML
+  const handlePdfClick = (lang = 'de') => {
+    const djId = dojoAuswahl || vorlage?.dojo_id || dojoId;
     if (!djId && dojos && dojos.length > 1) {
+      pendingLangRef.current = lang;
       setDojoAuswahlModal(true);
       return;
     }
+    // Fenster JETZT synchron öffnen (User-Geste → kein Popup-Blocker)
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Popup wurde blockiert – bitte Popup-Blocker für diese Seite deaktivieren.');
+      return;
+    }
+    win.document.write('<html><body style="font-family:sans-serif;padding:2rem;color:#333;"><p>PDF wird erstellt…</p></body></html>');
+    generatePdf(lang, win);
+  };
+
+  const generatePdf = async (lang = 'de', printWin = null, forcedDojoId = null) => {
+    const djId = forcedDojoId || dojoAuswahl || vorlage?.dojo_id || dojoId;
     setGenerating(true);
     try {
       const origin = window.location.origin;
-
-      // Bestellung in DB speichern oder überschreiben
-      const effectiveDjId = djId;
       let neueBestellungId = editingBestellungId;
-      if (effectiveDjId) {
+      if (djId) {
         const payload = {
           vorlage_id:     vorlage?.vorlage_id || null,
           lieferant_id:   form.lieferantId ? Number(form.lieferantId) : null,
           lieferant_name: form.lieferantFreitext || null,
           bestelldatum:   form.bestelldatum || null,
           lieferdatum:    form.lieferdatum  || null,
-          formdata:       { ...form, spezifikation: form.spezifikation, mengenKids: form.mengenKids, mengenAdult: form.mengenAdult },
+          formdata:       { ...form },
         };
         try {
           if (editingBestellungId) {
@@ -404,14 +399,26 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           }));
         } catch {}
       }
-      try {
-        const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId, lang);
-        setPdfHtml(html);
-      } catch (pdfErr) {
-        console.error('buildPdfHtml Fehler:', pdfErr);
-        alert('PDF-Erstellung fehlgeschlagen: ' + pdfErr.message);
+
+      const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId, lang);
+
+      if (printWin) {
+        // HTML ins bereits geöffnete Fenster schreiben
+        printWin.document.open();
+        printWin.document.write(html);
+        printWin.document.close();
+        // Drucken nach kurzem Delay damit Bilder laden können
+        setTimeout(() => {
+          try { printWin.focus(); printWin.print(); } catch {}
+        }, 800);
       }
-    } finally { setGenerating(false); }
+    } catch (err) {
+      console.error('PDF-Fehler:', err);
+      if (printWin) printWin.close();
+      alert('PDF-Erstellung fehlgeschlagen: ' + err.message);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const saveLieferant = async () => {
@@ -513,36 +520,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     <div className="gv-page">
 
       {/* PDF OVERLAY */}
-      {pdfHtml && createPortal(
-        <div className="gv-pdf-overlay">
-          <div className="gv-pdf-toolbar">
-            <button className="gv-pdf-print-btn" onClick={() => iframeRef.current?.contentWindow?.print()}>
-              🖨 PDF drucken
-            </button>
-            <span className="gv-pdf-shortcut">oder ⌘P / Ctrl+P</span>
-            <button className="gv-pdf-close-btn" onClick={() => setPdfHtml(null)}>
-              ✕ Schließen
-            </button>
-          </div>
-          <iframe
-            ref={iframeRef}
-            srcDoc={pdfHtml}
-            className="gv-pdf-frame"
-            title="Bestellvorlage PDF"
-            onLoad={() => {
-              try {
-                iframeRef.current?.contentDocument?.addEventListener('keydown', (e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
-                    e.preventDefault();
-                    iframeRef.current?.contentWindow?.print();
-                  }
-                });
-              } catch {}
-            }}
-          />
-        </div>,
-        document.body
-      )}
+      {/* PDF-Overlay entfernt — Druck läuft über neues Fenster */}
 
       {/* HEADER */}
       <div className="gv-header">
@@ -575,11 +553,11 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               {saving ? 'Speichert…' : 'Einstellungen speichern'}
             </button>
           )}
-          <button className="gv-btn-pdf" onClick={() => { pendingLangRef.current = 'de'; generatePdf(); }} disabled={generating}>
+          <button className="gv-btn-pdf" onClick={() => handlePdfClick('de')} disabled={generating}>
             {generating ? 'Erstelle PDF…' : editingBestellungId ? 'PDF aktualisieren & drucken' : 'PDF generieren & drucken'}
           </button>
           <button className="gv-btn-pdf" style={{ background: 'rgba(212,175,55,0.15)', fontSize: '0.82rem' }}
-            onClick={() => { pendingLangRef.current = 'en'; generatePdf(); }} disabled={generating}>
+            onClick={() => handlePdfClick('en')} disabled={generating}>
             PDF (EN)
           </button>
         </div>
@@ -1398,7 +1376,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             <div className="gv-lt-modal-footer">
               <button className="gv-btn-back" onClick={() => setDojoAuswahlModal(false)}>Abbrechen</button>
               <button className="gv-btn-pdf" disabled={!dojoAuswahl}
-                onClick={() => { setDojoAuswahlModal(false); generatePdf(dojoAuswahl); }}>
+                onClick={() => { setDojoAuswahlModal(false); handlePdfClick('de'); }}>
                 PDF generieren
               </button>
             </div>
