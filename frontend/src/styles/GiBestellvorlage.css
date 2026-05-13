@@ -852,8 +852,11 @@ select.gv-input { cursor: pointer; }
 }
 .gv-mt-mp {
   text-align: left !important;
-  min-width: 160px;
+  min-width: 130px;
   padding-left: 0.5rem !important;
+}
+.gv-mass-table thead th:not(.gv-mt-mp) {
+  min-width: 46px;
 }
 
 .gv-mass-table tbody tr:nth-child(odd) { background: rgba(255,255,255,0.015); }
@@ -867,8 +870,10 @@ select.gv-input { cursor: pointer; }
 
 .gv-mt-label {
   text-align: left !important;
-  padding: 0.3rem 0.5rem !important;
+  padding: 0.3rem 0.4rem !important;
   vertical-align: top !important;
+  min-width: 130px;
+  max-width: 130px;
 }
 .gv-mt-num {
   font-weight: 900;
@@ -894,11 +899,11 @@ select.gv-input { cursor: pointer; }
   background: transparent;
   color: rgba(255,255,255,0.82);
   text-align: center;
-  font-size: 0.85rem;
-  padding: 0.35rem 0.1rem;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.15rem;
   outline: none;
   -moz-appearance: textfield;
-  min-width: 30px;
+  min-width: 44px;
 }
 .gv-mt-input::-webkit-inner-spin-button,
 .gv-mt-input::-webkit-outer-spin-button { opacity: 0; }
