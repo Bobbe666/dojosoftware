@@ -8,6 +8,9 @@ const SIZES = {
   '188': [130, 140, 150, 160, 170, 180, 190, 200],
 };
 
+// Maßtabelle: vollständige Größenrange unabhängig vom Modell
+const MASS_SIZES = [100, 110, 120, 130, 140, 150, 160, 165, 170, 175, 180, 185, 190, 195, 200, 205, 210];
+
 const EMPTY_MENGEN = (model) =>
   SIZES[model].reduce((acc, s) => ({ ...acc, [s]: '' }), {});
 
@@ -235,17 +238,12 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       newSizes.forEach(s => { next[s] = oldSizes.includes(s) ? (old[s] || '') : ''; });
       return next;
     };
-    setForm(p => {
-      const oldMass = p.spezifikation?.massTabelle || {};
-      const newMass = {};
-      newSizes.forEach(s => { newMass[s] = oldSizes.includes(s) ? (oldMass[s] || {}) : {}; });
-      return {
-        ...p, model,
-        mengenKids:  migrate(p.mengenKids),
-        mengenAdult: migrate(p.mengenAdult),
-        spezifikation: { ...p.spezifikation, massTabelle: newMass },
-      };
-    });
+    setForm(p => ({
+      ...p, model,
+      mengenKids:  migrate(p.mengenKids),
+      mengenAdult: migrate(p.mengenAdult),
+      // massTabelle bleibt erhalten — nutzt MASS_SIZES unabhängig vom Modell
+    }));
   };
 
   const onLieferantChange = (e) => {
@@ -716,7 +714,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                 <thead>
                   <tr>
                     <th className="gv-mt-mp">Masspunkt</th>
-                    {sizes.map(s => <th key={s}>{s}</th>)}
+                    {MASS_SIZES.map(s => <th key={s}>{s}</th>)}
                   </tr>
                 </thead>
                 <tbody>
@@ -727,7 +725,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                         <span className="gv-mt-name">{mp.label}</span>
                         <span className="gv-mt-hint">{mp.hint}</span>
                       </td>
-                      {sizes.map(s => (
+                      {MASS_SIZES.map(s => (
                         <td key={s}>
                           <input
                             type="number"
@@ -1679,12 +1677,12 @@ table.ms tbody td.mp-val input{width:100%;border:none;text-align:center;font-siz
   <thead>
     <tr>
       <th class="mp-hd">${T.mpLabel}</th>
-      ${sizes.map(s => `<th>${s}</th>`).join('')}
+      ${MASS_SIZES.map(s => `<th>${s}</th>`).join('')}
     </tr>
   </thead>
   <tbody>
     ${MASSPUNKTE.map(mp => {
-      const cells = sizes.map(s => {
+      const cells = MASS_SIZES.map(s => {
         const val = (form.spezifikation?.massTabelle?.[s]?.[mp.key]) || '';
         return `<td class="mp-val"><input type="number" value="${val}" style="width:100%;border:none;text-align:center;font-size:9pt;background:transparent;padding:2px 0;"></td>`;
       }).join('');
