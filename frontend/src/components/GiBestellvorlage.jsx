@@ -1894,8 +1894,8 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 .ibox{background:#fffbf0;border:1px solid #e8d080;border-radius:4px;padding:3mm 4mm;font-size:8pt;color:#7a5f00;margin:3mm 0;}
 @media print{
   body{background:white;}
-  .page{margin:0;padding:14mm 18mm;box-shadow:none;min-height:0;page-break-after:always;break-after:page;}
-  .page:last-child{page-break-after:avoid;break-after:avoid;}
+  .page{margin:0;padding:14mm 18mm;box-shadow:none;min-height:0;page-break-before:always;break-before:page;page-break-after:auto;break-after:auto;}
+  .page-first{page-break-before:auto!important;break-before:auto!important;}
   input,select,textarea{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .print-btn{display:none!important;}
   input[type=number]::-webkit-inner-spin-button,
@@ -1903,9 +1903,10 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 }
 .print-btn{position:fixed;bottom:20px;right:20px;background:var(--gold);color:var(--dark);border:none;padding:12px 28px;font-size:12pt;font-weight:800;border-radius:6px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35);z-index:999;}
 </style></head><body>
+<button class="print-btn" onclick="window.print()">${T.printBtn}</button>
 
 <!-- SEITE 1 -->
-<div class="page">
+<div class="page page-first">
 <div class="ph">
   <div><h1>${T.h1}</h1><div class="sub">${T.sub}</div></div>
   <div class="ph-r">
@@ -2297,5 +2298,6 @@ ${(() => {
 </div>`;
 })()}
 
+<script>window.addEventListener('load',function(){setTimeout(function(){window.print();},1200);});</script>
 </body></html>`;
 }
