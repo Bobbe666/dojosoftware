@@ -582,30 +582,26 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                 <input className="gv-input" value={form.artikelNr} onChange={f('artikelNr')} placeholder="z. B. 0270" />
               </div>
             </div>
-            {/* Produktbild — kompakte Vorschau neben dem Modell-Card */}
+            {/* Produktbild — statisch aus public, optional per Upload überschreibbar */}
             {(() => {
-              const produktDateien = dateien.filter(d => d.tag === '__produktbild__');
+              const custom = dateien.find(d => d.tag === '__produktbild__');
+              const imgSrc = custom ? custom.pfad : '/gi-charts/produkt-vorschau.jpg';
               const uploading = uploadingFile === '__produktbild__';
-              if (produktDateien.length > 0) {
-                return (
-                  <div className="gv-produkt-preview-wrap">
-                    {produktDateien.map(d => (
-                      <div key={d.datei_id} className="gv-produkt-img-box">
-                        <img src={d.pfad} alt="Produktbild" className="gv-produkt-img" />
-                        <button className="gv-produkt-del" onClick={() => deleteDatei(d.datei_id)} title="Entfernen">×</button>
-                      </div>
-                    ))}
-                    {vorlage?.vorlage_id && (
-                      <button className="gv-produkt-add-btn" onClick={() => triggerUpload('__produktbild__')} disabled={!!uploadingFile} title="Weiteres Bild">+</button>
+              return (
+                <div className="gv-produkt-preview-wrap">
+                  <div className="gv-produkt-img-box">
+                    <img src={imgSrc} alt="Produktbild" className="gv-produkt-img" />
+                    {custom && (
+                      <button className="gv-produkt-del" onClick={() => deleteDatei(custom.datei_id)} title="Entfernen">×</button>
                     )}
                   </div>
-                );
-              }
-              return vorlage?.vorlage_id ? (
-                <div className="gv-produkt-empty" onClick={() => !uploadingFile && triggerUpload('__produktbild__')}>
-                  {uploading ? 'Lädt…' : '+ Produktbild'}
+                  {vorlage?.vorlage_id && (
+                    <button className="gv-produkt-add-btn" onClick={() => !uploading && triggerUpload('__produktbild__')} disabled={!!uploadingFile} title={custom ? 'Bild ersetzen' : 'Eigenes Bild hochladen'}>
+                      {uploading ? '…' : '↑'}
+                    </button>
+                  )}
                 </div>
-              ) : null;
+              );
             })()}
           </div>
         </div>
@@ -1816,13 +1812,14 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 
 ${(() => {
   const pb = eingebetteteDateien.find(d => d.tag === '__produktbild__' && d.dataUrl);
-  return pb ? `
+  const pbSrc = pb ? pb.dataUrl : `${origin}/gi-charts/produkt-vorschau.jpg`;
+  return `
 <div class="sec">
   <div class="st"><span class="n">✦</span> Produktbild</div>
   <div style="text-align:center;padding:3mm 0;">
-    <img src="${pb.dataUrl}" style="max-height:135mm;max-width:100%;border-radius:6px;border:1px solid #ddd;object-fit:contain;" alt="Produktbild">
+    <img src="${pbSrc}" style="max-height:135mm;max-width:100%;border-radius:6px;border:1px solid #ddd;object-fit:contain;" alt="Produktbild">
   </div>
-</div>` : '';
+</div>`;
 })()}
 
 <div class="sec">
