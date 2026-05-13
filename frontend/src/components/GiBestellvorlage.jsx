@@ -1811,12 +1811,19 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
       <div class="f"><span class="lbl">${T.modellbez}</span><input class="val" type="text" value="${form.modelName}"></div>
       <div class="f" style="margin-top:3mm;"><span class="lbl">${T.artikelNr}</span><input class="val" type="text" value="${form.artikelNr}"></div>
     </div>
-    ${(() => {
-      const pb = eingebetteteDateien.find(d => d.tag === '__produktbild__' && d.dataUrl);
-      return pb ? `<div style="flex-shrink:0;"><img src="${pb.dataUrl}" style="max-height:52mm;max-width:60mm;border-radius:4px;border:1px solid #eee;object-fit:contain;" alt="Produktbild"></div>` : '';
-    })()}
   </div>
 </div>
+
+${(() => {
+  const pb = eingebetteteDateien.find(d => d.tag === '__produktbild__' && d.dataUrl);
+  return pb ? `
+<div class="sec">
+  <div class="st"><span class="n">✦</span> Produktbild</div>
+  <div style="text-align:center;padding:3mm 0;">
+    <img src="${pb.dataUrl}" style="max-height:135mm;max-width:100%;border-radius:6px;border:1px solid #ddd;object-fit:contain;" alt="Produktbild">
+  </div>
+</div>` : '';
+})()}
 
 <div class="sec">
   <div class="st"><span class="n">2</span> ${T.s2}</div>

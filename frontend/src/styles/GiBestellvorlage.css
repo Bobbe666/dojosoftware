@@ -902,12 +902,16 @@ select.gv-input { cursor: pointer; }
   display: inline-flex;
 }
 .gv-produkt-img {
-  max-height: 140px;
-  max-width: 180px;
-  border-radius: 7px;
+  max-height: 420px;
+  max-width: 100%;
+  width: 100%;
+  border-radius: 9px;
   border: 1px solid rgba(212,175,55,0.25);
   object-fit: contain;
   background: rgba(255,255,255,0.03);
+}
+.gv-produkt-img-box {
+  width: 100%;
 }
 .gv-produkt-del {
   position: absolute;
