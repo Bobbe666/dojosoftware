@@ -367,15 +367,14 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         } catch {}
       }
       const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId, lang);
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
       if (win && !win.closed) {
-        win.document.open();
-        win.document.write(html);
-        win.document.close();
-        win.focus();
+        // Blob-URL → eigener Origin, kein CSP-Erbfall vom Parent
+        win.location.href = url;
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 30000);
       } else {
         // Fallback: als HTML herunterladen
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        const url  = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `bestellvorlage_${form.name || 'vorlage'}.html`;
@@ -1768,7 +1767,6 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
 
   return `<!DOCTYPE html>
 <html lang="${lang}"><head><meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
 <title>${T.docTitle}</title>
 <style>
 :root{--gold:#c9a227;--dark:#1a1a2e;}
