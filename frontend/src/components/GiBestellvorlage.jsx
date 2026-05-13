@@ -582,6 +582,31 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                 <input className="gv-input" value={form.artikelNr} onChange={f('artikelNr')} placeholder="z. B. 0270" />
               </div>
             </div>
+            {/* Produktbild — kompakte Vorschau neben dem Modell-Card */}
+            {(() => {
+              const produktDateien = dateien.filter(d => d.tag === '__produktbild__');
+              const uploading = uploadingFile === '__produktbild__';
+              if (produktDateien.length > 0) {
+                return (
+                  <div className="gv-produkt-preview-wrap">
+                    {produktDateien.map(d => (
+                      <div key={d.datei_id} className="gv-produkt-img-box">
+                        <img src={d.pfad} alt="Produktbild" className="gv-produkt-img" />
+                        <button className="gv-produkt-del" onClick={() => deleteDatei(d.datei_id)} title="Entfernen">×</button>
+                      </div>
+                    ))}
+                    {vorlage?.vorlage_id && (
+                      <button className="gv-produkt-add-btn" onClick={() => triggerUpload('__produktbild__')} disabled={!!uploadingFile} title="Weiteres Bild">+</button>
+                    )}
+                  </div>
+                );
+              }
+              return vorlage?.vorlage_id ? (
+                <div className="gv-produkt-empty" onClick={() => !uploadingFile && triggerUpload('__produktbild__')}>
+                  {uploading ? 'Lädt…' : '+ Produktbild'}
+                </div>
+              ) : null;
+            })()}
           </div>
         </div>
 
@@ -1780,12 +1805,16 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 
 <div class="sec">
   <div class="st"><span class="n">1</span> ${T.s1}</div>
-  <div class="mc-row">
+  <div class="mc-row" style="align-items:flex-start;">
     <div class="mc sel"><div class="mc-n">Modell 188</div><div class="mc-d">8 Größen · 130–200 cm</div></div>
     <div style="flex:2;padding:3mm;">
       <div class="f"><span class="lbl">${T.modellbez}</span><input class="val" type="text" value="${form.modelName}"></div>
       <div class="f" style="margin-top:3mm;"><span class="lbl">${T.artikelNr}</span><input class="val" type="text" value="${form.artikelNr}"></div>
     </div>
+    ${(() => {
+      const pb = eingebetteteDateien.find(d => d.tag === '__produktbild__' && d.dataUrl);
+      return pb ? `<div style="flex-shrink:0;"><img src="${pb.dataUrl}" style="max-height:52mm;max-width:60mm;border-radius:4px;border:1px solid #eee;object-fit:contain;" alt="Produktbild"></div>` : '';
+    })()}
   </div>
 </div>
 
