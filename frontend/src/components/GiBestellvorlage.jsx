@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import '../styles/GiBestellvorlage.css';
@@ -204,6 +205,19 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     }
   }, [vorlage?.vorlage_id, dojoId]);
 
+  // Cmd+P / Ctrl+P abfangen wenn PDF-Overlay offen → Iframe drucken statt Hauptseite
+  useEffect(() => {
+    if (!pdfHtml) return;
+    const onKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+        e.preventDefault();
+        iframeRef.current?.contentWindow?.print();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [pdfHtml]);
+
   const loadBestellungen = async () => {
     const djId = vorlage?.dojo_id || dojoId;
     if (!djId || !vorlage?.vorlage_id) return;
@@ -390,8 +404,13 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           }));
         } catch {}
       }
-      const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId, lang);
-      setPdfHtml(html);
+      try {
+        const html = buildPdfHtml(form, origin, eingebetteteDateien, neueBestellungId, lang);
+        setPdfHtml(html);
+      } catch (pdfErr) {
+        console.error('buildPdfHtml Fehler:', pdfErr);
+        alert('PDF-Erstellung fehlgeschlagen: ' + pdfErr.message);
+      }
     } finally { setGenerating(false); }
   };
 
@@ -494,12 +513,13 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     <div className="gv-page">
 
       {/* PDF OVERLAY */}
-      {pdfHtml && (
+      {pdfHtml && createPortal(
         <div className="gv-pdf-overlay">
           <div className="gv-pdf-toolbar">
             <button className="gv-pdf-print-btn" onClick={() => iframeRef.current?.contentWindow?.print()}>
               🖨 PDF drucken
             </button>
+            <span className="gv-pdf-shortcut">oder ⌘P / Ctrl+P</span>
             <button className="gv-pdf-close-btn" onClick={() => setPdfHtml(null)}>
               ✕ Schließen
             </button>
@@ -509,8 +529,19 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             srcDoc={pdfHtml}
             className="gv-pdf-frame"
             title="Bestellvorlage PDF"
+            onLoad={() => {
+              try {
+                iframeRef.current?.contentDocument?.addEventListener('keydown', (e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+                    e.preventDefault();
+                    iframeRef.current?.contentWindow?.print();
+                  }
+                });
+              } catch {}
+            }}
           />
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* HEADER */}
@@ -919,6 +950,11 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               <button className="gv-btn-save" onClick={saveVorlage} disabled={saving} style={{ flexShrink: 0 }}>
                 {saving ? 'Speichert…' : '💾 Maße speichern'}
               </button>
+            )}
+            {saveMsg && (
+              <span style={{ fontSize: '0.8rem', flexShrink: 0, color: saveMsg.includes('Fehler') ? '#f87171' : '#86efac' }}>
+                {saveMsg}
+              </span>
             )}
           </div>
           <div style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,0.3)', marginBottom: '0.65rem' }}>
@@ -1579,171 +1615,191 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 //  PDF-HTML-GENERATOR
 // ═══════════════════════════════════════════════════════
 export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungId = null, lang = 'de') {
-  const de = lang !== 'en';
+  // Bilingual PDF: alle Labels immer auf Deutsch und Englisch
   const T = {
-    docTitle:       de ? 'Karate-Gi Bestellvorlage – Kampfkunstschule Schreiner' : 'Karate-Gi Order Form – Martial Arts School Schreiner',
+    docTitle:       'Karate-Gi Bestellvorlage – Kampfkunstschule Schreiner',
     h1:             'Karate-Gi',
-    sub:            de ? 'Bestellvorlage · Kampfkunstschule Schreiner' : 'Order Form · Martial Arts School Schreiner',
-    nr:             de ? 'Nr.' : 'No.',
-    datum:          de ? 'Datum:' : 'Date:',
-    pageHeader:     de ? 'Karate-Gi Bestellvorlage – Kampfkunstschule Schreiner' : 'Karate-Gi Order Form – Martial Arts School Schreiner',
-    tolerance:      de ? 'Toleranz ±1,5 cm' : 'Tolerance ±1.5 cm',
-    selectedModel:  de ? '← Gewähltes Modell' : '← Selected Model',
+    sub:            'Bestellvorlage · Kampfkunstschule Schreiner  ·  Order Form · Martial Arts School Schreiner',
+    nr:             'Nr. / No.',
+    datum:          'Datum / Date:',
+    pageHeader:     'Karate-Gi Bestellvorlage / Order Form – Kampfkunstschule Schreiner',
+    tolerance:      'Toleranz ±1,5 cm / Tolerance ±1.5 cm',
+    selectedModel:  '← Gewähltes Modell / Selected Model',
     // Sections
-    s1: de ? 'Modellauswahl' : 'Model Selection',
-    s2: de ? 'Bestelldaten' : 'Order Details',
-    s3: de ? 'Produktspezifikation' : 'Product Specification',
-    s4: de ? 'Kategorie & Mengenbestellung' : 'Category & Quantity Order',
-    s5: de ? 'Stickerei & Branding' : 'Embroidery & Branding',
-    s6: de ? 'Pflegekennzeichnung (Care Label)' : 'Care Instructions (Care Label)',
-    s7: de ? 'Bemerkungen' : 'Remarks',
-    s8: de ? 'Freigabe & Unterschrift' : 'Approval & Signature',
-    s9: de ? 'Maßtabellen & Größenübersicht' : 'Size Charts & Measurements',
-    s9sub: de ? 'Beide Modelle – Referenz-Maßzeichnungen' : 'Both Models — Reference Size Drawings',
+    s1: 'Modellauswahl / Model Selection',
+    s2: 'Bestelldaten / Order Details',
+    s3: 'Produktspezifikation / Product Specification',
+    s4: 'Kategorie &amp; Mengenbestellung / Category &amp; Quantity Order',
+    s5: 'Stickerei &amp; Branding / Embroidery &amp; Branding',
+    s6: 'Pflegekennzeichnung / Care Instructions',
+    s7: 'Bemerkungen / Remarks',
+    s8: 'Freigabe &amp; Unterschrift / Approval &amp; Signature',
+    s9: 'Maßtabellen &amp; Größenübersicht / Size Charts &amp; Measurements',
+    s9sub: 'Modell Shoryu – Referenz-Maßzeichnungen / Reference Size Drawings',
     // Fields
-    modellbez:   de ? 'Modellbezeichnung' : 'Model Name',
-    artikelNr:   de ? 'Artikel-Nr.' : 'Article No.',
-    besteller:   de ? 'Besteller' : 'Purchaser',
-    lieferant:   de ? 'Hersteller / Lieferant' : 'Manufacturer / Supplier',
-    apBesteller: de ? 'Ansprechpartner Besteller' : 'Contact Person (Buyer)',
-    apLieferant: de ? 'Ansprechpartner Lieferant' : 'Contact Person (Supplier)',
-    bestelldat:  de ? 'Bestelldatum' : 'Order Date',
-    lieferdat:   de ? 'Gewünschtes Lieferdatum' : 'Requested Delivery Date',
-    projekt:     de ? 'Projekt / Verwendungszweck' : 'Project / Purpose',
-    farbe:       de ? 'Farbe / Ausführung' : 'Colour / Finish',
+    modellbez:   'Modellbezeichnung / Model Name',
+    artikelNr:   'Artikel-Nr. / Article No.',
+    besteller:   'Besteller / Purchaser',
+    lieferant:   'Hersteller / Lieferant  ·  Manufacturer / Supplier',
+    apBesteller: 'Ansprechpartner Besteller / Contact Person (Buyer)',
+    apLieferant: 'Ansprechpartner Lieferant / Contact Person (Supplier)',
+    bestelldat:  'Bestelldatum / Order Date',
+    lieferdat:   'Gewünschtes Lieferdatum / Requested Delivery Date',
+    projekt:     'Projekt / Verwendungszweck  ·  Project / Purpose',
+    farbe:       'Farbe / Ausführung  ·  Colour / Finish',
     // Spec
-    material:     de ? 'Material' : 'Material',
-    cotton:       de ? '100% Baumwolle' : '100% Cotton',
-    cottonPoly:   de ? 'Baumwolle/Polyester' : 'Cotton/Polyester',
+    material:     'Material',
+    cotton:       '100% Baumwolle / 100% Cotton',
+    cottonPoly:   'Baumwolle/Polyester / Cotton/Polyester',
     canvas:       'Canvas',
-    synthetik:    de ? 'Synthetik' : 'Synthetic',
-    webart:       de ? 'Webart' : 'Weave Type',
-    gramKids:     de ? 'Grammatur Kinder' : 'Weight (Kids)',
-    gramAdult:    de ? 'Grammatur Erwachsene' : 'Weight (Adults)',
-    wkf:          de ? 'WKF-Zulassung' : 'WKF Approval',
-    wkfApproved:  de ? 'WKF-zugelassen' : 'WKF approved',
-    kataList:     de ? 'Kata-Liste' : 'Kata List',
-    notRequired:  de ? 'Nicht erforderlich' : 'Not required',
+    synthetik:    'Synthetik / Synthetic',
+    webart:       'Webart / Weave Type',
+    gramKids:     'Grammatur Kinder / Weight (Kids)',
+    gramAdult:    'Grammatur Erwachsene / Weight (Adults)',
+    wkf:          'WKF-Zulassung / WKF Approval',
+    wkfApproved:  'WKF-zugelassen / WKF approved',
+    kataList:     'Kata-Liste / Kata List',
+    notRequired:  'Nicht erforderlich / Not required',
     // Qty
-    catLabel:     de ? 'Kategorie:' : 'Category:',
-    kids:         de ? 'Kinder / Kids' : 'Kids',
-    adults:       de ? 'Erwachsene' : 'Adults',
-    catSize:      de ? 'Kategorie \\ Größe' : 'Category \\ Size',
-    total:        de ? 'Gesamt' : 'Total',
-    pcsTotal:     de ? 'Stück gesamt' : 'pieces total',
+    catLabel:     'Kategorie / Category:',
+    kids:         'Kinder / Kids',
+    adults:       'Erwachsene / Adults',
+    catSize:      'Kategorie \\ Größe / Category \\ Size',
+    total:        'Gesamt / Total',
+    pcsTotal:     'Stück gesamt / pieces total',
     // Embroidery
-    embPos:       de ? 'Stickerei-Positionen:' : 'Embroidery Positions:',
-    posLL:        de ? 'Linkes Revers (vorne links)' : 'Left Lapel (front left)',
-    posRL:        de ? 'Rechtes Revers (vorne rechts)' : 'Right Lapel (front right)',
-    posRO:        de ? 'Rücken — oberer Bereich' : 'Back — upper area',
-    posRM:        de ? 'Rücken — Mitte / großes Motiv' : 'Back — centre / large motif',
-    posLA:        de ? 'Linker Ärmel (außen)' : 'Left Sleeve (outside)',
-    posRA:        de ? 'Rechter Ärmel (außen)' : 'Right Sleeve (outside)',
-    posHB:        de ? 'Hosenbein (links/rechts)' : 'Trouser Leg (left/right)',
-    posKr:        de ? 'Kragen / Nackenbereich' : 'Collar / Neck area',
-    logoDesc:     de ? 'Logo / Motiv-Beschreibung' : 'Logo / Motif Description',
-    embFile:      de ? 'Stickerei-Datei' : 'Embroidery File',
-    embText:      de ? 'Schriftzug / Text' : 'Text / Lettering',
-    threadCol:    de ? 'Garnfarben' : 'Thread Colours',
-    embSize:      de ? 'Größe Stickerei (B × H)' : 'Embroidery Size (W × H)',
-    font:         de ? 'Schriftart' : 'Font',
-    fontLatin:    de ? 'Lateinisch / Block' : 'Latin / Block',
-    fontKanji:    de ? 'Kanji / Japanisch' : 'Kanji / Japanese',
-    fontItalic:   de ? 'Kursiv' : 'Italic',
+    embPos:       'Stickerei-Positionen / Embroidery Positions:',
+    posLL:        'Linkes Revers / Left Lapel',
+    posRL:        'Rechtes Revers / Right Lapel',
+    posRO:        'Rücken oben / Back – upper',
+    posRM:        'Rücken Mitte / Back – centre',
+    posLA:        'Linker Ärmel / Left Sleeve',
+    posRA:        'Rechter Ärmel / Right Sleeve',
+    posHB:        'Hosenbein / Trouser Leg',
+    posKr:        'Kragen / Collar',
+    logoDesc:     'Logo / Motiv-Beschreibung  ·  Motif Description',
+    embFile:      'Stickerei-Datei / Embroidery File',
+    embText:      'Schriftzug / Text  ·  Lettering',
+    threadCol:    'Garnfarben / Thread Colours',
+    embSize:      'Größe Stickerei (B×H) / Embroidery Size (W×H)',
+    font:         'Schriftart / Font',
+    fontLatin:    'Lateinisch / Latin · Block',
+    fontKanji:    'Kanji / Japanisch',
+    fontItalic:   'Kursiv / Italic',
     fontCustom:   'Custom',
-    personal:     de ? 'Individualisierung je Stück' : 'Personalisation per piece',
-    persName:     de ? 'Mitgliedsname' : 'Member Name',
-    persBelt:     de ? 'Gurtgrad' : 'Belt Grade',
-    persNum:      de ? 'Nummerierung' : 'Numbering',
-    persNone:     de ? 'Keine' : 'None',
-    piping:       de ? 'Einfassung / Revers-Farbe' : 'Piping / Lapel Colour',
-    white:        de ? 'Weiß' : 'White',
-    black:        de ? 'Schwarz' : 'Black',
+    personal:     'Individualisierung je Stück / Personalisation per piece',
+    persName:     'Mitgliedsname / Member Name',
+    persBelt:     'Gurtgrad / Belt Grade',
+    persNum:      'Nummerierung / Numbering',
+    persNone:     'Keine / None',
+    piping:       'Einfassung / Revers-Farbe  ·  Piping / Lapel Colour',
+    white:        'Weiß / White',
+    black:        'Schwarz / Black',
     gold:         'Gold',
-    sameColour:   de ? 'Wie Grundfarbe' : 'Same as base colour',
-    embFiles:     de ? 'Bereitgestellte Logo- & Branding-Dateien:' : 'Provided Logo & Branding Files:',
+    sameColour:   'Wie Grundfarbe / Same as base colour',
+    embFiles:     'Bereitgestellte Logo- &amp; Branding-Dateien / Provided Logo &amp; Branding Files:',
     // Care
-    careSymbols:  de ? 'Pflegesymbole (ISO 3758):' : 'Care Symbols (ISO 3758):',
-    care30:       de ? 'Schonwäsche 30°C' : 'Gentle wash 30°C',
-    careNoBleach: de ? 'Nicht bleichen' : 'Do not bleach',
-    careNoDryer:  de ? 'Nicht im Trockner' : 'Do not tumble dry',
-    careDryFlat:  de ? 'Liegend trocknen' : 'Dry flat',
-    careIron:     de ? 'Bügeln max. 110°C' : 'Iron max. 110°C',
-    careNoDry:    de ? 'Keine chem. Reinigung' : 'No dry cleaning',
-    careNote:     de ? '<strong>Waschanleitung:</strong> Karate-Gi bei max. 30°C waschen. Kein Weichspüler. Nicht im Trockner. Liegend lufttrocknen. Weiße Gis alternativ bei 60°C. Bei Bedarf auf links bügeln.'
-                     : '<strong>Care Instructions:</strong> Wash Karate-Gi at max. 30°C. No fabric softener. Do not tumble dry. Air dry flat. White Gis may be washed at 60°C. Iron inside out if needed.',
-    labelSpec:    de ? 'Label-Spezifikation:' : 'Label Specification:',
-    labelMat:     de ? 'Material (Label-Text)' : 'Material (Label Text)',
-    labelLang:    de ? 'Label-Sprachen' : 'Label Languages',
-    langDE:       de ? 'Deutsch' : 'German',
-    langEN:       de ? 'Englisch' : 'English',
-    langFR:       de ? 'Französisch' : 'French',
-    langJA:       de ? 'Japanisch' : 'Japanese',
-    labelType:    de ? 'Label-Art' : 'Label Type',
-    labelWoven:   de ? 'Gewebtes Etikett' : 'Woven Label',
-    labelPrinted: de ? 'Gedrucktes Etikett' : 'Printed Label',
-    labelEmb:     de ? 'Eingestickt' : 'Embroidered',
-    labelPos:     de ? 'Label-Position' : 'Label Position',
-    labelNeck:    de ? 'Nacken (innen)' : 'Neck (inside)',
-    labelSeam:    de ? 'Seitennaht' : 'Side seam',
-    labelWaist:   de ? 'Hosenbund (innen)' : 'Waistband (inside)',
-    labelExtra:   de ? 'Zusatztext auf Label' : 'Additional text on label',
-    labelExtraHint: de ? 'z. B. Made exclusively for Kampfkunstschule Schreiner · TDA' : 'e.g. Made exclusively for Martial Arts School Schreiner · TDA',
+    careSymbols:  'Pflegesymbole (ISO 3758) / Care Symbols (ISO 3758):',
+    care30:       'Schonwäsche 30°C / Gentle wash 30°C',
+    careNoBleach: 'Nicht bleichen / Do not bleach',
+    careNoDryer:  'Nicht im Trockner / No tumble dry',
+    careDryFlat:  'Liegend trocknen / Dry flat',
+    careIron:     'Bügeln max. 110°C / Iron max. 110°C',
+    careNoDry:    'Keine chem. Reinigung / No dry cleaning',
+    careNote:     '<strong>Waschanleitung / Care Instructions:</strong> Max. 30°C, kein Weichspüler, nicht im Trockner, liegend lufttrocknen. Weiße Gis alternativ 60°C. / Max. 30°C, no fabric softener, do not tumble dry, air dry flat. White Gis may be washed at 60°C.',
+    labelSpec:    'Label-Spezifikation / Label Specification:',
+    labelMat:     'Material (Label-Text) / Material (Label Text)',
+    labelLang:    'Label-Sprachen / Label Languages',
+    langDE:       'Deutsch / German',
+    langEN:       'Englisch / English',
+    langFR:       'Französisch / French',
+    langJA:       'Japanisch / Japanese',
+    labelType:    'Label-Art / Label Type',
+    labelWoven:   'Gewebtes Etikett / Woven Label',
+    labelPrinted: 'Gedrucktes Etikett / Printed Label',
+    labelEmb:     'Eingestickt / Embroidered',
+    labelPos:     'Label-Position / Label Position',
+    labelNeck:    'Nacken (innen) / Neck (inside)',
+    labelSeam:    'Seitennaht / Side seam',
+    labelWaist:   'Hosenbund (innen) / Waistband (inside)',
+    labelExtra:   'Zusatztext auf Label / Additional text on label',
+    labelExtraHint: 'z. B. Made exclusively for Kampfkunstschule Schreiner · TDA',
     // Signature
-    qty:         de ? 'Gesamtmenge' : 'Total Quantity',
-    orderVal:    de ? 'Auftragswert (netto)' : 'Order Value (net)',
-    payTerms:    de ? 'Zahlungsziel / Incoterms' : 'Payment Terms / Incoterms',
-    pcs:         de ? 'Stück' : 'pcs',
-    sigDate:     de ? 'Datum & Ort' : 'Date & Place',
-    sigBuyer:    de ? 'Unterschrift Besteller' : "Buyer's Signature",
-    sigBuyerSub: de ? 'Kampfkunstschule Schreiner' : 'Martial Arts School Schreiner',
-    sigSupplier: de ? 'Bestätigung Lieferant' : 'Supplier Confirmation',
-    sigStamp:    de ? 'Stempel + Unterschrift' : 'Stamp + Signature',
-    // New sections
-    s_schnitt:    de ? 'Schnitt & Passform' : 'Cut & Fit',
-    s_schnittTyp: de ? 'Schnitttyp' : 'Cut Type',
-    s_revers:     de ? 'Revers-Typ' : 'Lapel Type',
-    s_hosenbund:  de ? 'Hosenbund' : 'Waistband',
-    s_schnittBem: de ? 'Schnitt-Bemerkung' : 'Cut Notes',
-    s_pantone:    de ? 'Pantone-Codes' : 'Pantone Codes',
-    s_pGrund:     de ? 'Grundfarbe Pantone' : 'Base Colour Pantone',
-    s_pGarn1:     de ? 'Garn-Pantone 1' : 'Thread Pantone 1',
-    s_pGarn2:     de ? 'Garn-Pantone 2' : 'Thread Pantone 2',
-    s_pPaspel:    de ? 'Paspel/Revers-Pantone' : 'Piping/Lapel Pantone',
-    s_naht:       de ? 'Naht & Verarbeitung' : 'Seam & Construction',
-    s_stiche:     de ? 'Stiche/cm' : 'Stitches/cm',
-    s_verst:      de ? 'Verstärkungspunkte' : 'Reinforcement Points',
-    s_gurtAnz:    de ? 'Gürtelschlaufen Anzahl' : 'Belt Loops Count',
-    s_gurtBr:     de ? 'Gürtelschlaufen Breite' : 'Belt Loop Width',
-    s_nahtBem:    de ? 'Naht-Bemerkung' : 'Seam Notes',
-    s_muster:     de ? 'Muster-Anforderungen' : 'Sampling Requirements',
-    s_musterBen:  de ? 'PP-Sample / Muster benötigt' : 'PP-Sample required',
-    s_musterGr:   de ? 'Mustergröße' : 'Sample Size',
-    s_musterDL:   de ? 'Muster bis' : 'Sample deadline',
-    s_musterEmb:  de ? 'Mit Stickerei' : 'With embroidery',
-    s_musterBem:  de ? 'Muster-Bemerkung' : 'Sample Notes',
-    s_zeitplan:   de ? 'Zeitplan' : 'Timeline',
-    s_zSample:    de ? 'Sample-Freigabe bis' : 'Sample approval by',
-    s_zProd:      de ? 'Produktionsstart' : 'Production start',
-    s_zSchiff:    de ? 'Schiffsbereitschaft' : 'Ready to ship',
-    s_verp:       de ? 'Verpackungsvorschriften' : 'Packaging Specifications',
-    s_verpTyp:    de ? 'Verpackungstyp' : 'Packaging Type',
-    s_verpBeutel: de ? 'Stück/Beutel' : 'Pcs/bag',
-    s_verpKarton: de ? 'Stück/Karton' : 'Pcs/carton',
-    s_verpEan:    de ? 'EAN/Barcode erforderlich' : 'EAN/Barcode required',
-    s_verpLabel:  de ? 'Label-Text auf Karton' : 'Carton label text',
-    s_verpBem:    de ? 'Verpackungs-Bemerkung' : 'Packaging notes',
+    qty:         'Gesamtmenge / Total Quantity',
+    orderVal:    'Auftragswert (netto) / Order Value (net)',
+    payTerms:    'Zahlungsziel / Incoterms  ·  Payment Terms / Incoterms',
+    pcs:         'Stück / pcs',
+    sigDate:     'Datum &amp; Ort / Date &amp; Place',
+    sigBuyer:    'Unterschrift Besteller / Buyer\'s Signature',
+    sigBuyerSub: 'Kampfkunstschule Schreiner',
+    sigSupplier: 'Bestätigung Lieferant / Supplier Confirmation',
+    sigStamp:    'Stempel + Unterschrift / Stamp + Signature',
+    // Sections 4+
+    s_schnitt:    'Schnitt &amp; Passform / Cut &amp; Fit',
+    s_schnittTyp: 'Schnitttyp / Cut Type',
+    s_revers:     'Revers-Typ / Lapel Type',
+    s_hosenbund:  'Hosenbund / Waistband Type',
+    s_schnittBem: 'Schnitt-Bemerkung / Cut Notes',
+    s_pantone:    'Pantone-Codes / Pantone Codes',
+    s_pGrund:     'Grundfarbe Pantone / Base Colour Pantone',
+    s_pGarn1:     'Garn-Pantone 1 / Thread Pantone 1',
+    s_pGarn2:     'Garn-Pantone 2 / Thread Pantone 2',
+    s_pPaspel:    'Paspel/Revers-Pantone / Piping/Lapel Pantone',
+    s_naht:       'Naht &amp; Verarbeitung / Seam &amp; Construction',
+    s_stiche:     'Stiche/cm / Stitches/cm',
+    s_verst:      'Verstärkungspunkte / Reinforcement Points',
+    s_gurtAnz:    'Gürtelschlaufen Anzahl / Belt Loops Count',
+    s_gurtBr:     'Gürtelschlaufen Breite / Belt Loop Width',
+    s_nahtBem:    'Naht-Bemerkung / Seam Notes',
+    s_muster:     'Muster-Anforderungen / Sampling Requirements',
+    s_musterBen:  'PP-Sample / Muster benötigt / PP-Sample required',
+    s_musterGr:   'Mustergröße / Sample Size',
+    s_musterDL:   'Muster bis / Sample deadline',
+    s_musterEmb:  'Mit Stickerei / With embroidery',
+    s_musterBem:  'Muster-Bemerkung / Sample Notes',
+    s_zeitplan:   'Zeitplan / Timeline',
+    s_zSample:    'Sample-Freigabe bis / Sample approval by',
+    s_zProd:      'Produktionsstart / Production start',
+    s_zSchiff:    'Schiffsbereitschaft / Ready to ship',
+    s_verp:       'Verpackungsvorschriften / Packaging Specifications',
+    s_verpTyp:    'Verpackungstyp / Packaging Type',
+    s_verpBeutel: 'Stück/Beutel / Pcs per bag',
+    s_verpKarton: 'Stück/Karton / Pcs per carton',
+    s_verpEan:    'EAN/Barcode erforderlich / EAN/Barcode required',
+    s_verpLabel:  'Label-Text auf Karton / Carton label text',
+    s_verpBem:    'Verpackungs-Bemerkung / Packaging notes',
     // Misc
-    printBtn:    de ? '🖨 PDF drucken' : '🖨 Print PDF',
-    refPoints:   de ? 'Masspunkte: 1=Rückenlänge · 2=Rückenbreite · 3=Spannweite · 4=Ärmellänge · 5=Schulterbreite · 6=Revers · A=Hosenlänge · B=Bundbreite(½) · C=Saumbreite(½) · D=Innenbeinlänge'
-                    : 'Reference points: 1=Back length · 2=Back width · 3=Wingspan · 4=Sleeve length · 5=Shoulder width · 6=Lapel · A=Trouser length · B=Waistband(½) · C=Hem(½) · D=Inseam',
-    page:        (n, t) => de ? `Seite ${n} / ${t}` : `Page ${n} / ${t}`,
+    printBtn:    '🖨 PDF drucken / Print PDF',
+    refPoints:   '1=Rückenlänge/Back length · 2=Rückenbreite/Back width · 3=Spannweite/Wingspan · 4=Ärmellänge/Sleeve length · 5=Schulterbreite/Shoulder width · 6=Revers/Lapel · A=Hosenlänge/Trouser length · B=Bundbreite½/Waistband½ · C=Saumbreite½/Hem½ · D=Innenbeinlänge/Inseam',
+    page:        (n, t) => `Seite ${n} / ${t}  ·  Page ${n} / ${t}`,
     // Mass spec
-    s10:         de ? 'Maßspezifikation (in cm)' : 'Measurement Specification (cm)',
-    s10note:     de ? 'Alle Angaben in cm · bitte vor Produktion vom Lieferanten bestätigen lassen'
-                    : 'All values in cm · please have supplier confirm before production',
-    mpLabel:     de ? 'Masspunkt' : 'Ref. Point',
-    mpSizes:     de ? 'Größen (cm-Größe in dieser Spalte)' : 'Sizes (cm size in this column)',
+    s10:         'Maßspezifikation / Measurement Specification (cm)',
+    s10note:     'Alle Angaben in cm · bitte vor Produktion bestätigen / All values in cm · please confirm before production',
+    mpLabel:     'Masspunkt / Ref. Point',
+    mpSizes:     'Größen / Sizes',
+  };
+
+  // Bilingual option labels for arrays used directly in the PDF
+  const OPT_BI = {
+    'Breit (Standard)': 'Breit / Wide (Standard)', 'Schmal': 'Schmal / Narrow',
+    'Competition-Flap': 'Competition-Flap',
+    'Kordel': 'Kordel / Drawstring', 'Gummibund': 'Gummibund / Elastic',
+    'Kordel + Gummi': 'Kordel + Gummi / Drawstring + Elastic',
+    'Gefaltet': 'Gefaltet / Folded', 'Auf Hänger': 'Auf Hänger / On hanger',
+    'Seitenabschluss': 'Seitenabschluss / Side finishing',
+    'Gürtelschlaufen': 'Gürtelschlaufen / Belt loops',
+    'Knotenbereich': 'Knotenbereich / Knot area',
+    'Kragen-Ansatz': 'Kragen-Ansatz / Collar junction',
+    'Ärmel-Saum': 'Ärmel-Saum / Sleeve hem',
+    'Hosenbund': 'Hosenbund / Waistband',
+  };
+  const optBi = (opt) => OPT_BI[opt] || opt;
+
+  // Bilingual measurement point labels for the PDF table
+  const MP_EN = {
+    rL: 'Back length (jacket)', rB: 'Back width', sw: 'Wingspan total',
+    aL: 'Sleeve length', sB: 'Shoulder width', rv: 'Lapel/skirt length',
+    hL: 'Trouser length', bB: 'Waistband ½', sM: 'Hem width ½', iL: 'Inseam',
   };
 
   const img128 = `${origin}/gi-charts/modell-128.jpg`; // unused
@@ -1859,8 +1915,8 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 .ibox{background:#fffbf0;border:1px solid #e8d080;border-radius:4px;padding:3mm 4mm;font-size:8pt;color:#7a5f00;margin:3mm 0;}
 @media print{
   body{background:white;}
-  .page{margin:0;padding:14mm 18mm;box-shadow:none;page-break-after:always;}
-  .page:last-child{page-break-after:avoid;}
+  .page{margin:0;padding:14mm 18mm;box-shadow:none;min-height:0;page-break-after:always;break-after:page;}
+  .page:last-child{page-break-after:avoid;break-after:avoid;}
   input,select,textarea{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .print-btn{display:none!important;}
   input[type=number]::-webkit-inner-spin-button,
@@ -1888,7 +1944,7 @@ ${(() => {
   <div style="display:flex;gap:6mm;align-items:flex-start;">
     <div style="flex:1;min-width:0;">
       <div class="mc-row" style="align-items:flex-start;margin-bottom:4mm;">
-        <div class="mc sel"><div class="mc-n">Modell Shoryu</div><div class="mc-d">8 Größen · 130–200 cm</div></div>
+        <div class="mc sel"><div class="mc-n">Modell Shoryu</div><div class="mc-d">8 Größen / 8 Sizes · 130–200 cm</div></div>
       </div>
       <div class="f"><span class="lbl">${T.modellbez}</span><input class="val" type="text" value="${form.modelName}"></div>
       <div class="f" style="margin-top:3mm;"><span class="lbl">${T.artikelNr}</span><input class="val" type="text" value="${form.artikelNr}"></div>
@@ -1964,17 +2020,17 @@ ${(() => {
   <div class="fg3">
     <div class="f"><span class="lbl">${T.s_schnittTyp}</span>
       <div class="tags">
-        ${SCHNITT_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.schnittTyp === opt)}> ${opt}</label>`).join('')}
+        ${SCHNITT_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.schnittTyp === opt)}> ${optBi(opt)}</label>`).join('')}
       </div>
     </div>
     <div class="f"><span class="lbl">${T.s_revers}</span>
       <div class="tags">
-        ${REVERS_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.reversTyp === opt)}> ${opt}</label>`).join('')}
+        ${REVERS_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.reversTyp === opt)}> ${optBi(opt)}</label>`).join('')}
       </div>
     </div>
     <div class="f"><span class="lbl">${T.s_hosenbund}</span>
       <div class="tags">
-        ${HOSENBUND_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.hosenbundTyp === opt)}> ${opt}</label>`).join('')}
+        ${HOSENBUND_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.hosenbundTyp === opt)}> ${optBi(opt)}</label>`).join('')}
       </div>
     </div>
   </div>
@@ -1984,7 +2040,7 @@ ${(() => {
 
 <!-- SEITE 2 -->
 <div class="page">
-<div class="ch"><span>${T.pageHeader}</span><span>${T.page(2,6)}</span></div>
+<div class="ch"><span>${T.pageHeader}</span><span>${T.page(2,5)}</span></div>
 
 <div class="sec">
   <div class="st"><span class="n">5</span> ${T.s4}</div>
@@ -2060,7 +2116,7 @@ ${(() => {
 
 <!-- SEITE 3 (NEU: Naht, Muster, Zeitplan, Verpackung) -->
 <div class="page">
-<div class="ch"><span>${T.pageHeader}</span><span>${T.page(3,6)}</span></div>
+<div class="ch"><span>${T.pageHeader}</span><span>${T.page(3,5)}</span></div>
 
 <div class="sec">
   <div class="st"><span class="n">7</span> ${T.s_naht}</div>
@@ -2072,7 +2128,7 @@ ${(() => {
   </div>
   <div class="f" style="margin-top:3mm;"><span class="lbl">${T.s_verst}</span>
     <div class="tags">
-      ${VERSTAERKUNGEN.map(opt => `<label class="tag"><input type="checkbox" ${checked((spez.verstaerkungen||[]).includes(opt))}> ${opt}</label>`).join('')}
+      ${VERSTAERKUNGEN.map(opt => `<label class="tag"><input type="checkbox" ${checked((spez.verstaerkungen||[]).includes(opt))}> ${optBi(opt)}</label>`).join('')}
     </div>
   </div>
 </div>
@@ -2103,7 +2159,7 @@ ${(() => {
   <div class="fg2">
     <div class="f"><span class="lbl">${T.s_verpTyp}</span>
       <div class="tags">
-        ${VERP_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(spez.verp_typ === opt)}> ${opt}</label>`).join('')}
+        ${VERP_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(spez.verp_typ === opt)}> ${optBi(opt)}</label>`).join('')}
       </div>
     </div>
     <div class="f"><span class="lbl">${T.s_verpBeutel}</span><input class="val" type="number" value="${spez.verp_stueck_beutel || ''}"></div>
@@ -2117,7 +2173,7 @@ ${(() => {
 
 <!-- SEITE 4 (alt: Seite 3): Pflegekennzeichnung, Bemerkungen, Freigabe -->
 <div class="page">
-<div class="ch"><span>${T.pageHeader}</span><span>${T.page(4,6)}</span></div>
+<div class="ch"><span>${T.pageHeader}</span><span>${T.page(4,5)}</span></div>
 
 <div class="sec">
   <div class="st"><span class="n">11</span> ${T.s6}</div>
@@ -2185,29 +2241,20 @@ ${form.bemerkungen ? `
 </div>
 </div>
 
-<!-- SEITE 5 (alt: Seite 4): Größentabellen -->
+<!-- SEITE 5: Größentabellen + Maßspezifikation (kombiniert) -->
 <div class="page">
 <div class="ph">
   <div><h1 style="font-size:15pt;">${T.s9}</h1><div class="sub">${T.s9sub}</div></div>
-  <div style="font-size:8pt;color:#999;text-align:right;">${T.page(5,6)}<br>${T.tolerance}</div>
+  <div style="font-size:8pt;color:#999;text-align:right;">${T.page(5,5)}<br>${T.tolerance}</div>
 </div>
-<div class="chart-block">
+<div class="chart-block" style="margin-bottom:4mm;">
   <div class="chart-label" style="border-color:var(--gold);">
-    Modell Shoryu &nbsp;·&nbsp; 8 Größen (130–200 cm)
+    Modell Shoryu &nbsp;·&nbsp; 8 Größen / 8 Sizes (130–200 cm)
   </div>
-  <img src="${img188}" alt="Größentabelle Modell Shoryu">
+  <img src="${img188}" alt="Größentabelle Modell Shoryu" style="max-height:95mm;">
 </div>
-<div style="font-size:7.5pt;color:#999;text-align:center;margin:3mm 0;font-style:italic;">
-  ${T.refPoints}
-</div>
-</div>
-
-<!-- SEITE 6 (alt: Seite 5) – MAßSPEZIFIKATION -->
-<div class="page">
-<div class="ph">
-  <div><h1 style="font-size:15pt;">${T.s10}</h1><div class="sub">${T.s10note}</div></div>
-  <div style="font-size:8pt;color:#999;text-align:right;">${T.page(6,6)}</div>
-</div>
+<div class="st" style="margin-bottom:3mm;"><span class="n">✦</span> ${T.s10}</div>
+<div style="font-size:7pt;color:#777;margin-bottom:3mm;">${T.s10note}</div>
 <style>
 table.ms{width:100%;border-collapse:collapse;font-size:8pt;}
 table.ms thead th{background:var(--dark);color:white;padding:4px 5px;text-align:center;font-size:7.5pt;white-space:nowrap;}
@@ -2238,7 +2285,7 @@ table.ms tbody td.mp-val input{width:100%;border:none;text-align:center;font-siz
       return `<tr>
         <td class="mp-cell">
           <span class="mp-num">${mp.num}</span><span class="mp-name">${mp.label}</span>
-          <span class="mp-hint">${mp.hint}</span>
+          <span class="mp-hint">${MP_EN[mp.key] || ''}</span>
         </td>${cells}
       </tr>`;
     }).join('')}
@@ -2257,8 +2304,8 @@ ${(() => {
 <!-- ANHANG: Logo & Branding -->
 <div class="page">
 <div class="ph">
-  <div><h1 style="font-size:15pt;">Logo &amp; Branding</h1><div class="sub">${de ? 'Bereitgestellte Dateien — Anhang' : 'Provided Files — Appendix'}</div></div>
-  <div style="font-size:8pt;color:#999;text-align:right;">Anhang</div>
+  <div><h1 style="font-size:15pt;">Logo &amp; Branding</h1><div class="sub">Bereitgestellte Dateien / Provided Files — Anhang / Appendix</div></div>
+  <div style="font-size:8pt;color:#999;text-align:right;">Anhang / Appendix</div>
 </div>
 <div style="display:grid;grid-template-columns:${brandingDateien.length === 1 ? '1fr' : '1fr 1fr'};gap:10mm;">
   ${brandingDateien.map(d => `

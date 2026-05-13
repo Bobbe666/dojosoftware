@@ -815,27 +815,28 @@ select.gv-input { cursor: pointer; }
 }
 .gv-zeichnung-toggle:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.75); }
 
-/* MAßSPEZ LAYOUT */
+/* MAßSPEZ LAYOUT — Zeichnung oben, Tabelle darunter in voller Breite */
 .gv-mass-layout {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
+  display: block;
 }
 
 .gv-zeichnung-img {
-  width: 220px;
-  min-width: 220px;
+  display: block;
+  max-height: 160px;
+  max-width: 100%;
+  margin: 0 auto 0.75rem auto;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 6px;
   object-fit: contain;
   background: rgba(255,255,255,0.03);
 }
 
-.gv-mass-wrap { flex: 1; overflow-x: auto; }
+.gv-mass-wrap { overflow-x: auto; }
 
 /* MAß-TABELLE */
 .gv-mass-table {
   width: 100%;
+  min-width: 960px;
   border-collapse: collapse;
   font-size: 0.78rem;
 }
@@ -852,11 +853,13 @@ select.gv-input { cursor: pointer; }
 }
 .gv-mt-mp {
   text-align: left !important;
-  min-width: 130px;
+  min-width: 120px;
+  width: 120px;
   padding-left: 0.5rem !important;
 }
 .gv-mass-table thead th:not(.gv-mt-mp) {
-  min-width: 46px;
+  min-width: 50px;
+  width: 50px;
 }
 
 .gv-mass-table tbody tr:nth-child(odd) { background: rgba(255,255,255,0.015); }
@@ -872,8 +875,8 @@ select.gv-input { cursor: pointer; }
   text-align: left !important;
   padding: 0.3rem 0.4rem !important;
   vertical-align: top !important;
-  min-width: 130px;
-  max-width: 130px;
+  min-width: 120px;
+  width: 120px;
 }
 .gv-mt-num {
   font-weight: 900;
@@ -900,10 +903,10 @@ select.gv-input { cursor: pointer; }
   color: rgba(255,255,255,0.82);
   text-align: center;
   font-size: 0.82rem;
-  padding: 0.35rem 0.15rem;
+  padding: 0.35rem 0.1rem;
   outline: none;
   -moz-appearance: textfield;
-  min-width: 44px;
+  min-width: 50px;
 }
 .gv-mt-input::-webkit-inner-spin-button,
 .gv-mt-input::-webkit-outer-spin-button { opacity: 0; }
@@ -949,6 +952,11 @@ select.gv-input { cursor: pointer; }
   transition: background 0.15s;
 }
 .gv-pdf-print-btn:hover { background: rgba(212,175,55,1); }
+.gv-pdf-shortcut {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.35);
+  margin-left: -0.2rem;
+}
 .gv-pdf-close-btn {
   padding: 0.45rem 1rem;
   background: rgba(255,255,255,0.08);
@@ -1067,6 +1075,5 @@ select.gv-input { cursor: pointer; }
   .gv-grid3 { grid-template-columns: 1fr 1fr; }
   .gv-model-row { flex-wrap: wrap; }
   .gv-pos-grid { grid-template-columns: 1fr; }
-  .gv-mass-layout { flex-direction: column; }
-  .gv-zeichnung-img { width: 100%; min-width: unset; }
+  .gv-zeichnung-img { max-height: 120px; }
 }
