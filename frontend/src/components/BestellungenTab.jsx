@@ -162,14 +162,16 @@ const BestellungenTab = () => {
   };
 
   const openGiBestellung = async (b) => {
-    try {
-      let vorlage = null;
-      if (b.vorlage_id) {
+    let vorlage = null;
+    if (b.vorlage_id) {
+      try {
         const djId = activeDojo?.id;
         const url = djId ? `/bestellvorlagen/${b.vorlage_id}?dojo_id=${djId}` : `/bestellvorlagen/${b.vorlage_id}`;
         const res = await axios.get(url);
         vorlage = res.data?.data || null;
-      }
+      } catch {}
+    }
+    try {
       const formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
       setGiOverlay({ vorlage, editingId: b.bestellung_id, formdata, dojoId: b.dojo_id });
     } catch {}
