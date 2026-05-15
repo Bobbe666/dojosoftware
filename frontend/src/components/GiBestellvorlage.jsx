@@ -69,6 +69,7 @@ const EMPTY = {
   zeitplan_sample: '', zeitplan_prod: '', zeitplan_schiff: '',
   pantone_garn1: '', pantone_garn2: '', pantone_paspel: '', pantone_grundfarbe: '',
   preisKids: '', preisAdult: '', waehrung: 'EUR',
+  care_label_image: '',
 };
 
 const POSITIONEN = [
@@ -1386,6 +1387,32 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         <div className="gv-section">
           <div className="gv-section-title">Pflegekennzeichnung & Label-Spezifikation</div>
           <div className="gv-grid2">
+            <div className="gv-field" style={{ gridColumn: '1 / -1' }}>
+              <label className="gv-label">Pflegesymbol-Grafik (Upload)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="gv-input"
+                style={{ padding: '4px' }}
+                onChange={e => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = ev => setForm(p => ({ ...p, care_label_image: ev.target.result }));
+                  reader.readAsDataURL(file);
+                }}
+              />
+              {form.care_label_image && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  <img src={form.care_label_image} style={{ maxHeight: '60px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.15)' }} alt="Pflegesymbol-Vorschau" />
+                  <button
+                    type="button"
+                    onClick={() => setForm(p => ({ ...p, care_label_image: '' }))}
+                    style={{ background: 'none', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '4px', color: 'rgba(255,255,255,0.6)', padding: '3px 10px', cursor: 'pointer', fontSize: '0.78rem' }}
+                  >Entfernen</button>
+                </div>
+              )}
+            </div>
             <div className="gv-field">
               <label className="gv-label">Material-Text (Label)</label>
               <input className="gv-input" value={spez.labelText || ''} onChange={fSpez('labelText')} placeholder="z. B. 100% Baumwolle / 100% Cotton" />
@@ -1702,9 +1729,6 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
     webart:       'Webart / Weave Type',
     gramKids:     'Grammatur Kinder / Weight (Kids)',
     gramAdult:    'Grammatur Erwachsene / Weight (Adults)',
-    wkf:          'WKF-Zulassung / WKF Approval',
-    wkfApproved:  'WKF-zugelassen / WKF approved',
-    kataList:     'Kata-Liste / Kata List',
     notRequired:  'Nicht erforderlich / Not required',
     // Qty
     catLabel:     'Kategorie / Category:',
@@ -1851,6 +1875,21 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
   const img128 = `${origin}/gi-charts/modell-128.jpg`; // unused
   const img188 = `${origin}/gi-charts/modell-188.jpg`;
 
+  // Helpers: leere Felder im PDF weglassen
+  const fval = (lbl, val, opts = '') =>
+    val ? `<div class="f" ${opts}><span class="lbl">${lbl}</span><input class="val" type="text" value="${String(val).replace(/"/g, '&quot;')}"></div>` : '';
+  // Nur gewählte Tags anzeigen; Feld weglassen wenn nichts gewählt
+  const ftags = (lbl, arr, toLbl = x => x) => {
+    const sel = Array.isArray(arr) ? arr.filter(Boolean) : [];
+    if (!sel.length) return '';
+    return `<div class="f"><span class="lbl">${lbl}</span><div class="tags">${
+      sel.map(opt => `<label class="tag" style="border-color:var(--gold);background:#fffbf0;font-weight:600;color:#1a1a2e;"><input type="checkbox" checked> ${toLbl(opt)}</label>`).join('')
+    }</div></div>`;
+  };
+  // Einzelauswahl-Tag
+  const ftag1 = (lbl, val, toLbl = x => x) =>
+    val ? `<div class="f"><span class="lbl">${lbl}</span><div class="tags"><label class="tag" style="border-color:var(--gold);background:#fffbf0;font-weight:600;color:#1a1a2e;"><input type="checkbox" checked> ${toLbl(val)}</label></div></div>` : '';
+
   const spez    = form.spezifikation || {};
   const stickereiPosFixed = (form.stickereiPos || []).map(fixUtf8);
   const posChecked = (pos) => stickereiPosFixed.includes(pos) ? 'checked' : '';
@@ -1960,9 +1999,12 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 .chart-block img{max-width:100%;max-height:120mm;border:1px solid #eee;}
 .ibox{background:#fffbf0;border:1px solid #e8d080;border-radius:4px;padding:3mm 4mm;font-size:8pt;color:#7a5f00;margin:3mm 0;}
 @media print{
+  @page{size:A4;margin:14mm 18mm;}
   body{background:white;}
-  .page{margin:0;width:210mm;height:297mm;overflow:hidden;padding:14mm 18mm;box-sizing:border-box;box-shadow:none;display:block;}
-  .page+.page{page-break-before:always;break-before:page;}
+  .page{margin:0;padding:0;width:auto;min-height:0;box-shadow:none;}
+  .sec{break-inside:avoid;page-break-inside:avoid;}
+  .qt-wrap{break-inside:avoid;page-break-inside:avoid;}
+  .ms-wrap{break-before:page;page-break-before:always;}
   input,select,textarea{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .print-btn{display:none!important;}
   input[type=number]::-webkit-inner-spin-button,
@@ -2011,10 +2053,10 @@ ${(() => {
   <div class="fg2">
     <div class="f"><span class="lbl">${T.besteller}</span><input class="val" type="text" value="${form.besteller}"></div>
     <div class="f"><span class="lbl">${T.lieferant}</span><input class="val" type="text" value="${selectedLtInfo}"></div>
-    <div class="f"><span class="lbl">${T.apBesteller}</span><input class="val" type="text" value="${form.ansprechpartnerBesteller}"></div>
-    <div class="f"><span class="lbl">${T.apLieferant}</span><input class="val" type="text" value="${form.ansprechpartnerLieferant}"></div>
+    ${fval(T.apBesteller, form.ansprechpartnerBesteller)}
+    ${fval(T.apLieferant, form.ansprechpartnerLieferant)}
     <div class="f"><span class="lbl">${T.bestelldat}</span><input class="val" type="text" value="${form.bestelldatum}"></div>
-    <div class="f"><span class="lbl">${T.lieferdat}</span><input class="val" type="text" value="${form.lieferdatum}"></div>
+    ${fval(T.lieferdat, form.lieferdatum)}
     <div class="f"><span class="lbl">${T.farbe}</span><input class="val" type="text" value="${form.farbe}"></div>
   </div>
 </div>
@@ -2022,75 +2064,35 @@ ${(() => {
 <div class="sec">
   <div class="st"><span class="n">3</span> ${T.s3}</div>
   <div class="fg2">
-    <div class="f"><span class="lbl">${T.material}</span>
-      <div class="tags">
-        <label class="tag"><input type="checkbox" ${matIn('100% Baumwolle')}> ${T.cotton}</label>
-        <label class="tag"><input type="checkbox" ${matIn('Baumwolle/Polyester')}> ${T.cottonPoly}</label>
-        <label class="tag"><input type="checkbox" ${matIn('Canvas')}> ${T.canvas}</label>
-        <label class="tag"><input type="checkbox" ${matIn('Synthetik')}> ${T.synthetik}</label>
-      </div>
-      <input class="val" type="text" value="${spez.materialText || ''}" placeholder="Exakte Zusammensetzung" style="margin-top:2mm;">
-    </div>
-    <div class="f"><span class="lbl">${T.webart}</span>
-      <div class="tags">
-        <label class="tag"><input type="checkbox" ${webIn('Single Weave')}> Single Weave</label>
-        <label class="tag"><input type="checkbox" ${webIn('Double Weave')}> Double Weave</label>
-        <label class="tag"><input type="checkbox" ${webIn('Kata')}> Kata</label>
-        <label class="tag"><input type="checkbox" ${webIn('Kumite / Leicht')}> Kumite / Leicht</label>
-      </div>
-    </div>
-    <div class="f"><span class="lbl">${T.gramKids}</span>
-      <div class="tags">
-        <label class="tag"><input type="checkbox" ${gramKIn('8 oz (~270 g/m²)')}> 8 oz (~270 g/m²)</label>
-        <label class="tag"><input type="checkbox" ${gramKIn('10 oz (~340 g/m²)')}> 10 oz (~340 g/m²)</label>
-        <label class="tag"><input type="checkbox" ${gramKIn('12 oz (~400 g/m²)')}> 12 oz (~400 g/m²)</label>
-        <label class="tag"><input type="checkbox" ${gramKIn('14 oz (~470 g/m²)')}> 14 oz (~470 g/m²)</label>
-      </div>
-    </div>
-    <div class="f"><span class="lbl">${T.gramAdult}</span>
-      <div class="tags">
-        <label class="tag"><input type="checkbox" ${gramAIn('8 oz (~270 g/m²)')}> 8 oz (~270 g/m²)</label>
-        <label class="tag"><input type="checkbox" ${gramAIn('10 oz (~340 g/m²)')}> 10 oz (~340 g/m²)</label>
-        <label class="tag"><input type="checkbox" ${gramAIn('12 oz (~400 g/m²)')}> 12 oz (~400 g/m²)</label>
-        <label class="tag"><input type="checkbox" ${gramAIn('14 oz (~470 g/m²)')}> 14 oz (~470 g/m²)</label>
-      </div>
-    </div>
-    <div class="f"><span class="lbl">${T.wkf}</span>
-      <div class="tags">
-        <label class="tag"><input type="checkbox" ${checked(form.wkf)}> ${T.wkfApproved}</label>
-        <label class="tag"><input type="checkbox"> ${T.kataList}</label>
-        <label class="tag"><input type="checkbox" ${checked(!form.wkf)}> ${T.notRequired}</label>
-      </div>
-    </div>
+    ${(() => {
+      const matSel = (spez.material || []);
+      if (!matSel.length && !spez.materialText) return '';
+      const matMap = { '100% Baumwolle': T.cotton, 'Baumwolle/Polyester': T.cottonPoly, 'Canvas': T.canvas, 'Synthetik': T.synthetik };
+      return `<div class="f"><span class="lbl">${T.material}</span>
+        <div class="tags">${matSel.map(m => `<label class="tag" style="border-color:var(--gold);background:#fffbf0;font-weight:600;color:#1a1a2e;"><input type="checkbox" checked> ${matMap[m]||m}</label>`).join('')}</div>
+        ${spez.materialText ? `<input class="val" type="text" value="${spez.materialText}" style="margin-top:2mm;">` : ''}
+      </div>`;
+    })()}
+    ${ftags(T.webart, spez.webart)}
+    ${ftags(T.gramKids, spez.grammaturKids)}
+    ${ftags(T.gramAdult, spez.grammaturAdult)}
   </div>
 </div>
 
+${(form.schnittTyp || form.reversTyp || form.hosenbundTyp || form.schnittBemerkung) ? `
 <div class="sec">
   <div class="st"><span class="n">4</span> ${T.s_schnitt}</div>
   <div class="fg3">
-    <div class="f"><span class="lbl">${T.s_schnittTyp}</span>
-      <div class="tags">
-        ${SCHNITT_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.schnittTyp === opt)}> ${optBi(opt)}</label>`).join('')}
-      </div>
-    </div>
-    <div class="f"><span class="lbl">${T.s_revers}</span>
-      <div class="tags">
-        ${REVERS_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.reversTyp === opt)}> ${optBi(opt)}</label>`).join('')}
-      </div>
-    </div>
-    <div class="f"><span class="lbl">${T.s_hosenbund}</span>
-      <div class="tags">
-        ${HOSENBUND_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(form.hosenbundTyp === opt)}> ${optBi(opt)}</label>`).join('')}
-      </div>
-    </div>
+    ${ftag1(T.s_schnittTyp, form.schnittTyp, optBi)}
+    ${ftag1(T.s_revers, form.reversTyp, optBi)}
+    ${ftag1(T.s_hosenbund, form.hosenbundTyp, optBi)}
   </div>
-  <div class="f" style="margin-top:3mm;"><span class="lbl">${T.s_schnittBem}</span><input class="val" type="text" value="${form.schnittBemerkung || ''}"></div>
-</div>
+  ${fval(T.s_schnittBem, form.schnittBemerkung, 'style="margin-top:3mm;"')}
+</div>` : ''}
 </div>
 
 <!-- SEITE 2 -->
 <div class="page">
-<div class="ch"><span>${T.pageHeader}</span><span>${T.page(2,5)}</span></div>
 
 <div class="sec">
   <div class="st"><span class="n">5</span> ${T.s4}</div>
@@ -2110,162 +2112,104 @@ ${(() => {
 
 <div class="sec">
   <div class="st"><span class="n">6</span> ${T.s5}</div>
+  ${form.stickereiPos.length > 0 ? `
   <span class="lbl" style="display:block;margin-bottom:2mm;">${T.embPos}</span>
-  <div class="chk-grid">
-    <label class="chk-item"><input type="checkbox" ${posChecked('Linkes Revers')}> ${T.posLL}</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Rechtes Revers')}> ${T.posRL}</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Rücken oben')}> ${T.posRO}</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Rücken Mitte')}> ${T.posRM}</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Linker Ärmel')}> ${T.posLA}</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Rechter Ärmel')}> ${T.posRA}</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Hosenbein')}> ${T.posHB}</label>
-    <label class="chk-item"><input type="checkbox" ${posChecked('Kragen')}> ${T.posKr}</label>
-  </div>
+  <div class="chk-grid" style="margin-bottom:4mm;">
+    ${[['Linkes Revers',T.posLL],['Rechtes Revers',T.posRL],['Rücken oben',T.posRO],['Rücken Mitte',T.posRM],
+       ['Linker Ärmel',T.posLA],['Rechter Ärmel',T.posRA],['Hosenbein',T.posHB],['Kragen',T.posKr]]
+      .filter(([k]) => form.stickereiPos.includes(k))
+      .map(([,lbl]) => `<label class="chk-item" style="border-color:var(--gold);background:#fffbf0;"><input type="checkbox" checked> ${lbl}</label>`).join('')}
+  </div>` : ''}
   <div class="fg2">
-    <div class="f"><span class="lbl">${T.logoDesc}</span><input class="val" type="text" placeholder="z. B. TDA Vereinslogo, Yin-Yang, Kanji Karate"></div>
-    <div class="f"><span class="lbl">${T.embFile}</span><input class="val" type="text" value="${form.stickereiBemerkung}" placeholder="z. B. TDA_logo_stickerei_v2.dst"></div>
-    <div class="f"><span class="lbl">${T.embText}</span><input class="val" type="text" value="${form.stickereiSchriftzug}"></div>
-    <div class="f"><span class="lbl">${T.threadCol}</span><input class="val" type="text" value="${form.stickereiGarnfarben}"></div>
-    <div class="f"><span class="lbl">${T.embSize}</span><input class="val" type="text" placeholder="z. B. 8 × 6 cm (Revers)"></div>
-    <div class="f"><span class="lbl">${T.font}</span>
-      <div class="tags">
-        <label class="tag"><input type="checkbox"> ${T.fontLatin}</label>
-        <label class="tag"><input type="checkbox"> ${T.fontKanji}</label>
-        <label class="tag"><input type="checkbox"> ${T.fontItalic}</label>
-        <label class="tag"><input type="checkbox"> ${T.fontCustom}</label>
-      </div>
-    </div>
-    <div class="f"><span class="lbl">${T.personal}</span>
-      <div class="tags">
-        <label class="tag"><input type="checkbox"> ${T.persName}</label>
-        <label class="tag"><input type="checkbox"> ${T.persBelt}</label>
-        <label class="tag"><input type="checkbox"> ${T.persNum}</label>
-        <label class="tag"><input type="checkbox"> ${T.persNone}</label>
-      </div>
-    </div>
-    <div class="f"><span class="lbl">${T.piping}</span>
-      <div class="tags">
-        <label class="tag"><input type="checkbox"> ${T.white}</label>
-        <label class="tag"><input type="checkbox"> ${T.black}</label>
-        <label class="tag"><input type="checkbox"> ${T.gold}</label>
-        <label class="tag"><input type="checkbox"> ${T.sameColour}</label>
-      </div>
-    </div>
+    ${fval(T.embFile, form.stickereiBemerkung)}
+    ${fval(T.embText, form.stickereiSchriftzug)}
+    ${fval(T.threadCol, form.stickereiGarnfarben)}
   </div>
-  <div style="margin-top:5mm;">
+  ${(form.pantone_grundfarbe || form.pantone_garn1 || form.pantone_garn2 || form.pantone_paspel) ? `
+  <div style="margin-top:4mm;">
     <span class="lbl" style="display:block;margin-bottom:3mm;">${T.s_pantone}</span>
     <div class="fg2">
-      <div class="f"><span class="lbl">${T.s_pGrund}</span><input class="val" type="text" value="${form.pantone_grundfarbe || ''}" placeholder="z. B. Pantone White / NTR"></div>
-      <div class="f"><span class="lbl">${T.s_pGarn1}</span><input class="val" type="text" value="${form.pantone_garn1 || ''}" placeholder="z. B. Pantone 116 C – Gold"></div>
-      <div class="f"><span class="lbl">${T.s_pGarn2}</span><input class="val" type="text" value="${form.pantone_garn2 || ''}" placeholder="z. B. Pantone Black C"></div>
-      <div class="f"><span class="lbl">${T.s_pPaspel}</span><input class="val" type="text" value="${form.pantone_paspel || ''}" placeholder="z. B. Pantone 116 C"></div>
+      ${fval(T.s_pGrund, form.pantone_grundfarbe)}
+      ${fval(T.s_pGarn1, form.pantone_garn1)}
+      ${fval(T.s_pGarn2, form.pantone_garn2)}
+      ${fval(T.s_pPaspel, form.pantone_paspel)}
     </div>
-  </div>
+  </div>` : ''}
 </div>
 </div>
 
 <!-- SEITE 3 (NEU: Naht, Muster, Zeitplan, Verpackung) -->
 <div class="page">
-<div class="ch"><span>${T.pageHeader}</span><span>${T.page(3,5)}</span></div>
 
+${(spez.stiche_cm || spez.nahtBemerkung || spez.gurtschlaufen_anzahl || spez.gurtschlaufen_breite || (spez.verstaerkungen||[]).length) ? `
 <div class="sec">
   <div class="st"><span class="n">7</span> ${T.s_naht}</div>
   <div class="fg2">
-    <div class="f"><span class="lbl">${T.s_stiche}</span><input class="val" type="number" value="${spez.stiche_cm || ''}"></div>
-    <div class="f"><span class="lbl">${T.s_nahtBem}</span><input class="val" type="text" value="${spez.nahtBemerkung || ''}"></div>
-    <div class="f"><span class="lbl">${T.s_gurtAnz}</span><input class="val" type="number" value="${spez.gurtschlaufen_anzahl || ''}"></div>
-    <div class="f"><span class="lbl">${T.s_gurtBr}</span><input class="val" type="text" value="${spez.gurtschlaufen_breite || ''}"></div>
+    ${fval(T.s_stiche, spez.stiche_cm)}
+    ${fval(T.s_nahtBem, spez.nahtBemerkung)}
+    ${fval(T.s_gurtAnz, spez.gurtschlaufen_anzahl)}
+    ${fval(T.s_gurtBr, spez.gurtschlaufen_breite)}
   </div>
-  <div class="f" style="margin-top:3mm;"><span class="lbl">${T.s_verst}</span>
-    <div class="tags">
-      ${VERSTAERKUNGEN.map(opt => `<label class="tag"><input type="checkbox" ${checked((spez.verstaerkungen||[]).includes(opt))}> ${optBi(opt)}</label>`).join('')}
-    </div>
-  </div>
-</div>
+  ${ftags(T.s_verst, spez.verstaerkungen, optBi)}
+</div>` : ''}
 
+${form.muster_benoetigt ? `
 <div class="sec">
   <div class="st"><span class="n">8</span> ${T.s_muster}</div>
-  <label class="chk-item" style="display:inline-flex;margin-bottom:4mm;"><input type="checkbox" ${checked(form.muster_benoetigt)}> ${T.s_musterBen}</label>
-  ${form.muster_benoetigt ? `
+  <label class="chk-item" style="display:inline-flex;margin-bottom:4mm;"><input type="checkbox" checked> ${T.s_musterBen}</label>
   <div class="fg2">
-    <div class="f"><span class="lbl">${T.s_musterGr}</span><input class="val" type="text" value="${form.muster_groesse || ''}"></div>
-    <div class="f"><span class="lbl">${T.s_musterDL}</span><input class="val" type="text" value="${form.muster_deadline || ''}"></div>
-    <div class="f"><span class="lbl">${T.s_musterBem}</span><input class="val" type="text" value="${form.muster_bemerkung || ''}"></div>
-    <div class="f" style="justify-content:flex-end;"><label class="chk-item"><input type="checkbox" ${checked(form.muster_mitStickerei)}> ${T.s_musterEmb}</label></div>
-  </div>` : ''}
-</div>
+    ${fval(T.s_musterGr, form.muster_groesse)}
+    ${fval(T.s_musterDL, form.muster_deadline)}
+    ${fval(T.s_musterBem, form.muster_bemerkung)}
+    ${form.muster_mitStickerei ? `<div class="f" style="justify-content:flex-end;"><label class="chk-item"><input type="checkbox" checked> ${T.s_musterEmb}</label></div>` : ''}
+  </div>
+</div>` : ''}
 
+${(form.zeitplan_sample || form.zeitplan_prod || form.zeitplan_schiff) ? `
 <div class="sec">
   <div class="st"><span class="n">9</span> ${T.s_zeitplan}</div>
   <div class="fg3">
-    <div class="f"><span class="lbl">${T.s_zSample}</span><input class="val" type="text" value="${form.zeitplan_sample || ''}"></div>
-    <div class="f"><span class="lbl">${T.s_zProd}</span><input class="val" type="text" value="${form.zeitplan_prod || ''}"></div>
-    <div class="f"><span class="lbl">${T.s_zSchiff}</span><input class="val" type="text" value="${form.zeitplan_schiff || ''}"></div>
+    ${fval(T.s_zSample, form.zeitplan_sample)}
+    ${fval(T.s_zProd, form.zeitplan_prod)}
+    ${fval(T.s_zSchiff, form.zeitplan_schiff)}
   </div>
-</div>
+</div>` : ''}
 
+${(spez.verp_typ || spez.verp_stueck_beutel || spez.verp_stueck_karton || spez.verp_ean || spez.verp_label || spez.verp_bemerkung) ? `
 <div class="sec">
   <div class="st"><span class="n">10</span> ${T.s_verp}</div>
   <div class="fg2">
-    <div class="f"><span class="lbl">${T.s_verpTyp}</span>
-      <div class="tags">
-        ${VERP_TYPEN.map(opt => `<label class="tag"><input type="checkbox" ${checked(spez.verp_typ === opt)}> ${optBi(opt)}</label>`).join('')}
-      </div>
-    </div>
-    <div class="f"><span class="lbl">${T.s_verpBeutel}</span><input class="val" type="number" value="${spez.verp_stueck_beutel || ''}"></div>
-    <div class="f"><span class="lbl">${T.s_verpKarton}</span><input class="val" type="number" value="${spez.verp_stueck_karton || ''}"></div>
-    <div class="f"><label class="chk-item"><input type="checkbox" ${checked(spez.verp_ean)}> ${T.s_verpEan}</label></div>
+    ${ftag1(T.s_verpTyp, spez.verp_typ, optBi)}
+    ${fval(T.s_verpBeutel, spez.verp_stueck_beutel)}
+    ${fval(T.s_verpKarton, spez.verp_stueck_karton)}
+    ${spez.verp_ean ? `<div class="f"><label class="chk-item"><input type="checkbox" checked> ${T.s_verpEan}</label></div>` : ''}
   </div>
-  <div class="f" style="margin-top:3mm;"><span class="lbl">${T.s_verpLabel}</span><input class="val" type="text" value="${spez.verp_label || ''}" placeholder="z. B. KARATE-GI · Gr. XXX · Art. Nr. XXXX · Kampfkunstschule Schreiner"></div>
-  <div class="f" style="margin-top:3mm;"><span class="lbl">${T.s_verpBem}</span><input class="val" type="text" value="${spez.verp_bemerkung || ''}"></div>
-</div>
+  ${fval(T.s_verpLabel, spez.verp_label, 'style="margin-top:3mm;"')}
+  ${fval(T.s_verpBem, spez.verp_bemerkung, 'style="margin-top:3mm;"')}
+</div>` : ''}
 </div>
 
 <!-- SEITE 4 (alt: Seite 3): Pflegekennzeichnung, Bemerkungen, Freigabe -->
 <div class="page">
-<div class="ch"><span>${T.pageHeader}</span><span>${T.page(4,5)}</span></div>
 
 <div class="sec">
   <div class="st"><span class="n">11</span> ${T.s6}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6mm 10mm;">
     <div>
-      <span class="lbl" style="display:block;margin-bottom:3mm;">${T.careSymbols}</span>
-      <div class="care-row">
-        <div class="ci"><svg viewBox="0 0 44 40" fill="none"><path d="M4 14 L8 36 L36 36 L40 14 Z" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><text x="22" y="30" text-anchor="middle" font-size="11" font-weight="800" fill="#1a1a2e" font-family="sans-serif">30°</text><line x1="13" y1="24" x2="31" y2="24" stroke="#1a1a2e" stroke-width="1.5" stroke-dasharray="3,2"/></svg><span>${T.care30}</span></div>
-        <div class="ci"><svg viewBox="0 0 44 40" fill="none"><polygon points="22,4 40,36 4,36" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><line x1="12" y1="16" x2="32" y2="32" stroke="#1a1a2e" stroke-width="2.5"/><line x1="32" y1="16" x2="12" y2="32" stroke="#1a1a2e" stroke-width="2.5"/></svg><span>${T.careNoBleach}</span></div>
-        <div class="ci"><svg viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="3" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><circle cx="22" cy="22" r="11" stroke="#1a1a2e" stroke-width="1.5" fill="white"/><line x1="9" y1="9" x2="35" y2="35" stroke="#1a1a2e" stroke-width="2.5"/></svg><span>${T.careNoDryer}</span></div>
-        <div class="ci"><svg viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="3" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><line x1="10" y1="22" x2="34" y2="22" stroke="#1a1a2e" stroke-width="3"/></svg><span>${T.careDryFlat}</span></div>
-        <div class="ci"><svg viewBox="0 0 52 40" fill="none"><path d="M6 30 Q6 18 20 17 L40 17 Q46 17 46 23 L46 30 Z" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><rect x="16" y="30" width="26" height="5" rx="1" stroke="#1a1a2e" stroke-width="1.5" fill="#eee"/><line x1="26" y1="17" x2="26" y2="10" stroke="#1a1a2e" stroke-width="2.5"/><line x1="26" y1="10" x2="16" y2="10" stroke="#1a1a2e" stroke-width="2.5"/><line x1="16" y1="10" x2="16" y2="15" stroke="#1a1a2e" stroke-width="2.5"/><circle cx="26" cy="24" r="2.5" fill="#1a1a2e"/></svg><span>${T.careIron}</span></div>
-        <div class="ci"><svg viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="17" stroke="#1a1a2e" stroke-width="2.5" fill="white"/><text x="22" y="28" text-anchor="middle" font-size="15" font-weight="800" fill="#1a1a2e" font-family="serif">P</text><line x1="8" y1="8" x2="36" y2="36" stroke="#1a1a2e" stroke-width="2.5"/></svg><span>${T.careNoDry}</span></div>
-      </div>
+      <span class="lbl" style="display:block;margin-bottom:3mm;">Pflegesymbole / Care Symbols:</span>
+      ${form.care_label_image
+        ? `<img src="${form.care_label_image}" style="max-height:44mm;max-width:100%;object-fit:contain;display:block;margin:3mm 0 4mm;">`
+        : `<div style="border:1.5px dashed #ccc;border-radius:4px;padding:6mm 4mm;text-align:center;color:#bbb;font-size:8pt;margin:3mm 0 4mm;min-height:20mm;display:flex;align-items:center;justify-content:center;">Pflegesymbol-Grafik / Care Symbol Image<br><span style="font-size:7pt;margin-top:2px;display:block;">(Upload im Formular)</span></div>`
+      }
       <div class="ibox">${T.careNote}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:4mm;">
       <span class="lbl" style="display:block;">${T.labelSpec}</span>
-      <div class="f"><span class="lbl">${T.labelMat}</span><input class="val" type="text" value="${spez.labelText || ''}" placeholder="z. B. 100% Baumwolle / 100% Cotton"></div>
-      <div class="f"><span class="lbl">${T.labelLang}</span>
-        <div class="tags">
-          <label class="tag"><input type="checkbox" ${langIn('Deutsch')}> ${T.langDE}</label>
-          <label class="tag"><input type="checkbox" ${langIn('Englisch')}> ${T.langEN}</label>
-          <label class="tag"><input type="checkbox" ${langIn('Französisch')}> ${T.langFR}</label>
-          <label class="tag"><input type="checkbox" ${langIn('Japanisch')}> ${T.langJA}</label>
-        </div>
-      </div>
-      <div class="f"><span class="lbl">${T.labelType}</span>
-        <div class="tags">
-          <label class="tag"><input type="checkbox" ${artIn('Gewebtes Etikett')}> ${T.labelWoven}</label>
-          <label class="tag"><input type="checkbox" ${artIn('Gedrucktes Etikett')}> ${T.labelPrinted}</label>
-          <label class="tag"><input type="checkbox" ${artIn('Eingestickt')}> ${T.labelEmb}</label>
-        </div>
-      </div>
-      <div class="f"><span class="lbl">${T.labelPos}</span>
-        <div class="tags">
-          <label class="tag"><input type="checkbox" ${posLIn('Nacken (innen)')}> ${T.labelNeck}</label>
-          <label class="tag"><input type="checkbox" ${posLIn('Seitennaht')}> ${T.labelSeam}</label>
-          <label class="tag"><input type="checkbox" ${posLIn('Hosenbund (innen)')}> ${T.labelWaist}</label>
-        </div>
-      </div>
-      <div class="f"><span class="lbl">${T.labelExtra}</span><input class="val" type="text" value="${spez.labelZusatz || ''}" placeholder="${T.labelExtraHint}"></div>
+      ${fval(T.labelMat, spez.labelText)}
+      ${ftags(T.labelLang, spez.labelSprachen || ['Deutsch','Englisch'], v => ({'Deutsch':T.langDE,'Englisch':T.langEN,'Französisch':T.langFR,'Japanisch':T.langJA}[v]||v))}
+      ${ftags(T.labelType, spez.labelArt || [], v => ({'Gewebtes Etikett':T.labelWoven,'Gedrucktes Etikett':T.labelPrinted,'Eingestickt':T.labelEmb}[v]||v))}
+      ${ftags(T.labelPos, spez.labelPosition || [], v => ({'Nacken (innen)':T.labelNeck,'Seitennaht':T.labelSeam,'Hosenbund (innen)':T.labelWaist}[v]||v))}
+      ${fval(T.labelExtra, spez.labelZusatz)}
     </div>
   </div>
 </div>
@@ -2292,7 +2236,7 @@ ${form.bemerkungen ? `
 </div>
 
 <!-- SEITE 5: Größentabellen + Maßspezifikation (kombiniert) -->
-<div class="page">
+<div class="page ms-wrap">
 <div class="ph">
   <div><h1 style="font-size:15pt;">${T.s9}</h1><div class="sub">${T.s9sub}</div></div>
   <div style="font-size:8pt;color:#999;text-align:right;">${T.page(5,5)}<br>${T.tolerance}</div>
