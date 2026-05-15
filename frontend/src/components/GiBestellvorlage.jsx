@@ -1402,25 +1402,6 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           )}
         </div>
 
-        {/* ── ZEITPLAN ── */}
-        <div className="gv-section">
-          <div className="gv-section-title">Zeitplan</div>
-          <div className="gv-grid3">
-            <div className="gv-field">
-              <label className="gv-label">Sample-Freigabe bis</label>
-              <input className="gv-input" type="date" value={form.zeitplan_sample} onChange={f('zeitplan_sample')} />
-            </div>
-            <div className="gv-field">
-              <label className="gv-label">Produktionsstart</label>
-              <input className="gv-input" type="date" value={form.zeitplan_prod} onChange={f('zeitplan_prod')} />
-            </div>
-            <div className="gv-field">
-              <label className="gv-label">Schiffsbereitschaft</label>
-              <input className="gv-input" type="date" value={form.zeitplan_schiff} onChange={f('zeitplan_schiff')} />
-            </div>
-          </div>
-        </div>
-
         {/* ── VERPACKUNGSVORSCHRIFTEN ── */}
         <div className="gv-section">
           <div className="gv-section-title">Verpackungsvorschriften</div>
@@ -2288,15 +2269,6 @@ ${(() => {
     ${fshow(T.s_musterBem, form.muster_bemerkung)}
     ${form.muster_mitStickerei ? `<div class="f" style="justify-content:flex-end;"><label class="chk-item" style="border-color:var(--gold);background:#fffbf0;"><input type="checkbox" checked> ${T.s_musterEmb}</label></div>` : ''}
   </div>` : ''}
-</div>
-
-<div class="sec">
-  <div class="st"><span class="n">9</span> ${T.s_zeitplan}</div>
-  <div class="fg3">
-    ${fshow(T.s_zSample, form.zeitplan_sample)}
-    ${fshow(T.s_zProd, form.zeitplan_prod)}
-    ${fshow(T.s_zSchiff, form.zeitplan_schiff)}
-  </div>
 </div>
 
 <div class="sec">
