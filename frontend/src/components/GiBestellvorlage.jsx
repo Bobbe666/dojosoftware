@@ -118,6 +118,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [draftMsg, setDraftMsg] = useState('');
   const [ltModal, setLtModal] = useState(false);
   const [ltForm, setLtForm] = useState({ ...LT_EMPTY });
   const [ltSaving, setLtSaving] = useState(false);
@@ -523,6 +525,32 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     finally { setSaving(false); }
   };
 
+  const saveDraft = async () => {
+    const djId = vorlage?.dojo_id || dojoAuswahl || activeDojo?.id;
+    if (!djId) { setDraftMsg('Kein Dojo ausgewählt'); setTimeout(() => setDraftMsg(''), 3000); return; }
+    setDraftSaving(true); setDraftMsg('');
+    try {
+      const payload = {
+        vorlage_id:     vorlage?.vorlage_id || null,
+        lieferant_id:   form.lieferantId ? Number(form.lieferantId) : null,
+        lieferant_name: form.lieferantFreitext || null,
+        bestelldatum:   form.bestelldatum || null,
+        lieferdatum:    form.lieferdatum  || null,
+        formdata:       { ...form },
+      };
+      if (editingBestellungId) {
+        await axios.put(`/gi-bestellungen/${editingBestellungId}?dojo_id=${djId}`, payload);
+      } else {
+        const bRes = await axios.post(`/gi-bestellungen?dojo_id=${djId}`, payload);
+        setEditingBestellungId(bRes.data?.bestellung_id || null);
+      }
+      await loadBestellungen();
+      setDraftMsg('Gespeichert ✓');
+      setTimeout(() => setDraftMsg(''), 3000);
+    } catch { setDraftMsg('Fehler beim Speichern'); setTimeout(() => setDraftMsg(''), 3000); }
+    finally { setDraftSaving(false); }
+  };
+
   const selectedLt = lieferanten.find(l => String(l.lieferant_id) === form.lieferantId);
   const spez       = form.spezifikation || {};
 
@@ -575,6 +603,11 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         </div>
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontSize: '0.7rem', opacity: 0.45, fontFamily: 'monospace', flexShrink: 0 }}>v13.05-B</span>
+          {draftMsg && (
+            <span style={{ fontSize: '0.8rem', color: draftMsg.includes('Fehler') || draftMsg.includes('Kein') ? '#f87171' : '#86efac' }}>
+              {draftMsg}
+            </span>
+          )}
           {saveMsg && (
             <span style={{ fontSize: '0.8rem', color: saveMsg.includes('Fehler') ? '#f87171' : '#86efac' }}>
               {saveMsg}
@@ -585,6 +618,9 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               Bearbeitung abbrechen
             </button>
           )}
+          <button className="gv-btn-save" onClick={saveDraft} disabled={draftSaving}>
+            {draftSaving ? 'Speichert…' : '💾 Zwischenspeichern'}
+          </button>
           {vorlage?.vorlage_id && (
             <button className="gv-btn-save" onClick={saveVorlage} disabled={saving}>
               {saving ? 'Speichert…' : 'Einstellungen speichern'}
@@ -1872,8 +1908,7 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
     hL: 'Trouser length', bB: 'Waistband ½', sM: 'Hem width ½', iL: 'Inseam',
   };
 
-  const img128 = `${origin}/gi-charts/modell-128.jpg`; // unused
-  const img188 = `${origin}/gi-charts/modell-188.jpg`;
+  const img188 = `${origin}/gi-charts/skizze-gi.png`;
 
   // Helpers: leere Felder im PDF weglassen
   const fval = (lbl, val, opts = '') =>
