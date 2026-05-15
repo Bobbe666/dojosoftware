@@ -1973,6 +1973,14 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
   };
   const optBi = (opt) => OPT_BI[opt] || opt;
 
+  const POS_LABEL = {
+    'Linkes Revers':'Linkes Revers / Left Lapel','Rechtes Revers':'Rechtes Revers / Right Lapel',
+    'Rücken oben':'Rücken oben / Back – upper','Rücken Mitte':'Rücken Mitte / Back – centre',
+    'Linker Ärmel':'Linker Ärmel / Left Sleeve','Rechter Ärmel':'Rechter Ärmel / Right Sleeve',
+    'Hosenbein links':'Hosenbein links / Left Leg','Hosenbein rechts':'Hosenbein rechts / Right Leg',
+    'Kragen':'Kragen / Collar',
+  };
+
   // Bilingual measurement point labels for the PDF table
   const MP_EN = {
     rL: 'Back length (jacket)', rB: 'Back width', sw: 'Wingspan total',
@@ -1996,6 +2004,21 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
   // Einzelauswahl-Tag
   const ftag1 = (lbl, val, toLbl = x => x) =>
     val ? `<div class="f"><span class="lbl">${lbl}</span><div class="tags"><label class="tag" style="border-color:var(--gold);background:#fffbf0;font-weight:600;color:#1a1a2e;"><input type="checkbox" checked> ${toLbl(val)}</label></div></div>` : '';
+  // Immer sichtbar; befüllt = goldene Unterlinie, leer = gestrichelt + gedimmt
+  const fshow = (lbl, val, opts = '') =>
+    `<div class="f" ${opts}><span class="lbl" style="${val ? '' : 'opacity:0.45;'}">${lbl}</span><input class="val" type="text" value="${val ? String(val).replace(/"/g, '&quot;') : ''}" placeholder="—" style="${val ? 'border-bottom-color:#c9a227;' : 'border-bottom:1px dashed #ccc;color:#aaa;'}"></div>`;
+  // Alle Optionen immer zeigen; gewählte = gold, rest = gedimmt
+  const allTags = (lbl, allOpts, selArr, toLbl = x => x) =>
+    `<div class="f"><span class="lbl">${lbl}</span><div class="tags">${allOpts.map(o => {
+      const s = (selArr||[]).includes(o);
+      return `<label class="tag" style="${s ? 'border-color:var(--gold);background:#fffbf0;font-weight:600;color:#1a1a2e;' : 'opacity:0.3;'}"><input type="checkbox" ${s ? 'checked' : ''}> ${toLbl(o)}</label>`;
+    }).join('')}</div></div>`;
+  // Einzelauswahl-Version
+  const allTag1 = (lbl, allOpts, val, toLbl = x => x) =>
+    `<div class="f"><span class="lbl">${lbl}</span><div class="tags">${allOpts.map(o => {
+      const s = val === o;
+      return `<label class="tag" style="${s ? 'border-color:var(--gold);background:#fffbf0;font-weight:600;color:#1a1a2e;' : 'opacity:0.3;'}"><input type="checkbox" ${s ? 'checked' : ''}> ${toLbl(o)}</label>`;
+    }).join('')}</div></div>`;
 
   const spez    = form.spezifikation || {};
   const stickereiPosFixed = (form.stickereiPos || []).map(fixUtf8);
@@ -2160,42 +2183,33 @@ ${(() => {
   <div class="fg2">
     <div class="f"><span class="lbl">${T.besteller}</span><input class="val" type="text" value="${form.besteller}"></div>
     <div class="f"><span class="lbl">${T.lieferant}</span><input class="val" type="text" value="${selectedLtInfo}"></div>
-    ${fval(T.apBesteller, form.ansprechpartnerBesteller)}
-    ${fval(T.apLieferant, form.ansprechpartnerLieferant)}
-    <div class="f"><span class="lbl">${T.bestelldat}</span><input class="val" type="text" value="${form.bestelldatum}"></div>
-    ${fval(T.lieferdat, form.lieferdatum)}
-    <div class="f"><span class="lbl">${T.farbe}</span><input class="val" type="text" value="${form.farbe}"></div>
+    ${fshow(T.apBesteller, form.ansprechpartnerBesteller)}
+    ${fshow(T.apLieferant, form.ansprechpartnerLieferant)}
+    <div class="f"><span class="lbl">${T.bestelldat}</span><input class="val" type="text" value="${form.bestelldatum}" style="border-bottom-color:#c9a227;"></div>
+    ${fshow(T.lieferdat, form.lieferdatum)}
+    <div class="f"><span class="lbl">${T.farbe}</span><input class="val" type="text" value="${form.farbe}" style="border-bottom-color:#c9a227;"></div>
   </div>
 </div>
 
 <div class="sec">
   <div class="st"><span class="n">3</span> ${T.s3}</div>
   <div class="fg2">
-    ${(() => {
-      const matSel = (spez.material || []);
-      if (!matSel.length && !spez.materialText) return '';
-      const matMap = { '100% Baumwolle': T.cotton, 'Baumwolle/Polyester': T.cottonPoly, 'Canvas': T.canvas, 'Synthetik': T.synthetik };
-      return `<div class="f"><span class="lbl">${T.material}</span>
-        <div class="tags">${matSel.map(m => `<label class="tag" style="border-color:var(--gold);background:#fffbf0;font-weight:600;color:#1a1a2e;"><input type="checkbox" checked> ${matMap[m]||m}</label>`).join('')}</div>
-        ${spez.materialText ? `<input class="val" type="text" value="${spez.materialText}" style="margin-top:2mm;">` : ''}
-      </div>`;
-    })()}
-    ${ftags(T.webart, spez.webart)}
-    ${ftags(T.gramKids, spez.grammaturKids)}
-    ${ftags(T.gramAdult, spez.grammaturAdult)}
+    ${allTags(T.material, ['100% Baumwolle','Baumwolle/Polyester','Canvas','Synthetik'], spez.material||[], m => ({'100% Baumwolle':T.cotton,'Baumwolle/Polyester':T.cottonPoly,'Canvas':T.canvas,'Synthetik':T.synthetik}[m]||m))}
+    ${allTags(T.webart, ['Single Weave','Double Weave','Kata','Kumite / Leicht'], spez.webart||[])}
+    ${allTags(T.gramKids, ['8 oz (~270 g/m²)','10 oz (~340 g/m²)','12 oz (~400 g/m²)','14 oz (~470 g/m²)'], spez.grammaturKids||spez.grammatur||[])}
+    ${allTags(T.gramAdult, ['8 oz (~270 g/m²)','10 oz (~340 g/m²)','12 oz (~400 g/m²)','14 oz (~470 g/m²)'], spez.grammaturAdult||spez.grammatur||[])}
   </div>
 </div>
 
-${(form.schnittTyp || form.reversTyp || form.hosenbundTyp || form.schnittBemerkung) ? `
 <div class="sec">
   <div class="st"><span class="n">4</span> ${T.s_schnitt}</div>
   <div class="fg3">
-    ${ftag1(T.s_schnittTyp, form.schnittTyp, optBi)}
-    ${ftag1(T.s_revers, form.reversTyp, optBi)}
-    ${ftag1(T.s_hosenbund, form.hosenbundTyp, optBi)}
+    ${allTag1(T.s_schnittTyp, ['Regular','Slim','Traditional','Competition-Cut'], form.schnittTyp, optBi)}
+    ${allTag1(T.s_revers, ['Breit (Standard)','Schmal','Competition-Flap'], form.reversTyp, optBi)}
+    ${allTag1(T.s_hosenbund, ['Kordel','Gummibund','Kordel + Gummi'], form.hosenbundTyp, optBi)}
   </div>
-  ${fval(T.s_schnittBem, form.schnittBemerkung, 'style="margin-top:3mm;"')}
-</div>` : ''}
+  ${fshow(T.s_schnittBem, form.schnittBemerkung, 'style="margin-top:3mm;"')}
+</div>
 </div>
 
 <!-- SEITE 2 -->
@@ -2219,81 +2233,83 @@ ${(form.schnittTyp || form.reversTyp || form.hosenbundTyp || form.schnittBemerku
 
 <div class="sec">
   <div class="st"><span class="n">6</span> ${T.s5}</div>
-  ${form.stickereiPos.length > 0 ? `
   <span class="lbl" style="display:block;margin-bottom:2mm;">${T.embPos}</span>
-  <div class="chk-grid" style="margin-bottom:4mm;">
-    ${[['Linkes Revers',T.posLL],['Rechtes Revers',T.posRL],['Rücken oben',T.posRO],['Rücken Mitte',T.posRM],
-       ['Linker Ärmel',T.posLA],['Rechter Ärmel',T.posRA],['Hosenbein',T.posHB],['Kragen',T.posKr]]
-      .filter(([k]) => form.stickereiPos.includes(k))
-      .map(([,lbl]) => `<label class="chk-item" style="border-color:var(--gold);background:#fffbf0;"><input type="checkbox" checked> ${lbl}</label>`).join('')}
-  </div>` : ''}
-  <div class="fg2">
-    ${fval(T.embFile, form.stickereiBemerkung)}
-    ${fval(T.embText, form.stickereiSchriftzug)}
-    ${fval(T.threadCol, form.stickereiGarnfarben)}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:5mm;">
+    ${['Linkes Revers','Rechtes Revers','Rücken oben','Rücken Mitte','Linker Ärmel','Rechter Ärmel','Hosenbein links','Hosenbein rechts','Kragen'].map(pos => {
+      const isActive = stickereiPosFixed.includes(pos);
+      const localFile = (form.stickereiPosDateien || {})[pos];
+      const serverFile = eingebetteteDateien.find(d => d.tag === pos && d.dataUrl);
+      const imgSrc = localFile?.dataUrl || serverFile?.dataUrl || null;
+      const lbl = POS_LABEL[pos] || pos;
+      return `<div style="border:${isActive ? '1.5px solid #c9a227;background:#fffbf0;' : '1px dashed #ddd;opacity:0.38;'}border-radius:4px;padding:2.5mm 3mm;display:flex;align-items:center;gap:3mm;min-height:10mm;break-inside:avoid;">
+        <input type="checkbox" ${isActive ? 'checked' : ''} style="flex-shrink:0;">
+        <span style="flex:1;font-weight:${isActive ? '700' : '400'};font-size:8.5pt;color:${isActive ? '#1a1a2e' : '#999'};">${lbl}</span>
+        ${imgSrc ? `<img src="${imgSrc}" style="max-height:20mm;max-width:30mm;object-fit:contain;border:1px solid #e8d080;border-radius:2px;background:white;flex-shrink:0;">` : (isActive ? `<span style="font-size:7pt;color:#c9a227;opacity:0.6;">kein Logo</span>` : '')}
+      </div>`;
+    }).join('')}
   </div>
-  ${(form.pantone_grundfarbe || form.pantone_garn1 || form.pantone_garn2 || form.pantone_paspel) ? `
+  <div class="fg2">
+    ${fshow(T.embFile, form.stickereiBemerkung)}
+    ${fshow(T.embText, form.stickereiSchriftzug)}
+    ${fshow(T.threadCol, form.stickereiGarnfarben)}
+  </div>
   <div style="margin-top:4mm;">
     <span class="lbl" style="display:block;margin-bottom:3mm;">${T.s_pantone}</span>
     <div class="fg2">
-      ${fval(T.s_pGrund, form.pantone_grundfarbe)}
-      ${fval(T.s_pGarn1, form.pantone_garn1)}
-      ${fval(T.s_pGarn2, form.pantone_garn2)}
-      ${fval(T.s_pPaspel, form.pantone_paspel)}
+      ${fshow(T.s_pGrund, form.pantone_grundfarbe)}
+      ${fshow(T.s_pGarn1, form.pantone_garn1)}
+      ${fshow(T.s_pGarn2, form.pantone_garn2)}
+      ${fshow(T.s_pPaspel, form.pantone_paspel)}
     </div>
-  </div>` : ''}
+  </div>
 </div>
 </div>
 
 <!-- SEITE 3 (NEU: Naht, Muster, Zeitplan, Verpackung) -->
 <div class="page">
 
-${(spez.stiche_cm || spez.nahtBemerkung || spez.gurtschlaufen_anzahl || spez.gurtschlaufen_breite || (spez.verstaerkungen||[]).length) ? `
 <div class="sec">
   <div class="st"><span class="n">7</span> ${T.s_naht}</div>
   <div class="fg2">
-    ${fval(T.s_stiche, spez.stiche_cm)}
-    ${fval(T.s_nahtBem, spez.nahtBemerkung)}
-    ${fval(T.s_gurtAnz, spez.gurtschlaufen_anzahl)}
-    ${fval(T.s_gurtBr, spez.gurtschlaufen_breite)}
+    ${fshow(T.s_stiche, spez.stiche_cm)}
+    ${fshow(T.s_nahtBem, spez.nahtBemerkung)}
+    ${fshow(T.s_gurtAnz, spez.gurtschlaufen_anzahl)}
+    ${fshow(T.s_gurtBr, spez.gurtschlaufen_breite)}
   </div>
-  ${ftags(T.s_verst, spez.verstaerkungen, optBi)}
-</div>` : ''}
+  ${allTags(T.s_verst, ['Seitenabschluss','Gürtelschlaufen','Knotenbereich','Kragen-Ansatz','Ärmel-Saum','Hosenbund'], spez.verstaerkungen||[], optBi)}
+</div>
 
-${form.muster_benoetigt ? `
 <div class="sec">
   <div class="st"><span class="n">8</span> ${T.s_muster}</div>
-  <label class="chk-item" style="display:inline-flex;margin-bottom:4mm;"><input type="checkbox" checked> ${T.s_musterBen}</label>
-  <div class="fg2">
-    ${fval(T.s_musterGr, form.muster_groesse)}
-    ${fval(T.s_musterDL, form.muster_deadline)}
-    ${fval(T.s_musterBem, form.muster_bemerkung)}
-    ${form.muster_mitStickerei ? `<div class="f" style="justify-content:flex-end;"><label class="chk-item"><input type="checkbox" checked> ${T.s_musterEmb}</label></div>` : ''}
-  </div>
-</div>` : ''}
+  <label class="chk-item" style="display:inline-flex;margin-bottom:4mm;${form.muster_benoetigt ? 'border-color:var(--gold);background:#fffbf0;' : 'opacity:0.5;'}"><input type="checkbox" ${checked(form.muster_benoetigt)}> ${T.s_musterBen}</label>
+  ${form.muster_benoetigt ? `<div class="fg2">
+    ${fshow(T.s_musterGr, form.muster_groesse)}
+    ${fshow(T.s_musterDL, form.muster_deadline)}
+    ${fshow(T.s_musterBem, form.muster_bemerkung)}
+    ${form.muster_mitStickerei ? `<div class="f" style="justify-content:flex-end;"><label class="chk-item" style="border-color:var(--gold);background:#fffbf0;"><input type="checkbox" checked> ${T.s_musterEmb}</label></div>` : ''}
+  </div>` : ''}
+</div>
 
-${(form.zeitplan_sample || form.zeitplan_prod || form.zeitplan_schiff) ? `
 <div class="sec">
   <div class="st"><span class="n">9</span> ${T.s_zeitplan}</div>
   <div class="fg3">
-    ${fval(T.s_zSample, form.zeitplan_sample)}
-    ${fval(T.s_zProd, form.zeitplan_prod)}
-    ${fval(T.s_zSchiff, form.zeitplan_schiff)}
+    ${fshow(T.s_zSample, form.zeitplan_sample)}
+    ${fshow(T.s_zProd, form.zeitplan_prod)}
+    ${fshow(T.s_zSchiff, form.zeitplan_schiff)}
   </div>
-</div>` : ''}
+</div>
 
-${(spez.verp_typ || spez.verp_stueck_beutel || spez.verp_stueck_karton || spez.verp_ean || spez.verp_label || spez.verp_bemerkung) ? `
 <div class="sec">
   <div class="st"><span class="n">10</span> ${T.s_verp}</div>
   <div class="fg2">
-    ${ftag1(T.s_verpTyp, spez.verp_typ, optBi)}
-    ${fval(T.s_verpBeutel, spez.verp_stueck_beutel)}
-    ${fval(T.s_verpKarton, spez.verp_stueck_karton)}
-    ${spez.verp_ean ? `<div class="f"><label class="chk-item"><input type="checkbox" checked> ${T.s_verpEan}</label></div>` : ''}
+    ${allTag1(T.s_verpTyp, ['Gefaltet','Auf Hänger'], spez.verp_typ, optBi)}
+    ${fshow(T.s_verpBeutel, spez.verp_stueck_beutel)}
+    ${fshow(T.s_verpKarton, spez.verp_stueck_karton)}
+    <label class="chk-item" style="${spez.verp_ean ? 'border-color:var(--gold);background:#fffbf0;' : 'opacity:0.5;'}"><input type="checkbox" ${checked(spez.verp_ean)}> ${T.s_verpEan}</label>
   </div>
-  ${fval(T.s_verpLabel, spez.verp_label, 'style="margin-top:3mm;"')}
-  ${fval(T.s_verpBem, spez.verp_bemerkung, 'style="margin-top:3mm;"')}
-</div>` : ''}
+  ${fshow(T.s_verpLabel, spez.verp_label, 'style="margin-top:3mm;"')}
+  ${fshow(T.s_verpBem, spez.verp_bemerkung, 'style="margin-top:3mm;"')}
+</div>
 </div>
 
 <!-- SEITE 4 (alt: Seite 3): Pflegekennzeichnung, Bemerkungen, Freigabe -->
@@ -2312,11 +2328,11 @@ ${(spez.verp_typ || spez.verp_stueck_beutel || spez.verp_stueck_karton || spez.v
     </div>
     <div style="display:flex;flex-direction:column;gap:4mm;">
       <span class="lbl" style="display:block;">${T.labelSpec}</span>
-      ${fval(T.labelMat, spez.labelText)}
-      ${ftags(T.labelLang, spez.labelSprachen || ['Deutsch','Englisch'], v => ({'Deutsch':T.langDE,'Englisch':T.langEN,'Französisch':T.langFR,'Japanisch':T.langJA}[v]||v))}
-      ${ftags(T.labelType, spez.labelArt || [], v => ({'Gewebtes Etikett':T.labelWoven,'Gedrucktes Etikett':T.labelPrinted,'Eingestickt':T.labelEmb}[v]||v))}
-      ${ftags(T.labelPos, spez.labelPosition || [], v => ({'Nacken (innen)':T.labelNeck,'Seitennaht':T.labelSeam,'Hosenbund (innen)':T.labelWaist}[v]||v))}
-      ${fval(T.labelExtra, spez.labelZusatz)}
+      ${fshow(T.labelMat, spez.labelText)}
+      ${allTags(T.labelLang, ['Deutsch','Englisch','Französisch','Japanisch'], spez.labelSprachen||['Deutsch','Englisch'], v => ({'Deutsch':T.langDE,'Englisch':T.langEN,'Französisch':T.langFR,'Japanisch':T.langJA}[v]||v))}
+      ${allTags(T.labelType, ['Gewebtes Etikett','Gedrucktes Etikett','Eingestickt'], spez.labelArt||[], v => ({'Gewebtes Etikett':T.labelWoven,'Gedrucktes Etikett':T.labelPrinted,'Eingestickt':T.labelEmb}[v]||v))}
+      ${allTags(T.labelPos, ['Nacken (innen)','Seitennaht','Hosenbund (innen)'], spez.labelPosition||[], v => ({'Nacken (innen)':T.labelNeck,'Seitennaht':T.labelSeam,'Hosenbund (innen)':T.labelWaist}[v]||v))}
+      ${fshow(T.labelExtra, spez.labelZusatz)}
     </div>
   </div>
 </div>
