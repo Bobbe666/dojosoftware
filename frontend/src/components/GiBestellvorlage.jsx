@@ -70,6 +70,7 @@ const EMPTY = {
   pantone_garn1: '', pantone_garn2: '', pantone_paspel: '', pantone_grundfarbe: '',
   preisKids: '', preisAdult: '', waehrung: 'EUR',
   care_label_image: '',
+  zeichnung_image: '',
 };
 
 const POSITIONEN = [
@@ -993,6 +994,23 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             <button className="gv-zeichnung-toggle" onClick={() => setZeichnungSichtbar(v => !v)}>
               {zeichnungSichtbar ? 'Zeichnung ▲' : 'Zeichnung zeigen ▼'}
             </button>
+            <label style={{ cursor: 'pointer', fontSize: '0.77rem', color: 'rgba(212,175,55,0.75)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '4px', padding: '3px 10px', flexShrink: 0 }}
+              title="Eigene Maßzeichnung hochladen (PNG/JPG)">
+              📐 Zeichnung hochladen
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = ev => setForm(p => ({ ...p, zeichnung_image: ev.target.result }));
+                reader.readAsDataURL(file);
+              }} />
+            </label>
+            {form.zeichnung_image && (
+              <button onClick={() => setForm(p => ({ ...p, zeichnung_image: '' }))}
+                style={{ fontSize: '0.72rem', color: 'rgba(255,100,100,0.7)', background: 'none', border: '1px solid rgba(255,100,100,0.3)', borderRadius: '4px', padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}>
+                ✕ Zeichnung entfernen
+              </button>
+            )}
             <button className="gv-btn-proportional" onClick={berechneProportional}
               title="Körpermaße proportional zur Referenzgröße berechnen">
               ↕ Maße hochrechnen
@@ -1023,8 +1041,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             {zeichnungSichtbar && (
               <img
                 className="gv-zeichnung-img"
-                src={`/gi-charts/modell-${form.model}.jpg`}
-                alt={`Maßzeichnung Modell ${form.model}`}
+                src={form.zeichnung_image || '/gi-charts/skizze-gi.png'}
+                alt="Maßzeichnung"
               />
             )}
             <div className="gv-mass-wrap">
@@ -1908,7 +1926,7 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
     hL: 'Trouser length', bB: 'Waistband ½', sM: 'Hem width ½', iL: 'Inseam',
   };
 
-  const img188 = `${origin}/gi-charts/skizze-gi.png`;
+  const img188 = form.zeichnung_image || `${origin}/gi-charts/skizze-gi.png`;
 
   // Helpers: leere Felder im PDF weglassen
   const fval = (lbl, val, opts = '') =>
