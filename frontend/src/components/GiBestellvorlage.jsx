@@ -71,6 +71,7 @@ const EMPTY = {
   preisKids: '', preisAdult: '', waehrung: 'EUR',
   care_label_image: '',
   zeichnung_image: '',
+  stickereiPosDateien: {},
 };
 
 const POSITIONEN = [
@@ -133,6 +134,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   const [dojoAuswahl, setDojoAuswahl] = useState(overrideDojoId || null); // für Super-Admin
   const [dojoAuswahlModal, setDojoAuswahlModal] = useState(false);
   const fileInputRef = useRef(null);
+  const localUploadRef = useRef(null);
+  const localUploadPosRef = useRef(null);
   const pendingLangRef = useRef('de');
   const [zeichnungSichtbar, setZeichnungSichtbar] = useState(true);
   const uploadTagRef = useRef(null);
@@ -263,6 +266,41 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       await axios.delete(`/bestellvorlagen/${vorlage.vorlage_id}/dateien/${dateiId}?dojo_id=${dojoId}`);
       setDateien(prev => prev.filter(d => d.datei_id !== dateiId));
     } catch {}
+  };
+
+  const triggerLocalUpload = (pos) => {
+    localUploadPosRef.current = pos;
+    localUploadRef.current?.click();
+  };
+
+  const handleLocalUpload = (e) => {
+    const file = e.target.files?.[0];
+    const pos = localUploadPosRef.current;
+    if (!file || !pos) return;
+    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name);
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onload = ev => setForm(p => ({
+        ...p,
+        stickereiPosDateien: { ...p.stickereiPosDateien, [pos]: { name: file.name, dataUrl: ev.target.result } },
+      }));
+      reader.readAsDataURL(file);
+    } else {
+      setForm(p => ({
+        ...p,
+        stickereiPosDateien: { ...p.stickereiPosDateien, [pos]: { name: file.name, dataUrl: null } },
+      }));
+    }
+    localUploadPosRef.current = null;
+    if (localUploadRef.current) localUploadRef.current.value = '';
+  };
+
+  const deleteLocalPosDatei = (pos) => {
+    setForm(p => {
+      const pd = { ...(p.stickereiPosDateien || {}) };
+      delete pd[pos];
+      return { ...p, stickereiPosDateien: pd };
+    });
   };
 
   const f   = (key) => (e) => setForm(p => ({ ...p, [key]: e.target.value }));
@@ -1115,36 +1153,46 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             )}
           </div>
 
-          {/* Gemeinsamer file-input */}
+          {/* Gemeinsamer file-input (Server-Upload via Vorlage) */}
           <input ref={fileInputRef} type="file" style={{ display: 'none' }}
             accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
             onChange={uploadDatei} />
+          {/* Lokaler file-input (Base64 im Form-State) */}
+          <input ref={localUploadRef} type="file" style={{ display: 'none' }}
+            accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
+            onChange={handleLocalUpload} />
 
           {/* Positionen — Jacke */}
           <div className="gv-pos-cat-label">Jacke</div>
           <div className="gv-pos-grid">
             {POSITIONEN.filter(p => !p.startsWith('Hosenbein')).map(pos => {
-              const posDatei = dateien.find(d => d.tag === pos);
-              const isActive = form.stickereiPos.includes(pos);
-              const uploading = uploadingFile === pos;
+              const serverDatei = dateien.find(d => d.tag === pos);
+              const localDatei  = (form.stickereiPosDateien || {})[pos];
+              const isActive    = form.stickereiPos.includes(pos);
+              const uploading   = uploadingFile === pos;
               return (
                 <div key={pos} className={`gv-pos-item ${isActive ? 'active' : ''}`}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', flex: 1, minWidth: 0 }}>
                     <input type="checkbox" checked={isActive} onChange={() => togglePos(pos)} />
                     <span style={{ flex: 1 }}>{pos}</span>
                   </label>
-                  {isActive && vorlage?.vorlage_id && (
-                    posDatei ? (
-                      <span className="gv-pos-inline-file" title={posDatei.original_name}>
-                        📎 {posDatei.original_name.length > 14 ? posDatei.original_name.slice(0, 12) + '…' : posDatei.original_name}
-                        <button className="gv-pos-inline-del" onClick={() => deleteDatei(posDatei.datei_id)} title="Löschen">✕</button>
-                      </span>
-                    ) : (
-                      <button className="gv-pos-inline-upload" onClick={() => triggerUpload(pos)} disabled={!!uploadingFile}>
-                        {uploading ? '⏳' : '+ Datei'}
-                      </button>
-                    )
-                  )}
+                  {isActive && (serverDatei ? (
+                    <span className="gv-pos-inline-file" title={serverDatei.original_name}>
+                      📎 {serverDatei.original_name.length > 14 ? serverDatei.original_name.slice(0, 12) + '…' : serverDatei.original_name}
+                      <button className="gv-pos-inline-del" onClick={() => deleteDatei(serverDatei.datei_id)} title="Löschen">✕</button>
+                    </span>
+                  ) : localDatei ? (
+                    <span className="gv-pos-inline-file" title={localDatei.name}>
+                      📎 {localDatei.name.length > 14 ? localDatei.name.slice(0, 12) + '…' : localDatei.name}
+                      <button className="gv-pos-inline-del" onClick={() => deleteLocalPosDatei(pos)} title="Löschen">✕</button>
+                    </span>
+                  ) : (
+                    <button className="gv-pos-inline-upload"
+                      onClick={() => vorlage?.vorlage_id ? triggerUpload(pos) : triggerLocalUpload(pos)}
+                      disabled={!!uploadingFile}>
+                      {uploading ? '⏳' : '+ Datei'}
+                    </button>
+                  ))}
                 </div>
               );
             })}
@@ -1154,27 +1202,33 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           <div className="gv-pos-cat-label" style={{ marginTop: '0.55rem' }}>Hose</div>
           <div className="gv-pos-grid">
             {POSITIONEN.filter(p => p.startsWith('Hosenbein')).map(pos => {
-              const posDatei = dateien.find(d => d.tag === pos);
-              const isActive = form.stickereiPos.includes(pos);
-              const uploading = uploadingFile === pos;
+              const serverDatei = dateien.find(d => d.tag === pos);
+              const localDatei  = (form.stickereiPosDateien || {})[pos];
+              const isActive    = form.stickereiPos.includes(pos);
+              const uploading   = uploadingFile === pos;
               return (
                 <div key={pos} className={`gv-pos-item ${isActive ? 'active' : ''}`}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', flex: 1, minWidth: 0 }}>
                     <input type="checkbox" checked={isActive} onChange={() => togglePos(pos)} />
                     <span style={{ flex: 1 }}>{pos}</span>
                   </label>
-                  {isActive && vorlage?.vorlage_id && (
-                    posDatei ? (
-                      <span className="gv-pos-inline-file" title={posDatei.original_name}>
-                        📎 {posDatei.original_name.length > 14 ? posDatei.original_name.slice(0, 12) + '…' : posDatei.original_name}
-                        <button className="gv-pos-inline-del" onClick={() => deleteDatei(posDatei.datei_id)} title="Löschen">✕</button>
-                      </span>
-                    ) : (
-                      <button className="gv-pos-inline-upload" onClick={() => triggerUpload(pos)} disabled={!!uploadingFile}>
-                        {uploading ? '⏳' : '+ Datei'}
-                      </button>
-                    )
-                  )}
+                  {isActive && (serverDatei ? (
+                    <span className="gv-pos-inline-file" title={serverDatei.original_name}>
+                      📎 {serverDatei.original_name.length > 14 ? serverDatei.original_name.slice(0, 12) + '…' : serverDatei.original_name}
+                      <button className="gv-pos-inline-del" onClick={() => deleteDatei(serverDatei.datei_id)} title="Löschen">✕</button>
+                    </span>
+                  ) : localDatei ? (
+                    <span className="gv-pos-inline-file" title={localDatei.name}>
+                      📎 {localDatei.name.length > 14 ? localDatei.name.slice(0, 12) + '…' : localDatei.name}
+                      <button className="gv-pos-inline-del" onClick={() => deleteLocalPosDatei(pos)} title="Löschen">✕</button>
+                    </span>
+                  ) : (
+                    <button className="gv-pos-inline-upload"
+                      onClick={() => vorlage?.vorlage_id ? triggerUpload(pos) : triggerLocalUpload(pos)}
+                      disabled={!!uploadingFile}>
+                      {uploading ? '⏳' : '+ Datei'}
+                    </button>
+                  ))}
                 </div>
               );
             })}
