@@ -185,11 +185,13 @@ const TarifePreise = () => {
         const arr = Array.isArray(stRes.data) ? stRes.data : (stRes.data.data || []);
         setSpStile(arr.filter(s => s.aktiv !== 0 && s.aktiv !== false));
       }
-      try {
-        const artRes = await axios.get(`/starterpakete/artikel-options${p}`);
-        setSpArtikel(artRes.data?.artikel || []);
-      } catch (artErr) {
-        console.warn('Artikel-Options nicht geladen:', artErr?.response?.status, artErr?.message);
+      if (dojoId) {
+        try {
+          const artRes = await axios.get(`/artikel?dojo_id=${dojoId}`);
+          setSpArtikel(artRes.data?.data || []);
+        } catch (artErr) {
+          console.warn('Artikel nicht geladen:', artErr?.response?.status);
+        }
       }
     } catch (err) {
       console.error('Starterpakete laden Fehler:', err);
@@ -1130,7 +1132,7 @@ const TarifePreise = () => {
       {/* Modal: Starterpaket bearbeiten (inkl. Positionen) */}
       {editingSp && (
         <div className="ds-modal-overlay" onClick={() => { setEditingSp(null); setAddingPosForId(null); }}>
-          <div className="ds-modal ds-modal--xl" onClick={e => e.stopPropagation()} style={{ background: 'rgba(26,26,46,0.99)' }}>
+          <div className="ds-modal ds-modal--xl" onClick={e => e.stopPropagation()} style={{ background: 'rgba(26,26,46,0.99)', maxWidth: 'min(900px, 96vw)', width: '96vw' }}>
             <div className="ds-modal-header">
               <div>
                 <h3 className="ds-modal-title">Starterpaket bearbeiten</h3>
