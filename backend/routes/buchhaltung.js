@@ -1569,8 +1569,10 @@ Regeln:
 // 📋 GET /api/buchhaltung/belege - Alle Belege abrufen
 // ===================================================================
 router.get('/belege', requireBuchhaltungAccess, (req, res) => {
-  const { organisation, jahr, kategorie, buchungsart, seite = 1, limit = 50 } = req.query;
+  const { organisation, jahr, kategorie, buchungsart, seite = 1, limit = 50, sortierung = 'datum' } = req.query;
   const offset = (parseInt(seite) - 1) * parseInt(limit);
+  const orderMap = { datum: 'beleg_datum DESC, beleg_id DESC', erstellt: 'erstellt_am DESC, beleg_id DESC' };
+  const orderBy = orderMap[sortierung] || orderMap.datum;
 
   let whereClause = '1=1';
   const params = [];
@@ -1620,7 +1622,7 @@ router.get('/belege', requireBuchhaltungAccess, (req, res) => {
       geaendert_am
     FROM buchhaltung_belege
     WHERE ${whereClause} AND storniert = FALSE
-    ORDER BY buchungsdatum DESC, beleg_nummer DESC
+    ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `;
 
