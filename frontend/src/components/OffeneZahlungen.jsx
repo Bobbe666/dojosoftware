@@ -7,13 +7,15 @@ import {
   Mail, Eye, Filter, TrendingDown, Users, Clock, CheckCircle,
   XCircle, AlertCircle, Search, RotateCcw, TrendingUp, Euro,
   Activity, ArrowUpRight, Phone, Banknote, Calendar, ChevronDown,
-  ChevronRight, ExternalLink, Zap, Info, Hash, User
+  ChevronRight, ExternalLink, Zap, Info, Hash, User, BarChart2,
+  Percent, Target, ShieldCheck, ShieldAlert
 } from 'lucide-react';
 import '../styles/OffeneZahlungen.css';
 
 const fmt = (val) => parseFloat(val || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 const maskIban = (iban) => iban ? iban.replace(/(.{4})(.+)(.{4})$/, (_, a, m, e) => a + m.replace(/./g, '·') + e) : '—';
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '—';
+const currentMonthLabel = new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
 
 const OffeneZahlungen = () => {
   const { token } = useAuth();
@@ -29,12 +31,12 @@ const OffeneZahlungen = () => {
   const [retryLoading, setRetryLoading] = useState({});
   const [retryAllLoading, setRetryAllLoading] = useState(false);
   const [auswertung, setAuswertung] = useState(null);
-
   const [filter, setFilter] = useState({ status: 'offen', typ: '', search: '' });
   const [activeTab, setActiveTab] = useState('ueberfaellig');
   const [selectedZahlung, setSelectedZahlung] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [expandedRows, setExpandedRows] = useState({});
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -65,6 +67,7 @@ const OffeneZahlungen = () => {
       setProcessingTransaktionen(processingRes.data.transactions || []);
       setUeberfaelligeMitglieder(ueberfaelligRes.data.mitglieder || []);
       if (auswertungRes.data?.success) setAuswertung(auswertungRes.data);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error('Fehler beim Laden:', err);
     } finally {
@@ -156,150 +159,324 @@ const OffeneZahlungen = () => {
     return <span className="status-badge" style={{ '--status-color': color }}>{label}</span>;
   };
 
+  // Computed stats
+  const monatTotal = auswertung
+    ? (auswertung.aktueller_monat.anzahl_bezahlt + auswertung.aktueller_monat.anzahl_offen)
+    : 0;
+  const einzugsquote = monatTotal > 0
+    ? Math.round((auswertung.aktueller_monat.anzahl_bezahlt / monatTotal) * 100)
+    : 0;
+  const avgUeberfaelligTage = ueberfaelligeMitglieder.length > 0
+    ? Math.round(ueberfaelligeMitglieder.reduce((s, m) => s + (parseInt(m.tage_ueberfaellig) || 0), 0) / ueberfaelligeMitglieder.length)
+    : 0;
+  const healthScore = auswertung
+    ? Math.max(0, Math.min(100, Math.round(
+        einzugsquote * 0.5
+        - (auswertung.failed_stripe.anzahl * 3)
+        - (auswertung.offene_beitraege.betroffene_mitglieder * 2)
+        - (auswertung.ruecklastschriften.anzahl * 5)
+        + 50
+      )))
+    : null;
+
   const tabs = [
     { key: 'ueberfaellig', label: 'Überfällig', icon: AlertTriangle, count: ueberfaelligeMitglieder.length, color: 'danger' },
-    { key: 'fehlgeschlagen', label: 'Fehlgeschlagene Einzüge', icon: XCircle, count: failedTransaktionen.length, color: 'danger' },
-    { key: 'clearing', label: 'Im SEPA-Clearing', icon: Activity, count: processingTransaktionen.length, color: 'info' },
+    { key: 'fehlgeschlagen', label: 'Fehlgeschlagen', icon: XCircle, count: failedTransaktionen.length, color: 'danger' },
+    { key: 'clearing', label: 'SEPA-Clearing', icon: Activity, count: processingTransaktionen.length, color: 'info' },
     { key: 'zahlungen', label: 'Rücklastschriften', icon: Building2, count: stats.offen || 0, color: 'warning' },
-    { key: 'disputes', label: 'Stripe Disputes', icon: CreditCard, count: disputes.filter(d => d.status !== 'won' && d.status !== 'lost').length, color: 'warning' },
-    { key: 'mitglieder', label: 'Problem-Mitglieder', icon: Users, count: mitgliederProbleme.length, color: 'neutral' },
+    { key: 'disputes', label: 'Disputes', icon: CreditCard, count: disputes.filter(d => d.status !== 'won' && d.status !== 'lost').length, color: 'warning' },
+    { key: 'mitglieder', label: 'Problemmitglieder', icon: Users, count: mitgliederProbleme.length, color: 'neutral' },
   ];
 
   return (
-    <div className="offene-zahlungen">
-      {/* Header */}
-      <div className="oz-header">
-        <div className="oz-header-info">
-          <h1><AlertTriangle size={28} />Offene Zahlungen & Rücklastschriften</h1>
-          <p>Überfällige Beiträge, fehlgeschlagene Einzüge, SEPA-Clearing und Chargebacks</p>
-        </div>
-        <button onClick={loadData} className="btn-refresh" disabled={loading}>
-          <RefreshCw size={16} className={loading ? 'spin' : ''} />
-          Aktualisieren
-        </button>
-      </div>
+    <div className="oz">
 
-      {/* KPI-Karten */}
+      {/* ════════════ HERO HEADER ════════════ */}
+      <header className="oz-hero">
+        <div className="oz-hero-left">
+          <div className="oz-hero-icon">
+            <AlertTriangle size={22} />
+          </div>
+          <div>
+            <h1 className="oz-hero-title">Offene Zahlungen</h1>
+            <p className="oz-hero-sub">Finanzüberwachung · SEPA-Clearing · Rücklastschriften · Chargebacks</p>
+          </div>
+        </div>
+        <div className="oz-hero-right">
+          {lastUpdated && (
+            <span className="oz-last-update">
+              <Clock size={12} /> {lastUpdated.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          <button onClick={loadData} className="oz-refresh-btn" disabled={loading}>
+            <RefreshCw size={14} className={loading ? 'spin' : ''} />
+            Aktualisieren
+          </button>
+        </div>
+      </header>
+
+      {/* ════════════ METRICS GRID ════════════ */}
       {auswertung && (
-        <div className="oz-auswertung">
-          <div className="oz-kpi-grid">
-            <div className="oz-kpi oz-kpi--danger oz-kpi--clickable" onClick={() => setActiveTab('ueberfaellig')}>
-              <div className="oz-kpi-icon"><TrendingDown size={20} /></div>
-              <div className="oz-kpi-body">
-                <span className="oz-kpi-value">{fmt(auswertung.offene_beitraege.summe)}</span>
-                <span className="oz-kpi-label">Überfällig gesamt</span>
-                <span className="oz-kpi-sub">{auswertung.offene_beitraege.anzahl} Beiträge · {auswertung.offene_beitraege.betroffene_mitglieder} Mitglieder</span>
-              </div>
+        <section className="oz-metrics">
+
+          {/* 1 — Einzugsquote */}
+          <div className="oz-metric oz-metric--primary">
+            <div className="oz-metric-hd">
+              <span className="oz-metric-lbl"><Percent size={11} /> Einzugsquote</span>
+              <span className="oz-metric-period">{currentMonthLabel}</span>
             </div>
-            <div className="oz-kpi oz-kpi--success">
-              <div className="oz-kpi-icon"><TrendingUp size={20} /></div>
-              <div className="oz-kpi-body">
-                <span className="oz-kpi-value">{fmt(auswertung.aktueller_monat.eingezogen)}</span>
-                <span className="oz-kpi-label">Dieser Monat eingezogen</span>
-                <span className="oz-kpi-sub">{auswertung.aktueller_monat.anzahl_bezahlt} von {auswertung.aktueller_monat.anzahl_bezahlt + auswertung.aktueller_monat.anzahl_offen} Beiträgen</span>
-              </div>
+            <div className="oz-metric-num">{einzugsquote}<span className="oz-metric-unit">%</span></div>
+            <div className="oz-metric-progress">
+              <div
+                className="oz-metric-progress-fill"
+                style={{
+                  width: `${einzugsquote}%`,
+                  background: einzugsquote >= 90 ? '#22c55e' : einzugsquote >= 70 ? '#f59e0b' : '#ef4444'
+                }}
+              />
             </div>
-            <div className="oz-kpi oz-kpi--warning">
-              <div className="oz-kpi-icon"><Euro size={20} /></div>
-              <div className="oz-kpi-body">
-                <span className="oz-kpi-value">{fmt(auswertung.aktueller_monat.noch_offen)}</span>
-                <span className="oz-kpi-label">Dieser Monat noch offen</span>
-                <span className="oz-kpi-sub">{auswertung.aktueller_monat.anzahl_offen} ausstehende Beiträge</span>
-              </div>
-            </div>
-            <div className={`oz-kpi ${auswertung.failed_stripe.anzahl > 0 ? 'oz-kpi--danger' : 'oz-kpi--neutral'} oz-kpi--clickable`} onClick={() => setActiveTab('fehlgeschlagen')}>
-              <div className="oz-kpi-icon"><XCircle size={20} /></div>
-              <div className="oz-kpi-body">
-                <span className="oz-kpi-value">{auswertung.failed_stripe.anzahl}</span>
-                <span className="oz-kpi-label">Fehlgeschlagene Einzüge</span>
-                <span className="oz-kpi-sub">{auswertung.failed_stripe.summe > 0 ? fmt(auswertung.failed_stripe.summe) : 'Alle erledigt'}</span>
-              </div>
-            </div>
-            <div className={`oz-kpi ${auswertung.processing_stripe.anzahl > 0 ? 'oz-kpi--info' : 'oz-kpi--neutral'} oz-kpi--clickable`} onClick={() => setActiveTab('clearing')}>
-              <div className="oz-kpi-icon"><Activity size={20} /></div>
-              <div className="oz-kpi-body">
-                <span className="oz-kpi-value">{auswertung.processing_stripe.anzahl}</span>
-                <span className="oz-kpi-label">Im SEPA-Clearing</span>
-                <span className="oz-kpi-sub">{auswertung.processing_stripe.summe > 0 ? fmt(auswertung.processing_stripe.summe) : 'Keine laufenden'}</span>
-              </div>
-            </div>
-            <div className={`oz-kpi ${auswertung.ruecklastschriften.anzahl > 0 ? 'oz-kpi--warning' : 'oz-kpi--neutral'} oz-kpi--clickable`} onClick={() => setActiveTab('zahlungen')}>
-              <div className="oz-kpi-icon"><Building2 size={20} /></div>
-              <div className="oz-kpi-body">
-                <span className="oz-kpi-value">{auswertung.ruecklastschriften.anzahl}</span>
-                <span className="oz-kpi-label">Rücklastschriften offen</span>
-                <span className="oz-kpi-sub">{auswertung.ruecklastschriften.summe > 0 ? fmt(auswertung.ruecklastschriften.summe) : 'Keine offenen'}</span>
-              </div>
+            <div className="oz-metric-ft">
+              {auswertung.aktueller_monat.anzahl_bezahlt} von {monatTotal} Beiträgen eingezogen
             </div>
           </div>
 
-          {/* Monatsverlauf + letzte Erfolge */}
-          <div className="oz-detail-grid">
-            {auswertung.monatsverlauf?.length > 0 && (
-              <div className="oz-detail-card">
-                <h3><ArrowUpRight size={16} /> Monatsverlauf (letzte 6 Monate)</h3>
-                <div className="oz-monatsverlauf">
-                  {auswertung.monatsverlauf.map(m => {
-                    const maxVal = Math.max(...auswertung.monatsverlauf.map(x => parseFloat(x.summe)));
-                    const pct = maxVal > 0 ? (parseFloat(m.summe) / maxVal * 100) : 0;
-                    const [yr, mo] = m.monat.split('-');
-                    return (
-                      <div key={m.monat} className="oz-bar-item">
-                        <div className="oz-bar-fill" style={{ height: `${Math.max(pct, 4)}%` }} title={fmt(m.summe)} />
-                        <span className="oz-bar-label">{mo}/{yr.slice(2)}</span>
-                        <span className="oz-bar-val">{(parseFloat(m.summe)/1000).toFixed(1)}k</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            {auswertung.letzte_erfolge?.length > 0 && (
-              <div className="oz-detail-card">
-                <h3><CheckCircle size={16} /> Letzte erfolgreiche Einzüge</h3>
-                <div className="oz-erfolge-list">
-                  {auswertung.letzte_erfolge.map((e, i) => (
-                    <div key={i} className="oz-erfolg-item">
-                      <span className="oz-erfolg-name">{e.vorname} {e.nachname}</span>
-                      <span className="oz-erfolg-monat">{String(e.monat).padStart(2,'0')}/{e.jahr}</span>
-                      <span className="oz-erfolg-betrag">{fmt(e.betrag)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {auswertung.mitglieder_mit_problem > 0 && (
-              <div className="oz-detail-card oz-detail-card--alert">
-                <h3><Users size={16} /> Zahlungsprobleme</h3>
-                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-                  <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--error)' }}>{auswertung.mitglieder_mit_problem}</span>
-                  <p style={{ margin: '0.5rem 0 0', color: 'var(--text-2)', fontSize: '0.9rem' }}>Mitglieder mit aktivem Zahlungsproblem-Flag</p>
-                </div>
-              </div>
-            )}
+          {/* 2 — Eingezogen */}
+          <div className="oz-metric oz-metric--success">
+            <div className="oz-metric-hd">
+              <span className="oz-metric-lbl"><TrendingUp size={11} /> Eingezogen</span>
+              <span className="oz-metric-period">{currentMonthLabel}</span>
+            </div>
+            <div className="oz-metric-num oz-metric-num--money">{fmt(auswertung.aktueller_monat.eingezogen)}</div>
+            <div className="oz-metric-ft oz-metric-ft--split">
+              <span>{auswertung.aktueller_monat.anzahl_bezahlt} bezahlt</span>
+              <span className="oz-ft-muted">noch offen: {fmt(auswertung.aktueller_monat.noch_offen)}</span>
+            </div>
           </div>
-        </div>
+
+          {/* 3 — Überfällig */}
+          <div className="oz-metric oz-metric--danger oz-metric--link" onClick={() => setActiveTab('ueberfaellig')}>
+            <div className="oz-metric-hd">
+              <span className="oz-metric-lbl"><TrendingDown size={11} /> Überfällig gesamt</span>
+              <ChevronRight size={13} className="oz-metric-arrow" />
+            </div>
+            <div className="oz-metric-num oz-metric-num--money">{fmt(auswertung.offene_beitraege.summe)}</div>
+            <div className="oz-metric-ft oz-metric-ft--split">
+              <span>{auswertung.offene_beitraege.betroffene_mitglieder} Mitgl. · {auswertung.offene_beitraege.anzahl} Beitr.</span>
+              {avgUeberfaelligTage > 0 && (
+                <span className={`oz-ft-pill ${avgUeberfaelligTage > 60 ? 'oz-ft-pill--red' : 'oz-ft-pill--amber'}`}>
+                  Ø {avgUeberfaelligTage}d
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* 4 — Fehlgeschlagen */}
+          <div
+            className={`oz-metric ${auswertung.failed_stripe.anzahl > 0 ? 'oz-metric--danger' : 'oz-metric--ok'} oz-metric--link`}
+            onClick={() => setActiveTab('fehlgeschlagen')}
+          >
+            <div className="oz-metric-hd">
+              <span className="oz-metric-lbl"><XCircle size={11} /> Fehlgesch. Einzüge</span>
+              <ChevronRight size={13} className="oz-metric-arrow" />
+            </div>
+            <div className="oz-metric-num oz-metric-num--count">
+              {auswertung.failed_stripe.anzahl}
+              {auswertung.failed_stripe.summe > 0 && (
+                <span className="oz-metric-aside">{fmt(auswertung.failed_stripe.summe)}</span>
+              )}
+            </div>
+            <div className="oz-metric-ft">
+              {auswertung.failed_stripe.anzahl > 0
+                ? <span className="oz-ft-pill oz-ft-pill--red">→ Erneut einziehen</span>
+                : <span className="oz-ft-pill oz-ft-pill--green">✓ Alle erfolgreich</span>
+              }
+            </div>
+          </div>
+
+          {/* 5 — SEPA-Clearing */}
+          <div
+            className={`oz-metric ${auswertung.processing_stripe.anzahl > 0 ? 'oz-metric--info' : 'oz-metric--ok'} oz-metric--link`}
+            onClick={() => setActiveTab('clearing')}
+          >
+            <div className="oz-metric-hd">
+              <span className="oz-metric-lbl"><Activity size={11} /> SEPA-Clearing</span>
+              <ChevronRight size={13} className="oz-metric-arrow" />
+            </div>
+            <div className="oz-metric-num oz-metric-num--count">
+              {auswertung.processing_stripe.anzahl}
+              {auswertung.processing_stripe.summe > 0 && (
+                <span className="oz-metric-aside">{fmt(auswertung.processing_stripe.summe)}</span>
+              )}
+            </div>
+            <div className="oz-metric-ft">
+              {auswertung.processing_stripe.anzahl > 0
+                ? `${auswertung.processing_stripe.anzahl} Transaktionen im Clearing`
+                : 'Keine laufenden Transaktionen'
+              }
+            </div>
+          </div>
+
+          {/* 6 — Rücklastschriften */}
+          <div
+            className={`oz-metric ${auswertung.ruecklastschriften.anzahl > 0 ? 'oz-metric--warning' : 'oz-metric--ok'} oz-metric--link`}
+            onClick={() => setActiveTab('zahlungen')}
+          >
+            <div className="oz-metric-hd">
+              <span className="oz-metric-lbl"><Building2 size={11} /> Rücklastschriften</span>
+              <ChevronRight size={13} className="oz-metric-arrow" />
+            </div>
+            <div className="oz-metric-num oz-metric-num--count">
+              {auswertung.ruecklastschriften.anzahl}
+              {auswertung.ruecklastschriften.summe > 0 && (
+                <span className="oz-metric-aside">{fmt(auswertung.ruecklastschriften.summe)}</span>
+              )}
+            </div>
+            <div className="oz-metric-ft">
+              {auswertung.ruecklastschriften.anzahl === 0
+                ? <span className="oz-ft-pill oz-ft-pill--green">✓ Keine offenen</span>
+                : <span className="oz-ft-pill oz-ft-pill--amber">{auswertung.ruecklastschriften.anzahl} offen</span>
+              }
+            </div>
+          </div>
+
+        </section>
       )}
 
-      {/* Tabs */}
-      <div className="oz-tabs">
+      {/* ════════════ INSIGHTS ROW ════════════ */}
+      {auswertung && (
+        <section className="oz-insights">
+
+          {/* Bar Chart */}
+          {auswertung.monatsverlauf?.length > 0 && (
+            <div className="oz-insight-card oz-insight-chart">
+              <div className="oz-insight-hd">
+                <span><BarChart2 size={14} /> Monatsverlauf</span>
+                <span className="oz-insight-sub">{auswertung.monatsverlauf.length} Monate</span>
+              </div>
+              <div className="oz-barchart">
+                {(() => {
+                  const maxVal = Math.max(...auswertung.monatsverlauf.map(x => parseFloat(x.summe)));
+                  const now = new Date();
+                  return auswertung.monatsverlauf.map(m => {
+                    const pct = maxVal > 0 ? (parseFloat(m.summe) / maxVal * 100) : 0;
+                    const [yr, mo] = m.monat.split('-');
+                    const isCurrent = parseInt(yr) === now.getFullYear() && parseInt(mo) === (now.getMonth() + 1);
+                    return (
+                      <div key={m.monat} className={`oz-bar ${isCurrent ? 'oz-bar--now' : ''}`} title={`${mo}/${yr}: ${fmt(m.summe)}`}>
+                        <span className="oz-bar-val">{(parseFloat(m.summe)/1000).toFixed(1)}k</span>
+                        <div className="oz-bar-track">
+                          <div className="oz-bar-fill" style={{ height: `${Math.max(pct, 3)}%` }} />
+                        </div>
+                        <span className="oz-bar-lbl">{mo}/{yr.slice(2)}</span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Recent Payments */}
+          {auswertung.letzte_erfolge?.length > 0 && (
+            <div className="oz-insight-card oz-insight-recent">
+              <div className="oz-insight-hd">
+                <span><CheckCircle size={14} /> Letzte Einzüge</span>
+                <span className="oz-insight-sub">{auswertung.letzte_erfolge.length} Einträge</span>
+              </div>
+              <div className="oz-recent-list">
+                {auswertung.letzte_erfolge.slice(0, 7).map((e, i) => (
+                  <div key={i} className="oz-recent-row">
+                    <span className="oz-recent-name">{e.vorname} {e.nachname}</span>
+                    <span className="oz-recent-mo">{String(e.monat).padStart(2, '0')}/{e.jahr}</span>
+                    <span className="oz-recent-sum">{fmt(e.betrag)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Top Debtors */}
+          {ueberfaelligeMitglieder.length > 0 ? (
+            <div className="oz-insight-card oz-insight-debtors">
+              <div className="oz-insight-hd">
+                <span><AlertCircle size={14} /> Top Rückstände</span>
+                <span className="oz-insight-sub">{ueberfaelligeMitglieder.length} Mitglieder</span>
+              </div>
+              <div className="oz-debtors-list">
+                {ueberfaelligeMitglieder.slice(0, 5).map(m => (
+                  <div
+                    key={m.mitglied_id}
+                    className="oz-debtor-row"
+                    onClick={() => navigate(`/dashboard/mitglieder/${m.mitglied_id}`)}
+                  >
+                    <div className="oz-debtor-info">
+                      <span className="oz-debtor-name">{m.vorname} {m.nachname}</span>
+                      <span className="oz-debtor-meta">{m.anzahl_monate} Mo. · {m.tage_ueberfaellig}d überfällig</span>
+                    </div>
+                    <span className={`oz-debtor-amt ${m.tage_ueberfaellig > 60 ? 'oz-debtor-amt--red' : ''}`}>
+                      {fmt(m.gesamtbetrag)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {ueberfaelligeMitglieder.length > 5 && (
+                <button className="oz-show-all" onClick={() => setActiveTab('ueberfaellig')}>
+                  +{ueberfaelligeMitglieder.length - 5} weitere anzeigen →
+                </button>
+              )}
+            </div>
+          ) : healthScore !== null && (
+            <div className="oz-insight-card oz-insight-health">
+              <div className="oz-insight-hd">
+                <span>{healthScore >= 70 ? <ShieldCheck size={14} /> : <ShieldAlert size={14} />} Zahlungsgesundheit</span>
+              </div>
+              <div className="oz-health-score">
+                <div className={`oz-health-ring ${healthScore >= 70 ? 'oz-health-ring--good' : healthScore >= 40 ? 'oz-health-ring--warn' : 'oz-health-ring--bad'}`}>
+                  <span className="oz-health-num">{healthScore}</span>
+                  <span className="oz-health-unit">/ 100</span>
+                </div>
+                <p className="oz-health-label">
+                  {healthScore >= 70 ? 'Sehr gut — alles im grünen Bereich' : healthScore >= 40 ? 'Handlungsbedarf bei einigen Positionen' : 'Kritisch — sofortige Maßnahmen nötig'}
+                </p>
+              </div>
+            </div>
+          )}
+
+        </section>
+      )}
+
+      {/* ════════════ TAB NAVIGATION ════════════ */}
+      <nav className="oz-tabs-nav">
         {tabs.map(t => (
-          <button key={t.key} className={`oz-tab ${activeTab === t.key ? 'active' : ''}`} onClick={() => setActiveTab(t.key)}>
-            <t.icon size={16} />
-            {t.label}
-            {t.count > 0 && <span className={`tab-count tab-count--${t.color}`}>{t.count}</span>}
+          <button
+            key={t.key}
+            className={`oz-tab-btn ${activeTab === t.key ? 'active' : ''}`}
+            onClick={() => setActiveTab(t.key)}
+          >
+            <t.icon size={15} />
+            <span className="oz-tab-label">{t.label}</span>
+            {t.count > 0 && (
+              <span className={`oz-tab-badge oz-tab-badge--${t.color}`}>{t.count}</span>
+            )}
           </button>
         ))}
-      </div>
+      </nav>
 
-      {/* Content */}
-      <div className="oz-content">
+      {/* ════════════ TAB PANELS ════════════ */}
+      <div className="oz-panel">
 
         {/* ── TAB: ÜBERFÄLLIGE BEITRÄGE ── */}
         {activeTab === 'ueberfaellig' && (
           <>
-            <div className="oz-tab-header">
-              <h2><AlertTriangle size={18} /> Überfällige Beiträge — {ueberfaelligeMitglieder.length} Mitglieder · {fmt(ueberfaelligeMitglieder.reduce((s, m) => s + parseFloat(m.gesamtbetrag), 0))}</h2>
+            <div className="oz-panel-hd">
+              <div className="oz-panel-title">
+                <AlertTriangle size={17} />
+                Überfällige Beiträge
+                <span className="oz-panel-count">{ueberfaelligeMitglieder.length} Mitglieder</span>
+              </div>
+              {ueberfaelligeMitglieder.length > 0 && (
+                <span className="oz-panel-total">{fmt(ueberfaelligeMitglieder.reduce((s, m) => s + parseFloat(m.gesamtbetrag), 0))}</span>
+              )}
             </div>
             <div className="oz-table-wrap">
               {ueberfaelligeMitglieder.length === 0 ? (
@@ -369,10 +546,14 @@ const OffeneZahlungen = () => {
         {/* ── TAB: FEHLGESCHLAGENE EINZÜGE ── */}
         {activeTab === 'fehlgeschlagen' && (
           <>
-            <div className="oz-tab-header">
-              <h2><XCircle size={18} /> Fehlgeschlagene Stripe-Einzüge — {failedTransaktionen.length} Einträge · {fmt(failedTransaktionen.reduce((s, t) => s + parseFloat(t.retry_betrag || t.betrag), 0))}</h2>
+            <div className="oz-panel-hd">
+              <div className="oz-panel-title">
+                <XCircle size={17} />
+                Fehlgeschlagene Stripe-Einzüge
+                <span className="oz-panel-count">{failedTransaktionen.length} Einträge</span>
+              </div>
               {failedTransaktionen.length > 1 && (
-                <button className="btn-action-primary" onClick={handleRetryAll} disabled={retryAllLoading}>
+                <button className="oz-btn-action-primary" onClick={handleRetryAll} disabled={retryAllLoading}>
                   {retryAllLoading ? <RefreshCw size={14} className="spin" /> : <Zap size={14} />}
                   Alle erneut einziehen
                 </button>
@@ -385,7 +566,7 @@ const OffeneZahlungen = () => {
                 <table className="oz-table">
                   <thead>
                     <tr>
-                      <th></th>
+                      <th style={{ width: 36 }}></th>
                       <th>Mitglied</th>
                       <th>Monat</th>
                       <th>IBAN</th>
@@ -393,7 +574,7 @@ const OffeneZahlungen = () => {
                       <th>Datum</th>
                       <th>Batch</th>
                       <th className="oz-td-right">Betrag</th>
-                      <th>Aktion</th>
+                      <th style={{ width: 48 }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -414,7 +595,7 @@ const OffeneZahlungen = () => {
                               <span className="oz-td-email">{t.email}</span>
                             </div>
                           </td>
-                          <td><span className="oz-badge-neutral">{String(t.monat).padStart(2,'0')}/{t.jahr}</span></td>
+                          <td><span className="oz-badge-neutral">{String(t.monat).padStart(2, '0')}/{t.jahr}</span></td>
                           <td><code className="oz-iban">{maskIban(t.iban)}</code></td>
                           <td>
                             <span className="oz-error-msg">
@@ -432,7 +613,7 @@ const OffeneZahlungen = () => {
                                 {retryLoading[t.id] ? <RefreshCw size={15} className="spin" /> : <RotateCcw size={15} />}
                               </button>
                             ) : (
-                              <span title="Bereits bezahlt" style={{ color: 'var(--success)', padding: '0.25rem' }}><CheckCircle size={15} /></span>
+                              <span title="Bereits bezahlt" style={{ color: 'var(--success)', padding: '0.25rem', display: 'flex' }}><CheckCircle size={15} /></span>
                             )}
                           </td>
                         </tr>
@@ -472,10 +653,17 @@ const OffeneZahlungen = () => {
         {/* ── TAB: SEPA-CLEARING ── */}
         {activeTab === 'clearing' && (
           <>
-            <div className="oz-tab-header">
-              <h2><Activity size={18} /> Im SEPA-Clearing — {processingTransaktionen.length} Transaktionen · {fmt(processingTransaktionen.reduce((s, t) => s + parseFloat(t.betrag), 0))}</h2>
-              <p className="oz-tab-hint">Diese Lastschriften wurden eingereicht und warten auf Bankbestätigung (typisch 2–5 Werktage).</p>
+            <div className="oz-panel-hd">
+              <div className="oz-panel-title">
+                <Activity size={17} />
+                Im SEPA-Clearing
+                <span className="oz-panel-count">{processingTransaktionen.length} Transaktionen</span>
+              </div>
+              {processingTransaktionen.length > 0 && (
+                <span className="oz-panel-total">{fmt(processingTransaktionen.reduce((s, t) => s + parseFloat(t.betrag), 0))}</span>
+              )}
             </div>
+            <p className="oz-panel-hint">Eingereichte Lastschriften warten auf Bankbestätigung — typisch 2–5 Werktage.</p>
             <div className="oz-table-wrap">
               {processingTransaktionen.length === 0 ? (
                 <div className="oz-empty"><CheckCircle size={48} /><h3>Keine laufenden Transaktionen</h3></div>
@@ -504,7 +692,7 @@ const OffeneZahlungen = () => {
                             <span className="oz-td-email">{t.email}</span>
                           </div>
                         </td>
-                        <td><span className="oz-badge-neutral">{String(t.monat).padStart(2,'0')}/{t.jahr}</span></td>
+                        <td><span className="oz-badge-neutral">{String(t.monat).padStart(2, '0')}/{t.jahr}</span></td>
                         <td><code className="oz-iban">{maskIban(t.iban)}</code></td>
                         <td className="oz-text-muted">{fmtDate(t.created_at)}</td>
                         <td>
@@ -527,6 +715,9 @@ const OffeneZahlungen = () => {
         {/* ── TAB: RÜCKLASTSCHRIFTEN ── */}
         {activeTab === 'zahlungen' && (
           <>
+            <div className="oz-panel-hd">
+              <div className="oz-panel-title"><Building2 size={17} /> Rücklastschriften</div>
+            </div>
             <div className="oz-filter-bar">
               <div className="filter-group">
                 <Filter size={16} />
@@ -595,70 +786,89 @@ const OffeneZahlungen = () => {
 
         {/* ── TAB: STRIPE DISPUTES ── */}
         {activeTab === 'disputes' && (
-          <div className="oz-table-wrap">
-            {disputes.length === 0 ? (
-              <div className="oz-empty"><CheckCircle size={48} /><h3>Keine Stripe Disputes</h3></div>
-            ) : (
-              <table className="oz-table">
-                <thead>
-                  <tr><th>Mitglied</th><th>Dispute-ID</th><th>Grund</th><th>Status</th><th>Frist</th><th className="oz-td-right">Betrag</th></tr>
-                </thead>
-                <tbody>
-                  {disputes.map(d => (
-                    <tr key={d.id} className={d.status === 'needs_response' ? 'oz-tr--warn' : ''}>
-                      <td><strong>{d.vorname || 'Unbekannt'} {d.nachname || ''}</strong></td>
-                      <td><code style={{ fontSize: '0.75rem' }}>{d.stripe_dispute_id}</code></td>
-                      <td><span className="reason-badge">{d.reason || '—'}</span></td>
-                      <td>
-                        <span className={`status-badge ${d.status}`}>
-                          {d.status === 'won' ? '✓ Gewonnen' : d.status === 'lost' ? '✗ Verloren' : d.status === 'needs_response' ? '⚠ Antwort nötig' : d.status}
-                        </span>
-                      </td>
-                      <td>{d.evidence_due_by ? <span className="oz-days oz-days--warning"><AlertTriangle size={11} /> {fmtDate(d.evidence_due_by)}</span> : '—'}</td>
-                      <td className="oz-td-right oz-td-bold">{fmt(d.amount / 100)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          <>
+            <div className="oz-panel-hd">
+              <div className="oz-panel-title">
+                <CreditCard size={17} />
+                Stripe Disputes
+                <span className="oz-panel-count">{disputes.length} gesamt</span>
+              </div>
+            </div>
+            <div className="oz-table-wrap">
+              {disputes.length === 0 ? (
+                <div className="oz-empty"><CheckCircle size={48} /><h3>Keine Stripe Disputes</h3></div>
+              ) : (
+                <table className="oz-table">
+                  <thead>
+                    <tr><th>Mitglied</th><th>Dispute-ID</th><th>Grund</th><th>Status</th><th>Frist</th><th className="oz-td-right">Betrag</th></tr>
+                  </thead>
+                  <tbody>
+                    {disputes.map(d => (
+                      <tr key={d.id} className={d.status === 'needs_response' ? 'oz-tr--warn' : ''}>
+                        <td><strong>{d.vorname || 'Unbekannt'} {d.nachname || ''}</strong></td>
+                        <td><code style={{ fontSize: '0.75rem' }}>{d.stripe_dispute_id}</code></td>
+                        <td><span className="reason-badge">{d.reason || '—'}</span></td>
+                        <td>
+                          <span className={`status-badge ${d.status}`}>
+                            {d.status === 'won' ? '✓ Gewonnen' : d.status === 'lost' ? '✗ Verloren' : d.status === 'needs_response' ? '⚠ Antwort nötig' : d.status}
+                          </span>
+                        </td>
+                        <td>{d.evidence_due_by ? <span className="oz-days oz-days--warning"><AlertTriangle size={11} /> {fmtDate(d.evidence_due_by)}</span> : '—'}</td>
+                        <td className="oz-td-right oz-td-bold">{fmt(d.amount / 100)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
         )}
 
         {/* ── TAB: PROBLEM-MITGLIEDER ── */}
         {activeTab === 'mitglieder' && (
-          <div className="oz-table-wrap">
-            {mitgliederProbleme.length === 0 ? (
-              <div className="oz-empty"><CheckCircle size={48} /><h3>Keine Problem-Mitglieder</h3></div>
-            ) : (
-              <table className="oz-table">
-                <thead>
-                  <tr><th>Mitglied</th><th>Kontakt</th><th>Problem seit</th><th>Details</th><th className="oz-td-right">Offener Betrag</th></tr>
-                </thead>
-                <tbody>
-                  {mitgliederProbleme.map(m => (
-                    <tr key={m.mitglied_id}>
-                      <td>
-                        <div className="oz-td-member">
-                          <button className="oz-link" onClick={() => navigate(`/dashboard/mitglieder/${m.mitglied_id}`)}>
-                            <strong>{m.vorname} {m.nachname}</strong><ExternalLink size={12} />
-                          </button>
-                          {m.dojoname && <span className="oz-td-email">{m.dojoname}</span>}
-                        </div>
-                      </td>
-                      <td><div className="oz-td-contact"><span><Mail size={11} /> {m.email}</span></div></td>
-                      <td>{m.zahlungsproblem_datum ? fmtDate(m.zahlungsproblem_datum) : '—'}</td>
-                      <td>{m.zahlungsproblem_details || '—'}</td>
-                      <td className="oz-td-right oz-td-bold oz-td-danger">{fmt(m.summe_offen)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          <>
+            <div className="oz-panel-hd">
+              <div className="oz-panel-title">
+                <Users size={17} />
+                Problem-Mitglieder
+                <span className="oz-panel-count">{mitgliederProbleme.length} Mitglieder</span>
+              </div>
+            </div>
+            <div className="oz-table-wrap">
+              {mitgliederProbleme.length === 0 ? (
+                <div className="oz-empty"><CheckCircle size={48} /><h3>Keine Problem-Mitglieder</h3></div>
+              ) : (
+                <table className="oz-table">
+                  <thead>
+                    <tr><th>Mitglied</th><th>Kontakt</th><th>Problem seit</th><th>Details</th><th className="oz-td-right">Offener Betrag</th></tr>
+                  </thead>
+                  <tbody>
+                    {mitgliederProbleme.map(m => (
+                      <tr key={m.mitglied_id}>
+                        <td>
+                          <div className="oz-td-member">
+                            <button className="oz-link" onClick={() => navigate(`/dashboard/mitglieder/${m.mitglied_id}`)}>
+                              <strong>{m.vorname} {m.nachname}</strong><ExternalLink size={12} />
+                            </button>
+                            {m.dojoname && <span className="oz-td-email">{m.dojoname}</span>}
+                          </div>
+                        </td>
+                        <td><div className="oz-td-contact"><span><Mail size={11} /> {m.email}</span></div></td>
+                        <td>{m.zahlungsproblem_datum ? fmtDate(m.zahlungsproblem_datum) : '—'}</td>
+                        <td>{m.zahlungsproblem_details || '—'}</td>
+                        <td className="oz-td-right oz-td-bold oz-td-danger">{fmt(m.summe_offen)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
         )}
+
       </div>
 
-      {/* Detail Modal */}
+      {/* ════════════ DETAIL MODAL ════════════ */}
       {showDetail && selectedZahlung && (
         <div className="oz-modal-overlay" onClick={() => setShowDetail(false)}>
           <div className="oz-modal" onClick={e => e.stopPropagation()}>
@@ -697,6 +907,7 @@ const OffeneZahlungen = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };
