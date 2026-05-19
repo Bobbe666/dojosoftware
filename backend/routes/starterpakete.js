@@ -409,8 +409,8 @@ router.get('/bestellungen', async (req, res) => {
     let positionenByPaket = {};
     if (paketIds.length > 0) {
       const [positionen] = await pool.query(
-        `SELECT spp.id, spp.paket_id, spp.menge, spp.einzelpreis_cent, spp.hat_varianten,
-                COALESCE(a.name, spp.bezeichnung_custom) AS artikel_name
+        `SELECT spp.id, spp.paket_id, spp.menge, spp.einzelpreis_cent,
+                COALESCE(a.name, spp.bezeichnung) AS artikel_name
          FROM starterpaket_positionen spp
          LEFT JOIN artikel a ON spp.artikel_id = a.artikel_id
          WHERE spp.paket_id IN (?)
