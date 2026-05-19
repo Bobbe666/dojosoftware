@@ -92,6 +92,7 @@ const TarifePreise = () => {
   const [starterpakete, setStarterpakete] = useState([]);
   const [spStile, setSpStile] = useState([]);
   const [spArtikel, setSpArtikel] = useState([]);
+  const [spArtikelLoading, setSpArtikelLoading] = useState(false);
   const [editingSp, setEditingSp] = useState(null);
   const [expandedSpId, setExpandedSpId] = useState(null);
   const [spSaving, setSpSaving] = useState(false);
@@ -185,16 +186,27 @@ const TarifePreise = () => {
         const arr = Array.isArray(stRes.data) ? stRes.data : (stRes.data.data || []);
         setSpStile(arr.filter(s => s.aktiv !== 0 && s.aktiv !== false));
       }
-      if (dojoId) {
-        try {
-          const artRes = await axios.get(`/artikel?dojo_id=${dojoId}`);
-          setSpArtikel(artRes.data?.data || []);
-        } catch (artErr) {
-          console.warn('Artikel nicht geladen:', artErr?.response?.status);
-        }
-      }
     } catch (err) {
       console.error('Starterpakete laden Fehler:', err);
+    }
+  };
+
+  const openAddPos = async (paketId, dojoIdFromPaket) => {
+    setAddingPosForId(paketId);
+    setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
+    if (spArtikel.length === 0) {
+      setSpArtikelLoading(true);
+      try {
+        const id = dojoIdFromPaket || getDojoId();
+        if (id) {
+          const res = await axios.get(`/artikel?dojo_id=${id}`);
+          setSpArtikel(res.data?.data || []);
+        }
+      } catch (e) {
+        console.warn('Artikel lazy-load Fehler:', e?.response?.status);
+      } finally {
+        setSpArtikelLoading(false);
+      }
     }
   };
 
@@ -793,7 +805,10 @@ const TarifePreise = () => {
                       </table>
                       {addingPosForId === pk.paket_id ? (
                         <div className="tc-pos-form">
-                          {spArtikel.length > 0 && (
+                          {spArtikelLoading && (
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-4)', marginBottom: '0.5rem' }}>Lade Artikel…</div>
+                          )}
+                          {!spArtikelLoading && spArtikel.length > 0 && (
                             <div style={{ marginBottom: '0.6rem' }}>
                               <select
                                 className="tc-pos-input"
@@ -834,7 +849,7 @@ const TarifePreise = () => {
                           </div>
                         </div>
                       ) : (
-                        <button className="btn btn-sm btn-secondary" onClick={() => setAddingPosForId(pk.paket_id)} style={{ marginTop: '0.25rem' }}>
+                        <button className="btn btn-sm btn-secondary" onClick={() => openAddPos(pk.paket_id, pk.dojo_id)} style={{ marginTop: '0.25rem' }}>
                           <Plus size={13} /> Position hinzufügen
                         </button>
                       )}
@@ -1229,7 +1244,10 @@ const TarifePreise = () => {
                 {/* Position hinzufügen */}
                 {addingPosForId === editingSp.paket_id ? (
                   <div className="tc-pos-form">
-                    {spArtikel.length > 0 && (
+                    {spArtikelLoading && (
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-4)', marginBottom: '0.5rem' }}>Lade Artikel…</div>
+                    )}
+                    {!spArtikelLoading && spArtikel.length > 0 && (
                       <div style={{ marginBottom: '0.6rem' }}>
                         <select
                           className="tc-pos-input"
@@ -1270,7 +1288,7 @@ const TarifePreise = () => {
                     </div>
                   </div>
                 ) : (
-                  <button className="btn btn-sm btn-secondary" onClick={() => setAddingPosForId(editingSp.paket_id)}>
+                  <button className="btn btn-sm btn-secondary" onClick={() => openAddPos(editingSp.paket_id, editingSp.dojo_id)}>
                     <Plus size={13} /> Position hinzufügen
                   </button>
                 )}
