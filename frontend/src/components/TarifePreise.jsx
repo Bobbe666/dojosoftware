@@ -97,12 +97,16 @@ const TarifePreise = () => {
   const [expandedSpId, setExpandedSpId] = useState(null);
   const [spSaving, setSpSaving] = useState(false);
   const [addingPosForId, setAddingPosForId] = useState(null);
+  const [neuArtikelOpen, setNeuArtikelOpen] = useState(false);
+  const [neuArtikelName, setNeuArtikelName] = useState('');
+  const [neuArtikelPreis, setNeuArtikelPreis] = useState('');
+  const [neuArtikelSaving, setNeuArtikelSaving] = useState(false);
   const [newSp, setNewSp] = useState({
     stil_id: '', name: '', beschreibung: '',
     hinweis: 'Für ein einheitliches Auftreten, ein starkes Teamgefühl und die Einhaltung unserer Qualitäts- und Sicherheitsstandards bitten wir darum, im Training sowie insbesondere bei Wettkämpfen ausschließlich Ausrüstung zu verwenden, die über unsere Schule bzw. unsere offiziellen Partner bezogen wurde. So stellen wir sicher, dass alle Mitglieder mit geprüfter, passender und einheitlicher Ausrüstung trainieren und auftreten. Vielen Dank für euer Verständnis und eure Unterstützung unseres gemeinsamen Auftritts als Team.',
     rabatt_prozent: 0, aktiv: true
   });
-  const [newPos, setNewPos] = useState({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
+  const [newPos, setNewPos] = useState({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, pflicht: true });
   const [showNewSp, setShowNewSp] = useState(false);
   const [activeTab, setActiveTab] = useState('tarife');
   const [tarifeFilter, setTarifeFilter] = useState('alle');
@@ -193,7 +197,8 @@ const TarifePreise = () => {
 
   const openAddPos = async (paketId, dojoIdFromPaket) => {
     setAddingPosForId(paketId);
-    setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
+    setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, pflicht: true });
+    setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis('');
     setSpArtikel([]);
     setSpArtikelLoading(true);
     try {
@@ -204,6 +209,25 @@ const TarifePreise = () => {
       console.error('Artikel-Load Fehler:', e?.response?.status, e?.message);
     } finally {
       setSpArtikelLoading(false);
+    }
+  };
+
+  const handleNeuArtikel = async () => {
+    if (!neuArtikelName || !neuArtikelPreis) return;
+    setNeuArtikelSaving(true);
+    try {
+      const preis = Math.round(parseFloat(String(neuArtikelPreis).replace(',', '.')) * 100);
+      const r = await axios.post('/starterpakete/artikel-quick', { name: neuArtikelName, verkaufspreis_cent: preis });
+      if (r.data?.success) {
+        const art = r.data.artikel;
+        setSpArtikel(prev => [...prev, art].sort((a, b) => a.name.localeCompare(b.name)));
+        setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, originalPreis_cent: art.verkaufspreis_cent, rabatt_prozent: 0, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
+        setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis('');
+      }
+    } catch (e) {
+      console.error('Neu-Artikel Fehler:', e);
+    } finally {
+      setNeuArtikelSaving(false);
     }
   };
 
@@ -802,28 +826,30 @@ const TarifePreise = () => {
                       </table>
                       {addingPosForId === pk.paket_id ? (
                         <div className="tc-pos-form">
-                          <div style={{ marginBottom: '0.6rem' }}>
-                            <select
-                              className="tc-pos-input"
-                              value={newPos.artikel_id || ''}
-                              disabled={spArtikelLoading}
-                              onChange={e => {
-                                const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
-                                if (art) {
-                                  setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
-                                } else {
-                                  setNewPos(p => ({ ...p, artikel_id: null }));
-                                }
-                              }}
-                            >
-                              <option value="">{spArtikelLoading ? 'Lade Artikel…' : spArtikel.length === 0 ? '— Keine Artikel im Katalog —' : '— Aus Artikelkatalog wählen (optional) —'}</option>
-                              {spArtikel.map(a => (
-                                <option key={a.artikel_id} value={a.artikel_id}>
-                                  {a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                          {/* Artikel-Auswahl */}
+                          <select className="tc-pos-input" style={{ marginBottom: '0.5rem' }} value={newPos.artikel_id || ''} disabled={spArtikelLoading}
+                            onChange={e => {
+                              const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
+                              if (art) setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, originalPreis_cent: art.verkaufspreis_cent, rabatt_prozent: 0, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
+                              else setNewPos(p => ({ ...p, artikel_id: null, originalPreis_cent: null, rabatt_prozent: 0 }));
+                            }}>
+                            <option value="">{spArtikelLoading ? 'Lade Artikel…' : spArtikel.length === 0 ? '— Keine Artikel im Katalog —' : '— Aus Artikelkatalog wählen (optional) —'}</option>
+                            {spArtikel.map(a => <option key={a.artikel_id} value={a.artikel_id}>{a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}</option>)}
+                          </select>
+                          {/* Rabatt (nur bei gewähltem Artikel) */}
+                          {newPos.originalPreis_cent != null && (
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.82rem', flexWrap: 'wrap' }}>
+                              <span style={{ color: 'var(--text-4)' }}>Katalogpreis: <strong style={{ color: 'var(--text-2)' }}>€{(newPos.originalPreis_cent / 100).toFixed(2)}</strong></span>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-3)' }}>
+                                Rabatt:
+                                <input className="tc-pos-input" type="number" min="0" max="100" step="1" style={{ width: '65px', padding: '0.25rem 0.4rem' }} value={newPos.rabatt_prozent}
+                                  onChange={e => { const r = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)); setNewPos(p => ({ ...p, rabatt_prozent: r, einzelpreis_cent: (p.originalPreis_cent * (1 - r / 100) / 100).toFixed(2) })); }} />
+                                %
+                              </label>
+                              {newPos.rabatt_prozent > 0 && <span style={{ color: '#d4af37', fontWeight: 600 }}>→ €{(newPos.originalPreis_cent * (1 - newPos.rabatt_prozent / 100) / 100).toFixed(2)}</span>}
+                            </div>
+                          )}
+                          {/* Bezeichnung / Menge / Preis */}
                           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <input className="tc-pos-input" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
                             <input className="tc-pos-input" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
@@ -834,11 +860,25 @@ const TarifePreise = () => {
                               <input type="checkbox" checked={newPos.pflicht} onChange={e => setNewPos({ ...newPos, pflicht: e.target.checked })} /> Pflicht
                             </label>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true }); }}>Abbrechen</button>
-                              <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(pk.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>
-                                {spSaving ? '…' : 'Hinzufügen'}
-                              </button>
+                              <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, pflicht: true }); setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis(''); }}>Abbrechen</button>
+                              <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(pk.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>{spSaving ? '…' : 'Hinzufügen'}</button>
                             </div>
+                          </div>
+                          {/* Neuer Artikel */}
+                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '0.5rem', marginTop: '0.4rem' }}>
+                            {!neuArtikelOpen ? (
+                              <button type="button" className="btn btn-sm btn-secondary" style={{ fontSize: '0.78rem' }} onClick={() => setNeuArtikelOpen(true)}><Plus size={11} /> Neuen Artikel anlegen</button>
+                            ) : (
+                              <div>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: '0.35rem', fontWeight: 600 }}>Neuen Artikel in Katalog anlegen</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto auto', gap: '0.4rem', alignItems: 'center' }}>
+                                  <input className="tc-pos-input" placeholder="Artikelname *" value={neuArtikelName} onChange={e => setNeuArtikelName(e.target.value)} />
+                                  <input className="tc-pos-input" type="number" step="0.01" placeholder="Preis €" value={neuArtikelPreis} onChange={e => setNeuArtikelPreis(e.target.value)} />
+                                  <button className="btn btn-sm btn-primary" onClick={handleNeuArtikel} disabled={neuArtikelSaving || !neuArtikelName || !neuArtikelPreis}>{neuArtikelSaving ? '…' : 'Anlegen'}</button>
+                                  <button className="btn btn-sm btn-secondary" onClick={() => { setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis(''); }}>✕</button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -1237,28 +1277,30 @@ const TarifePreise = () => {
                 {/* Position hinzufügen */}
                 {addingPosForId === editingSp.paket_id ? (
                   <div className="tc-pos-form">
-                    <div style={{ marginBottom: '0.6rem' }}>
-                      <select
-                        className="tc-pos-input"
-                        value={newPos.artikel_id || ''}
-                        disabled={spArtikelLoading}
-                        onChange={e => {
-                          const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
-                          if (art) {
-                            setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
-                          } else {
-                            setNewPos(p => ({ ...p, artikel_id: null }));
-                          }
-                        }}
-                      >
-                        <option value="">{spArtikelLoading ? 'Lade Artikel…' : spArtikel.length === 0 ? '— Keine Artikel im Katalog —' : '— Aus Artikelkatalog wählen (optional) —'}</option>
-                        {spArtikel.map(a => (
-                          <option key={a.artikel_id} value={a.artikel_id}>
-                            {a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    {/* Artikel-Auswahl */}
+                    <select className="tc-pos-input" style={{ marginBottom: '0.5rem' }} value={newPos.artikel_id || ''} disabled={spArtikelLoading}
+                      onChange={e => {
+                        const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
+                        if (art) setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, originalPreis_cent: art.verkaufspreis_cent, rabatt_prozent: 0, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
+                        else setNewPos(p => ({ ...p, artikel_id: null, originalPreis_cent: null, rabatt_prozent: 0 }));
+                      }}>
+                      <option value="">{spArtikelLoading ? 'Lade Artikel…' : spArtikel.length === 0 ? '— Keine Artikel im Katalog —' : '— Aus Artikelkatalog wählen (optional) —'}</option>
+                      {spArtikel.map(a => <option key={a.artikel_id} value={a.artikel_id}>{a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}</option>)}
+                    </select>
+                    {/* Rabatt (nur bei gewähltem Artikel) */}
+                    {newPos.originalPreis_cent != null && (
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.82rem', flexWrap: 'wrap' }}>
+                        <span style={{ color: 'var(--text-4)' }}>Katalogpreis: <strong style={{ color: 'var(--text-2)' }}>€{(newPos.originalPreis_cent / 100).toFixed(2)}</strong></span>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-3)' }}>
+                          Rabatt:
+                          <input className="tc-pos-input" type="number" min="0" max="100" step="1" style={{ width: '65px', padding: '0.25rem 0.4rem' }} value={newPos.rabatt_prozent}
+                            onChange={e => { const r = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)); setNewPos(p => ({ ...p, rabatt_prozent: r, einzelpreis_cent: (p.originalPreis_cent * (1 - r / 100) / 100).toFixed(2) })); }} />
+                          %
+                        </label>
+                        {newPos.rabatt_prozent > 0 && <span style={{ color: '#d4af37', fontWeight: 600 }}>→ €{(newPos.originalPreis_cent * (1 - newPos.rabatt_prozent / 100) / 100).toFixed(2)}</span>}
+                      </div>
+                    )}
+                    {/* Bezeichnung / Menge / Preis */}
                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <input className="tc-pos-input" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
                       <input className="tc-pos-input" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
@@ -1269,11 +1311,25 @@ const TarifePreise = () => {
                         <input type="checkbox" checked={newPos.pflicht} onChange={e => setNewPos({ ...newPos, pflicht: e.target.checked })} /> Pflicht
                       </label>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true }); }}>Abbrechen</button>
-                        <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(editingSp.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>
-                          {spSaving ? '…' : 'Hinzufügen'}
-                        </button>
+                        <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, pflicht: true }); setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis(''); }}>Abbrechen</button>
+                        <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(editingSp.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>{spSaving ? '…' : 'Hinzufügen'}</button>
                       </div>
+                    </div>
+                    {/* Neuer Artikel */}
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '0.5rem', marginTop: '0.4rem' }}>
+                      {!neuArtikelOpen ? (
+                        <button type="button" className="btn btn-sm btn-secondary" style={{ fontSize: '0.78rem' }} onClick={() => setNeuArtikelOpen(true)}><Plus size={11} /> Neuen Artikel anlegen</button>
+                      ) : (
+                        <div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginBottom: '0.35rem', fontWeight: 600 }}>Neuen Artikel in Katalog anlegen</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto auto', gap: '0.4rem', alignItems: 'center' }}>
+                            <input className="tc-pos-input" placeholder="Artikelname *" value={neuArtikelName} onChange={e => setNeuArtikelName(e.target.value)} />
+                            <input className="tc-pos-input" type="number" step="0.01" placeholder="Preis €" value={neuArtikelPreis} onChange={e => setNeuArtikelPreis(e.target.value)} />
+                            <button className="btn btn-sm btn-primary" onClick={handleNeuArtikel} disabled={neuArtikelSaving || !neuArtikelName || !neuArtikelPreis}>{neuArtikelSaving ? '…' : 'Anlegen'}</button>
+                            <button className="btn btn-sm btn-secondary" onClick={() => { setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis(''); }}>✕</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (

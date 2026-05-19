@@ -47,6 +47,36 @@ router.get('/artikel-options', async (req, res) => {
   }
 });
 
+// ── POST /api/starterpakete/artikel-quick ── Schnell-Artikel anlegen ─
+router.post('/artikel-quick', async (req, res) => {
+  try {
+    const { name, verkaufspreis_cent } = req.body;
+    if (!name || verkaufspreis_cent == null) {
+      return res.status(400).json({ error: 'name und verkaufspreis_cent sind Pflichtfelder' });
+    }
+
+    const [[kat]] = await pool.query(
+      'SELECT id FROM artikelgruppen WHERE aktiv = 1 ORDER BY id ASC LIMIT 1'
+    );
+    if (!kat) return res.status(400).json({ error: 'Keine Artikelkategorie verfügbar' });
+
+    const artikel_nummer = `ART-SP-${Date.now()}`;
+    const preis = Math.round(parseFloat(String(verkaufspreis_cent)));
+
+    const [result] = await pool.query(
+      `INSERT INTO artikel (kategorie_id, name, verkaufspreis_cent, mwst_prozent, lagerbestand, artikel_nummer, aktiv, sichtbar_kasse, farbe_hex, dojo_id)
+       VALUES (?, ?, ?, 19, 0, ?, 1, 0, '#FFFFFF', ?)`,
+      [kat.id, name, preis, artikel_nummer, req.user?.dojo_id || null]
+    );
+
+    logger.info('Artikel Quick-Create', { name, preis, artikel_id: result.insertId });
+    res.json({ success: true, artikel: { artikel_id: result.insertId, name, verkaufspreis_cent: preis } });
+  } catch (err) {
+    logger.error('Artikel Quick-Create Fehler:', err);
+    res.status(500).json({ error: 'Fehler beim Erstellen' });
+  }
+});
+
 // ── GET /api/starterpakete ── alle Pakete des Dojos ─────────────────
 router.get('/', async (req, res) => {
   try {
