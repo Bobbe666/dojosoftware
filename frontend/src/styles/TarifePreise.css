@@ -866,7 +866,7 @@
   gap: 0;
   transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, transform 0.18s;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .tc-card::before {
@@ -913,17 +913,19 @@
   display: flex;
   align-items: baseline;
   gap: 0.2rem;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .tc-price-val {
-  font-size: 1.85rem;
+  font-size: 1.35rem;
   font-weight: 800;
   background: linear-gradient(135deg, #ffd700 30%, #ffaa00 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 
 .tc-price-period {
