@@ -167,10 +167,14 @@ router.post('/login',
 
   try {
     // Zuerst in users Tabelle suchen (Mitglieder)
+    // COALESCE: falls users.dojo_id NULL ist (ältere Accounts), mitglieder.dojo_id als Fallback
     const userQuery = `
-      SELECT id, username, email, password, role, dojo_id, mitglied_id, created_at, msg_app_enabled
-      FROM users
-      WHERE email = ? OR username = ?
+      SELECT u.id, u.username, u.email, u.password, u.role,
+             COALESCE(u.dojo_id, m.dojo_id) as dojo_id,
+             u.mitglied_id, u.created_at, u.msg_app_enabled
+      FROM users u
+      LEFT JOIN mitglieder m ON u.mitglied_id = m.mitglied_id
+      WHERE u.email = ? OR u.username = ?
       LIMIT 1
     `;
 

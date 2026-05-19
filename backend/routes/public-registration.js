@@ -1696,8 +1696,8 @@ router.post('/mitglied-anlegen', async (req, res) => {
         const usernameToUse = existing.length > 0 ? autoUsername + '.' + newMitgliedId : autoUsername;
         const hash = await bcrypt.hash(autoPassword, 10);
         await queryAsync(
-          'INSERT IGNORE INTO users (username, email, password, role, mitglied_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-          [usernameToUse, email || null, hash, 'member', newMitgliedId]
+          'INSERT IGNORE INTO users (username, email, password, role, mitglied_id, dojo_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+          [usernameToUse, email || null, hash, 'member', newMitgliedId, dojo_id || null]
         );
         logger.info('Account automatisch erstellt', { username: usernameToUse, mitglied_id: newMitgliedId });
       }

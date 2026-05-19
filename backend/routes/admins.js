@@ -765,8 +765,8 @@ router.post('/password-management/dojo/bulk-create', async (req, res) => {
       const { hashPassword } = require('../services/passwordService');
       const hash = await hashPassword(password);
       await db.promise().query(
-        `INSERT IGNORE INTO users (username, email, password, mitglied_id, role, created_at) VALUES (?, ?, ?, ?, 'member', NOW())`,
-        [username, m.email || null, hash, m.mitglied_id]
+        `INSERT IGNORE INTO users (username, email, password, mitglied_id, dojo_id, role, created_at) VALUES (?, ?, ?, ?, ?, 'member', NOW())`,
+        [username, m.email || null, hash, m.mitglied_id, m.dojo_id || null]
       );
       created++;
       results.push({ username, mitglied_id: m.mitglied_id });
@@ -869,9 +869,9 @@ router.post('/password-management/dojo/create', async (req, res) => {
 
     // Erstelle den Account
     const [result] = await db.promise().query(
-      `INSERT INTO users (username, email, password, mitglied_id, role, created_at)
-       VALUES (?, ?, ?, ?, 'member', NOW())`,
-      [username, member.email || '', hashedPassword, mitglied_id]
+      `INSERT INTO users (username, email, password, mitglied_id, dojo_id, role, created_at)
+       VALUES (?, ?, ?, ?, ?, 'member', NOW())`,
+      [username, member.email || '', hashedPassword, mitglied_id, member.dojo_id || null]
     );
 
     res.json({

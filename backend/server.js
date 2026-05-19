@@ -701,6 +701,14 @@ db.promise().query(`
     ADD COLUMN IF NOT EXISTS varianten_json TEXT DEFAULT NULL
 `).catch(err => logger.warn('Migration 160b (ignoriert):', { error: err.message }));
 
+// Migration 161: users.dojo_id aus mitglieder befüllen (Fix für fehlende dojo_id bei Registrierung)
+db.promise().query(`
+  UPDATE users u
+  JOIN mitglieder m ON u.mitglied_id = m.mitglied_id
+  SET u.dojo_id = m.dojo_id
+  WHERE u.dojo_id IS NULL AND m.dojo_id IS NOT NULL
+`).catch(err => logger.warn('Migration 161 (ignoriert):', { error: err.message }));
+
 // Migration 148: Dateianhang für bank_transaktionen
 db.promise().query(`
   ALTER TABLE bank_transaktionen

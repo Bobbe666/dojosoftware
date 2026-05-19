@@ -4092,8 +4092,8 @@ async function createUserAccountIfNeeded(memberData, mitgliedId, callback) {
                     logger.warn(`Benutzername ${username} vergeben, nutze ${usernameFallback}`);
                     const hash2 = await bcrypt.hash(password, 10);
                     db.query(
-                        'INSERT IGNORE INTO users (username, email, password, role, mitglied_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-                        [usernameFallback, email, hash2, 'member', mitgliedId],
+                        'INSERT IGNORE INTO users (username, email, password, role, mitglied_id, dojo_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+                        [usernameFallback, email, hash2, 'member', mitgliedId, memberData.dojo_id || null],
                         (err2, res2) => {
                             if (err2) return callback(null, { warning: 'Fallback-Account fehlgeschlagen' });
                             logger.info(`✅ Fallback-Account erstellt: ${usernameFallback}`);
@@ -4106,8 +4106,8 @@ async function createUserAccountIfNeeded(memberData, mitgliedId, callback) {
                 // Neu erstellen
                 const hashedPassword = await bcrypt.hash(password, 10);
                 db.query(
-                    'INSERT INTO users (username, email, password, role, mitglied_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-                    [username, email, hashedPassword, 'member', mitgliedId],
+                    'INSERT INTO users (username, email, password, role, mitglied_id, dojo_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+                    [username, email, hashedPassword, 'member', mitgliedId, memberData.dojo_id || null],
                     (userErr, userResult) => {
                         if (userErr) {
                             logger.error('Fehler beim Erstellen des User-Accounts:', userErr);
