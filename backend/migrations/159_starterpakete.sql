@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS starterpaket_bestellungen (
   mitglied_id      INT NOT NULL,
   gesamtpreis_cent INT NOT NULL DEFAULT 0,
   status           ENUM('offen','bezahlt','storniert') NOT NULL DEFAULT 'offen',
+  varianten_json   JSON NULL,
   erstellt_am      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_dojo    (dojo_id),
   INDEX idx_mitglied (mitglied_id),

@@ -9,9 +9,18 @@ const STATUS_LABELS = {
   storniert: { label: 'Storniert', color: '#EF4444' }
 };
 
+const SP_STATUS = {
+  offen:     { label: 'Offen',      color: '#F59E0B' },
+  bezahlt:   { label: 'Bezahlt',    color: '#22C55E' },
+  storniert: { label: 'Storniert',  color: '#EF4444' }
+};
+
 const STATUS_FLOW = ['offen', 'in_bearbeitung', 'versendet', 'abgeschlossen'];
 
 export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
+  const [activeTab, setActiveTab] = useState('shop');
+
+  // ── Shop-Bestellungen State ────────────────────────────────────────
   const [bestellungen, setBestellungen] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -22,6 +31,15 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
   const [trackingForm, setTrackingForm] = useState({ tracking_nummer: '', versand_dienstleister: '' });
   const [showTracking, setShowTracking] = useState(false);
   const LIMIT = 20;
+
+  // ── Starterpaket-Bestellungen State ───────────────────────────────
+  const [spBestellungen, setSpBestellungen] = useState([]);
+  const [spTotal, setSpTotal] = useState(0);
+  const [spLoading, setSpLoading] = useState(false);
+  const [spStatusFilter, setSpStatusFilter] = useState('');
+  const [spPage, setSpPage] = useState(1);
+  const [selectedSp, setSelectedSp] = useState(null);
+  const SP_LIMIT = 20;
 
   const loadBestellungen = useCallback(async () => {
     setLoading(true);
@@ -41,6 +59,41 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
   }, [page, statusFilter, dojoParam]);
 
   useEffect(() => { loadBestellungen(); }, [loadBestellungen]);
+
+  // ── Starterpaket-Bestellungen laden ───────────────────────────────
+  const loadSpBestellungen = useCallback(async () => {
+    setSpLoading(true);
+    try {
+      const params = new URLSearchParams({ page: spPage, limit: SP_LIMIT });
+      if (spStatusFilter) params.append('status', spStatusFilter);
+      const sep = dojoParam ? (dojoParam.startsWith('?') ? '&' : '?') : '';
+      const url = `/starterpakete/bestellungen?${params}${dojoParam ? sep + dojoParam.replace('?', '') : ''}`;
+      const { data } = await axios.get(url);
+      if (data.success) {
+        setSpBestellungen(data.bestellungen);
+        setSpTotal(data.total);
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden der SP-Bestellungen:', err);
+    } finally {
+      setSpLoading(false);
+    }
+  }, [spPage, spStatusFilter, dojoParam]);
+
+  useEffect(() => {
+    if (activeTab === 'starterpakete') loadSpBestellungen();
+  }, [activeTab, loadSpBestellungen]);
+
+  const updateSpStatus = async (id, status) => {
+    try {
+      const sep = dojoParam ? (dojoParam.startsWith('?') ? '&' : '?') : '';
+      await axios.patch(`/starterpakete/bestellungen/${id}/status${dojoParam ? dojoParam : ''}`, { status });
+      setSpBestellungen(prev => prev.map(b => b.id === id ? { ...b, status } : b));
+      if (selectedSp?.id === id) setSelectedSp(prev => ({ ...prev, status }));
+    } catch (err) {
+      alert('Fehler beim Aktualisieren des Status');
+    }
+  };
 
   const openDetail = async (b) => {
     setDetailLoading(true);
@@ -88,8 +141,41 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
 
   const pages = Math.ceil(total / LIMIT);
 
+  const spPages = Math.ceil(spTotal / SP_LIMIT);
+
   return (
     <div className="shop-admin-content shop-bestellungen">
+      {/* ── Tab-Leiste ── */}
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.25rem' }}>
+        {[
+          { key: 'shop', label: `🛒 Shop-Bestellungen`, count: total },
+          { key: 'starterpakete', label: `🎁 Starterpakete`, count: spTotal },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              padding: '0.65rem 1.25rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === tab.key ? '2px solid #d4af37' : '2px solid transparent',
+              color: activeTab === tab.key ? '#d4af37' : 'rgba(255,255,255,0.5)',
+              fontWeight: activeTab === tab.key ? 700 : 400,
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontFamily: 'inherit',
+              marginBottom: '-1px',
+              transition: 'color 0.2s',
+            }}
+          >
+            {tab.label}
+            {tab.count > 0 && <span style={{ marginLeft: '0.4rem', fontSize: '0.78rem', opacity: 0.7 }}>({tab.count})</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Shop-Tab ── */}
+      {activeTab === 'shop' && (<>
       <div className="shop-admin-header">
         <h2>Bestellungen ({total})</h2>
         <div className="shop-filter-bar">
@@ -281,6 +367,136 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
           )}
         </div>
       </div>
+      </>)}
+
+      {/* ── Starterpaket-Tab ── */}
+      {activeTab === 'starterpakete' && (
+        <div className="shop-bestellungen-layout">
+          {/* Liste */}
+          <div className="shop-bestellungen-list">
+            <div className="shop-admin-header" style={{ marginBottom: '0.875rem' }}>
+              <h2 style={{ fontSize: '1rem' }}>Starterpaket-Bestellungen ({spTotal})</h2>
+              <div className="shop-filter-bar">
+                <select value={spStatusFilter} onChange={e => { setSpStatusFilter(e.target.value); setSpPage(1); }}>
+                  <option value="">Alle Status</option>
+                  {Object.entries(SP_STATUS).map(([k, v]) => (
+                    <option key={k} value={k}>{v.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {spLoading ? (
+              <div className="shop-loading">Lade Bestellungen…</div>
+            ) : spBestellungen.length === 0 ? (
+              <div className="shop-empty">Keine Starterpaket-Bestellungen gefunden</div>
+            ) : (
+              <>
+                {spBestellungen.map(b => {
+                  const s = SP_STATUS[b.status] || { label: b.status, color: '#6B7280' };
+                  return (
+                    <div
+                      key={b.id}
+                      className={`shop-bestellung-item ${selectedSp?.id === b.id ? 'active' : ''}`}
+                      onClick={() => setSelectedSp(b)}
+                    >
+                      <div className="shop-bestellung-row">
+                        <span className="shop-bestellung-nr">#{b.id} · {b.stil_name}</span>
+                        <span className="shop-bestellung-status" style={{ color: s.color }}>{s.label}</span>
+                      </div>
+                      <div className="shop-bestellung-row">
+                        <span>{b.mitglied_name}</span>
+                        <strong>{formatEur(b.gesamtpreis_cent)}</strong>
+                      </div>
+                      <div className="shop-bestellung-date">{formatDate(b.erstellt_am)}</div>
+                      <div className="shop-bestellung-meta">{b.paket_name} · Lastschrift</div>
+                    </div>
+                  );
+                })}
+                {spPages > 1 && (
+                  <div className="shop-pagination">
+                    <button disabled={spPage <= 1} onClick={() => setSpPage(p => p - 1)}>← Zurück</button>
+                    <span>{spPage} / {spPages}</span>
+                    <button disabled={spPage >= spPages} onClick={() => setSpPage(p => p + 1)}>Weiter →</button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Detail */}
+          <div className="shop-bestellung-detail">
+            {!selectedSp ? (
+              <div className="shop-empty">Bestellung auswählen</div>
+            ) : (
+              <>
+                <div className="shop-detail-header">
+                  <h3>🎁 {selectedSp.paket_name}</h3>
+                  <span className="shop-bestellung-status" style={{ color: SP_STATUS[selectedSp.status]?.color }}>
+                    {SP_STATUS[selectedSp.status]?.label || selectedSp.status}
+                  </span>
+                </div>
+
+                {/* Status-Buttons */}
+                <div className="shop-status-flow">
+                  {Object.entries(SP_STATUS).map(([k, v]) => (
+                    <button
+                      key={k}
+                      className={`shop-status-btn ${selectedSp.status === k ? 'active' : ''}`}
+                      style={{ borderColor: v.color }}
+                      onClick={() => updateSpStatus(selectedSp.id, k)}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="shop-detail-section">
+                  <h4>Mitglied</h4>
+                  <p>{selectedSp.mitglied_name}</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{selectedSp.mitglied_email}</p>
+                </div>
+
+                <div className="shop-detail-section">
+                  <h4>Paket</h4>
+                  <p>{selectedSp.paket_name}</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Stil: {selectedSp.stil_name}</p>
+                </div>
+
+                {selectedSp.varianten_json && Object.keys(
+                  typeof selectedSp.varianten_json === 'string'
+                    ? JSON.parse(selectedSp.varianten_json)
+                    : selectedSp.varianten_json
+                ).length > 0 && (
+                  <div className="shop-detail-section">
+                    <h4>Gewählte Varianten / Größen</h4>
+                    {Object.entries(
+                      typeof selectedSp.varianten_json === 'string'
+                        ? JSON.parse(selectedSp.varianten_json)
+                        : selectedSp.varianten_json
+                    ).map(([posId, wahl]) => (
+                      <p key={posId} style={{ fontSize: '0.88rem' }}>Position {posId}: <strong>{wahl}</strong></p>
+                    ))}
+                  </div>
+                )}
+
+                <div className="shop-detail-section">
+                  <h4>Zahlung</h4>
+                  <p>SEPA-Lastschrift · {selectedSp.status === 'bezahlt' ? '✅ Bezahlt' : '⏳ Ausstehend'}</p>
+                  <div className="shop-position-summe shop-position-summe--total" style={{ marginTop: '0.5rem' }}>
+                    <span>Gesamtpreis</span>
+                    <strong>{formatEur(selectedSp.gesamtpreis_cent)}</strong>
+                  </div>
+                </div>
+
+                <div className="shop-detail-footer">
+                  Bestellt: {formatDate(selectedSp.erstellt_am)}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

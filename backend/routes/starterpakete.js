@@ -316,4 +316,71 @@ router.post('/:id/bestellen', async (req, res) => {
   }
 });
 
+// ── GET /api/starterpakete/bestellungen ── Alle Bestellungen (Admin) ─
+router.get('/bestellungen', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'dojo_id fehlt' });
+
+    const page  = Math.max(1, parseInt(req.query.page  || '1', 10));
+    const limit = Math.min(100, parseInt(req.query.limit || '20', 10));
+    const offset = (page - 1) * limit;
+    const { status } = req.query;
+
+    let where = 'WHERE sb.dojo_id = ?';
+    const params = [dojoId];
+    if (status) { where += ' AND sb.status = ?'; params.push(status); }
+
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) AS total FROM starterpaket_bestellungen sb ${where}`,
+      params
+    );
+
+    const [bestellungen] = await pool.query(
+      `SELECT sb.id, sb.paket_id, sb.mitglied_id, sb.gesamtpreis_cent, sb.status,
+              sb.erstellt_am, sb.varianten_json,
+              sp.name AS paket_name, s.name AS stil_name,
+              CONCAT(m.vorname, ' ', m.nachname) AS mitglied_name, m.email AS mitglied_email
+       FROM starterpaket_bestellungen sb
+       JOIN starterpakete sp ON sb.paket_id = sp.paket_id
+       LEFT JOIN stile s ON sp.stil_id = s.stil_id
+       LEFT JOIN mitglieder m ON sb.mitglied_id = m.mitglied_id
+       ${where}
+       ORDER BY sb.erstellt_am DESC
+       LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    res.json({ success: true, bestellungen, total, page, limit });
+  } catch (err) {
+    logger.error('Starterpaket Bestellungen laden Fehler:', err);
+    res.status(500).json({ error: 'Fehler beim Laden' });
+  }
+});
+
+// ── PATCH /api/starterpakete/bestellungen/:id/status ── Status setzen ─
+router.patch('/bestellungen/:id/status', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'dojo_id fehlt' });
+
+    const bestellId = parseInt(req.params.id, 10);
+    if (isNaN(bestellId)) return res.status(400).json({ error: 'Ungültige ID' });
+
+    const { status } = req.body;
+    const erlaubt = ['offen', 'bezahlt', 'storniert'];
+    if (!erlaubt.includes(status)) return res.status(400).json({ error: 'Ungültiger Status' });
+
+    const [r] = await pool.query(
+      'UPDATE starterpaket_bestellungen SET status = ? WHERE id = ? AND dojo_id = ?',
+      [status, bestellId, dojoId]
+    );
+    if (r.affectedRows === 0) return res.status(404).json({ error: 'Bestellung nicht gefunden' });
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Starterpaket Status Fehler:', err);
+    res.status(500).json({ error: 'Fehler beim Aktualisieren' });
+  }
+});
+
 module.exports = router;
