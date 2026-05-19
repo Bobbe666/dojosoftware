@@ -3890,7 +3890,7 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
             if (effectiveTarifId) {
                 fm.tarif_id = effectiveTarifId; // normalisieren für den Block unten
                 // Erst Tarif-Details holen für korrekten Preis
-                db.query('SELECT * FROM tarife WHERE id = ?', [fm.tarif_id], (tarifErr, tarifResults) => {
+                db.query('SELECT * FROM tarife WHERE id = ?', [fm.tarif_id], async (tarifErr, tarifResults) => {
                     if (tarifErr || tarifResults.length === 0) {
                         logger.error(`❌ Tarif ${fm.tarif_id} nicht gefunden`);
                         createdMembers.push({ mitglied_id: newMemberId, vorname: fm.vorname, nachname: fm.nachname });
