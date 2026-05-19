@@ -1566,6 +1566,34 @@ Regeln:
 });
 
 // ===================================================================
+// 🔍 GET /api/buchhaltung/belege/duplikat-check - Doppelte Belege prüfen
+// ===================================================================
+router.get('/belege/duplikat-check', requireBuchhaltungAccess, (req, res) => {
+  const { datum, betrag, buchungsart } = req.query;
+  if (!datum || !betrag) return res.json({ duplikate: [] });
+
+  const betragNum = parseFloat(betrag);
+  if (isNaN(betragNum)) return res.json({ duplikate: [] });
+
+  const _orgFilter = buildOrgFilter(req, req.query.organisation);
+  let where = 'beleg_datum = ? AND ABS(betrag_brutto - ?) < 0.02 AND storniert = FALSE';
+  const params = [datum, betragNum];
+
+  if (_orgFilter.sql) { where += ' ' + _orgFilter.sql; params.push(..._orgFilter.params); }
+  if (buchungsart) { where += ' AND buchungsart = ?'; params.push(buchungsart); }
+
+  const sql = `
+    SELECT beleg_id, beleg_datum, beschreibung, betrag_brutto, mwst_satz, buchungsart, erstellt_am
+    FROM buchhaltung_belege WHERE ${where}
+    ORDER BY erstellt_am DESC LIMIT 5
+  `;
+
+  db.query(sql, params, (err, rows) => {
+    if (err) return res.json({ duplikate: [] });
+    res.json({ duplikate: rows });
+  });
+});
+
 // 📋 GET /api/buchhaltung/belege - Alle Belege abrufen
 // ===================================================================
 router.get('/belege', requireBuchhaltungAccess, (req, res) => {
