@@ -1122,7 +1122,7 @@ const TarifePreise = () => {
                 </div>
                 <div style={{ gridColumn: '1/-1' }}>
                   <label className="u-form-label">Pflichthinweis</label>
-                  <input className="u-input-sm" value={editingSp.hinweis || ''} onChange={e => setEditingSp({ ...editingSp, hinweis: e.target.value })} />
+                  <textarea className="u-input-sm" rows={4} value={editingSp.hinweis || ''} onChange={e => setEditingSp({ ...editingSp, hinweis: e.target.value })} style={{ resize: 'vertical' }} />
                 </div>
                 <div>
                   <label className="u-form-label">Rabatt (%)</label>

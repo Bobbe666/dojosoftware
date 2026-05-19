@@ -540,6 +540,7 @@
 .tarife-container .form-group textarea,
 .tarife-container .form-group select,
 .tarife-container .ds-modal-body input,
+.tarife-container .ds-modal-body textarea,
 .tarife-container .ds-modal-body select {
   width: 100%;
   padding: 0.5rem 0.75rem;
@@ -556,6 +557,7 @@
 .tarife-container .form-group textarea:focus,
 .tarife-container .form-group select:focus,
 .tarife-container .ds-modal-body input:focus,
+.tarife-container .ds-modal-body textarea:focus,
 .tarife-container .ds-modal-body select:focus {
   outline: none;
   border-color: rgba(255,255,255,0.3);
@@ -1354,6 +1356,7 @@
 [data-theme="tda-vib"] .tarife-container .form-group textarea,
 [data-theme="tda-vib"] .tarife-container .form-group select,
 [data-theme="tda-vib"] .tarife-container .ds-modal-body input,
+[data-theme="tda-vib"] .tarife-container .ds-modal-body textarea,
 [data-theme="tda-vib"] .tarife-container .ds-modal-body select {
   border-color: rgba(26, 26, 26, 0.15);
   background: rgba(26, 26, 26, 0.04);
@@ -1362,6 +1365,7 @@
 [data-theme="tda-vib"] .tarife-container .form-group textarea:focus,
 [data-theme="tda-vib"] .tarife-container .form-group select:focus,
 [data-theme="tda-vib"] .tarife-container .ds-modal-body input:focus,
+[data-theme="tda-vib"] .tarife-container .ds-modal-body textarea:focus,
 [data-theme="tda-vib"] .tarife-container .ds-modal-body select:focus {
   border-color: rgba(26, 26, 26, 0.3);
   background: rgba(26, 26, 26, 0.06);
