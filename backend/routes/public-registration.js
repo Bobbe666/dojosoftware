@@ -2001,7 +2001,7 @@ router.post('/probetraining', async (req, res) => {
       interessiert_an || null,
       today,
       'website-probetraining',
-      'probetraining_angemeldet',
+      'probetraining_vereinbart',
       'mittel',
       notizParts.join('\n'),
       true,
