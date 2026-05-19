@@ -1,6 +1,8 @@
 // Wiederverwendbare Vertragsformular-Komponente
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+import config from '../config';
 import '../styles/MitgliedDetail.css';
 import '../styles/VertragFormular.css';
 
@@ -25,6 +27,8 @@ const VertragFormular = ({
   const [sepaMandate, setSepaMandate] = useState(null);
   const [archivierteMandate, setArchivierteMandate] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sonderAktionen, setSonderAktionen] = useState([]);
+  const [selectedAktionId, setSelectedAktionId] = useState(vertrag.sonder_aktion_id || null);
 
   // Modal für Dokumentenanzeige
   const [showDokumentModal, setShowDokumentModal] = useState(false);
@@ -199,6 +203,17 @@ const VertragFormular = ({
           console.warn('Fehler beim Laden der Dokumente:', err);
         }
 
+        // Sonderaktionen laden (nur für authentifizierte Admins)
+        if (!isPublic) {
+          try {
+            const saRes = await fetchWithAuth(`${config.apiBaseUrl}/sonder-aktionen?aktiv=1`);
+            if (saRes.ok) {
+              const saData = await saRes.json();
+              setSonderAktionen(saData.aktionen || []);
+            }
+          } catch (e) { /* ignore */ }
+        }
+
         // SEPA-Mandate laden (nur wenn mitgliedId vorhanden)
         if (mitgliedId) {
           try {
@@ -336,6 +351,46 @@ const VertragFormular = ({
     return null;
   };
 
+  // Filtere Aktionen für den gewählten Tarif
+  const getAktionenFuerTarif = (tarifId) => {
+    return sonderAktionen.filter(a => {
+      if (!a.tarif_ids) return true; // null = gilt für alle Tarife
+      try {
+        const ids = typeof a.tarif_ids === 'string' ? JSON.parse(a.tarif_ids) : a.tarif_ids;
+        return !ids || ids.length === 0 || ids.includes(parseInt(tarifId, 10));
+      } catch { return true; }
+    });
+  };
+
+  // Sonderaktion anwenden
+  const applyAktion = (aktion, tarifId) => {
+    const selectedTarif = tarife.find(t => t.id === parseInt(tarifId));
+    const basispreis = selectedTarif ? selectedTarif.price_cents / 100 : (vertrag.monatsbeitrag || 0);
+    let updates = { sonder_aktion_id: aktion.id };
+
+    if (aktion.typ === 'rabatt_prozent') {
+      updates.monatsbeitrag = Math.max(0, Math.round((basispreis * (100 - aktion.wert)) * 100) / 100);
+    } else if (aktion.typ === 'rabatt_betrag') {
+      updates.monatsbeitrag = Math.max(0, Math.round((basispreis - parseFloat(aktion.wert)) * 100) / 100);
+    } else if (aktion.typ === 'zahlungsaufschub') {
+      const heute = new Date();
+      heute.setMonth(heute.getMonth() + parseInt(aktion.wert, 10));
+      const neuerBeginn = heute.toISOString().split('T')[0];
+      updates.vertragsbeginn = neuerBeginn;
+      updates.vertragsende = calculateVertragsende(neuerBeginn, vertrag.mindestlaufzeit_monate);
+    }
+    return updates;
+  };
+
+  // Aktion entfernen → Preise zurücksetzen
+  const removeAktion = (tarifId) => {
+    const selectedTarif = tarife.find(t => t.id === parseInt(tarifId));
+    return {
+      sonder_aktion_id: null,
+      monatsbeitrag: selectedTarif ? selectedTarif.price_cents / 100 : vertrag.monatsbeitrag,
+    };
+  };
+
   if (loading) {
     return <div className="vf-loading">Lade Vertragsdaten...</div>;
   }
@@ -353,6 +408,7 @@ const VertragFormular = ({
               const mindestlaufzeit = selectedTarif?.mindestlaufzeit_monate || 12;
               const calculatedEnde = calculateVertragsende(vertrag.vertragsbeginn, mindestlaufzeit);
 
+              setSelectedAktionId(null);
               onChange({
                 ...vertrag,
                 tarif_id: e.target.value,
@@ -361,7 +417,8 @@ const VertragFormular = ({
                 aufnahmegebuehr_cents: selectedTarif?.aufnahmegebuehr_cents ?? 4999,
                 billing_cycle: selectedTarif?.billing_cycle?.toLowerCase() || vertrag.billing_cycle,
                 monatsbeitrag: selectedTarif ? selectedTarif.price_cents / 100 : vertrag.monatsbeitrag,
-                vertragsende: calculatedEnde
+                vertragsende: calculatedEnde,
+                sonder_aktion_id: null
               });
             }}
             className="vf-select"
@@ -383,6 +440,69 @@ const VertragFormular = ({
             </p>
           )}
         </div>
+
+        {/* Sonderaktion */}
+        {!isPublic && vertrag.tarif_id && getAktionenFuerTarif(vertrag.tarif_id).length > 0 && (
+          <div className="form-group vf-full-col">
+            <label className="vf-label">🏷️ Sonderaktion (optional)</label>
+            <select
+              value={selectedAktionId || ''}
+              onChange={(e) => {
+                const aktionId = e.target.value ? parseInt(e.target.value, 10) : null;
+                setSelectedAktionId(aktionId);
+                if (aktionId) {
+                  const aktion = sonderAktionen.find(a => a.id === aktionId);
+                  if (aktion) onChange({ ...vertrag, ...applyAktion(aktion, vertrag.tarif_id) });
+                } else {
+                  onChange({ ...vertrag, ...removeAktion(vertrag.tarif_id) });
+                }
+              }}
+              className="vf-select"
+            >
+              <option value="">— Keine Sonderaktion —</option>
+              {getAktionenFuerTarif(vertrag.tarif_id).map(a => {
+                const wertLabel = a.typ === 'rabatt_prozent'
+                  ? `${a.wert}% Rabatt`
+                  : a.typ === 'rabatt_betrag'
+                  ? `${Number(a.wert).toFixed(2)} € Rabatt`
+                  : `${a.wert} Monate Zahlungsaufschub`;
+                return (
+                  <option key={a.id} value={a.id}>
+                    {a.name} — {wertLabel}
+                    {a.gueltig_bis ? ` (bis ${new Date(a.gueltig_bis).toLocaleDateString('de-DE')})` : ''}
+                  </option>
+                );
+              })}
+            </select>
+            {selectedAktionId && (() => {
+              const aktion = sonderAktionen.find(a => a.id === selectedAktionId);
+              if (!aktion) return null;
+              const selectedTarif = tarife.find(t => t.id === parseInt(vertrag.tarif_id));
+              const basispreis = selectedTarif ? selectedTarif.price_cents / 100 : 0;
+              return (
+                <div style={{
+                  marginTop: '0.5rem',
+                  background: 'rgba(212,175,55,0.08)',
+                  border: '1px solid rgba(212,175,55,0.25)',
+                  borderRadius: '7px',
+                  padding: '0.6rem 0.9rem',
+                  fontSize: '0.82rem',
+                  color: '#d4af37',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>✅</span>
+                  <span>
+                    {aktion.typ === 'rabatt_prozent' && `Monatsbeitrag reduziert: €${basispreis.toFixed(2)} → €${Math.max(0,(basispreis*(100-aktion.wert)/100)).toFixed(2)}`}
+                    {aktion.typ === 'rabatt_betrag' && `Monatsbeitrag reduziert: €${basispreis.toFixed(2)} → €${Math.max(0,basispreis-parseFloat(aktion.wert)).toFixed(2)}`}
+                    {aktion.typ === 'zahlungsaufschub' && `Vertragsbeginn wird um ${aktion.wert} Monat${aktion.wert !== 1 ? 'e' : ''} verschoben`}
+                  </span>
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {/* Zahlungsintervall & Vertragsbeginn */}
         <div className="form-group vf-form-group-mb">
