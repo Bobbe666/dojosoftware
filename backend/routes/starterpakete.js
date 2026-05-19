@@ -37,21 +37,17 @@ async function loadPaketMitPositionen(paketId, dojoId) {
 // ── GET /api/starterpakete/artikel-options ── Artikel für Dropdown ──
 router.get('/artikel-options', async (req, res) => {
   try {
-    const dojoId = getSecureDojoId(req);
-    if (!dojoId) return res.status(400).json({ error: 'dojo_id fehlt' });
+    const dojoId = parseInt(req.query.dojo_id, 10) || req.user?.dojo_id || null;
+    if (!dojoId) return res.json({ success: true, artikel: [] });
 
     const [artikel] = await pool.query(
-      `SELECT artikel_id, name, verkaufspreis_cent
-       FROM artikel
-       WHERE dojo_id = ? AND aktiv = 1
-       ORDER BY name ASC`,
+      'SELECT artikel_id, name, verkaufspreis_cent FROM artikel WHERE dojo_id = ? AND aktiv = 1 ORDER BY name ASC',
       [dojoId]
     );
-
     res.json({ success: true, artikel });
   } catch (err) {
-    logger.error('Artikel-Options laden Fehler:', err);
-    res.status(500).json({ error: 'Fehler beim Laden' });
+    logger.error('Artikel-Options Fehler:', err);
+    res.status(500).json({ error: 'Fehler' });
   }
 });
 

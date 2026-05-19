@@ -194,19 +194,16 @@ const TarifePreise = () => {
   const openAddPos = async (paketId, dojoIdFromPaket) => {
     setAddingPosForId(paketId);
     setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
-    if (spArtikel.length === 0) {
-      setSpArtikelLoading(true);
-      try {
-        const id = dojoIdFromPaket || getDojoId();
-        if (id) {
-          const res = await axios.get(`/artikel?dojo_id=${id}`);
-          setSpArtikel(res.data?.data || []);
-        }
-      } catch (e) {
-        console.warn('Artikel lazy-load Fehler:', e?.response?.status);
-      } finally {
-        setSpArtikelLoading(false);
-      }
+    setSpArtikel([]);
+    setSpArtikelLoading(true);
+    try {
+      const id = dojoIdFromPaket || getDojoId();
+      const res = await axios.get(`/starterpakete/artikel-options${id ? `?dojo_id=${id}` : ''}`);
+      setSpArtikel(res.data?.artikel || []);
+    } catch (e) {
+      console.error('Artikel-Load Fehler:', e?.response?.status, e?.message);
+    } finally {
+      setSpArtikelLoading(false);
     }
   };
 
