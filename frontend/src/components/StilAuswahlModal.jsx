@@ -173,7 +173,6 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
             <div className={`sa-step-line ${step >= 2 ? 'active' : ''}`} />
             <div className={`sa-step-dot ${step >= 2 ? 'active' : ''}`} />
           </div>
-          <button className="sa-skip" onClick={markDone} title="Überspringen">✕</button>
         </div>
 
         {/* ── Schritt 1: Stil-Auswahl ─────────────────────────── */}
@@ -208,9 +207,6 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
             </div>
 
             <div className="sa-footer">
-              <button className="sa-btn-skip" onClick={markDone} disabled={saving}>
-                Später auswählen
-              </button>
               <button
                 className="sa-btn-primary"
                 onClick={handleStilWeiter}
@@ -367,9 +363,6 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
                     {error && <div className="sa-error" style={{ marginTop: '0.75rem' }}>{error}</div>}
 
                     <div className="sa-footer" style={{ marginTop: '1.25rem' }}>
-                      <button className="sa-btn-skip" onClick={markDone} disabled={saving}>
-                        Später entscheiden
-                      </button>
                       <button className="sa-btn-primary" onClick={handleBestellen} disabled={saving}>
                         {saving ? 'Wird gesendet…' : 'Paket bestellen'}
                       </button>
