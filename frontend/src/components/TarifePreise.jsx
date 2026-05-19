@@ -104,6 +104,7 @@ const TarifePreise = () => {
   const [showNewSp, setShowNewSp] = useState(false);
   const [activeTab, setActiveTab] = useState('tarife');
   const [tarifeFilter, setTarifeFilter] = useState('alle');
+  const [catCollapsed, setCatCollapsed] = useState({ kinder: false, studenten: false, erwachsene: false, familien: false, sonstige: false, archiviert: true });
 
   useEffect(() => {
     loadTarifeUndRabatte();
@@ -148,7 +149,8 @@ const TarifePreise = () => {
                         tarif.name.toLowerCase().includes('schüler') ||
                         tarif.name.toLowerCase().includes('kids'),
           isAdultRate: tarif.name.toLowerCase().includes('erwachsene') ||
-                      tarif.name.toLowerCase().includes('18+')
+                      tarif.name.toLowerCase().includes('18+'),
+          isFamilienRate: tarif.name.toLowerCase().includes('famili')
         }));
         const mappedRabatte = rabatteData.data.map(rabatt => ({
           id: rabatt.rabatt_id, name: rabatt.name, beschreibung: rabatt.beschreibung,
@@ -425,7 +427,8 @@ const TarifePreise = () => {
       case 'kinder': return tarife.filter(t => t.isChildRate && !t.ist_archiviert);
       case 'studenten': return tarife.filter(t => t.isStudentRate && !t.ist_archiviert);
       case 'erwachsene': return tarife.filter(t => t.isAdultRate && !t.ist_archiviert);
-      case 'sonstige': return tarife.filter(t => !t.isChildRate && !t.isStudentRate && !t.isAdultRate && !t.ist_archiviert);
+      case 'familien': return tarife.filter(t => t.isFamilienRate && !t.isChildRate && !t.isStudentRate && !t.isAdultRate && !t.ist_archiviert);
+      case 'sonstige': return tarife.filter(t => !t.isChildRate && !t.isStudentRate && !t.isAdultRate && !t.isFamilienRate && !t.ist_archiviert);
       case 'archiviert': return tarife.filter(t => t.ist_archiviert);
       default: return tarife.filter(t => !t.ist_archiviert);
     }
@@ -441,6 +444,29 @@ const TarifePreise = () => {
       </div>
     );
   }
+
+  // ── Inline CategorySection (Accordion) ───────────────────────────
+  const CategorySection = ({ title, icon, items, catKey }) => {
+    if (items.length === 0) return null;
+    const collapsed = catCollapsed[catKey];
+    return (
+      <div className="tc-cat-section">
+        <button className="tc-cat-header" onClick={() => setCatCollapsed(p => ({ ...p, [catKey]: !p[catKey] }))}>
+          <div className="tc-cat-title">
+            {icon}
+            <span>{title}</span>
+            <span className="tc-cat-count">{items.length}</span>
+          </div>
+          <ChevronDown size={15} className={`tc-cat-chevron${collapsed ? '' : ' open'}`} />
+        </button>
+        {!collapsed && (
+          <div className="tc-grid tc-grid--cat">
+            {items.map(tarif => <TarifCard key={tarif.id} tarif={tarif} />)}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // ── Inline TarifCard ──────────────────────────────────────────────
   const TarifCard = ({ tarif }) => (
@@ -562,7 +588,8 @@ const TarifePreise = () => {
                 { key: 'kinder', label: 'Kinder', count: tarife.filter(t => t.isChildRate && !t.ist_archiviert).length },
                 { key: 'studenten', label: 'Studenten', count: tarife.filter(t => t.isStudentRate && !t.ist_archiviert).length },
                 { key: 'erwachsene', label: 'Erwachsene', count: tarife.filter(t => t.isAdultRate && !t.ist_archiviert).length },
-                { key: 'sonstige', label: 'Sonstige', count: null },
+                { key: 'familien', label: 'Familien', count: tarife.filter(t => t.isFamilienRate && !t.isChildRate && !t.isStudentRate && !t.isAdultRate && !t.ist_archiviert).length },
+                { key: 'sonstige', label: 'Sonstige', count: tarife.filter(t => !t.isChildRate && !t.isStudentRate && !t.isAdultRate && !t.isFamilienRate && !t.ist_archiviert).length },
                 { key: 'archiviert', label: 'Archiviert', count: tarife.filter(t => t.ist_archiviert).length },
               ].map(({ key, label, count }) => (
                 <button
@@ -585,18 +612,29 @@ const TarifePreise = () => {
             </div>
           </div>
 
-          {/* Tarife Grid */}
-          <div className="tc-grid">
-            {getFilteredTarife().map(tarif => (
-              <TarifCard key={tarif.id} tarif={tarif} />
-            ))}
-            {getFilteredTarife().length === 0 && (
-              <div className="tc-empty">
-                <Package size={28} />
-                <p>Keine Tarife in dieser Kategorie</p>
-              </div>
-            )}
-          </div>
+          {/* Tarife: Accordion-Gruppen (Alle) oder flaches Grid (Filter) */}
+          {tarifeFilter === 'alle' ? (
+            <div className="tc-categories">
+              <CategorySection title="Kinder & Jugendliche" icon={<Baby size={14} />} items={tarife.filter(t => t.isChildRate && !t.ist_archiviert)} catKey="kinder" />
+              <CategorySection title="Studenten & Schüler" icon={<GraduationCap size={14} />} items={tarife.filter(t => t.isStudentRate && !t.ist_archiviert)} catKey="studenten" />
+              <CategorySection title="Erwachsene" icon={<User size={14} />} items={tarife.filter(t => t.isAdultRate && !t.ist_archiviert)} catKey="erwachsene" />
+              <CategorySection title="Familien" icon={<Users size={14} />} items={tarife.filter(t => t.isFamilienRate && !t.isChildRate && !t.isStudentRate && !t.isAdultRate && !t.ist_archiviert)} catKey="familien" />
+              <CategorySection title="Sonstige" icon={<Package size={14} />} items={tarife.filter(t => !t.isChildRate && !t.isStudentRate && !t.isAdultRate && !t.isFamilienRate && !t.ist_archiviert)} catKey="sonstige" />
+              <CategorySection title="Archiviert" icon={<Tag size={14} />} items={tarife.filter(t => t.ist_archiviert)} catKey="archiviert" />
+            </div>
+          ) : (
+            <div className="tc-grid">
+              {getFilteredTarife().map(tarif => (
+                <TarifCard key={tarif.id} tarif={tarif} />
+              ))}
+              {getFilteredTarife().length === 0 && (
+                <div className="tc-empty">
+                  <Package size={28} />
+                  <p>Keine Tarife in dieser Kategorie</p>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
