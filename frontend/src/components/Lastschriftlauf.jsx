@@ -67,8 +67,11 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const [notInRun, setNotInRun] = useState(null);
   const [notInRunOpen, setNotInRunOpen] = useState(true);
   const [notInRunLoading, setNotInRunLoading] = useState(false);
-  const [setupLoadingPer, setSetupLoadingPer] = useState({}); // { [mitglied_id]: 'loading'|'ok'|'error' }
-  const [setupResultPer, setSetupResultPer] = useState({});   // { [mitglied_id]: { success, error } }
+  const [setupLoadingPer, setSetupLoadingPer] = useState({});
+  const [setupResultPer, setSetupResultPer] = useState({});
+  const [debugSearch, setDebugSearch] = useState('');
+  const [debugResult, setDebugResult] = useState(null);
+  const [debugLoading, setDebugLoading] = useState(false);
 
   // Mitglieder ohne Tarif (Warnliste aus Preview)
   const [ohneTarif, setOhneTarif] = useState([]);
@@ -199,6 +202,27 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
     } catch (err) {
       setSetupLoadingPer(prev => ({ ...prev, [mitglied_id]: 'error' }));
       setSetupResultPer(prev => ({ ...prev, [mitglied_id]: { error: err.message } }));
+    }
+  };
+
+  const handleDebugSearch = async () => {
+    if (!debugSearch.trim()) return;
+    setDebugLoading(true);
+    setDebugResult(null);
+    try {
+      const dojoParam = numericDojoId ? `&dojo_id=${numericDojoId}` : '';
+      const nameParam = isNaN(parseInt(debugSearch))
+        ? `name=${encodeURIComponent(debugSearch)}`
+        : `mitglied_id=${parseInt(debugSearch)}`;
+      const response = await fetchWithAuth(
+        `${config.apiBaseUrl}/lastschriftlauf/debug-member?${nameParam}&monat=${selectedMonth}&jahr=${selectedYear}${dojoParam}`
+      );
+      const data = await response.json();
+      setDebugResult(data);
+    } catch (e) {
+      setDebugResult({ error: e.message });
+    } finally {
+      setDebugLoading(false);
     }
   };
 
@@ -968,6 +992,53 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
               {!notInRunLoading && notInRun && !notInRun.success && (
                 <p className="u-text-error">Fehler: {notInRun.error}</p>
               )}
+
+              {/* Mitglied direkt nachschlagen */}
+              <div className="ll-debug-lookup">
+                <span className="ll-debug-label">Mitglied direkt prüfen:</span>
+                <input
+                  className="ll-debug-input"
+                  placeholder="Name oder ID…"
+                  value={debugSearch}
+                  onChange={e => setDebugSearch(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleDebugSearch()}
+                />
+                <button className="ll-dfix-btn" onClick={handleDebugSearch} disabled={debugLoading}>
+                  {debugLoading ? <Loader size={13} className="ll-spin" /> : 'Prüfen'}
+                </button>
+              </div>
+
+              {debugResult && !debugResult.error && !debugResult.found && (
+                <div className="ll-debug-result ll-debug-result--warn">Kein Mitglied gefunden für "{debugSearch}"</div>
+              )}
+              {debugResult?.error && (
+                <div className="ll-debug-result ll-debug-result--error">Fehler: {debugResult.error}</div>
+              )}
+              {debugResult?.found && debugResult.members?.map(m => (
+                <div key={m.mitglied_id} className="ll-debug-result">
+                  <div className="ll-debug-name">
+                    <strong>{m.vorname} {m.nachname}</strong>
+                    <span className="ll-dcard-id">#{m.mitglied_id}</span>
+                    <span className={`ll-debug-pill ${m.aktiv ? 'll-debug-pill--ok' : 'll-debug-pill--bad'}`}>{m.aktiv ? 'aktiv' : 'INAKTIV'}</span>
+                  </div>
+                  <div className="ll-debug-rows">
+                    <div className="ll-debug-row"><span>Zahlungsmethode</span><strong>{m.zahlungsmethode || '—'}</strong></div>
+                    <div className="ll-debug-row"><span>Vertragsfrei</span><strong>{m.vertragsfrei ? 'JA' : 'nein'}</strong></div>
+                    <div className="ll-debug-row"><span>Offene Beiträge</span><strong>{m.offene_beitraege} ({new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(m.offener_betrag)})</strong></div>
+                    <div className="ll-debug-row"><span>SEPA-Mandate</span><strong>{m.mandate?.length || 0} gesamt, {m.mandate?.filter(mn=>mn.status==='aktiv'&&mn.mandatsreferenz).length || 0} aktiv+gültig</strong></div>
+                    <div className="ll-debug-row"><span>Stripe-Tx (letzte 6)</span><strong>{m.stripe_transaktionen?.map(t=>`${t.status} ${t.monat}/${t.jahr}`).join(', ') || '—'}</strong></div>
+                  </div>
+                  {m.diagnose?.length > 0 && (
+                    <div className="ll-debug-diagnose">
+                      {m.diagnose.map((d,i) => (
+                        <div key={i} className={`ll-debug-issue ${d.startsWith('Keine Probleme') ? 'll-debug-issue--ok' : 'll-debug-issue--bad'}`}>
+                          {d.startsWith('Keine Probleme') ? <CheckCircle size={13}/> : <AlertCircle size={13}/>} {d}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

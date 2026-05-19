@@ -461,6 +461,80 @@ router.get("/missing-mandates", (req, res) => {
 });
 
 /**
+ * GET /api/lastschriftlauf/debug-member?name=xxx&dojo_id=X
+ * Vollständige Diagnose für ein einzelnes Mitglied (Lastschriftlauf-Sicht)
+ */
+router.get("/debug-member", async (req, res) => {
+    try {
+        const { name, mitglied_id } = req.query;
+        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        const monat = parseInt(req.query.monat) || (new Date().getMonth() + 1);
+        const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
+        const lastDay = new Date(jahr, monat, 0).getDate();
+        const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+        if (!name && !mitglied_id) return res.status(400).json({ error: 'name oder mitglied_id erforderlich' });
+
+        const where = mitglied_id
+            ? 'm.mitglied_id = ?'
+            : 'CONCAT(m.vorname, " ", m.nachname) LIKE ?';
+        const whereParam = mitglied_id ? [parseInt(mitglied_id)] : [`%${name}%`];
+        const dojoFilter = dojoId ? 'AND m.dojo_id = ?' : '';
+        const params = [...whereParam, ...(dojoId ? [dojoId] : [])];
+
+        const rows = await queryAsync(`
+            SELECT m.mitglied_id, m.vorname, m.nachname,
+                   m.zahlungsmethode, m.aktiv, m.vertragsfrei, m.dojo_id,
+                   m.stripe_customer_id
+            FROM mitglieder m
+            WHERE ${where} ${dojoFilter}
+            LIMIT 5
+        `, params);
+
+        if (rows.length === 0) return res.json({ found: false, query: name || mitglied_id });
+
+        const results = await Promise.all(rows.map(async m => {
+            const [mandate, beitraege, vertraege, stripeTx] = await Promise.all([
+                queryAsync(`SELECT mandat_id, status, mandatsreferenz, iban, stripe_payment_method_id, erstellt_am FROM sepa_mandate WHERE mitglied_id = ? ORDER BY erstellt_am DESC`, [m.mitglied_id]),
+                queryAsync(`SELECT beitrag_id, betrag, zahlungsdatum, bezahlt, art FROM beitraege WHERE mitglied_id = ? AND zahlungsdatum <= ? ORDER BY zahlungsdatum DESC LIMIT 12`, [m.mitglied_id, monatEnde]),
+                queryAsync(`SELECT vertrag_id, status, vertragsstart, vertragsende, ruhepause_von, ruhepause_bis FROM vertraege WHERE mitglied_id = ? ORDER BY vertragsstart DESC LIMIT 3`, [m.mitglied_id]),
+                queryAsync(`SELECT slt.id, slt.status, slt.betrag, slt.beitrag_ids, slb.monat, slb.jahr, slt.created_at FROM stripe_lastschrift_transaktion slt JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id WHERE slt.mitglied_id = ? ORDER BY slt.created_at DESC LIMIT 6`, [m.mitglied_id]),
+            ]);
+
+            const offeneBeitraege = beitraege.filter(b => b.bezahlt == 0);
+            const aktivesMandat = mandate.find(mn => mn.status === 'aktiv' && mn.mandatsreferenz);
+            const processingTx = stripeTx.filter(t => t.status === 'processing');
+            const succeededTx = stripeTx.filter(t => t.status === 'succeeded');
+
+            const diagnose = [];
+            if (!m.aktiv) diagnose.push('INAKTIV (aktiv=0) — vom Preview ausgeschlossen');
+            if (m.vertragsfrei == 1) diagnose.push('vertragsfrei=1 — von der Diagnose ausgeschlossen');
+            if (m.zahlungsmethode !== 'SEPA-Lastschrift' && m.zahlungsmethode !== 'Lastschrift')
+                diagnose.push(`zahlungsmethode="${m.zahlungsmethode}" — kein SEPA-Wert → weder Preview noch Diagnose`);
+            if (!aktivesMandat) diagnose.push('Kein aktives Mandat mit mandatsreferenz');
+            if (!m.stripe_customer_id) diagnose.push('Kein stripe_customer_id');
+            if (offeneBeitraege.length === 0) diagnose.push('Keine offenen Beiträge bis Monatsende');
+            if (processingTx.length > 0) diagnose.push(`${processingTx.length} Stripe-Tx in "processing" → blockiert Preview + Diagnose`);
+
+            return {
+                ...m,
+                mandate, vertraege,
+                offene_beitraege: offeneBeitraege.length,
+                offener_betrag: offeneBeitraege.reduce((s, b) => s + parseFloat(b.betrag), 0),
+                beitraege_sample: beitraege,
+                stripe_transaktionen: stripeTx,
+                diagnose: diagnose.length ? diagnose : ['Keine Probleme gefunden — sollte im Preview erscheinen'],
+            };
+        }));
+
+        res.json({ found: true, monatEnde, members: results });
+    } catch (err) {
+        logger.error('debug-member error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
  * GET /api/lastschriftlauf/not-in-run
  * Alle SEPA-Mitglieder die NICHT im aktuellen Lastschriftlauf sind, mit Grund
  */
