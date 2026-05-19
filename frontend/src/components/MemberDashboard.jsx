@@ -2336,12 +2336,17 @@ const MemberDashboard = () => {
             )}
 
             {/* Aktuelle Stile & Gürtel */}
-            {memberStile.length > 0 && (
+            {memberStile.length > 0 ? (
               <div className="md-info-card md-stile-card">
                 <div className="md-stile-card__header">
                   <span className="md-stile-card__icon">🥋</span>
                   <span className="md-stile-card__title">Meine Kampfkunst-Stile</span>
-                  <span className="md-hint-text md-hint-inline">💡 Klicke auf "Stil &amp; Gurt" für Details</span>
+                  <button
+                    onClick={() => setShowStilAuswahl(true)}
+                    style={{ marginLeft: 'auto', background: 'none', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 6, color: '#d4af37', fontSize: '0.78rem', padding: '3px 10px', cursor: 'pointer' }}
+                  >
+                    + Stil hinzufügen
+                  </button>
                 </div>
                 <div className="md-stile-card__chips">
                   {memberStile.map((stil) => {
@@ -2362,6 +2367,20 @@ const MemberDashboard = () => {
                     );
                   })}
                 </div>
+              </div>
+            ) : (
+              <div className="md-info-card" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🥋</div>
+                <div style={{ fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-primary)' }}>Noch kein Kampfkunststil gewählt</div>
+                <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1rem' }}>
+                  Wähle deinen Stil um loszulegen
+                </div>
+                <button
+                  onClick={() => setShowStilAuswahl(true)}
+                  style={{ background: 'linear-gradient(135deg,#d4af37,#b8962e)', border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, padding: '0.6rem 1.4rem', cursor: 'pointer', fontSize: '0.9rem' }}
+                >
+                  Stil auswählen
+                </button>
               </div>
             )}
 
