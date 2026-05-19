@@ -2067,4 +2067,36 @@ router.post('/probetraining', async (req, res) => {
   }
 });
 
+// GET /api/public/sonder-aktionen - Aktive Sonderaktionen (tenant-aware, kein Auth)
+router.get('/sonder-aktionen', async (req, res) => {
+  try {
+    let dojoId = null;
+    const subdomain = req.headers['x-tenant-subdomain'];
+    if (subdomain) {
+      const dojos = await queryAsync(
+        'SELECT id FROM dojo WHERE subdomain = ? AND ist_aktiv = 1 LIMIT 1',
+        [subdomain]
+      );
+      if (dojos.length > 0) dojoId = dojos[0].id;
+    }
+    if (!dojoId) return res.json({ success: true, aktionen: [] });
+
+    const heute = new Date().toISOString().slice(0, 10);
+    const aktionen = await queryAsync(
+      `SELECT id, name, beschreibung, typ, wert, gueltig_von, gueltig_bis, tarif_ids, code, max_einloesungen, einloesungen_count
+       FROM sonder_aktionen
+       WHERE dojo_id = ? AND aktiv = 1
+         AND (gueltig_von IS NULL OR gueltig_von <= ?)
+         AND (gueltig_bis IS NULL OR gueltig_bis >= ?)
+         AND (max_einloesungen IS NULL OR einloesungen_count < max_einloesungen)
+       ORDER BY erstellt_am DESC`,
+      [dojoId, heute, heute]
+    );
+    res.json({ success: true, aktionen });
+  } catch (err) {
+    logger.error('Fehler bei public sonder-aktionen:', { error: err });
+    res.status(500).json({ success: false, error: 'Serverfehler' });
+  }
+});
+
 module.exports = router;

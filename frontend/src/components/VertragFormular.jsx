@@ -203,16 +203,17 @@ const VertragFormular = ({
           console.warn('Fehler beim Laden der Dokumente:', err);
         }
 
-        // Sonderaktionen laden (nur für authentifizierte Admins)
-        if (!isPublic) {
-          try {
-            const saRes = await fetchWithAuth(`${config.apiBaseUrl}/sonder-aktionen?aktiv=1`);
-            if (saRes.ok) {
-              const saData = await saRes.json();
-              setSonderAktionen(saData.aktionen || []);
-            }
-          } catch (e) { /* ignore */ }
-        }
+        // Sonderaktionen laden (public + authenticated)
+        try {
+          const saUrl = isPublic
+            ? '/public/sonder-aktionen'
+            : `${config.apiBaseUrl}/sonder-aktionen?aktiv=1`;
+          const saRes = isPublic
+            ? await axios.get(saUrl)
+            : await fetchWithAuth(saUrl);
+          const saData = isPublic ? saRes.data : (saRes.ok ? await saRes.json() : { aktionen: [] });
+          setSonderAktionen(saData.aktionen || []);
+        } catch (e) { /* ignore */ }
 
         // SEPA-Mandate laden (nur wenn mitgliedId vorhanden)
         if (mitgliedId) {
@@ -442,7 +443,7 @@ const VertragFormular = ({
         </div>
 
         {/* Sonderaktion */}
-        {!isPublic && vertrag.tarif_id && getAktionenFuerTarif(vertrag.tarif_id).length > 0 && (
+        {vertrag.tarif_id && getAktionenFuerTarif(vertrag.tarif_id).length > 0 && (
           <div className="form-group vf-full-col">
             <label className="vf-label">🏷️ Sonderaktion (optional)</label>
             <select
