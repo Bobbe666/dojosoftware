@@ -405,6 +405,30 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const [stripeSyncing, setStripeSyncing] = useState(false);
   const [stripeSyncResult, setStripeSyncResult] = useState(null);
 
+  const [regenLoading, setRegenLoading] = useState(false);
+  const handleRegenerateAll = async () => {
+    if (!window.confirm(
+      'Alle Beiträge gemäß Vertragslaufzeit nachgenerieren?\n\n' +
+      'Fehlende Monatsbeiträge werden für alle aktiven Verträge angelegt. ' +
+      'Bereits vorhandene Einträge werden nicht verändert.'
+    )) return;
+    setRegenLoading(true);
+    try {
+      const dojoParam = numericDojoId ? `?dojo_id=${numericDojoId}` : '';
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/beitraege/regenerate-all${dojoParam}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      alert(`Beiträge nachgeneriert: ${data.beitraege_eingefuegt ?? 0} neue Einträge, ${data.beitraege_uebersprungen ?? 0} bereits vorhanden.`);
+      await loadPreview();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setRegenLoading(false);
+    }
+  };
+
   const handleStripeSyncVormonat = async () => {
     if (!window.confirm(
       `Alle offenen Stripe-Lastschriften prüfen?\n\n` +
@@ -934,6 +958,10 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
         <button className="ll-period-btn" onClick={loadPreview} disabled={loading}>
           <Eye size={14} />
           {loading ? 'Lädt…' : 'Vorschau laden'}
+        </button>
+        <button className="ll-period-btn" onClick={handleRegenerateAll} disabled={regenLoading} title="Fehlende Monatsbeiträge für alle aktiven Verträge nachgenerieren">
+          {regenLoading ? <Loader size={14} className="spin" /> : <RefreshCw size={14} />}
+          {regenLoading ? 'Generiert…' : 'Beiträge generieren'}
         </button>
       </div>
 
