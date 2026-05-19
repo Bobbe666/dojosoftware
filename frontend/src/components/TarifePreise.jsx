@@ -471,8 +471,9 @@ const TarifePreise = () => {
   // ── Inline TarifCard ──────────────────────────────────────────────
   const TarifCard = ({ tarif }) => (
     <div className={`tc-card${tarif.ist_archiviert ? ' tc-card--archived' : ''}`}>
-      <div className="tc-card-top">
-        <div className="tc-card-price">
+      {/* Hero: Preis + Aktionen */}
+      <div className="tc-card-hero">
+        <div className="tc-card-price-block">
           <span className="tc-price-val">€{tarif.price_euros}</span>
           <span className="tc-price-period">/Mo.</span>
         </div>
@@ -488,15 +489,34 @@ const TarifePreise = () => {
           </button>
         </div>
       </div>
+
+      {/* Name */}
       <div className="tc-card-name">{tarif.name}</div>
-      <div className="tc-card-chips">
-        <span className="tc-chip"><Calendar size={11} /> {tarif.duration_months} Mo.</span>
-        <span className="tc-chip"><Clock size={11} /> {translateBillingCycle(tarif.billing_cycle)}</span>
-        <span className="tc-chip">Aufn. €{tarif.aufnahmegebuehr_euros}</span>
-        <span className={`tc-chip tc-chip--status${tarif.ist_archiviert ? ' archived' : tarif.active ? ' active' : ' inactive'}`}>
+
+      {/* Details */}
+      <div className="tc-card-details">
+        <div className="tc-detail">
+          <Calendar size={11} />
+          <span>{tarif.duration_months} Monate Laufzeit</span>
+        </div>
+        <div className="tc-detail">
+          <Clock size={11} />
+          <span>{translateBillingCycle(tarif.billing_cycle)}</span>
+        </div>
+        <div className="tc-detail">
+          <CreditCard size={11} />
+          <span>Aufnahme €{tarif.aufnahmegebuehr_euros}</span>
+        </div>
+      </div>
+
+      {/* Footer: Status */}
+      <div className="tc-card-footer">
+        <span className={`tc-status-badge${tarif.ist_archiviert ? ' archived' : tarif.active ? ' active' : ' inactive'}`}>
+          <span className="tc-status-dot" />
           {tarif.ist_archiviert ? 'Archiviert' : tarif.active ? 'Aktiv' : 'Inaktiv'}
         </span>
       </div>
+
       {tarif.ist_archiviert && (
         <div className="tc-card-archive-row">
           <button className="tc-archive-btn" onClick={() => handleSetNachfolger(tarif.id)}>

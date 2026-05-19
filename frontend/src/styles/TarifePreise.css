@@ -854,109 +854,182 @@
   background: rgba(0,0,0,0.12);
 }
 
-/* ─── Tarif Card (neu, kompakt) ───────────────────── */
+/* ─── Tarif Card (edel) ───────────────────────────── */
 .tc-card {
   background: var(--surface-2);
   border: 1px solid rgba(255,255,255,0.08);
+  border-top: 2px solid rgba(255,215,0,0.22);
   border-radius: var(--comp-radius-xl);
-  padding: 1rem 1.15rem;
+  padding: 1.1rem 1.15rem 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  transition: background 0.15s, border-color 0.15s;
+  gap: 0;
+  transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+  position: relative;
+  overflow: hidden;
+}
+
+.tc-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: linear-gradient(180deg, rgba(255,215,0,0.04) 0%, transparent 100%);
+  pointer-events: none;
 }
 
 .tc-card:hover {
   background: var(--surface-3);
-  border-color: rgba(255,255,255,0.13);
+  border-color: rgba(255,255,255,0.12);
+  border-top-color: rgba(255,215,0,0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,215,0,0.08);
 }
 
 .tc-card--archived {
-  opacity: 0.65;
-  border-color: rgba(107,114,128,0.35);
+  opacity: 0.58;
+  border-top-color: rgba(107,114,128,0.35);
 }
 
-.tc-card-top {
+.tc-card--archived::before {
+  display: none;
+}
+
+.tc-card--archived:hover {
+  border-top-color: rgba(107,114,128,0.5);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Hero: Preis + Aktionen */
+.tc-card-hero {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.5rem;
+  margin-bottom: 0.55rem;
 }
 
-.tc-card-price {
+.tc-card-price-block {
   display: flex;
   align-items: baseline;
   gap: 0.2rem;
 }
 
 .tc-price-val {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--primary);
+  font-size: 1.85rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffd700 30%, #ffaa00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   line-height: 1;
+  letter-spacing: -0.03em;
 }
 
 .tc-price-period {
-  font-size: 0.78rem;
+  font-size: 0.73rem;
   font-weight: 400;
   color: var(--text-4);
+  -webkit-text-fill-color: var(--text-4);
+  margin-bottom: 0.15rem;
 }
 
+/* Name */
+.tc-card-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.4;
+  margin-bottom: 0.7rem;
+}
+
+/* Details */
+.tc-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 0.7rem;
+}
+
+.tc-detail {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-3);
+}
+
+.tc-detail svg {
+  color: var(--text-4);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Footer */
+.tc-card-footer {
+  display: flex;
+  align-items: center;
+}
+
+/* Status Badge */
+.tc-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid transparent;
+}
+
+.tc-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tc-status-badge.active {
+  background: rgba(74,222,128,0.1);
+  color: #4ade80;
+  border-color: rgba(74,222,128,0.22);
+}
+.tc-status-badge.active .tc-status-dot {
+  background: #4ade80;
+  box-shadow: 0 0 5px rgba(74,222,128,0.7);
+}
+
+.tc-status-badge.inactive {
+  background: rgba(248,113,113,0.1);
+  color: #f87171;
+  border-color: rgba(248,113,113,0.22);
+}
+.tc-status-badge.inactive .tc-status-dot { background: #f87171; }
+
+.tc-status-badge.archived {
+  background: rgba(107,114,128,0.1);
+  color: #9ca3af;
+  border-color: rgba(107,114,128,0.2);
+}
+.tc-status-badge.archived .tc-status-dot { background: #9ca3af; }
+
+/* Actions */
 .tc-card-actions {
   display: flex;
   gap: 0.25rem;
   flex-shrink: 0;
 }
 
-.tc-card-name {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-1);
-  line-height: 1.35;
-}
-
-.tc-card-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
-
-.tc-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.73rem;
-  font-weight: 500;
-  color: var(--text-3);
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: var(--comp-radius-pill);
-  padding: 0.18rem 0.55rem;
-  white-space: nowrap;
-}
-
-.tc-chip--status.active {
-  background: rgba(74,222,128,0.08);
-  color: #4ade80;
-  border-color: rgba(74,222,128,0.2);
-}
-
-.tc-chip--status.inactive {
-  background: rgba(248,113,113,0.08);
-  color: #f87171;
-  border-color: rgba(248,113,113,0.2);
-}
-
-.tc-chip--status.archived {
-  background: rgba(107,114,128,0.08);
-  color: #9ca3af;
-  border-color: rgba(107,114,128,0.2);
-}
-
 .tc-card-archive-row {
   display: flex;
   gap: 0.4rem;
-  margin-top: 0.1rem;
+  margin-top: 0.5rem;
 }
 
 .tc-archive-btn {
@@ -1058,16 +1131,24 @@
 }
 [data-theme="tda-vib"] .tc-card {
   border-color: rgba(26,26,26,0.1);
+  border-top-color: rgba(201,162,39,0.25);
   background: rgba(26,26,26,0.03);
 }
 [data-theme="tda-vib"] .tc-card:hover {
   background: rgba(26,26,26,0.06);
   border-color: rgba(26,26,26,0.15);
+  border-top-color: rgba(201,162,39,0.45);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
-[data-theme="tda-vib"] .tc-chip {
-  background: rgba(26,26,26,0.04);
-  border-color: rgba(26,26,26,0.08);
+[data-theme="tda-vib"] .tc-card::before {
+  background: linear-gradient(180deg, rgba(201,162,39,0.04) 0%, transparent 100%);
 }
+[data-theme="tda-vib"] .tc-card-details {
+  border-top-color: rgba(26,26,26,0.08);
+  border-bottom-color: rgba(26,26,26,0.08);
+}
+[data-theme="tda-vib"] .tc-status-badge.active { color: #16a34a; background: rgba(22,163,74,0.08); border-color: rgba(22,163,74,0.2); }
+[data-theme="tda-vib"] .tc-status-badge.active .tc-status-dot { background: #16a34a; box-shadow: none; }
 
 /* === Added inline-style extractions — prefix: tp- === */
 
