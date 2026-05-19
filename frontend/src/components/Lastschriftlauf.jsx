@@ -570,6 +570,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
   useEffect(() => {
     loadPreview();
+    loadNotInRun();
   }, [selectedMonth, selectedYear]);
 
   const handleCreateZahllauf = async () => {
@@ -1399,8 +1400,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
       )}
 
       {/* Schnelldiagnose: Wer fehlt im Einzug? */}
-      {preview && (
-        <div className="preview-card ll-diagnose-card">
+      <div className="preview-card ll-diagnose-card">
           <div className="ll-not-in-run-header" onClick={() => setNotInRunOpen(o => !o)}>
             <div className="ll-diagnose-header-left">
               <AlertCircle size={18} className="ll-diagnose-icon" />
@@ -1554,7 +1554,6 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
             </div>
           )}
         </div>
-      )}
 
 
       </>
