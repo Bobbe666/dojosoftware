@@ -998,6 +998,8 @@ const MemberDashboard = () => {
           offeneBeitraege: 2,
           naechstePruefung: '2024-02-15'
         });
+        // Stile trotzdem laden, damit StilAuswahlModal befüllt ist
+        loadStile().catch(() => {});
       }
     };
 
