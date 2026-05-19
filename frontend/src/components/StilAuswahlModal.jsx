@@ -30,6 +30,7 @@ const StilAuswahlModal = ({ mitgliedId, vorname, stile, onClose, onSaved }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [bestelltErfolgreich, setBestelltErfolgreich] = useState(false);
+  const [variantenWahl, setVariantenWahl] = useState({});
 
   const aktiveStile = (stile || []).filter(s => s.aktiv !== false && s.aktiv !== 0);
 
@@ -73,15 +74,33 @@ const StilAuswahlModal = ({ mitgliedId, vorname, stile, onClose, onSaved }) => {
     setStep(2);
   };
 
+  const variantenPositionen = (starterpaket?.positionen || []).filter(p => p.hat_varianten);
+  const variantenVollstaendig = variantenPositionen.every(p => {
+    const w = variantenWahl[p.id];
+    if (!w) return false;
+    const opts = p.varianten_options ? (typeof p.varianten_options === 'string' ? JSON.parse(p.varianten_options) : p.varianten_options) : null;
+    if (opts?.hat_preiskategorien) return w.kategorie && w.groesse;
+    return !!w.groesse;
+  });
+
   const handleBestellen = async () => {
     if (!starterpaket) return;
+    if (variantenPositionen.length > 0 && !variantenVollstaendig) {
+      setError('Bitte wähle für alle Artikel eine Größe aus.');
+      return;
+    }
     setSaving(true);
     setError('');
+    const variantenJson = {};
+    variantenPositionen.forEach(p => {
+      const w = variantenWahl[p.id];
+      if (w) variantenJson[p.id] = w.kategorie ? `${w.kategorie === 'kids' ? 'Kids' : 'Erwachsene'} ${w.groesse}` : w.groesse;
+    });
     try {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/starterpakete/${starterpaket.paket_id}/bestellen`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mitglied_id: mitgliedId }),
+        body: JSON.stringify({ mitglied_id: mitgliedId, varianten_json: Object.keys(variantenJson).length ? variantenJson : null }),
       });
       if (!res.ok) throw new Error('Bestellung fehlgeschlagen');
       setBestelltErfolgreich(true);
@@ -221,16 +240,64 @@ const StilAuswahlModal = ({ mitgliedId, vorname, stile, onClose, onSaved }) => {
 
                     {/* Positionen-Tabelle */}
                     <div className="sa-paket-table">
-                      {(starterpaket.positionen || []).map(pos => (
-                        <div key={pos.id} className="sa-paket-row">
-                          <div className="sa-paket-bez">
-                            {pos.bezeichnung}
-                            {pos.menge > 1 && <span className="sa-paket-menge">× {pos.menge}</span>}
-                            {!pos.pflicht && <span className="sa-paket-opt">optional</span>}
+                      {(starterpaket.positionen || []).map(pos => {
+                        const opts = pos.hat_varianten && pos.varianten_options
+                          ? (typeof pos.varianten_options === 'string' ? JSON.parse(pos.varianten_options) : pos.varianten_options)
+                          : null;
+                        const wahl = variantenWahl[pos.id] || {};
+                        return (
+                          <div key={pos.id} className="sa-paket-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.4rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div className="sa-paket-bez">
+                                {pos.bezeichnung}
+                                {pos.menge > 1 && <span className="sa-paket-menge">× {pos.menge}</span>}
+                                {!pos.pflicht && <span className="sa-paket-opt">optional</span>}
+                              </div>
+                              <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                {pos.rabatt_prozent > 0 && pos.originalpreis_cent > 0 && (
+                                  <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', textDecoration: 'line-through' }}>
+                                    {(pos.originalpreis_cent * pos.menge / 100).toFixed(2)} €
+                                  </div>
+                                )}
+                                <div className="sa-paket-preis">{(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €</div>
+                                {pos.rabatt_prozent > 0 && (
+                                  <div style={{ fontSize: '0.72rem', color: '#d4af37' }}>{pos.rabatt_prozent}% Rabatt</div>
+                                )}
+                              </div>
+                            </div>
+                            {/* Größenauswahl */}
+                            {opts && (
+                              <div style={{ paddingLeft: '0.25rem' }}>
+                                {opts.hat_preiskategorien && (
+                                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                                    {['kids', 'erwachsene'].map(kat => (
+                                      <button key={kat} type="button"
+                                        style={{ padding: '0.2rem 0.7rem', borderRadius: 6, border: `1px solid ${wahl.kategorie === kat ? '#d4af37' : 'rgba(255,255,255,0.15)'}`, background: wahl.kategorie === kat ? 'rgba(212,175,55,0.15)' : 'transparent', color: wahl.kategorie === kat ? '#d4af37' : 'rgba(255,255,255,0.6)', fontSize: '0.8rem', cursor: 'pointer' }}
+                                        onClick={() => setVariantenWahl(v => ({ ...v, [pos.id]: { kategorie: kat, groesse: null } }))}>
+                                        {kat === 'kids' ? '👧 Kids' : '🧑 Erwachsene'}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                {(opts.hat_preiskategorien ? wahl.kategorie : true) && (
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                                    {(opts.hat_preiskategorien
+                                      ? (wahl.kategorie === 'kids' ? opts.groessen_kids : opts.groessen_erwachsene)
+                                      : (opts.groessen || [])
+                                    ).map(gr => (
+                                      <button key={gr} type="button"
+                                        style={{ padding: '0.2rem 0.55rem', borderRadius: 5, border: `1px solid ${wahl.groesse === gr ? '#d4af37' : 'rgba(255,255,255,0.15)'}`, background: wahl.groesse === gr ? 'rgba(212,175,55,0.15)' : 'transparent', color: wahl.groesse === gr ? '#d4af37' : 'rgba(255,255,255,0.6)', fontSize: '0.78rem', cursor: 'pointer' }}
+                                        onClick={() => setVariantenWahl(v => ({ ...v, [pos.id]: { ...v[pos.id], groesse: gr } }))}>
+                                        {gr}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          <div className="sa-paket-preis">{(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €</div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {starterpaket.rabatt_prozent > 0 && (
                         <div className="sa-paket-row sa-paket-rabatt">
                           <div>Rabatt ({starterpaket.rabatt_prozent}%)</div>

@@ -106,7 +106,7 @@ const TarifePreise = () => {
     hinweis: 'Für ein einheitliches Auftreten, ein starkes Teamgefühl und die Einhaltung unserer Qualitäts- und Sicherheitsstandards bitten wir darum, im Training sowie insbesondere bei Wettkämpfen ausschließlich Ausrüstung zu verwenden, die über unsere Schule bzw. unsere offiziellen Partner bezogen wurde. So stellen wir sicher, dass alle Mitglieder mit geprüfter, passender und einheitlicher Ausrüstung trainieren und auftreten. Vielen Dank für euer Verständnis und eure Unterstützung unseres gemeinsamen Auftritts als Team.',
     rabatt_prozent: 0, aktiv: true
   });
-  const [newPos, setNewPos] = useState({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, pflicht: true });
+  const [newPos, setNewPos] = useState({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true });
   const [showNewSp, setShowNewSp] = useState(false);
   const [activeTab, setActiveTab] = useState('tarife');
   const [tarifeFilter, setTarifeFilter] = useState('alle');
@@ -286,7 +286,7 @@ const TarifePreise = () => {
       if (r.data.success) {
         setStarterpakete(prev => prev.map(x => x.paket_id === paketId ? r.data.paket : x));
         if (editingSp?.paket_id === paketId) setEditingSp(r.data.paket);
-        setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
+        setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true });
         setAddingPosForId(null);
       }
     } catch (err) { console.error(err); }
@@ -830,8 +830,17 @@ const TarifePreise = () => {
                           <select className="tc-pos-input" style={{ marginBottom: '0.5rem' }} value={newPos.artikel_id || ''} disabled={spArtikelLoading}
                             onChange={e => {
                               const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
-                              if (art) setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, originalPreis_cent: art.verkaufspreis_cent, rabatt_prozent: 0, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
-                              else setNewPos(p => ({ ...p, artikel_id: null, originalPreis_cent: null, rabatt_prozent: 0 }));
+                              if (art) {
+                                const varOpts = (art.hat_varianten || art.hat_preiskategorien) ? {
+                                  hat_preiskategorien: art.hat_preiskategorien,
+                                  groessen_kids: art.groessen_kids,
+                                  groessen_erwachsene: art.groessen_erwachsene,
+                                  preis_kids_cent: art.preis_kids_cent,
+                                  preis_erwachsene_cent: art.preis_erwachsene_cent,
+                                  groessen: art.varianten_groessen,
+                                } : null;
+                                setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, originalPreis_cent: art.verkaufspreis_cent, rabatt_prozent: 0, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2), hat_varianten: !!(art.hat_varianten || art.hat_preiskategorien), varianten_options: varOpts }));
+                              } else setNewPos(p => ({ ...p, artikel_id: null, originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null }));
                             }}>
                             <option value="">{spArtikelLoading ? 'Lade Artikel…' : spArtikel.length === 0 ? '— Keine Artikel im Katalog —' : '— Aus Artikelkatalog wählen (optional) —'}</option>
                             {spArtikel.map(a => <option key={a.artikel_id} value={a.artikel_id}>{a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}</option>)}
@@ -847,6 +856,12 @@ const TarifePreise = () => {
                                 %
                               </label>
                               {newPos.rabatt_prozent > 0 && <span style={{ color: '#d4af37', fontWeight: 600 }}>→ €{(newPos.originalPreis_cent * (1 - newPos.rabatt_prozent / 100) / 100).toFixed(2)}</span>}
+                            </div>
+                          )}
+                          {/* Varianten-Hinweis */}
+                          {newPos.hat_varianten && (
+                            <div style={{ fontSize: '0.79rem', color: '#d4af37', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              📐 Mitglied wählt Größe (Kids/Erwachsene) beim Bestellen
                             </div>
                           )}
                           {/* Bezeichnung / Menge / Preis */}
@@ -1281,8 +1296,10 @@ const TarifePreise = () => {
                     <select className="tc-pos-input" style={{ marginBottom: '0.5rem' }} value={newPos.artikel_id || ''} disabled={spArtikelLoading}
                       onChange={e => {
                         const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
-                        if (art) setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, originalPreis_cent: art.verkaufspreis_cent, rabatt_prozent: 0, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
-                        else setNewPos(p => ({ ...p, artikel_id: null, originalPreis_cent: null, rabatt_prozent: 0 }));
+                        if (art) {
+                          const varOpts = (art.hat_varianten || art.hat_preiskategorien) ? { hat_preiskategorien: art.hat_preiskategorien, groessen_kids: art.groessen_kids, groessen_erwachsene: art.groessen_erwachsene, preis_kids_cent: art.preis_kids_cent, preis_erwachsene_cent: art.preis_erwachsene_cent, groessen: art.varianten_groessen } : null;
+                          setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, originalPreis_cent: art.verkaufspreis_cent, rabatt_prozent: 0, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2), hat_varianten: !!(art.hat_varianten || art.hat_preiskategorien), varianten_options: varOpts }));
+                        } else setNewPos(p => ({ ...p, artikel_id: null, originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null }));
                       }}>
                       <option value="">{spArtikelLoading ? 'Lade Artikel…' : spArtikel.length === 0 ? '— Keine Artikel im Katalog —' : '— Aus Artikelkatalog wählen (optional) —'}</option>
                       {spArtikel.map(a => <option key={a.artikel_id} value={a.artikel_id}>{a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}</option>)}
@@ -1298,6 +1315,11 @@ const TarifePreise = () => {
                           %
                         </label>
                         {newPos.rabatt_prozent > 0 && <span style={{ color: '#d4af37', fontWeight: 600 }}>→ €{(newPos.originalPreis_cent * (1 - newPos.rabatt_prozent / 100) / 100).toFixed(2)}</span>}
+                      </div>
+                    )}
+                    {newPos.hat_varianten && (
+                      <div style={{ fontSize: '0.79rem', color: '#d4af37', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        📐 Mitglied wählt Größe (Kids/Erwachsene) beim Bestellen
                       </div>
                     )}
                     {/* Bezeichnung / Menge / Preis */}

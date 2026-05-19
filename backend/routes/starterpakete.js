@@ -37,9 +37,22 @@ async function loadPaketMitPositionen(paketId, dojoId) {
 // ── GET /api/starterpakete/artikel-options ── Artikel für Dropdown ──
 router.get('/artikel-options', async (req, res) => {
   try {
-    const [artikel] = await pool.query(
-      'SELECT artikel_id, name, verkaufspreis_cent FROM artikel WHERE aktiv = 1 ORDER BY name ASC'
+    const [rows] = await pool.query(
+      `SELECT artikel_id, name, verkaufspreis_cent,
+              hat_varianten, hat_preiskategorien,
+              preis_kids_cent, preis_erwachsene_cent,
+              varianten_groessen, groessen_kids, groessen_erwachsene
+       FROM artikel WHERE aktiv = 1 ORDER BY name ASC`
     );
+    const parseJ = v => { try { return v ? (typeof v === 'string' ? JSON.parse(v) : v) : []; } catch { return []; } };
+    const artikel = rows.map(a => ({
+      ...a,
+      hat_varianten: !!a.hat_varianten,
+      hat_preiskategorien: !!a.hat_preiskategorien,
+      varianten_groessen: parseJ(a.varianten_groessen),
+      groessen_kids: parseJ(a.groessen_kids) || ['100','110','120','130','140','150'],
+      groessen_erwachsene: parseJ(a.groessen_erwachsene) || ['XS','S','M','L','XL','XXL'],
+    }));
     res.json({ success: true, artikel });
   } catch (err) {
     logger.error('Artikel-Options Fehler:', err);
@@ -220,15 +233,21 @@ router.post('/:id/positionen', async (req, res) => {
     );
     if (!paket) return res.status(404).json({ error: 'Paket nicht gefunden' });
 
-    const { artikel_id, bezeichnung, menge = 1, einzelpreis_cent, pflicht = 1, position = 0 } = req.body;
+    const { artikel_id, bezeichnung, menge = 1, einzelpreis_cent, pflicht = 1, position = 0,
+            rabatt_prozent = 0, originalPreis_cent = null, hat_varianten = 0, varianten_options = null } = req.body;
     if (!bezeichnung || einzelpreis_cent == null) {
       return res.status(400).json({ error: 'bezeichnung und einzelpreis_cent sind Pflichtfelder' });
     }
 
+    const variantenJson = varianten_options ? (typeof varianten_options === 'string' ? varianten_options : JSON.stringify(varianten_options)) : null;
+
     const [result] = await pool.query(
-      `INSERT INTO starterpaket_positionen (paket_id, artikel_id, bezeichnung, menge, einzelpreis_cent, pflicht, position)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [paketId, artikel_id || null, bezeichnung, menge, einzelpreis_cent, pflicht ? 1 : 0, position]
+      `INSERT INTO starterpaket_positionen
+         (paket_id, artikel_id, bezeichnung, menge, einzelpreis_cent, pflicht, position,
+          rabatt_prozent, originalpreis_cent, hat_varianten, varianten_options)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [paketId, artikel_id || null, bezeichnung, menge, einzelpreis_cent, pflicht ? 1 : 0, position,
+       parseFloat(rabatt_prozent) || 0, originalPreis_cent || null, hat_varianten ? 1 : 0, variantenJson]
     );
 
     const full = await loadPaketMitPositionen(paketId, dojoId);
@@ -279,38 +298,15 @@ router.post('/:id/bestellen', async (req, res) => {
     if (!paket) return res.status(404).json({ error: 'Paket nicht gefunden' });
     if (!paket.aktiv) return res.status(400).json({ error: 'Paket ist inaktiv' });
 
-    // Bestellung in Tabelle schreiben (starterpaket_bestellungen)
+    const { varianten_json } = req.body;
+    const variantenStr = varianten_json ? (typeof varianten_json === 'string' ? varianten_json : JSON.stringify(varianten_json)) : null;
+
     await pool.query(
       `INSERT INTO starterpaket_bestellungen
-         (dojo_id, paket_id, mitglied_id, gesamtpreis_cent, status, erstellt_am)
-       VALUES (?, ?, ?, ?, 'offen', CURRENT_TIMESTAMP)`,
-      [dojoId, paketId, mitgliedId, paket.endpreis_cent]
-    ).catch(async (err) => {
-      // Tabelle existiert noch nicht → anlegen und nochmal versuchen
-      if (err.code === 'ER_NO_SUCH_TABLE') {
-        await pool.query(`
-          CREATE TABLE IF NOT EXISTS starterpaket_bestellungen (
-            id               INT AUTO_INCREMENT PRIMARY KEY,
-            dojo_id          INT NOT NULL,
-            paket_id         INT NOT NULL,
-            mitglied_id      INT NOT NULL,
-            gesamtpreis_cent INT NOT NULL DEFAULT 0,
-            status           ENUM('offen','bezahlt','storniert') NOT NULL DEFAULT 'offen',
-            erstellt_am      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_dojo    (dojo_id),
-            INDEX idx_mitglied (mitglied_id),
-            INDEX idx_status  (status)
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
-        await pool.query(
-          `INSERT INTO starterpaket_bestellungen (dojo_id, paket_id, mitglied_id, gesamtpreis_cent, status)
-           VALUES (?, ?, ?, ?, 'offen')`,
-          [dojoId, paketId, mitgliedId, paket.endpreis_cent]
-        );
-      } else {
-        throw err;
-      }
-    });
+         (dojo_id, paket_id, mitglied_id, gesamtpreis_cent, status, varianten_json, erstellt_am)
+       VALUES (?, ?, ?, ?, 'offen', ?, CURRENT_TIMESTAMP)`,
+      [dojoId, paketId, mitgliedId, paket.endpreis_cent, variantenStr]
+    );
 
     logger.info('Starterpaket Bestellung', { dojoId, paketId, mitgliedId, betrag: paket.endpreis_cent });
     res.json({ success: true, message: 'Bestellung erfolgreich übermittelt' });
