@@ -1069,6 +1069,30 @@
   border: 1px solid rgba(74,222,128,0.15);
 }
 
+/* ─── Positions-Formular ──────────────────────────── */
+.tc-pos-form {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 8px;
+  padding: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.tc-pos-input {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-1);
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: var(--comp-radius-sm);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.tc-pos-input:focus { border-color: rgba(255,215,0,0.4); }
+.tc-pos-input::placeholder { color: var(--text-4); }
+
 /* ─── Empty state ─────────────────────────────────── */
 .tc-empty {
   grid-column: 1 / -1;
