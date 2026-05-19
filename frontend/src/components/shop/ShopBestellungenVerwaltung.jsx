@@ -409,7 +409,7 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
                         <strong>{formatEur(b.gesamtpreis_cent)}</strong>
                       </div>
                       <div className="shop-bestellung-date">{formatDate(b.erstellt_am)}</div>
-                      <div className="shop-bestellung-meta">{b.paket_name} · Lastschrift</div>
+                      <div className="shop-bestellung-meta">{b.paket_name} · {b.zahlungsmethode || 'Lastschrift'}</div>
                     </div>
                   );
                 })}
@@ -499,7 +499,7 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
 
                 <div className="shop-detail-section">
                   <h4>Zahlung</h4>
-                  <p>SEPA-Lastschrift · {selectedSp.status === 'bezahlt' ? '✅ Bezahlt' : '⏳ Ausstehend'}</p>
+                  <p>{selectedSp.zahlungsmethode || 'SEPA-Lastschrift'} · {selectedSp.status === 'bezahlt' ? '✅ Bezahlt' : '⏳ Ausstehend'}</p>
                   <div className="shop-position-summe shop-position-summe--total" style={{ marginTop: '0.5rem' }}>
                     <span>Gesamtpreis</span>
                     <strong>{formatEur(selectedSp.gesamtpreis_cent)}</strong>

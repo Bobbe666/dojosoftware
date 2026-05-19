@@ -134,48 +134,72 @@ router.get("/", async (req, res) => {
             ORDER BY m.nachname, m.vorname
         `;
 
-        db.query(query, (err, results) => {
-            if (err) {
-                logger.error('Database error:', err);
-                return res.status(500).json({
-                    error: 'Datenbankfehler',
-                    details: err.message
-                });
-            }
+        const results = await queryAsync(query);
 
-            if (results.length === 0) {
-                return res.status(404).json({
-                    error: 'Keine aktiven Verträge mit SEPA-Lastschrift gefunden'
-                });
-            }
+        // Offene Starterpaket-Bestellungen für SEPA-Mitglieder ebenfalls einziehen
+        const spOrders = await queryAsync(`
+            SELECT sb.mitglied_id, sb.gesamtpreis_cent,
+                   sp.name AS paket_name,
+                   m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
+                   sm.mandatsreferenz, sm.erstellungsdatum AS mandat_datum
+            FROM starterpaket_bestellungen sb
+            JOIN mitglieder m ON sb.mitglied_id = m.mitglied_id
+            JOIN starterpakete sp ON sb.paket_id = sp.paket_id
+            JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+            WHERE sb.status = 'offen'
+              AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND sm.mandatsreferenz IS NOT NULL
+        `);
 
-            logger.info(`Found ${results.length} active contracts with SEPA mandate`);
+        const spRows = spOrders.map(sp => ({
+            mandatsreferenz: sp.mandatsreferenz,
+            iban: sp.iban,
+            bic: sp.bic,
+            kontoinhaber: sp.kontoinhaber || `${sp.vorname} ${sp.nachname}`,
+            vorname: sp.vorname,
+            nachname: sp.nachname,
+            mitglied_id: sp.mitglied_id,
+            mandat_datum: sp.mandat_datum,
+            tarif_name: `Starterpaket: ${sp.paket_name}`,
+            monatlicher_beitrag: sp.gesamtpreis_cent / 100,
+            offene_rechnungen: 0,
+            ratenplan_id: null,
+        }));
 
-            // Verwende ausgewählte Bank oder ermittle häufigste Bank
-            const bankName = selectedBank ? selectedBank.bank_name : getMostCommonBank(results);
+        const allContracts = [...results, ...spRows];
 
-            // Generiere CSV mit Bankinfo
-            const csvData = generateSepaCSV(results, selectedBank);
-            const dateStr = new Date().toISOString().split('T')[0];
-            const monthStr = monat ? String(monat).padStart(2, '0') : String(new Date().getMonth() + 1).padStart(2, '0');
-            const yearStr = jahr || new Date().getFullYear();
-            const filename = `SEPA_Lastschriftlauf_${yearStr}-${monthStr}_${dateStr}.csv`;
+        if (allContracts.length === 0) {
+            return res.status(404).json({
+                error: 'Keine aktiven Verträge mit SEPA-Lastschrift gefunden'
+            });
+        }
 
-            // Send as downloadable file
-            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-            res.setHeader('X-Mandate-Count', results.length);
-            res.setHeader('X-Total-Amount', calculateTotalAmount(results));
-            res.setHeader('X-Creditor-Bank', bankName || 'Unbekannt');
-            if (selectedBank) {
-                res.setHeader('X-Creditor-IBAN', selectedBank.iban || '');
-                res.setHeader('X-Creditor-Name', selectedBank.kontoinhaber || '');
-            }
+        logger.info(`Found ${results.length} contracts + ${spRows.length} Starterpaket orders for SEPA batch`);
 
-            res.send('\uFEFF' + csvData); // UTF-8 BOM für Excel
+        // Verwende ausgewählte Bank oder ermittle häufigste Bank
+        const bankName = selectedBank ? selectedBank.bank_name : getMostCommonBank(results.length ? results : allContracts);
 
-            logger.debug(`📄 SEPA batch file generated: ${filename} via ${bankName}`);
-        });
+        // Generiere CSV mit Bankinfo
+        const csvData = generateSepaCSV(allContracts, selectedBank);
+        const dateStr = new Date().toISOString().split('T')[0];
+        const monthStr = monat ? String(monat).padStart(2, '0') : String(new Date().getMonth() + 1).padStart(2, '0');
+        const yearStr = jahr || new Date().getFullYear();
+        const filename = `SEPA_Lastschriftlauf_${yearStr}-${monthStr}_${dateStr}.csv`;
+
+        // Send as downloadable file
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('X-Mandate-Count', allContracts.length);
+        res.setHeader('X-Total-Amount', calculateTotalAmount(allContracts));
+        res.setHeader('X-Creditor-Bank', bankName || 'Unbekannt');
+        if (selectedBank) {
+            res.setHeader('X-Creditor-IBAN', selectedBank.iban || '');
+            res.setHeader('X-Creditor-Name', selectedBank.kontoinhaber || '');
+        }
+
+        res.send('\uFEFF' + csvData); // UTF-8 BOM für Excel
+
+        logger.debug(`📄 SEPA batch file generated: ${filename} via ${bankName}`);
 
     } catch (error) {
         logger.error('Error generating SEPA batch file:', error);

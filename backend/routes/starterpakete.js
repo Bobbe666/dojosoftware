@@ -393,7 +393,8 @@ router.get('/bestellungen', async (req, res) => {
       `SELECT sb.id, sb.paket_id, sb.mitglied_id, sb.gesamtpreis_cent, sb.status,
               sb.erstellt_am, sb.varianten_json,
               sp.name AS paket_name, sp.rabatt_prozent, s.name AS stil_name,
-              CONCAT(m.vorname, ' ', m.nachname) AS mitglied_name, m.email AS mitglied_email
+              CONCAT(m.vorname, ' ', m.nachname) AS mitglied_name, m.email AS mitglied_email,
+              m.zahlungsmethode
        FROM starterpaket_bestellungen sb
        JOIN starterpakete sp ON sb.paket_id = sp.paket_id
        LEFT JOIN stile s ON sp.stil_id = s.stil_id
