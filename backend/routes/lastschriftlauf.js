@@ -1735,6 +1735,76 @@ router.get("/stripe/failed-transactions", async (req, res) => {
 });
 
 /**
+ * GET /lastschriftlauf/ueberfaellige-beitraege
+ * Alle Mitglieder mit überfälligen offenen Beiträgen (vor heute, unbezahlt)
+ */
+router.get("/ueberfaellige-beitraege", async (req, res) => {
+    try {
+        const secureDojoId = getSecureDojoId(req);
+        const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
+        const params = secureDojoId ? [secureDojoId] : [];
+
+        const rows = await queryAsync(`
+            SELECT
+                m.mitglied_id, m.vorname, m.nachname, m.email, m.telefon,
+                m.iban, m.zahlungsmethode, m.zahlungsproblem,
+                COUNT(b.beitrag_id) as anzahl_monate,
+                COALESCE(SUM(b.betrag), 0) as gesamtbetrag,
+                MIN(b.zahlungsdatum) as aeltestes_datum,
+                MAX(b.zahlungsdatum) as neuestes_datum,
+                DATEDIFF(CURDATE(), MIN(b.zahlungsdatum)) as tage_ueberfaellig,
+                GROUP_CONCAT(DATE_FORMAT(b.zahlungsdatum,'%m/%Y') ORDER BY b.zahlungsdatum SEPARATOR ', ') as offene_monate
+            FROM mitglieder m
+            JOIN beitraege b ON m.mitglied_id = b.mitglied_id
+            WHERE b.bezahlt = 0
+              AND (b.art = 'mitgliedsbeitrag' OR b.art IS NULL)
+              AND b.zahlungsdatum < CURDATE()
+              AND m.aktiv = 1
+              ${dojoFilter}
+            GROUP BY m.mitglied_id
+            ORDER BY gesamtbetrag DESC
+        `, params);
+
+        res.json({ success: true, mitglieder: rows, total: rows.length });
+    } catch (error) {
+        logger.error('Fehler bei überfälligen Beiträgen:', error);
+        res.status(500).json({ error: 'Fehler beim Laden', details: error.message });
+    }
+});
+
+/**
+ * GET /lastschriftlauf/stripe/processing-transactions
+ * Laufende SEPA-Clearing Transaktionen
+ */
+router.get("/stripe/processing-transactions", async (req, res) => {
+    try {
+        const secureDojoId = getSecureDojoId(req);
+        const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
+        const params = secureDojoId ? [secureDojoId] : [];
+
+        const rows = await queryAsync(`
+            SELECT
+                slt.id, slt.batch_id, slt.mitglied_id, slt.betrag, slt.status,
+                slt.stripe_payment_intent_id, slt.created_at, slt.beitrag_ids,
+                slb.monat, slb.jahr,
+                m.vorname, m.nachname, m.email, m.iban,
+                DATEDIFF(CURDATE(), slt.created_at) as tage_im_clearing
+            FROM stripe_lastschrift_transaktion slt
+            JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+            JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+            WHERE slt.status = 'processing'
+              ${dojoFilter}
+            ORDER BY slt.created_at DESC
+        `, params);
+
+        res.json({ success: true, transactions: rows, total: rows.length });
+    } catch (error) {
+        logger.error('Fehler bei Processing-Transaktionen:', error);
+        res.status(500).json({ error: 'Fehler beim Laden', details: error.message });
+    }
+});
+
+/**
  * POST /lastschriftlauf/stripe/retry-single
  * Einzelne fehlgeschlagene Transaktion erneut einziehen
  */
@@ -1832,38 +1902,6 @@ router.post("/stripe/retry-single", async (req, res) => {
     } catch (error) {
         logger.error('Fehler beim Retry:', error);
         res.status(500).json({ error: 'Fehler beim erneuten Einzug', details: error.message });
-    }
-});
-
-/**
- * GET /lastschriftlauf/stripe/processing-transactions
- * Laufende Stripe-Transaktionen (status=processing) auflisten — für Storno-Verwaltung
- */
-router.get("/stripe/processing-transactions", async (req, res) => {
-    try {
-        const secureDojoId = getSecureDojoId(req);
-        const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
-        const params = secureDojoId ? [secureDojoId] : [];
-
-        const rows = await queryAsync(`
-            SELECT
-                slt.id, slt.batch_id, slt.mitglied_id, slt.betrag, slt.status,
-                slt.stripe_payment_intent_id, slt.beitrag_ids, slt.created_at,
-                slb.monat, slb.jahr,
-                m.vorname, m.nachname, m.email, m.dojo_id
-            FROM stripe_lastschrift_transaktion slt
-            JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
-            JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
-            WHERE slt.status = 'processing'
-              ${dojoFilter}
-            ORDER BY slt.created_at DESC
-            LIMIT 200
-        `, params);
-
-        res.json({ success: true, transactions: rows, total: rows.length });
-    } catch (error) {
-        logger.error('Fehler beim Laden der Processing-Transaktionen:', error);
-        res.status(500).json({ error: 'Fehler beim Laden', details: error.message });
     }
 });
 
