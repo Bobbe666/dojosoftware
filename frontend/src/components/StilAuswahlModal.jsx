@@ -36,7 +36,8 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
   const alter = calcAge(geburtsdatum);
   const isKid = alter !== null ? alter < 14 : null;
   const [step, setStep] = useState(1);
-  const [selectedStilId, setSelectedStilId] = useState(null);
+  const [selectedStilIds, setSelectedStilIds] = useState([]);
+  const [paketStilId, setPaketStilId] = useState(null); // welcher Stil für Starterpaket
   const [starterpaket, setStarterpaket] = useState(null);
   const [paketLoading, setPaketLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -48,11 +49,11 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
 
   // Starterpaket laden + Varianten automatisch vorbelegen
   useEffect(() => {
-    if (!selectedStilId) return;
+    if (!paketStilId) return;
     setPaketLoading(true);
     setStarterpaket(null);
     setVariantenWahl({});
-    fetchWithAuth(`${config.apiBaseUrl}/starterpakete/for-stil/${selectedStilId}`)
+    fetchWithAuth(`${config.apiBaseUrl}/starterpakete/for-stil/${paketStilId}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!d?.success) return;
@@ -76,33 +77,42 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
       })
       .catch(() => {})
       .finally(() => setPaketLoading(false));
-  }, [selectedStilId, isKid]);
+  }, [paketStilId, isKid]);
+
+  const toggleStil = (stilId) => {
+    setSelectedStilIds(prev =>
+      prev.includes(stilId) ? prev.filter(id => id !== stilId) : [...prev, stilId]
+    );
+    setError('');
+  };
 
   const handleStilWeiter = async () => {
-    if (!selectedStilId) {
-      setError('Bitte wähle einen Kampfkunststil aus.');
+    if (selectedStilIds.length === 0) {
+      setError('Bitte wähle mindestens einen Kampfkunststil aus.');
       return;
     }
     setError('');
 
-    // Stil sofort speichern
+    // Alle Stile speichern
     setSaving(true);
     try {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${mitgliedId}/stile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stile: [selectedStilId] }),
+        body: JSON.stringify({ stile: selectedStilIds }),
       });
-      if (!res.ok) throw new Error('Fehler beim Speichern des Stils');
+      if (!res.ok) throw new Error('Fehler beim Speichern');
     } catch (err) {
       console.error(err);
-      setError('Stil konnte nicht gespeichert werden. Bitte erneut versuchen.');
+      setError('Stile konnten nicht gespeichert werden. Bitte erneut versuchen.');
       setSaving(false);
       return;
     } finally {
       setSaving(false);
     }
 
+    // Für Starterpaket den ersten gewählten Stil nehmen
+    setPaketStilId(selectedStilIds[0]);
     setStep(2);
   };
 
@@ -150,8 +160,8 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
     onClose();
   };
 
-  const selectedStil = aktiveStile.find(s => s.stil_id === selectedStilId);
-  const selectedMeta = selectedStil ? (STIL_META[selectedStil.name] || { emoji: '🥋', farbe: '#d4af37' }) : null;
+  const paketStil = aktiveStile.find(s => s.stil_id === paketStilId);
+  const paketMeta = paketStil ? (STIL_META[paketStil.name] || { emoji: '🥋', farbe: '#d4af37' }) : null;
 
   return (
     <div className="sa-overlay">
@@ -172,7 +182,7 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
             <div className="sa-icon">🥋</div>
             <h2 className="sa-title">Willkommen, {vorname}!</h2>
             <p className="sa-subtitle">
-              Welchen Kampfkunststil möchtest du trainieren?
+              Welche Kampfkunststile möchtest du trainieren? (Mehrere möglich)
             </p>
 
             {error && <div className="sa-error">{error}</div>}
@@ -180,13 +190,13 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
             <div className="sa-stile-grid">
               {aktiveStile.map(stil => {
                 const meta = STIL_META[stil.name] || { emoji: '🥋', farbe: '#d4af37' };
-                const isSelected = selectedStilId === stil.stil_id;
+                const isSelected = selectedStilIds.includes(stil.stil_id);
                 return (
                   <button
                     key={stil.stil_id}
                     className={`sa-stil-card ${isSelected ? 'sa-stil-card--selected' : ''}`}
                     style={isSelected ? { '--sa-stil-farbe': meta.farbe } : {}}
-                    onClick={() => { setSelectedStilId(stil.stil_id); setError(''); }}
+                    onClick={() => toggleStil(stil.stil_id)}
                     type="button"
                   >
                     <span className="sa-stil-emoji">{meta.emoji}</span>
@@ -204,7 +214,7 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
               <button
                 className="sa-btn-primary"
                 onClick={handleStilWeiter}
-                disabled={saving || !selectedStilId}
+                disabled={saving || selectedStilIds.length === 0}
               >
                 {saving ? 'Speichern…' : 'Weiter →'}
               </button>
@@ -229,16 +239,25 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
               </div>
             ) : (
               <>
-                {/* Gewählter Stil */}
-                {selectedStil && selectedMeta && (
-                  <div className="sa-chosen-stil" style={{ '--sa-stil-farbe': selectedMeta.farbe }}>
-                    <span>{selectedMeta.emoji}</span>
-                    <span>{selectedStil.name}</span>
-                    <span className="sa-chosen-check">✓ gewählt</span>
-                  </div>
-                )}
+                {/* Gewählte Stile */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                  {selectedStilIds.map(id => {
+                    const s = aktiveStile.find(x => x.stil_id === id);
+                    if (!s) return null;
+                    const m = STIL_META[s.name] || { emoji: '🥋', farbe: '#d4af37' };
+                    return (
+                      <div key={id} className="sa-chosen-stil" style={{ '--sa-stil-farbe': m.farbe, flex: 'none' }}>
+                        <span>{m.emoji}</span>
+                        <span>{s.name}</span>
+                        <span className="sa-chosen-check">✓</span>
+                      </div>
+                    );
+                  })}
+                </div>
 
-                <h2 className="sa-title" style={{ marginTop: '1rem' }}>Dein Starterpaket</h2>
+                <h2 className="sa-title" style={{ marginTop: '1rem' }}>
+                  Dein Starterpaket{paketStil ? ` – ${paketStil.name}` : ''}
+                </h2>
 
                 {paketLoading && (
                   <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.45)', marginTop: '1.5rem' }}>Paket wird geladen…</p>

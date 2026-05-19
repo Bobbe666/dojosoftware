@@ -273,6 +273,22 @@ Fuer Wertsachen wird keine Haftung uebernommen.`;
                 <span className={dojoRegelnAccepted ? "done" : ""}>Regeln {dojoRegelnAccepted ? "✓" : "○"}</span>
                 <span className={hausordnungAccepted ? "done" : ""}>Hausordnung {hausordnungAccepted ? "✓" : "○"}</span>
               </div>
+              {!allAccepted && (
+                <label className="checkbox-label accept-all-label">
+                  <input
+                    type="checkbox"
+                    checked={allAccepted}
+                    onChange={(e) => {
+                      const v = e.target.checked;
+                      setAgbAccepted(v);
+                      setDatenschutzAccepted(v);
+                      setDojoRegelnAccepted(v);
+                      setHausordnungAccepted(v);
+                    }}
+                  />
+                  <span>Alle Dokumente gelesen und akzeptiert</span>
+                </label>
+              )}
               <button
                 className="btn-confirm"
                 onClick={handleSubmit}
