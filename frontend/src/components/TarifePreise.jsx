@@ -108,7 +108,8 @@ const TarifePreise = () => {
     hinweis: 'Für ein einheitliches Auftreten, ein starkes Teamgefühl und die Einhaltung unserer Qualitäts- und Sicherheitsstandards bitten wir darum, im Training sowie insbesondere bei Wettkämpfen ausschließlich Ausrüstung zu verwenden, die über unsere Schule bzw. unsere offiziellen Partner bezogen wurde. So stellen wir sicher, dass alle Mitglieder mit geprüfter, passender und einheitlicher Ausrüstung trainieren und auftreten. Vielen Dank für euer Verständnis und eure Unterstützung unseres gemeinsamen Auftritts als Team.',
     rabatt_prozent: 0, aktiv: true
   });
-  const [newPos, setNewPos] = useState({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true, uvpErw: '', paketErw: '', uvpKids: '', paketKids: '' });
+  const EMPTY_POS = { artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true, uvpErw: '', paketErw: '', uvpKids: '', paketKids: '', rabattModus: 'prozent', rabattWert: '' };
+  const [newPos, setNewPos] = useState(EMPTY_POS);
   const [showNewSp, setShowNewSp] = useState(false);
   const [activeTab, setActiveTab] = useState('tarife');
   const [tarifeFilter, setTarifeFilter] = useState('alle');
@@ -199,7 +200,7 @@ const TarifePreise = () => {
 
   const openAddPos = async (paketId, dojoIdFromPaket) => {
     setAddingPosForId(paketId);
-    setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, pflicht: true });
+    setNewPos(EMPTY_POS);
     setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis('');
     setSpArtikel([]);
     setSpArtikelLoading(true);
@@ -304,7 +305,10 @@ const TarifePreise = () => {
         },
       };
     } else {
-      payload.einzelpreis_cent = toC(newPos.einzelpreis_cent);
+      // Wenn Rabatt gesetzt: paketErw ist der reduzierte Preis, einzelpreis_cent ist VK
+      const hasRabatt = newPos.paketErw && parseFloat(newPos.paketErw) > 0 && newPos.paketErw !== newPos.einzelpreis_cent;
+      payload.einzelpreis_cent = hasRabatt ? toC(newPos.paketErw) : toC(newPos.einzelpreis_cent);
+      if (hasRabatt) payload.originalPreis_cent = toC(newPos.einzelpreis_cent);
     }
 
     try {
@@ -312,7 +316,7 @@ const TarifePreise = () => {
       if (r.data.success) {
         setStarterpakete(prev => prev.map(x => x.paket_id === paketId ? r.data.paket : x));
         if (editingSp?.paket_id === paketId) setEditingSp(r.data.paket);
-        setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true, uvpErw: '', paketErw: '', uvpKids: '', paketKids: '' });
+        setNewPos(EMPTY_POS);
         setAddingPosForId(null);
       }
     } catch (err) { console.error(err); }
@@ -911,46 +915,66 @@ const TarifePreise = () => {
                             <option value="">{spArtikelLoading ? 'Lade Artikel…' : spArtikel.length === 0 ? '— Keine Artikel im Katalog —' : '— Aus Artikelkatalog wählen (optional) —'}</option>
                             {spArtikel.map(a => <option key={a.artikel_id} value={a.artikel_id}>{a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}</option>)}
                           </select>
-                          {/* Rabatt (nur bei gewähltem Artikel) */}
-                          {newPos.originalPreis_cent != null && (
-                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.82rem', flexWrap: 'wrap' }}>
-                              <span style={{ color: 'var(--text-4)' }}>Katalogpreis: <strong style={{ color: 'var(--text-2)' }}>€{(newPos.originalPreis_cent / 100).toFixed(2)}</strong></span>
-                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-3)' }}>
-                                Rabatt:
-                                <input className="tc-pos-input" type="number" min="0" max="100" step="1" style={{ width: '65px', padding: '0.25rem 0.4rem' }} value={newPos.rabatt_prozent}
-                                  onChange={e => { const r = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)); setNewPos(p => ({ ...p, rabatt_prozent: r, einzelpreis_cent: (p.originalPreis_cent * (1 - r / 100) / 100).toFixed(2) })); }} />
-                                %
-                              </label>
-                              {newPos.rabatt_prozent > 0 && <span style={{ color: '#d4af37', fontWeight: 600 }}>→ €{(newPos.originalPreis_cent * (1 - newPos.rabatt_prozent / 100) / 100).toFixed(2)}</span>}
-                            </div>
-                          )}
                           {/* Kinder/Erwachsene Preisblock */}
                           {newPos.hat_varianten && newPos.varianten_options?.hat_preiskategorien ? (
                             <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '0.75rem', marginBottom: '0.5rem' }}>
                               <div style={{ fontSize: '0.78rem', color: '#d4af37', marginBottom: '0.6rem', fontWeight: 600 }}>📐 Preise nach Altersgruppe</div>
-                              <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 16px 1fr', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', marginBottom: '0.4rem' }}>
+                              {/* Erwachsene */}
+                              <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr 16px 1fr', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', marginBottom: '0.4rem' }}>
                                 <span style={{ color: 'rgba(255,255,255,0.5)' }}>🧑 Erw.</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                  <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>VK</span>
-                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK €" style={{ flex: 1 }} value={newPos.uvpErw} onChange={e => setNewPos(p => ({ ...p, uvpErw: e.target.value }))} />
+                                  <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>VK</span>
+                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK €" style={{ flex: 1 }} value={newPos.uvpErw}
+                                    onChange={e => { const v = e.target.value; setNewPos(p => { const w = parseFloat(p.rabattWert) || 0; const paket = w > 0 ? (p.rabattModus === 'prozent' ? Math.max(0, parseFloat(v) * (1 - w / 100)).toFixed(2) : Math.max(0, parseFloat(v) - w).toFixed(2)) : p.paketErw; return { ...p, uvpErw: v, paketErw: paket, einzelpreis_cent: paket }; }); }} />
                                 </div>
-                                <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.9rem' }}>→</span>
+                                <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem' }}>→</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                  <span style={{ fontSize: '0.75rem', color: '#d4af37' }}>Paket</span>
-                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Paket €" style={{ flex: 1, borderColor: 'rgba(212,175,55,0.4)' }} value={newPos.paketErw} onChange={e => { const v = e.target.value; setNewPos(p => ({ ...p, paketErw: v, einzelpreis_cent: v })); }} />
+                                  <span style={{ fontSize: '0.72rem', color: '#d4af37' }}>Paket</span>
+                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Paket €" style={{ flex: 1, borderColor: 'rgba(212,175,55,0.4)' }} value={newPos.paketErw} onChange={e => { const v = e.target.value; setNewPos(p => ({ ...p, paketErw: v, einzelpreis_cent: v, rabattWert: '' })); }} />
                                 </div>
                               </div>
-                              <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 16px 1fr', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}>
+                              {/* Kids */}
+                              <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr 16px 1fr', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', marginBottom: '0.6rem' }}>
                                 <span style={{ color: 'rgba(255,255,255,0.5)' }}>👧 Kids</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                  <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>VK</span>
-                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK €" style={{ flex: 1 }} value={newPos.uvpKids} onChange={e => setNewPos(p => ({ ...p, uvpKids: e.target.value }))} />
+                                  <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>VK</span>
+                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK €" style={{ flex: 1 }} value={newPos.uvpKids}
+                                    onChange={e => { const v = e.target.value; setNewPos(p => { const w = parseFloat(p.rabattWert) || 0; const paket = w > 0 ? (p.rabattModus === 'prozent' ? Math.max(0, parseFloat(v) * (1 - w / 100)).toFixed(2) : Math.max(0, parseFloat(v) - w).toFixed(2)) : p.paketKids; return { ...p, uvpKids: v, paketKids: paket }; }); }} />
                                 </div>
-                                <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.9rem' }}>→</span>
+                                <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem' }}>→</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                  <span style={{ fontSize: '0.75rem', color: '#d4af37' }}>Paket</span>
-                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Paket €" style={{ flex: 1, borderColor: 'rgba(212,175,55,0.4)' }} value={newPos.paketKids} onChange={e => setNewPos(p => ({ ...p, paketKids: e.target.value }))} />
+                                  <span style={{ fontSize: '0.72rem', color: '#d4af37' }}>Paket</span>
+                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Paket €" style={{ flex: 1, borderColor: 'rgba(212,175,55,0.4)' }} value={newPos.paketKids} onChange={e => setNewPos(p => ({ ...p, paketKids: e.target.value, rabattWert: '' }))} />
                                 </div>
+                              </div>
+                              {/* Rabatt-Zeile */}
+                              <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)' }}>Rabatt auf beide:</span>
+                                <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="0" style={{ width: '70px', padding: '0.2rem 0.4rem' }}
+                                  value={newPos.rabattWert}
+                                  onChange={e => {
+                                    const w = e.target.value;
+                                    setNewPos(p => {
+                                      const wNum = parseFloat(w) || 0;
+                                      const calc = (vk) => {
+                                        if (!vk || !wNum) return vk;
+                                        const n = p.rabattModus === 'prozent' ? Math.max(0, parseFloat(vk) * (1 - wNum / 100)) : Math.max(0, parseFloat(vk) - wNum);
+                                        return n.toFixed(2);
+                                      };
+                                      const pe = calc(p.uvpErw); const pk2 = calc(p.uvpKids);
+                                      return { ...p, rabattWert: w, paketErw: pe || p.paketErw, paketKids: pk2 || p.paketKids, einzelpreis_cent: pe || p.paketErw };
+                                    });
+                                  }} />
+                                <button type="button"
+                                  style={{ padding: '0.2rem 0.55rem', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600, minWidth: 36 }}
+                                  onClick={() => setNewPos(p => ({ ...p, rabattModus: p.rabattModus === 'prozent' ? 'euro' : 'prozent', rabattWert: '' }))}>
+                                  {newPos.rabattModus === 'prozent' ? '%' : '€'}
+                                </button>
+                                {newPos.rabattWert && parseFloat(newPos.rabattWert) > 0 && newPos.uvpErw && newPos.uvpKids && (
+                                  <span style={{ fontSize: '0.78rem', color: '#4ade80', fontWeight: 600 }}>
+                                    → Erw: €{newPos.paketErw} / Kids: €{newPos.paketKids}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           ) : newPos.hat_varianten ? (
@@ -959,19 +983,48 @@ const TarifePreise = () => {
                             </div>
                           ) : null}
                           {/* Bezeichnung / Menge / Preis (Preis nur wenn KEIN Katpreis-Variante) */}
-                          <div style={{ display: 'grid', gridTemplateColumns: newPos.varianten_options?.hat_preiskategorien ? '3fr 1fr' : '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: newPos.varianten_options?.hat_preiskategorien ? '3fr 1fr' : '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.4rem' }}>
                             <input className="tc-pos-input" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
                             <input className="tc-pos-input" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
                             {!newPos.varianten_options?.hat_preiskategorien && (
-                              <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Preis € *" value={newPos.einzelpreis_cent} onChange={e => setNewPos({ ...newPos, einzelpreis_cent: e.target.value })} />
+                              <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK-Preis € *" value={newPos.einzelpreis_cent}
+                                onChange={e => { const v = e.target.value; setNewPos(p => { const w = parseFloat(p.rabattWert)||0; const paket = w > 0 ? (p.rabattModus==='prozent' ? Math.max(0,parseFloat(v)*(1-w/100)) : Math.max(0,parseFloat(v)-w)).toFixed(2) : v; return { ...p, einzelpreis_cent: v, originalPreis_cent: Math.round(parseFloat(v||0)*100) || null, paketErw: paket }; }); }} />
                             )}
                           </div>
+                          {/* Rabatt-Zeile für normale Positionen */}
+                          {!newPos.varianten_options?.hat_preiskategorien && newPos.einzelpreis_cent !== '' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>Rabatt:</span>
+                              <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="0" style={{ width: '70px', padding: '0.2rem 0.4rem' }}
+                                value={newPos.rabattWert}
+                                onChange={e => {
+                                  const w = e.target.value;
+                                  setNewPos(p => {
+                                    const wNum = parseFloat(w) || 0;
+                                    const vk = parseFloat(p.einzelpreis_cent) || 0;
+                                    const neu = wNum > 0 ? (p.rabattModus === 'prozent' ? Math.max(0, vk*(1-wNum/100)) : Math.max(0, vk-wNum)).toFixed(2) : '';
+                                    return { ...p, rabattWert: w, paketErw: neu, originalPreis_cent: neu ? Math.round(vk*100) : null, rabatt_prozent: p.rabattModus === 'prozent' ? (wNum||0) : (vk ? Math.round(wNum/vk*100) : 0) };
+                                  });
+                                }} />
+                              <button type="button"
+                                style={{ padding: '0.2rem 0.55rem', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600, minWidth: 36 }}
+                                onClick={() => setNewPos(p => ({ ...p, rabattModus: p.rabattModus === 'prozent' ? 'euro' : 'prozent', rabattWert: '', paketErw: '' }))}>
+                                {newPos.rabattModus === 'prozent' ? '%' : '€'}
+                              </button>
+                              {newPos.rabattWert && parseFloat(newPos.rabattWert) > 0 && newPos.paketErw && (
+                                <span style={{ fontSize: '0.8rem', color: '#4ade80', fontWeight: 600 }}>
+                                  <span style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.35)', marginRight: '0.3rem' }}>€{parseFloat(newPos.einzelpreis_cent).toFixed(2)}</span>
+                                  → €{parseFloat(newPos.paketErw).toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-3)', cursor: 'pointer' }}>
                               <input type="checkbox" checked={newPos.pflicht} onChange={e => setNewPos({ ...newPos, pflicht: e.target.checked })} /> Pflicht
                             </label>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true, uvpErw: '', paketErw: '', uvpKids: '', paketKids: '' }); setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis(''); }}>Abbrechen</button>
+                              <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos(EMPTY_POS); setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis(''); }}>Abbrechen</button>
                               <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(pk.paket_id)} disabled={spSaving || !newPos.bezeichnung || (newPos.varianten_options?.hat_preiskategorien ? (!newPos.paketErw || !newPos.paketKids) : newPos.einzelpreis_cent === '')}>{spSaving ? '…' : 'Hinzufügen'}</button>
                             </div>
                           </div>
@@ -1443,8 +1496,8 @@ const TarifePreise = () => {
                         <input type="checkbox" checked={newPos.pflicht} onChange={e => setNewPos({ ...newPos, pflicht: e.target.checked })} /> Pflicht
                       </label>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, pflicht: true }); setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis(''); }}>Abbrechen</button>
-                        <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(editingSp.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>{spSaving ? '…' : 'Hinzufügen'}</button>
+                        <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos(EMPTY_POS); setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis(''); }}>Abbrechen</button>
+                        <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(editingSp.paket_id)} disabled={spSaving || !newPos.bezeichnung || (newPos.varianten_options?.hat_preiskategorien ? (!newPos.paketErw || !newPos.paketKids) : newPos.einzelpreis_cent === '')}>{spSaving ? '…' : 'Hinzufügen'}</button>
                       </div>
                     </div>
                     {/* Neuer Artikel */}
