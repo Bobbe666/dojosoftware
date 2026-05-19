@@ -1265,7 +1265,19 @@ Glassmorphism-Design mit Theme-Variablen.
 /* Form Elements */
 .u-form-label { display: block; margin-bottom: 0.4rem; font-size: 0.875rem; font-weight: 500; }
 .u-form-label-secondary { display: block; margin-bottom: 0.5rem; color: var(--text-secondary); }
-.u-input-sm { width: 100%; padding: 0.5rem; font-size: 0.875rem; }
+.u-input-sm {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  background: var(--bg-glass, rgba(0,0,0,0.25));
+  color: var(--text-primary, #f1f1f1);
+  border: 1px solid var(--border-secondary, rgba(255,255,255,0.12));
+  border-radius: var(--border-radius-sm, 6px);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.u-input-sm:focus { border-color: var(--primary-500, #d4af37); }
+.u-input-sm::placeholder { color: var(--text-muted, rgba(255,255,255,0.35)); }
 
 /* Text Colors */
 .u-text-primary { color: var(--text-primary); }
