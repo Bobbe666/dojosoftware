@@ -392,7 +392,7 @@ router.get('/bestellungen', async (req, res) => {
     const [bestellungen] = await pool.query(
       `SELECT sb.id, sb.paket_id, sb.mitglied_id, sb.gesamtpreis_cent, sb.status,
               sb.erstellt_am, sb.varianten_json,
-              sp.name AS paket_name, s.name AS stil_name,
+              sp.name AS paket_name, sp.rabatt_prozent, s.name AS stil_name,
               CONCAT(m.vorname, ' ', m.nachname) AS mitglied_name, m.email AS mitglied_email
        FROM starterpaket_bestellungen sb
        JOIN starterpakete sp ON sb.paket_id = sp.paket_id
@@ -404,7 +404,30 @@ router.get('/bestellungen', async (req, res) => {
       [...params, limit, offset]
     );
 
-    res.json({ success: true, bestellungen, total, page, limit });
+    // Artikel-Positionen für alle gefundenen Pakete nachladen
+    const paketIds = [...new Set(bestellungen.map(b => b.paket_id))];
+    let positionenByPaket = {};
+    if (paketIds.length > 0) {
+      const [positionen] = await pool.query(
+        `SELECT spp.id, spp.paket_id, spp.menge, spp.einzelpreis_cent, spp.hat_varianten,
+                COALESCE(a.name, spp.bezeichnung_custom) AS artikel_name
+         FROM starterpaket_positionen spp
+         LEFT JOIN artikel a ON spp.artikel_id = a.artikel_id
+         WHERE spp.paket_id IN (?)
+         ORDER BY spp.paket_id, spp.position ASC, spp.id ASC`,
+        [paketIds]
+      );
+      positionen.forEach(p => {
+        if (!positionenByPaket[p.paket_id]) positionenByPaket[p.paket_id] = [];
+        positionenByPaket[p.paket_id].push(p);
+      });
+    }
+    const bestellungenMitPos = bestellungen.map(b => ({
+      ...b,
+      positionen: positionenByPaket[b.paket_id] || []
+    }));
+
+    res.json({ success: true, bestellungen: bestellungenMitPos, total, page, limit });
   } catch (err) {
     logger.error('Starterpaket Bestellungen laden Fehler:', err);
     res.status(500).json({ error: 'Fehler beim Laden' });

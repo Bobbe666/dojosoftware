@@ -463,22 +463,39 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Stil: {selectedSp.stil_name}</p>
                 </div>
 
-                {selectedSp.varianten_json && Object.keys(
-                  typeof selectedSp.varianten_json === 'string'
-                    ? JSON.parse(selectedSp.varianten_json)
-                    : selectedSp.varianten_json
-                ).length > 0 && (
-                  <div className="shop-detail-section">
-                    <h4>Gewählte Varianten / Größen</h4>
-                    {Object.entries(
-                      typeof selectedSp.varianten_json === 'string'
+                {/* Artikel-Liste */}
+                {selectedSp.positionen?.length > 0 && (() => {
+                  const variantenMap = (() => {
+                    try {
+                      return typeof selectedSp.varianten_json === 'string'
                         ? JSON.parse(selectedSp.varianten_json)
-                        : selectedSp.varianten_json
-                    ).map(([posId, wahl]) => (
-                      <p key={posId} style={{ fontSize: '0.88rem' }}>Position {posId}: <strong>{wahl}</strong></p>
-                    ))}
-                  </div>
-                )}
+                        : (selectedSp.varianten_json || {});
+                    } catch { return {}; }
+                  })();
+                  return (
+                    <div className="shop-detail-section">
+                      <h4>Artikel</h4>
+                      {selectedSp.positionen.map(pos => {
+                        const variante = variantenMap[pos.id];
+                        return (
+                          <div key={pos.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '0.3rem 0', borderBottom: '1px solid rgba(255,255,255,0.06)', gap: '0.75rem' }}>
+                            <div>
+                              <span style={{ fontSize: '0.88rem' }}>{pos.menge}× <strong>{pos.artikel_name}</strong></span>
+                              {variante && <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>{variante}</span>}
+                            </div>
+                            <span style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{formatEur(pos.einzelpreis_cent * pos.menge)}</span>
+                          </div>
+                        );
+                      })}
+                      {selectedSp.rabatt_prozent > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#22c55e', marginTop: '0.4rem' }}>
+                          <span>Rabatt ({selectedSp.rabatt_prozent}%)</span>
+                          <span>−{formatEur(Math.round(selectedSp.positionen.reduce((s, p) => s + p.einzelpreis_cent * p.menge, 0) * selectedSp.rabatt_prozent / 100))}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 <div className="shop-detail-section">
                   <h4>Zahlung</h4>
