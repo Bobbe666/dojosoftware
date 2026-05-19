@@ -1784,8 +1784,9 @@ router.put('/belege/:id', requireBuchhaltungAccess, (req, res) => {
     } = req.body;
 
     // Berechne MwSt und Brutto
-    const netto = parseFloat(betrag_netto || beleg.betrag_netto);
-    const mwst = parseFloat(mwst_satz || beleg.mwst_satz);
+    // WICHTIG: != null statt ||, damit mwst_satz=0 (USt-befreit) korrekt gespeichert wird
+    const netto = parseFloat(betrag_netto != null ? betrag_netto : beleg.betrag_netto);
+    const mwst = parseFloat(mwst_satz != null ? mwst_satz : beleg.mwst_satz);
     const mwstBetrag = Math.round(netto * (mwst / 100) * 100) / 100;
     const brutto = Math.round((netto + mwstBetrag) * 100) / 100;
 
