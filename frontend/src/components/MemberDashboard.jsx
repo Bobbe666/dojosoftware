@@ -1276,14 +1276,14 @@ const MemberDashboard = () => {
       )}
 
       {/* StilAuswahl: beim ersten Login anzeigen wenn noch kein Stil hinterlegt (nur Neumitglieder) */}
-      {showStilAuswahl && memberData && (
+      {showStilAuswahl && (memberData?.mitglied_id || user?.mitglied_id) && (
         <StilAuswahlModal
-          mitgliedId={memberData.mitglied_id}
-          vorname={memberData.vorname}
-          geburtsdatum={memberData.geburtsdatum}
+          mitgliedId={memberData?.mitglied_id ?? user?.mitglied_id}
+          vorname={memberData?.vorname ?? user?.vorname ?? ''}
+          geburtsdatum={memberData?.geburtsdatum ?? null}
           stile={stile}
           onClose={() => setShowStilAuswahl(false)}
-          onSaved={() => loadMemberStyles(memberData.mitglied_id)}
+          onSaved={() => loadMemberStyles(memberData?.mitglied_id ?? user?.mitglied_id)}
         />
       )}
 
