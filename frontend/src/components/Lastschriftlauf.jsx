@@ -63,10 +63,12 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   // Vorschau ein-/ausklappen
   const [previewOpen, setPreviewOpen] = useState(true);
 
-  // Nicht-im-Lauf Übersicht
+  // Nicht-im-Lauf Übersicht / Schnelldiagnose
   const [notInRun, setNotInRun] = useState(null);
-  const [notInRunOpen, setNotInRunOpen] = useState(false);
+  const [notInRunOpen, setNotInRunOpen] = useState(true);
   const [notInRunLoading, setNotInRunLoading] = useState(false);
+  const [setupLoadingPer, setSetupLoadingPer] = useState({}); // { [mitglied_id]: 'loading'|'ok'|'error' }
+  const [setupResultPer, setSetupResultPer] = useState({});   // { [mitglied_id]: { success, error } }
 
   // Mitglieder ohne Tarif (Warnliste aus Preview)
   const [ohneTarif, setOhneTarif] = useState([]);
@@ -172,6 +174,31 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
       setNotInRun({ success: false, error: e.message });
     } finally {
       setNotInRunLoading(false);
+    }
+  };
+
+  const handleStripeSetupSingle = async (mitglied_id) => {
+    setSetupLoadingPer(prev => ({ ...prev, [mitglied_id]: 'loading' }));
+    setSetupResultPer(prev => ({ ...prev, [mitglied_id]: null }));
+    try {
+      const dojoParam = numericDojoId ? `?dojo_id=${numericDojoId}` : '';
+      const response = await fetchWithAuth(
+        `${config.apiBaseUrl}/lastschriftlauf/stripe/setup-customer${dojoParam}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mitglied_id })
+        }
+      );
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'Fehler beim Setup');
+      setSetupLoadingPer(prev => ({ ...prev, [mitglied_id]: 'ok' }));
+      setSetupResultPer(prev => ({ ...prev, [mitglied_id]: { success: true } }));
+      // Diagnose neu laden damit der Eintrag verschwindet
+      await loadNotInRun();
+    } catch (err) {
+      setSetupLoadingPer(prev => ({ ...prev, [mitglied_id]: 'error' }));
+      setSetupResultPer(prev => ({ ...prev, [mitglied_id]: { error: err.message } }));
     }
   };
 
@@ -293,6 +320,8 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
       setOhneTarif(data.ohne_tarif || []);
       setInVerarbeitung(data.in_verarbeitung || []);
       setLoading(false);
+      // Diagnose automatisch mitladen
+      loadNotInRun();
     } catch (error) {
       console.error('❌ Fehler beim Laden der Vorschau:', error);
       console.error('❌ Error Stack:', error.stack);
@@ -1369,42 +1398,157 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
         </div>
       )}
 
-      {/* Nicht im Lauf */}
+      {/* Schnelldiagnose: Wer fehlt im Einzug? */}
       {preview && (
-        <div className="preview-card ll-not-in-run-card">
-          <div className="ll-not-in-run-header" onClick={() => { setNotInRunOpen(o => !o); if (!notInRun) loadNotInRun(); }}>
-            <h3>Wer fehlt im Einzug? {notInRun ? `(${notInRun.count})` : ''}</h3>
+        <div className="preview-card ll-diagnose-card">
+          <div className="ll-not-in-run-header" onClick={() => setNotInRunOpen(o => !o)}>
+            <div className="ll-diagnose-header-left">
+              <AlertCircle size={18} className="ll-diagnose-icon" />
+              <h3>
+                Schnelldiagnose — Wer fehlt im Einzug?
+                {notInRun?.count > 0 && (
+                  <span className="ll-diagnose-count-badge">{notInRun.count}</span>
+                )}
+              </h3>
+            </div>
             {notInRunOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </div>
+
           {notInRunOpen && (
-            <div className="ll-not-in-run-body">
-              {notInRunLoading && <p className="u-text-secondary">Lade…</p>}
-              {notInRun && notInRun.success && notInRun.members?.length === 0 && (
-                <p className="u-text-secondary">Alle SEPA-Mitglieder sind im Lauf enthalten.</p>
+            <div className="ll-diagnose-body">
+              {notInRunLoading && (
+                <div className="ll-diagnose-loading">
+                  <Loader size={16} className="ll-spin" /> Analysiere…
+                </div>
               )}
-              {notInRun && notInRun.success && notInRun.members?.length > 0 && (
-                <table className="preview-table">
-                  <thead>
-                    <tr>
-                      <th>Mitglied</th>
-                      <th>Vertragsstatus</th>
-                      <th>Offene Beiträge</th>
-                      <th>Grund</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {notInRun.members.map(m => (
-                      <tr key={m.mitglied_id}>
-                        <td><strong>{m.name}</strong><br /><small>ID: {m.mitglied_id}</small></td>
-                        <td><span className={`badge badge-${m.vertrag_status === 'aktiv' ? 'success' : 'warning'}`}>{m.vertrag_status || '—'}</span></td>
-                        <td>{m.offene_beitraege}</td>
-                        <td><span className="badge badge-danger">{m.grund}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              {!notInRunLoading && notInRun?.success && notInRun.members?.length === 0 && (
+                <div className="ll-diagnose-all-ok">
+                  <CheckCircle size={18} /> Alle SEPA-Mitglieder mit aktivem Vertrag sind im Lauf.
+                </div>
               )}
-              {notInRun && !notInRun.success && (
+              {!notInRunLoading && notInRun?.success && notInRun.members?.length > 0 && (
+                <div className="ll-diagnose-cards">
+                  {notInRun.members.map(m => {
+                    const setupState = setupLoadingPer[m.mitglied_id];
+                    const setupRes = setupResultPer[m.mitglied_id];
+                    const profileUrl = `/mitglieder/${m.mitglied_id}`;
+
+                    let iconEl, cardClass, fixEl;
+
+                    if (m.grundTyp === 'kein_mandat') {
+                      iconEl = <XCircle size={16} />;
+                      cardClass = 'll-dcard--danger';
+                      if (m.needs_stripe_setup) {
+                        fixEl = (
+                          <div className="ll-dcard-fix">
+                            <span className="ll-dfix-label">IBAN hinterlegt, Stripe-Setup fehlt</span>
+                            <button
+                              className={`ll-dfix-btn ll-dfix-btn--primary ${setupState === 'loading' ? 'll-dfix-btn--loading' : ''}`}
+                              disabled={setupState === 'loading' || setupState === 'ok'}
+                              onClick={() => handleStripeSetupSingle(m.mitglied_id)}
+                            >
+                              {setupState === 'loading' && <Loader size={13} className="ll-spin" />}
+                              {setupState === 'ok' && <CheckCircle size={13} />}
+                              {!setupState && 'Stripe Setup starten'}
+                              {setupState === 'loading' && 'Richtet ein…'}
+                              {setupState === 'ok' && 'Eingerichtet'}
+                              {setupState === 'error' && 'Erneut versuchen'}
+                            </button>
+                            {setupRes?.error && <span className="ll-dfix-error">{setupRes.error}</span>}
+                          </div>
+                        );
+                      } else if (!m.has_mandat_iban) {
+                        fixEl = (
+                          <div className="ll-dcard-fix">
+                            <span className="ll-dfix-label">Kein SEPA-Mandat hinterlegt</span>
+                            <a className="ll-dfix-btn" href={profileUrl}>Im Profil anlegen</a>
+                          </div>
+                        );
+                      } else {
+                        fixEl = (
+                          <div className="ll-dcard-fix">
+                            <span className="ll-dfix-label">Mandat unvollständig</span>
+                            <a className="ll-dfix-btn" href={profileUrl}>Profil prüfen</a>
+                          </div>
+                        );
+                      }
+                    } else if (m.grundTyp === 'kein_vertrag') {
+                      iconEl = <AlertCircle size={16} />;
+                      cardClass = 'll-dcard--warning';
+                      fixEl = (
+                        <div className="ll-dcard-fix">
+                          <span className="ll-dfix-label">Kein aktiver Vertrag vorhanden</span>
+                          <a className="ll-dfix-btn" href={profileUrl}>Vertrag anlegen</a>
+                        </div>
+                      );
+                    } else if (m.grundTyp === 'ruhepause') {
+                      iconEl = <Clock size={16} />;
+                      cardClass = 'll-dcard--info';
+                      const bisDatum = m.ruhepause_bis
+                        ? new Date(m.ruhepause_bis).toLocaleDateString('de-DE')
+                        : '—';
+                      fixEl = (
+                        <div className="ll-dcard-fix">
+                          <span className="ll-dfix-label">Ruhepause bis {bisDatum} — endet automatisch</span>
+                          <a className="ll-dfix-btn ll-dfix-btn--ghost" href={profileUrl}>Vorzeitig beenden</a>
+                        </div>
+                      );
+                    } else if (m.grundTyp === 'gekuendigt') {
+                      iconEl = <XCircle size={16} />;
+                      const endDatum = m.vertragsende
+                        ? new Date(m.vertragsende).toLocaleDateString('de-DE')
+                        : null;
+                      const isExpired = m.vertragsende && new Date(m.vertragsende) < new Date();
+                      cardClass = isExpired ? 'll-dcard--danger' : 'll-dcard--neutral';
+                      fixEl = (
+                        <div className="ll-dcard-fix">
+                          <span className="ll-dfix-label">
+                            {endDatum ? `Vertragsende: ${endDatum}` : 'Vertrag gekündigt'}
+                          </span>
+                          {isExpired && m.offene_beitraege > 0 && (
+                            <a className="ll-dfix-btn" href={profileUrl}>Offene Beiträge prüfen</a>
+                          )}
+                        </div>
+                      );
+                    } else {
+                      iconEl = <Info size={16} />;
+                      cardClass = 'll-dcard--neutral';
+                      fixEl = (
+                        <div className="ll-dcard-fix">
+                          <span className="ll-dfix-label">Grund unklar</span>
+                          <a className="ll-dfix-btn ll-dfix-btn--ghost" href={profileUrl}>Profil prüfen</a>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={m.mitglied_id} className={`ll-dcard ${cardClass}`}>
+                        <div className="ll-dcard-top">
+                          <div className="ll-dcard-who">
+                            <span className="ll-dcard-icon">{iconEl}</span>
+                            <div>
+                              <strong className="ll-dcard-name">{m.name}</strong>
+                              <span className="ll-dcard-id">#{m.mitglied_id}</span>
+                            </div>
+                          </div>
+                          <div className="ll-dcard-meta">
+                            {m.offener_betrag > 0 && (
+                              <span className="ll-dcard-debt">
+                                {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(m.offener_betrag)} offen
+                              </span>
+                            )}
+                            {m.offene_beitraege > 0 && (
+                              <span className="ll-dcard-months">{m.offene_beitraege} Monat{m.offene_beitraege !== 1 ? 'e' : ''}</span>
+                            )}
+                          </div>
+                        </div>
+                        {fixEl}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {!notInRunLoading && notInRun && !notInRun.success && (
                 <p className="u-text-error">Fehler: {notInRun.error}</p>
               )}
             </div>

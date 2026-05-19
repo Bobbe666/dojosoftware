@@ -497,13 +497,20 @@ router.get("/not-in-run", async (req, res) => {
 
         const query = `
             SELECT
-                m.mitglied_id, m.vorname, m.nachname, m.zahlungsmethode,
+                m.mitglied_id, m.vorname, m.nachname, m.email, m.telefon,
+                m.zahlungsmethode, m.stripe_customer_id,
                 v.status as vertrag_status,
                 v.ruhepause_von, v.ruhepause_bis, v.vertragsende,
                 sm.mandat_id, sm.mandatsreferenz,
+                (SELECT sm2.iban FROM sepa_mandate sm2 WHERE sm2.mitglied_id = m.mitglied_id AND sm2.status = 'aktiv' LIMIT 1) as mandat_iban,
+                (SELECT sm2.stripe_payment_method_id IS NOT NULL FROM sepa_mandate sm2 WHERE sm2.mitglied_id = m.mitglied_id AND sm2.status = 'aktiv' LIMIT 1) as has_stripe_pm,
+                (SELECT COUNT(*) FROM sepa_mandate sm3 WHERE sm3.mitglied_id = m.mitglied_id) as mandat_gesamt,
                 (SELECT COUNT(*) FROM beitraege b
                  WHERE b.mitglied_id = m.mitglied_id AND b.bezahlt = 0
-                   AND b.zahlungsdatum <= ?) as offene_beitraege
+                   AND b.zahlungsdatum <= ?) as offene_beitraege,
+                (SELECT SUM(b2.betrag) FROM beitraege b2
+                 WHERE b2.mitglied_id = m.mitglied_id AND b2.bezahlt = 0
+                   AND b2.zahlungsdatum <= ?) as offener_betrag
             FROM mitglieder m
             LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id
                 AND v.status IN ('aktiv','gekuendigt','ruhepause')
@@ -518,7 +525,7 @@ router.get("/not-in-run", async (req, res) => {
         `;
 
         const queryParams = [
-            monatEnde,
+            monatEnde, monatEnde,
             ...(dojoId ? [dojoId] : []),
             ...inRunIds
         ];
@@ -529,24 +536,40 @@ router.get("/not-in-run", async (req, res) => {
             .filter(r => r.offene_beitraege > 0)
             .map(r => {
                 let grund = '';
+                let grundTyp = '';
                 if (!r.mandat_id) {
                     grund = 'Kein aktives SEPA-Mandat';
+                    grundTyp = 'kein_mandat';
                 } else if (!r.vertrag_status) {
                     grund = 'Kein Vertrag';
+                    grundTyp = 'kein_vertrag';
                 } else if (r.vertrag_status === 'ruhepause') {
                     grund = `Ruhepause (bis ${r.ruhepause_bis ? new Date(r.ruhepause_bis).toLocaleDateString('de-DE') : '?'})`;
+                    grundTyp = 'ruhepause';
                 } else if (r.vertrag_status === 'gekuendigt') {
                     grund = `Gekündigt (Ende ${r.vertragsende ? new Date(r.vertragsende).toLocaleDateString('de-DE') : '?'})`;
+                    grundTyp = 'gekuendigt';
                 } else {
                     grund = 'Unbekannt';
+                    grundTyp = 'unbekannt';
                 }
                 return {
                     mitglied_id: r.mitglied_id,
                     name: `${r.vorname} ${r.nachname}`,
+                    email: r.email,
                     zahlungsmethode: r.zahlungsmethode,
                     vertrag_status: r.vertrag_status,
+                    ruhepause_bis: r.ruhepause_bis,
+                    vertragsende: r.vertragsende,
                     offene_beitraege: r.offene_beitraege,
-                    grund
+                    offener_betrag: parseFloat(r.offener_betrag || 0),
+                    grund,
+                    grundTyp,
+                    has_mandat_iban: !!r.mandat_iban,
+                    has_stripe_customer: !!r.stripe_customer_id,
+                    has_stripe_pm: !!r.has_stripe_pm,
+                    mandat_gesamt: r.mandat_gesamt || 0,
+                    needs_stripe_setup: !!r.mandat_iban && (!r.stripe_customer_id || !r.has_stripe_pm)
                 };
             });
 

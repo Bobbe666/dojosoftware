@@ -1155,6 +1155,87 @@
 .ll-not-in-run-header h3 { margin: 0; font-size: 1rem; }
 .ll-not-in-run-body { margin-top: 1rem; }
 
+/* ─── Schnelldiagnose ─── */
+.ll-diagnose-card { margin-top: 1rem; border-left: 3px solid rgba(239, 68, 68, 0.5); }
+.ll-diagnose-header-left { display: flex; align-items: center; gap: 0.5rem; }
+.ll-diagnose-icon { color: #ef4444; flex-shrink: 0; }
+.ll-diagnose-count-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #ef4444; color: #fff;
+  border-radius: 999px; font-size: 0.7rem; font-weight: 700;
+  min-width: 1.3em; height: 1.3em; padding: 0 0.35em;
+  margin-left: 0.4rem; line-height: 1;
+}
+.ll-diagnose-body { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.ll-diagnose-loading { display: flex; align-items: center; gap: 0.5rem; color: var(--text-3, #888); font-size: 0.9rem; }
+.ll-diagnose-all-ok {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 8px; padding: 0.75rem 1rem;
+  color: #10b981; font-size: 0.9rem;
+}
+.ll-diagnose-cards { display: flex; flex-direction: column; gap: 0.5rem; }
+
+/* Diagnosis card base */
+.ll-dcard {
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.03);
+  transition: background 0.15s;
+}
+.ll-dcard:hover { background: rgba(255,255,255,0.05); }
+.ll-dcard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+.ll-dcard-who { display: flex; align-items: center; gap: 0.5rem; }
+.ll-dcard-icon { display: flex; align-items: center; flex-shrink: 0; }
+.ll-dcard-name { display: block; font-size: 0.92rem; font-weight: 600; }
+.ll-dcard-id { font-size: 0.75rem; color: var(--text-3, #888); margin-left: 0.3rem; }
+.ll-dcard-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; margin-left: auto; }
+.ll-dcard-debt {
+  font-size: 0.8rem; font-weight: 700;
+  background: rgba(239, 68, 68, 0.12); color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px; padding: 0.15rem 0.5rem;
+}
+.ll-dcard-months {
+  font-size: 0.78rem; color: var(--text-3, #888);
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px; padding: 0.15rem 0.5rem;
+}
+
+/* Color variants */
+.ll-dcard--danger { border-left: 3px solid #ef4444; }
+.ll-dcard--danger .ll-dcard-icon { color: #ef4444; }
+.ll-dcard--warning { border-left: 3px solid #f59e0b; }
+.ll-dcard--warning .ll-dcard-icon { color: #f59e0b; }
+.ll-dcard--info { border-left: 3px solid #3b82f6; }
+.ll-dcard--info .ll-dcard-icon { color: #3b82f6; }
+.ll-dcard--neutral { border-left: 3px solid rgba(255,255,255,0.15); }
+.ll-dcard--neutral .ll-dcard-icon { color: var(--text-3, #888); }
+
+/* Fix row */
+.ll-dcard-fix { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.5rem; flex-wrap: wrap; }
+.ll-dfix-label { font-size: 0.8rem; color: var(--text-2, #bbb); flex: 1; min-width: 140px; }
+.ll-dfix-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.3rem 0.75rem; border-radius: 7px; font-size: 0.8rem; font-weight: 600;
+  background: var(--accent, #7c6af7); color: #fff; border: none; cursor: pointer;
+  text-decoration: none; white-space: nowrap; transition: opacity 0.15s, transform 0.1s;
+}
+.ll-dfix-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.ll-dfix-btn--primary { background: var(--accent, #7c6af7); }
+.ll-dfix-btn--ghost {
+  background: transparent; color: var(--text-2, #bbb);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.ll-dfix-btn--ghost:hover { background: rgba(255,255,255,0.07); }
+.ll-dfix-btn--loading { opacity: 0.7; cursor: not-allowed; }
+.ll-dfix-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.ll-dfix-error { font-size: 0.75rem; color: #ef4444; }
+
+@keyframes ll-spin { to { transform: rotate(360deg); } }
+.ll-spin { animation: ll-spin 0.8s linear infinite; display: inline-block; }
+
 /* ── Tab-Navigation Lastschriftlauf ── */
 .ll-tab-nav {
   display: flex !important;
