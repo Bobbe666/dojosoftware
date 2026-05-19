@@ -709,6 +709,15 @@ db.promise().query(`
   WHERE u.dojo_id IS NULL AND m.dojo_id IS NOT NULL
 `).catch(err => logger.warn('Migration 161 (ignoriert):', { error: err.message }));
 
+// Migration 162: users.mitglied_id + dojo_id per E-Mail-Match (Fix für NULL mitglied_id bei INSERT IGNORE)
+db.promise().query(`
+  UPDATE users u
+  JOIN mitglieder m ON u.email = m.email AND m.aktiv = 1
+  SET u.mitglied_id = m.mitglied_id,
+      u.dojo_id = COALESCE(u.dojo_id, m.dojo_id)
+  WHERE u.mitglied_id IS NULL AND u.role = 'member'
+`).catch(err => logger.warn('Migration 162 (ignoriert):', { error: err.message }));
+
 // Migration 148: Dateianhang für bank_transaktionen
 db.promise().query(`
   ALTER TABLE bank_transaktionen
