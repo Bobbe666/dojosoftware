@@ -802,32 +802,28 @@ const TarifePreise = () => {
                       </table>
                       {addingPosForId === pk.paket_id ? (
                         <div className="tc-pos-form">
-                          {spArtikelLoading && (
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-4)', marginBottom: '0.5rem' }}>Lade Artikel…</div>
-                          )}
-                          {!spArtikelLoading && spArtikel.length > 0 && (
-                            <div style={{ marginBottom: '0.6rem' }}>
-                              <select
-                                className="tc-pos-input"
-                                value={newPos.artikel_id || ''}
-                                onChange={e => {
-                                  const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
-                                  if (art) {
-                                    setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
-                                  } else {
-                                    setNewPos(p => ({ ...p, artikel_id: null }));
-                                  }
-                                }}
-                              >
-                                <option value="">— Aus Artikelkatalog wählen (optional) —</option>
-                                {spArtikel.map(a => (
-                                  <option key={a.artikel_id} value={a.artikel_id}>
-                                    {a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
+                          <div style={{ marginBottom: '0.6rem' }}>
+                            <select
+                              className="tc-pos-input"
+                              value={newPos.artikel_id || ''}
+                              disabled={spArtikelLoading}
+                              onChange={e => {
+                                const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
+                                if (art) {
+                                  setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
+                                } else {
+                                  setNewPos(p => ({ ...p, artikel_id: null }));
+                                }
+                              }}
+                            >
+                              <option value="">{spArtikelLoading ? 'Lade Artikel…' : spArtikel.length === 0 ? '— Keine Artikel im Katalog —' : '— Aus Artikelkatalog wählen (optional) —'}</option>
+                              {spArtikel.map(a => (
+                                <option key={a.artikel_id} value={a.artikel_id}>
+                                  {a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <input className="tc-pos-input" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
                             <input className="tc-pos-input" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
@@ -1241,32 +1237,28 @@ const TarifePreise = () => {
                 {/* Position hinzufügen */}
                 {addingPosForId === editingSp.paket_id ? (
                   <div className="tc-pos-form">
-                    {spArtikelLoading && (
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-4)', marginBottom: '0.5rem' }}>Lade Artikel…</div>
-                    )}
-                    {!spArtikelLoading && spArtikel.length > 0 && (
-                      <div style={{ marginBottom: '0.6rem' }}>
-                        <select
-                          className="tc-pos-input"
-                          value={newPos.artikel_id || ''}
-                          onChange={e => {
-                            const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
-                            if (art) {
-                              setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
-                            } else {
-                              setNewPos(p => ({ ...p, artikel_id: null }));
-                            }
-                          }}
-                        >
-                          <option value="">— Aus Artikelkatalog wählen (optional) —</option>
-                          {spArtikel.map(a => (
-                            <option key={a.artikel_id} value={a.artikel_id}>
-                              {a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                    <div style={{ marginBottom: '0.6rem' }}>
+                      <select
+                        className="tc-pos-input"
+                        value={newPos.artikel_id || ''}
+                        disabled={spArtikelLoading}
+                        onChange={e => {
+                          const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
+                          if (art) {
+                            setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
+                          } else {
+                            setNewPos(p => ({ ...p, artikel_id: null }));
+                          }
+                        }}
+                      >
+                        <option value="">{spArtikelLoading ? 'Lade Artikel…' : spArtikel.length === 0 ? '— Keine Artikel im Katalog —' : '— Aus Artikelkatalog wählen (optional) —'}</option>
+                        {spArtikel.map(a => (
+                          <option key={a.artikel_id} value={a.artikel_id}>
+                            {a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <input className="tc-pos-input" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
                       <input className="tc-pos-input" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
