@@ -688,6 +688,19 @@ try {
     });
 }
 
+// Migration 160: Starterpaket-Positionen Rabatt + Varianten
+db.promise().query(`
+  ALTER TABLE starterpaket_positionen
+    ADD COLUMN IF NOT EXISTS rabatt_prozent   DECIMAL(5,2) NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS originalpreis_cent INT        DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS hat_varianten    TINYINT(1)  NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS varianten_options TEXT        DEFAULT NULL
+`).catch(err => logger.warn('Migration 160a (ignoriert):', { error: err.message }));
+db.promise().query(`
+  ALTER TABLE starterpaket_bestellungen
+    ADD COLUMN IF NOT EXISTS varianten_json TEXT DEFAULT NULL
+`).catch(err => logger.warn('Migration 160b (ignoriert):', { error: err.message }));
+
 // Migration 148: Dateianhang für bank_transaktionen
 db.promise().query(`
   ALTER TABLE bank_transaktionen
