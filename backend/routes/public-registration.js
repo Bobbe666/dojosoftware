@@ -2007,6 +2007,59 @@ router.post('/probetraining', async (req, res) => {
       true,
     ]);
 
+    // E-Mail an Anmelder
+    if (email) {
+      const bestaetigung_html = `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a">
+          <div style="background:#1a1a1a;padding:32px;text-align:center">
+            <div style="font-size:3rem;color:#c9a227;font-family:serif">武</div>
+            <h1 style="color:#ffffff;font-size:1.4rem;margin:12px 0 0;font-weight:400;letter-spacing:0.05em">Kampfkunstschule Schreiner</h1>
+          </div>
+          <div style="padding:32px;background:#fff;border:1px solid #e5e5e5;border-top:none">
+            <h2 style="color:#1a1a1a;font-size:1.3rem;margin:0 0 16px">Dein Probetraining ist vorgemerkt!</h2>
+            <p style="color:#444;line-height:1.7">Hallo ${vorname},</p>
+            <p style="color:#444;line-height:1.7">
+              wir freuen uns auf deinen Besuch! Deine Anmeldung für das Probetraining wurde erfolgreich gespeichert.
+            </p>
+            <div style="background:#f9f9f9;border-left:3px solid #c9a227;padding:16px 20px;margin:24px 0">
+              <strong style="display:block;margin-bottom:8px;color:#1a1a1a">Deine Angaben</strong>
+              <p style="margin:4px 0;color:#444">Kurs: <strong>${interessiert_an || '–'}</strong></p>
+              ${erziehungsberechtigte_name ? `<p style="margin:4px 0;color:#444">Erziehungsberechtigte/r: <strong>${erziehungsberechtigte_name}</strong></p>` : ''}
+            </div>
+            <p style="color:#444;line-height:1.7">
+              <strong>Du kannst jederzeit einfach zur gewünschten Trainingsstunde vorbeikommen</strong> — eine weitere Bestätigung ist nicht nötig. Wir erwarten dich!
+            </p>
+            <p style="color:#444;line-height:1.7">Bei Fragen erreichst du uns unter:</p>
+            <p style="margin:0;color:#444">
+              📞 <a href="tel:+4915752461776" style="color:#c9a227">+49 157 52461776</a><br>
+              ✉️ <a href="mailto:info@tda-vib.de" style="color:#c9a227">info@tda-vib.de</a><br>
+              📍 Ohmstr. 14, 84137 Vilsbiburg
+            </p>
+            <div style="margin-top:32px;text-align:center">
+              <a href="https://tda-vib.de/stundenplan" style="background:#c9a227;color:#fff;padding:12px 28px;text-decoration:none;font-weight:600;display:inline-block">Stundenplan ansehen</a>
+            </div>
+          </div>
+          <div style="padding:16px;text-align:center;font-size:0.8rem;color:#999">
+            Kampfkunstschule Schreiner · Ohmstr. 14 · 84137 Vilsbiburg
+          </div>
+        </div>`;
+
+      sendEmailForDojo({
+        to: email.trim(),
+        subject: `Probetraining vorgemerkt – Kampfkunstschule Schreiner`,
+        html: bestaetigung_html,
+        text: `Hallo ${vorname},\n\ndein Probetraining ist vorgemerkt! Kurs: ${interessiert_an || '–'}\n\nDu kannst jederzeit zur gewünschten Trainingsstunde vorbeikommen.\n\nBei Fragen: info@tda-vib.de | +49 157 52461776\n\nKampfkunstschule Schreiner · Ohmstr. 14 · 84137 Vilsbiburg`,
+      }, parseInt(dojo_id)).catch(err => logger.warn('Bestätigungs-Mail fehlgeschlagen:', err.message));
+    }
+
+    // Benachrichtigung ans Dojo
+    sendEmailForDojo({
+      to: 'info@tda-vib.de',
+      subject: `Neue Probetraining-Anmeldung: ${vorname} ${nachname}`,
+      html: `<div style="font-family:sans-serif;max-width:500px"><h2>Neue Probetraining-Anmeldung</h2><table style="width:100%;border-collapse:collapse"><tr><td style="padding:6px 0;color:#666">Name</td><td><strong>${vorname} ${nachname}</strong></td></tr><tr><td style="padding:6px 0;color:#666">Geburtsdatum</td><td>${geburtsdatum} (${age} Jahre)</td></tr><tr><td style="padding:6px 0;color:#666">E-Mail</td><td>${email || '–'}</td></tr><tr><td style="padding:6px 0;color:#666">Telefon</td><td>${telefon || '–'}</td></tr><tr><td style="padding:6px 0;color:#666">Kurs</td><td>${interessiert_an || '–'}</td></tr>${erziehungsberechtigte_name ? `<tr><td style="padding:6px 0;color:#666">Erziehungsber.</td><td>${erziehungsberechtigte_name}${erziehungsberechtigte_telefon ? ` · ${erziehungsberechtigte_telefon}` : ''}</td></tr>` : ''}</table><p style="margin-top:16px;color:#666">In Dojosoftware unter <strong>Interessenten</strong> eingetragen.</p></div>`,
+      text: `Neue Probetraining-Anmeldung\n\nName: ${vorname} ${nachname}\nGeburtsdatum: ${geburtsdatum} (${age} J.)\nE-Mail: ${email || '–'}\nTelefon: ${telefon || '–'}\nKurs: ${interessiert_an || '–'}${erziehungsberechtigte_name ? `\nErziehungsber.: ${erziehungsberechtigte_name}` : ''}`,
+    }, parseInt(dojo_id)).catch(err => logger.warn('Dojo-Benachrichtigung fehlgeschlagen:', err.message));
+
     res.json({ success: true });
   } catch (err) {
     logger.error('Fehler bei Probetraining-Anmeldung:', { error: err });
