@@ -1841,6 +1841,74 @@ const MemberDashboard = () => {
         </div>
       )}
 
+      {/* Aktuelle Stile & Gürtel */}
+      {memberStile.length > 0 ? (
+        <div className="md-info-section" style={{ paddingTop: 0 }}>
+          <div className="md-info-list">
+            <div className="md-info-card md-stile-card">
+              <div className="md-stile-card__header">
+                <span className="md-stile-card__icon">🥋</span>
+                <span className="md-stile-card__title">Meine Kampfkunst-Stile</span>
+                <button
+                  onClick={() => setShowStilAuswahl(true)}
+                  style={{ marginLeft: 'auto', background: 'none', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 6, color: '#d4af37', fontSize: '0.78rem', padding: '3px 10px', cursor: 'pointer' }}
+                >
+                  + Stil hinzufügen
+                </button>
+              </div>
+              <div className="md-stile-card__chips">
+                {memberStile.map((stil) => {
+                  const stilData = styleSpecificData[stil.stil_id];
+                  const currentGraduation = stilData?.current_graduierung_id ?
+                    stil.graduierungen?.find(g => g.graduierung_id === stilData.current_graduierung_id) :
+                    stil.graduierungen?.[0];
+                  return (
+                    <div key={stil.stil_id} className="md-stil-chip" style={{ position: 'relative', paddingRight: '1.8rem' }}>
+                      <span className="md-stil-chip__name">{stil.name}</span>
+                      {currentGraduation && (
+                        <span className="md-graduation-badge">{currentGraduation.name}</span>
+                      )}
+                      {stilData?.letzte_pruefung && (
+                        <span className="md-stil-chip__exam">Prüfung: {new Date(stilData.letzte_pruefung).toLocaleDateString('de-DE')}</span>
+                      )}
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm(`Stil "${stil.name}" wirklich entfernen?`)) return;
+                          try {
+                            const res = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/stil/${stil.stil_id}/remove/${memberData.mitglied_id}`, { method: 'DELETE' });
+                            if (res.ok) loadMemberStyles(memberData.mitglied_id);
+                          } catch {}
+                        }}
+                        title="Stil entfernen"
+                        style={{ position: 'absolute', top: '50%', right: '0.4rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: '0.9rem', lineHeight: 1, padding: '2px' }}
+                      >✕</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="md-info-section" style={{ paddingTop: 0 }}>
+          <div className="md-info-list">
+            <div className="md-info-card" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🥋</div>
+              <div style={{ fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-primary)' }}>Noch kein Kampfkunststil gewählt</div>
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1rem' }}>
+                Wähle deinen Stil um loszulegen
+              </div>
+              <button
+                onClick={() => setShowStilAuswahl(true)}
+                style={{ background: 'linear-gradient(135deg,#d4af37,#b8962e)', border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, padding: '0.6rem 1.4rem', cursor: 'pointer', fontSize: '0.9rem' }}
+              >
+                Stil auswählen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* News Widget */}
       {memberNews.length > 0 && (
         <div className="member-news-wrap">
@@ -2332,66 +2400,6 @@ const MemberDashboard = () => {
                     💡 Klicke auf "Stil & Gurt" für Details
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Aktuelle Stile & Gürtel */}
-            {memberStile.length > 0 ? (
-              <div className="md-info-card md-stile-card">
-                <div className="md-stile-card__header">
-                  <span className="md-stile-card__icon">🥋</span>
-                  <span className="md-stile-card__title">Meine Kampfkunst-Stile</span>
-                  <button
-                    onClick={() => setShowStilAuswahl(true)}
-                    style={{ marginLeft: 'auto', background: 'none', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 6, color: '#d4af37', fontSize: '0.78rem', padding: '3px 10px', cursor: 'pointer' }}
-                  >
-                    + Stil hinzufügen
-                  </button>
-                </div>
-                <div className="md-stile-card__chips">
-                  {memberStile.map((stil) => {
-                    const stilData = styleSpecificData[stil.stil_id];
-                    const currentGraduation = stilData?.current_graduierung_id ?
-                      stil.graduierungen?.find(g => g.graduierung_id === stilData.current_graduierung_id) :
-                      stil.graduierungen?.[0];
-                    return (
-                      <div key={stil.stil_id} className="md-stil-chip" style={{ position: 'relative', paddingRight: '1.8rem' }}>
-                        <span className="md-stil-chip__name">{stil.name}</span>
-                        {currentGraduation && (
-                          <span className="md-graduation-badge">{currentGraduation.name}</span>
-                        )}
-                        {stilData?.letzte_pruefung && (
-                          <span className="md-stil-chip__exam">Prüfung: {new Date(stilData.letzte_pruefung).toLocaleDateString('de-DE')}</span>
-                        )}
-                        <button
-                          onClick={async () => {
-                            if (!window.confirm(`Stil "${stil.name}" wirklich entfernen?`)) return;
-                            try {
-                              const res = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/stil/${stil.stil_id}/remove/${memberData.mitglied_id}`, { method: 'DELETE' });
-                              if (res.ok) loadMemberStyles(memberData.mitglied_id);
-                            } catch {}
-                          }}
-                          title="Stil entfernen"
-                          style={{ position: 'absolute', top: '50%', right: '0.4rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: '0.9rem', lineHeight: 1, padding: '2px' }}
-                        >✕</button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="md-info-card" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🥋</div>
-                <div style={{ fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-primary)' }}>Noch kein Kampfkunststil gewählt</div>
-                <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1rem' }}>
-                  Wähle deinen Stil um loszulegen
-                </div>
-                <button
-                  onClick={() => setShowStilAuswahl(true)}
-                  style={{ background: 'linear-gradient(135deg,#d4af37,#b8962e)', border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, padding: '0.6rem 1.4rem', cursor: 'pointer', fontSize: '0.9rem' }}
-                >
-                  Stil auswählen
-                </button>
               </div>
             )}
 
