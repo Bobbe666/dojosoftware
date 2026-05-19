@@ -186,10 +186,10 @@ const TarifePreise = () => {
         setSpStile(arr.filter(s => s.aktiv !== 0 && s.aktiv !== false));
       }
       try {
-        const artRes = await axios.get(`/artikel${p}`);
-        setSpArtikel(artRes.data?.data || []);
+        const artRes = await axios.get(`/starterpakete/artikel-options${p}`);
+        setSpArtikel(artRes.data?.artikel || []);
       } catch (artErr) {
-        console.warn('Artikel für Starterpakete nicht geladen:', artErr?.response?.status, artErr?.message);
+        console.warn('Artikel-Options nicht geladen:', artErr?.response?.status, artErr?.message);
       }
     } catch (err) {
       console.error('Starterpakete laden Fehler:', err);
@@ -250,6 +250,7 @@ const TarifePreise = () => {
       });
       if (r.data.success) {
         setStarterpakete(prev => prev.map(x => x.paket_id === paketId ? r.data.paket : x));
+        if (editingSp?.paket_id === paketId) setEditingSp(r.data.paket);
         setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
         setAddingPosForId(null);
       }
@@ -264,6 +265,7 @@ const TarifePreise = () => {
       const r = await axios.delete(`/starterpakete/${paketId}/positionen/${posId}${p}`);
       if (r.data.success) {
         setStarterpakete(prev => prev.map(x => x.paket_id === paketId ? r.data.paket : x));
+        if (editingSp?.paket_id === paketId) setEditingSp(r.data.paket);
       }
     } catch (err) { console.error(err); }
   };
@@ -1125,51 +1127,157 @@ const TarifePreise = () => {
         </div>
       )}
 
-      {/* Modal: Starterpaket bearbeiten */}
+      {/* Modal: Starterpaket bearbeiten (inkl. Positionen) */}
       {editingSp && (
-        <div className="ds-modal-overlay" onClick={() => setEditingSp(null)}>
-          <div className="ds-modal ds-modal--md" onClick={e => e.stopPropagation()}>
+        <div className="ds-modal-overlay" onClick={() => { setEditingSp(null); setAddingPosForId(null); }}>
+          <div className="ds-modal ds-modal--xl" onClick={e => e.stopPropagation()} style={{ background: 'rgba(26,26,46,0.99)' }}>
             <div className="ds-modal-header">
-              <div><h3 className="ds-modal-title">Starterpaket bearbeiten</h3></div>
-              <button className="ds-modal-close" onClick={() => setEditingSp(null)}><X size={16} /></button>
+              <div>
+                <h3 className="ds-modal-title">Starterpaket bearbeiten</h3>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-4)' }}>{editingSp.stil_name} · {editingSp.positionen?.length || 0} Positionen · {((editingSp.endpreis_cent || 0) / 100).toFixed(2)} €</p>
+              </div>
+              <button className="ds-modal-close" onClick={() => { setEditingSp(null); setAddingPosForId(null); }}><X size={16} /></button>
             </div>
-            <div className="ds-modal-body">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label className="u-form-label">Stil *</label>
-                  <select value={editingSp.stil_id} onChange={e => setEditingSp({ ...editingSp, stil_id: parseInt(e.target.value) })} className="u-input-sm">
-                    <option value="">— Stil wählen —</option>
-                    {spStile.map(s => <option key={s.stil_id} value={s.stil_id}>{s.name}</option>)}
-                  </select>
+            <div className="ds-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+              {/* ── Paketdetails ── */}
+              <div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-4)', marginBottom: '0.65rem' }}>Paketdetails</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label className="u-form-label">Stil *</label>
+                    <select value={editingSp.stil_id} onChange={e => setEditingSp({ ...editingSp, stil_id: parseInt(e.target.value) })} className="u-input-sm">
+                      <option value="">— Stil wählen —</option>
+                      {spStile.map(s => <option key={s.stil_id} value={s.stil_id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="u-form-label">Paketname *</label>
+                    <input className="u-input-sm" value={editingSp.name} onChange={e => setEditingSp({ ...editingSp, name: e.target.value })} />
+                  </div>
+                  <div style={{ gridColumn: '1/-1' }}>
+                    <label className="u-form-label">Beschreibung</label>
+                    <input className="u-input-sm" value={editingSp.beschreibung || ''} onChange={e => setEditingSp({ ...editingSp, beschreibung: e.target.value })} />
+                  </div>
+                  <div style={{ gridColumn: '1/-1' }}>
+                    <label className="u-form-label">Pflichthinweis</label>
+                    <textarea className="u-input-sm" rows={3} value={editingSp.hinweis || ''} onChange={e => setEditingSp({ ...editingSp, hinweis: e.target.value })} style={{ resize: 'vertical' }} />
+                  </div>
+                  <div>
+                    <label className="u-form-label">Rabatt (%)</label>
+                    <input className="u-input-sm" type="number" min="0" max="100" step="0.5" value={editingSp.rabatt_prozent || 0} onChange={e => setEditingSp({ ...editingSp, rabatt_prozent: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-3)', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={!!editingSp.aktiv} onChange={e => setEditingSp({ ...editingSp, aktiv: e.target.checked })} />
+                      Paket aktiv
+                    </label>
+                  </div>
                 </div>
-                <div>
-                  <label className="u-form-label">Paketname *</label>
-                  <input className="u-input-sm" value={editingSp.name} onChange={e => setEditingSp({ ...editingSp, name: e.target.value })} />
-                </div>
-                <div style={{ gridColumn: '1/-1' }}>
-                  <label className="u-form-label">Beschreibung</label>
-                  <input className="u-input-sm" value={editingSp.beschreibung || ''} onChange={e => setEditingSp({ ...editingSp, beschreibung: e.target.value })} />
-                </div>
-                <div style={{ gridColumn: '1/-1' }}>
-                  <label className="u-form-label">Pflichthinweis</label>
-                  <textarea className="u-input-sm" rows={4} value={editingSp.hinweis || ''} onChange={e => setEditingSp({ ...editingSp, hinweis: e.target.value })} style={{ resize: 'vertical' }} />
-                </div>
-                <div>
-                  <label className="u-form-label">Rabatt (%)</label>
-                  <input className="u-input-sm" type="number" min="0" max="100" step="0.5" value={editingSp.rabatt_prozent || 0} onChange={e => setEditingSp({ ...editingSp, rabatt_prozent: parseFloat(e.target.value) || 0 })} />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={!!editingSp.aktiv} onChange={e => setEditingSp({ ...editingSp, aktiv: e.target.checked })} />
-                    Paket aktiv
-                  </label>
-                </div>
+              </div>
+
+              {/* ── Divider ── */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.09)' }} />
+
+              {/* ── Positionen ── */}
+              <div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-4)', marginBottom: '0.65rem' }}>Positionen / Artikel</div>
+
+                {(editingSp.positionen || []).length > 0 ? (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+                    <thead>
+                      <tr style={{ color: 'var(--text-4)', borderBottom: '1px solid rgba(255,255,255,0.09)' }}>
+                        <th style={{ textAlign: 'left', padding: '0.3rem 0.4rem', fontWeight: 600 }}>Bezeichnung</th>
+                        <th style={{ textAlign: 'center', padding: '0.3rem 0.4rem', fontWeight: 600, width: 60 }}>Menge</th>
+                        <th style={{ textAlign: 'right', padding: '0.3rem 0.4rem', fontWeight: 600, width: 90 }}>Preis</th>
+                        <th style={{ textAlign: 'right', padding: '0.3rem 0.4rem', fontWeight: 600, width: 90 }}>Gesamt</th>
+                        <th style={{ width: 30 }} />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {editingSp.positionen.map(pos => (
+                        <tr key={pos.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <td style={{ padding: '0.35rem 0.4rem', color: pos.pflicht ? 'var(--text-1)' : 'var(--text-4)' }}>
+                            {pos.bezeichnung}
+                            {!pos.pflicht && <span style={{ fontSize: '0.73rem', color: 'var(--text-4)', marginLeft: '0.3rem' }}>optional</span>}
+                          </td>
+                          <td style={{ textAlign: 'center', padding: '0.35rem 0.4rem', color: 'var(--text-3)' }}>{pos.menge}</td>
+                          <td style={{ textAlign: 'right', padding: '0.35rem 0.4rem' }}>{(pos.einzelpreis_cent / 100).toFixed(2)} €</td>
+                          <td style={{ textAlign: 'right', padding: '0.35rem 0.4rem', fontWeight: 600 }}>{(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €</td>
+                          <td style={{ textAlign: 'right', padding: '0.35rem 0.2rem' }}>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', padding: '0.2rem' }} onClick={() => handleDeletePos(editingSp.paket_id, pos.id)}><Trash2 size={12} /></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+                        <td colSpan={3} style={{ textAlign: 'right', padding: '0.45rem 0.4rem', color: 'var(--text-4)', fontSize: '0.82rem' }}>
+                          Summe{editingSp.rabatt_prozent > 0 ? ` − ${editingSp.rabatt_prozent}% Rabatt` : ''}
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '0.45rem 0.4rem', fontWeight: 700, color: '#d4af37' }}>{((editingSp.endpreis_cent || 0) / 100).toFixed(2)} €</td>
+                        <td />
+                      </tr>
+                    </tfoot>
+                  </table>
+                ) : (
+                  <p style={{ color: 'var(--text-4)', fontSize: '0.85rem', margin: '0 0 0.75rem' }}>Noch keine Positionen. Füge unten Artikel hinzu.</p>
+                )}
+
+                {/* Position hinzufügen */}
+                {addingPosForId === editingSp.paket_id ? (
+                  <div className="tc-pos-form">
+                    {spArtikel.length > 0 && (
+                      <div style={{ marginBottom: '0.6rem' }}>
+                        <select
+                          className="tc-pos-input"
+                          value={newPos.artikel_id || ''}
+                          onChange={e => {
+                            const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
+                            if (art) {
+                              setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
+                            } else {
+                              setNewPos(p => ({ ...p, artikel_id: null }));
+                            }
+                          }}
+                        >
+                          <option value="">— Aus Artikelkatalog wählen (optional) —</option>
+                          {spArtikel.map(a => (
+                            <option key={a.artikel_id} value={a.artikel_id}>
+                              {a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <input className="tc-pos-input" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
+                      <input className="tc-pos-input" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
+                      <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Preis € *" value={newPos.einzelpreis_cent} onChange={e => setNewPos({ ...newPos, einzelpreis_cent: e.target.value })} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-3)', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={newPos.pflicht} onChange={e => setNewPos({ ...newPos, pflicht: e.target.checked })} /> Pflicht
+                      </label>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true }); }}>Abbrechen</button>
+                        <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(editingSp.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>
+                          {spSaving ? '…' : 'Hinzufügen'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <button className="btn btn-sm btn-secondary" onClick={() => setAddingPosForId(editingSp.paket_id)}>
+                    <Plus size={13} /> Position hinzufügen
+                  </button>
+                )}
               </div>
             </div>
             <div className="ds-modal-footer">
-              <button className="btn btn-secondary" onClick={() => setEditingSp(null)}>Abbrechen</button>
+              <button className="btn btn-secondary" onClick={() => { setEditingSp(null); setAddingPosForId(null); }}>Schließen</button>
               <button className="btn btn-primary" onClick={handleUpdateSp} disabled={spSaving || !editingSp.name}>
-                <Save size={14} /> {spSaving ? 'Speichern…' : 'Speichern'}
+                <Save size={14} /> {spSaving ? 'Speichern…' : 'Änderungen speichern'}
               </button>
             </div>
           </div>
