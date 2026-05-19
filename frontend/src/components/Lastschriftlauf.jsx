@@ -867,7 +867,21 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
                     let iconEl, cardClass, fixEl;
 
-                    if (m.grundTyp === 'falsche_zahlungsmethode') {
+                    if (m.grundTyp === 'processing_blockiert') {
+                      iconEl = <Clock size={16} />;
+                      cardClass = 'll-dcard--info';
+                      fixEl = (
+                        <div className="ll-dcard-fix">
+                          <span className="ll-dfix-label">{m.grund}</span>
+                          <button
+                            className="ll-dfix-btn ll-dfix-btn--ghost"
+                            onClick={() => setStornoModal({ mitglied: m, transaktion: { id: m.slt_id, betrag: m.tx_betrag, monat: null, jahr: null } })}
+                          >
+                            Stornieren
+                          </button>
+                        </div>
+                      );
+                    } else if (m.grundTyp === 'falsche_zahlungsmethode') {
                       iconEl = <Settings size={16} />;
                       cardClass = 'll-dcard--warning';
                       fixEl = (

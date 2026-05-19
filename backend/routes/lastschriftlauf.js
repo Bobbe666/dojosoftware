@@ -678,9 +678,60 @@ router.get("/not-in-run", async (req, res) => {
             };
         };
 
+        // Schritt 4: Mitglieder mit laufender processing-Transaktion die weder im Preview noch in Diagnose auftauchen
+        // (inRunQuery nimmt sie auf → schließt sie aus not-in-run aus, aber preview filtert sie wegen NOT EXISTS raus)
+        const diagnosedIds = new Set([
+            ...results.map(r => r.mitglied_id),
+            ...wrongZmResults.map(r => r.mitglied_id)
+        ]);
+        const processingExcludeWhere = diagnosedIds.size > 0
+            ? `AND slt.mitglied_id NOT IN (${[...diagnosedIds].map(() => '?').join(',')})`
+            : '';
+        const processingBlockedQuery = `
+            SELECT
+                m.mitglied_id, m.vorname, m.nachname, m.email,
+                m.zahlungsmethode, m.stripe_customer_id,
+                v.status as vertrag_status, v.ruhepause_bis, v.vertragsende,
+                slt.id as slt_id, slt.betrag as tx_betrag, slt.created_at as tx_created,
+                slb.monat as tx_monat, slb.jahr as tx_jahr,
+                (SELECT COUNT(*) FROM beitraege b WHERE b.mitglied_id = m.mitglied_id AND b.bezahlt = 0 AND b.zahlungsdatum <= ?) as offene_beitraege,
+                (SELECT SUM(b2.betrag) FROM beitraege b2 WHERE b2.mitglied_id = m.mitglied_id AND b2.bezahlt = 0 AND b2.zahlungsdatum <= ?) as offener_betrag
+            FROM stripe_lastschrift_transaktion slt
+            JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+            JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+            LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status IN ('aktiv','gekuendigt','ruhepause')
+            WHERE slt.status = 'processing'
+              ${dojoId ? 'AND m.dojo_id = ?' : ''}
+              ${processingExcludeWhere}
+            GROUP BY m.mitglied_id
+            ORDER BY m.nachname, m.vorname
+        `;
+        const processingBlockedParams = [monatEnde, monatEnde, ...(dojoId ? [dojoId] : []), ...[...diagnosedIds]];
+        const processingBlockedResults = await queryAsync(processingBlockedQuery, processingBlockedParams);
+
         const members = [
             ...results.filter(r => r.offene_beitraege > 0).map(r => mapMember(r, null)),
-            ...wrongZmResults.filter(r => r.offene_beitraege > 0).map(r => mapMember(r, 'falsche_zahlungsmethode'))
+            ...wrongZmResults.filter(r => r.offene_beitraege > 0).map(r => mapMember(r, 'falsche_zahlungsmethode')),
+            ...processingBlockedResults.map(r => ({
+                mitglied_id: r.mitglied_id,
+                name: `${r.vorname} ${r.nachname}`,
+                email: r.email,
+                zahlungsmethode: r.zahlungsmethode,
+                vertrag_status: r.vertrag_status,
+                ruhepause_bis: r.ruhepause_bis,
+                vertragsende: r.vertragsende,
+                offene_beitraege: r.offene_beitraege,
+                offener_betrag: parseFloat(r.offener_betrag || 0),
+                grund: `Stripe-Transaktion vom ${new Date(r.tx_created).toLocaleDateString('de-DE')} (${r.tx_monat}/${r.tx_jahr}) noch in Bearbeitung`,
+                grundTyp: 'processing_blockiert',
+                slt_id: r.slt_id,
+                tx_betrag: parseFloat(r.tx_betrag || 0),
+                has_mandat_iban: true,
+                has_stripe_customer: !!r.stripe_customer_id,
+                has_stripe_pm: true,
+                mandat_gesamt: 1,
+                needs_stripe_setup: false
+            }))
         ].sort((a, b) => a.name.localeCompare(b.name));
 
         res.json({ success: true, count: members.length, members });
