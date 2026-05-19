@@ -176,19 +176,20 @@ const TarifePreise = () => {
     const dojoId = getDojoId();
     const p = dojoId ? `?dojo_id=${dojoId}` : '';
     try {
-      const [pkRes, stRes, artRes] = await Promise.all([
+      const [pkRes, stRes] = await Promise.all([
         axios.get(`/starterpakete${p}`).catch(() => null),
         axios.get(`/stile?aktiv=true${dojoId ? `&dojo_id=${dojoId}` : ''}`).catch(() => null),
-        axios.get(`/artikel${p}`).catch(() => null),
       ]);
       if (pkRes?.data?.success) setStarterpakete(pkRes.data.pakete || []);
       if (stRes?.data) {
         const arr = Array.isArray(stRes.data) ? stRes.data : (stRes.data.data || []);
         setSpStile(arr.filter(s => s.aktiv !== 0 && s.aktiv !== false));
       }
-      if (artRes?.data) {
-        const arr = Array.isArray(artRes.data) ? artRes.data : (artRes.data.data || artRes.data.artikel || []);
-        setSpArtikel(arr.filter(a => a.aktiv !== 0 && a.aktiv !== false));
+      try {
+        const artRes = await axios.get(`/artikel${p}`);
+        setSpArtikel(artRes.data?.data || []);
+      } catch (artErr) {
+        console.warn('Artikel für Starterpakete nicht geladen:', artErr?.response?.status, artErr?.message);
       }
     } catch (err) {
       console.error('Starterpakete laden Fehler:', err);
