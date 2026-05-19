@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 const db = require("../db"); // MySQL-Datenbankanbindung importieren
 const auditLog = require("../services/auditLogService");
 const { generateInitialBeitraege, generateMissingBeitraege } = require('./vertraege/shared');
+const { generateMonthlyBeitraege } = require('../cron-jobs');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
@@ -286,6 +287,16 @@ router.post("/regenerate-all", async (req, res) => {
                     error: error.message
                 });
             }
+        }
+
+        // Rolling-Window: fehlende SEPA-Beiträge bis Ende nächsten Monats sicherstellen
+        // (deckt Verträge ab deren Mindestlaufzeit abgelaufen ist)
+        try {
+            const cronResult = await generateMonthlyBeitraege();
+            results.beitraege_eingefuegt += cronResult.generated || 0;
+            logger.info(`Rolling-Window-Nachgenerierung: ${cronResult.generated} neue Beiträge`);
+        } catch (e) {
+            logger.error('Rolling-Window-Generierung fehlgeschlagen:', e.message);
         }
 
         // Audit-Log

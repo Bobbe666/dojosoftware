@@ -911,7 +911,7 @@ async function generateMonthlyBeitraege() {
         // Bei Verlängerung bereits erledigt — sonst Rolling-Window für fehlende Monate
         if (!verlängert) {
             const [[lastRow]] = await pool.query(
-                `SELECT MAX(zahlungsdatum) as last_date FROM beitraege WHERE mitglied_id = ? AND art = 'mitgliedsbeitrag'`,
+                `SELECT MAX(zahlungsdatum) as last_date FROM beitraege WHERE mitglied_id = ? AND (art = 'mitgliedsbeitrag' OR art IS NULL)`,
                 [v.mitglied_id]
             );
 
