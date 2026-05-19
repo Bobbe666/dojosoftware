@@ -300,8 +300,8 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
                         const preis_cent = (opts?.hat_preiskategorien && isKid !== null)
                           ? (isKid ? (opts.preis_kids_cent || pos.einzelpreis_cent) : (opts.preis_erwachsene_cent || pos.einzelpreis_cent))
                           : pos.einzelpreis_cent;
-                        const original_cent = (opts?.hat_preiskategorien && isKid !== null && pos.rabatt_prozent > 0)
-                          ? Math.round(preis_cent / (1 - pos.rabatt_prozent / 100))
+                        const original_cent = opts?.hat_preiskategorien && isKid !== null
+                          ? (isKid ? (opts.original_kids_cent || null) : (opts.original_erwachsene_cent || null))
                           : pos.originalpreis_cent;
                         return (
                           <div key={pos.id} className="sa-paket-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.4rem' }}>

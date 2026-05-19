@@ -108,7 +108,7 @@ const TarifePreise = () => {
     hinweis: 'Für ein einheitliches Auftreten, ein starkes Teamgefühl und die Einhaltung unserer Qualitäts- und Sicherheitsstandards bitten wir darum, im Training sowie insbesondere bei Wettkämpfen ausschließlich Ausrüstung zu verwenden, die über unsere Schule bzw. unsere offiziellen Partner bezogen wurde. So stellen wir sicher, dass alle Mitglieder mit geprüfter, passender und einheitlicher Ausrüstung trainieren und auftreten. Vielen Dank für euer Verständnis und eure Unterstützung unseres gemeinsamen Auftritts als Team.',
     rabatt_prozent: 0, aktiv: true
   });
-  const [newPos, setNewPos] = useState({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true });
+  const [newPos, setNewPos] = useState({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true, uvpErw: '', paketErw: '', uvpKids: '', paketKids: '' });
   const [showNewSp, setShowNewSp] = useState(false);
   const [activeTab, setActiveTab] = useState('tarife');
   const [tarifeFilter, setTarifeFilter] = useState('alle');
@@ -276,19 +276,43 @@ const TarifePreise = () => {
   };
 
   const handleAddPos = async (paketId) => {
-    if (!newPos.bezeichnung || newPos.einzelpreis_cent === '') return;
+    const isKatPreis = !!(newPos.varianten_options?.hat_preiskategorien);
+    if (!newPos.bezeichnung) return;
+    if (!isKatPreis && newPos.einzelpreis_cent === '') return;
+    if (isKatPreis && (!newPos.paketErw || !newPos.paketKids)) return;
     setSpSaving(true);
     const dojoId = getDojoId();
     const p = dojoId ? `?dojo_id=${dojoId}` : '';
+    const toC = v => Math.round(parseFloat(String(v).replace(',', '.')) * 100);
+
+    let payload = { ...newPos };
+    if (isKatPreis) {
+      const paketErwC  = toC(newPos.paketErw);
+      const paketKidsC = toC(newPos.paketKids);
+      const uvpErwC    = newPos.uvpErw  ? toC(newPos.uvpErw)  : null;
+      const uvpKidsC   = newPos.uvpKids ? toC(newPos.uvpKids) : null;
+      payload = {
+        ...payload,
+        einzelpreis_cent: paketErwC,
+        originalPreis_cent: uvpErwC,
+        varianten_options: {
+          ...newPos.varianten_options,
+          preis_erwachsene_cent:    paketErwC,
+          preis_kids_cent:          paketKidsC,
+          original_erwachsene_cent: uvpErwC,
+          original_kids_cent:       uvpKidsC,
+        },
+      };
+    } else {
+      payload.einzelpreis_cent = toC(newPos.einzelpreis_cent);
+    }
+
     try {
-      const r = await axios.post(`/starterpakete/${paketId}/positionen${p}`, {
-        ...newPos,
-        einzelpreis_cent: Math.round(parseFloat(String(newPos.einzelpreis_cent).replace(',', '.')) * 100),
-      });
+      const r = await axios.post(`/starterpakete/${paketId}/positionen${p}`, payload);
       if (r.data.success) {
         setStarterpakete(prev => prev.map(x => x.paket_id === paketId ? r.data.paket : x));
         if (editingSp?.paket_id === paketId) setEditingSp(r.data.paket);
-        setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true });
+        setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true, uvpErw: '', paketErw: '', uvpKids: '', paketKids: '' });
         setAddingPosForId(null);
       }
     } catch (err) { console.error(err); }
@@ -810,19 +834,37 @@ const TarifePreise = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {(pk.positionen || []).map(pos => (
+                          {(pk.positionen || []).map(pos => {
+                            const vOpts = pos.varianten_options ? (typeof pos.varianten_options === 'string' ? (() => { try { return JSON.parse(pos.varianten_options); } catch { return null; } })() : pos.varianten_options) : null;
+                            const isKat = !!(vOpts?.hat_preiskategorien);
+                            return (
                             <tr key={pos.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                               <td style={{ padding: '0.4rem 0.5rem', color: pos.pflicht ? '#fff' : 'rgba(255,255,255,0.55)' }}>
                                 {pos.bezeichnung}{!pos.pflicht && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.35rem' }}>optional</span>}
+                                {isKat && <span style={{ fontSize: '0.72rem', color: '#d4af37', marginLeft: '0.4rem' }}>📐 Kinder/Erw.</span>}
                               </td>
                               <td style={{ textAlign: 'center', padding: '0.4rem 0.5rem', color: 'var(--text-muted)' }}>{pos.menge}</td>
-                              <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem' }}>{(pos.einzelpreis_cent / 100).toFixed(2)} €</td>
-                              <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem', fontWeight: 600 }}>{(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €</td>
+                              <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem', fontSize: '0.82rem' }}>
+                                {isKat ? (
+                                  <div style={{ lineHeight: 1.6 }}>
+                                    {vOpts.original_erwachsene_cent && <div style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through', fontSize: '0.75rem' }}>{(vOpts.original_erwachsene_cent / 100).toFixed(2)} €</div>}
+                                    <div style={{ color: '#fff' }}>🧑 {(vOpts.preis_erwachsene_cent / 100).toFixed(2)} €</div>
+                                    {vOpts.original_kids_cent && <div style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through', fontSize: '0.75rem' }}>{(vOpts.original_kids_cent / 100).toFixed(2)} €</div>}
+                                    <div style={{ color: '#fff' }}>👧 {(vOpts.preis_kids_cent / 100).toFixed(2)} €</div>
+                                  </div>
+                                ) : (
+                                  <span>{(pos.einzelpreis_cent / 100).toFixed(2)} €</span>
+                                )}
+                              </td>
+                              <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem', fontWeight: 600 }}>
+                                {isKat ? <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>je Größe</span> : `${(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €`}
+                              </td>
                               <td style={{ textAlign: 'right', padding: '0.4rem 0.25rem' }}>
                                 <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', padding: '0.2rem' }} onClick={() => handleDeletePos(pk.paket_id, pos.id)}><Trash2 size={12} /></button>
                               </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                         <tfoot>
                           <tr style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>
@@ -849,8 +891,22 @@ const TarifePreise = () => {
                                   preis_erwachsene_cent: art.preis_erwachsene_cent,
                                   groessen: art.varianten_groessen,
                                 } : null;
-                                setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, originalPreis_cent: art.verkaufspreis_cent, rabatt_prozent: 0, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2), hat_varianten: !!(art.hat_varianten || art.hat_preiskategorien), varianten_options: varOpts }));
-                              } else setNewPos(p => ({ ...p, artikel_id: null, originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null }));
+                                const isKatPreis = !!(art.hat_preiskategorien);
+                                setNewPos(p => ({
+                                  ...p,
+                                  artikel_id: art.artikel_id,
+                                  bezeichnung: art.name,
+                                  originalPreis_cent: art.verkaufspreis_cent,
+                                  rabatt_prozent: 0,
+                                  einzelpreis_cent: isKatPreis ? (art.preis_erwachsene_cent ? (art.preis_erwachsene_cent / 100).toFixed(2) : (art.verkaufspreis_cent / 100).toFixed(2)) : (art.verkaufspreis_cent / 100).toFixed(2),
+                                  hat_varianten: !!(art.hat_varianten || art.hat_preiskategorien),
+                                  varianten_options: varOpts,
+                                  uvpErw:   isKatPreis ? (art.preis_erwachsene_cent ? (art.preis_erwachsene_cent / 100).toFixed(2) : '') : '',
+                                  paketErw: isKatPreis ? (art.preis_erwachsene_cent ? (art.preis_erwachsene_cent / 100).toFixed(2) : '') : '',
+                                  uvpKids:   isKatPreis ? (art.preis_kids_cent ? (art.preis_kids_cent / 100).toFixed(2) : '') : '',
+                                  paketKids: isKatPreis ? (art.preis_kids_cent ? (art.preis_kids_cent / 100).toFixed(2) : '') : '',
+                                }));
+                              } else setNewPos(p => ({ ...p, artikel_id: null, originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, uvpErw: '', paketErw: '', uvpKids: '', paketKids: '' }));
                             }}>
                             <option value="">{spArtikelLoading ? 'Lade Artikel…' : spArtikel.length === 0 ? '— Keine Artikel im Katalog —' : '— Aus Artikelkatalog wählen (optional) —'}</option>
                             {spArtikel.map(a => <option key={a.artikel_id} value={a.artikel_id}>{a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}</option>)}
@@ -868,25 +924,55 @@ const TarifePreise = () => {
                               {newPos.rabatt_prozent > 0 && <span style={{ color: '#d4af37', fontWeight: 600 }}>→ €{(newPos.originalPreis_cent * (1 - newPos.rabatt_prozent / 100) / 100).toFixed(2)}</span>}
                             </div>
                           )}
-                          {/* Varianten-Hinweis */}
-                          {newPos.hat_varianten && (
-                            <div style={{ fontSize: '0.79rem', color: '#d4af37', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                              📐 Mitglied wählt Größe (Kids/Erwachsene) beim Bestellen
+                          {/* Kinder/Erwachsene Preisblock */}
+                          {newPos.hat_varianten && newPos.varianten_options?.hat_preiskategorien ? (
+                            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '0.75rem', marginBottom: '0.5rem' }}>
+                              <div style={{ fontSize: '0.78rem', color: '#d4af37', marginBottom: '0.6rem', fontWeight: 600 }}>📐 Preise nach Altersgruppe</div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 16px 1fr', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', marginBottom: '0.4rem' }}>
+                                <span style={{ color: 'rgba(255,255,255,0.5)' }}>🧑 Erw.</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                  <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>VK</span>
+                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK €" style={{ flex: 1 }} value={newPos.uvpErw} onChange={e => setNewPos(p => ({ ...p, uvpErw: e.target.value }))} />
+                                </div>
+                                <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.9rem' }}>→</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#d4af37' }}>Paket</span>
+                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Paket €" style={{ flex: 1, borderColor: 'rgba(212,175,55,0.4)' }} value={newPos.paketErw} onChange={e => { const v = e.target.value; setNewPos(p => ({ ...p, paketErw: v, einzelpreis_cent: v })); }} />
+                                </div>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 16px 1fr', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}>
+                                <span style={{ color: 'rgba(255,255,255,0.5)' }}>👧 Kids</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                  <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>VK</span>
+                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK €" style={{ flex: 1 }} value={newPos.uvpKids} onChange={e => setNewPos(p => ({ ...p, uvpKids: e.target.value }))} />
+                                </div>
+                                <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.9rem' }}>→</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#d4af37' }}>Paket</span>
+                                  <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Paket €" style={{ flex: 1, borderColor: 'rgba(212,175,55,0.4)' }} value={newPos.paketKids} onChange={e => setNewPos(p => ({ ...p, paketKids: e.target.value }))} />
+                                </div>
+                              </div>
                             </div>
-                          )}
-                          {/* Bezeichnung / Menge / Preis */}
-                          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          ) : newPos.hat_varianten ? (
+                            <div style={{ fontSize: '0.79rem', color: '#d4af37', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              📐 Mitglied wählt Größe beim Bestellen
+                            </div>
+                          ) : null}
+                          {/* Bezeichnung / Menge / Preis (Preis nur wenn KEIN Katpreis-Variante) */}
+                          <div style={{ display: 'grid', gridTemplateColumns: newPos.varianten_options?.hat_preiskategorien ? '3fr 1fr' : '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <input className="tc-pos-input" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
                             <input className="tc-pos-input" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
-                            <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Preis € *" value={newPos.einzelpreis_cent} onChange={e => setNewPos({ ...newPos, einzelpreis_cent: e.target.value })} />
+                            {!newPos.varianten_options?.hat_preiskategorien && (
+                              <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Preis € *" value={newPos.einzelpreis_cent} onChange={e => setNewPos({ ...newPos, einzelpreis_cent: e.target.value })} />
+                            )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-3)', cursor: 'pointer' }}>
                               <input type="checkbox" checked={newPos.pflicht} onChange={e => setNewPos({ ...newPos, pflicht: e.target.checked })} /> Pflicht
                             </label>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, pflicht: true }); setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis(''); }}>Abbrechen</button>
-                              <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(pk.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>{spSaving ? '…' : 'Hinzufügen'}</button>
+                              <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true, uvpErw: '', paketErw: '', uvpKids: '', paketKids: '' }); setNeuArtikelOpen(false); setNeuArtikelName(''); setNeuArtikelPreis(''); }}>Abbrechen</button>
+                              <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(pk.paket_id)} disabled={spSaving || !newPos.bezeichnung || (newPos.varianten_options?.hat_preiskategorien ? (!newPos.paketErw || !newPos.paketKids) : newPos.einzelpreis_cent === '')}>{spSaving ? '…' : 'Hinzufügen'}</button>
                             </div>
                           </div>
                           {/* Neuer Artikel */}

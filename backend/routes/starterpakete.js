@@ -26,12 +26,18 @@ async function loadPaketMitPositionen(paketId, dojoId) {
     [paketId]
   );
 
-  const gesamtpreis = positionen.reduce((s, p) => s + p.einzelpreis_cent * p.menge, 0);
+  const parseJ = v => { try { return v ? (typeof v === 'string' ? JSON.parse(v) : v) : null; } catch { return null; } };
+  const positionenParsed = positionen.map(p => ({
+    ...p,
+    varianten_options: parseJ(p.varianten_options),
+  }));
+
+  const gesamtpreis = positionenParsed.reduce((s, p) => s + p.einzelpreis_cent * p.menge, 0);
   const rabatt = paket.rabatt_prozent > 0
     ? Math.round(gesamtpreis * paket.rabatt_prozent / 100)
     : 0;
 
-  return { ...paket, positionen, gesamtpreis_cent: gesamtpreis, rabatt_cent: rabatt, endpreis_cent: gesamtpreis - rabatt };
+  return { ...paket, positionen: positionenParsed, gesamtpreis_cent: gesamtpreis, rabatt_cent: rabatt, endpreis_cent: gesamtpreis - rabatt };
 }
 
 // ── GET /api/starterpakete/artikel-options ── Artikel für Dropdown ──
