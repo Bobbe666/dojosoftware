@@ -31,14 +31,18 @@ CREATE TABLE IF NOT EXISTS starterpaket_bestellungen (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS starterpaket_positionen (
-  id               INT AUTO_INCREMENT PRIMARY KEY,
-  paket_id         INT         NOT NULL,
-  artikel_id       INT         NULL,
-  bezeichnung      VARCHAR(200) NOT NULL,
-  menge            INT         NOT NULL DEFAULT 1,
-  einzelpreis_cent INT         NOT NULL DEFAULT 0,
-  position         INT         NOT NULL DEFAULT 0,
-  pflicht          TINYINT(1)  NOT NULL DEFAULT 1,
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  paket_id          INT          NOT NULL,
+  artikel_id        INT          NULL,
+  bezeichnung       VARCHAR(200) NOT NULL,
+  menge             INT          NOT NULL DEFAULT 1,
+  einzelpreis_cent  INT          NOT NULL DEFAULT 0,
+  position          INT          NOT NULL DEFAULT 0,
+  pflicht           TINYINT(1)   NOT NULL DEFAULT 1,
+  rabatt_prozent    DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+  originalpreis_cent INT         NULL,
+  hat_varianten     TINYINT(1)   NOT NULL DEFAULT 0,
+  varianten_options JSON         NULL,
   INDEX idx_paket   (paket_id),
   INDEX idx_artikel (artikel_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
