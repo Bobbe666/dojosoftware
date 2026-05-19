@@ -838,8 +838,8 @@ async function generateMonthlyBeitraege() {
     const pool = db.promise();
     const now = new Date();
 
-    // Generiere bis Ende des nächsten Monats (als Puffer für Lastschriftlauf)
-    const endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0); // letzter Tag des übernächsten Monats
+    // Generiere immer 12 Monate im Voraus
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 13, 0); // letzter Tag des Monats in 12 Monaten
 
     // Alle aktiven + gekündigten Verträge mit SEPA-Zahlung laden
     const [vertraege] = await pool.query(`

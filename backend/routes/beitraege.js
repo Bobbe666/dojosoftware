@@ -3,7 +3,7 @@ const logger = require('../utils/logger');
 const db = require("../db"); // MySQL-Datenbankanbindung importieren
 const auditLog = require("../services/auditLogService");
 const { generateInitialBeitraege, generateMissingBeitraege } = require('./vertraege/shared');
-const { generateMonthlyBeitraege } = require('../cron-jobs');
+const { generateMonthlyBeitraege } = require('../cron-jobs'); // für regenerate-all und regenerate/:id
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
@@ -206,113 +206,22 @@ router.delete("/:beitrag_id", (req, res) => {
  */
 router.post("/regenerate-all", async (req, res) => {
     try {
-        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
-        const secureDojoId = getSecureDojoId(req);
+        const result = await generateMonthlyBeitraege();
 
-        // Hole alle aktiven Verträge
-        let whereClause = 'WHERE v.status = ?';
-        const params = ['aktiv'];
-
-        if (secureDojoId) {
-            whereClause += ' AND v.dojo_id = ?';
-            params.push(secureDojoId);
-        }
-
-        const vertraege = await queryAsync(`
-            SELECT
-                v.id as vertrag_id,
-                v.mitglied_id,
-                v.dojo_id,
-                v.vertragsbeginn,
-                v.vertragsende,
-                v.mindestlaufzeit_monate,
-                COALESCE(v.monatsbeitrag, t.price_cents / 100) as monatsbeitrag,
-                m.vorname,
-                m.nachname
-            FROM vertraege v
-            JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-            LEFT JOIN tarife t ON v.tarif_id = t.id
-            ${whereClause}
-            ORDER BY v.id
-        `, params);
-
-        const results = {
-            total_vertraege: vertraege.length,
-            processed: 0,
-            beitraege_eingefuegt: 0,
-            beitraege_uebersprungen: 0,
-            errors: [],
-            details: []
-        };
-
-        for (const vertrag of vertraege) {
-            try {
-                if (!vertrag.monatsbeitrag || vertrag.monatsbeitrag <= 0) {
-                    results.details.push({
-                        vertrag_id: vertrag.vertrag_id,
-                        mitglied: `${vertrag.vorname} ${vertrag.nachname}`,
-                        status: 'skipped',
-                        reason: 'Kein Monatsbeitrag definiert'
-                    });
-                    continue;
-                }
-
-                const beitraegeResult = await generateInitialBeitraege(
-                    vertrag.mitglied_id,
-                    vertrag.dojo_id,
-                    vertrag.vertragsbeginn,
-                    vertrag.monatsbeitrag,
-                    0, // Keine Aufnahmegebühr bei Nachgenerierung
-                    vertrag.vertragsende,
-                    vertrag.mindestlaufzeit_monate || 12
-                );
-
-                results.processed++;
-                results.beitraege_eingefuegt += beitraegeResult.insertedIds?.length || 0;
-                results.beitraege_uebersprungen += beitraegeResult.skippedCount || 0;
-
-                if (beitraegeResult.insertedIds?.length > 0) {
-                    results.details.push({
-                        vertrag_id: vertrag.vertrag_id,
-                        mitglied: `${vertrag.vorname} ${vertrag.nachname}`,
-                        status: 'success',
-                        eingefuegt: beitraegeResult.insertedIds.length,
-                        uebersprungen: beitraegeResult.skippedCount
-                    });
-                }
-            } catch (error) {
-                results.errors.push({
-                    vertrag_id: vertrag.vertrag_id,
-                    mitglied: `${vertrag.vorname} ${vertrag.nachname}`,
-                    error: error.message
-                });
-            }
-        }
-
-        // Rolling-Window: fehlende SEPA-Beiträge bis Ende nächsten Monats sicherstellen
-        // (deckt Verträge ab deren Mindestlaufzeit abgelaufen ist)
-        try {
-            const cronResult = await generateMonthlyBeitraege();
-            results.beitraege_eingefuegt += cronResult.generated || 0;
-            logger.info(`Rolling-Window-Nachgenerierung: ${cronResult.generated} neue Beiträge`);
-        } catch (e) {
-            logger.error('Rolling-Window-Generierung fehlgeschlagen:', e.message);
-        }
-
-        // Audit-Log
         auditLog.log({
             req,
             aktion: 'BEITRAEGE_REGENERIERT',
             kategorie: auditLog.KATEGORIE.FINANZEN,
             entityType: 'beitraege',
-            beschreibung: `Beiträge nachgeneriert: ${results.beitraege_eingefuegt} neue, ${results.beitraege_uebersprungen} übersprungen`
+            beschreibung: `Beiträge nachgeneriert: ${result.generated} neue, ${result.skipped} übersprungen`
         });
 
-        logger.info('Beiträge-Regenerierung abgeschlossen:', results);
+        logger.info('Beiträge-Regenerierung abgeschlossen:', result);
 
         res.json({
             success: true,
-            ...results
+            beitraege_eingefuegt: result.generated || 0,
+            beitraege_uebersprungen: result.skipped || 0
         });
     } catch (error) {
         logger.error('Fehler bei Beiträge-Regenerierung:', error);
