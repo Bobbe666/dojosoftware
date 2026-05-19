@@ -471,22 +471,11 @@ const TarifePreise = () => {
   // ── Inline TarifCard ──────────────────────────────────────────────
   const TarifCard = ({ tarif }) => (
     <div className={`tc-card${tarif.ist_archiviert ? ' tc-card--archived' : ''}`}>
-      {/* Hero: Preis + Aktionen */}
+      {/* Hero: Preis */}
       <div className="tc-card-hero">
         <div className="tc-card-price-block">
           <span className="tc-price-val">€{tarif.price_euros}</span>
           <span className="tc-price-period">/Mo.</span>
-        </div>
-        <div className="tc-card-actions">
-          <button className="action-btn edit" onClick={() => setEditingTarif(tarif)} title="Bearbeiten"><Edit size={13} /></button>
-          <button className="action-btn delete" onClick={() => handleDeleteTarif(tarif.id)} title="Löschen"><Trash2 size={13} /></button>
-          <button
-            className={`action-btn archive${tarif.ist_archiviert ? ' is-archived' : ''}`}
-            onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
-            title={tarif.ist_archiviert ? "Reaktivieren" : "Archivieren"}
-          >
-            {tarif.ist_archiviert ? '↺' : '▣'}
-          </button>
         </div>
       </div>
 
@@ -509,12 +498,23 @@ const TarifePreise = () => {
         </div>
       </div>
 
-      {/* Footer: Status */}
+      {/* Footer: Status + Aktionen */}
       <div className="tc-card-footer">
         <span className={`tc-status-badge${tarif.ist_archiviert ? ' archived' : tarif.active ? ' active' : ' inactive'}`}>
           <span className="tc-status-dot" />
           {tarif.ist_archiviert ? 'Archiviert' : tarif.active ? 'Aktiv' : 'Inaktiv'}
         </span>
+        <div className="tc-card-actions">
+          <button className="action-btn edit" onClick={() => setEditingTarif(tarif)} title="Bearbeiten"><Edit size={13} /></button>
+          <button className="action-btn delete" onClick={() => handleDeleteTarif(tarif.id)} title="Löschen"><Trash2 size={13} /></button>
+          <button
+            className={`action-btn archive${tarif.ist_archiviert ? ' is-archived' : ''}`}
+            onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
+            title={tarif.ist_archiviert ? "Reaktivieren" : "Archivieren"}
+          >
+            {tarif.ist_archiviert ? '↺' : '▣'}
+          </button>
+        </div>
       </div>
 
       {tarif.ist_archiviert && (

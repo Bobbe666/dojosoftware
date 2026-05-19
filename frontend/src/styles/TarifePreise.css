@@ -900,25 +900,19 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-/* Hero: Preis + Aktionen */
+/* Hero: Preis */
 .tc-card-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.45rem;
 }
 
 .tc-card-price-block {
   display: flex;
   align-items: baseline;
   gap: 0.2rem;
-  min-width: 0;
-  flex-shrink: 1;
 }
 
 .tc-price-val {
-  font-size: 1.35rem;
+  font-size: 1.55rem;
   font-weight: 800;
   background: linear-gradient(135deg, #ffd700 30%, #ffaa00 100%);
   -webkit-background-clip: text;
@@ -974,6 +968,8 @@
 .tc-card-footer {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 /* Status Badge */
