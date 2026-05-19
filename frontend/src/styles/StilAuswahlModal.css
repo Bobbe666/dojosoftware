@@ -141,6 +141,136 @@
   font-weight: 700;
 }
 
+/* ── Schritt-Anzeige ── */
+.sa-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.sa-step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.3s;
+}
+
+.sa-step-dot.active {
+  background: #d4af37;
+}
+
+.sa-step-line {
+  width: 32px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: background 0.3s;
+}
+
+.sa-step-line.active {
+  background: #d4af37;
+}
+
+/* ── Gewählter Stil (Schritt 2) ── */
+.sa-chosen-stil {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.875rem;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--sa-stil-farbe, #d4af37) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sa-stil-farbe, #d4af37) 40%, transparent);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 auto;
+  display: flex;
+}
+
+.sa-chosen-check {
+  font-size: 0.75rem;
+  color: #4ade80;
+  margin-left: 0.2rem;
+}
+
+/* ── Hinweis-Box ── */
+.sa-hinweis {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 0.65rem 0.875rem;
+  font-size: 0.83rem;
+  color: #fca5a5;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+/* ── Paket-Tabelle ── */
+.sa-paket-table {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sa-paket-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.87rem;
+}
+
+.sa-paket-row:last-child {
+  border-bottom: none;
+}
+
+.sa-paket-bez {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sa-paket-menge {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.sa-paket-opt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+}
+
+.sa-paket-preis {
+  font-size: 0.87rem;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.sa-paket-rabatt {
+  color: #4ade80;
+}
+
+.sa-paket-rabatt div:last-child {
+  color: #4ade80;
+}
+
+.sa-paket-total {
+  background: rgba(212, 175, 55, 0.06);
+  font-weight: 700;
+}
+
+.sa-paket-total div:last-child {
+  color: #d4af37;
+  font-size: 1rem;
+}
+
+/* ── Footer ── */
 .sa-footer {
   display: flex;
   gap: 0.75rem;

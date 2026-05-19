@@ -601,6 +601,14 @@ try {
   logger.error('Fehler beim Laden der Route', { route: 'referral', error: error.message, stack: error.stack });
 }
 
+try {
+  const starterpaketeRoutes = require(path.join(__dirname, 'routes', 'starterpakete.js'));
+  app.use('/api/starterpakete', authenticateToken, starterpaketeRoutes);
+  logger.success('Route gemountet', { path: '/api/starterpakete' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'starterpakete', error: error.message, stack: error.stack });
+}
+
 // AUTH ROUTES (Login, Token, Passwortänderung/Reset) - mit strenger Rate Limiting
 // Verwendet loginLimiter aus config/security.js (IP+Username Kombination)
 try {

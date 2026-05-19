@@ -118,9 +118,28 @@ const TarifePreise = () => {
     aktiv: true
   });
 
+  // ── Starterpakete State ────────────────────────────────────────────
+  const [starterpakete, setStarterpakete] = useState([]);
+  const [spStile, setSpStile] = useState([]);
+  const [spCollapsed, setSpCollapsed] = useState(false);
+  const [editingSp, setEditingSp] = useState(null);
+  const [expandedSpId, setExpandedSpId] = useState(null);
+  const [spSaving, setSpSaving] = useState(false);
+  const [addingPosForId, setAddingPosForId] = useState(null);
+  const [newSp, setNewSp] = useState({
+    stil_id: '', name: '',
+    beschreibung: '',
+    hinweis: 'Nur bei uns gekaufte Ausrüstung ist im Training zugelassen',
+    rabatt_prozent: 0,
+    aktiv: true
+  });
+  const [newPos, setNewPos] = useState({ bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
+  const [showNewSp, setShowNewSp] = useState(false);
+
   useEffect(() => {
     loadTarifeUndRabatte();
     loadDojoSettings();
+    loadStarterpakete();
   }, [activeDojo]); // Neu laden wenn sich das aktive Dojo ändert
 
   const loadTarifeUndRabatte = async () => {
@@ -199,6 +218,97 @@ const TarifePreise = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ── Starterpakete: Laden + CRUD ──────────────────────────────────
+  const loadStarterpakete = async () => {
+    const dojoId = getDojoId();
+    const p = dojoId ? `?dojo_id=${dojoId}` : '';
+    try {
+      const [pkRes, stRes] = await Promise.all([
+        axios.get(`/starterpakete${p}`).catch(() => null),
+        axios.get(`/stile?aktiv=true${dojoId ? `&dojo_id=${dojoId}` : ''}`).catch(() => null),
+      ]);
+      if (pkRes?.data?.success) setStarterpakete(pkRes.data.pakete || []);
+      if (stRes?.data) {
+        const arr = Array.isArray(stRes.data) ? stRes.data : (stRes.data.data || []);
+        setSpStile(arr.filter(s => s.aktiv !== 0 && s.aktiv !== false));
+      }
+    } catch (err) {
+      console.error('Starterpakete laden Fehler:', err);
+    }
+  };
+
+  const handleCreateSp = async () => {
+    if (!newSp.stil_id || !newSp.name) return;
+    setSpSaving(true);
+    const dojoId = getDojoId();
+    const p = dojoId ? `?dojo_id=${dojoId}` : '';
+    try {
+      const r = await axios.post(`/starterpakete${p}`, { ...newSp, stil_id: parseInt(newSp.stil_id) });
+      if (r.data.success) {
+        setStarterpakete(prev => [...prev, r.data.paket]);
+        setShowNewSp(false);
+        setNewSp({ stil_id: '', name: '', beschreibung: '', hinweis: 'Nur bei uns gekaufte Ausrüstung ist im Training zugelassen', rabatt_prozent: 0, aktiv: true });
+      }
+    } catch (err) { console.error(err); }
+    finally { setSpSaving(false); }
+  };
+
+  const handleUpdateSp = async () => {
+    if (!editingSp || !editingSp.name) return;
+    setSpSaving(true);
+    const dojoId = getDojoId();
+    const p = dojoId ? `?dojo_id=${dojoId}` : '';
+    try {
+      const r = await axios.put(`/starterpakete/${editingSp.paket_id}${p}`, editingSp);
+      if (r.data.success) {
+        setStarterpakete(prev => prev.map(x => x.paket_id === editingSp.paket_id ? r.data.paket : x));
+        setEditingSp(null);
+      }
+    } catch (err) { console.error(err); }
+    finally { setSpSaving(false); }
+  };
+
+  const handleDeleteSp = async (paketId) => {
+    if (!window.confirm('Starterpaket wirklich löschen?')) return;
+    const dojoId = getDojoId();
+    const p = dojoId ? `?dojo_id=${dojoId}` : '';
+    try {
+      await axios.delete(`/starterpakete/${paketId}${p}`);
+      setStarterpakete(prev => prev.filter(x => x.paket_id !== paketId));
+      if (expandedSpId === paketId) setExpandedSpId(null);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleAddPos = async (paketId) => {
+    if (!newPos.bezeichnung || newPos.einzelpreis_cent === '') return;
+    setSpSaving(true);
+    const dojoId = getDojoId();
+    const p = dojoId ? `?dojo_id=${dojoId}` : '';
+    try {
+      const r = await axios.post(`/starterpakete/${paketId}/positionen${p}`, {
+        ...newPos,
+        einzelpreis_cent: Math.round(parseFloat(String(newPos.einzelpreis_cent).replace(',', '.')) * 100),
+      });
+      if (r.data.success) {
+        setStarterpakete(prev => prev.map(x => x.paket_id === paketId ? r.data.paket : x));
+        setNewPos({ bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
+        setAddingPosForId(null);
+      }
+    } catch (err) { console.error(err); }
+    finally { setSpSaving(false); }
+  };
+
+  const handleDeletePos = async (paketId, posId) => {
+    const dojoId = getDojoId();
+    const p = dojoId ? `?dojo_id=${dojoId}` : '';
+    try {
+      const r = await axios.delete(`/starterpakete/${paketId}/positionen/${posId}${p}`);
+      if (r.data.success) {
+        setStarterpakete(prev => prev.map(x => x.paket_id === paketId ? r.data.paket : x));
+      }
+    } catch (err) { console.error(err); }
   };
 
   const loadDojoSettings = async () => {
@@ -1506,6 +1616,222 @@ const TarifePreise = () => {
                   Speichern
                 </button>
             </div>{/* ds-modal-footer */}
+          </div>
+        </div>
+      )}
+
+      {/* ── Starterpakete ──────────────────────────────────────── */}
+      <div className="section">
+        <div className="section-header collapsible" onClick={() => setSpCollapsed(!spCollapsed)} style={{ cursor: 'pointer' }}>
+          <h2><span style={{ marginRight: '0.5rem' }}>🎁</span>Starterpakete</h2>
+          <div className="header-actions">
+            <button className="btn btn-sm btn-primary" onClick={e => { e.stopPropagation(); setShowNewSp(true); setSpCollapsed(false); }}>
+              <Plus size={14} /> Neues Paket
+            </button>
+          </div>
+        </div>
+
+        {!spCollapsed && (
+          <div style={{ padding: '1.25rem' }}>
+            {/* Hinweis */}
+            <div style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 10, padding: '0.875rem 1rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+              <strong style={{ color: '#d4af37' }}>ℹ️ Starterpakete</strong> — beim ersten Login wählt das Neumitglied seinen Kampfkunststil und sieht das zugeordnete Starterpaket. Das Paket wird per Lastschrift abgebucht.
+            </div>
+
+            {/* Neues Paket Formular */}
+            {showNewSp && (
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '1.25rem', marginBottom: '1.25rem' }}>
+                <h4 style={{ margin: '0 0 1rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>Neues Starterpaket</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div>
+                    <label className="u-form-label">Stil *</label>
+                    <select value={newSp.stil_id} onChange={e => setNewSp({ ...newSp, stil_id: e.target.value })} className="u-input-sm">
+                      <option value="">— Stil wählen —</option>
+                      {spStile.map(s => <option key={s.stil_id} value={s.stil_id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="u-form-label">Paketname *</label>
+                    <input className="u-input-sm" value={newSp.name} onChange={e => setNewSp({ ...newSp, name: e.target.value })} placeholder="z. B. Karate Starterpaket" />
+                  </div>
+                  <div style={{ gridColumn: '1/-1' }}>
+                    <label className="u-form-label">Beschreibung</label>
+                    <input className="u-input-sm" value={newSp.beschreibung} onChange={e => setNewSp({ ...newSp, beschreibung: e.target.value })} placeholder="Kurze Beschreibung" />
+                  </div>
+                  <div style={{ gridColumn: '1/-1' }}>
+                    <label className="u-form-label">Pflichthinweis für Mitglied</label>
+                    <input className="u-input-sm" value={newSp.hinweis} onChange={e => setNewSp({ ...newSp, hinweis: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="u-form-label">Rabatt (%)</label>
+                    <input className="u-input-sm" type="number" min="0" max="100" step="0.5" value={newSp.rabatt_prozent} onChange={e => setNewSp({ ...newSp, rabatt_prozent: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={newSp.aktiv} onChange={e => setNewSp({ ...newSp, aktiv: e.target.checked })} />
+                      Paket aktiv
+                    </label>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setShowNewSp(false)}>Abbrechen</button>
+                  <button className="btn btn-primary btn-sm" onClick={handleCreateSp} disabled={spSaving || !newSp.stil_id || !newSp.name}>
+                    {spSaving ? 'Speichern…' : 'Paket anlegen'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Paket-Liste */}
+            {starterpakete.length === 0 ? (
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '1rem 0' }}>Noch keine Starterpakete angelegt.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                {starterpakete.map(pk => (
+                  <div key={pk.paket_id} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${pk.aktiv ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 12, overflow: 'hidden' }}>
+                    {/* Paket Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1rem', cursor: 'pointer' }} onClick={() => setExpandedSpId(expandedSpId === pk.paket_id ? null : pk.paket_id)}>
+                      <span style={{ fontSize: '1.2rem' }}>🎁</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: pk.aktiv ? '#fff' : 'rgba(255,255,255,0.4)' }}>{pk.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          {pk.stil_name} · {pk.positionen?.length || 0} Positionen · {((pk.endpreis_cent || 0) / 100).toFixed(2)} €
+                          {pk.rabatt_prozent > 0 && <span style={{ color: '#4ade80', marginLeft: '0.4rem' }}>−{pk.rabatt_prozent}%</span>}
+                          {!pk.aktiv && <span style={{ color: 'rgba(255,255,255,0.3)', marginLeft: '0.4rem' }}>inaktiv</span>}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button className="btn btn-sm btn-secondary" onClick={e => { e.stopPropagation(); setEditingSp({ ...pk }); }} title="Bearbeiten"><Edit size={13} /></button>
+                        <button className="btn btn-sm btn-danger" onClick={e => { e.stopPropagation(); handleDeleteSp(pk.paket_id); }} title="Löschen"><Trash2 size={13} /></button>
+                      </div>
+                    </div>
+
+                    {/* Positionen (expanded) */}
+                    {expandedSpId === pk.paket_id && (
+                      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '0.875rem 1rem' }}>
+                        {pk.hinweis && (
+                          <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: '0.875rem', fontSize: '0.82rem', color: '#fca5a5' }}>
+                            ⚠️ {pk.hinweis}
+                          </div>
+                        )}
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '0.875rem' }}>
+                          <thead>
+                            <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                              <th style={{ textAlign: 'left', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Bezeichnung</th>
+                              <th style={{ textAlign: 'center', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Menge</th>
+                              <th style={{ textAlign: 'right', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Preis</th>
+                              <th style={{ textAlign: 'right', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Gesamt</th>
+                              <th style={{ width: 30 }}></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(pk.positionen || []).map(pos => (
+                              <tr key={pos.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                <td style={{ padding: '0.4rem 0.5rem', color: pos.pflicht ? '#fff' : 'rgba(255,255,255,0.55)' }}>
+                                  {pos.bezeichnung}{!pos.pflicht && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.35rem' }}>optional</span>}
+                                </td>
+                                <td style={{ textAlign: 'center', padding: '0.4rem 0.5rem', color: 'var(--text-muted)' }}>{pos.menge}</td>
+                                <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem' }}>{(pos.einzelpreis_cent / 100).toFixed(2)} €</td>
+                                <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem', fontWeight: 600 }}>{(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €</td>
+                                <td style={{ textAlign: 'right', padding: '0.4rem 0.25rem' }}>
+                                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', padding: '0.2rem' }} onClick={() => handleDeletePos(pk.paket_id, pos.id)}><Trash2 size={12} /></button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+                              <td colSpan={3} style={{ textAlign: 'right', padding: '0.5rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                                Summe{pk.rabatt_prozent > 0 ? ` − ${pk.rabatt_prozent}% Rabatt` : ''}
+                              </td>
+                              <td style={{ textAlign: 'right', padding: '0.5rem 0.5rem', fontWeight: 700, color: '#d4af37' }}>{((pk.endpreis_cent || 0) / 100).toFixed(2)} €</td>
+                              <td></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+
+                        {/* Position hinzufügen */}
+                        {addingPosForId === pk.paket_id ? (
+                          <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '0.875rem', marginTop: '0.5rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <input className="u-input-sm" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
+                              <input className="u-input-sm" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
+                              <input className="u-input-sm" type="number" min="0" step="0.01" placeholder="Preis € *" value={newPos.einzelpreis_cent} onChange={e => setNewPos({ ...newPos, einzelpreis_cent: e.target.value })} />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={newPos.pflicht} onChange={e => setNewPos({ ...newPos, pflicht: e.target.checked })} /> Pflicht
+                              </label>
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true }); }}>Abbrechen</button>
+                                <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(pk.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>
+                                  {spSaving ? '…' : 'Hinzufügen'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button className="btn btn-sm btn-secondary" onClick={() => setAddingPosForId(pk.paket_id)} style={{ marginTop: '0.25rem' }}>
+                            <Plus size={13} /> Position hinzufügen
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Starterpaket bearbeiten Modal */}
+      {editingSp && (
+        <div className="ds-modal-overlay" onClick={() => setEditingSp(null)}>
+          <div className="ds-modal ds-modal--md" onClick={e => e.stopPropagation()}>
+            <div className="ds-modal-header">
+              <div><h3 className="ds-modal-title">Starterpaket bearbeiten</h3></div>
+              <button className="ds-modal-close" onClick={() => setEditingSp(null)}><X size={16} /></button>
+            </div>
+            <div className="ds-modal-body">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label className="u-form-label">Stil *</label>
+                  <select value={editingSp.stil_id} onChange={e => setEditingSp({ ...editingSp, stil_id: parseInt(e.target.value) })} className="u-input-sm">
+                    <option value="">— Stil wählen —</option>
+                    {spStile.map(s => <option key={s.stil_id} value={s.stil_id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="u-form-label">Paketname *</label>
+                  <input className="u-input-sm" value={editingSp.name} onChange={e => setEditingSp({ ...editingSp, name: e.target.value })} />
+                </div>
+                <div style={{ gridColumn: '1/-1' }}>
+                  <label className="u-form-label">Beschreibung</label>
+                  <input className="u-input-sm" value={editingSp.beschreibung || ''} onChange={e => setEditingSp({ ...editingSp, beschreibung: e.target.value })} />
+                </div>
+                <div style={{ gridColumn: '1/-1' }}>
+                  <label className="u-form-label">Pflichthinweis</label>
+                  <input className="u-input-sm" value={editingSp.hinweis || ''} onChange={e => setEditingSp({ ...editingSp, hinweis: e.target.value })} />
+                </div>
+                <div>
+                  <label className="u-form-label">Rabatt (%)</label>
+                  <input className="u-input-sm" type="number" min="0" max="100" step="0.5" value={editingSp.rabatt_prozent || 0} onChange={e => setEditingSp({ ...editingSp, rabatt_prozent: parseFloat(e.target.value) || 0 })} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={!!editingSp.aktiv} onChange={e => setEditingSp({ ...editingSp, aktiv: e.target.checked })} />
+                    Paket aktiv
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="ds-modal-footer">
+              <button className="btn btn-secondary" onClick={() => setEditingSp(null)}>Abbrechen</button>
+              <button className="btn btn-primary" onClick={handleUpdateSp} disabled={spSaving || !editingSp.name}>
+                <Save size={14} /> {spSaving ? 'Speichern…' : 'Speichern'}
+              </button>
+            </div>
           </div>
         </div>
       )}
