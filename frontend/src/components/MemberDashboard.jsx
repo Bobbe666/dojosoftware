@@ -2355,7 +2355,7 @@ const MemberDashboard = () => {
                       stil.graduierungen?.find(g => g.graduierung_id === stilData.current_graduierung_id) :
                       stil.graduierungen?.[0];
                     return (
-                      <div key={stil.stil_id} className="md-stil-chip">
+                      <div key={stil.stil_id} className="md-stil-chip" style={{ position: 'relative', paddingRight: '1.8rem' }}>
                         <span className="md-stil-chip__name">{stil.name}</span>
                         {currentGraduation && (
                           <span className="md-graduation-badge">{currentGraduation.name}</span>
@@ -2363,6 +2363,17 @@ const MemberDashboard = () => {
                         {stilData?.letzte_pruefung && (
                           <span className="md-stil-chip__exam">Prüfung: {new Date(stilData.letzte_pruefung).toLocaleDateString('de-DE')}</span>
                         )}
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm(`Stil "${stil.name}" wirklich entfernen?`)) return;
+                            try {
+                              const res = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/stil/${stil.stil_id}/remove/${memberData.mitglied_id}`, { method: 'DELETE' });
+                              if (res.ok) loadMemberStyles(memberData.mitglied_id);
+                            } catch {}
+                          }}
+                          title="Stil entfernen"
+                          style={{ position: 'absolute', top: '50%', right: '0.4rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: '0.9rem', lineHeight: 1, padding: '2px' }}
+                        >✕</button>
                       </div>
                     );
                   })}
