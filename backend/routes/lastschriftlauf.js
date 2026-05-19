@@ -484,6 +484,7 @@ router.get("/not-in-run", async (req, res) => {
                 WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
             ) sm2 ON m2.mitglied_id = sm2.mitglied_id
             WHERE (m2.zahlungsmethode = 'SEPA-Lastschrift' OR m2.zahlungsmethode = 'Lastschrift')
+              AND m2.aktiv = 1
               ${dojoId ? 'AND m2.dojo_id = ?' : ''}
         `;
         const inRunParams = dojoId ? [monatEnde, dojoId] : [monatEnde];
@@ -517,6 +518,7 @@ router.get("/not-in-run", async (req, res) => {
             LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id
                 AND sm.status = 'aktiv' AND sm.mandatsreferenz IS NOT NULL
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND m.aktiv = 1
               AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
               ${dojoId ? 'AND m.dojo_id = ?' : ''}
               ${notInRunWhere}
@@ -554,6 +556,7 @@ router.get("/not-in-run", async (req, res) => {
             JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv' AND sm.mandatsreferenz IS NOT NULL
             LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status IN ('aktiv','gekuendigt','ruhepause')
             WHERE NOT (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND m.aktiv = 1
               AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
               ${dojoId ? 'AND m.dojo_id = ?' : ''}
               ${wrongZmWhere}
