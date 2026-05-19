@@ -220,7 +220,7 @@ router.post('/stripe/sync-lastschriften', authenticateToken, async (req, res) =>
             dojoId = firstBatch?.dojo_id || null;
         }
         if (!dojoId) {
-            return res.json({ success: true, message: 'Keine offenen Transaktionen gefunden', synced: 0 });
+            return res.json({ success: true, message: 'Keine offenen Transaktionen gefunden', synced: 0, succeeded: 0, failed: 0, still_processing: 0 });
         }
 
         // Stripe-Key direkt aus DB laden (ohne PaymentProviderFactory-Fallback auf ManualSepa)
@@ -248,7 +248,7 @@ router.post('/stripe/sync-lastschriften', authenticateToken, async (req, res) =>
         );
 
         if (transaktionen.length === 0) {
-            return res.json({ success: true, message: 'Keine offenen Transaktionen gefunden', synced: 0 });
+            return res.json({ success: true, message: 'Keine offenen Transaktionen gefunden', synced: 0, succeeded: 0, failed: 0, still_processing: 0 });
         }
 
         // Provider nur für markLastschrift-Methoden (kein stripe-Client nötig)
