@@ -49,6 +49,7 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 import EventNotificationPopup from './EventNotificationPopup.jsx';
 import PushNotificationPopup from './PushNotificationPopup.jsx';
 import ProfilWizard from './ProfilWizard.jsx';
+import StilAuswahlModal from './StilAuswahlModal.jsx';
 import AbwesenheitWidget from './AbwesenheitWidget.jsx';
 import NextTrainingsWidget from './NextTrainingsWidget.jsx';
 
@@ -203,6 +204,9 @@ const MemberDashboard = () => {
 
   // ProfilWizard: beim ersten Login anzeigen
   const [showProfilWizard, setShowProfilWizard] = useState(false);
+
+  // StilAuswahl: beim ersten Login anzeigen wenn noch kein Stil hinterlegt
+  const [showStilAuswahl, setShowStilAuswahl] = useState(false);
 
   // Meine Gutscheine
   const [meineGutscheine, setMeineGutscheine] = useState([]);
@@ -1121,7 +1125,13 @@ const MemberDashboard = () => {
         const result = await response.json();
         if (result.success && result.stile) {
           setMemberStile(result.stile);
-          
+
+          // Stil-Auswahl beim ersten Login anzeigen wenn noch kein Stil hinterlegt
+          const stilKey = `stil_ausgewaehlt_${memberId}`;
+          if (result.stile.length === 0 && !localStorage.getItem(stilKey)) {
+            setShowStilAuswahl(true);
+          }
+
           // Lade stilspezifische Daten für jeden Stil
           result.stile.forEach(async (stil) => {
             await loadStyleSpecificData(memberId, stil.stil_id);
@@ -1262,6 +1272,17 @@ const MemberDashboard = () => {
           mitgliedId={memberData.mitglied_id}
           vorname={memberData.vorname}
           onClose={() => setShowProfilWizard(false)}
+        />
+      )}
+
+      {/* StilAuswahl: beim ersten Login anzeigen wenn noch kein Stil hinterlegt (nur Neumitglieder) */}
+      {showStilAuswahl && memberData && (
+        <StilAuswahlModal
+          mitgliedId={memberData.mitglied_id}
+          vorname={memberData.vorname}
+          stile={stile}
+          onClose={() => setShowStilAuswahl(false)}
+          onSaved={() => loadMemberStyles(memberData.mitglied_id)}
         />
       )}
 

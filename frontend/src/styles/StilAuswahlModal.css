@@ -1,0 +1,217 @@
+/* StilAuswahlModal.css */
+.sa-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.sa-modal {
+  background: rgba(26, 26, 46, 0.99);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.sa-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 1rem 0;
+}
+
+.sa-skip {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.sa-skip:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sa-body {
+  padding: 0 1.75rem 1.75rem;
+}
+
+.sa-icon {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.sa-title {
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem;
+}
+
+.sa-subtitle {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0 0 1.5rem;
+}
+
+.sa-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  border-radius: 8px;
+  padding: 0.6rem 0.875rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.sa-stile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.sa-stil-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.1rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.sa-stil-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.sa-stil-card--selected {
+  background: color-mix(in srgb, var(--sa-stil-farbe, #d4af37) 18%, transparent);
+  border-color: var(--sa-stil-farbe, #d4af37);
+  color: #fff;
+}
+
+.sa-stil-card--selected:hover {
+  background: color-mix(in srgb, var(--sa-stil-farbe, #d4af37) 25%, transparent);
+}
+
+.sa-stil-emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.sa-stil-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.sa-stil-check {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--sa-stil-farbe, #d4af37);
+  font-weight: 700;
+}
+
+.sa-footer {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.sa-btn-primary {
+  background: #d4af37;
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 0.65rem 1.4rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  font-family: inherit;
+}
+
+.sa-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.sa-btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sa-btn-skip {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0.65rem 1.1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.sa-btn-skip:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+@media (max-width: 480px) {
+  .sa-modal {
+    border-radius: 20px 20px 0 0;
+    max-height: 95vh;
+  }
+
+  .sa-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .sa-stile-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sa-footer {
+    flex-direction: column-reverse;
+  }
+
+  .sa-btn-primary,
+  .sa-btn-skip {
+    width: 100%;
+    text-align: center;
+  }
+}
