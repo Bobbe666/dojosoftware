@@ -926,8 +926,8 @@ const TarifePreise = () => {
                                 {isKat ? <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>je Größe</span> : `${(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €`}
                               </td>
                               <td style={{ textAlign: 'right', padding: '0.4rem 0.25rem', whiteSpace: 'nowrap' }}>
-                                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', padding: '0.2rem', marginRight: '0.1rem' }} title="Bearbeiten" onClick={() => editingPosId === pos.id ? setEditingPosId(null) : openEditPos(pos)}><Edit size={12} /></button>
-                                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', padding: '0.2rem' }} title="Löschen" onClick={() => handleDeletePos(pk.paket_id, pos.id)}><Trash2 size={12} /></button>
+                                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: editingPosId === pos.id ? '#d4af37' : 'rgba(255,255,255,0.6)', padding: '0.3rem', marginRight: '0.2rem' }} title="Bearbeiten" onClick={() => editingPosId === pos.id ? setEditingPosId(null) : openEditPos(pos)}><Edit size={15} /></button>
+                                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.8)', padding: '0.3rem' }} title="Löschen" onClick={() => handleDeletePos(pk.paket_id, pos.id)}><Trash2 size={15} /></button>
                               </td>
                             </tr>
                             {editingPosId === pos.id && (
@@ -1581,8 +1581,8 @@ const TarifePreise = () => {
                             {isKat2 ? <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>je Größe</span> : `${(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €`}
                           </td>
                           <td style={{ textAlign: 'right', padding: '0.35rem 0.2rem', whiteSpace: 'nowrap' }}>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', padding: '0.2rem', marginRight: '0.1rem' }} title="Bearbeiten" onClick={() => editingPosId === pos.id ? setEditingPosId(null) : openEditPos(pos)}><Edit size={12} /></button>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', padding: '0.2rem' }} onClick={() => handleDeletePos(editingSp.paket_id, pos.id)}><Trash2 size={12} /></button>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: editingPosId === pos.id ? '#d4af37' : 'rgba(255,255,255,0.6)', padding: '0.3rem', marginRight: '0.2rem' }} title="Bearbeiten" onClick={() => editingPosId === pos.id ? setEditingPosId(null) : openEditPos(pos)}><Edit size={15} /></button>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.8)', padding: '0.3rem' }} onClick={() => handleDeletePos(editingSp.paket_id, pos.id)}><Trash2 size={15} /></button>
                           </td>
                         </tr>
                         {editingPosId === pos.id && (
