@@ -2450,12 +2450,17 @@ router.delete('/stil/:stil_id/remove/:mitglied_id', async (req, res) => {
       if (m.length === 0) return res.status(403).json({ error: 'Nicht berechtigt' });
     }
     await pool.query('DELETE FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?', [mitglied_id, stil_id]);
+    // mitglied_stile speichert ENUM-Werte die vom stile.name abweichen können (z.B. 'Karate' statt 'Enso Karate')
+    const stilEnumMapping = { 2: 'ShieldX', 3: 'BJJ', 4: 'Kickboxen', 5: 'Karate', 7: 'Taekwon-Do', 8: 'BJJ', 20: 'MMA', 21: 'Grappling', 22: 'Open Mat' };
     const [stilRow] = await pool.query('SELECT name FROM stile WHERE stil_id = ?', [stil_id]);
+    const deletedNames = new Set();
     if (stilRow.length > 0) {
-      await pool.query(
-        'DELETE FROM mitglied_stile WHERE mitglied_id = ? AND stil = ?',
-        [mitglied_id, stilRow[0].name]
-      );
+      await pool.query('DELETE FROM mitglied_stile WHERE mitglied_id = ? AND stil = ?', [mitglied_id, stilRow[0].name]);
+      deletedNames.add(stilRow[0].name);
+    }
+    const enumVal = stilEnumMapping[stil_id];
+    if (enumVal && !deletedNames.has(enumVal)) {
+      await pool.query('DELETE FROM mitglied_stile WHERE mitglied_id = ? AND stil = ?', [mitglied_id, enumVal]);
     }
     res.json({ success: true });
   } catch (err) {
