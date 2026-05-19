@@ -606,6 +606,386 @@
   .tarife-container .stat-card { padding: 1rem 1.1rem; }
 }
 
+/* ─── Tab Navigation ──────────────────────────────── */
+.tarife-tab-nav {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  background: var(--surface-1);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--comp-radius-xl);
+  padding: 0.3rem;
+}
+
+.tarife-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: calc(var(--comp-radius-xl) - 4px);
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.tarife-tab-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-2);
+}
+
+.tarife-tab-btn.active {
+  background: rgba(255,215,0,0.1);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.tarife-tab-count {
+  background: rgba(255,255,255,0.1);
+  color: var(--text-3);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  line-height: 1.4;
+}
+
+.tarife-tab-btn.active .tarife-tab-count {
+  background: rgba(255,215,0,0.15);
+  color: var(--primary);
+}
+
+/* ─── Stats Strip ─────────────────────────────────── */
+.tc-stats-strip {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--surface-1);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--comp-radius-xl);
+  padding: 0.75rem 1.5rem;
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+}
+
+.tc-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 1.5rem;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 80px;
+}
+
+.tc-stat-div {
+  width: 1px;
+  height: 2rem;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+.tc-stat-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1;
+}
+
+.tc-stat-val--gold {
+  background: var(--gradient-gold, linear-gradient(135deg,#ffd700,#ffaa00));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.tc-stat-lbl {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* ─── Toolbar ─────────────────────────────────────── */
+.tarife-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.tarife-filter-pills {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.tarife-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-3);
+  background: var(--surface-1);
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.tarife-filter-pill:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--text-2);
+}
+
+.tarife-filter-pill.active {
+  background: rgba(255,215,0,0.1);
+  color: var(--primary);
+  border-color: rgba(255,215,0,0.3);
+  font-weight: 600;
+}
+
+.tarife-filter-pill .pill-count {
+  background: rgba(255,255,255,0.1);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 0.05rem 0.4rem;
+  font-weight: 600;
+}
+
+.tarife-filter-pill.active .pill-count {
+  background: rgba(255,215,0,0.15);
+  color: var(--primary);
+}
+
+.tarife-toolbar-right {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ─── Tarife Grid (kompakt) ───────────────────────── */
+.tc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+/* ─── Tarif Card (neu, kompakt) ───────────────────── */
+.tc-card {
+  background: var(--surface-2);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--comp-radius-xl);
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.tc-card:hover {
+  background: var(--surface-3);
+  border-color: rgba(255,255,255,0.13);
+}
+
+.tc-card--archived {
+  opacity: 0.65;
+  border-color: rgba(107,114,128,0.35);
+}
+
+.tc-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.tc-card-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.tc-price-val {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.tc-price-period {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-4);
+}
+
+.tc-card-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.tc-card-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.35;
+}
+
+.tc-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.tc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.73rem;
+  font-weight: 500;
+  color: var(--text-3);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--comp-radius-pill);
+  padding: 0.18rem 0.55rem;
+  white-space: nowrap;
+}
+
+.tc-chip--status.active {
+  background: rgba(74,222,128,0.08);
+  color: #4ade80;
+  border-color: rgba(74,222,128,0.2);
+}
+
+.tc-chip--status.inactive {
+  background: rgba(248,113,113,0.08);
+  color: #f87171;
+  border-color: rgba(248,113,113,0.2);
+}
+
+.tc-chip--status.archived {
+  background: rgba(107,114,128,0.08);
+  color: #9ca3af;
+  border-color: rgba(107,114,128,0.2);
+}
+
+.tc-card-archive-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.1rem;
+}
+
+.tc-archive-btn {
+  flex: 1;
+  padding: 0.3rem 0.6rem;
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.25);
+  border-radius: var(--comp-radius-md);
+  color: #93c5fd;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: background 0.15s;
+  text-align: center;
+}
+
+.tc-archive-btn:hover {
+  background: rgba(59,130,246,0.15);
+}
+
+.tc-archive-btn--green {
+  background: rgba(34,197,94,0.08);
+  border-color: rgba(34,197,94,0.25);
+  color: #86efac;
+}
+
+.tc-archive-btn--green:hover {
+  background: rgba(34,197,94,0.15);
+}
+
+.tc-card-nachfolger {
+  font-size: 0.76rem;
+  color: #4ade80;
+  padding: 0.25rem 0.55rem;
+  background: rgba(74,222,128,0.06);
+  border-radius: var(--comp-radius-md);
+  border: 1px solid rgba(74,222,128,0.15);
+}
+
+/* ─── Empty state ─────────────────────────────────── */
+.tc-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  color: var(--text-4);
+  text-align: center;
+}
+
+.tc-empty p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ─── Responsive ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .tarife-tab-nav { overflow-x: auto; flex-wrap: nowrap; }
+  .tc-stats-strip { padding: 0.65rem 1rem; gap: 0; }
+  .tc-stat { padding: 0 0.85rem; min-width: 60px; }
+  .tc-stat-val { font-size: 1.2rem; }
+  .tarife-toolbar { flex-direction: column; align-items: stretch; }
+  .tarife-toolbar-right { justify-content: flex-end; }
+  .tc-grid { grid-template-columns: 1fr; }
+}
+
+/* ─── Washi Theme ─────────────────────────────────── */
+[data-theme="tda-vib"] .tarife-tab-nav {
+  border-color: rgba(26,26,26,0.1);
+  background: rgba(26,26,26,0.02);
+}
+[data-theme="tda-vib"] .tarife-tab-btn.active {
+  background: rgba(201,162,39,0.08);
+}
+[data-theme="tda-vib"] .tarife-filter-pill {
+  border-color: rgba(26,26,26,0.1);
+  background: rgba(26,26,26,0.02);
+}
+[data-theme="tda-vib"] .tarife-filter-pill.active {
+  background: rgba(201,162,39,0.08);
+  border-color: rgba(201,162,39,0.3);
+}
+[data-theme="tda-vib"] .tc-stats-strip {
+  border-color: rgba(26,26,26,0.1);
+  background: rgba(26,26,26,0.02);
+}
+[data-theme="tda-vib"] .tc-stat-div { background: rgba(26,26,26,0.08); }
+[data-theme="tda-vib"] .tc-card {
+  border-color: rgba(26,26,26,0.1);
+  background: rgba(26,26,26,0.03);
+}
+[data-theme="tda-vib"] .tc-card:hover {
+  background: rgba(26,26,26,0.06);
+  border-color: rgba(26,26,26,0.15);
+}
+[data-theme="tda-vib"] .tc-chip {
+  background: rgba(26,26,26,0.04);
+  border-color: rgba(26,26,26,0.08);
+}
+
 /* === Added inline-style extractions — prefix: tp- === */
 
 /* Section header for archived tarife */

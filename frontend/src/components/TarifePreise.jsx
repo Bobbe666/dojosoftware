@@ -23,23 +23,17 @@ import {
 } from "lucide-react";
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
-import "../styles/themes.css";       // Centralized theme system
-import "../styles/components.css";   // Universal component styles
+import "../styles/themes.css";
+import "../styles/components.css";
 import "../styles/TarifePreise.css";
 
-// Übersetze billing_cycle ins Deutsche
 function translateBillingCycle(cycle) {
   if (!cycle) return '';
   const cycleMap = {
-    'monthly': 'Monatlich',
-    'monatlich': 'Monatlich',
-    'quarterly': 'Vierteljährlich',
-    'vierteljaehrlich': 'Vierteljährlich',
-    'semi-annually': 'Halbjährlich',
-    'halbjaehrlich': 'Halbjährlich',
-    'annually': 'Jährlich',
-    'jaehrlich': 'Jährlich',
-    'yearly': 'Jährlich'
+    'monthly': 'Monatlich', 'monatlich': 'Monatlich',
+    'quarterly': 'Vierteljährlich', 'vierteljaehrlich': 'Vierteljährlich',
+    'semi-annually': 'Halbjährlich', 'halbjaehrlich': 'Halbjährlich',
+    'annually': 'Jährlich', 'jaehrlich': 'Jährlich', 'yearly': 'Jährlich'
   };
   return cycleMap[cycle.toLowerCase()] || cycle;
 }
@@ -55,11 +49,6 @@ const TarifePreise = () => {
   const [editingRabatt, setEditingRabatt] = useState(null);
   const [showNewTarif, setShowNewTarif] = useState(false);
   const [showNewRabatt, setShowNewRabatt] = useState(false);
-  const [kinderCollapsed, setKinderCollapsed] = useState(false);
-  const [studentenCollapsed, setStudentenCollapsed] = useState(false);
-  const [erwachseneCollapsed, setErwachseneCollapsed] = useState(false);
-  const [individuellCollapsed, setIndividuellCollapsed] = useState(false);
-  const [alteTarifeCollapsed, setAlteTarifeCollapsed] = useState(true);
   const [showNewIndividuell, setShowNewIndividuell] = useState(false);
   const [dojoSettings, setDojoSettings] = useState({
     vertragsmodell: 'gesetzlich',
@@ -75,102 +64,71 @@ const TarifePreise = () => {
     kuendigung_schriftlich: false
   });
   const [isEditingSettings, setIsEditingSettings] = useState(false);
-  const [settingsCollapsed, setSettingsCollapsed] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
 
-  // Ermittle die dojo_id aus dem aktivem Dojo
   const getDojoId = () => {
-    if (!activeDojo || activeDojo === 'super-admin') {
-      return null; // Super-Admin sieht alle zentral verwalteten Dojos
-    }
+    if (!activeDojo || activeDojo === 'super-admin') return null;
     return activeDojo.id;
   };
 
   const [newIndividuell, setNewIndividuell] = useState({
-    name: "",
-    duration_months: "",
-    mindestlaufzeit_monate: "",
-    kuendigungsfrist_monate: "",
-    price_cents: "",
-    aufnahmegebuehr_cents: 4999 // Standard: 49,99 EUR
+    name: "", duration_months: "", mindestlaufzeit_monate: "",
+    kuendigungsfrist_monate: "", price_cents: "", aufnahmegebuehr_cents: 4999
   });
 
   const [newTarif, setNewTarif] = useState({
-    name: "",
-    price_cents: "",
-    aufnahmegebuehr_cents: 4999, // Standard: 49,99 EUR
-    currency: "EUR",
-    duration_months: "",
-    mindestlaufzeit_monate: "",
-    kuendigungsfrist_monate: 3,
-    billing_cycle: "monthly",
-    payment_method: "bank_transfer",
-    active: true
+    name: "", price_cents: "", aufnahmegebuehr_cents: 4999,
+    currency: "EUR", duration_months: "", mindestlaufzeit_monate: "",
+    kuendigungsfrist_monate: 3, billing_cycle: "monthly",
+    payment_method: "bank_transfer", active: true
   });
 
   const [newRabatt, setNewRabatt] = useState({
-    name: "",
-    beschreibung: "",
-    rabatt_prozent: "",
-    gueltig_von: "",
-    gueltig_bis: "",
-    max_nutzungen: "",
-    aktiv: true
+    name: "", beschreibung: "", rabatt_prozent: "",
+    gueltig_von: "", gueltig_bis: "", max_nutzungen: "", aktiv: true
   });
 
-  // ── Starterpakete State ────────────────────────────────────────────
+  // ── Starterpakete State ──────────────────────────────────────────
   const [starterpakete, setStarterpakete] = useState([]);
   const [spStile, setSpStile] = useState([]);
-  const [spCollapsed, setSpCollapsed] = useState(false);
   const [editingSp, setEditingSp] = useState(null);
   const [expandedSpId, setExpandedSpId] = useState(null);
   const [spSaving, setSpSaving] = useState(false);
   const [addingPosForId, setAddingPosForId] = useState(null);
   const [newSp, setNewSp] = useState({
-    stil_id: '', name: '',
-    beschreibung: '',
+    stil_id: '', name: '', beschreibung: '',
     hinweis: 'Nur bei uns gekaufte Ausrüstung ist im Training zugelassen',
-    rabatt_prozent: 0,
-    aktiv: true
+    rabatt_prozent: 0, aktiv: true
   });
   const [newPos, setNewPos] = useState({ bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
   const [showNewSp, setShowNewSp] = useState(false);
+  const [activeTab, setActiveTab] = useState('tarife');
+  const [tarifeFilter, setTarifeFilter] = useState('alle');
 
   useEffect(() => {
     loadTarifeUndRabatte();
     loadDojoSettings();
     loadStarterpakete();
-  }, [activeDojo]); // Neu laden wenn sich das aktive Dojo ändert
+  }, [activeDojo]);
 
   const loadTarifeUndRabatte = async () => {
     try {
       setLoading(true);
-
-      // Dojo-ID für API-Calls
       const dojoId = getDojoId();
       const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
-
-      console.log('📊 TarifePreise: Lade Tarife für Dojo:', dojoId, 'activeDojo:', activeDojo);
-
-      // Alle benötigten APIs laden
       const [tarifeResponse, rabatteResponse, zahlungszyklenResponse, laufzeitenResponse] = await Promise.all([
         axios.get(`/tarife${dojoParam}`),
         axios.get(`/tarife/rabatte${dojoParam}`),
         axios.get(`/zahlungszyklen${dojoParam}`).catch(() => ({ data: { data: [] } })),
         axios.get(`/laufzeiten${dojoParam}`).catch(() => ({ data: { data: [] } }))
       ]);
-
       const tarifeData = tarifeResponse.data;
       const rabatteData = rabatteResponse.data;
-      const zahlungszyklenData = zahlungszyklenResponse.data;
-      const laufzeitenData = laufzeitenResponse.data;
-
       if (tarifeData.success && rabatteData.success) {
-        // Mapping für neues API Format (price_cents, duration_months, etc.)
         const mappedTarife = tarifeData.data.map(tarif => ({
           id: tarif.id,
           name: tarif.name,
-          price_euros: (tarif.price_cents / 100).toFixed(2), // Cents to Euros
+          price_euros: (tarif.price_cents / 100).toFixed(2),
           price_cents: tarif.price_cents,
           aufnahmegebuehr_euros: ((tarif.aufnahmegebuehr_cents || 4999) / 100).toFixed(2),
           aufnahmegebuehr_cents: tarif.aufnahmegebuehr_cents || 4999,
@@ -180,7 +138,7 @@ const TarifePreise = () => {
           payment_method: tarif.payment_method,
           active: tarif.active === 1,
           ist_archiviert: tarif.ist_archiviert === 1 || tarif.ist_archiviert === true,
-          // Helper für Kategorisierung - erweiterte Logik
+          nachfolger_tarif_id: tarif.nachfolger_tarif_id,
           isChildRate: (tarif.name.toLowerCase().includes('kinder') ||
                        tarif.name.toLowerCase().includes('kids') ||
                        tarif.name.toLowerCase().includes('jugendliche')) &&
@@ -192,26 +150,16 @@ const TarifePreise = () => {
           isAdultRate: tarif.name.toLowerCase().includes('erwachsene') ||
                       tarif.name.toLowerCase().includes('18+')
         }));
-
         const mappedRabatte = rabatteData.data.map(rabatt => ({
-          id: rabatt.rabatt_id,
-          name: rabatt.name,
-          beschreibung: rabatt.beschreibung,
-          rabatt_prozent: parseFloat(rabatt.rabatt_prozent),
-          gueltig_von: rabatt.gueltig_von,
-          gueltig_bis: rabatt.gueltig_bis,
-          max_nutzungen: rabatt.max_nutzungen,
-          aktiv: rabatt.aktiv === 1,
-          genutzt: rabatt.genutzt || 0
+          id: rabatt.rabatt_id, name: rabatt.name, beschreibung: rabatt.beschreibung,
+          rabatt_prozent: parseFloat(rabatt.rabatt_prozent), gueltig_von: rabatt.gueltig_von,
+          gueltig_bis: rabatt.gueltig_bis, max_nutzungen: rabatt.max_nutzungen,
+          aktiv: rabatt.aktiv === 1, genutzt: rabatt.genutzt || 0
         }));
-
         setTarife(mappedTarife);
         setRabatte(mappedRabatte);
-        console.log('Zahlungszyklen geladen:', zahlungszyklenData.data || []);
-        setZahlungszyklen(zahlungszyklenData.data || []);
-        setLaufzeiten(laufzeitenData.data || []);
-      } else {
-        console.error('API Error:', tarifeData.error || rabatteData.error);
+        setZahlungszyklen(zahlungszyklenResponse.data.data || []);
+        setLaufzeiten(laufzeitenResponse.data.data || []);
       }
     } catch (error) {
       console.error('Fehler beim Laden der Tarife und Rabatte:', error);
@@ -346,47 +294,25 @@ const TarifePreise = () => {
     setSavingSettings(false);
   };
 
-  // Berechne Brutto-Beitrag
-  const calculateBruttoBeitrag = (beitrag, mwst) => {
-    const netto = parseFloat(beitrag) || 0;
-    const steuer = parseFloat(mwst) || 19;
-    return (netto * (1 + steuer / 100)).toFixed(2);
-  };
-
   const handleSaveTarif = async (tarifData) => {
     try {
       const dojoId = getDojoId();
       const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
-
       let response;
       if (tarifData.id) {
         response = await axios.put(`/tarife/${tarifData.id}${dojoParam}`, tarifData);
       } else {
         response = await axios.post(`/tarife${dojoParam}`, tarifData);
       }
-
-      const result = response.data;
-
-      if (result.success) {
+      if (response.data.success) {
         await loadTarifeUndRabatte();
         setShowNewTarif(false);
         setEditingTarif(null);
-        // Reset form
-        setNewTarif({
-          name: "",
-          price_cents: "",
-          aufnahmegebuehr_cents: 4999,
-          currency: "EUR",
-          duration_months: "",
-          billing_cycle: "monthly",
-          payment_method: "bank_transfer",
-          active: true
-        });
+        setNewTarif({ name: "", price_cents: "", aufnahmegebuehr_cents: 4999, currency: "EUR", duration_months: "", billing_cycle: "monthly", payment_method: "bank_transfer", active: true });
       } else {
-        alert('Fehler beim Speichern: ' + result.error);
+        alert('Fehler beim Speichern: ' + response.data.error);
       }
     } catch (error) {
-      console.error('Fehler beim Speichern des Tarifs:', error);
       alert('Fehler beim Speichern des Tarifs');
     }
   };
@@ -397,15 +323,12 @@ const TarifePreise = () => {
         const dojoId = getDojoId();
         const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
         const response = await axios.delete(`/tarife/${tarifId}${dojoParam}`);
-        const result = response.data;
-
-        if (result.success) {
+        if (response.data.success) {
           await loadTarifeUndRabatte();
         } else {
-          alert('Fehler beim Löschen: ' + result.error);
+          alert('Fehler beim Löschen: ' + response.data.error);
         }
       } catch (error) {
-        console.error('Fehler beim Löschen des Tarifs:', error);
         alert('Fehler beim Löschen des Tarifs');
       }
     }
@@ -416,22 +339,17 @@ const TarifePreise = () => {
     const confirmMessage = newStatus
       ? 'Diesen Tarif als "Alter Tarif" markieren? Er wird dann nicht mehr für neue Mitglieder verfügbar sein.'
       : 'Diesen Tarif reaktivieren? Er wird dann wieder für neue Mitglieder verfügbar sein.';
-
     if (window.confirm(confirmMessage)) {
       try {
         const dojoId = getDojoId();
         const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
-        const response = await axios.put(`/api/tarife/${tarifId}/archivieren${dojoParam}`, {
-          ist_archiviert: newStatus
-        });
-
+        const response = await axios.put(`/api/tarife/${tarifId}/archivieren${dojoParam}`, { ist_archiviert: newStatus });
         if (response.data.success) {
           await loadTarifeUndRabatte();
         } else {
           alert('Fehler beim Archivieren: ' + response.data.error);
         }
       } catch (error) {
-        console.error('Fehler beim Archivieren des Tarifs:', error);
         alert('Fehler beim Archivieren des Tarifs');
       }
     }
@@ -440,28 +358,19 @@ const TarifePreise = () => {
   const handleSetNachfolger = async (tarifId) => {
     const tarif = tarife.find(t => t.id === tarifId);
     if (!tarif) return;
-
-    // Zeige Auswahldialog mit aktiven Tarifen
     const aktiveTarife = tarife.filter(t => !t.ist_archiviert && t.id !== tarifId);
     if (aktiveTarife.length === 0) {
       alert('Keine aktiven Tarife verfügbar. Bitte erstellen Sie zuerst einen neuen Tarif.');
       return;
     }
-
     const options = aktiveTarife.map(t => `${t.id}: ${t.name} (€${t.price_euros}/Monat)`).join('\n');
     const nachfolgerId = prompt(`Nachfolger-Tarif für "${tarif.name}" festlegen:\n\n${options}\n\nBitte Tarif-ID eingeben (oder leer lassen zum Entfernen):`);
-
-    if (nachfolgerId === null) return; // Abgebrochen
-
+    if (nachfolgerId === null) return;
     const nachfolgerTarifId = nachfolgerId.trim() === '' ? null : parseInt(nachfolgerId, 10);
-
     try {
       const dojoId = getDojoId();
       const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
-      const response = await axios.put(`/api/tarife/${tarifId}/nachfolger${dojoParam}`, {
-        nachfolger_tarif_id: nachfolgerTarifId
-      });
-
+      const response = await axios.put(`/api/tarife/${tarifId}/nachfolger${dojoParam}`, { nachfolger_tarif_id: nachfolgerTarifId });
       if (response.data.success) {
         alert(nachfolgerTarifId ? 'Nachfolger-Tarif erfolgreich zugewiesen!' : 'Nachfolger-Tarif entfernt');
         await loadTarifeUndRabatte();
@@ -469,7 +378,6 @@ const TarifePreise = () => {
         alert('Fehler beim Zuweisen: ' + response.data.error);
       }
     } catch (error) {
-      console.error('Fehler beim Zuweisen des Nachfolger-Tarifs:', error);
       alert('Fehler beim Zuweisen des Nachfolger-Tarifs');
     }
   };
@@ -477,12 +385,7 @@ const TarifePreise = () => {
   const handleMigrateContracts = async (tarifId) => {
     const tarif = tarife.find(t => t.id === tarifId);
     if (!tarif) return;
-
-    // Wenn Nachfolger gesetzt ist, diesen vorschlagen
-    const nachfolger = tarif.nachfolger_tarif_id
-      ? tarife.find(t => t.id === tarif.nachfolger_tarif_id)
-      : null;
-
+    const nachfolger = tarif.nachfolger_tarif_id ? tarife.find(t => t.id === tarif.nachfolger_tarif_id) : null;
     let zielTarifId;
     if (nachfolger) {
       const useNachfolger = window.confirm(
@@ -491,27 +394,20 @@ const TarifePreise = () => {
       if (!useNachfolger) return;
       zielTarifId = nachfolger.id;
     } else {
-      // Zeige Auswahldialog mit aktiven Tarifen
       const aktiveTarife = tarife.filter(t => !t.ist_archiviert && t.id !== tarifId);
       if (aktiveTarife.length === 0) {
-        alert('Keine aktiven Tarife verfügbar. Bitte erstellen Sie zuerst einen neuen Tarif.');
+        alert('Keine aktiven Tarife verfügbar.');
         return;
       }
-
       const options = aktiveTarife.map(t => `${t.id}: ${t.name} (€${t.price_euros}/Monat)`).join('\n');
       const inputId = prompt(`ALLE aktiven Verträge von "${tarif.name}" umstellen auf:\n\n${options}\n\nBitte Ziel-Tarif-ID eingeben:`);
-
-      if (!inputId) return; // Abgebrochen
+      if (!inputId) return;
       zielTarifId = parseInt(inputId, 10);
     }
-
     try {
       const dojoId = getDojoId();
       const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
-      const response = await axios.post(`/api/tarife/${tarifId}/migrate-contracts${dojoParam}`, {
-        ziel_tarif_id: zielTarifId
-      });
-
+      const response = await axios.post(`/api/tarife/${tarifId}/migrate-contracts${dojoParam}`, { ziel_tarif_id: zielTarifId });
       if (response.data.success) {
         alert(`✅ ${response.data.message}\n\nAnzahl migriert: ${response.data.anzahl_migriert}\nNeuer Monatsbeitrag: €${response.data.neuer_monatsbeitrag}`);
         await loadTarifeUndRabatte();
@@ -519,9 +415,19 @@ const TarifePreise = () => {
         alert('Fehler bei der Migration: ' + response.data.error);
       }
     } catch (error) {
-      console.error('Fehler bei der Vertrags-Migration:', error);
       const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Unbekannter Fehler';
       alert(`Fehler bei der Vertrags-Migration: ${errorMsg}`);
+    }
+  };
+
+  const getFilteredTarife = () => {
+    switch (tarifeFilter) {
+      case 'kinder': return tarife.filter(t => t.isChildRate && !t.ist_archiviert);
+      case 'studenten': return tarife.filter(t => t.isStudentRate && !t.ist_archiviert);
+      case 'erwachsene': return tarife.filter(t => t.isAdultRate && !t.ist_archiviert);
+      case 'sonstige': return tarife.filter(t => !t.isChildRate && !t.isStudentRate && !t.isAdultRate && !t.ist_archiviert);
+      case 'archiviert': return tarife.filter(t => t.ist_archiviert);
+      default: return tarife.filter(t => !t.ist_archiviert);
     }
   };
 
@@ -536,775 +442,344 @@ const TarifePreise = () => {
     );
   }
 
+  // ── Inline TarifCard ──────────────────────────────────────────────
+  const TarifCard = ({ tarif }) => (
+    <div className={`tc-card${tarif.ist_archiviert ? ' tc-card--archived' : ''}`}>
+      <div className="tc-card-top">
+        <div className="tc-card-price">
+          <span className="tc-price-val">€{tarif.price_euros}</span>
+          <span className="tc-price-period">/Mo.</span>
+        </div>
+        <div className="tc-card-actions">
+          <button className="action-btn edit" onClick={() => setEditingTarif(tarif)} title="Bearbeiten"><Edit size={13} /></button>
+          <button className="action-btn delete" onClick={() => handleDeleteTarif(tarif.id)} title="Löschen"><Trash2 size={13} /></button>
+          <button
+            className={`action-btn archive${tarif.ist_archiviert ? ' is-archived' : ''}`}
+            onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
+            title={tarif.ist_archiviert ? "Reaktivieren" : "Archivieren"}
+          >
+            {tarif.ist_archiviert ? '↺' : '▣'}
+          </button>
+        </div>
+      </div>
+      <div className="tc-card-name">{tarif.name}</div>
+      <div className="tc-card-chips">
+        <span className="tc-chip"><Calendar size={11} /> {tarif.duration_months} Mo.</span>
+        <span className="tc-chip"><Clock size={11} /> {translateBillingCycle(tarif.billing_cycle)}</span>
+        <span className="tc-chip">Aufn. €{tarif.aufnahmegebuehr_euros}</span>
+        <span className={`tc-chip tc-chip--status${tarif.ist_archiviert ? ' archived' : tarif.active ? ' active' : ' inactive'}`}>
+          {tarif.ist_archiviert ? 'Archiviert' : tarif.active ? 'Aktiv' : 'Inaktiv'}
+        </span>
+      </div>
+      {tarif.ist_archiviert && (
+        <div className="tc-card-archive-row">
+          <button className="tc-archive-btn" onClick={() => handleSetNachfolger(tarif.id)}>
+            {tarif.nachfolger_tarif_id ? '✏️ Nachfolger' : '➕ Nachfolger'}
+          </button>
+          <button className="tc-archive-btn tc-archive-btn--green" onClick={() => handleMigrateContracts(tarif.id)}>
+            🔄 Migration
+          </button>
+        </div>
+      )}
+      {tarif.nachfolger_tarif_id && tarif.ist_archiviert && (
+        <div className="tc-card-nachfolger">
+          ➜ {tarife.find(t => t.id === tarif.nachfolger_tarif_id)?.name || `ID ${tarif.nachfolger_tarif_id}`}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="tarife-container">
+
+      {/* ─── Page Header ─────────────────────────────── */}
       <div className="tarife-page-header">
         <div className="tarife-page-header-icon"><DollarSign size={18} /></div>
         <div>
           <h1>Tarife & Preise</h1>
-          <p>Mitgliedstarife, Zahlungszyklen und Preisstrukturen verwalten</p>
+          <p>Mitgliedstarife, Starterpakete und Vertragsbedingungen verwalten</p>
         </div>
       </div>
 
-      {/* Statistik-Übersicht */}
-      <div className="stats-grid">
-        <div className="stat-card primary">
-          <div className="stat-icon">
-            <Package size={32} />
-          </div>
-          <div className="stat-info">
-            <h3>Aktive Tarife</h3>
-            <p className="stat-value">{tarife.filter(t => t.active).length}</p>
-            <span className="stat-trend">von {tarife.length} Gesamt</span>
-          </div>
-        </div>
-
-        <div className="stat-card success">
-          <div className="stat-icon">
-            <Baby size={32} />
-          </div>
-          <div className="stat-info">
-            <h3>Kinder-Tarife</h3>
-            <p className="stat-value">{tarife.filter(t => t.isChildRate && !t.ist_archiviert).length}</p>
-            <span className="stat-trend">verfügbar</span>
-          </div>
-        </div>
-
-        <div className="stat-card info">
-          <div className="stat-icon">
-            <GraduationCap size={32} />
-          </div>
-          <div className="stat-info">
-            <h3>Studenten-Tarife</h3>
-            <p className="stat-value">{tarife.filter(t => t.isStudentRate && !t.ist_archiviert).length}</p>
-            <span className="stat-trend">verfügbar</span>
-          </div>
-        </div>
-
-        <div className="stat-card warning">
-          <div className="stat-icon">
-            <User size={32} />
-          </div>
-          <div className="stat-info">
-            <h3>Erwachsenen-Tarife</h3>
-            <p className="stat-value">{tarife.filter(t => t.isAdultRate && !t.ist_archiviert).length}</p>
-            <span className="stat-trend">verfügbar</span>
-          </div>
-        </div>
-
-        <div className="stat-card purple">
-          <div className="stat-icon">
-            <DollarSign size={32} />
-          </div>
-          <div className="stat-info">
-            <h3>Durchschnittspreis</h3>
-            <p className="stat-value">
-              €{tarife.length > 0 ? (tarife.reduce((sum, t) => sum + parseFloat(t.price_euros), 0) / tarife.length).toFixed(2) : '0.00'}
-            </p>
-            <span className="stat-trend">monatlich</span>
-          </div>
-        </div>
+      {/* ─── Tab Navigation ──────────────────────────── */}
+      <div className="tarife-tab-nav">
+        <button className={`tarife-tab-btn${activeTab === 'tarife' ? ' active' : ''}`} onClick={() => setActiveTab('tarife')}>
+          <Package size={14} />
+          Tarife
+          <span className="tarife-tab-count">{tarife.filter(t => !t.ist_archiviert).length}</span>
+        </button>
+        <button className={`tarife-tab-btn${activeTab === 'starterpakete' ? ' active' : ''}`} onClick={() => setActiveTab('starterpakete')}>
+          <span>🎁</span>
+          Starterpakete
+          {starterpakete.length > 0 && <span className="tarife-tab-count">{starterpakete.length}</span>}
+        </button>
+        <button className={`tarife-tab-btn${activeTab === 'einstellungen' ? ' active' : ''}`} onClick={() => setActiveTab('einstellungen')}>
+          <Settings size={14} />
+          Vertragseinstellungen
+        </button>
       </div>
 
-      {/* Kinder-Tarife Sektion */}
-      <div className="section">
-        <div
-          className="section-header collapsible"
-          onClick={() => setKinderCollapsed(!kinderCollapsed)}
-        >
-          <h2>
-            <Baby size={24} /> Kinder & Jugendliche (6-17 Jahre)
-            <span className="tarif-count">({tarife.filter(t => t.isChildRate && !t.ist_archiviert).length})</span>
-          </h2>
-          <div className="header-actions">
-            <button
-              className="btn btn-primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowNewTarif(true);
-              }}
-            >
-              <Plus size={20} />
-              Neuer Tarif
-            </button>
-            {kinderCollapsed ? <ChevronDown size={24} /> : <ChevronUp size={24} />}
+      {/* ═══════════ TAB: TARIFE ═══════════ */}
+      {activeTab === 'tarife' && (
+        <>
+          {/* Kompakter Stats-Strip */}
+          <div className="tc-stats-strip">
+            <div className="tc-stat">
+              <span className="tc-stat-val">{tarife.filter(t => !t.ist_archiviert && t.active).length}</span>
+              <span className="tc-stat-lbl">Aktive Tarife</span>
+            </div>
+            <div className="tc-stat-div" />
+            <div className="tc-stat">
+              <span className="tc-stat-val">{tarife.filter(t => t.isChildRate && !t.ist_archiviert).length}</span>
+              <span className="tc-stat-lbl">Kinder</span>
+            </div>
+            <div className="tc-stat-div" />
+            <div className="tc-stat">
+              <span className="tc-stat-val">{tarife.filter(t => t.isStudentRate && !t.ist_archiviert).length}</span>
+              <span className="tc-stat-lbl">Studenten</span>
+            </div>
+            <div className="tc-stat-div" />
+            <div className="tc-stat">
+              <span className="tc-stat-val">{tarife.filter(t => t.isAdultRate && !t.ist_archiviert).length}</span>
+              <span className="tc-stat-lbl">Erwachsene</span>
+            </div>
+            <div className="tc-stat-div" />
+            <div className="tc-stat">
+              <span className="tc-stat-val tc-stat-val--gold">
+                €{tarife.filter(t => !t.ist_archiviert).length > 0
+                  ? (tarife.filter(t => !t.ist_archiviert).reduce((s, t) => s + parseFloat(t.price_euros), 0) / tarife.filter(t => !t.ist_archiviert).length).toFixed(2)
+                  : '0.00'}
+              </span>
+              <span className="tc-stat-lbl">Ø Beitrag/Mo.</span>
+            </div>
           </div>
-        </div>
 
-        {!kinderCollapsed && (
-          <div className="tarife-grid">
-            {tarife.filter(tarif => tarif.isChildRate && !tarif.ist_archiviert).map(tarif => (
-              <div key={tarif.id} className="tarif-card">
-                <div className="tarif-header">
-                  <div className="tarif-title">
-                    <h3>{tarif.name}</h3>
-                    <span className={`status-badge ${tarif.active ? 'active' : 'inactive'}`}>
-                      {tarif.active ? 'Aktiv' : 'Inaktiv'}
-                    </span>
-                  </div>
-                  <div className="tarif-actions">
-                    <button
-                      className="action-btn edit"
-                      onClick={() => setEditingTarif(tarif)}
-                      title="Bearbeiten"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      className="action-btn delete"
-                      onClick={() => handleDeleteTarif(tarif.id)}
-                      title="Löschen"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                    <button
-                      className={`action-btn archive${tarif.ist_archiviert ? ' is-archived' : ''}`}
-                      onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
-                      title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
-                    >
-                      {tarif.ist_archiviert ? '↺' : '▣'}
-                    </button>
-                  </div>
-                </div>
+          {/* Toolbar: Filter-Pills + Aktionen */}
+          <div className="tarife-toolbar">
+            <div className="tarife-filter-pills">
+              {[
+                { key: 'alle', label: 'Alle', count: tarife.filter(t => !t.ist_archiviert).length },
+                { key: 'kinder', label: 'Kinder', count: tarife.filter(t => t.isChildRate && !t.ist_archiviert).length },
+                { key: 'studenten', label: 'Studenten', count: tarife.filter(t => t.isStudentRate && !t.ist_archiviert).length },
+                { key: 'erwachsene', label: 'Erwachsene', count: tarife.filter(t => t.isAdultRate && !t.ist_archiviert).length },
+                { key: 'sonstige', label: 'Sonstige', count: null },
+                { key: 'archiviert', label: 'Archiviert', count: tarife.filter(t => t.ist_archiviert).length },
+              ].map(({ key, label, count }) => (
+                <button
+                  key={key}
+                  className={`tarife-filter-pill${tarifeFilter === key ? ' active' : ''}`}
+                  onClick={() => setTarifeFilter(key)}
+                >
+                  {label}
+                  {count !== null && count > 0 && <span className="pill-count">{count}</span>}
+                </button>
+              ))}
+            </div>
+            <div className="tarife-toolbar-right">
+              <button className="btn btn-secondary" onClick={() => setShowNewIndividuell(true)}>
+                <Plus size={14} /> Individuell
+              </button>
+              <button className="btn btn-primary" onClick={() => setShowNewTarif(true)}>
+                <Plus size={14} /> Neuer Tarif
+              </button>
+            </div>
+          </div>
 
-                <div className="tarif-price">
-                  <span className="currency">€</span>{tarif.price_euros}
-                  <span className="period">/Monat</span>
-                </div>
-
-                <div className="tarif-details">
-                  <div className="detail-item">
-                    <span className="label">
-                      <DollarSign size={14} /> Aufnahmegebühr
-                    </span>
-                    <div className="value">€{tarif.aufnahmegebuehr_euros}</div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <Calendar size={14} /> Laufzeit
-                    </span>
-                    <div className="value">{tarif.duration_months} Monate</div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <CreditCard size={14} /> Zahlungsmethode
-                    </span>
-                    <div className="value">
-                      {tarif.payment_method === 'SEPA' ? 'SEPA-Lastschrift' :
-                       tarif.payment_method === 'BANK_TRANSFER' ? 'Banküberweisung' :
-                       tarif.payment_method === 'CARD' ? 'Kreditkarte' :
-                       tarif.payment_method === 'PAYPAL' ? 'PayPal' :
-                       tarif.payment_method}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <Clock size={14} /> Abrechnung
-                    </span>
-                    <div className="value">
-                      {translateBillingCycle(tarif.billing_cycle)}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <Tag size={14} /> Währung
-                    </span>
-                    <div className="value">{tarif.currency}</div>
-                  </div>
-                </div>
-              </div>
+          {/* Tarife Grid */}
+          <div className="tc-grid">
+            {getFilteredTarife().map(tarif => (
+              <TarifCard key={tarif.id} tarif={tarif} />
             ))}
-          </div>
-        )}
-      </div>
-
-      {/* Studenten & Schüler Tarife Sektion */}
-      <div className="section">
-        <div
-          className="section-header collapsible"
-          onClick={() => setStudentenCollapsed(!studentenCollapsed)}
-        >
-          <h2>
-            <GraduationCap size={24} /> Studenten & Schüler Tarife (18+)
-            <span className="tarif-count">({tarife.filter(t => t.isStudentRate && !t.ist_archiviert).length})</span>
-          </h2>
-          <div className="header-actions">
-            <button
-              className="btn btn-primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowNewTarif(true);
-              }}
-            >
-              <Plus size={20} />
-              Neuer Tarif
-            </button>
-            {studentenCollapsed ? <ChevronDown size={24} /> : <ChevronUp size={24} />}
-          </div>
-        </div>
-
-        {!studentenCollapsed && (
-          <div className="tarife-grid">
-            {tarife.filter(tarif => tarif.isStudentRate && !tarif.ist_archiviert).map(tarif => (
-              <div key={tarif.id} className="tarif-card">
-                <div className="tarif-header">
-                  <div className="tarif-title">
-                    <h3>{tarif.name}</h3>
-                    <span className={`status-badge ${tarif.active ? 'active' : 'inactive'}`}>
-                      {tarif.active ? 'Aktiv' : 'Inaktiv'}
-                    </span>
-                  </div>
-                  <div className="tarif-actions">
-                    <button
-                      className="action-btn edit"
-                      onClick={() => setEditingTarif(tarif)}
-                      title="Bearbeiten"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      className="action-btn delete"
-                      onClick={() => handleDeleteTarif(tarif.id)}
-                      title="Löschen"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                    <button
-                      className={`action-btn archive${tarif.ist_archiviert ? ' is-archived' : ''}`}
-                      onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
-                      title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
-                    >
-                      {tarif.ist_archiviert ? '↺' : '▣'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="tarif-price">
-                  <span className="currency">€</span>{tarif.price_euros}
-                  <span className="period">/Monat</span>
-                </div>
-
-                <div className="tarif-details">
-                  <div className="detail-item">
-                    <span className="label">
-                      <DollarSign size={14} /> Aufnahmegebühr
-                    </span>
-                    <div className="value">€{tarif.aufnahmegebuehr_euros}</div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <Calendar size={14} /> Laufzeit
-                    </span>
-                    <div className="value">{tarif.duration_months} Monate</div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <CreditCard size={14} /> Zahlungsmethode
-                    </span>
-                    <div className="value">
-                      {tarif.payment_method === 'SEPA' ? 'SEPA-Lastschrift' :
-                       tarif.payment_method === 'BANK_TRANSFER' ? 'Banküberweisung' :
-                       tarif.payment_method === 'CARD' ? 'Kreditkarte' :
-                       tarif.payment_method === 'PAYPAL' ? 'PayPal' :
-                       tarif.payment_method}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <Clock size={14} /> Abrechnung
-                    </span>
-                    <div className="value">
-                      {translateBillingCycle(tarif.billing_cycle)}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <Tag size={14} /> Währung
-                    </span>
-                    <div className="value">{tarif.currency}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Erwachsenen-Tarife Sektion */}
-      <div className="section">
-        <div
-          className="section-header collapsible"
-          onClick={() => setErwachseneCollapsed(!erwachseneCollapsed)}
-        >
-          <h2>
-            <User size={24} /> Erwachsenen-Tarife (18+)
-            <span className="tarif-count">({tarife.filter(t => t.isAdultRate && !t.ist_archiviert).length})</span>
-          </h2>
-          <div className="header-actions">
-            <button
-              className="btn btn-primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowNewTarif(true);
-              }}
-            >
-              <Plus size={20} />
-              Neuer Tarif
-            </button>
-            {erwachseneCollapsed ? <ChevronDown size={24} /> : <ChevronUp size={24} />}
-          </div>
-        </div>
-
-        {!erwachseneCollapsed && (
-          <div className="tarife-grid">
-            {tarife.filter(tarif => tarif.isAdultRate && !tarif.ist_archiviert).map(tarif => (
-              <div key={tarif.id} className="tarif-card">
-                <div className="tarif-header">
-                  <div className="tarif-title">
-                    <h3>{tarif.name}</h3>
-                    <span className={`status-badge ${tarif.active ? 'active' : 'inactive'}`}>
-                      {tarif.active ? 'Aktiv' : 'Inaktiv'}
-                    </span>
-                  </div>
-                  <div className="tarif-actions">
-                    <button
-                      className="action-btn edit"
-                      onClick={() => setEditingTarif(tarif)}
-                      title="Bearbeiten"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      className="action-btn delete"
-                      onClick={() => handleDeleteTarif(tarif.id)}
-                      title="Löschen"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                    <button
-                      className={`action-btn archive${tarif.ist_archiviert ? ' is-archived' : ''}`}
-                      onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
-                      title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
-                    >
-                      {tarif.ist_archiviert ? '↺' : '▣'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="tarif-price">
-                  <span className="currency">€</span>{tarif.price_euros}
-                  <span className="period">/Monat</span>
-                </div>
-
-                <div className="tarif-details">
-                  <div className="detail-item">
-                    <span className="label">
-                      <DollarSign size={14} /> Aufnahmegebühr
-                    </span>
-                    <div className="value">€{tarif.aufnahmegebuehr_euros}</div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <Calendar size={14} /> Laufzeit
-                    </span>
-                    <div className="value">{tarif.duration_months} Monate</div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <CreditCard size={14} /> Zahlungsmethode
-                    </span>
-                    <div className="value">
-                      {tarif.payment_method === 'SEPA' ? 'SEPA-Lastschrift' :
-                       tarif.payment_method === 'BANK_TRANSFER' ? 'Banküberweisung' :
-                       tarif.payment_method === 'CARD' ? 'Kreditkarte' :
-                       tarif.payment_method === 'PAYPAL' ? 'PayPal' :
-                       tarif.payment_method}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <Clock size={14} /> Abrechnung
-                    </span>
-                    <div className="value">
-                      {translateBillingCycle(tarif.billing_cycle)}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">
-                      <Tag size={14} /> Währung
-                    </span>
-                    <div className="value">{tarif.currency}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Alte Tarife Sektion */}
-      <div className="section">
-        <div
-          className="section-header collapsible tp-archived-header"
-          onClick={() => setAlteTarifeCollapsed(!alteTarifeCollapsed)}
-        >
-          <h2 className="u-text-muted">
-            <Package size={24} /> Alte Tarife (Archiviert)
-            <span className="tarif-count">({tarife.filter(t => t.ist_archiviert).length})</span>
-          </h2>
-          <div className="header-actions">
-            {alteTarifeCollapsed ? <ChevronDown size={24} /> : <ChevronUp size={24} />}
-          </div>
-        </div>
-
-        {!alteTarifeCollapsed && (
-          <>
-            {tarife.filter(t => t.ist_archiviert).length === 0 ? (
-              <div className="info-box tp-info-box-gray">
-                <p className="u-text-muted">
-                  Keine archivierten Tarife vorhanden. Tarife können über den 📦-Button archiviert werden.
-                </p>
-              </div>
-            ) : (
-              <div className="tarife-grid">
-                {tarife.filter(tarif => tarif.ist_archiviert).map(tarif => (
-                  <div key={tarif.id} className="tarif-card tp-tarif-card--archived">
-                    <div className="tarif-header">
-                      <div className="tarif-title">
-                        <h3>{tarif.name}</h3>
-                        <span className="status-badge tp-badge-archived">
-                          Archiviert
-                        </span>
-                      </div>
-                      <div className="tarif-actions">
-                        <button
-                          className="action-btn edit"
-                          onClick={() => setEditingTarif(tarif)}
-                          title="Bearbeiten"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          className="action-btn delete"
-                          onClick={() => handleDeleteTarif(tarif.id)}
-                          title="Löschen"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                        <button
-                          className={tarif.ist_archiviert ? 'action-btn archive tp-btn-archive--active' : 'action-btn archive tp-btn-archive--inactive'}
-                          onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
-                          title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
-                        >
-                          {tarif.ist_archiviert ? '↺' : '📦'}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="tarif-price">
-                      <span className="currency">€</span>{tarif.price_euros}
-                      <span className="period">/Monat</span>
-                    </div>
-
-                    <div className="tarif-details">
-                      <div className="detail-item">
-                        <span className="label">
-                          <DollarSign size={14} /> Aufnahmegebühr
-                        </span>
-                        <div className="value">€{tarif.aufnahmegebuehr_euros}</div>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">
-                          <Calendar size={14} /> Laufzeit
-                        </span>
-                        <div className="value">{tarif.duration_months} Monate</div>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">
-                          <CreditCard size={14} /> Zahlungsmethode
-                        </span>
-                        <div className="value">
-                          {tarif.payment_method === 'SEPA' ? 'SEPA-Lastschrift' :
-                           tarif.payment_method === 'BANK_TRANSFER' ? 'Banküberweisung' :
-                           tarif.payment_method === 'CARD' ? 'Kreditkarte' :
-                           tarif.payment_method === 'PAYPAL' ? 'PayPal' :
-                           tarif.payment_method}
-                        </div>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">
-                          <Clock size={14} /> Abrechnung
-                        </span>
-                        <div className="value">
-                          {translateBillingCycle(tarif.billing_cycle)}
-                        </div>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">
-                          <Tag size={14} /> Währung
-                        </span>
-                        <div className="value">{tarif.currency}</div>
-                      </div>
-
-                      {/* Nachfolger-Tarif Info */}
-                      {tarif.nachfolger_tarif_id && (
-                        <div className="detail-item tp-nachfolger-item">
-                          <span className="label u-text-success">
-                            ➜ Nachfolger-Tarif
-                          </span>
-                          <div className="value tp-nachfolger-value">
-                            {tarife.find(t => t.id === tarif.nachfolger_tarif_id)?.name || `ID ${tarif.nachfolger_tarif_id}`}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Verwaltungs-Buttons für archivierte Tarife */}
-                      <div className="tp-admin-btn-row">
-                        <button
-                          onClick={() => handleSetNachfolger(tarif.id)}
-                          className="tp-btn-nachfolger"
-                        >
-                          {tarif.nachfolger_tarif_id ? '✏️ Nachfolger ändern' : '➕ Nachfolger festlegen'}
-                        </button>
-                        <button
-                          onClick={() => handleMigrateContracts(tarif.id)}
-                          className="tp-btn-migrate"
-                        >
-                          🔄 Verträge migrieren
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            {getFilteredTarife().length === 0 && (
+              <div className="tc-empty">
+                <Package size={28} />
+                <p>Keine Tarife in dieser Kategorie</p>
               </div>
             )}
-          </>
-        )}
-      </div>
-
-      {/* Individuelle Verträge (Admin Only) */}
-      <div className="tarif-section">
-        <div
-          className="section-header collapsible"
-          onClick={() => setIndividuellCollapsed(!individuellCollapsed)}
-        >
-          <h2>
-            <Settings size={24} /> Individuelle Verträge
-            <span className="tarif-count">(Admin Only)</span>
-          </h2>
-          <div className="header-actions">
-            <button
-              className="btn btn-primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowNewIndividuell(true);
-              }}
-            >
-              <Plus size={20} />
-              Neuer individueller Vertrag
-            </button>
-            {individuellCollapsed ? <ChevronDown size={24} /> : <ChevronUp size={24} />}
           </div>
-        </div>
+        </>
+      )}
 
-        {!individuellCollapsed && (
-          <div className="info-box">
-            <p>
-              Hier können individuelle Verträge mit benutzerdefinierten Konditionen erstellt werden.
-              Diese Funktion ist nur für Administratoren verfügbar.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Modal für individuellen Vertrag */}
-      {showNewIndividuell && (
-        <div className="ds-modal-overlay" onClick={() => setShowNewIndividuell(false)}>
-          <div className="ds-modal ds-modal--md" onClick={(e) => e.stopPropagation()}>
-            <div className="ds-modal-header">
-              <div>
-                <h3 className="ds-modal-title">Neuer individueller Vertrag</h3>
-              </div>
-              <button className="ds-modal-close" onClick={() => setShowNewIndividuell(false)}>
-                <X size={18} />
+      {/* ═══════════ TAB: STARTERPAKETE ═══════════ */}
+      {activeTab === 'starterpakete' && (
+        <div style={{ marginTop: '1.5rem' }}>
+          <div className="section-header" style={{ marginBottom: '1.25rem' }}>
+            <h2><span style={{ marginRight: '0.5rem' }}>🎁</span>Starterpakete</h2>
+            <div className="header-actions">
+              <button className="btn btn-primary" onClick={() => setShowNewSp(true)}>
+                <Plus size={14} /> Neues Paket
               </button>
             </div>
-            <div className="ds-modal-body">
+          </div>
 
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Vertragsname *</label>
-                <input
-                  type="text"
-                  value={newIndividuell.name}
-                  onChange={(e) => setNewIndividuell({...newIndividuell, name: e.target.value})}
-                  placeholder="z.B. Individualtarif Max Mustermann"
-                />
+          <div style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 10, padding: '0.875rem 1rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+            <strong style={{ color: '#d4af37' }}>ℹ️ Starterpakete</strong> — beim ersten Login wählt das Neumitglied seinen Kampfkunststil und sieht das zugeordnete Starterpaket. Das Paket wird per Lastschrift abgebucht.
+          </div>
+
+          {showNewSp && (
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '1.25rem', marginBottom: '1.25rem' }}>
+              <h4 style={{ margin: '0 0 1rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>Neues Starterpaket</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <div>
+                  <label className="u-form-label">Stil *</label>
+                  <select value={newSp.stil_id} onChange={e => setNewSp({ ...newSp, stil_id: e.target.value })} className="u-input-sm">
+                    <option value="">— Stil wählen —</option>
+                    {spStile.map(s => <option key={s.stil_id} value={s.stil_id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="u-form-label">Paketname *</label>
+                  <input className="u-input-sm" value={newSp.name} onChange={e => setNewSp({ ...newSp, name: e.target.value })} placeholder="z. B. Karate Starterpaket" />
+                </div>
+                <div style={{ gridColumn: '1/-1' }}>
+                  <label className="u-form-label">Beschreibung</label>
+                  <input className="u-input-sm" value={newSp.beschreibung} onChange={e => setNewSp({ ...newSp, beschreibung: e.target.value })} placeholder="Kurze Beschreibung" />
+                </div>
+                <div style={{ gridColumn: '1/-1' }}>
+                  <label className="u-form-label">Pflichthinweis für Mitglied</label>
+                  <input className="u-input-sm" value={newSp.hinweis} onChange={e => setNewSp({ ...newSp, hinweis: e.target.value })} />
+                </div>
+                <div>
+                  <label className="u-form-label">Rabatt (%)</label>
+                  <input className="u-input-sm" type="number" min="0" max="100" step="0.5" value={newSp.rabatt_prozent} onChange={e => setNewSp({ ...newSp, rabatt_prozent: parseFloat(e.target.value) || 0 })} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={newSp.aktiv} onChange={e => setNewSp({ ...newSp, aktiv: e.target.checked })} />
+                    Paket aktiv
+                  </label>
+                </div>
               </div>
-
-              <div className="form-group">
-                <label>Laufzeit (Monate) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={newIndividuell.duration_months}
-                  onChange={(e) => setNewIndividuell({...newIndividuell, duration_months: e.target.value})}
-                  placeholder="z.B. 12"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Vertragsdauer/Mindestlaufzeit (Monate) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={newIndividuell.mindestlaufzeit_monate}
-                  onChange={(e) => setNewIndividuell({...newIndividuell, mindestlaufzeit_monate: e.target.value})}
-                  placeholder="z.B. 12"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Kündigungsfrist (Monate) *</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={newIndividuell.kuendigungsfrist_monate}
-                  onChange={(e) => setNewIndividuell({...newIndividuell, kuendigungsfrist_monate: e.target.value})}
-                  placeholder="z.B. 3"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Monatlicher Beitrag (€) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={newIndividuell.price_cents ? (newIndividuell.price_cents / 100).toFixed(2) : ''}
-                  onChange={(e) => setNewIndividuell({...newIndividuell, price_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
-                  placeholder="z.B. 49.90"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Aufnahmegebühr (€)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={newIndividuell.aufnahmegebuehr_cents ? (newIndividuell.aufnahmegebuehr_cents / 100).toFixed(2) : ''}
-                  onChange={(e) => setNewIndividuell({...newIndividuell, aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
-                  placeholder="49.99"
-                />
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowNewSp(false)}>Abbrechen</button>
+                <button className="btn btn-primary btn-sm" onClick={handleCreateSp} disabled={spSaving || !newSp.stil_id || !newSp.name}>
+                  {spSaving ? 'Speichern…' : 'Paket anlegen'}
+                </button>
               </div>
             </div>
+          )}
 
-            </div>{/* ds-modal-body */}
-            <div className="ds-modal-footer">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowNewIndividuell(false)}
-              >
-                Abbrechen
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={async () => {
-                  try {
-                    const dojoId = getDojoId();
-                    const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
-                    await axios.post(`/tarife${dojoParam}`, {
-                      name: newIndividuell.name,
-                      duration_months: parseInt(newIndividuell.duration_months),
-                      mindestlaufzeit_monate: parseInt(newIndividuell.mindestlaufzeit_monate),
-                      kuendigungsfrist_monate: parseInt(newIndividuell.kuendigungsfrist_monate),
-                      price_cents: newIndividuell.price_cents,
-                      aufnahmegebuehr_cents: newIndividuell.aufnahmegebuehr_cents,
-                      currency: 'EUR',
-                      billing_cycle: 'MONTHLY',
-                      payment_method: 'SEPA',
-                      active: true
-                    });
-                    setShowNewIndividuell(false);
-                    setNewIndividuell({
-                      name: "",
-                      duration_months: "",
-                      mindestlaufzeit_monate: "",
-                      kuendigungsfrist_monate: "",
-                      price_cents: "",
-                      aufnahmegebuehr_cents: 4999
-                    });
-                    loadTarifeUndRabatte();
-                    alert('Individueller Vertrag erfolgreich erstellt!');
-                  } catch (error) {
-                    console.error('Fehler beim Erstellen:', error);
-                    alert('Fehler beim Erstellen: ' + (error.response?.data?.error || error.message));
-                  }
-                }}
-              >
-                <Save size={18} />
-                Vertrag erstellen
-              </button>
-            </div>{/* ds-modal-footer */}
-          </div>
+          {starterpakete.length === 0 ? (
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '1rem 0' }}>Noch keine Starterpakete angelegt.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              {starterpakete.map(pk => (
+                <div key={pk.paket_id} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${pk.aktiv ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 12, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1rem', cursor: 'pointer' }} onClick={() => setExpandedSpId(expandedSpId === pk.paket_id ? null : pk.paket_id)}>
+                    <span style={{ fontSize: '1.2rem' }}>🎁</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, color: pk.aktiv ? '#fff' : 'rgba(255,255,255,0.4)' }}>{pk.name}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {pk.stil_name} · {pk.positionen?.length || 0} Positionen · {((pk.endpreis_cent || 0) / 100).toFixed(2)} €
+                        {pk.rabatt_prozent > 0 && <span style={{ color: '#4ade80', marginLeft: '0.4rem' }}>−{pk.rabatt_prozent}%</span>}
+                        {!pk.aktiv && <span style={{ color: 'rgba(255,255,255,0.3)', marginLeft: '0.4rem' }}>inaktiv</span>}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button className="btn btn-sm btn-secondary" onClick={e => { e.stopPropagation(); setEditingSp({ ...pk }); }} title="Bearbeiten"><Edit size={13} /></button>
+                      <button className="btn btn-sm btn-danger" onClick={e => { e.stopPropagation(); handleDeleteSp(pk.paket_id); }} title="Löschen"><Trash2 size={13} /></button>
+                    </div>
+                  </div>
+                  {expandedSpId === pk.paket_id && (
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '0.875rem 1rem' }}>
+                      {pk.hinweis && (
+                        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: '0.875rem', fontSize: '0.82rem', color: '#fca5a5' }}>
+                          ⚠️ {pk.hinweis}
+                        </div>
+                      )}
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '0.875rem' }}>
+                        <thead>
+                          <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                            <th style={{ textAlign: 'left', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Bezeichnung</th>
+                            <th style={{ textAlign: 'center', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Menge</th>
+                            <th style={{ textAlign: 'right', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Preis</th>
+                            <th style={{ textAlign: 'right', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Gesamt</th>
+                            <th style={{ width: 30 }}></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(pk.positionen || []).map(pos => (
+                            <tr key={pos.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                              <td style={{ padding: '0.4rem 0.5rem', color: pos.pflicht ? '#fff' : 'rgba(255,255,255,0.55)' }}>
+                                {pos.bezeichnung}{!pos.pflicht && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.35rem' }}>optional</span>}
+                              </td>
+                              <td style={{ textAlign: 'center', padding: '0.4rem 0.5rem', color: 'var(--text-muted)' }}>{pos.menge}</td>
+                              <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem' }}>{(pos.einzelpreis_cent / 100).toFixed(2)} €</td>
+                              <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem', fontWeight: 600 }}>{(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €</td>
+                              <td style={{ textAlign: 'right', padding: '0.4rem 0.25rem' }}>
+                                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', padding: '0.2rem' }} onClick={() => handleDeletePos(pk.paket_id, pos.id)}><Trash2 size={12} /></button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+                            <td colSpan={3} style={{ textAlign: 'right', padding: '0.5rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                              Summe{pk.rabatt_prozent > 0 ? ` − ${pk.rabatt_prozent}% Rabatt` : ''}
+                            </td>
+                            <td style={{ textAlign: 'right', padding: '0.5rem 0.5rem', fontWeight: 700, color: '#d4af37' }}>{((pk.endpreis_cent || 0) / 100).toFixed(2)} €</td>
+                            <td></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                      {addingPosForId === pk.paket_id ? (
+                        <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '0.875rem', marginTop: '0.5rem' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <input className="u-input-sm" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
+                            <input className="u-input-sm" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
+                            <input className="u-input-sm" type="number" min="0" step="0.01" placeholder="Preis € *" value={newPos.einzelpreis_cent} onChange={e => setNewPos({ ...newPos, einzelpreis_cent: e.target.value })} />
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', cursor: 'pointer' }}>
+                              <input type="checkbox" checked={newPos.pflicht} onChange={e => setNewPos({ ...newPos, pflicht: e.target.checked })} /> Pflicht
+                            </label>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true }); }}>Abbrechen</button>
+                              <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(pk.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>
+                                {spSaving ? '…' : 'Hinzufügen'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <button className="btn btn-sm btn-secondary" onClick={() => setAddingPosForId(pk.paket_id)} style={{ marginTop: '0.25rem' }}>
+                          <Plus size={13} /> Position hinzufügen
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Vertragsmodell & Vertragsbedingungen */}
-      <div className="section">
-        <div
-          className="section-header collapsible"
-          onClick={() => setSettingsCollapsed(!settingsCollapsed)}
-          style={{ cursor: 'pointer' }}
-        >
-          <h2>
-            <span style={{ marginRight: '0.5rem' }}>📋</span>
-            Vertragsmodell & Vertragsbedingungen
-          </h2>
-          <div className="header-actions">
-            {!isEditingSettings ? (
-              <button
-                className="btn btn-sm btn-secondary"
-                onClick={(e) => { e.stopPropagation(); setIsEditingSettings(true); setSettingsCollapsed(false); }}
-              >
-                Bearbeiten
-              </button>
-            ) : (
-              <>
-                <button
-                  className="btn btn-sm btn-secondary"
-                  onClick={(e) => { e.stopPropagation(); setIsEditingSettings(false); loadDojoSettings(); }}
-                >
-                  Abbrechen
-                </button>
-                <button
-                  className="btn btn-sm btn-primary"
-                  onClick={(e) => { e.stopPropagation(); saveDojoSettings(); }}
-                  disabled={savingSettings}
-                >
-                  {savingSettings ? 'Speichern...' : 'Speichern'}
-                </button>
-              </>
-            )}
+      {/* ═══════════ TAB: VERTRAGSEINSTELLUNGEN ═══════════ */}
+      {activeTab === 'einstellungen' && (
+        <div className="section" style={{ marginTop: '1.5rem' }}>
+          <div className="section-header" style={{ marginBottom: '1.5rem' }}>
+            <h2><span style={{ marginRight: '0.5rem' }}>📋</span>Vertragsmodell & Vertragsbedingungen</h2>
+            <div className="header-actions">
+              {!isEditingSettings ? (
+                <button className="btn btn-secondary" onClick={() => setIsEditingSettings(true)}>Bearbeiten</button>
+              ) : (
+                <>
+                  <button className="btn btn-secondary" onClick={() => { setIsEditingSettings(false); loadDojoSettings(); }}>Abbrechen</button>
+                  <button className="btn btn-primary" onClick={saveDojoSettings} disabled={savingSettings}>
+                    {savingSettings ? 'Speichern...' : 'Speichern'}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        {!settingsCollapsed && (
-          <div style={{ padding: '1.5rem' }}>
-            {/* Vertragsmodell */}
+          <div style={{ padding: '0 0 1rem' }}>
             <div style={{ marginBottom: '1.5rem' }}>
               <h4 style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>🔄 Vertragsmodell</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <label style={{ display: 'flex', gap: '0.75rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: `1px solid ${dojoSettings.vertragsmodell === 'gesetzlich' ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}`, cursor: isEditingSettings ? 'pointer' : 'default' }}>
-                  <input
-                    type="radio"
-                    name="vertragsmodell"
-                    value="gesetzlich"
-                    checked={dojoSettings.vertragsmodell === 'gesetzlich'}
-                    onChange={(e) => setDojoSettings({ ...dojoSettings, vertragsmodell: e.target.value })}
-                    disabled={!isEditingSettings}
-                  />
+                  <input type="radio" name="vertragsmodell" value="gesetzlich" checked={dojoSettings.vertragsmodell === 'gesetzlich'} onChange={(e) => setDojoSettings({ ...dojoSettings, vertragsmodell: e.target.value })} disabled={!isEditingSettings} />
                   <div>
                     <div style={{ fontWeight: 600 }}>📜 Gesetzliche Verlängerung (Standard)</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
@@ -1313,14 +788,7 @@ const TarifePreise = () => {
                   </div>
                 </label>
                 <label style={{ display: 'flex', gap: '0.75rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: `1px solid ${dojoSettings.vertragsmodell === 'beitragsgarantie' ? '#14B8A6' : 'rgba(255,255,255,0.08)'}`, cursor: isEditingSettings ? 'pointer' : 'default' }}>
-                  <input
-                    type="radio"
-                    name="vertragsmodell"
-                    value="beitragsgarantie"
-                    checked={dojoSettings.vertragsmodell === 'beitragsgarantie'}
-                    onChange={(e) => setDojoSettings({ ...dojoSettings, vertragsmodell: e.target.value })}
-                    disabled={!isEditingSettings}
-                  />
+                  <input type="radio" name="vertragsmodell" value="beitragsgarantie" checked={dojoSettings.vertragsmodell === 'beitragsgarantie'} onChange={(e) => setDojoSettings({ ...dojoSettings, vertragsmodell: e.target.value })} disabled={!isEditingSettings} />
                   <div>
                     <div style={{ fontWeight: 600 }}>💰 Beitragsgarantie-Modell</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
@@ -1331,7 +799,6 @@ const TarifePreise = () => {
               </div>
             </div>
 
-            {/* Allgemeine Vertragseinstellungen */}
             <div style={{ marginBottom: '1.5rem' }}>
               <h4 style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>📝 Allgemeine Vertragsbedingungen</h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
@@ -1344,10 +811,7 @@ const TarifePreise = () => {
                   <div key={key}>
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>{label}</label>
                     <input
-                      type="number"
-                      min={min}
-                      max={max}
-                      value={dojoSettings[key]}
+                      type="number" min={min} max={max} value={dojoSettings[key]}
                       onChange={(e) => setDojoSettings({ ...dojoSettings, [key]: parseInt(e.target.value) || min })}
                       disabled={!isEditingSettings}
                       style={{ width: '100%', padding: '0.5rem', background: 'var(--input-bg, rgba(255,255,255,0.05))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--text-primary)', opacity: isEditingSettings ? 1 : 0.7 }}
@@ -1361,19 +825,13 @@ const TarifePreise = () => {
                   { label: 'Kündigung muss schriftlich erfolgen', key: 'kuendigung_schriftlich' }
                 ].map(({ label, key }) => (
                   <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isEditingSettings ? 'pointer' : 'default' }}>
-                    <input
-                      type="checkbox"
-                      checked={dojoSettings[key]}
-                      onChange={(e) => setDojoSettings({ ...dojoSettings, [key]: e.target.checked })}
-                      disabled={!isEditingSettings}
-                    />
+                    <input type="checkbox" checked={dojoSettings[key]} onChange={(e) => setDojoSettings({ ...dojoSettings, [key]: e.target.checked })} disabled={!isEditingSettings} />
                     <span style={{ fontSize: '0.9rem' }}>{label}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* Beitragsgarantie Einstellungen */}
             {dojoSettings.vertragsmodell === 'beitragsgarantie' && (
               <div style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.3)', borderRadius: '8px', padding: '1.25rem' }}>
                 <h4 style={{ marginBottom: '1rem', color: '#14B8A6' }}>⚙️ Beitragsgarantie-Einstellungen</h4>
@@ -1400,10 +858,7 @@ const TarifePreise = () => {
                       <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>{label}</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <input
-                          type="number"
-                          min={0}
-                          max={90}
-                          value={dojoSettings[key]}
+                          type="number" min={0} max={90} value={dojoSettings[key]}
                           onChange={(e) => setDojoSettings({ ...dojoSettings, [key]: parseInt(e.target.value) || 0 })}
                           disabled={!isEditingSettings}
                           style={{ width: '70px', padding: '0.5rem', background: 'var(--input-bg, rgba(255,255,255,0.05))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--text-primary)' }}
@@ -1416,103 +871,113 @@ const TarifePreise = () => {
               </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Neuer Tarif Modal */}
+      {/* ═══════════ MODALS ═══════════ */}
+
+      {/* Modal: Individueller Vertrag */}
+      {showNewIndividuell && (
+        <div className="ds-modal-overlay" onClick={() => setShowNewIndividuell(false)}>
+          <div className="ds-modal ds-modal--md" onClick={(e) => e.stopPropagation()}>
+            <div className="ds-modal-header">
+              <div><h3 className="ds-modal-title">Neuer individueller Vertrag</h3></div>
+              <button className="ds-modal-close" onClick={() => setShowNewIndividuell(false)}><X size={18} /></button>
+            </div>
+            <div className="ds-modal-body">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Vertragsname *</label>
+                  <input type="text" value={newIndividuell.name} onChange={(e) => setNewIndividuell({...newIndividuell, name: e.target.value})} placeholder="z.B. Individualtarif Max Mustermann" />
+                </div>
+                <div className="form-group">
+                  <label>Laufzeit (Monate) *</label>
+                  <input type="number" min="1" value={newIndividuell.duration_months} onChange={(e) => setNewIndividuell({...newIndividuell, duration_months: e.target.value})} placeholder="z.B. 12" />
+                </div>
+                <div className="form-group">
+                  <label>Mindestlaufzeit (Monate) *</label>
+                  <input type="number" min="1" value={newIndividuell.mindestlaufzeit_monate} onChange={(e) => setNewIndividuell({...newIndividuell, mindestlaufzeit_monate: e.target.value})} placeholder="z.B. 12" />
+                </div>
+                <div className="form-group">
+                  <label>Kündigungsfrist (Monate) *</label>
+                  <input type="number" min="0" value={newIndividuell.kuendigungsfrist_monate} onChange={(e) => setNewIndividuell({...newIndividuell, kuendigungsfrist_monate: e.target.value})} placeholder="z.B. 3" />
+                </div>
+                <div className="form-group">
+                  <label>Monatlicher Beitrag (€) *</label>
+                  <input type="number" step="0.01" min="0" value={newIndividuell.price_cents ? (newIndividuell.price_cents / 100).toFixed(2) : ''} onChange={(e) => setNewIndividuell({...newIndividuell, price_cents: Math.round(parseFloat(e.target.value || 0) * 100)})} placeholder="z.B. 49.90" />
+                </div>
+                <div className="form-group">
+                  <label>Aufnahmegebühr (€)</label>
+                  <input type="number" step="0.01" min="0" value={newIndividuell.aufnahmegebuehr_cents ? (newIndividuell.aufnahmegebuehr_cents / 100).toFixed(2) : ''} onChange={(e) => setNewIndividuell({...newIndividuell, aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)})} placeholder="49.99" />
+                </div>
+              </div>
+            </div>
+            <div className="ds-modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowNewIndividuell(false)}>Abbrechen</button>
+              <button className="btn btn-primary" onClick={async () => {
+                try {
+                  const dojoId = getDojoId();
+                  const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
+                  await axios.post(`/tarife${dojoParam}`, {
+                    name: newIndividuell.name,
+                    duration_months: parseInt(newIndividuell.duration_months),
+                    mindestlaufzeit_monate: parseInt(newIndividuell.mindestlaufzeit_monate),
+                    kuendigungsfrist_monate: parseInt(newIndividuell.kuendigungsfrist_monate),
+                    price_cents: newIndividuell.price_cents,
+                    aufnahmegebuehr_cents: newIndividuell.aufnahmegebuehr_cents,
+                    currency: 'EUR', billing_cycle: 'MONTHLY', payment_method: 'SEPA', active: true
+                  });
+                  setShowNewIndividuell(false);
+                  setNewIndividuell({ name: "", duration_months: "", mindestlaufzeit_monate: "", kuendigungsfrist_monate: "", price_cents: "", aufnahmegebuehr_cents: 4999 });
+                  loadTarifeUndRabatte();
+                  alert('Individueller Vertrag erfolgreich erstellt!');
+                } catch (error) {
+                  alert('Fehler beim Erstellen: ' + (error.response?.data?.error || error.message));
+                }
+              }}>
+                <Save size={18} /> Vertrag erstellen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Neuer Tarif */}
       {showNewTarif && (
         <div className="ds-modal-overlay" onClick={() => setShowNewTarif(false)}>
           <div className="ds-modal ds-modal--md" onClick={(e) => e.stopPropagation()}>
             <div className="ds-modal-header">
-              <div>
-                <h3 className="ds-modal-title">Neuer Tarif</h3>
-              </div>
-              <button className="ds-modal-close" onClick={() => setShowNewTarif(false)}>
-                <X size={18} />
-              </button>
+              <div><h3 className="ds-modal-title">Neuer Tarif</h3></div>
+              <button className="ds-modal-close" onClick={() => setShowNewTarif(false)}><X size={18} /></button>
             </div>
-
             <div className="ds-modal-body">
-              {/* Name - volle Breite */}
               <div className="tp-field-mb">
-                <label className="u-form-label">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={newTarif.name}
-                  onChange={(e) => setNewTarif({...newTarif, name: e.target.value})}
-                  placeholder="Tarif-Bezeichnung"
-                  className="u-input-sm"
-                />
+                <label className="u-form-label">Name *</label>
+                <input type="text" value={newTarif.name} onChange={(e) => setNewTarif({...newTarif, name: e.target.value})} placeholder="Tarif-Bezeichnung" className="u-input-sm" />
               </div>
-
-              {/* Preis & Aufnahmegebühr - 2 Spalten */}
               <div className="u-grid-2col">
                 <div>
-                  <label className="u-form-label">
-                    Preis (€) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newTarif.price_cents ? (newTarif.price_cents / 100).toFixed(2) : ''}
-                    onChange={(e) => setNewTarif({...newTarif, price_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
-                    placeholder="0.00"
-                    className="u-input-sm"
-                  />
+                  <label className="u-form-label">Preis (€) *</label>
+                  <input type="number" step="0.01" value={newTarif.price_cents ? (newTarif.price_cents / 100).toFixed(2) : ''} onChange={(e) => setNewTarif({...newTarif, price_cents: Math.round(parseFloat(e.target.value || 0) * 100)})} placeholder="0.00" className="u-input-sm" />
                 </div>
-
                 <div>
-                  <label className="u-form-label">
-                    Aufnahmegebühr (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={newTarif.aufnahmegebuehr_cents ? (newTarif.aufnahmegebuehr_cents / 100).toFixed(2) : ''}
-                    onChange={(e) => setNewTarif({...newTarif, aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
-                    placeholder="49.99"
-                    className="u-input-sm"
-                  />
+                  <label className="u-form-label">Aufnahmegebühr (€)</label>
+                  <input type="number" step="0.01" min="0" value={newTarif.aufnahmegebuehr_cents ? (newTarif.aufnahmegebuehr_cents / 100).toFixed(2) : ''} onChange={(e) => setNewTarif({...newTarif, aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)})} placeholder="49.99" className="u-input-sm" />
                 </div>
               </div>
-
-              {/* Laufzeit & Zahlungsintervall - 2 Spalten */}
               <div className="u-grid-2col">
                 <div>
-                  <label className="u-form-label">
-                    Laufzeit (Monate) *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={newTarif.duration_months}
-                    onChange={(e) => setNewTarif({...newTarif, duration_months: parseInt(e.target.value) || ''})}
-                    placeholder="12"
-                    className="u-input-sm"
-                  />
+                  <label className="u-form-label">Laufzeit (Monate) *</label>
+                  <input type="number" min="1" value={newTarif.duration_months} onChange={(e) => setNewTarif({...newTarif, duration_months: parseInt(e.target.value) || ''})} placeholder="12" className="u-input-sm" />
                 </div>
-
                 <div>
-                  <label className="u-form-label">
-                    Zahlungsintervall *
-                  </label>
-                  <select
-                    value={newTarif.billing_cycle}
-                    onChange={(e) => setNewTarif({...newTarif, billing_cycle: e.target.value})}
-                    className="u-input-sm"
-                  >
+                  <label className="u-form-label">Zahlungsintervall *</label>
+                  <select value={newTarif.billing_cycle} onChange={(e) => setNewTarif({...newTarif, billing_cycle: e.target.value})} className="u-input-sm">
                     <option value="">Bitte wählen...</option>
                     {zahlungszyklen.length > 0 ? (
                       zahlungszyklen.map(zyklus => {
                         const cycleValue = zyklus.name?.toLowerCase() || zyklus.intervall?.toLowerCase() || '';
-                        return (
-                          <option key={zyklus.id || zyklus.zyklus_id} value={cycleValue}>
-                            {zyklus.name || zyklus.intervall}
-                          </option>
-                        );
+                        return <option key={zyklus.id || zyklus.zyklus_id} value={cycleValue}>{zyklus.name || zyklus.intervall}</option>;
                       })
                     ) : (
                       <>
@@ -1526,266 +991,53 @@ const TarifePreise = () => {
                   </select>
                 </div>
               </div>
-
-              {/* Zahlungsmethode & Währung - 2 Spalten */}
               <div className="u-grid-2col">
                 <div>
-                  <label className="u-form-label">
-                    Zahlungsmethode *
-                  </label>
-                  <select
-                    value={newTarif.payment_method}
-                    onChange={(e) => setNewTarif({...newTarif, payment_method: e.target.value})}
-                    className="u-input-sm"
-                  >
+                  <label className="u-form-label">Zahlungsmethode *</label>
+                  <select value={newTarif.payment_method} onChange={(e) => setNewTarif({...newTarif, payment_method: e.target.value})} className="u-input-sm">
                     <option value="bank_transfer">Banküberweisung</option>
                     <option value="direct_debit">Lastschrift</option>
                     <option value="credit_card">Kreditkarte</option>
                     <option value="cash">Bar</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="u-form-label">
-                    Währung
-                  </label>
-                  <select
-                    value={newTarif.currency}
-                    onChange={(e) => setNewTarif({...newTarif, currency: e.target.value})}
-                    className="u-input-sm"
-                  >
+                  <label className="u-form-label">Währung</label>
+                  <select value={newTarif.currency} onChange={(e) => setNewTarif({...newTarif, currency: e.target.value})} className="u-input-sm">
                     <option value="EUR">EUR (€)</option>
                     <option value="USD">USD ($)</option>
                     <option value="CHF">CHF</option>
                   </select>
                 </div>
               </div>
-
-              {/* Mindestlaufzeit & Kündigungsfrist */}
               <div className="u-grid-2col" style={{marginTop: '12px'}}>
                 <div>
                   <label className="u-form-label">Mindestlaufzeit (Monate)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={newTarif.mindestlaufzeit_monate || ''}
-                    onChange={(e) => setNewTarif({...newTarif, mindestlaufzeit_monate: parseInt(e.target.value) || ''})}
-                    placeholder={newTarif.duration_months || '12'}
-                    className="u-input-sm"
-                  />
+                  <input type="number" min="1" value={newTarif.mindestlaufzeit_monate || ''} onChange={(e) => setNewTarif({...newTarif, mindestlaufzeit_monate: parseInt(e.target.value) || ''})} placeholder={newTarif.duration_months || '12'} className="u-input-sm" />
                 </div>
                 <div>
                   <label className="u-form-label">Kündigungsfrist (Monate)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={newTarif.kuendigungsfrist_monate ?? ''}
-                    onChange={(e) => setNewTarif({...newTarif, kuendigungsfrist_monate: parseInt(e.target.value) || ''})}
-                    placeholder="3"
-                    className="u-input-sm"
-                  />
+                  <input type="number" min="1" value={newTarif.kuendigungsfrist_monate ?? ''} onChange={(e) => setNewTarif({...newTarif, kuendigungsfrist_monate: parseInt(e.target.value) || ''})} placeholder="3" className="u-input-sm" />
                 </div>
               </div>
-
-              {/* Status */}
               <div className="tp-status-row">
                 <label className="tp-status-label">
-                  <input
-                    type="checkbox"
-                    checked={newTarif.active}
-                    onChange={(e) => setNewTarif({...newTarif, active: e.target.checked})}
-                  />
+                  <input type="checkbox" checked={newTarif.active} onChange={(e) => setNewTarif({...newTarif, active: e.target.checked})} />
                   Tarif ist aktiv
                 </label>
               </div>
-
-            </div>{/* ds-modal-body */}
+            </div>
             <div className="ds-modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowNewTarif(false)}
-                >
-                  Abbrechen
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => handleSaveTarif(newTarif)}
-                  disabled={!newTarif.name || !newTarif.price_cents || !newTarif.duration_months}
-                >
-                  <Save size={16} />
-                  Speichern
-                </button>
-            </div>{/* ds-modal-footer */}
+              <button className="btn btn-secondary" onClick={() => setShowNewTarif(false)}>Abbrechen</button>
+              <button className="btn btn-primary" onClick={() => handleSaveTarif(newTarif)} disabled={!newTarif.name || !newTarif.price_cents || !newTarif.duration_months}>
+                <Save size={16} /> Speichern
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Starterpakete ──────────────────────────────────────── */}
-      <div className="section">
-        <div className="section-header collapsible" onClick={() => setSpCollapsed(!spCollapsed)} style={{ cursor: 'pointer' }}>
-          <h2><span style={{ marginRight: '0.5rem' }}>🎁</span>Starterpakete</h2>
-          <div className="header-actions">
-            <button className="btn btn-sm btn-primary" onClick={e => { e.stopPropagation(); setShowNewSp(true); setSpCollapsed(false); }}>
-              <Plus size={14} /> Neues Paket
-            </button>
-          </div>
-        </div>
-
-        {!spCollapsed && (
-          <div style={{ padding: '1.25rem' }}>
-            {/* Hinweis */}
-            <div style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 10, padding: '0.875rem 1rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
-              <strong style={{ color: '#d4af37' }}>ℹ️ Starterpakete</strong> — beim ersten Login wählt das Neumitglied seinen Kampfkunststil und sieht das zugeordnete Starterpaket. Das Paket wird per Lastschrift abgebucht.
-            </div>
-
-            {/* Neues Paket Formular */}
-            {showNewSp && (
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '1.25rem', marginBottom: '1.25rem' }}>
-                <h4 style={{ margin: '0 0 1rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>Neues Starterpaket</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                  <div>
-                    <label className="u-form-label">Stil *</label>
-                    <select value={newSp.stil_id} onChange={e => setNewSp({ ...newSp, stil_id: e.target.value })} className="u-input-sm">
-                      <option value="">— Stil wählen —</option>
-                      {spStile.map(s => <option key={s.stil_id} value={s.stil_id}>{s.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="u-form-label">Paketname *</label>
-                    <input className="u-input-sm" value={newSp.name} onChange={e => setNewSp({ ...newSp, name: e.target.value })} placeholder="z. B. Karate Starterpaket" />
-                  </div>
-                  <div style={{ gridColumn: '1/-1' }}>
-                    <label className="u-form-label">Beschreibung</label>
-                    <input className="u-input-sm" value={newSp.beschreibung} onChange={e => setNewSp({ ...newSp, beschreibung: e.target.value })} placeholder="Kurze Beschreibung" />
-                  </div>
-                  <div style={{ gridColumn: '1/-1' }}>
-                    <label className="u-form-label">Pflichthinweis für Mitglied</label>
-                    <input className="u-input-sm" value={newSp.hinweis} onChange={e => setNewSp({ ...newSp, hinweis: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="u-form-label">Rabatt (%)</label>
-                    <input className="u-input-sm" type="number" min="0" max="100" step="0.5" value={newSp.rabatt_prozent} onChange={e => setNewSp({ ...newSp, rabatt_prozent: parseFloat(e.target.value) || 0 })} />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={newSp.aktiv} onChange={e => setNewSp({ ...newSp, aktiv: e.target.checked })} />
-                      Paket aktiv
-                    </label>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setShowNewSp(false)}>Abbrechen</button>
-                  <button className="btn btn-primary btn-sm" onClick={handleCreateSp} disabled={spSaving || !newSp.stil_id || !newSp.name}>
-                    {spSaving ? 'Speichern…' : 'Paket anlegen'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Paket-Liste */}
-            {starterpakete.length === 0 ? (
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '1rem 0' }}>Noch keine Starterpakete angelegt.</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                {starterpakete.map(pk => (
-                  <div key={pk.paket_id} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${pk.aktiv ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 12, overflow: 'hidden' }}>
-                    {/* Paket Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1rem', cursor: 'pointer' }} onClick={() => setExpandedSpId(expandedSpId === pk.paket_id ? null : pk.paket_id)}>
-                      <span style={{ fontSize: '1.2rem' }}>🎁</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, color: pk.aktiv ? '#fff' : 'rgba(255,255,255,0.4)' }}>{pk.name}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          {pk.stil_name} · {pk.positionen?.length || 0} Positionen · {((pk.endpreis_cent || 0) / 100).toFixed(2)} €
-                          {pk.rabatt_prozent > 0 && <span style={{ color: '#4ade80', marginLeft: '0.4rem' }}>−{pk.rabatt_prozent}%</span>}
-                          {!pk.aktiv && <span style={{ color: 'rgba(255,255,255,0.3)', marginLeft: '0.4rem' }}>inaktiv</span>}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <button className="btn btn-sm btn-secondary" onClick={e => { e.stopPropagation(); setEditingSp({ ...pk }); }} title="Bearbeiten"><Edit size={13} /></button>
-                        <button className="btn btn-sm btn-danger" onClick={e => { e.stopPropagation(); handleDeleteSp(pk.paket_id); }} title="Löschen"><Trash2 size={13} /></button>
-                      </div>
-                    </div>
-
-                    {/* Positionen (expanded) */}
-                    {expandedSpId === pk.paket_id && (
-                      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '0.875rem 1rem' }}>
-                        {pk.hinweis && (
-                          <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: '0.875rem', fontSize: '0.82rem', color: '#fca5a5' }}>
-                            ⚠️ {pk.hinweis}
-                          </div>
-                        )}
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '0.875rem' }}>
-                          <thead>
-                            <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                              <th style={{ textAlign: 'left', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Bezeichnung</th>
-                              <th style={{ textAlign: 'center', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Menge</th>
-                              <th style={{ textAlign: 'right', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Preis</th>
-                              <th style={{ textAlign: 'right', padding: '0.35rem 0.5rem', fontWeight: 600 }}>Gesamt</th>
-                              <th style={{ width: 30 }}></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(pk.positionen || []).map(pos => (
-                              <tr key={pos.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                <td style={{ padding: '0.4rem 0.5rem', color: pos.pflicht ? '#fff' : 'rgba(255,255,255,0.55)' }}>
-                                  {pos.bezeichnung}{!pos.pflicht && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.35rem' }}>optional</span>}
-                                </td>
-                                <td style={{ textAlign: 'center', padding: '0.4rem 0.5rem', color: 'var(--text-muted)' }}>{pos.menge}</td>
-                                <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem' }}>{(pos.einzelpreis_cent / 100).toFixed(2)} €</td>
-                                <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem', fontWeight: 600 }}>{(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €</td>
-                                <td style={{ textAlign: 'right', padding: '0.4rem 0.25rem' }}>
-                                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', padding: '0.2rem' }} onClick={() => handleDeletePos(pk.paket_id, pos.id)}><Trash2 size={12} /></button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                          <tfoot>
-                            <tr style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>
-                              <td colSpan={3} style={{ textAlign: 'right', padding: '0.5rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                                Summe{pk.rabatt_prozent > 0 ? ` − ${pk.rabatt_prozent}% Rabatt` : ''}
-                              </td>
-                              <td style={{ textAlign: 'right', padding: '0.5rem 0.5rem', fontWeight: 700, color: '#d4af37' }}>{((pk.endpreis_cent || 0) / 100).toFixed(2)} €</td>
-                              <td></td>
-                            </tr>
-                          </tfoot>
-                        </table>
-
-                        {/* Position hinzufügen */}
-                        {addingPosForId === pk.paket_id ? (
-                          <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '0.875rem', marginTop: '0.5rem' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                              <input className="u-input-sm" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
-                              <input className="u-input-sm" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
-                              <input className="u-input-sm" type="number" min="0" step="0.01" placeholder="Preis € *" value={newPos.einzelpreis_cent} onChange={e => setNewPos({ ...newPos, einzelpreis_cent: e.target.value })} />
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
-                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', cursor: 'pointer' }}>
-                                <input type="checkbox" checked={newPos.pflicht} onChange={e => setNewPos({ ...newPos, pflicht: e.target.checked })} /> Pflicht
-                              </label>
-                              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true }); }}>Abbrechen</button>
-                                <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(pk.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>
-                                  {spSaving ? '…' : 'Hinzufügen'}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <button className="btn btn-sm btn-secondary" onClick={() => setAddingPosForId(pk.paket_id)} style={{ marginTop: '0.25rem' }}>
-                            <Plus size={13} /> Position hinzufügen
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Starterpaket bearbeiten Modal */}
+      {/* Modal: Starterpaket bearbeiten */}
       {editingSp && (
         <div className="ds-modal-overlay" onClick={() => setEditingSp(null)}>
           <div className="ds-modal ds-modal--md" onClick={e => e.stopPropagation()}>
@@ -1836,7 +1088,7 @@ const TarifePreise = () => {
         </div>
       )}
 
-      {/* Tarif bearbeiten Modal */}
+      {/* Modal: Tarif bearbeiten */}
       {editingTarif && (
         <div className="ds-modal-overlay" onClick={() => setEditingTarif(null)}>
           <div className="ds-modal ds-modal--md" onClick={(e) => e.stopPropagation()}>
@@ -1845,91 +1097,31 @@ const TarifePreise = () => {
                 <h3 className="ds-modal-title">Tarif bearbeiten</h3>
                 <p className="ds-modal-subtitle">{editingTarif.name}</p>
               </div>
-              <button className="ds-modal-close" onClick={() => setEditingTarif(null)}>
-                <X size={18} />
-              </button>
+              <button className="ds-modal-close" onClick={() => setEditingTarif(null)}><X size={18} /></button>
             </div>
-
             <div className="ds-modal-body">
-              {/* Name - volle Breite */}
               <div className="tp-field-mb">
-                <label className="u-form-label">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={editingTarif.name}
-                  onChange={(e) => setEditingTarif({...editingTarif, name: e.target.value})}
-                  placeholder="Tarif-Bezeichnung"
-                  className="u-input-sm"
-                />
+                <label className="u-form-label">Name *</label>
+                <input type="text" value={editingTarif.name} onChange={(e) => setEditingTarif({...editingTarif, name: e.target.value})} placeholder="Tarif-Bezeichnung" className="u-input-sm" />
               </div>
-
-              {/* Preis & Aufnahmegebühr - 2 Spalten */}
               <div className="u-grid-2col">
                 <div>
-                  <label className="u-form-label">
-                    Preis (€) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={editingTarif.price_euros || ''}
-                    onChange={(e) => setEditingTarif({
-                      ...editingTarif,
-                      price_euros: e.target.value,
-                      price_cents: Math.round(parseFloat(e.target.value || 0) * 100)
-                    })}
-                    placeholder="0.00"
-                    className="u-input-sm"
-                  />
+                  <label className="u-form-label">Preis (€) *</label>
+                  <input type="number" step="0.01" value={editingTarif.price_euros || ''} onChange={(e) => setEditingTarif({...editingTarif, price_euros: e.target.value, price_cents: Math.round(parseFloat(e.target.value || 0) * 100)})} placeholder="0.00" className="u-input-sm" />
                 </div>
-
                 <div>
-                  <label className="u-form-label">
-                    Aufnahmegebühr (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={editingTarif.aufnahmegebuehr_euros || ''}
-                    onChange={(e) => setEditingTarif({
-                      ...editingTarif,
-                      aufnahmegebuehr_euros: e.target.value,
-                      aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)
-                    })}
-                    placeholder="49.99"
-                    className="u-input-sm"
-                  />
+                  <label className="u-form-label">Aufnahmegebühr (€)</label>
+                  <input type="number" step="0.01" min="0" value={editingTarif.aufnahmegebuehr_euros || ''} onChange={(e) => setEditingTarif({...editingTarif, aufnahmegebuehr_euros: e.target.value, aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)})} placeholder="49.99" className="u-input-sm" />
                 </div>
               </div>
-
-              {/* Laufzeit & Zahlungsintervall - 2 Spalten */}
               <div className="u-grid-2col">
                 <div>
-                  <label className="u-form-label">
-                    Laufzeit (Monate) *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={editingTarif.duration_months}
-                    onChange={(e) => setEditingTarif({...editingTarif, duration_months: parseInt(e.target.value) || ''})}
-                    placeholder="12"
-                    className="u-input-sm"
-                  />
+                  <label className="u-form-label">Laufzeit (Monate) *</label>
+                  <input type="number" min="1" value={editingTarif.duration_months} onChange={(e) => setEditingTarif({...editingTarif, duration_months: parseInt(e.target.value) || ''})} placeholder="12" className="u-input-sm" />
                 </div>
-
                 <div>
-                  <label className="u-form-label">
-                    Zahlungsintervall *
-                  </label>
-                  <select
-                    value={editingTarif.billing_cycle?.toUpperCase() || ''}
-                    onChange={(e) => setEditingTarif({...editingTarif, billing_cycle: e.target.value})}
-                    className="u-input-sm"
-                  >
+                  <label className="u-form-label">Zahlungsintervall *</label>
+                  <select value={editingTarif.billing_cycle?.toUpperCase() || ''} onChange={(e) => setEditingTarif({...editingTarif, billing_cycle: e.target.value})} className="u-input-sm">
                     <option value="">Bitte wählen...</option>
                     <option value="MONTHLY">Monatlich</option>
                     <option value="QUARTERLY">Vierteljährlich</option>
@@ -1937,103 +1129,52 @@ const TarifePreise = () => {
                   </select>
                 </div>
               </div>
-
-              {/* Zahlungsmethode & Währung - 2 Spalten */}
               <div className="u-grid-2col">
                 <div>
-                  <label className="u-form-label">
-                    Zahlungsmethode *
-                  </label>
-                  <select
-                    value={editingTarif.payment_method?.toUpperCase() || ''}
-                    onChange={(e) => setEditingTarif({...editingTarif, payment_method: e.target.value})}
-                    className="u-input-sm"
-                  >
+                  <label className="u-form-label">Zahlungsmethode *</label>
+                  <select value={editingTarif.payment_method?.toUpperCase() || ''} onChange={(e) => setEditingTarif({...editingTarif, payment_method: e.target.value})} className="u-input-sm">
                     <option value="SEPA">SEPA</option>
                     <option value="CARD">Kreditkarte</option>
                     <option value="PAYPAL">PayPal</option>
                     <option value="BANK_TRANSFER">Banküberweisung</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="u-form-label">
-                    Währung
-                  </label>
-                  <select
-                    value={editingTarif.currency}
-                    onChange={(e) => setEditingTarif({...editingTarif, currency: e.target.value})}
-                    className="u-input-sm"
-                  >
+                  <label className="u-form-label">Währung</label>
+                  <select value={editingTarif.currency} onChange={(e) => setEditingTarif({...editingTarif, currency: e.target.value})} className="u-input-sm">
                     <option value="EUR">EUR (€)</option>
                     <option value="USD">USD ($)</option>
                     <option value="CHF">CHF</option>
                   </select>
                 </div>
               </div>
-
-              {/* Mindestlaufzeit & Kündigungsfrist - 2 Spalten */}
               <div className="u-grid-2col" style={{marginTop: '12px'}}>
                 <div>
-                  <label className="u-form-label">
-                    Mindestlaufzeit (Monate)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={editingTarif.mindestlaufzeit_monate || ''}
-                    onChange={(e) => setEditingTarif({...editingTarif, mindestlaufzeit_monate: parseInt(e.target.value) || ''})}
-                    placeholder={editingTarif.duration_months || '12'}
-                    className="u-input-sm"
-                  />
+                  <label className="u-form-label">Mindestlaufzeit (Monate)</label>
+                  <input type="number" min="1" value={editingTarif.mindestlaufzeit_monate || ''} onChange={(e) => setEditingTarif({...editingTarif, mindestlaufzeit_monate: parseInt(e.target.value) || ''})} placeholder={editingTarif.duration_months || '12'} className="u-input-sm" />
                 </div>
                 <div>
-                  <label className="u-form-label">
-                    Kündigungsfrist (Monate)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={editingTarif.kuendigungsfrist_monate ?? ''}
-                    onChange={(e) => setEditingTarif({...editingTarif, kuendigungsfrist_monate: parseInt(e.target.value) || ''})}
-                    placeholder="3"
-                    className="u-input-sm"
-                  />
+                  <label className="u-form-label">Kündigungsfrist (Monate)</label>
+                  <input type="number" min="1" value={editingTarif.kuendigungsfrist_monate ?? ''} onChange={(e) => setEditingTarif({...editingTarif, kuendigungsfrist_monate: parseInt(e.target.value) || ''})} placeholder="3" className="u-input-sm" />
                 </div>
               </div>
-
-              {/* Status */}
               <div className="tp-status-row">
                 <label className="tp-status-label">
-                  <input
-                    type="checkbox"
-                    checked={editingTarif.active}
-                    onChange={(e) => setEditingTarif({...editingTarif, active: e.target.checked})}
-                  />
+                  <input type="checkbox" checked={editingTarif.active} onChange={(e) => setEditingTarif({...editingTarif, active: e.target.checked})} />
                   Tarif ist aktiv
                 </label>
               </div>
-
-            </div>{/* ds-modal-body */}
+            </div>
             <div className="ds-modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setEditingTarif(null)}
-                >
-                  Abbrechen
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => handleSaveTarif(editingTarif)}
-                  disabled={!editingTarif.name || !editingTarif.price_cents || !editingTarif.duration_months}
-                >
-                  <Save size={16} />
-                  Speichern
-                </button>
-            </div>{/* ds-modal-footer */}
+              <button className="btn btn-secondary" onClick={() => setEditingTarif(null)}>Abbrechen</button>
+              <button className="btn btn-primary" onClick={() => handleSaveTarif(editingTarif)} disabled={!editingTarif.name || !editingTarif.price_cents || !editingTarif.duration_months}>
+                <Save size={16} /> Speichern
+              </button>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };
