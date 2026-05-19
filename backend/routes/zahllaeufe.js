@@ -369,13 +369,24 @@ router.post("/", async (req, res) => {
             }
         }
 
+        // Starterpaket-Bestellungen 'in_einzug' → 'bezahlt' (Bank hat bestätigt)
+        const spSql = effectiveDojoId
+            ? `UPDATE starterpaket_bestellungen SET status = 'bezahlt', zahllauf_id = ? WHERE status = 'in_einzug' AND dojo_id = ?`
+            : `UPDATE starterpaket_bestellungen SET status = 'bezahlt', zahllauf_id = ? WHERE status = 'in_einzug'`;
+        const spParams = effectiveDojoId ? [zahllauf_id, effectiveDojoId] : [zahllauf_id];
+        const spResult = await queryAsync(spSql, spParams);
+        if (spResult.affectedRows > 0) {
+            logger.info(`${spResult.affectedRows} Starterpaket-Bestellungen als bezahlt markiert (Zahllauf #${zahllauf_id})`);
+        }
+
         logger.info(`Zahllauf #${zahllauf_id} erstellt, ${markedCount} Beiträge als bezahlt markiert`);
 
         res.json({
             success: true,
             zahllauf_id,
             marked_bezahlt: markedCount,
-            message: `Zahllauf erfolgreich erstellt${markedCount > 0 ? ` (${markedCount} Beiträge als bezahlt markiert)` : ''}`
+            sp_bezahlt: spResult.affectedRows,
+            message: `Zahllauf erfolgreich erstellt${markedCount > 0 ? ` (${markedCount} Beiträge als bezahlt markiert)` : ''}${spResult.affectedRows > 0 ? ` + ${spResult.affectedRows} Starterpaket-Bestellungen bezahlt` : ''}`
         });
 
     } catch (err) {
@@ -475,10 +486,21 @@ router.post("/:id/abschliessen", async (req, res) => {
             `, dojo_id ? [monatStart, monatEnde, dojo_id] : [monatStart, monatEnde]);
         }
 
+        // Starterpaket-Bestellungen 'in_einzug' → 'bezahlt' (Bank hat bestätigt)
+        const spDojoId = dojo_id || null;
+        const spSql2 = spDojoId
+            ? `UPDATE starterpaket_bestellungen SET status = 'bezahlt', zahllauf_id = ? WHERE status = 'in_einzug' AND dojo_id = ?`
+            : `UPDATE starterpaket_bestellungen SET status = 'bezahlt', zahllauf_id = ? WHERE status = 'in_einzug'`;
+        const spRes2 = await queryAsync(spSql2, spDojoId ? [id, spDojoId] : [id]);
+        if (spRes2.affectedRows > 0) {
+            logger.info(`${spRes2.affectedRows} Starterpaket-Bestellungen als bezahlt markiert (Zahllauf #${id})`);
+        }
+
         res.json({
             success: true,
             marked_bezahlt: markedCount,
-            message: `Zahllauf abgeschlossen, ${markedCount} Beiträge als bezahlt markiert`
+            sp_bezahlt: spRes2.affectedRows,
+            message: `Zahllauf abgeschlossen, ${markedCount} Beiträge als bezahlt markiert${spRes2.affectedRows > 0 ? ` + ${spRes2.affectedRows} Starterpaket-Bestellungen` : ''}`
         });
 
     } catch (err) {

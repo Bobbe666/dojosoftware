@@ -138,7 +138,7 @@ router.get("/", async (req, res) => {
 
         // Offene Starterpaket-Bestellungen für SEPA-Mitglieder ebenfalls einziehen
         const spOrders = await queryAsync(`
-            SELECT sb.mitglied_id, sb.gesamtpreis_cent,
+            SELECT sb.id, sb.mitglied_id, sb.gesamtpreis_cent,
                    sp.name AS paket_name,
                    m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
                    sm.mandatsreferenz, sm.erstellungsdatum AS mandat_datum
@@ -195,6 +195,16 @@ router.get("/", async (req, res) => {
         if (selectedBank) {
             res.setHeader('X-Creditor-IBAN', selectedBank.iban || '');
             res.setHeader('X-Creditor-Name', selectedBank.kontoinhaber || '');
+        }
+
+        // Starterpaket-Bestellungen als 'in_einzug' markieren (warten auf Zahllauf-Bestätigung)
+        if (spOrders.length > 0) {
+            const spIds = spOrders.map(sp => sp.id);
+            await queryAsync(
+                'UPDATE starterpaket_bestellungen SET status = ? WHERE id IN (?)',
+                ['in_einzug', spIds]
+            );
+            logger.info(`${spIds.length} Starterpaket-Bestellungen als 'in_einzug' markiert`);
         }
 
         res.send('\uFEFF' + csvData); // UTF-8 BOM für Excel

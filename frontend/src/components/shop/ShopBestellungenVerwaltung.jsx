@@ -10,9 +10,10 @@ const STATUS_LABELS = {
 };
 
 const SP_STATUS = {
-  offen:     { label: 'Offen',      color: '#F59E0B' },
-  bezahlt:   { label: 'Bezahlt',    color: '#22C55E' },
-  storniert: { label: 'Storniert',  color: '#EF4444' }
+  offen:      { label: 'Offen',      color: '#F59E0B' },
+  in_einzug:  { label: 'Im Einzug',  color: '#3B82F6' },
+  bezahlt:    { label: 'Bezahlt',    color: '#22C55E' },
+  storniert:  { label: 'Storniert',  color: '#EF4444' }
 };
 
 const STATUS_FLOW = ['offen', 'in_bearbeitung', 'versendet', 'abgeschlossen'];

@@ -746,6 +746,16 @@ db.promise().query(`
     ADD COLUMN IF NOT EXISTS zahlungsaufschub_monate INT NULL DEFAULT 0
 `).catch(err => logger.warn('Migration 164 (ignoriert):', { error: err.message }));
 
+// Migration 165: starterpaket_bestellungen — in_einzug Status + zahllauf_id
+db.promise().query(`
+  ALTER TABLE starterpaket_bestellungen
+    MODIFY COLUMN status ENUM('offen','in_einzug','bezahlt','storniert') NOT NULL DEFAULT 'offen'
+`).catch(err => logger.warn('Migration 165a (ignoriert):', { error: err.message }));
+db.promise().query(`
+  ALTER TABLE starterpaket_bestellungen
+    ADD COLUMN IF NOT EXISTS zahllauf_id INT DEFAULT NULL
+`).catch(err => logger.warn('Migration 165b (ignoriert):', { error: err.message }));
+
 // Migration 148: Dateianhang für bank_transaktionen
 db.promise().query(`
   ALTER TABLE bank_transaktionen

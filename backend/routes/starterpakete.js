@@ -445,7 +445,7 @@ router.patch('/bestellungen/:id/status', async (req, res) => {
     if (isNaN(bestellId)) return res.status(400).json({ error: 'Ungültige ID' });
 
     const { status } = req.body;
-    const erlaubt = ['offen', 'bezahlt', 'storniert'];
+    const erlaubt = ['offen', 'in_einzug', 'bezahlt', 'storniert'];
     if (!erlaubt.includes(status)) return res.status(400).json({ error: 'Ungültiger Status' });
 
     const [r] = await pool.query(
