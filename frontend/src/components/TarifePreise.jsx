@@ -91,6 +91,7 @@ const TarifePreise = () => {
   // ── Starterpakete State ──────────────────────────────────────────
   const [starterpakete, setStarterpakete] = useState([]);
   const [spStile, setSpStile] = useState([]);
+  const [spArtikel, setSpArtikel] = useState([]);
   const [editingSp, setEditingSp] = useState(null);
   const [expandedSpId, setExpandedSpId] = useState(null);
   const [spSaving, setSpSaving] = useState(false);
@@ -100,7 +101,7 @@ const TarifePreise = () => {
     hinweis: 'Für ein einheitliches Auftreten, ein starkes Teamgefühl und die Einhaltung unserer Qualitäts- und Sicherheitsstandards bitten wir darum, im Training sowie insbesondere bei Wettkämpfen ausschließlich Ausrüstung zu verwenden, die über unsere Schule bzw. unsere offiziellen Partner bezogen wurde. So stellen wir sicher, dass alle Mitglieder mit geprüfter, passender und einheitlicher Ausrüstung trainieren und auftreten. Vielen Dank für euer Verständnis und eure Unterstützung unseres gemeinsamen Auftritts als Team.',
     rabatt_prozent: 0, aktiv: true
   });
-  const [newPos, setNewPos] = useState({ bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
+  const [newPos, setNewPos] = useState({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
   const [showNewSp, setShowNewSp] = useState(false);
   const [activeTab, setActiveTab] = useState('tarife');
   const [tarifeFilter, setTarifeFilter] = useState('alle');
@@ -175,14 +176,19 @@ const TarifePreise = () => {
     const dojoId = getDojoId();
     const p = dojoId ? `?dojo_id=${dojoId}` : '';
     try {
-      const [pkRes, stRes] = await Promise.all([
+      const [pkRes, stRes, artRes] = await Promise.all([
         axios.get(`/starterpakete${p}`).catch(() => null),
         axios.get(`/stile?aktiv=true${dojoId ? `&dojo_id=${dojoId}` : ''}`).catch(() => null),
+        axios.get(`/artikel${p}`).catch(() => null),
       ]);
       if (pkRes?.data?.success) setStarterpakete(pkRes.data.pakete || []);
       if (stRes?.data) {
         const arr = Array.isArray(stRes.data) ? stRes.data : (stRes.data.data || []);
         setSpStile(arr.filter(s => s.aktiv !== 0 && s.aktiv !== false));
+      }
+      if (artRes?.data) {
+        const arr = Array.isArray(artRes.data) ? artRes.data : (artRes.data.data || artRes.data.artikel || []);
+        setSpArtikel(arr.filter(a => a.aktiv !== 0 && a.aktiv !== false));
       }
     } catch (err) {
       console.error('Starterpakete laden Fehler:', err);
@@ -243,7 +249,7 @@ const TarifePreise = () => {
       });
       if (r.data.success) {
         setStarterpakete(prev => prev.map(x => x.paket_id === paketId ? r.data.paket : x));
-        setNewPos({ bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
+        setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
         setAddingPosForId(null);
       }
     } catch (err) { console.error(err); }
@@ -782,6 +788,29 @@ const TarifePreise = () => {
                       </table>
                       {addingPosForId === pk.paket_id ? (
                         <div className="tc-pos-form">
+                          {spArtikel.length > 0 && (
+                            <div style={{ marginBottom: '0.6rem' }}>
+                              <select
+                                className="tc-pos-input"
+                                value={newPos.artikel_id || ''}
+                                onChange={e => {
+                                  const art = spArtikel.find(a => a.artikel_id === parseInt(e.target.value));
+                                  if (art) {
+                                    setNewPos(p => ({ ...p, artikel_id: art.artikel_id, bezeichnung: art.name, einzelpreis_cent: (art.verkaufspreis_cent / 100).toFixed(2) }));
+                                  } else {
+                                    setNewPos(p => ({ ...p, artikel_id: null }));
+                                  }
+                                }}
+                              >
+                                <option value="">— Aus Artikelkatalog wählen (optional) —</option>
+                                {spArtikel.map(a => (
+                                  <option key={a.artikel_id} value={a.artikel_id}>
+                                    {a.name} — €{(a.verkaufspreis_cent / 100).toFixed(2)}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
                           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <input className="tc-pos-input" placeholder="Bezeichnung *" value={newPos.bezeichnung} onChange={e => setNewPos({ ...newPos, bezeichnung: e.target.value })} />
                             <input className="tc-pos-input" type="number" min="1" placeholder="Menge" value={newPos.menge} onChange={e => setNewPos({ ...newPos, menge: parseInt(e.target.value) || 1 })} />
@@ -792,7 +821,7 @@ const TarifePreise = () => {
                               <input type="checkbox" checked={newPos.pflicht} onChange={e => setNewPos({ ...newPos, pflicht: e.target.checked })} /> Pflicht
                             </label>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true }); }}>Abbrechen</button>
+                              <button className="btn btn-sm btn-secondary" onClick={() => { setAddingPosForId(null); setNewPos({ artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true }); }}>Abbrechen</button>
                               <button className="btn btn-sm btn-primary" onClick={() => handleAddPos(pk.paket_id)} disabled={spSaving || !newPos.bezeichnung || newPos.einzelpreis_cent === ''}>
                                 {spSaving ? '…' : 'Hinzufügen'}
                               </button>
