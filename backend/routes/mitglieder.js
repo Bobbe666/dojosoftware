@@ -3723,6 +3723,9 @@ router.post("/",
                 status: 'aktiv',
                 unterschrift_datum: new Date()
             };
+            if (memberData.sonder_aktion_id) {
+                vertragData.sonder_aktion_id = parseInt(memberData.sonder_aktion_id);
+            }
 
             const vertragFields = Object.keys(vertragData);
             const vertragPlaceholders = vertragFields.map(() => '?').join(', ');
@@ -3751,6 +3754,14 @@ router.post("/",
                 }
 
                 const vertragId = vertragResult.insertId;
+
+                if (memberData.sonder_aktion_id && vertragId) {
+                    db.query(
+                        'UPDATE sonder_aktionen SET einloesungen_count = einloesungen_count + 1 WHERE id = ? AND dojo_id = ?',
+                        [parseInt(memberData.sonder_aktion_id), memberData.dojo_id],
+                        (e) => { if (e) logger.warn('Einlösungs-Zählung fehlgeschlagen:', e.message); }
+                    );
+                }
 
                 // 💰 Beiträge für gesamte Vertragslaufzeit erstellen
                 const createAllBeitraege = (callback) => {
@@ -4386,10 +4397,7 @@ router.get('/:id/birthday-check', (req, res) => {
     }
 
     if (results.length === 0) {
-      return res.status(404).json({
-        error: 'Mitglied nicht gefunden',
-        hasBirthday: false
-      });
+      return res.json({ success: true, hasBirthday: false });
     }
 
     const mitglied = results[0];
