@@ -2211,7 +2211,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               vertrag_gesundheitserklaerung: updatedVertrag.gesundheitserklaerung,
               vertrag_foto_einverstaendnis: updatedVertrag.foto_einverstaendnis,
               vertrag_agb_version: updatedVertrag.agb_version,
-              vertrag_datenschutz_version: updatedVertrag.datenschutz_version
+              vertrag_datenschutz_version: updatedVertrag.datenschutz_version,
+              sonder_aktion_id: updatedVertrag.sonder_aktion_id || null
             }));
           }}
           geburtsdatum={memberData.geburtsdatum}

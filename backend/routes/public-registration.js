@@ -1369,7 +1369,9 @@ router.post('/mitglied-anlegen', async (req, res) => {
       // Einverständnisse
       agb_accepted, dsgvo_accepted, widerrufsrecht_acknowledged, dojoregeln_accepted,
       // Empfehlungscode
-      referral_code
+      referral_code,
+      // Sonderaktion
+      sonder_aktion_id
     } = req.body;
 
     // Pflichtfeld-Validierung
@@ -1551,6 +1553,16 @@ router.post('/mitglied-anlegen', async (req, res) => {
           t.billing_cycle || 'MONTHLY', vertragsnummer, mindestlaufzeit
         ]);
         vertragId = vertragResult.insertId;
+        if (sonder_aktion_id && vertragId) {
+          await queryAsync(
+            'UPDATE vertraege SET sonder_aktion_id = ? WHERE id = ?',
+            [parseInt(sonder_aktion_id), vertragId]
+          );
+          queryAsync(
+            'UPDATE sonder_aktionen SET einloesungen_count = einloesungen_count + 1 WHERE id = ? AND dojo_id = ?',
+            [parseInt(sonder_aktion_id), dojo_id]
+          ).catch(e => logger.warn('Einlösungs-Zählung fehlgeschlagen (public):', { error: e.message }));
+        }
 
         // SEPA-Mandat erstellen falls Bankdaten vorhanden
         if (iban && kontoinhaber) {

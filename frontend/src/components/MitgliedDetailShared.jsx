@@ -6358,7 +6358,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 foto_einverstaendnis: newVertrag.foto_einverstaendnis,
                 agb_version: newVertrag.agb_version,
                 datenschutz_version: newVertrag.datenschutz_version,
-                sepa_mandat_id: newVertrag.sepa_mandat_id
+                sepa_mandat_id: newVertrag.sepa_mandat_id,
+                sonder_aktion_id: newVertrag.sonder_aktion_id
               }}
               onChange={(updatedVertrag) => {
                 setNewVertrag({
@@ -6380,7 +6381,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   foto_einverstaendnis: updatedVertrag.foto_einverstaendnis,
                   agb_version: updatedVertrag.agb_version,
                   datenschutz_version: updatedVertrag.datenschutz_version,
-                  sepa_mandat_id: updatedVertrag.sepa_mandat_id
+                  sepa_mandat_id: updatedVertrag.sepa_mandat_id,
+                  sonder_aktion_id: updatedVertrag.sonder_aktion_id || null
                 });
               }}
               geburtsdatum={mitglied?.geburtsdatum}

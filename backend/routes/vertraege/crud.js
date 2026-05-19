@@ -115,7 +115,7 @@ router.post('/', async (req, res) => {
       agb_version, agb_akzeptiert_am, datenschutz_version, datenschutz_akzeptiert_am, widerruf_akzeptiert_am,
       hausordnung_akzeptiert_am, gesundheitserklaerung, gesundheitserklaerung_datum, haftungsausschluss_akzeptiert,
       haftungsausschluss_datum, foto_einverstaendnis, foto_einverstaendnis_datum, unterschrift_datum,
-      unterschrift_digital, unterschrift_ip, vertragstext_pdf_path, created_by
+      unterschrift_digital, unterschrift_ip, vertragstext_pdf_path, created_by, sonder_aktion_id
     } = req.body;
 
     if (!mitglied_id) return res.status(400).json({ error: 'mitglied_id ist erforderlich' });
@@ -165,10 +165,18 @@ router.post('/', async (req, res) => {
     if (unterschrift_ip) { fields.push('unterschrift_ip'); values.push(unterschrift_ip); }
     if (vertragstext_pdf_path) { fields.push('vertragstext_pdf_path'); values.push(vertragstext_pdf_path); }
     if (created_by) { fields.push('created_by'); values.push(created_by); }
+    if (sonder_aktion_id) { fields.push('sonder_aktion_id'); values.push(parseInt(sonder_aktion_id)); }
 
     const placeholders = fields.map(() => '?').join(', ');
     const query = `INSERT INTO vertraege (${fields.join(', ')}) VALUES (${placeholders})`;
     const result = await queryAsync(query, values);
+
+    if (result.insertId && sonder_aktion_id) {
+      queryAsync(
+        'UPDATE sonder_aktionen SET einloesungen_count = einloesungen_count + 1 WHERE id = ? AND dojo_id = ?',
+        [parseInt(sonder_aktion_id), parseInt(dojo_id)]
+      ).catch(e => logger.warn('Einlösungs-Zählung fehlgeschlagen:', { error: e.message }));
+    }
 
     let generatedVertragsnummer = null;
     if (result.insertId && !vertragsnummer) {
