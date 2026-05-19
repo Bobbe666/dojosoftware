@@ -497,7 +497,7 @@ router.get("/debug-member", async (req, res) => {
             const [mandate, beitraege, vertraege, stripeTx] = await Promise.all([
                 queryAsync(`SELECT mandat_id, status, mandatsreferenz, iban, stripe_payment_method_id, erstellungsdatum FROM sepa_mandate WHERE mitglied_id = ? ORDER BY erstellungsdatum DESC`, [m.mitglied_id]),
                 queryAsync(`SELECT beitrag_id, betrag, zahlungsdatum, bezahlt, art FROM beitraege WHERE mitglied_id = ? AND zahlungsdatum <= ? ORDER BY zahlungsdatum DESC LIMIT 12`, [m.mitglied_id, monatEnde]),
-                queryAsync(`SELECT vertrag_id, status, vertragsstart, vertragsende, ruhepause_von, ruhepause_bis FROM vertraege WHERE mitglied_id = ? ORDER BY vertragsstart DESC LIMIT 3`, [m.mitglied_id]),
+                queryAsync(`SELECT id as vertrag_id, status, vertragsstart, vertragsende, ruhepause_von, ruhepause_bis FROM vertraege WHERE mitglied_id = ? ORDER BY vertragsstart DESC LIMIT 3`, [m.mitglied_id]),
                 queryAsync(`SELECT slt.id, slt.status, slt.betrag, slt.beitrag_ids, slb.monat, slb.jahr, slt.created_at FROM stripe_lastschrift_transaktion slt JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id WHERE slt.mitglied_id = ? ORDER BY slt.created_at DESC LIMIT 6`, [m.mitglied_id]),
             ]);
 
