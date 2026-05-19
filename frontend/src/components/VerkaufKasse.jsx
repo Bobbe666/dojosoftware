@@ -499,7 +499,12 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
 
     if (hatVarianten) {
       setSelectedArtikelForVariant(artikelItem);
-      setSelectedVariante({ groesse: '', farbe: '', material: '', preiskategorie: '' });
+      // Single-Optionen automatisch vorauswählen
+      const farben = artikelItem.varianten_farben || [];
+      const materialien = artikelItem.varianten_material || [];
+      const autoFarbe = farben.length === 1 ? (typeof farben[0] === 'object' ? farben[0].name : farben[0]) : '';
+      const autoMaterial = materialien.length === 1 ? (typeof materialien[0] === 'object' ? materialien[0].name : materialien[0]) : '';
+      setSelectedVariante({ groesse: '', farbe: autoFarbe, material: autoMaterial, preiskategorie: '' });
       setShowVariantenModal(true);
     } else {
       addToWarenkorb(artikelItem);
