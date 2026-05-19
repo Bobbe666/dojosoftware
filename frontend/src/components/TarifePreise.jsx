@@ -97,7 +97,7 @@ const TarifePreise = () => {
   const [addingPosForId, setAddingPosForId] = useState(null);
   const [newSp, setNewSp] = useState({
     stil_id: '', name: '', beschreibung: '',
-    hinweis: 'Nur bei uns gekaufte Ausrüstung ist im Training zugelassen',
+    hinweis: 'Für ein einheitliches Auftreten, ein starkes Teamgefühl und die Einhaltung unserer Qualitäts- und Sicherheitsstandards bitten wir darum, im Training sowie insbesondere bei Wettkämpfen ausschließlich Ausrüstung zu verwenden, die über unsere Schule bzw. unsere offiziellen Partner bezogen wurde. So stellen wir sicher, dass alle Mitglieder mit geprüfter, passender und einheitlicher Ausrüstung trainieren und auftreten. Vielen Dank für euer Verständnis und eure Unterstützung unseres gemeinsamen Auftritts als Team.',
     rabatt_prozent: 0, aktiv: true
   });
   const [newPos, setNewPos] = useState({ bezeichnung: '', menge: 1, einzelpreis_cent: '', pflicht: true });
@@ -199,7 +199,7 @@ const TarifePreise = () => {
       if (r.data.success) {
         setStarterpakete(prev => [...prev, r.data.paket]);
         setShowNewSp(false);
-        setNewSp({ stil_id: '', name: '', beschreibung: '', hinweis: 'Nur bei uns gekaufte Ausrüstung ist im Training zugelassen', rabatt_prozent: 0, aktiv: true });
+        setNewSp({ stil_id: '', name: '', beschreibung: '', hinweis: 'Für ein einheitliches Auftreten, ein starkes Teamgefühl und die Einhaltung unserer Qualitäts- und Sicherheitsstandards bitten wir darum, im Training sowie insbesondere bei Wettkämpfen ausschließlich Ausrüstung zu verwenden, die über unsere Schule bzw. unsere offiziellen Partner bezogen wurde. So stellen wir sicher, dass alle Mitglieder mit geprüfter, passender und einheitlicher Ausrüstung trainieren und auftreten. Vielen Dank für euer Verständnis und eure Unterstützung unseres gemeinsamen Auftritts als Team.', rabatt_prozent: 0, aktiv: true });
       }
     } catch (err) { console.error(err); }
     finally { setSpSaving(false); }
@@ -695,7 +695,7 @@ const TarifePreise = () => {
                 </div>
                 <div style={{ gridColumn: '1/-1' }}>
                   <label className="u-form-label">Pflichthinweis für Mitglied</label>
-                  <input className="u-input-sm" value={newSp.hinweis} onChange={e => setNewSp({ ...newSp, hinweis: e.target.value })} />
+                  <textarea className="u-input-sm" rows={4} value={newSp.hinweis} onChange={e => setNewSp({ ...newSp, hinweis: e.target.value })} style={{ resize: 'vertical' }} />
                 </div>
                 <div>
                   <label className="u-form-label">Rabatt (%)</label>
