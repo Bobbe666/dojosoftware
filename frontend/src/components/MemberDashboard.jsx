@@ -1280,6 +1280,7 @@ const MemberDashboard = () => {
         <StilAuswahlModal
           mitgliedId={memberData.mitglied_id}
           vorname={memberData.vorname}
+          geburtsdatum={memberData.geburtsdatum}
           stile={stile}
           onClose={() => setShowStilAuswahl(false)}
           onSaved={() => loadMemberStyles(memberData.mitglied_id)}
