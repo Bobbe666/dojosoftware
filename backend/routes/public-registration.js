@@ -1954,4 +1954,64 @@ router.post('/iban-validate', async (req, res) => {
   }
 });
 
+// POST /api/public/probetraining — Probetraining-Anmeldung (kein Auth, öffentlich)
+// Legt einen Interessenten in der dojo-eigenen DB an (dojo_id aus Body)
+router.post('/probetraining', async (req, res) => {
+  try {
+    const {
+      dojo_id,
+      vorname, nachname, geburtsdatum,
+      email, telefon,
+      interessiert_an,
+      erziehungsberechtigte_name,
+      erziehungsberechtigte_email,
+      erziehungsberechtigte_telefon,
+      gesundheitserklaerung,
+      haftungsausschluss,
+      datenschutz_akzeptiert,
+      foto_einverstaendnis,
+    } = req.body;
+
+    if (!dojo_id || !vorname || !nachname || !geburtsdatum || !datenschutz_akzeptiert || !gesundheitserklaerung || !haftungsausschluss) {
+      return res.status(400).json({ success: false, error: 'Pflichtfelder fehlen' });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const birthDate = new Date(geburtsdatum);
+    const age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 3600 * 1000));
+
+    const notizParts = [`Probetraining-Anmeldung (Website)`];
+    if (erziehungsberechtigte_name) notizParts.push(`Erziehungsberechtigte/r: ${erziehungsberechtigte_name}${erziehungsberechtigte_email ? ` (${erziehungsberechtigte_email})` : ''}${erziehungsberechtigte_telefon ? `, Tel: ${erziehungsberechtigte_telefon}` : ''}`);
+    notizParts.push(`Gesundheitserklärung: ja | Haftungsausschluss: ja | Datenschutz: ja | Foto-Einverständnis: ${foto_einverstaendnis ? 'ja' : 'nein'}`);
+
+    await queryAsync(`
+      INSERT INTO interessenten
+        (dojo_id, vorname, nachname, geburtsdatum, \`alter\`, email, telefon,
+         interessiert_an, erstkontakt_datum, erstkontakt_quelle,
+         status, prioritaet, notizen, datenschutz_akzeptiert)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      parseInt(dojo_id),
+      vorname.trim(),
+      nachname.trim(),
+      geburtsdatum,
+      age,
+      email?.trim() || null,
+      telefon?.trim() || null,
+      interessiert_an || null,
+      today,
+      'website-probetraining',
+      'probetraining_angemeldet',
+      'mittel',
+      notizParts.join('\n'),
+      true,
+    ]);
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Fehler bei Probetraining-Anmeldung:', { error: err });
+    res.status(500).json({ success: false, error: 'Serverfehler' });
+  }
+});
+
 module.exports = router;
