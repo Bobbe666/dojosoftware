@@ -3967,12 +3967,40 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
                     const tarif = tarifResults[0];
                     const tarifPreis = tarif.price_cents / 100; // Preis in Euro
 
-                    // Rabatt berechnen (aus fm oder mainMemberData)
-                    let rabattProzent = fm.custom_discount_value || fm.rabatt_prozent || 0;
-                    let rabattGrund = 'Familienrabatt';
+                    // Familienrabatt aus rabatte-Tabelle automatisch ermitteln
+                    const applyFamilyDiscount = async () => {
+                        // Manueller Override aus fm hat Vorrang
+                        if (fm.custom_discount_value > 0 || fm.rabatt_prozent > 0) {
+                            const pct = fm.custom_discount_value || fm.rabatt_prozent;
+                            return { rabattProzent: pct, rabattBetragCents: null, rabattGrund: 'Familienrabatt' };
+                        }
+                        try {
+                            const [rules] = await db.promise().query(
+                                `SELECT * FROM rabatte
+                                 WHERE dojo_id = ? AND ist_familien_rabatt = 1 AND aktiv = 1
+                                   AND (gueltig_von IS NULL OR gueltig_von <= CURDATE())
+                                   AND (gueltig_bis IS NULL OR gueltig_bis >= CURDATE())
+                                 ORDER BY id ASC LIMIT 1`,
+                                [dojoId]
+                            );
+                            if (rules.length > 0) {
+                                const r = rules[0];
+                                return {
+                                    rabattProzent: r.rabatt_typ === 'prozent' ? (r.rabatt_prozent || 0) : 0,
+                                    rabattBetragCents: r.rabatt_typ === 'betrag' ? (r.rabatt_betrag_cents || 0) : null,
+                                    rabattGrund: r.name || 'Familienrabatt'
+                                };
+                            }
+                        } catch (e) { /* Fallback: kein Rabatt */ }
+                        return { rabattProzent: 0, rabattBetragCents: null, rabattGrund: 'Familienrabatt' };
+                    };
+
+                    const { rabattProzent, rabattBetragCents, rabattGrund } = await applyFamilyDiscount();
                     let monatsbeitrag = tarifPreis;
 
-                    if (rabattProzent > 0) {
+                    if (rabattBetragCents) {
+                        monatsbeitrag = Math.max(0, Math.round((tarifPreis - rabattBetragCents / 100) * 100) / 100);
+                    } else if (rabattProzent > 0) {
                         monatsbeitrag = Math.round((tarifPreis * (100 - rabattProzent)) * 100) / 100;
                     }
 
@@ -3985,7 +4013,7 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
                         monatsbeitrag: monatsbeitrag,
                         monatlicher_beitrag: monatsbeitrag,
                         rabatt_prozent: rabattProzent,
-                        rabatt_grund: rabattProzent > 0 ? rabattGrund : null,
+                        rabatt_grund: (rabattProzent > 0 || rabattBetragCents) ? rabattGrund : null,
                         mindestlaufzeit_monate: tarif.mindestlaufzeit_monate || 12,
                         kuendigungsfrist_monate: tarif.kuendigungsfrist_monate || 3,
                         aufnahmegebuehr_cents: tarif.aufnahmegebuehr_cents || 0,

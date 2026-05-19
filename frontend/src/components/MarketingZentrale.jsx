@@ -7,7 +7,7 @@ import React, { useState, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, CalendarDays, Zap, Loader2, Users, Gift,
-  Megaphone, TrendingUp, Target, Sparkles, Mail, Share2, Facebook
+  Megaphone, TrendingUp, Target, Sparkles, Mail, Share2, Facebook, Tag
 } from 'lucide-react';
 import '../styles/MarketingZentrale.css';
 
@@ -18,6 +18,7 @@ const MarketingKiContent      = lazy(() => import('./MarketingKiContent'));
 const MarketingGeburtstage    = lazy(() => import('./MarketingGeburtstage'));
 const MarketingNewsletter     = lazy(() => import('./MarketingNewsletter'));
 const MarketingAktionen       = lazy(() => import('./MarketingAktionen'));
+const SonderaktionenTab       = lazy(() => import('./SonderaktionenTab'));
 
 const TABS = [
   {
@@ -62,6 +63,13 @@ const TABS = [
     label: 'Freie Aktionen',
     icon:  Zap,
     desc:  'Spontane Kampagnen',
+  },
+  {
+    id:        'sonderaktionen',
+    label:     'Aktionen',
+    icon:      Tag,
+    desc:      'Sonderaktionen & Rabatte schalten',
+    highlight: true,
   },
 ];
 
@@ -180,6 +188,9 @@ export default function MarketingZentrale({ embedded = false }) {
         )}
         {activeTab === 'freie-aktionen' && (
           <Suspense fallback={<LazyFallback />}><FreieAktionen onSwitchToJahresplan={() => setActiveTab('jahresplan')} /></Suspense>
+        )}
+        {activeTab === 'sonderaktionen' && (
+          <Suspense fallback={<LazyFallback />}><SonderaktionenTab nurMarketing={true} /></Suspense>
         )}
 
       </div>

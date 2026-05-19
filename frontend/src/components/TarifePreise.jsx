@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
+import VergünstigungenTab from './VergünstigungenTab';
+import SonderaktionenTab from './SonderaktionenTab';
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/TarifePreise.css";
@@ -603,6 +605,14 @@ const TarifePreise = () => {
           Starterpakete
           {starterpakete.length > 0 && <span className="tarife-tab-count">{starterpakete.length}</span>}
         </button>
+        <button className={`tarife-tab-btn${activeTab === 'vergünstigungen' ? ' active' : ''}`} onClick={() => setActiveTab('vergünstigungen')}>
+          <Tag size={14} />
+          Vergünstigungen
+        </button>
+        <button className={`tarife-tab-btn${activeTab === 'aktionen' ? ' active' : ''}`} onClick={() => setActiveTab('aktionen')}>
+          <span>🏷️</span>
+          Sonderaktionen
+        </button>
         <button className={`tarife-tab-btn${activeTab === 'einstellungen' ? ' active' : ''}`} onClick={() => setActiveTab('einstellungen')}>
           <Settings size={14} />
           Vertragseinstellungen
@@ -907,6 +917,20 @@ const TarifePreise = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ═══════════ TAB: VERGÜNSTIGUNGEN ═══════════ */}
+      {activeTab === 'vergünstigungen' && (
+        <div style={{ marginTop: '1.5rem' }}>
+          <VergünstigungenTab />
+        </div>
+      )}
+
+      {/* ═══════════ TAB: SONDERAKTIONEN ═══════════ */}
+      {activeTab === 'aktionen' && (
+        <div style={{ marginTop: '1.5rem' }}>
+          <SonderaktionenTab />
         </div>
       )}
 

@@ -718,6 +718,34 @@ db.promise().query(`
   WHERE u.mitglied_id IS NULL AND u.role = 'member'
 `).catch(err => logger.warn('Migration 162 (ignoriert):', { error: err.message }));
 
+// Migration 163: Sonderaktionen-Tabelle
+db.promise().query(`
+  CREATE TABLE IF NOT EXISTS sonder_aktionen (
+    id                  INT AUTO_INCREMENT PRIMARY KEY,
+    dojo_id             INT NOT NULL,
+    name                VARCHAR(255) NOT NULL,
+    beschreibung        TEXT,
+    typ                 ENUM('rabatt_prozent','rabatt_betrag','zahlungsaufschub') NOT NULL,
+    wert                DECIMAL(10,2) NOT NULL DEFAULT 0,
+    gueltig_von         DATE NULL,
+    gueltig_bis         DATE NULL,
+    aktiv               TINYINT(1) NOT NULL DEFAULT 1,
+    marketing_steuerbar TINYINT(1) NOT NULL DEFAULT 1,
+    tarif_ids           JSON NULL,
+    code                VARCHAR(50) NULL,
+    max_einloesungen    INT NULL,
+    einloesungen_count  INT NOT NULL DEFAULT 0,
+    erstellt_am         TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`).catch(err => logger.warn('Migration 163 (ignoriert):', { error: err.message }));
+
+// Migration 164: sonder_aktion_id + zahlungsaufschub_monate in vertraege
+db.promise().query(`
+  ALTER TABLE vertraege
+    ADD COLUMN IF NOT EXISTS sonder_aktion_id       INT NULL,
+    ADD COLUMN IF NOT EXISTS zahlungsaufschub_monate INT NULL DEFAULT 0
+`).catch(err => logger.warn('Migration 164 (ignoriert):', { error: err.message }));
+
 // Migration 148: Dateianhang für bank_transaktionen
 db.promise().query(`
   ALTER TABLE bank_transaktionen
@@ -1168,6 +1196,15 @@ try {
       error: error.message,
       stack: error.stack
     });
+}
+
+// 3.1 SONDER-AKTIONEN
+try {
+  const sonderAktionenRouter = require('./routes/sonder-aktionen');
+  app.use('/api/sonder-aktionen', authenticateToken, sonderAktionenRouter);
+  logger.success('Route gemountet', { path: '/api/sonder-aktionen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'sonder-aktionen', error: error.message });
 }
 
 // Temporärer Migrations-Endpoint
