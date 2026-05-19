@@ -346,36 +346,6 @@ const OffeneZahlungen = () => {
       {auswertung && (
         <section className="oz-insights">
 
-          {/* Bar Chart */}
-          {auswertung.monatsverlauf?.length > 0 && (
-            <div className="oz-insight-card oz-insight-chart">
-              <div className="oz-insight-hd">
-                <span><BarChart2 size={14} /> Monatsverlauf</span>
-                <span className="oz-insight-sub">{auswertung.monatsverlauf.length} Monate</span>
-              </div>
-              <div className="oz-barchart">
-                {(() => {
-                  const maxVal = Math.max(...auswertung.monatsverlauf.map(x => parseFloat(x.summe)));
-                  const now = new Date();
-                  return auswertung.monatsverlauf.map(m => {
-                    const pct = maxVal > 0 ? (parseFloat(m.summe) / maxVal * 100) : 0;
-                    const [yr, mo] = m.monat.split('-');
-                    const isCurrent = parseInt(yr) === now.getFullYear() && parseInt(mo) === (now.getMonth() + 1);
-                    return (
-                      <div key={m.monat} className={`oz-bar ${isCurrent ? 'oz-bar--now' : ''}`} title={`${mo}/${yr}: ${fmt(m.summe)}`}>
-                        <span className="oz-bar-val">{(parseFloat(m.summe)/1000).toFixed(1)}k</span>
-                        <div className="oz-bar-track">
-                          <div className="oz-bar-fill" style={{ height: `${Math.max(pct, 3)}%` }} />
-                        </div>
-                        <span className="oz-bar-lbl">{mo}/{yr.slice(2)}</span>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          )}
-
           {/* Recent Payments */}
           {auswertung.letzte_erfolge?.length > 0 && (
             <div className="oz-insight-card oz-insight-recent">
@@ -438,6 +408,36 @@ const OffeneZahlungen = () => {
                 <p className="oz-health-label">
                   {healthScore >= 70 ? 'Sehr gut — alles im grünen Bereich' : healthScore >= 40 ? 'Handlungsbedarf bei einigen Positionen' : 'Kritisch — sofortige Maßnahmen nötig'}
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* Bar Chart — volle Breite unten */}
+          {auswertung.monatsverlauf?.length > 0 && (
+            <div className="oz-insight-card oz-insight-chart">
+              <div className="oz-insight-hd">
+                <span><BarChart2 size={14} /> Monatsverlauf</span>
+                <span className="oz-insight-sub">{auswertung.monatsverlauf.length} Monate</span>
+              </div>
+              <div className="oz-barchart">
+                {(() => {
+                  const maxVal = Math.max(...auswertung.monatsverlauf.map(x => parseFloat(x.summe)));
+                  const now = new Date();
+                  return auswertung.monatsverlauf.map(m => {
+                    const pct = maxVal > 0 ? (parseFloat(m.summe) / maxVal * 100) : 0;
+                    const [yr, mo] = m.monat.split('-');
+                    const isCurrent = parseInt(yr) === now.getFullYear() && parseInt(mo) === (now.getMonth() + 1);
+                    return (
+                      <div key={m.monat} className={`oz-bar ${isCurrent ? 'oz-bar--now' : ''}`} title={`${mo}/${yr}: ${fmt(m.summe)}`}>
+                        <span className="oz-bar-val">{(parseFloat(m.summe)/1000).toFixed(1)}k</span>
+                        <div className="oz-bar-track">
+                          <div className="oz-bar-fill" style={{ height: `${Math.max(pct, 3)}%` }} />
+                        </div>
+                        <span className="oz-bar-lbl">{mo}/{yr.slice(2)}</span>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           )}
