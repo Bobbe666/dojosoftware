@@ -1435,7 +1435,16 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
                     let iconEl, cardClass, fixEl;
 
-                    if (m.grundTyp === 'kein_mandat') {
+                    if (m.grundTyp === 'falsche_zahlungsmethode') {
+                      iconEl = <Settings size={16} />;
+                      cardClass = 'll-dcard--warning';
+                      fixEl = (
+                        <div className="ll-dcard-fix">
+                          <span className="ll-dfix-label">{m.grund}</span>
+                          <a className="ll-dfix-btn" href={profileUrl}>Zahlungsmethode korrigieren</a>
+                        </div>
+                      );
+                    } else if (m.grundTyp === 'kein_mandat') {
                       iconEl = <XCircle size={16} />;
                       cardClass = 'll-dcard--danger';
                       if (m.needs_stripe_setup) {
