@@ -37,12 +37,8 @@ async function loadPaketMitPositionen(paketId, dojoId) {
 // ── GET /api/starterpakete/artikel-options ── Artikel für Dropdown ──
 router.get('/artikel-options', async (req, res) => {
   try {
-    const dojoId = parseInt(req.query.dojo_id, 10) || req.user?.dojo_id || null;
-    if (!dojoId) return res.json({ success: true, artikel: [] });
-
     const [artikel] = await pool.query(
-      'SELECT artikel_id, name, verkaufspreis_cent FROM artikel WHERE dojo_id = ? AND aktiv = 1 ORDER BY name ASC',
-      [dojoId]
+      'SELECT artikel_id, name, verkaufspreis_cent FROM artikel WHERE aktiv = 1 ORDER BY name ASC'
     );
     res.json({ success: true, artikel });
   } catch (err) {
