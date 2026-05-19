@@ -65,7 +65,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
   // Nicht-im-Lauf Übersicht / Schnelldiagnose
   const [notInRun, setNotInRun] = useState(null);
-  const [notInRunOpen, setNotInRunOpen] = useState(true);
+  const [notInRunOpen, setNotInRunOpen] = useState(false);
   const [notInRunLoading, setNotInRunLoading] = useState(false);
   const [setupLoadingPer, setSetupLoadingPer] = useState({});
   const [setupResultPer, setSetupResultPer] = useState({});
