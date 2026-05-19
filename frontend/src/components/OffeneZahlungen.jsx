@@ -272,7 +272,7 @@ const OffeneZahlungen = () => {
 
           {/* 4 — Fehlgeschlagen */}
           <div
-            className={`oz-metric ${auswertung.failed_stripe.anzahl > 0 ? 'oz-metric--danger' : 'oz-metric--ok'} oz-metric--link`}
+            className={`oz-metric ${failedTransaktionen.length > 0 ? 'oz-metric--danger' : 'oz-metric--ok'} oz-metric--link`}
             onClick={() => setActiveTab('fehlgeschlagen')}
           >
             <div className="oz-metric-hd">
@@ -280,13 +280,13 @@ const OffeneZahlungen = () => {
               <ChevronRight size={13} className="oz-metric-arrow" />
             </div>
             <div className="oz-metric-num oz-metric-num--count">
-              {auswertung.failed_stripe.anzahl}
-              {auswertung.failed_stripe.summe > 0 && (
-                <span className="oz-metric-aside">{fmt(auswertung.failed_stripe.summe)}</span>
+              {failedTransaktionen.length}
+              {failedTransaktionen.length > 0 && (
+                <span className="oz-metric-aside">{fmt(failedTransaktionen.reduce((s,t) => s + parseFloat(t.retry_betrag || t.betrag || 0), 0))}</span>
               )}
             </div>
             <div className="oz-metric-ft">
-              {auswertung.failed_stripe.anzahl > 0
+              {failedTransaktionen.length > 0
                 ? <span className="oz-ft-pill oz-ft-pill--red">→ Erneut einziehen</span>
                 : <span className="oz-ft-pill oz-ft-pill--green">✓ Alle erfolgreich</span>
               }
