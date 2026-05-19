@@ -110,6 +110,8 @@ const TarifePreise = () => {
   });
   const EMPTY_POS = { artikel_id: null, bezeichnung: '', menge: 1, einzelpreis_cent: '', originalPreis_cent: null, rabatt_prozent: 0, hat_varianten: false, varianten_options: null, pflicht: true, uvpErw: '', paketErw: '', uvpKids: '', paketKids: '', rabattModus: 'prozent', rabattWert: '' };
   const [newPos, setNewPos] = useState(EMPTY_POS);
+  const [editingPosId, setEditingPosId] = useState(null);
+  const [editPos, setEditPos] = useState(EMPTY_POS);
   const [showNewSp, setShowNewSp] = useState(false);
   const [activeTab, setActiveTab] = useState('tarife');
   const [tarifeFilter, setTarifeFilter] = useState('alle');
@@ -333,6 +335,65 @@ const TarifePreise = () => {
         if (editingSp?.paket_id === paketId) setEditingSp(r.data.paket);
       }
     } catch (err) { console.error(err); }
+  };
+
+  const openEditPos = (pos) => {
+    const vOpts = pos.varianten_options;
+    const isKat = !!(vOpts?.hat_preiskategorien);
+    setEditPos({
+      ...EMPTY_POS,
+      bezeichnung: pos.bezeichnung,
+      menge: pos.menge,
+      pflicht: !!pos.pflicht,
+      hat_varianten: !!pos.hat_varianten,
+      varianten_options: vOpts || null,
+      rabatt_prozent: pos.rabatt_prozent || 0,
+      ...(isKat ? {
+        uvpErw:   vOpts.original_erwachsene_cent ? (vOpts.original_erwachsene_cent / 100).toFixed(2) : '',
+        paketErw: vOpts.preis_erwachsene_cent    ? (vOpts.preis_erwachsene_cent    / 100).toFixed(2) : (pos.einzelpreis_cent / 100).toFixed(2),
+        uvpKids:  vOpts.original_kids_cent       ? (vOpts.original_kids_cent       / 100).toFixed(2) : '',
+        paketKids: vOpts.preis_kids_cent         ? (vOpts.preis_kids_cent          / 100).toFixed(2) : '',
+      } : {
+        einzelpreis_cent: (pos.einzelpreis_cent / 100).toFixed(2),
+        originalPreis_cent: pos.originalpreis_cent || null,
+        paketErw: pos.originalpreis_cent ? (pos.einzelpreis_cent / 100).toFixed(2) : '',
+      }),
+    });
+    setEditingPosId(pos.id);
+  };
+
+  const handleUpdatePos = async (paketId, posId) => {
+    const isKat = !!(editPos.varianten_options?.hat_preiskategorien);
+    if (!editPos.bezeichnung) return;
+    if (!isKat && editPos.einzelpreis_cent === '') return;
+    if (isKat && (!editPos.paketErw || !editPos.paketKids)) return;
+    setSpSaving(true);
+    const dojoId = getDojoId();
+    const p = dojoId ? `?dojo_id=${dojoId}` : '';
+    const toC = v => Math.round(parseFloat(String(v).replace(',', '.')) * 100);
+    let payload = { ...editPos };
+    if (isKat) {
+      const paketErwC  = toC(editPos.paketErw);
+      const paketKidsC = toC(editPos.paketKids);
+      const uvpErwC    = editPos.uvpErw  ? toC(editPos.uvpErw)  : null;
+      const uvpKidsC   = editPos.uvpKids ? toC(editPos.uvpKids) : null;
+      payload = { ...payload, einzelpreis_cent: paketErwC, originalPreis_cent: uvpErwC,
+        varianten_options: { ...editPos.varianten_options, preis_erwachsene_cent: paketErwC, preis_kids_cent: paketKidsC, original_erwachsene_cent: uvpErwC, original_kids_cent: uvpKidsC } };
+    } else {
+      const hasRabatt = editPos.paketErw && parseFloat(editPos.paketErw) > 0 && editPos.paketErw !== editPos.einzelpreis_cent;
+      payload.einzelpreis_cent = hasRabatt ? toC(editPos.paketErw) : toC(editPos.einzelpreis_cent);
+      if (hasRabatt) payload.originalPreis_cent = toC(editPos.einzelpreis_cent);
+    }
+    try {
+      const r = await axios.put(`/starterpakete/${paketId}/positionen/${posId}${p}`, payload);
+      if (r.data.success) {
+        setStarterpakete(prev => prev.map(x => x.paket_id === paketId ? r.data.paket : x));
+        if (editingSp?.paket_id === paketId) setEditingSp(r.data.paket);
+        setEditingPosId(null);
+        setEditPos(EMPTY_POS);
+      }
+    } catch (err) { console.error(err); }
+    finally { setSpSaving(false); }
   };
 
   const loadDojoSettings = async () => {
@@ -842,7 +903,8 @@ const TarifePreise = () => {
                             const vOpts = pos.varianten_options ? (typeof pos.varianten_options === 'string' ? (() => { try { return JSON.parse(pos.varianten_options); } catch { return null; } })() : pos.varianten_options) : null;
                             const isKat = !!(vOpts?.hat_preiskategorien);
                             return (
-                            <tr key={pos.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <React.Fragment key={pos.id}>
+                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                               <td style={{ padding: '0.4rem 0.5rem', color: pos.pflicht ? '#fff' : 'rgba(255,255,255,0.55)' }}>
                                 {pos.bezeichnung}{!pos.pflicht && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.35rem' }}>optional</span>}
                                 {isKat && <span style={{ fontSize: '0.72rem', color: '#d4af37', marginLeft: '0.4rem' }}>📐 Kinder/Erw.</span>}
@@ -863,10 +925,80 @@ const TarifePreise = () => {
                               <td style={{ textAlign: 'right', padding: '0.4rem 0.5rem', fontWeight: 600 }}>
                                 {isKat ? <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>je Größe</span> : `${(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €`}
                               </td>
-                              <td style={{ textAlign: 'right', padding: '0.4rem 0.25rem' }}>
-                                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', padding: '0.2rem' }} onClick={() => handleDeletePos(pk.paket_id, pos.id)}><Trash2 size={12} /></button>
+                              <td style={{ textAlign: 'right', padding: '0.4rem 0.25rem', whiteSpace: 'nowrap' }}>
+                                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', padding: '0.2rem', marginRight: '0.1rem' }} title="Bearbeiten" onClick={() => editingPosId === pos.id ? setEditingPosId(null) : openEditPos(pos)}><Edit size={12} /></button>
+                                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', padding: '0.2rem' }} title="Löschen" onClick={() => handleDeletePos(pk.paket_id, pos.id)}><Trash2 size={12} /></button>
                               </td>
                             </tr>
+                            {editingPosId === pos.id && (
+                              <tr key={`edit-${pos.id}`}>
+                                <td colSpan={5} style={{ padding: '0', background: 'rgba(212,175,55,0.04)', borderBottom: '2px solid rgba(212,175,55,0.25)' }}>
+                                  <div style={{ padding: '0.75rem 1rem' }}>
+                                    <div style={{ fontSize: '0.78rem', color: '#d4af37', fontWeight: 600, marginBottom: '0.5rem' }}>✏️ Position bearbeiten</div>
+                                    {/* Kinder/Erwachsene Preisblock */}
+                                    {editPos.hat_varianten && editPos.varianten_options?.hat_preiskategorien ? (
+                                      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '0.75rem', marginBottom: '0.5rem' }}>
+                                        <div style={{ fontSize: '0.78rem', color: '#d4af37', marginBottom: '0.6rem', fontWeight: 600 }}>📐 Preise nach Altersgruppe</div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr 16px 1fr', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', marginBottom: '0.4rem' }}>
+                                          <span style={{ color: 'rgba(255,255,255,0.5)' }}>🧑 Erw.</span>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>VK</span>
+                                            <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK €" style={{ flex: 1 }} value={editPos.uvpErw} onChange={e => { const v = e.target.value; setEditPos(p => { const w = parseFloat(p.rabattWert)||0; const pk2 = w > 0 ? (p.rabattModus==='prozent' ? Math.max(0,parseFloat(v)*(1-w/100)) : Math.max(0,parseFloat(v)-w)).toFixed(2) : p.paketErw; return { ...p, uvpErw: v, paketErw: pk2, einzelpreis_cent: pk2 }; }); }} />
+                                          </div>
+                                          <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)' }}>→</span>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                            <span style={{ fontSize: '0.72rem', color: '#d4af37' }}>Paket</span>
+                                            <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Paket €" style={{ flex: 1, borderColor: 'rgba(212,175,55,0.4)' }} value={editPos.paketErw} onChange={e => { const v = e.target.value; setEditPos(p => ({ ...p, paketErw: v, einzelpreis_cent: v, rabattWert: '' })); }} />
+                                          </div>
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr 16px 1fr', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', marginBottom: '0.6rem' }}>
+                                          <span style={{ color: 'rgba(255,255,255,0.5)' }}>👧 Kids</span>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>VK</span>
+                                            <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK €" style={{ flex: 1 }} value={editPos.uvpKids} onChange={e => { const v = e.target.value; setEditPos(p => { const w = parseFloat(p.rabattWert)||0; const pk2 = w > 0 ? (p.rabattModus==='prozent' ? Math.max(0,parseFloat(v)*(1-w/100)) : Math.max(0,parseFloat(v)-w)).toFixed(2) : p.paketKids; return { ...p, uvpKids: v, paketKids: pk2 }; }); }} />
+                                          </div>
+                                          <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)' }}>→</span>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                            <span style={{ fontSize: '0.72rem', color: '#d4af37' }}>Paket</span>
+                                            <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="Paket €" style={{ flex: 1, borderColor: 'rgba(212,175,55,0.4)' }} value={editPos.paketKids} onChange={e => setEditPos(p => ({ ...p, paketKids: e.target.value, rabattWert: '' }))} />
+                                          </div>
+                                        </div>
+                                        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                          <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)' }}>Rabatt auf beide:</span>
+                                          <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="0" style={{ width: '70px', padding: '0.2rem 0.4rem' }} value={editPos.rabattWert}
+                                            onChange={e => { const w = e.target.value; setEditPos(p => { const wNum = parseFloat(w)||0; const calc = vk => !vk||!wNum ? vk : (p.rabattModus==='prozent' ? Math.max(0,parseFloat(vk)*(1-wNum/100)) : Math.max(0,parseFloat(vk)-wNum)).toFixed(2); const pe = calc(p.uvpErw); const pk2 = calc(p.uvpKids); return { ...p, rabattWert: w, paketErw: pe||p.paketErw, paketKids: pk2||p.paketKids, einzelpreis_cent: pe||p.paketErw }; }); }} />
+                                          <button type="button" style={{ padding: '0.2rem 0.55rem', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600, minWidth: 36 }} onClick={() => setEditPos(p => ({ ...p, rabattModus: p.rabattModus==='prozent' ? 'euro' : 'prozent', rabattWert: '' }))}>{editPos.rabattModus === 'prozent' ? '%' : '€'}</button>
+                                          {editPos.rabattWert && parseFloat(editPos.rabattWert) > 0 && editPos.uvpErw && editPos.uvpKids && <span style={{ fontSize: '0.78rem', color: '#4ade80', fontWeight: 600 }}>→ Erw: €{editPos.paketErw} / Kids: €{editPos.paketKids}</span>}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+                                        <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK-Preis €" style={{ width: '110px' }} value={editPos.einzelpreis_cent} onChange={e => { const v = e.target.value; setEditPos(p => { const w = parseFloat(p.rabattWert)||0; const neu = w > 0 ? (p.rabattModus==='prozent' ? Math.max(0,parseFloat(v)*(1-w/100)) : Math.max(0,parseFloat(v)-w)).toFixed(2) : v; return { ...p, einzelpreis_cent: v, originalPreis_cent: Math.round(parseFloat(v||0)*100)||null, paketErw: neu }; }); }} />
+                                        <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>Rabatt:</span>
+                                        <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="0" style={{ width: '70px', padding: '0.2rem 0.4rem' }} value={editPos.rabattWert}
+                                          onChange={e => { const w = e.target.value; setEditPos(p => { const wNum = parseFloat(w)||0; const vk = parseFloat(p.einzelpreis_cent)||0; const neu = wNum > 0 ? (p.rabattModus==='prozent' ? Math.max(0,vk*(1-wNum/100)) : Math.max(0,vk-wNum)).toFixed(2) : ''; return { ...p, rabattWert: w, paketErw: neu, originalPreis_cent: neu ? Math.round(vk*100) : null, rabatt_prozent: p.rabattModus==='prozent' ? (wNum||0) : (vk ? Math.round(wNum/vk*100) : 0) }; }); }} />
+                                        <button type="button" style={{ padding: '0.2rem 0.55rem', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600, minWidth: 36 }} onClick={() => setEditPos(p => ({ ...p, rabattModus: p.rabattModus==='prozent' ? 'euro' : 'prozent', rabattWert: '', paketErw: '' }))}>{editPos.rabattModus === 'prozent' ? '%' : '€'}</button>
+                                        {editPos.rabattWert && parseFloat(editPos.rabattWert) > 0 && editPos.paketErw && <span style={{ fontSize: '0.8rem', color: '#4ade80', fontWeight: 600 }}><span style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.35)', marginRight: '0.3rem' }}>€{parseFloat(editPos.einzelpreis_cent).toFixed(2)}</span>→ €{parseFloat(editPos.paketErw).toFixed(2)}</span>}
+                                      </div>
+                                    )}
+                                    <div style={{ display: 'grid', gridTemplateColumns: editPos.varianten_options?.hat_preiskategorien ? '3fr 1fr' : '2fr 1fr', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                                      <input className="tc-pos-input" placeholder="Bezeichnung *" value={editPos.bezeichnung} onChange={e => setEditPos({ ...editPos, bezeichnung: e.target.value })} />
+                                      <input className="tc-pos-input" type="number" min="1" placeholder="Menge" value={editPos.menge} onChange={e => setEditPos({ ...editPos, menge: parseInt(e.target.value)||1 })} />
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-3)', cursor: 'pointer' }}>
+                                        <input type="checkbox" checked={editPos.pflicht} onChange={e => setEditPos({ ...editPos, pflicht: e.target.checked })} /> Pflicht
+                                      </label>
+                                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button className="btn btn-sm btn-secondary" onClick={() => { setEditingPosId(null); setEditPos(EMPTY_POS); }}>Abbrechen</button>
+                                        <button className="btn btn-sm btn-primary" onClick={() => handleUpdatePos(pk.paket_id, pos.id)} disabled={spSaving || !editPos.bezeichnung || (editPos.varianten_options?.hat_preiskategorien ? (!editPos.paketErw || !editPos.paketKids) : editPos.einzelpreis_cent === '')}>{spSaving ? '…' : 'Speichern'}</button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                            </React.Fragment>
                             );
                           })}
                         </tbody>
@@ -1423,20 +1555,92 @@ const TarifePreise = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {editingSp.positionen.map(pos => (
-                        <tr key={pos.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      {editingSp.positionen.map(pos => {
+                        const vOpts2 = pos.varianten_options ? (typeof pos.varianten_options === 'string' ? (() => { try { return JSON.parse(pos.varianten_options); } catch { return null; } })() : pos.varianten_options) : null;
+                        const isKat2 = !!(vOpts2?.hat_preiskategorien);
+                        return (
+                        <React.Fragment key={pos.id}>
+                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                           <td style={{ padding: '0.35rem 0.4rem', color: pos.pflicht ? 'var(--text-1)' : 'var(--text-4)' }}>
                             {pos.bezeichnung}
                             {!pos.pflicht && <span style={{ fontSize: '0.73rem', color: 'var(--text-4)', marginLeft: '0.3rem' }}>optional</span>}
+                            {isKat2 && <span style={{ fontSize: '0.72rem', color: '#d4af37', marginLeft: '0.4rem' }}>📐 Kinder/Erw.</span>}
                           </td>
                           <td style={{ textAlign: 'center', padding: '0.35rem 0.4rem', color: 'var(--text-3)' }}>{pos.menge}</td>
-                          <td style={{ textAlign: 'right', padding: '0.35rem 0.4rem' }}>{(pos.einzelpreis_cent / 100).toFixed(2)} €</td>
-                          <td style={{ textAlign: 'right', padding: '0.35rem 0.4rem', fontWeight: 600 }}>{(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €</td>
-                          <td style={{ textAlign: 'right', padding: '0.35rem 0.2rem' }}>
+                          <td style={{ textAlign: 'right', padding: '0.35rem 0.4rem', fontSize: '0.82rem' }}>
+                            {isKat2 ? (
+                              <div style={{ lineHeight: 1.6 }}>
+                                {vOpts2.original_erwachsene_cent && <div style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through', fontSize: '0.75rem' }}>{(vOpts2.original_erwachsene_cent/100).toFixed(2)} €</div>}
+                                <div>🧑 {(vOpts2.preis_erwachsene_cent/100).toFixed(2)} €</div>
+                                {vOpts2.original_kids_cent && <div style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through', fontSize: '0.75rem' }}>{(vOpts2.original_kids_cent/100).toFixed(2)} €</div>}
+                                <div>👧 {(vOpts2.preis_kids_cent/100).toFixed(2)} €</div>
+                              </div>
+                            ) : <span>{(pos.einzelpreis_cent / 100).toFixed(2)} €</span>}
+                          </td>
+                          <td style={{ textAlign: 'right', padding: '0.35rem 0.4rem', fontWeight: 600 }}>
+                            {isKat2 ? <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>je Größe</span> : `${(pos.einzelpreis_cent * pos.menge / 100).toFixed(2)} €`}
+                          </td>
+                          <td style={{ textAlign: 'right', padding: '0.35rem 0.2rem', whiteSpace: 'nowrap' }}>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', padding: '0.2rem', marginRight: '0.1rem' }} title="Bearbeiten" onClick={() => editingPosId === pos.id ? setEditingPosId(null) : openEditPos(pos)}><Edit size={12} /></button>
                             <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(239,68,68,0.6)', padding: '0.2rem' }} onClick={() => handleDeletePos(editingSp.paket_id, pos.id)}><Trash2 size={12} /></button>
                           </td>
                         </tr>
-                      ))}
+                        {editingPosId === pos.id && (
+                          <tr key={`edit2-${pos.id}`}>
+                            <td colSpan={5} style={{ padding: '0', background: 'rgba(212,175,55,0.04)', borderBottom: '2px solid rgba(212,175,55,0.25)' }}>
+                              <div style={{ padding: '0.75rem 1rem' }}>
+                                <div style={{ fontSize: '0.78rem', color: '#d4af37', fontWeight: 600, marginBottom: '0.5rem' }}>✏️ Position bearbeiten</div>
+                                {editPos.hat_varianten && editPos.varianten_options?.hat_preiskategorien ? (
+                                  <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '0.75rem', marginBottom: '0.5rem' }}>
+                                    <div style={{ fontSize: '0.78rem', color: '#d4af37', marginBottom: '0.6rem', fontWeight: 600 }}>📐 Preise nach Altersgruppe</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr 16px 1fr', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', marginBottom: '0.4rem' }}>
+                                      <span style={{ color: 'rgba(255,255,255,0.5)' }}>🧑 Erw.</span>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>VK</span><input className="tc-pos-input" type="number" min="0" step="0.01" style={{ flex: 1 }} value={editPos.uvpErw} onChange={e => { const v = e.target.value; setEditPos(p => { const w = parseFloat(p.rabattWert)||0; const pk2 = w > 0 ? (p.rabattModus==='prozent' ? Math.max(0,parseFloat(v)*(1-w/100)) : Math.max(0,parseFloat(v)-w)).toFixed(2) : p.paketErw; return { ...p, uvpErw: v, paketErw: pk2 }; }); }} /></div>
+                                      <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)' }}>→</span>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><span style={{ fontSize: '0.72rem', color: '#d4af37' }}>Paket</span><input className="tc-pos-input" type="number" min="0" step="0.01" style={{ flex: 1, borderColor: 'rgba(212,175,55,0.4)' }} value={editPos.paketErw} onChange={e => setEditPos(p => ({ ...p, paketErw: e.target.value, rabattWert: '' }))} /></div>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr 16px 1fr', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', marginBottom: '0.5rem' }}>
+                                      <span style={{ color: 'rgba(255,255,255,0.5)' }}>👧 Kids</span>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>VK</span><input className="tc-pos-input" type="number" min="0" step="0.01" style={{ flex: 1 }} value={editPos.uvpKids} onChange={e => { const v = e.target.value; setEditPos(p => { const w = parseFloat(p.rabattWert)||0; const pk2 = w > 0 ? (p.rabattModus==='prozent' ? Math.max(0,parseFloat(v)*(1-w/100)) : Math.max(0,parseFloat(v)-w)).toFixed(2) : p.paketKids; return { ...p, uvpKids: v, paketKids: pk2 }; }); }} /></div>
+                                      <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)' }}>→</span>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><span style={{ fontSize: '0.72rem', color: '#d4af37' }}>Paket</span><input className="tc-pos-input" type="number" min="0" step="0.01" style={{ flex: 1, borderColor: 'rgba(212,175,55,0.4)' }} value={editPos.paketKids} onChange={e => setEditPos(p => ({ ...p, paketKids: e.target.value, rabattWert: '' }))} /></div>
+                                    </div>
+                                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                      <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)' }}>Rabatt:</span>
+                                      <input className="tc-pos-input" type="number" min="0" step="0.01" style={{ width: '70px', padding: '0.2rem 0.4rem' }} value={editPos.rabattWert} onChange={e => { const w = e.target.value; setEditPos(p => { const wNum = parseFloat(w)||0; const calc = vk => !vk||!wNum ? vk : (p.rabattModus==='prozent' ? Math.max(0,parseFloat(vk)*(1-wNum/100)) : Math.max(0,parseFloat(vk)-wNum)).toFixed(2); const pe = calc(p.uvpErw); const pk2 = calc(p.uvpKids); return { ...p, rabattWert: w, paketErw: pe||p.paketErw, paketKids: pk2||p.paketKids }; }); }} />
+                                      <button type="button" style={{ padding: '0.2rem 0.55rem', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }} onClick={() => setEditPos(p => ({ ...p, rabattModus: p.rabattModus==='prozent' ? 'euro' : 'prozent', rabattWert: '' }))}>{editPos.rabattModus === 'prozent' ? '%' : '€'}</button>
+                                      {editPos.rabattWert && parseFloat(editPos.rabattWert) > 0 && <span style={{ fontSize: '0.78rem', color: '#4ade80', fontWeight: 600 }}>→ Erw: €{editPos.paketErw} / Kids: €{editPos.paketKids}</span>}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+                                    <input className="tc-pos-input" type="number" min="0" step="0.01" placeholder="VK-Preis €" style={{ width: '110px' }} value={editPos.einzelpreis_cent} onChange={e => { const v = e.target.value; setEditPos(p => { const w = parseFloat(p.rabattWert)||0; const neu = w > 0 ? (p.rabattModus==='prozent' ? Math.max(0,parseFloat(v)*(1-w/100)) : Math.max(0,parseFloat(v)-w)).toFixed(2) : v; return { ...p, einzelpreis_cent: v, paketErw: neu }; }); }} />
+                                    <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>Rabatt:</span>
+                                    <input className="tc-pos-input" type="number" min="0" step="0.01" style={{ width: '70px', padding: '0.2rem 0.4rem' }} value={editPos.rabattWert} onChange={e => { const w = e.target.value; setEditPos(p => { const wNum = parseFloat(w)||0; const vk = parseFloat(p.einzelpreis_cent)||0; const neu = wNum > 0 ? (p.rabattModus==='prozent' ? Math.max(0,vk*(1-wNum/100)) : Math.max(0,vk-wNum)).toFixed(2) : ''; return { ...p, rabattWert: w, paketErw: neu, rabatt_prozent: p.rabattModus==='prozent' ? (wNum||0) : (vk ? Math.round(wNum/vk*100) : 0) }; }); }} />
+                                    <button type="button" style={{ padding: '0.2rem 0.55rem', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }} onClick={() => setEditPos(p => ({ ...p, rabattModus: p.rabattModus==='prozent' ? 'euro' : 'prozent', rabattWert: '', paketErw: '' }))}>{editPos.rabattModus === 'prozent' ? '%' : '€'}</button>
+                                    {editPos.rabattWert && parseFloat(editPos.rabattWert) > 0 && editPos.paketErw && <span style={{ fontSize: '0.8rem', color: '#4ade80', fontWeight: 600 }}><span style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.35)', marginRight: '0.3rem' }}>€{parseFloat(editPos.einzelpreis_cent).toFixed(2)}</span>→ €{parseFloat(editPos.paketErw).toFixed(2)}</span>}
+                                  </div>
+                                )}
+                                <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                                  <input className="tc-pos-input" placeholder="Bezeichnung *" value={editPos.bezeichnung} onChange={e => setEditPos({ ...editPos, bezeichnung: e.target.value })} />
+                                  <input className="tc-pos-input" type="number" min="1" value={editPos.menge} onChange={e => setEditPos({ ...editPos, menge: parseInt(e.target.value)||1 })} />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-3)', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={editPos.pflicht} onChange={e => setEditPos({ ...editPos, pflicht: e.target.checked })} /> Pflicht
+                                  </label>
+                                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button className="btn btn-sm btn-secondary" onClick={() => { setEditingPosId(null); setEditPos(EMPTY_POS); }}>Abbrechen</button>
+                                    <button className="btn btn-sm btn-primary" onClick={() => handleUpdatePos(editingSp.paket_id, pos.id)} disabled={spSaving || !editPos.bezeichnung}>{spSaving ? '…' : 'Speichern'}</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        </React.Fragment>
+                        );
+                      })}
                     </tbody>
                     <tfoot>
                       <tr style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>

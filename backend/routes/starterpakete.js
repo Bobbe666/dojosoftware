@@ -264,6 +264,53 @@ router.post('/:id/positionen', async (req, res) => {
   }
 });
 
+// ── PUT /api/starterpakete/:id/positionen/:posId ── Position bearbeiten
+router.put('/:id/positionen/:posId', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'dojo_id fehlt' });
+
+    const paketId = parseInt(req.params.id,  10);
+    const posId   = parseInt(req.params.posId, 10);
+    if (isNaN(paketId) || isNaN(posId)) return res.status(400).json({ error: 'Ungültige IDs' });
+
+    const [[check]] = await pool.query(
+      `SELECT spp.id FROM starterpaket_positionen spp
+       JOIN starterpakete sp ON spp.paket_id = sp.paket_id
+       WHERE spp.id = ? AND sp.dojo_id = ?`,
+      [posId, dojoId]
+    );
+    if (!check) return res.status(404).json({ error: 'Position nicht gefunden' });
+
+    const { bezeichnung, menge = 1, einzelpreis_cent, pflicht = 1, position = 0,
+            rabatt_prozent = 0, originalPreis_cent = null, hat_varianten = 0,
+            varianten_options = null } = req.body;
+    if (!bezeichnung || einzelpreis_cent == null) {
+      return res.status(400).json({ error: 'bezeichnung und einzelpreis_cent sind Pflichtfelder' });
+    }
+
+    const variantenJson = varianten_options
+      ? (typeof varianten_options === 'string' ? varianten_options : JSON.stringify(varianten_options))
+      : null;
+
+    await pool.query(
+      `UPDATE starterpaket_positionen
+       SET bezeichnung=?, menge=?, einzelpreis_cent=?, pflicht=?, position=?,
+           rabatt_prozent=?, originalpreis_cent=?, hat_varianten=?, varianten_options=?
+       WHERE id=?`,
+      [bezeichnung, menge, einzelpreis_cent, pflicht ? 1 : 0, position,
+       parseFloat(rabatt_prozent) || 0, originalPreis_cent || null,
+       hat_varianten ? 1 : 0, variantenJson, posId]
+    );
+
+    const full = await loadPaketMitPositionen(paketId, dojoId);
+    res.json({ success: true, paket: full });
+  } catch (err) {
+    logger.error('Starterpaket Position bearbeiten Fehler:', err);
+    res.status(500).json({ error: 'Fehler beim Bearbeiten' });
+  }
+});
+
 // ── DELETE /api/starterpakete/:id/positionen/:posId ── Position entfernen
 router.delete('/:id/positionen/:posId', async (req, res) => {
   try {
