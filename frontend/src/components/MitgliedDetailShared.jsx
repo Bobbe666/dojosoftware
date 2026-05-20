@@ -821,6 +821,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [selectedMandate, setSelectedMandate] = useState(null);
   const [showMandateModal, setShowMandateModal] = useState(false);
 
+  // Modal für Vertragsfrei stellen / aufheben
+  const [vertragsfreiModal, setVertragsfreiModal] = useState(null); // null | 'stellen' | 'aufheben'
+  const [vertragsfreiForm, setVertragsfreiForm] = useState({
+    grund: '',
+    ab: new Date().toISOString().split('T')[0],
+    beitraege_aktion: 'behalten'
+  });
+
   // Abgeleitete Zähler für Status-Badges (schmal oben in Sidebar)
   const offeneDokumente = Number(mitglied?.dokumente_offen) || 0;
   const offeneNachrichten = Number(mitglied?.nachrichten_offen) || 0;
@@ -4261,24 +4269,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   <div className="vtr-header-actions">
                     <button
                       className={`vtr-btn-freistell${mitglied?.vertragsfrei ? ' vtr-btn-freistell--active' : ''}`}
-                      onClick={async () => {
-                        const isVertragsfrei = !mitglied?.vertragsfrei;
-                        const grund = isVertragsfrei
-                          ? prompt('Grund für Vertragsfreistellung:\n(z.B. Ehrenmitglied, Familie, Sponsor, etc.)')
-                          : null;
-                        if (isVertragsfrei && !grund) return;
-                        try {
-                          await axios.put(`/mitglieddetail/${mitglied.mitglied_id}`, {
-                            vertragsfrei: isVertragsfrei ? 1 : 0,
-                            vertragsfrei_grund: grund || null
-                          });
-                          setMitglied(prev => ({
-                            ...prev,
-                            vertragsfrei: isVertragsfrei ? 1 : 0,
-                            vertragsfrei_grund: grund || null
-                          }));
-                        } catch (error) {
-                          console.error('Fehler beim Aktualisieren:', error);
+                      onClick={() => {
+                        if (mitglied?.vertragsfrei) {
+                          setVertragsfreiModal('aufheben');
+                        } else {
+                          setVertragsfreiForm({ grund: '', ab: new Date().toISOString().split('T')[0], beitraege_aktion: 'behalten' });
+                          setVertragsfreiModal('stellen');
                         }
                       }}
                     >
@@ -8158,6 +8154,135 @@ function VertragAnpassungSektion({ vertrag, mitglied, vertragAnpassungen, setVer
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Vertragsfrei Modal ── */}
+      {vertragsfreiModal && (
+      <div
+        className="modal-overlay"
+        onClick={() => setVertragsfreiModal(null)}
+        style={{ zIndex: 9100 }}
+      >
+        <div
+          className="modal-content"
+          onClick={e => e.stopPropagation()}
+          style={{
+            background: 'linear-gradient(135deg, rgba(26,26,46,0.99) 0%, rgba(20,20,40,0.99) 100%)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 12,
+            padding: '1.75rem',
+            maxWidth: 480,
+            width: '100%'
+          }}
+        >
+          <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+            {vertragsfreiModal === 'stellen' ? 'Vertragsfrei stellen' : 'Vertragsfreistellung aufheben'}
+          </h3>
+
+          {vertragsfreiModal === 'stellen' && (
+            <>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Grund <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="z.B. Ehrenmitglied, Familie, Sponsor …"
+                  value={vertragsfreiForm.grund}
+                  onChange={e => setVertragsfreiForm(f => ({ ...f, grund: e.target.value }))}
+                  style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: 7, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'var(--text-primary)', fontSize: '0.9rem', boxSizing: 'border-box' }}
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Wirksam ab
+                </label>
+                <input
+                  type="date"
+                  value={vertragsfreiForm.ab}
+                  onChange={e => setVertragsfreiForm(f => ({ ...f, ab: e.target.value }))}
+                  style={{ padding: '0.55rem 0.75rem', borderRadius: 7, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'var(--text-primary)', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Offene Beiträge ab diesem Datum
+                </label>
+                {[
+                  { val: 'behalten',   label: 'Behalten',                desc: 'Werden weiterhin per Lastschrift eingezogen' },
+                  { val: 'stornieren', label: 'Stornieren',              desc: 'Werden gelöscht und nicht mehr eingezogen' },
+                  { val: 'erlassen',   label: 'Als bezahlt markieren',   desc: 'Werden als erlassen / bezahlt geführt' }
+                ].map(opt => (
+                  <label
+                    key={opt.val}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', marginBottom: '0.6rem', cursor: 'pointer' }}
+                  >
+                    <input
+                      type="radio"
+                      name="beitraege_aktion"
+                      value={opt.val}
+                      checked={vertragsfreiForm.beitraege_aktion === opt.val}
+                      onChange={() => setVertragsfreiForm(f => ({ ...f, beitraege_aktion: opt.val }))}
+                      style={{ marginTop: 3 }}
+                    />
+                    <span>
+                      <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{opt.label}</strong>
+                      <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{opt.desc}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+
+          {vertragsfreiModal === 'aufheben' && (
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem', lineHeight: 1.5 }}>
+              Die Vertragsfreistellung von <strong style={{ color: 'var(--text-primary)' }}>{mitglied?.vorname} {mitglied?.nachname}</strong> wird aufgehoben.
+              Zukünftige Beiträge werden wieder automatisch generiert und eingezogen.
+            </p>
+          )}
+
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setVertragsfreiModal(null)}
+              style={{ padding: '0.5rem 1rem', borderRadius: 7, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.88rem' }}
+            >
+              Abbrechen
+            </button>
+            <button
+              onClick={async () => {
+                if (vertragsfreiModal === 'stellen' && !vertragsfreiForm.grund.trim()) return;
+                try {
+                  const payload = vertragsfreiModal === 'stellen'
+                    ? { vertragsfrei: 1, vertragsfrei_grund: vertragsfreiForm.grund, vertragsfrei_ab: vertragsfreiForm.ab, beitraege_aktion: vertragsfreiForm.beitraege_aktion }
+                    : { vertragsfrei: 0, vertragsfrei_grund: null, vertragsfrei_ab: null };
+                  await axios.put(`/mitglieddetail/${mitglied.mitglied_id}`, payload);
+                  setMitglied(prev => ({
+                    ...prev,
+                    vertragsfrei: vertragsfreiModal === 'stellen' ? 1 : 0,
+                    vertragsfrei_grund: vertragsfreiModal === 'stellen' ? vertragsfreiForm.grund : null,
+                    vertragsfrei_ab: vertragsfreiModal === 'stellen' ? vertragsfreiForm.ab : null
+                  }));
+                  setVertragsfreiModal(null);
+                } catch (err) {
+                  console.error('Fehler beim Aktualisieren:', err);
+                }
+              }}
+              style={{
+                padding: '0.5rem 1.25rem', borderRadius: 7, border: 'none',
+                background: vertragsfreiModal === 'stellen' ? 'rgba(234,179,8,0.2)' : 'rgba(34,197,94,0.2)',
+                color: vertragsfreiModal === 'stellen' ? '#EAB308' : '#22C55E',
+                cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600
+              }}
+            >
+              {vertragsfreiModal === 'stellen' ? 'Vertragsfrei stellen' : 'Aufheben'}
+            </button>
+          </div>
+        </div>
+      </div>
       )}
     </div>
   );

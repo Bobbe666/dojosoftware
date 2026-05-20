@@ -756,6 +756,12 @@ db.promise().query(`
     ADD COLUMN IF NOT EXISTS zahllauf_id INT DEFAULT NULL
 `).catch(err => logger.warn('Migration 165b (ignoriert):', { error: err.message }));
 
+// Migration 166: vertragsfrei_ab Datum in mitglieder
+db.promise().query(`
+  ALTER TABLE mitglieder
+    ADD COLUMN IF NOT EXISTS vertragsfrei_ab DATE DEFAULT NULL
+`).catch(err => logger.warn('Migration 166 (ignoriert):', { error: err.message }));
+
 // Migration 148: Dateianhang für bank_transaktionen
 db.promise().query(`
   ALTER TABLE bank_transaktionen

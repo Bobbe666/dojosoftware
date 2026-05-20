@@ -116,6 +116,11 @@ router.put("/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
   const dojoId = req.dojo_id;
 
+  // Vertragsfrei-Seiteneffekt: Beitraege-Aktion (wird nicht in DB gespeichert)
+  const beitraegeAktion = req.body.beitraege_aktion; // 'behalten' | 'stornieren' | 'erlassen'
+  const vertragsfreiAb = req.body.vertragsfrei_ab || new Date().toISOString().split('T')[0];
+  const isVertragsfrei = req.body.vertragsfrei === 1 || req.body.vertragsfrei === '1';
+
   // Kopiere die Daten, damit wir sie manipulieren können
   let data = { ...req.body };
 
@@ -143,7 +148,7 @@ router.put("/:id", authenticateToken, (req, res) => {
     'vorname', 'nachname', 'geburtsdatum', 'geschlecht', 'gewicht', 'gurtfarbe', 'dojo_id',
     'email', 'telefon', 'telefon_mobil', 'strasse', 'hausnummer', 'plz', 'ort',
     'iban', 'bic', 'bankname', 'kontoinhaber', 'zahlungsmethode', 'zahllaufgruppe',
-    'eintrittsdatum', 'gekuendigt_am', 'aktiv', 'vertragsfrei', 'vertragsfrei_grund',
+    'eintrittsdatum', 'gekuendigt_am', 'aktiv', 'vertragsfrei', 'vertragsfrei_grund', 'vertragsfrei_ab',
     'allergien', 'medizinische_hinweise', 'notfallkontakt_name', 'notfallkontakt_telefon', 'notfallkontakt_verhaeltnis',
     'notfallkontakt2_name', 'notfallkontakt2_telefon', 'notfallkontakt2_verhaeltnis',
     'notfallkontakt3_name', 'notfallkontakt3_telefon', 'notfallkontakt3_verhaeltnis',
@@ -206,6 +211,23 @@ router.put("/:id", authenticateToken, (req, res) => {
       return res.status(404).json({ error: "Mitglied nicht gefunden oder Zugriff verweigert" });
     }
 
+    // Beitraege-Aktion wenn Vertragsfrei aktiviert wird
+    const doBeitraegeAktion = async () => {
+      if (!isVertragsfrei || !beitraegeAktion || beitraegeAktion === 'behalten') return;
+      const pool = db.promise();
+      if (beitraegeAktion === 'stornieren') {
+        await pool.query(
+          'DELETE FROM beitraege WHERE mitglied_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?',
+          [id, vertragsfreiAb]
+        );
+      } else if (beitraegeAktion === 'erlassen') {
+        await pool.query(
+          'UPDATE beitraege SET bezahlt = 1, euer_ausblenden = 1 WHERE mitglied_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?',
+          [id, vertragsfreiAb]
+        );
+      }
+    };
+
     // Nach dem Update: Den aktualisierten Datensatz abfragen und zurücksenden
     let selectWhereClause = 'WHERE m.mitglied_id = ?';
     let selectParams = [id];
@@ -241,20 +263,24 @@ router.put("/:id", authenticateToken, (req, res) => {
       GROUP BY m.mitglied_id
     `;
 
-    db.query(selectQuery, selectParams, (err, results) => {
-      if (err) {
-        logger.error('Fehler beim Abrufen des aktualisierten Mitglieds', {
-          error: err.message,
-          mitgliedId: id,
-          dojoId,
-        });
-        return res.status(500).json({ error: "Fehler beim Abrufen des aktualisierten Mitglieds" });
-      }
-      if (results.length === 0) {
-        return res.status(404).json({ message: "Mitglied nicht gefunden." });
-      }
+    doBeitraegeAktion().catch(err => {
+      logger.warn('Beitraege-Aktion fehlgeschlagen (nicht kritisch)', { error: err.message });
+    }).finally(() => {
+      db.query(selectQuery, selectParams, (err, results) => {
+        if (err) {
+          logger.error('Fehler beim Abrufen des aktualisierten Mitglieds', {
+            error: err.message,
+            mitgliedId: id,
+            dojoId,
+          });
+          return res.status(500).json({ error: "Fehler beim Abrufen des aktualisierten Mitglieds" });
+        }
+        if (results.length === 0) {
+          return res.status(404).json({ message: "Mitglied nicht gefunden." });
+        }
 
-      res.json(results[0]);
+        res.json(results[0]);
+      });
     });
   });
 });
