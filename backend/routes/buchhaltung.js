@@ -1503,10 +1503,22 @@ Regeln:
 
     const raw = response.content[0]?.text?.trim() || '{}';
     let parsed = {};
+    let jsonParseOk = false;
+    // Versuch 1: Markdown-Code-Block entfernen
     try {
       const cleaned = raw.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
       parsed = JSON.parse(cleaned);
-    } catch {
+      jsonParseOk = true;
+    } catch { /* weiter */ }
+    // Versuch 2: JSON-Objekt irgendwo im Text suchen
+    if (!jsonParseOk) {
+      try {
+        const m = raw.match(/\{[\s\S]*\}/);
+        if (m) { parsed = JSON.parse(m[0]); jsonParseOk = true; }
+      } catch { /* weiter */ }
+    }
+    if (!jsonParseOk) {
+      logger.warn('OCR-JSON Parse-Fehler', { raw: raw.substring(0, 600) });
       return res.status(422).json({ error: 'KI konnte keinen strukturierten Text extrahieren', raw });
     }
 
