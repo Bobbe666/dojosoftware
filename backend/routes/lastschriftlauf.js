@@ -1409,6 +1409,7 @@ router.get("/stripe/status", async (req, res) => {
             FROM mitglieder m
             INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
               AND m.dojo_id = ?
         ` : `
             SELECT
@@ -1419,6 +1420,7 @@ router.get("/stripe/status", async (req, res) => {
             INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
             JOIN dojo d ON m.dojo_id = d.id AND d.stripe_secret_key IS NOT NULL AND d.stripe_secret_key != ''
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
         `;
 
         const countResult = await queryAsync(countQuery, dojoId ? [dojoId] : []);
