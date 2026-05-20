@@ -776,9 +776,9 @@ router.get('/platform-metrics', requireSuperAdmin, async (req, res) => {
     await pool.query('SELECT 1');
     const dbLatency = Date.now() - dbStart;
 
-    const [[dojosByPlan]] = await pool.query(`
+    const [dojosByPlan] = await pool.query(`
       SELECT
-        subscription_plan,
+        COALESCE(subscription_plan, 'trial') AS subscription_plan,
         subscription_status,
         COUNT(*) AS anzahl
       FROM dojo
@@ -786,7 +786,7 @@ router.get('/platform-metrics', requireSuperAdmin, async (req, res) => {
       ORDER BY anzahl DESC
     `);
 
-    const [[todayActivity]] = await pool.query(`
+    const [todayActivity] = await pool.query(`
       SELECT
         kategorie,
         COUNT(*) AS anzahl
@@ -796,7 +796,7 @@ router.get('/platform-metrics', requireSuperAdmin, async (req, res) => {
       ORDER BY anzahl DESC
     `);
 
-    const [[topDojos]] = await pool.query(`
+    const [topDojos] = await pool.query(`
       SELECT
         dojo_id,
         dojo_name,
@@ -816,7 +816,7 @@ router.get('/platform-metrics', requireSuperAdmin, async (req, res) => {
     const [[memberStats]] = await pool.query(`
       SELECT
         COUNT(*) AS gesamt,
-        SUM(CASE WHEN status = 'aktiv' THEN 1 ELSE 0 END) AS aktiv
+        SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) AS aktiv
       FROM mitglieder
     `);
 
@@ -826,9 +826,9 @@ router.get('/platform-metrics', requireSuperAdmin, async (req, res) => {
       memory_mb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
       db_latency_ms: dbLatency,
       timestamp: new Date().toISOString(),
-      dojos_by_plan: Array.isArray(dojosByPlan) ? dojosByPlan : [dojosByPlan].filter(Boolean),
-      today_activity: Array.isArray(todayActivity) ? todayActivity : [todayActivity].filter(Boolean),
-      top_dojos_today: Array.isArray(topDojos) ? topDojos : [topDojos].filter(Boolean),
+      dojos_by_plan: dojosByPlan || [],
+      today_activity: todayActivity || [],
+      top_dojos_today: topDojos || [],
       total_actions_today: totalToday?.total || 0,
       members: memberStats || {}
     });
