@@ -438,7 +438,10 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
         // details kann Array (Einzelfehler) oder String (Server-Fehler) sein
         const detailsArray = Array.isArray(data.details) ? data.details : [];
         const errorLines = detailsArray.length > 0
-          ? detailsArray.filter(d => d.status === 'failed').map(d => `${d.name}: ${d.error || 'unbekannter Fehler'}`)
+          ? detailsArray.filter(d => d.status === 'failed').map(d => {
+              const ibanPart = d.iban ? ` — IBAN: ${d.iban.substring(0, 4)}****${d.iban.slice(-4)}` : '';
+              return `${d.name}${ibanPart}: ${d.error || 'unbekannter Fehler'}`;
+            })
           : data.details && typeof data.details === 'string'
             ? [`Serverfehler: ${data.details}`]
             : [];

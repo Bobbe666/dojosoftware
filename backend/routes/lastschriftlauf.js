@@ -6,6 +6,23 @@ const PaymentProviderFactory = require("../services/PaymentProviderFactory");
 const { getSecureDojoId } = require("../middleware/tenantSecurity");
 const router = express.Router();
 
+function validateIban(iban) {
+    if (!iban || iban.length < 5) return 'IBAN fehlt oder zu kurz';
+    const lengths = { DE: 22, AT: 20, CH: 21, NL: 18, FR: 27, IT: 27, ES: 24, BE: 16, LU: 20, GB: 22, PL: 28, CZ: 24, HU: 28, RO: 24 };
+    const cc = iban.substring(0, 2);
+    const expected = lengths[cc];
+    if (expected && iban.length !== expected) return `IBAN ungültige Länge (${cc}: ${expected} Zeichen erwartet, ${iban.length} erhalten)`;
+    // Mod-97 Prüfsumme
+    const rearranged = iban.substring(4) + iban.substring(0, 4);
+    const numeric = rearranged.split('').map(c => isNaN(c) ? (c.charCodeAt(0) - 55).toString() : c).join('');
+    let remainder = 0;
+    for (const chunk of numeric.match(/.{1,9}/g) || []) {
+        remainder = parseInt(String(remainder) + chunk, 10) % 97;
+    }
+    if (remainder !== 1) return 'IBAN Prüfsumme ungültig (Ziffern/Buchstaben prüfen)';
+    return null;
+}
+
 /**
  * API-Route: Verfügbare Bankkonten für SEPA-Lastschrift abrufen
  * GET /api/lastschriftlauf/banken
@@ -1534,6 +1551,19 @@ router.post("/stripe/setup-all", async (req, res) => {
 
         // Verarbeite jeden Mitglied mit dem richtigen Provider für sein Dojo
         for (const mitglied of mitglieder) {
+            const rawIban = (mitglied.iban || '').replace(/\s/g, '').toUpperCase();
+            const ibanError = validateIban(rawIban);
+            if (ibanError) {
+                results.failed++;
+                results.details.push({
+                    mitglied_id: mitglied.mitglied_id,
+                    name: `${mitglied.vorname} ${mitglied.nachname}`,
+                    iban: rawIban,
+                    status: 'failed',
+                    error: ibanError
+                });
+                continue;
+            }
             try {
                 const memberDojoId = mitglied.dojo_id || dojoId;
                 if (!providerCache[memberDojoId]) {
@@ -1545,7 +1575,7 @@ router.post("/stripe/setup-all", async (req, res) => {
                 }
                 await provider.createSepaCustomer(
                     mitglied,
-                    mitglied.iban,
+                    rawIban,
                     mitglied.kontoinhaber || `${mitglied.vorname} ${mitglied.nachname}`
                 );
                 results.succeeded++;
@@ -1559,6 +1589,7 @@ router.post("/stripe/setup-all", async (req, res) => {
                 results.details.push({
                     mitglied_id: mitglied.mitglied_id,
                     name: `${mitglied.vorname} ${mitglied.nachname}`,
+                    iban: rawIban,
                     status: 'failed',
                     error: error.message
                 });
