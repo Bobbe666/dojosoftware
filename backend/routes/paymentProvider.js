@@ -703,6 +703,28 @@ router.post('/refund', authenticateToken, async (req, res) => {
     }
 });
 
+// GET /api/payment-provider/stripe-suche?name=birker
+// Mitglied per Name suchen (Produktion), Super-Admin only
+router.get('/stripe-suche', authenticateToken, async (req, res) => {
+    try {
+        const db = require('../db');
+        const pool = db.promise();
+        const name = (req.query.name || '').trim();
+        if (!name || name.length < 2) return res.status(400).json({ error: 'name Parameter erforderlich (min. 2 Zeichen)' });
+
+        const [rows] = await pool.query(
+            `SELECT mitglied_id, vorname, nachname, email, dojo_id
+             FROM mitglieder
+             WHERE vorname LIKE ? OR nachname LIKE ? OR CONCAT(vorname,' ',nachname) LIKE ?
+             ORDER BY nachname, vorname LIMIT 20`,
+            [`%${name}%`, `%${name}%`, `%${name}%`]
+        );
+        res.json({ treffer: rows.length, mitglieder: rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/payment-provider/stripe-abgleich/:mitglied_id
 // Vergleicht Stripe-Charges mit DB-Beitraegen — Admin/Super-Admin only
 router.get('/stripe-abgleich/:mitglied_id', authenticateToken, async (req, res) => {
