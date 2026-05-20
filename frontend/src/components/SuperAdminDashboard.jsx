@@ -1311,12 +1311,12 @@ const SuperAdminDashboard = () => {
   const tabs = [
     { id: 'overview',      label: 'Cockpit',        icon: '🎛️' },
     { id: 'todos',         label: 'To Do',          icon: '✅' },
-    { id: 'software',      label: 'Software',       icon: '💻' },
-    { id: 'kommunikation', label: 'Komm.',          icon: '📣', badge: unreadCount > 0 ? unreadCount : null },
     { id: 'verband',       label: 'Verband',        icon: '🏆' },
-    { id: 'entwicklung',   label: 'Entwicklung',    icon: '🎯' },
+    { id: 'software',      label: 'Software',       icon: '💻' },
     { id: 'finanzen',      label: 'Finanzen',       icon: '💰' },
-    { id: 'plattform',     label: 'Plattform',      icon: '🌐' },
+    { id: 'kommunikation', label: 'Komm.',          icon: '📣', badge: unreadCount > 0 ? unreadCount : null },
+    { id: 'plattform',     label: 'Org-Kalender',   icon: '🌐' },
+    { id: 'entwicklung',   label: 'Entwicklung',    icon: '🎯' },
     { id: 'system',        label: 'System',         icon: '⚙️' },
   ];
 
