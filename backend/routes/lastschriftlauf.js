@@ -1734,6 +1734,23 @@ router.post("/stripe/execute", async (req, res) => {
         const filteredMitglieder = [];
         for (const mitglied of mitglieder) {
             if (mitglied.beitraege && mitglied.beitraege.length > 0) {
+                // Zweite Sicherheitslinie: Hat dieses Mitglied bereits eine erfolgreiche/laufende
+                // Stripe-Transaktion für diesen Monat? Verhindert Doppelabbuchung auch wenn
+                // durch Magicline-Import neue bezahlt=0 Beiträge für denselben Monat entstanden.
+                const existingStripeTx = await queryAsync(
+                    `SELECT slt.id FROM stripe_lastschrift_transaktion slt
+                     JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+                     WHERE slt.mitglied_id = ?
+                       AND slb.monat = ? AND slb.jahr = ?
+                       AND slt.status IN ('processing','succeeded')
+                     LIMIT 1`,
+                    [mitglied.mitglied_id, parseInt(monat), parseInt(jahr)]
+                );
+                if (existingStripeTx.length > 0) {
+                    logger.warn(`⛔ Stripe-Doppelabbuchung verhindert: Mitglied ${mitglied.mitglied_id} bereits verarbeitet für ${monat}/${jahr}`);
+                    continue;
+                }
+
                 const beitragIds = mitglied.beitraege.map(b => b.beitrag_id);
                 const placeholders = beitragIds.map(() => '?').join(',');
                 const unbezahlteBeitraege = await queryAsync(
