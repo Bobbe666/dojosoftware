@@ -4,8 +4,24 @@
 // Route: /dashboard/termine
 // ============================================================================
 
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, Component } from 'react';
 import { createPortal } from 'react-dom';
+
+class KalenderErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ color: '#f87171', padding: '24px', background: 'rgba(239,68,68,0.1)', borderRadius: 8, margin: '16px 0' }}>
+          <strong>Kalender-Fehler:</strong> {this.state.error.message}
+          <pre style={{ marginTop: 8, fontSize: '0.75rem', opacity: 0.7, whiteSpace: 'pre-wrap' }}>{this.state.error.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { useNavigate } from 'react-router-dom';
 import { useDojoContext } from '../context/DojoContext';
 import { Check, X, Calendar, Award, Users, TrendingUp, ChevronUp, ChevronDown, Download, Edit, Trash2, Play, FileText, Scroll, Printer, CalendarDays } from 'lucide-react';
@@ -6790,16 +6806,18 @@ const PruefungsVerwaltung = () => {
       , document.body)}
 
       {activeTab === 'kalender' && (
-        <div style={{ padding: '0 0 24px 0' }}>
-          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary, #888)' }}>Kalender wird geladen…</div>}>
-            <KalenderZentrale
-              onDayClick={(date) => {
-                const dateStr = date.toISOString().split('T')[0];
-                setNeuerTermin(prev => ({ ...prev, pruefungsdatum: dateStr }));
-                setShowNeuerTerminModal(true);
-              }}
-            />
-          </Suspense>
+        <div style={{ padding: '16px 0 24px 0', minHeight: 200 }}>
+          <KalenderErrorBoundary>
+            <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#d4af37', fontWeight: 600 }}>Kalender wird geladen…</div>}>
+              <KalenderZentrale
+                onDayClick={(date) => {
+                  const dateStr = date.toISOString().split('T')[0];
+                  setNeuerTermin(prev => ({ ...prev, pruefungsdatum: dateStr }));
+                  setShowNeuerTerminModal(true);
+                }}
+              />
+            </Suspense>
+          </KalenderErrorBoundary>
         </div>
       )}
 
