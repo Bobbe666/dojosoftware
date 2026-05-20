@@ -1446,19 +1446,21 @@ router.post('/belege/ocr', requireBuchhaltungAccess, ocrUpload.single('bild'), a
     const base64 = req.file.buffer.toString('base64');
     const mediaType = req.file.mimetype;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: mediaType, data: base64 }
-          },
-          {
-            type: 'text',
-            text: `Analysiere diesen Kassenbon oder Beleg für die deutsche Buchhaltung (EÜR).
+    // Modelle in Reihenfolge: neues zuerst, Fallback bei Überlastung (529)
+    const ocrModels = ['claude-haiku-4-5-20251001', 'claude-3-5-haiku-20241022'];
+    let response, lastOcrError;
+    for (const model of ocrModels) {
+      try {
+        response = await anthropic.messages.create({
+          model,
+          max_tokens: 1024,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+              {
+                type: 'text',
+                text: `Analysiere diesen Kassenbon oder Beleg für die deutsche Buchhaltung (EÜR).
 
 Extrahiere ALLE Einzelpositionen UND die Kopfdaten. Antworte NUR mit diesem JSON (kein Markdown, keine Erklärung):
 
@@ -1486,10 +1488,18 @@ Regeln:
 - Die Summe aller betrag-Felder in positionen MUSS gleich betrag_brutto sein
 - Falls nur ein Gesamtbetrag sichtbar (keine Einzelpositionen): eine Position mit Gesamtbetrag anlegen
 - Unlesbare Werte: null`
-          }
-        ]
-      }]
-    });
+              }
+            ]
+          }]
+        });
+        break; // Erfolg — kein Fallback nötig
+      } catch (ocrErr) {
+        lastOcrError = ocrErr;
+        if (ocrErr.status === 529) continue; // Überlastet → nächstes Modell versuchen
+        throw ocrErr; // anderer Fehler → sofort werfen
+      }
+    }
+    if (!response) throw lastOcrError;
 
     const raw = response.content[0]?.text?.trim() || '{}';
     let parsed = {};
