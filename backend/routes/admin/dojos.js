@@ -789,7 +789,7 @@ router.get('/onboarding-status', requireSuperAdmin, async (req, res) => {
         (d.sepa_glaeubiger_id IS NOT NULL AND d.sepa_glaeubiger_id != '')                AS hat_sepa,
         (SELECT COUNT(*) FROM tarife t WHERE t.dojo_id = d.id)                           AS tarife_count,
         (SELECT COUNT(*) FROM mitglieder m WHERE m.dojo_id = d.id AND m.aktiv = 1)       AS mitglieder_count,
-        (SELECT COUNT(*) FROM users u WHERE u.dojo_id = d.id AND u.aktiv = 1)            AS benutzer_count,
+        (SELECT COUNT(*) FROM admin_users u WHERE u.dojo_id = d.id AND u.aktiv = 1)       AS benutzer_count,
         (SELECT COUNT(*) FROM vertraege v
           JOIN mitglieder m2 ON v.mitglied_id = m2.mitglied_id
           WHERE m2.dojo_id = d.id AND v.status = 'aktiv')                                AS vertraege_count
