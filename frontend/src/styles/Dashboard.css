@@ -1172,10 +1172,36 @@
 }
 
 /* Mobile Responsive */
+@media (max-width: 1280px) {
+  /* Tablet Querformat (iPad Air 1180px, iPad Pro 11" 1194px, iPad 1080px): 5 → 4 Spalten */
+  .dashboard-navigation .nav-cards,
+  .nav-cards {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-4);
+  }
+
+  .app-container .stats-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
 @media (max-width: 1200px) {
   .dashboard-navigation .nav-card h3,
   .dashboard-navigation .nav-card-title {
     font-size: clamp(0.9rem, 1.6vw, 1.05rem) !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  /* Tablet Hochformat (iPad Pro 12.9" 1024px, iPad Air 820px): 4 → 3 Spalten */
+  .dashboard-navigation .nav-cards,
+  .nav-cards {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-4);
+  }
+
+  .app-container .stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
   }
 }
 

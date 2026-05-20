@@ -195,3 +195,16 @@
   background: var(--badge-bg, rgba(156,163,175,0.2));
   color: var(--badge-color, var(--text-muted));
 }
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .st-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .st-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

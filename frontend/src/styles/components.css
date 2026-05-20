@@ -1261,6 +1261,7 @@ Glassmorphism-Design mit Theme-Variablen.
 .u-flex-1-min0 { flex: 1; min-width: 0; }
 .u-flex-between { display: flex; justify-content: space-between; }
 .u-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+@media (max-width: 600px) { .u-grid-2col { grid-template-columns: 1fr; } }
 
 /* Form Elements */
 .u-form-label { display: block; margin-bottom: 0.4rem; font-size: 0.875rem; font-weight: 500; }

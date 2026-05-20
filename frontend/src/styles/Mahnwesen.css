@@ -655,6 +655,9 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   .mw-kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .mw-result__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {

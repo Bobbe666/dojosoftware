@@ -903,3 +903,16 @@
   background: rgba(255,255,255,0.45);
   border-color: rgba(175,135,55,0.18);
 }
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .ft-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .ft-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
