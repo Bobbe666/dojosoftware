@@ -359,6 +359,96 @@ function initCronJobs() {
    * Sendet Push-Erinnerungen 7 Tage und 1 Tag vor dem Event
    * an alle angemeldeten (angemeldet/bestaetigt) Mitglieder
    */
+  /**
+   * Super-Admin Trial & Abo Ablauf-Warnung
+   * Läuft täglich um 07:00 Uhr
+   * Sendet E-Mail an Super-Admin wenn Trials (1/3/7 Tage) oder Abos (7/14 Tage) ablaufen
+   */
+  cron.schedule('0 7 * * *', async () => {
+    try {
+      logger.info('⏰ Trial/Abo Ablauf-Warnung Cron-Job gestartet');
+
+      const [trials] = await db.promise().query(`
+        SELECT id, dojoname, email, trial_ends_at,
+               DATEDIFF(trial_ends_at, NOW()) AS tage
+        FROM dojo
+        WHERE subscription_status = 'trial'
+          AND trial_ends_at IS NOT NULL
+          AND DATEDIFF(trial_ends_at, NOW()) IN (0, 1, 3, 7)
+        ORDER BY trial_ends_at ASC
+      `);
+
+      const [abos] = await db.promise().query(`
+        SELECT id, dojoname, email, subscription_plan, subscription_ends_at,
+               DATEDIFF(subscription_ends_at, NOW()) AS tage
+        FROM dojo
+        WHERE subscription_status = 'active'
+          AND subscription_ends_at IS NOT NULL
+          AND DATEDIFF(subscription_ends_at, NOW()) IN (0, 1, 7, 14)
+        ORDER BY subscription_ends_at ASC
+      `);
+
+      if (trials.length === 0 && abos.length === 0) {
+        logger.info('ℹ️ Trial/Abo Ablauf-Warnung: Keine Einträge heute');
+        return;
+      }
+
+      // E-Mail-Settings laden
+      const [[emailSettings]] = await db.promise().query('SELECT * FROM email_settings WHERE id = 1');
+      if (!emailSettings || !emailSettings.aktiv || !emailSettings.smtp_host) {
+        logger.warn('⚠️ Trial/Abo Ablauf-Warnung: E-Mail-Versand nicht konfiguriert');
+        return;
+      }
+
+      const transporter = nodemailer.createTransport({
+        host: emailSettings.smtp_host,
+        port: emailSettings.smtp_port || 587,
+        secure: !!emailSettings.smtp_secure,
+        auth: { user: emailSettings.smtp_user, pass: emailSettings.smtp_password }
+      });
+
+      const formatDate = d => new Date(d).toLocaleDateString('de-DE');
+      const urgency = t => t <= 1 ? '🔴' : t <= 3 ? '🟡' : '🟢';
+
+      const trialsHtml = trials.map(t =>
+        `<tr><td>${urgency(t.tage)} ${t.dojoname}</td><td>${t.email}</td><td><b>${t.tage === 0 ? 'HEUTE' : `${t.tage} Tag(e)`}</b></td><td>${formatDate(t.trial_ends_at)}</td></tr>`
+      ).join('');
+
+      const abosHtml = abos.map(a =>
+        `<tr><td>${urgency(a.tage)} ${a.dojoname}</td><td>${a.email}</td><td>${a.subscription_plan}</td><td><b>${a.tage === 0 ? 'HEUTE' : `${a.tage} Tag(e)`}</b></td><td>${formatDate(a.subscription_ends_at)}</td></tr>`
+      ).join('');
+
+      const html = `
+        <h2 style="color:#d4af37">⏰ Ablauf-Warnung DojoSoftware</h2>
+        <p style="color:#999">${new Date().toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
+        ${trials.length > 0 ? `
+          <h3>⏳ Ablaufende Trials (${trials.length})</h3>
+          <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+            <tr style="background:#333"><th>Dojo</th><th>E-Mail</th><th>Verbleibend</th><th>Enddatum</th></tr>
+            ${trialsHtml}
+          </table>` : ''}
+        ${abos.length > 0 ? `
+          <h3 style="margin-top:1.5rem">💳 Ablaufende Abonnements (${abos.length})</h3>
+          <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+            <tr style="background:#333"><th>Dojo</th><th>E-Mail</th><th>Plan</th><th>Verbleibend</th><th>Enddatum</th></tr>
+            ${abosHtml}
+          </table>` : ''}
+        <p style="margin-top:1.5rem;color:#999;font-size:12px">DojoSoftware Automatische Benachrichtigung — <a href="https://dojo.tda-intl.org/dashboard">Zum Dashboard</a></p>
+      `;
+
+      await transporter.sendMail({
+        from: `"DojoSoftware" <${emailSettings.smtp_user}>`,
+        to: emailSettings.default_from_email || emailSettings.smtp_user,
+        subject: `⚠️ Ablauf-Warnung: ${trials.length} Trial(s) / ${abos.length} Abo(s) laufen bald ab`,
+        html
+      });
+
+      logger.success(`✅ Trial/Abo Ablauf-Warnung gesendet: ${trials.length} Trials, ${abos.length} Abos`);
+    } catch (error) {
+      logger.error('❌ Trial/Abo Ablauf-Warnung Fehler', { error: error.message });
+    }
+  });
+
   cron.schedule('30 8 * * *', async () => {
     try {
       logger.info('📅 Event-Erinnerungen Cron-Job gestartet');
@@ -408,6 +498,11 @@ function initCronJobs() {
         name: 'Feature-Trials Erinnerungen',
         schedule: '09:00:00 täglich',
         description: 'Sendet Erinnerungen wenn Trials bald ablaufen (3 Tage, 1 Tag)'
+      },
+      {
+        name: 'Trial/Abo Ablauf-Warnung',
+        schedule: '07:00:00 täglich',
+        description: 'Sendet E-Mail an Super-Admin bei ablaufenden Trials (1/3/7 Tage) und Abos (1/7/14 Tage)'
       },
       {
         name: 'Lastschrift-Scheduler',
