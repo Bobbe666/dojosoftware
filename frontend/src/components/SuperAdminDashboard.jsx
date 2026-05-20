@@ -22,6 +22,8 @@ const StatisticsTab       = lazy(() => import('./StatisticsTab'));
 const ContractsTab        = lazy(() => import('./ContractsTab'));
 const UsersTab            = lazy(() => import('./UsersTab'));
 const FinanzenTab         = lazy(() => import('./FinanzenTab'));
+const SuperAdminFinanzen  = lazy(() => import('./SuperAdminFinanzen'));
+const FehlendeMandateTab  = lazy(() => import('./FinanzenTab').then(m => ({ default: m.FehlendeMandateTab || (() => null) })));
 const BuchhaltungTab      = lazy(() => import('./BuchhaltungTab'));
 const ZieleEntwicklung    = lazy(() => import('./ZieleEntwicklung'));
 const SupportTickets      = lazy(() => import('./SupportTickets'));
@@ -2107,14 +2109,18 @@ const SuperAdminDashboard = () => {
             {renderSubTabs('finanzen', [
               { id: 'finanzen',     icon: '💰', label: 'Übersicht' },
               { id: 'lastschrift',  icon: '🏦', label: 'Lastschrift' },
+              { id: 'mandate',      icon: '⚠️', label: 'Fehlende Mandate' },
               { id: 'buchhaltung',  icon: '📒', label: 'Buchhaltung' },
               { id: 'shop',         icon: '🛒', label: 'Shop' },
               { id: 'bestellungen', icon: '📦', label: 'Bestellungen' },
-              { id: 'statistiken',  icon: '📈', label: 'Statistiken' }
             ])}
 
             {subActiveTab.finanzen === 'finanzen' && (
-              <FinanzenTab token={token} />
+              <Suspense fallback={<TabLoader />}><SuperAdminFinanzen /></Suspense>
+            )}
+
+            {subActiveTab.finanzen === 'mandate' && (
+              <Suspense fallback={<TabLoader />}><FehlendeMandateTab token={token} /></Suspense>
             )}
 
             {subActiveTab.finanzen === 'lastschrift' && (
@@ -2327,9 +2333,6 @@ const SuperAdminDashboard = () => {
               </section>
             )}
 
-            {subActiveTab.finanzen === 'statistiken' && (
-              <StatisticsTab token={token} />
-            )}
           </div>
         )}
 

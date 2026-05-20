@@ -946,4 +946,5 @@ const CategoryDetailView = ({
   );
 };
 
+export { FehlendeMandateTab };
 export default FinanzenTab;
