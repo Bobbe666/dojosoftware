@@ -46,6 +46,62 @@ router.put('/dojos/bulk-extend-trial', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /subscriptions/ablauf?days=30 - Ablaufende Trials + Abos
+router.get('/subscriptions/ablauf', requireSuperAdmin, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+
+    const [trials] = await db.promise().query(`
+      SELECT id, dojoname, email, subscription_status, subscription_plan, trial_ends_at,
+             DATEDIFF(trial_ends_at, NOW()) AS tage_verbleibend
+      FROM dojo
+      WHERE subscription_status = 'trial'
+        AND trial_ends_at IS NOT NULL
+        AND trial_ends_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL ? DAY)
+      ORDER BY trial_ends_at ASC
+    `, [days]);
+
+    const [abos] = await db.promise().query(`
+      SELECT id, dojoname, email, subscription_status, subscription_plan,
+             subscription_ends_at, payment_interval,
+             DATEDIFF(subscription_ends_at, NOW()) AS tage_verbleibend
+      FROM dojo
+      WHERE subscription_status = 'active'
+        AND subscription_ends_at IS NOT NULL
+        AND subscription_ends_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL ? DAY)
+      ORDER BY subscription_ends_at ASC
+    `, [days]);
+
+    res.json({ trials, abos });
+  } catch (error) {
+    logger.error('Fehler beim Laden der Ablauf-Übersicht:', error);
+    res.status(500).json({ error: 'Fehler beim Laden', details: error.message });
+  }
+});
+
+// PUT /dojos/:id/renew-subscription - Abo um ein Interval verlängern
+router.put('/dojos/:id/renew-subscription', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [dojos] = await db.promise().query(
+      'SELECT id, dojoname, subscription_ends_at, payment_interval FROM dojo WHERE id = ?', [id]
+    );
+    if (dojos.length === 0) return res.status(404).json({ error: 'Dojo nicht gefunden' });
+    const dojo = dojos[0];
+
+    const intervalDays = { monthly: 30, quarterly: 90, yearly: 365 }[dojo.payment_interval] || 30;
+    const base = dojo.subscription_ends_at ? new Date(dojo.subscription_ends_at) : new Date();
+    base.setDate(base.getDate() + intervalDays);
+
+    await db.promise().query('UPDATE dojo SET subscription_ends_at = ? WHERE id = ?', [base, id]);
+    logger.info('Abo verlängert:', { dojoname: dojo.dojoname, interval: dojo.payment_interval, days: intervalDays });
+    res.json({ success: true, message: `Abo um ${intervalDays} Tage verlängert`, new_ends_at: base });
+  } catch (error) {
+    logger.error('Fehler beim Abo-Verlängern:', error);
+    res.status(500).json({ error: 'Fehler beim Verlängern', details: error.message });
+  }
+});
+
 // PUT /dojos/:id/extend-trial - Trial verlängern
 router.put('/dojos/:id/extend-trial', requireSuperAdmin, async (req, res) => {
   try {
