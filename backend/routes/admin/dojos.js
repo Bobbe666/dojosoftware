@@ -768,6 +768,69 @@ router.get('/subscription-audit-log', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /admin/mrr — Monthly Recurring Revenue Übersicht
+router.get('/mrr', requireSuperAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT
+        d.id,
+        d.dojoname,
+        d.subscription_plan,
+        d.subscription_status,
+        d.payment_interval,
+        d.subscription_started_at,
+        d.subscription_ends_at,
+        COALESCE(sp.display_name, d.subscription_plan) AS plan_display,
+        COALESCE(sp.price_monthly, 0)                  AS price_monthly,
+        COALESCE(sp.price_yearly,  0)                  AS price_yearly
+      FROM dojo d
+      LEFT JOIN subscription_plans sp ON sp.plan_name = d.subscription_plan
+      WHERE d.subscription_status IN ('active', 'trial')
+        AND d.ist_aktiv = 1
+      ORDER BY sp.price_monthly DESC NULLS LAST, d.dojoname ASC
+    `);
+
+    // MRR pro Dojo berechnen
+    const dojos = rows.map(r => {
+      let mrr = 0;
+      if (r.subscription_status === 'active') {
+        if (r.payment_interval === 'yearly' && r.price_yearly > 0) {
+          mrr = r.price_yearly / 12;
+        } else if (r.payment_interval === 'quarterly' && r.price_monthly > 0) {
+          mrr = r.price_monthly; // gleicher Monatsbetrag, quartalsweise gezahlt
+        } else {
+          mrr = r.price_monthly || 0;
+        }
+      }
+      return { ...r, mrr: Math.round(mrr * 100) / 100 };
+    });
+
+    // Aggregation nach Plan
+    const byPlan = {};
+    let totalMrr = 0;
+    dojos.forEach(d => {
+      const key = d.subscription_plan || 'unbekannt';
+      if (!byPlan[key]) byPlan[key] = { plan: key, display: d.plan_display, count: 0, mrr: 0 };
+      byPlan[key].count++;
+      byPlan[key].mrr += d.mrr;
+      totalMrr += d.mrr;
+    });
+
+    res.json({
+      success: true,
+      total_mrr: Math.round(totalMrr * 100) / 100,
+      total_arr: Math.round(totalMrr * 12 * 100) / 100,
+      active_count: dojos.filter(d => d.subscription_status === 'active').length,
+      trial_count:  dojos.filter(d => d.subscription_status === 'trial').length,
+      by_plan: Object.values(byPlan).sort((a, b) => b.mrr - a.mrr),
+      dojos
+    });
+  } catch (error) {
+    logger.error('Fehler bei MRR:', { error: error.message });
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
 // GET /admin/onboarding-status — Setup-Vollständigkeit aller Dojos
 router.get('/onboarding-status', requireSuperAdmin, async (req, res) => {
   try {

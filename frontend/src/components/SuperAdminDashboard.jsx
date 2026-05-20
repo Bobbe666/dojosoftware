@@ -48,6 +48,7 @@ const AppsMonitor           = lazy(() => import('./AppsMonitor'));
 const AuditTrailTab         = lazy(() => import('./AuditTrailTab'));
 const PlatformStatusTab     = lazy(() => import('./PlatformStatusTab'));
 const OnboardingStatusTab   = lazy(() => import('./OnboardingStatusTab'));
+const MRRTab                = lazy(() => import('./MRRTab'));
 
 const TabLoader = () => <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Lädt…</div>;
 
@@ -2118,6 +2119,7 @@ const SuperAdminDashboard = () => {
           <div>
             {renderSubTabs('finanzen', [
               { id: 'finanzen',     icon: '💰', label: 'Übersicht' },
+              { id: 'mrr',          icon: '📈', label: 'MRR / ARR' },
               { id: 'lastschrift',  icon: '🏦', label: 'Lastschrift' },
               { id: 'mandate',      icon: '⚠️', label: 'Fehlende Mandate' },
               { id: 'buchhaltung',  icon: '📒', label: 'Buchhaltung' },
@@ -2127,6 +2129,10 @@ const SuperAdminDashboard = () => {
 
             {subActiveTab.finanzen === 'finanzen' && (
               <Suspense fallback={<TabLoader />}><SuperAdminFinanzen /></Suspense>
+            )}
+
+            {subActiveTab.finanzen === 'mrr' && (
+              <Suspense fallback={<TabLoader />}><MRRTab token={token} /></Suspense>
             )}
 
             {subActiveTab.finanzen === 'mandate' && (
