@@ -9,6 +9,7 @@ import '../styles/ArtikelVerwaltungOverrides.css';
 import '../styles/ArtikelFormular.css';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import { useSubscription } from '../context/SubscriptionContext';
 
 
 const ArtikelFormular = ({ mode }) => {
@@ -43,6 +44,25 @@ const ArtikelFormular = ({ mode }) => {
   });
   const [rabattLoading, setRabattLoading] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  // Bestell-Specs (Enterprise)
+  const { hasFeature } = useSubscription();
+  const isEnterprise = isSuperAdmin || hasFeature('bestellsystem');
+  const LEERE_BESTELL_SPECS = {
+    lieferant_id: '', modell_bezeichnung: '', artikel_nr_lieferant: '',
+    farbe: 'Weiß', wkf: false,
+    material_specs: { material: [], webart: [], grammatur: [], materialText: '' },
+    stickerei_specs: { positionen: [], text: '', garnfarben: 'Gold, Schwarz', bemerkung: '' },
+    label_specs: { labelText: '', labelArt: [], labelPosition: [], labelSprachen: ['Deutsch', 'Englisch'], labelZusatz: '' },
+    verpackung_specs: { typ: '', stueck_beutel: '1', stueck_karton: '', bemerkung: '' },
+    bemerkungen: '',
+    foto_urls: [],
+  };
+  const [bestellSpecs, setBestellSpecs]         = useState(LEERE_BESTELL_SPECS);
+  const [bestellLieferanten, setBestellLieferanten] = useState([]);
+  const [bestellSpecsSaving, setBestellSpecsSaving] = useState(false);
+  const [bestellSpecsSaved, setBestellSpecsSaved]   = useState(false);
+  const [bestellSpecsError, setBestellSpecsError]   = useState('');
 
   // Verfügbare Größen
   const verfuegbareGroessen = [
@@ -385,6 +405,67 @@ const ArtikelFormular = ({ mode }) => {
     }
   }, [isSuperAdmin, mode, id]);
 
+  // Bestell-Specs und Lieferanten laden (Enterprise, Edit-Modus)
+  useEffect(() => {
+    if (isEnterprise && mode === 'edit' && id) {
+      fetchWithAuth(`${config.apiBaseUrl}/artikel/${id}/bestell-specs`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.success && d.data) {
+            const s = d.data;
+            setBestellSpecs({
+              lieferant_id: s.lieferant_id ? String(s.lieferant_id) : '',
+              modell_bezeichnung: s.modell_bezeichnung || '',
+              artikel_nr_lieferant: s.artikel_nr_lieferant || '',
+              farbe: s.farbe || 'Weiß',
+              wkf: !!s.wkf,
+              material_specs: s.material_specs || { material: [], webart: [], grammatur: [], materialText: '' },
+              stickerei_specs: s.stickerei_specs || { positionen: [], text: '', garnfarben: 'Gold, Schwarz', bemerkung: '' },
+              label_specs: s.label_specs || { labelText: '', labelArt: [], labelPosition: [], labelSprachen: ['Deutsch','Englisch'], labelZusatz: '' },
+              verpackung_specs: s.verpackung_specs || { typ: '', stueck_beutel: '1', stueck_karton: '', bemerkung: '' },
+              bemerkungen: s.bemerkungen || '',
+              foto_urls: s.foto_urls || [],
+            });
+          }
+        }).catch(() => {});
+      fetchWithAuth(`${config.apiBaseUrl}/lieferanten`)
+        .then(r => r.json())
+        .then(d => setBestellLieferanten(d.data || []))
+        .catch(() => {});
+    }
+  }, [isEnterprise, mode, id]);
+
+  const saveBestellSpecs = async () => {
+    if (!id) return;
+    setBestellSpecsSaving(true);
+    setBestellSpecsError('');
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/artikel/${id}/bestell-specs`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...bestellSpecs,
+          lieferant_id: bestellSpecs.lieferant_id ? parseInt(bestellSpecs.lieferant_id) : null
+        })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Fehler');
+      setBestellSpecsSaved(true);
+      setTimeout(() => setBestellSpecsSaved(false), 2500);
+    } catch (e) {
+      setBestellSpecsError(e.message);
+    } finally {
+      setBestellSpecsSaving(false);
+    }
+  };
+
+  const bsSet = (key, val) => setBestellSpecs(prev => ({ ...prev, [key]: val }));
+  const bsToggleArr = (section, key, val) => setBestellSpecs(prev => {
+    const arr = prev[section]?.[key] || [];
+    return { ...prev, [section]: { ...prev[section], [key]: arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val] } };
+  });
+  const bsSetSub = (section, key, val) => setBestellSpecs(prev => ({ ...prev, [section]: { ...prev[section], [key]: val } }));
+
   // Create-Modus: Gruppenvorauswahl aus Navigation-State übernehmen
   useEffect(() => {
     if (mode === 'create' && location.state?.gruppeId && artikelgruppen.length > 0) {
@@ -679,10 +760,12 @@ const ArtikelFormular = ({ mode }) => {
     { id: 'einstellungen', label: 'Einstellungen', icon: '⚙️' }
   ];
 
-  // Rabatt-Tab nur für SuperAdmin anzeigen
-  const tabs = isSuperAdmin
-    ? [...baseTabs, { id: 'rabatt', label: 'Mitglieder-Rabatt', icon: '🏷️' }]
-    : baseTabs;
+  // Rabatt-Tab nur für SuperAdmin, Bestellen-Tab nur für Enterprise (Edit-Modus)
+  const tabs = [
+    ...baseTabs,
+    ...(isSuperAdmin ? [{ id: 'rabatt', label: 'Mitglieder-Rabatt', icon: '🏷️' }] : []),
+    ...(isEnterprise && mode === 'edit' ? [{ id: 'bestellen', label: 'Bestellen', icon: '📦' }] : []),
+  ];
 
   // basisInputStyle and basisLabelStyle migrated to CSS classes af3-basis-input / af3-basis-label
 
@@ -2901,6 +2984,239 @@ const ArtikelFormular = ({ mode }) => {
     </div>
   );
 
+  const renderTabBestellen = () => {
+    const MATERIALIEN  = ['100% Baumwolle', 'Baumwolle/Polyester', 'Canvas', 'Synthetik', 'Polyester', 'Seide', 'Leder'];
+    const WEBARTEN     = ['Single Weave', 'Double Weave', 'Kata', 'Kumite / Leicht', 'gewoben', 'gewirkt'];
+    const GRAMMATUREN  = ['8 oz (~270 g/m²)', '10 oz (~340 g/m²)', '12 oz (~400 g/m²)', '14 oz (~470 g/m²)'];
+    const POSITIONEN   = ['Linkes Revers', 'Rechtes Revers', 'Rücken oben', 'Rücken Mitte', 'Linker Ärmel', 'Rechter Ärmel', 'Hosenbein', 'Kragen'];
+    const LABEL_ART    = ['Gewebtes Etikett', 'Gedrucktes Etikett', 'Eingestickt'];
+    const LABEL_POS    = ['Nacken (innen)', 'Seitennaht', 'Hosenbund (innen)'];
+    const LABEL_LANG   = ['Deutsch', 'Englisch', 'Französisch', 'Japanisch', 'Arabisch'];
+    const VERP_TYPEN   = ['Gefaltet', 'Auf Hänger', 'Polybeutel', 'Karton'];
+    const bs = bestellSpecs;
+
+    const ChipRow = ({ options, section, key: k }) => (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.3rem' }}>
+        {options.map(opt => {
+          const active = (bs[section]?.[k] || []).includes(opt);
+          return (
+            <button key={opt} type="button" onClick={() => bsToggleArr(section, k, opt)}
+              style={{ padding: '0.22rem 0.6rem', borderRadius: 20, fontSize: '0.76rem', cursor: 'pointer', border: active ? '1px solid rgba(212,175,55,0.6)' : '1px solid rgba(255,255,255,0.1)', background: active ? 'rgba(212,175,55,0.1)' : 'transparent', color: active ? '#d4af37' : 'rgba(255,255,255,0.45)' }}>
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    );
+
+    const sectionStyle = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '1rem', marginBottom: '1rem' };
+    const labelStyle   = { display: 'block', fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' };
+    const inputStyle   = { width: '100%', padding: '0.45rem 0.65rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, color: 'var(--text-1)', fontSize: '0.88rem', boxSizing: 'border-box' };
+    const grid2        = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' };
+
+    return (
+      <div className="tab-content-section" style={{ maxWidth: 860 }}>
+
+        {/* Speichern-Banner */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', padding: '0.7rem 1rem', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.2)', borderRadius: 8 }}>
+          <div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#d4af37' }}>📦 Bestell-Spezifikationen</div>
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.1rem' }}>Wird beim Erstellen einer Bestellung automatisch vorausgefüllt</div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {bestellSpecsSaved && <span style={{ color: '#27ae60', fontSize: '0.8rem' }}>✓ Gespeichert</span>}
+            {bestellSpecsError && <span style={{ color: '#e74c3c', fontSize: '0.8rem' }}>{bestellSpecsError}</span>}
+            <button type="button" onClick={saveBestellSpecs} disabled={bestellSpecsSaving}
+              style={{ padding: '0.4rem 1rem', background: 'rgba(212,175,55,0.2)', border: '1px solid rgba(212,175,55,0.5)', borderRadius: 7, color: '#d4af37', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>
+              {bestellSpecsSaving ? '⏳ Speichert…' : '💾 Bestell-Specs speichern'}
+            </button>
+          </div>
+        </div>
+
+        {/* Lieferant & Produkt-ID */}
+        <div style={sectionStyle}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Lieferant &amp; Identifikation</div>
+          <div style={grid2}>
+            <div>
+              <label style={labelStyle}>Lieferant</label>
+              <select value={bs.lieferant_id} onChange={e => bsSet('lieferant_id', e.target.value)} style={inputStyle}>
+                <option value="">— kein Lieferant —</option>
+                {bestellLieferanten.map(l => <option key={l.lieferant_id} value={l.lieferant_id}>{l.firmenname}{l.land ? ` · ${l.land}` : ''}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Modellbezeichnung</label>
+              <input type="text" value={bs.modell_bezeichnung} onChange={e => bsSet('modell_bezeichnung', e.target.value)} placeholder="z.B. Hayashi Tenno WKF" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Artikel-Nr. beim Lieferanten</label>
+              <input type="text" value={bs.artikel_nr_lieferant} onChange={e => bsSet('artikel_nr_lieferant', e.target.value)} placeholder="z.B. 0270" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Farbe / Ausführung</label>
+              <input type="text" value={bs.farbe} onChange={e => bsSet('farbe', e.target.value)} style={inputStyle} />
+            </div>
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={bs.wkf} onChange={e => bsSet('wkf', e.target.checked)} />
+            WKF-zugelassen
+          </label>
+        </div>
+
+        {/* Material */}
+        <div style={sectionStyle}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Material-Spezifikation</div>
+          <div style={grid2}>
+            <div>
+              <label style={labelStyle}>Material</label>
+              <ChipRow options={MATERIALIEN} section="material_specs" k="material" />
+            </div>
+            <div>
+              <label style={labelStyle}>Webart</label>
+              <ChipRow options={WEBARTEN} section="material_specs" k="webart" />
+            </div>
+            <div>
+              <label style={labelStyle}>Grammatur</label>
+              <ChipRow options={GRAMMATUREN} section="material_specs" k="grammatur" />
+            </div>
+            <div>
+              <label style={labelStyle}>Material-Text (exakt)</label>
+              <input type="text" value={bs.material_specs?.materialText || ''} onChange={e => bsSetSub('material_specs', 'materialText', e.target.value)} placeholder="z.B. 55% Baumwolle, 45% Polyester" style={inputStyle} />
+            </div>
+          </div>
+        </div>
+
+        {/* Stickerei */}
+        <div style={sectionStyle}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Stickerei &amp; Branding</div>
+          <label style={labelStyle}>Stickerei-Positionen</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.75rem' }}>
+            {POSITIONEN.map(pos => {
+              const active = (bs.stickerei_specs?.positionen || []).includes(pos);
+              return (
+                <button key={pos} type="button" onClick={() => bsToggleArr('stickerei_specs', 'positionen', pos)}
+                  style={{ padding: '0.22rem 0.6rem', borderRadius: 5, fontSize: '0.76rem', cursor: 'pointer', border: active ? '1px solid rgba(212,175,55,0.6)' : '1px solid rgba(255,255,255,0.1)', background: active ? 'rgba(212,175,55,0.1)' : 'transparent', color: active ? '#d4af37' : 'rgba(255,255,255,0.45)' }}>
+                  {pos}
+                </button>
+              );
+            })}
+          </div>
+          <div style={grid2}>
+            <div>
+              <label style={labelStyle}>Schriftzug / Text</label>
+              <input type="text" value={bs.stickerei_specs?.text || ''} onChange={e => bsSetSub('stickerei_specs', 'text', e.target.value)} placeholder="z.B. Kampfkunstschule Schreiner" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Garnfarben</label>
+              <input type="text" value={bs.stickerei_specs?.garnfarben || ''} onChange={e => bsSetSub('stickerei_specs', 'garnfarben', e.target.value)} placeholder="Gold, Schwarz" style={inputStyle} />
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={labelStyle}>Stickerei-Bemerkungen</label>
+              <textarea value={bs.stickerei_specs?.bemerkung || ''} onChange={e => bsSetSub('stickerei_specs', 'bemerkung', e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Label */}
+        <div style={sectionStyle}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Pflegekennzeichnung &amp; Label</div>
+          <div style={grid2}>
+            <div>
+              <label style={labelStyle}>Material-Text (Label)</label>
+              <input type="text" value={bs.label_specs?.labelText || ''} onChange={e => bsSetSub('label_specs', 'labelText', e.target.value)} placeholder="z.B. 100% Baumwolle / 100% Cotton" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Zusatztext</label>
+              <input type="text" value={bs.label_specs?.labelZusatz || ''} onChange={e => bsSetSub('label_specs', 'labelZusatz', e.target.value)} placeholder="z.B. Made exclusively for KKS Schreiner" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Label-Sprachen</label>
+              <ChipRow options={LABEL_LANG} section="label_specs" k="labelSprachen" />
+            </div>
+            <div>
+              <label style={labelStyle}>Label-Art</label>
+              <ChipRow options={LABEL_ART} section="label_specs" k="labelArt" />
+            </div>
+            <div>
+              <label style={labelStyle}>Label-Position</label>
+              <ChipRow options={LABEL_POS} section="label_specs" k="labelPosition" />
+            </div>
+          </div>
+        </div>
+
+        {/* Verpackung */}
+        <div style={sectionStyle}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Verpackung</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label style={labelStyle}>Verpackungstyp</label>
+              <select value={bs.verpackung_specs?.typ || ''} onChange={e => bsSetSub('verpackung_specs', 'typ', e.target.value)} style={inputStyle}>
+                <option value="">— wählen —</option>
+                {VERP_TYPEN.map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Stück / Beutel</label>
+              <input type="number" min="1" value={bs.verpackung_specs?.stueck_beutel || ''} onChange={e => bsSetSub('verpackung_specs', 'stueck_beutel', e.target.value)} style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Stück / Karton</label>
+              <input type="number" min="1" value={bs.verpackung_specs?.stueck_karton || ''} onChange={e => bsSetSub('verpackung_specs', 'stueck_karton', e.target.value)} style={inputStyle} />
+            </div>
+            <div style={{ gridColumn: 'span 3' }}>
+              <label style={labelStyle}>Verpackungs-Bemerkung</label>
+              <input type="text" value={bs.verpackung_specs?.bemerkung || ''} onChange={e => bsSetSub('verpackung_specs', 'bemerkung', e.target.value)} style={inputStyle} />
+            </div>
+          </div>
+        </div>
+
+        {/* Modell-Fotos */}
+        <div style={sectionStyle}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Modell-Fotos &amp; Zeichnungen</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {(bs.foto_urls || []).map((foto, i) => (
+              <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <input type="text" value={foto.label || ''} onChange={e => {
+                  const next = [...bs.foto_urls]; next[i] = { ...next[i], label: e.target.value };
+                  bsSet('foto_urls', next);
+                }} placeholder="Bezeichnung (z.B. Vorne-Brust)" style={{ ...inputStyle, width: 180 }} />
+                <input type="text" value={foto.url || ''} onChange={e => {
+                  const next = [...bs.foto_urls]; next[i] = { ...next[i], url: e.target.value };
+                  bsSet('foto_urls', next);
+                }} placeholder="Bild-URL" style={inputStyle} />
+                {foto.url && <img src={foto.url} alt="" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }} onError={e => e.target.style.display='none'} />}
+                <button type="button" onClick={() => bsSet('foto_urls', bs.foto_urls.filter((_, j) => j !== i))}
+                  style={{ background: 'rgba(231,76,60,0.15)', border: '1px solid rgba(231,76,60,0.3)', borderRadius: 5, color: '#e74c3c', padding: '0.3rem 0.6rem', cursor: 'pointer', flexShrink: 0, fontSize: '0.8rem' }}>
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button type="button" onClick={() => bsSet('foto_urls', [...(bs.foto_urls || []), { url: '', label: '' }])}
+              style={{ alignSelf: 'flex-start', padding: '0.35rem 0.8rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '0.82rem' }}>
+              + Foto hinzufügen
+            </button>
+          </div>
+        </div>
+
+        {/* Allgemeine Bemerkungen */}
+        <div style={sectionStyle}>
+          <label style={labelStyle}>Allgemeine Bemerkungen (Bestellhinweise)</label>
+          <textarea value={bs.bemerkungen} onChange={e => bsSet('bemerkungen', e.target.value)} rows={3}
+            placeholder="Sonderwünsche, Verpackungsvorschriften, Qualitätsprüfung..." style={{ ...inputStyle, resize: 'vertical' }} />
+        </div>
+
+        {/* Footer Speichern */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+          {bestellSpecsSaved && <span style={{ color: '#27ae60', fontSize: '0.85rem', alignSelf: 'center' }}>✓ Gespeichert</span>}
+          <button type="button" onClick={saveBestellSpecs} disabled={bestellSpecsSaving}
+            style={{ padding: '0.55rem 1.4rem', background: 'rgba(212,175,55,0.2)', border: '1px solid rgba(212,175,55,0.5)', borderRadius: 7, color: '#d4af37', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
+            {bestellSpecsSaving ? '⏳ Speichert…' : '💾 Bestell-Specs speichern'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'basis': return renderTabBasis();
@@ -2909,6 +3225,7 @@ const ArtikelFormular = ({ mode }) => {
       case 'lager': return renderTabLager();
       case 'einstellungen': return renderTabEinstellungen();
       case 'rabatt': return renderTabRabatt();
+      case 'bestellen': return renderTabBestellen();
       default: return null;
     }
   };

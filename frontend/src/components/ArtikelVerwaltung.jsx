@@ -22,13 +22,16 @@ import InventurTab from './InventurTab';
 import LieferantenTab from './LieferantenTab';
 import GiBestellvorlage from './GiBestellvorlage';
 import BestellvorlagenTab from './BestellvorlagenTab';
+import { useSubscription } from '../context/SubscriptionContext';
 
 
 const ArtikelVerwaltung = () => {
   const navigate = useNavigate();
   const { activeDojo } = useDojoContext();
   const { isDarkMode } = useTheme();
+  const { hasFeature } = useSubscription();
   const isVerbandLevel = activeDojo === 'super-admin' || activeDojo === 'verband';
+  const isEnterprise = activeDojo === 'super-admin' || hasFeature('bestellsystem');
 
   // =====================================================================================
   // STATE MANAGEMENT
@@ -1546,8 +1549,11 @@ const ArtikelVerwaltung = () => {
                       {item.lager_tracking && (
                         <button className="sub-tab-btn av-btn-sm" onClick={() => handleLager(item)} title="Lagerbestand ändern">📦</button>
                       )}
-                      {item.vorlage_id && (
-                        <button className="sub-tab-btn av-btn-sm" onClick={() => openVorlageForArtikel(item)} title="Bestellung aufgeben">📋</button>
+                      {isEnterprise && (
+                        <button className="sub-tab-btn av-btn-sm" onClick={() => {
+                          if (item.vorlage_id) { openVorlageForArtikel(item); }
+                          else { setGiVorlageArtikel(item); }
+                        }} title="Bestellen (Enterprise)">📋</button>
                       )}
                       <button className="sub-tab-btn av-btn-sm" onClick={() => deleteArtikel(item.artikel_id)} title="Deaktivieren">🗑️</button>
                     </td>

@@ -841,6 +841,40 @@ db.promise().query(`
   ADD UNIQUE KEY uq_magicline_transaction (magicline_transaction_id)
 `).catch(err => logger.warn('Migration 169b (ignoriert):', { error: err.message }));
 
+// Migration 170: Artikel-Bestell-Spezifikationen (Enterprise)
+db.promise().query(`
+  CREATE TABLE IF NOT EXISTS artikel_bestell_specs (
+    id                   INT AUTO_INCREMENT PRIMARY KEY,
+    artikel_id           INT NOT NULL,
+    dojo_id              INT NOT NULL,
+    lieferant_id         INT NULL,
+    modell_bezeichnung   VARCHAR(255) DEFAULT NULL,
+    artikel_nr_lieferant VARCHAR(100) DEFAULT NULL,
+    farbe                VARCHAR(100) DEFAULT 'Weiß',
+    wkf                  TINYINT(1) DEFAULT 0,
+    material_specs       JSON NULL,
+    stickerei_specs      JSON NULL,
+    label_specs          JSON NULL,
+    verpackung_specs     JSON NULL,
+    mass_tabelle         JSON NULL,
+    bemerkungen          TEXT DEFAULT NULL,
+    foto_urls            JSON NULL,
+    erstellt_am          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    aktualisiert_am      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_artikel (artikel_id),
+    INDEX idx_dojo (dojo_id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+`).catch(err => logger.warn('Migration 170a (ignoriert):', { error: err.message }));
+
+db.promise().query(`ALTER TABLE dojo_subscriptions ADD COLUMN IF NOT EXISTS feature_bestellsystem BOOLEAN DEFAULT FALSE`)
+  .catch(err => logger.warn('Migration 170b (ignoriert):', { error: err.message }));
+db.promise().query(`ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS feature_bestellsystem BOOLEAN DEFAULT FALSE`)
+  .catch(err => logger.warn('Migration 170c (ignoriert):', { error: err.message }));
+db.promise().query(`UPDATE subscription_plans SET feature_bestellsystem = TRUE WHERE plan_name = 'enterprise'`)
+  .catch(err => logger.warn('Migration 170d (ignoriert):', { error: err.message }));
+db.promise().query(`UPDATE dojo_subscriptions s JOIN subscription_plans p ON p.plan_name = s.plan_type SET s.feature_bestellsystem = p.feature_bestellsystem`)
+  .catch(err => logger.warn('Migration 170e (ignoriert):', { error: err.message }));
+
 // BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
 try {
   const buchhaltungRoutes = require('./routes/buchhaltung');

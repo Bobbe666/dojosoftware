@@ -115,7 +115,8 @@ export const SubscriptionProvider = ({ children }) => {
       homepage_builder: 'Homepage Builder',
       social_media: 'Social Media Posting',
       training: 'Training Timer',
-      todos: 'To-Do System'
+      todos: 'To-Do System',
+      bestellsystem: 'Artikel-Bestellsystem (Enterprise)'
     };
     return featureNames[featureName] || featureName;
   };

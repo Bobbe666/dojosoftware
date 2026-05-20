@@ -1365,4 +1365,89 @@ router.get('/stats/overview', (req, res) => {
   });
 });
 
+// =====================================================================================
+// BESTELL-SPEZIFIKATIONEN (Enterprise)
+// =====================================================================================
+
+const BESTELL_SPECS_ENTERPRISE_CHECK = async (req, res, next) => {
+  const dojoId = req.tenant?.dojo_id;
+  if (!dojoId) return next(); // Super-Admin darf immer
+  try {
+    const [[sub]] = await db.promise().query(
+      'SELECT feature_bestellsystem FROM dojo_subscriptions WHERE dojo_id = ? AND status IN (\'active\',\'trial\')',
+      [dojoId]
+    );
+    if (!sub?.feature_bestellsystem) {
+      return res.status(403).json({ error: 'Bestellsystem erfordert den Enterprise-Plan.', code: 'ENTERPRISE_REQUIRED' });
+    }
+    next();
+  } catch (e) {
+    res.status(500).json({ error: 'Plan-Prüfung fehlgeschlagen' });
+  }
+};
+
+// GET /api/artikel/:id/bestell-specs
+router.get('/:id/bestell-specs', BESTELL_SPECS_ENTERPRISE_CHECK, async (req, res) => {
+  const artikelId = parseInt(req.params.id);
+  const dojoId = req.tenant?.dojo_id;
+  try {
+    const where = dojoId ? 'artikel_id = ? AND dojo_id = ?' : 'artikel_id = ?';
+    const params = dojoId ? [artikelId, dojoId] : [artikelId];
+    const [rows] = await db.promise().query(`SELECT * FROM artikel_bestell_specs WHERE ${where} LIMIT 1`, params);
+    if (!rows.length) return res.json({ success: true, data: null });
+    const row = rows[0];
+    ['material_specs','stickerei_specs','label_specs','verpackung_specs','mass_tabelle','foto_urls'].forEach(k => {
+      if (typeof row[k] === 'string') { try { row[k] = JSON.parse(row[k]); } catch {} }
+    });
+    res.json({ success: true, data: row });
+  } catch (e) {
+    logger.error('GET bestell-specs:', { error: e.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// PUT /api/artikel/:id/bestell-specs
+router.put('/:id/bestell-specs', BESTELL_SPECS_ENTERPRISE_CHECK, async (req, res) => {
+  const artikelId = parseInt(req.params.id);
+  const dojoId = req.tenant?.dojo_id || 2;
+  const {
+    lieferant_id, modell_bezeichnung, artikel_nr_lieferant, farbe, wkf,
+    material_specs, stickerei_specs, label_specs, verpackung_specs,
+    mass_tabelle, bemerkungen, foto_urls
+  } = req.body;
+
+  const data = {
+    artikel_id: artikelId,
+    dojo_id: dojoId,
+    lieferant_id: lieferant_id || null,
+    modell_bezeichnung: modell_bezeichnung || null,
+    artikel_nr_lieferant: artikel_nr_lieferant || null,
+    farbe: farbe || 'Weiß',
+    wkf: wkf ? 1 : 0,
+    material_specs: material_specs ? JSON.stringify(material_specs) : null,
+    stickerei_specs: stickerei_specs ? JSON.stringify(stickerei_specs) : null,
+    label_specs: label_specs ? JSON.stringify(label_specs) : null,
+    verpackung_specs: verpackung_specs ? JSON.stringify(verpackung_specs) : null,
+    mass_tabelle: mass_tabelle ? JSON.stringify(mass_tabelle) : null,
+    bemerkungen: bemerkungen || null,
+    foto_urls: foto_urls ? JSON.stringify(foto_urls) : null,
+  };
+
+  try {
+    await db.promise().query(
+      `INSERT INTO artikel_bestell_specs SET ? ON DUPLICATE KEY UPDATE
+        lieferant_id=VALUES(lieferant_id), modell_bezeichnung=VALUES(modell_bezeichnung),
+        artikel_nr_lieferant=VALUES(artikel_nr_lieferant), farbe=VALUES(farbe), wkf=VALUES(wkf),
+        material_specs=VALUES(material_specs), stickerei_specs=VALUES(stickerei_specs),
+        label_specs=VALUES(label_specs), verpackung_specs=VALUES(verpackung_specs),
+        mass_tabelle=VALUES(mass_tabelle), bemerkungen=VALUES(bemerkungen), foto_urls=VALUES(foto_urls)`,
+      [data]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    logger.error('PUT bestell-specs:', { error: e.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
 module.exports = router;

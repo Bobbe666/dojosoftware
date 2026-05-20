@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import '../styles/GiBestellvorlage.css';
+import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 const SIZES = {
   '188': [130, 140, 150, 160, 170, 180, 190, 200],
@@ -188,6 +190,49 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   };
 
   const [form, setForm] = useState(buildInitialForm);
+
+  // Bestell-Specs vom Artikel laden (wenn Artikel-Prop ohne Vorlage übergeben)
+  useEffect(() => {
+    if (!artikel || vorlage || initFormdata) return;
+    const aid = artikel.artikel_id;
+    if (!aid) return;
+    fetchWithAuth(`${config.apiBaseUrl}/artikel/${aid}/bestell-specs`)
+      .then(r => r.json())
+      .then(d => {
+        if (!d.success || !d.data) return;
+        const s = d.data;
+        setForm(prev => ({
+          ...prev,
+          modelName:          s.modell_bezeichnung || prev.modelName,
+          artikelNr:          s.artikel_nr_lieferant || prev.artikelNr,
+          lieferantId:        s.lieferant_id ? String(s.lieferant_id) : prev.lieferantId,
+          farbe:              s.farbe || prev.farbe,
+          wkf:                s.wkf != null ? !!s.wkf : prev.wkf,
+          stickereiPos:       s.stickerei_specs?.positionen || prev.stickereiPos,
+          stickereiSchriftzug: s.stickerei_specs?.text || prev.stickereiSchriftzug,
+          stickereiGarnfarben: s.stickerei_specs?.garnfarben || prev.stickereiGarnfarben,
+          stickereiBemerkung: s.stickerei_specs?.bemerkung || prev.stickereiBemerkung,
+          bemerkungen:        s.bemerkungen || prev.bemerkungen,
+          spezifikation: {
+            ...prev.spezifikation,
+            material:    s.material_specs?.material   || prev.spezifikation?.material,
+            webart:      s.material_specs?.webart     || prev.spezifikation?.webart,
+            grammaturKids:  s.material_specs?.grammatur || prev.spezifikation?.grammaturKids,
+            grammaturAdult: s.material_specs?.grammatur || prev.spezifikation?.grammaturAdult,
+            materialText:   s.material_specs?.materialText || prev.spezifikation?.materialText,
+            labelText:       s.label_specs?.labelText    || prev.spezifikation?.labelText,
+            labelArt:        s.label_specs?.labelArt     || prev.spezifikation?.labelArt,
+            labelPosition:   s.label_specs?.labelPosition || prev.spezifikation?.labelPosition,
+            labelSprachen:   s.label_specs?.labelSprachen || prev.spezifikation?.labelSprachen,
+            labelZusatz:     s.label_specs?.labelZusatz  || prev.spezifikation?.labelZusatz,
+            verp_typ:        s.verpackung_specs?.typ      || prev.spezifikation?.verp_typ,
+            verp_stueck_beutel: s.verpackung_specs?.stueck_beutel || prev.spezifikation?.verp_stueck_beutel,
+            verp_stueck_karton: s.verpackung_specs?.stueck_karton || prev.spezifikation?.verp_stueck_karton,
+          },
+        }));
+      })
+      .catch(() => {});
+  }, [artikel?.artikel_id]); // eslint-disable-line
 
   const dojoId = activeDojo?.id;
 
