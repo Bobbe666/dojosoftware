@@ -1,85 +1,44 @@
-/**
- * MarketingZentrale.jsx
- * Zentraler Hub für alle Marketing-Funktionen
- */
-
 import React, { useState, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, CalendarDays, Zap, Loader2, Users, Gift,
-  Megaphone, TrendingUp, Target, Sparkles, Mail, Share2, Facebook, Tag, ShoppingBag
+  Megaphone, Sparkles, Mail, Share2, Tag, ShoppingBag
 } from 'lucide-react';
 import '../styles/MarketingZentrale.css';
 
-const MarketingJahresplan     = lazy(() => import('./MarketingJahresplan'));
-const FreundeWerbenFreunde    = lazy(() => import('./FreundeWerbenFreunde'));
-const FreieAktionen           = lazy(() => import('./FreieAktionen'));
-const MarketingKiContent      = lazy(() => import('./MarketingKiContent'));
-const MarketingGeburtstage    = lazy(() => import('./MarketingGeburtstage'));
-const MarketingNewsletter     = lazy(() => import('./MarketingNewsletter'));
-const MarketingAktionen       = lazy(() => import('./MarketingAktionen'));
-const SonderaktionenTab       = lazy(() => import('./SonderaktionenTab'));
-const MarketingArtikelTab     = lazy(() => import('./MarketingArtikelTab'));
+const MarketingJahresplan  = lazy(() => import('./MarketingJahresplan'));
+const FreundeWerbenFreunde = lazy(() => import('./FreundeWerbenFreunde'));
+const FreieAktionen        = lazy(() => import('./FreieAktionen'));
+const MarketingKiContent   = lazy(() => import('./MarketingKiContent'));
+const MarketingGeburtstage = lazy(() => import('./MarketingGeburtstage'));
+const MarketingNewsletter  = lazy(() => import('./MarketingNewsletter'));
+const MarketingAktionen    = lazy(() => import('./MarketingAktionen'));
+const SonderaktionenTab    = lazy(() => import('./SonderaktionenTab'));
+const MarketingArtikelTab  = lazy(() => import('./MarketingArtikelTab'));
 
-const TABS = [
+const NAV = [
   {
-    id:    'jahresplan',
-    label: 'Jahresplan',
-    icon:  CalendarDays,
-    desc:  'Geplante Aktionen & Kampagnen',
+    group: 'Inhalte & Kampagnen',
+    items: [
+      { id: 'jahresplan',    label: 'Jahresplan',     icon: CalendarDays, desc: 'Geplante Aktionen & Kampagnen' },
+      { id: 'ki-content',    label: 'KI-Content',     icon: Sparkles,     desc: 'Posts mit KI erstellen',       badge: 'KI', badgeClass: 'ki' },
+      { id: 'social-media',  label: 'Social Media',   icon: Share2,       desc: 'Facebook & Instagram Posts' },
+      { id: 'newsletter',    label: 'Newsletter',     icon: Mail,         desc: 'E-Mails an Mitglieder' },
+      { id: 'geburtstage',   label: 'Geburtstage',    icon: Gift,         desc: 'Geburtstags-Kampagnen' },
+      { id: 'freunde-werben',label: 'Freunde werben', icon: Users,        desc: 'Empfehlungs-Programm' },
+      { id: 'freie-aktionen',label: 'Freie Aktionen', icon: Zap,          desc: 'Spontane Kampagnen' },
+    ],
   },
   {
-    id:    'ki-content',
-    label: 'KI-Content',
-    icon:  Sparkles,
-    desc:  'Posts mit KI erstellen & Templates',
-    highlight: true,
-  },
-  {
-    id:    'social-media',
-    label: 'Social Media',
-    icon:  Share2,
-    desc:  'Facebook & Instagram Posts',
-  },
-  {
-    id:    'newsletter',
-    label: 'Newsletter',
-    icon:  Mail,
-    desc:  'E-Mails an Mitglieder senden',
-  },
-  {
-    id:    'geburtstage',
-    label: 'Geburtstage',
-    icon:  Gift,
-    desc:  'Posts für Mitglieder-Geburtstage',
-  },
-  {
-    id:    'freunde-werben',
-    label: 'Freunde werben',
-    icon:  Users,
-    desc:  'Empfehlungs-Programm',
-  },
-  {
-    id:    'freie-aktionen',
-    label: 'Freie Aktionen',
-    icon:  Zap,
-    desc:  'Spontane Kampagnen',
-  },
-  {
-    id:        'sonderaktionen',
-    label:     'Aktionen',
-    icon:      Tag,
-    desc:      'Sonderaktionen & Rabatte schalten',
-    highlight: true,
-  },
-  {
-    id:        'artikel',
-    label:     'Artikel & Shop',
-    icon:      ShoppingBag,
-    desc:      'Artikel für Mitglieder anlegen — Vorverkauf oder Bestellung',
-    highlight: true,
+    group: 'Angebote & Shop',
+    items: [
+      { id: 'sonderaktionen',label: 'Aktionen',       icon: Tag,          desc: 'Rabatte & Sonderaktionen' },
+      { id: 'artikel',       label: 'Artikel & Shop', icon: ShoppingBag,  desc: 'Vorverkauf & Bestellungen',    badge: 'NEU', badgeClass: 'neu' },
+    ],
   },
 ];
+
+const ALL_ITEMS = NAV.flatMap(g => g.items);
 
 const LazyFallback = () => (
   <div className="mz-lazy-fallback">
@@ -94,115 +53,84 @@ export default function MarketingZentrale({ embedded = false }) {
   const initialTab = searchParams.get('tab') || 'jahresplan';
   const [activeTab, setActiveTab] = useState(initialTab);
 
-  const activeTabData = TABS.find(t => t.id === activeTab);
+  const active = ALL_ITEMS.find(t => t.id === activeTab);
+  const ActiveIcon = active?.icon;
 
   return (
-    <div className="mz-container">
+    <div className="mz-root">
 
-      {/* Hero-Header */}
+      {/* Topbar */}
       {!embedded && (
-        <div className="mz-hero">
-          <div className="mz-hero-bg" />
-          <div className="mz-hero-inner">
-            <button className="mz-back-btn" onClick={() => navigate('/dashboard')}>
-              <ArrowLeft size={16} /> Zurück
-            </button>
-            <div className="mz-hero-content">
-              <div className="mz-hero-icon-wrap">
-                <Megaphone size={28} />
+        <div className="mz-topbar">
+          <button className="mz-topbar-back" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft size={14} /> Zurück
+          </button>
+          <div className="mz-topbar-logo">
+            <div className="mz-topbar-icon"><Megaphone size={17} /></div>
+            <span className="mz-topbar-title">Marketing-Zentrale</span>
+          </div>
+          <span className="mz-topbar-sub">KI-Content · Social Media · Newsletter · Aktionen · Shop</span>
+        </div>
+      )}
+
+      {/* Sidebar + Content */}
+      <div className="mz-body">
+
+        {/* Sidebar Navigation */}
+        <nav className="mz-sidebar">
+          {NAV.map(group => (
+            <React.Fragment key={group.group}>
+              <div className="mz-sidebar-group">{group.group}</div>
+              {group.items.map(item => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    className={`mz-nav-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => setActiveTab(item.id)}
+                    title={item.desc}
+                  >
+                    <span className="mz-nav-icon"><Icon size={15} /></span>
+                    <span className="mz-nav-label">{item.label}</span>
+                    {item.badge && (
+                      <span className={`mz-nav-badge ${item.badgeClass || ''}`}>{item.badge}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </nav>
+
+        {/* Content-Bereich */}
+        <div className="mz-content-wrap">
+          {active && (
+            <div className="mz-content-header">
+              <div className="mz-content-header-icon">
+                {ActiveIcon && <ActiveIcon size={18} />}
               </div>
-              <div>
-                <h1 className="mz-hero-title">Marketing-Zentrale</h1>
-                <p className="mz-hero-sub">
-                  KI-Content · Social Media · Newsletter · Jahresplanung · Gutscheine
-                </p>
-              </div>
+              <span className="mz-content-header-title">{active.label}</span>
+              {active.desc && (
+                <span className="mz-content-header-desc">— {active.desc}</span>
+              )}
             </div>
-            <div className="mz-hero-stats">
-              <div className="mz-stat">
-                <TrendingUp size={15} />
-                <span>Wachstum fördern</span>
-              </div>
-              <div className="mz-stat">
-                <Target size={15} />
-                <span>Zielgruppe erreichen</span>
-              </div>
-              <div className="mz-stat">
-                <Sparkles size={15} />
-                <span>KI-Unterstützung</span>
-              </div>
-            </div>
+          )}
+
+          <div className="mz-content">
+            <Suspense fallback={<LazyFallback />}>
+              {activeTab === 'jahresplan'    && <MarketingJahresplan />}
+              {activeTab === 'ki-content'    && <MarketingKiContent />}
+              {activeTab === 'social-media'  && <MarketingAktionen />}
+              {activeTab === 'newsletter'    && <MarketingNewsletter />}
+              {activeTab === 'geburtstage'   && <MarketingGeburtstage />}
+              {activeTab === 'freunde-werben'&& <FreundeWerbenFreunde />}
+              {activeTab === 'freie-aktionen'&& <FreieAktionen onSwitchToJahresplan={() => setActiveTab('jahresplan')} />}
+              {activeTab === 'sonderaktionen'&& <SonderaktionenTab nurMarketing={true} />}
+              {activeTab === 'artikel'       && <MarketingArtikelTab />}
+            </Suspense>
           </div>
         </div>
-      )}
-
-      {/* Tab-Navigation */}
-      <div className="mz-tabs-wrap">
-        <nav className="mz-tabs">
-          {TABS.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                className={`mz-tab ${isActive ? 'active' : ''} ${tab.highlight ? 'mz-tab--highlight' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <span className="mz-tab-icon-wrap">
-                  <Icon size={17} />
-                </span>
-                <span className="mz-tab-texts">
-                  <span className="mz-tab-label">{tab.label}</span>
-                  <span className="mz-tab-desc">{tab.desc}</span>
-                </span>
-                {tab.premium && <span className="mz-tab-badge">Premium</span>}
-                {tab.highlight && !isActive && <span className="mz-tab-badge mz-tab-badge--ki">KI</span>}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Aktiver Tab-Titel */}
-      {activeTabData && (
-        <div className="mz-active-header">
-          <activeTabData.icon size={16} />
-          <span>{activeTabData.label}</span>
-          {activeTabData.desc && (
-            <span className="mz-active-desc">— {activeTabData.desc}</span>
-          )}
-        </div>
-      )}
-
-      {/* Inhalt */}
-      <div className="mz-content">
-        {activeTab === 'jahresplan' && (
-          <Suspense fallback={<LazyFallback />}><MarketingJahresplan /></Suspense>
-        )}
-        {activeTab === 'ki-content' && (
-          <Suspense fallback={<LazyFallback />}><MarketingKiContent /></Suspense>
-        )}
-        {activeTab === 'social-media' && (
-          <Suspense fallback={<LazyFallback />}><MarketingAktionen /></Suspense>
-        )}
-        {activeTab === 'newsletter' && (
-          <Suspense fallback={<LazyFallback />}><MarketingNewsletter /></Suspense>
-        )}
-        {activeTab === 'geburtstage' && (
-          <Suspense fallback={<LazyFallback />}><MarketingGeburtstage /></Suspense>
-        )}
-        {activeTab === 'freunde-werben' && (
-          <Suspense fallback={<LazyFallback />}><FreundeWerbenFreunde /></Suspense>
-        )}
-        {activeTab === 'freie-aktionen' && (
-          <Suspense fallback={<LazyFallback />}><FreieAktionen onSwitchToJahresplan={() => setActiveTab('jahresplan')} /></Suspense>
-        )}
-        {activeTab === 'sonderaktionen' && (
-          <Suspense fallback={<LazyFallback />}><SonderaktionenTab nurMarketing={true} /></Suspense>
-        )}
-        {activeTab === 'artikel' && (
-          <Suspense fallback={<LazyFallback />}><MarketingArtikelTab /></Suspense>
-        )}
 
       </div>
     </div>
