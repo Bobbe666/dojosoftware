@@ -3335,6 +3335,21 @@ const PruefungsVerwaltung = () => {
               })()}
             </div>
           )}
+
+          {/* Kalenderübersicht */}
+          <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border, rgba(255,255,255,0.08))', paddingTop: '1.5rem' }}>
+            <KalenderErrorBoundary>
+              <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#d4af37', fontWeight: 600 }}>Kalender wird geladen…</div>}>
+                <KalenderZentrale
+                  onDayClick={(date) => {
+                    const dateStr = date.toISOString().split('T')[0];
+                    setNeuerTermin(prev => ({ ...prev, pruefungsdatum: dateStr }));
+                    setShowNeuerTerminModal(true);
+                  }}
+                />
+              </Suspense>
+            </KalenderErrorBoundary>
+          </div>
         </div>
       )}
 
