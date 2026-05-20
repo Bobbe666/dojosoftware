@@ -812,6 +812,19 @@ db.promise().query(`
     ADD COLUMN IF NOT EXISTS datei_groesse INT          DEFAULT NULL
 `).catch(err => logger.warn('Migration 148 (ignoriert):', { error: err.message }));
 
+// Migration 168: Kalender iCal-URLs (Unified Calendar)
+db.promise().query(`
+  CREATE TABLE IF NOT EXISTS kalender_ical_urls (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dojo_id INT NULL,
+    name VARCHAR(100) NOT NULL,
+    url TEXT NOT NULL,
+    farbe VARCHAR(20) DEFAULT '#6366f1',
+    aktiv TINYINT(1) DEFAULT 1,
+    erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+`).catch(err => logger.warn('Migration 168 (ignoriert):', { error: err.message }));
+
 // BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
 try {
   const buchhaltungRoutes = require('./routes/buchhaltung');
@@ -1496,6 +1509,20 @@ try {
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'events',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// 10.2. KALENDER ZENTRALE (Unified Calendar — Events + Prüfungen + Stundenplan + iCal)
+try {
+  const { authenticateToken } = require('./middleware/auth');
+  const kalenderRouter = require(path.join(__dirname, "routes", "kalender.js"));
+  app.use("/api/kalender", authenticateToken, kalenderRouter);
+  logger.success('Route gemountet', { path: '/api/kalender' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'kalender',
       error: error.message,
       stack: error.stack
     });

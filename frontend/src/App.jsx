@@ -202,6 +202,7 @@ const IntegrationsEinstellungen = lazyWithReload(() => import(/* webpackChunkNam
 const DatevExport = lazyWithReload(() => import(/* webpackChunkName: "integrations" */ "./components/DatevExport"));
 const SteuerAssistent = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/SteuerAssistent"));
 const KalenderAbo = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/KalenderAbo"));
+const KalenderZentrale = lazyWithReload(() => import(/* webpackChunkName: "kalender" */ "./components/KalenderZentrale"));
 
 // ============================================================================
 // LAZY LOADED - Payment Checkout
@@ -938,6 +939,7 @@ const App = () => {
               {/* Prüfungsverwaltung (Gurtprüfungen) */}
               <Route path="termine" element={<Suspense fallback={<LazyLoadFallback />}><PruefungsVerwaltung /></Suspense>} />
               <Route path="pruefung-durchfuehren" element={<Suspense fallback={<LazyLoadFallback />}><PruefungDurchfuehren /></Suspense>} />
+              <Route path="kalender" element={<Suspense fallback={<LazyLoadFallback />}><KalenderZentrale /></Suspense>} />
 
               {/* Badge-Verwaltung (Auszeichnungen) */}
               <Route path="badges" element={<Suspense fallback={<LazyLoadFallback />}><BadgeAdminOverview /></Suspense>} />

@@ -1,0 +1,836 @@
+/* ============================================================================
+   KalenderZentrale.css — Unified Calendar Dark Theme
+   ============================================================================ */
+
+:root {
+  --kz-accent: #f8c41e;
+  --kz-bg: var(--bg-card, #1a1a2e);
+  --kz-bg2: var(--bg-secondary, #16213e);
+  --kz-text: var(--text-1, #e2e8f0);
+  --kz-text2: var(--text-2, #94a3b8);
+  --kz-border: var(--border, rgba(255, 255, 255, 0.08));
+  --kz-hover: rgba(248, 196, 30, 0.07);
+  --kz-radius: 10px;
+}
+
+/* ── Outer Wrapper ── */
+.kz-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  min-height: 100%;
+  color: var(--kz-text);
+  font-family: inherit;
+}
+
+/* ── Header ── */
+.kz-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.kz-period-label {
+  flex: 1;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--kz-text);
+  white-space: nowrap;
+}
+
+.kz-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.kz-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.75rem;
+  background: var(--kz-bg2);
+  border: 1px solid var(--kz-border);
+  border-radius: 6px;
+  color: var(--kz-text);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.kz-nav-btn:hover {
+  background: var(--kz-hover);
+  border-color: var(--kz-accent);
+  color: var(--kz-accent);
+}
+
+.kz-nav-btn.today {
+  font-weight: 600;
+}
+
+/* ── View Buttons ── */
+.kz-view-btns {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.kz-view-btn {
+  padding: 0.4rem 0.85rem;
+  background: var(--kz-bg2);
+  border: 1px solid var(--kz-border);
+  border-radius: 6px;
+  color: var(--kz-text2);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.kz-view-btn:hover {
+  background: var(--kz-hover);
+  color: var(--kz-text);
+  border-color: rgba(248, 196, 30, 0.3);
+}
+
+.kz-view-btn.active {
+  background: rgba(248, 196, 30, 0.12);
+  border-color: var(--kz-accent);
+  color: var(--kz-accent);
+  font-weight: 600;
+}
+
+/* ── Settings button ── */
+.kz-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--kz-bg2);
+  border: 1px solid var(--kz-border);
+  border-radius: 6px;
+  color: var(--kz-text2);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.kz-settings-btn:hover {
+  background: var(--kz-hover);
+  border-color: var(--kz-accent);
+  color: var(--kz-accent);
+}
+
+/* ── Legend ── */
+.kz-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0.65rem 1rem;
+  background: var(--kz-bg2);
+  border: 1px solid var(--kz-border);
+  border-radius: var(--kz-radius);
+}
+
+.kz-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--kz-text2);
+}
+
+.kz-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Loading ── */
+.kz-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 3rem;
+  color: var(--kz-text2);
+  font-size: 0.9rem;
+}
+
+.kz-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--kz-border);
+  border-top-color: var(--kz-accent);
+  border-radius: 50%;
+  animation: kz-spin 0.7s linear infinite;
+}
+
+@keyframes kz-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================================
+   MONTHLY VIEW
+   ============================================================================ */
+
+.kz-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border: 1px solid var(--kz-border);
+  border-radius: var(--kz-radius);
+  overflow: hidden;
+  background: var(--kz-bg2);
+}
+
+.kz-weekday-header {
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--kz-text2);
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--kz-border);
+}
+
+.kz-day-cell {
+  min-height: 90px;
+  padding: 0.35rem 0.3rem 0.3rem;
+  border-right: 1px solid var(--kz-border);
+  border-bottom: 1px solid var(--kz-border);
+  background: var(--kz-bg);
+  cursor: pointer;
+  transition: background 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+}
+
+.kz-day-cell:nth-child(7n) {
+  border-right: none;
+}
+
+.kz-day-cell:hover {
+  background: var(--kz-hover);
+}
+
+.kz-day-cell.other-month {
+  background: rgba(0, 0, 0, 0.15);
+  opacity: 0.55;
+}
+
+.kz-day-cell.today {
+  background: rgba(248, 196, 30, 0.06);
+}
+
+.kz-day-cell.today .kz-day-num {
+  color: var(--kz-accent);
+  font-weight: 700;
+}
+
+.kz-day-num {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--kz-text2);
+  line-height: 1;
+  margin-bottom: 2px;
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.kz-day-add-btn {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--kz-accent);
+  opacity: 0;
+  cursor: pointer;
+  line-height: 1;
+  padding: 1px 4px;
+  border-radius: 3px;
+  transition: opacity 0.15s, background 0.15s;
+}
+.kz-day-cell:hover .kz-day-add-btn { opacity: 1; }
+.kz-day-add-btn:hover { background: rgba(248,196,30,0.15); }
+
+.kz-day-cell.today .kz-day-num-inner {
+  background: var(--kz-accent);
+  color: #1a1a2e;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kz-event-bar {
+  display: block;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  line-height: 1.5;
+  transition: opacity 0.1s;
+}
+
+.kz-event-bar:hover {
+  opacity: 0.85;
+}
+
+.kz-more-badge {
+  font-size: 0.66rem;
+  color: var(--kz-text2);
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.kz-more-badge:hover {
+  color: var(--kz-accent);
+}
+
+/* ============================================================================
+   TIME GRID (Daily & Weekly)
+   ============================================================================ */
+
+.kz-time-grid-wrap {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--kz-border);
+  border-radius: var(--kz-radius);
+  overflow: hidden;
+  background: var(--kz-bg);
+}
+
+.kz-time-grid-header {
+  display: flex;
+  border-bottom: 1px solid var(--kz-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.kz-time-col-spacer {
+  width: 52px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--kz-border);
+}
+
+.kz-day-col-header {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--kz-text2);
+  border-right: 1px solid var(--kz-border);
+}
+
+.kz-day-col-header:last-child {
+  border-right: none;
+}
+
+.kz-day-col-header.today-col {
+  color: var(--kz-accent);
+}
+
+.kz-time-grid-body {
+  display: flex;
+  overflow-y: auto;
+  max-height: 600px;
+  position: relative;
+}
+
+.kz-time-labels {
+  width: 52px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--kz-border);
+}
+
+.kz-time-label {
+  height: 48px;
+  display: flex;
+  align-items: flex-start;
+  padding: 2px 6px 0;
+  font-size: 0.68rem;
+  color: var(--kz-text2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.kz-day-cols {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+
+.kz-day-column {
+  flex: 1;
+  position: relative;
+  border-right: 1px solid var(--kz-border);
+}
+
+.kz-day-column:last-child {
+  border-right: none;
+}
+
+.kz-hour-row {
+  height: 48px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-right: none;
+}
+
+.kz-hour-row.half-hour {
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.03);
+}
+
+.kz-event-block {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border-radius: 4px;
+  padding: 3px 5px;
+  font-size: 0.7rem;
+  color: #fff;
+  overflow: hidden;
+  cursor: pointer;
+  z-index: 1;
+  transition: opacity 0.1s, box-shadow 0.1s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.kz-event-block:hover {
+  opacity: 0.9;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  z-index: 2;
+}
+
+.kz-event-block-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.kz-event-block-time {
+  font-size: 0.65rem;
+  opacity: 0.85;
+  line-height: 1.2;
+}
+
+/* Current time line */
+.kz-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ef4444;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.kz-now-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+}
+
+/* ============================================================================
+   MINI-MONTH VIEWS (Quartal / Halbjahr / Jahr)
+   ============================================================================ */
+
+.kz-mini-months {
+  display: grid;
+  gap: 1rem;
+}
+
+.kz-mini-months.quartal {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.kz-mini-months.halbjahr {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.kz-mini-months.jahr {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 900px) {
+  .kz-mini-months.quartal,
+  .kz-mini-months.halbjahr { grid-template-columns: repeat(2, 1fr); }
+  .kz-mini-months.jahr { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .kz-mini-months.quartal,
+  .kz-mini-months.halbjahr,
+  .kz-mini-months.jahr { grid-template-columns: 1fr; }
+}
+
+.kz-mini-month {
+  background: var(--kz-bg2);
+  border: 1px solid var(--kz-border);
+  border-radius: var(--kz-radius);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kz-mini-month-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--kz-text);
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.kz-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.kz-mini-weekday {
+  font-size: 0.6rem;
+  text-align: center;
+  color: var(--kz-text2);
+  font-weight: 700;
+  padding: 1px 0;
+}
+
+.kz-mini-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  color: var(--kz-text2);
+  transition: background 0.1s;
+}
+
+.kz-mini-day:hover {
+  background: var(--kz-hover);
+  color: var(--kz-text);
+}
+
+.kz-mini-day.other-month {
+  opacity: 0.3;
+}
+
+.kz-mini-day.today {
+  background: rgba(248, 196, 30, 0.15);
+  color: var(--kz-accent);
+  font-weight: 700;
+}
+
+.kz-mini-day.has-events::after {
+  content: '';
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--kz-accent);
+  border-radius: 50%;
+}
+
+.kz-mini-day-count {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  background: var(--kz-accent);
+  color: #1a1a2e;
+  font-size: 0.55rem;
+  font-weight: 700;
+  border-radius: 9px;
+  padding: 0 3px;
+  min-width: 12px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   DETAIL MODAL (Event Popover)
+   ============================================================================ */
+
+.kz-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: kz-fade-in 0.15s ease;
+}
+
+@keyframes kz-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.kz-detail-modal {
+  background: rgba(26, 26, 46, 0.99);
+  border: 1px solid var(--kz-border);
+  border-radius: var(--kz-radius);
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: kz-slide-up 0.15s ease;
+}
+
+@keyframes kz-slide-up {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.kz-detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.kz-detail-color-bar {
+  width: 4px;
+  border-radius: 2px;
+  align-self: stretch;
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+.kz-detail-title {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--kz-text);
+  line-height: 1.3;
+}
+
+.kz-detail-close {
+  background: none;
+  border: none;
+  color: var(--kz-text2);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.1s;
+}
+
+.kz-detail-close:hover {
+  color: var(--kz-text);
+}
+
+.kz-detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.83rem;
+  color: var(--kz-text2);
+}
+
+.kz-detail-meta-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.kz-detail-meta-icon {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.kz-detail-typ-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #fff;
+  margin-top: 0.75rem;
+}
+
+/* ============================================================================
+   SETTINGS MODAL
+   ============================================================================ */
+
+.kz-settings-modal {
+  background: rgba(26, 26, 46, 0.99);
+  border: 1px solid var(--kz-border);
+  border-radius: var(--kz-radius);
+  padding: 1.5rem;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: kz-slide-up 0.15s ease;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.kz-settings-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--kz-text);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kz-ical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.kz-ical-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--kz-bg2);
+  border: 1px solid var(--kz-border);
+  border-radius: 6px;
+}
+
+.kz-ical-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.kz-ical-name {
+  flex: 1;
+  font-size: 0.83rem;
+  color: var(--kz-text);
+  font-weight: 500;
+}
+
+.kz-ical-url {
+  font-size: 0.7rem;
+  color: var(--kz-text2);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kz-ical-delete {
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  transition: all 0.1s;
+  flex-shrink: 0;
+}
+
+.kz-ical-delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.kz-ical-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kz-ical-add-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--kz-text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kz-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--kz-bg2);
+  border: 1px solid var(--kz-border);
+  border-radius: 6px;
+  color: var(--kz-text);
+  font-size: 0.83rem;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.kz-input:focus {
+  border-color: var(--kz-accent);
+}
+
+.kz-input::placeholder {
+  color: var(--kz-text2);
+  opacity: 0.6;
+}
+
+.kz-ical-add-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.kz-btn-add {
+  padding: 0.5rem 1rem;
+  background: rgba(248, 196, 30, 0.12);
+  border: 1px solid rgba(248, 196, 30, 0.4);
+  border-radius: 6px;
+  color: var(--kz-accent);
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.kz-btn-add:hover {
+  background: rgba(248, 196, 30, 0.2);
+}
+
+.kz-btn-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kz-empty-hint {
+  text-align: center;
+  color: var(--kz-text2);
+  font-size: 0.82rem;
+  padding: 1.5rem 0;
+  opacity: 0.7;
+}

@@ -4,11 +4,13 @@
 // Route: /dashboard/termine
 // ============================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useDojoContext } from '../context/DojoContext';
-import { Check, X, Calendar, Award, Users, TrendingUp, ChevronUp, ChevronDown, Download, Edit, Trash2, Play, FileText, Scroll, Printer } from 'lucide-react';
+import { Check, X, Calendar, Award, Users, TrendingUp, ChevronUp, ChevronDown, Download, Edit, Trash2, Play, FileText, Scroll, Printer, CalendarDays } from 'lucide-react';
+
+const KalenderZentrale = lazy(() => import('./KalenderZentrale'));
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/Buttons.css';
@@ -114,6 +116,9 @@ const PruefungsVerwaltung = () => {
   const [editAnmeldung, setEditAnmeldung] = useState(null); // { ...anmeldung, termin_id }
   const [editAnmeldungForm, setEditAnmeldungForm] = useState({});
   const [editAnmeldungGrads, setEditAnmeldungGrads] = useState([]);
+
+  // Terminkonflikt-Warnung (neuer Prüfungstermin)
+  const [konfliktWarnung, setKonfliktWarnung] = useState({ loading: false, konflikte: [] });
 
   // Drucken Vorschau-Modal
   const [showDruckPreview, setShowDruckPreview] = useState(false);
@@ -259,6 +264,36 @@ const PruefungsVerwaltung = () => {
   useEffect(() => {
     fetchStile();
   }, []);
+
+  // Terminkonflikt-Check: automatisch beim Ändern von Datum/Uhrzeit im neuen Terminformular
+  useEffect(() => {
+    const { pruefungsdatum, pruefungszeit } = neuerTermin;
+    if (!pruefungsdatum || !pruefungszeit) {
+      setKonfliktWarnung({ loading: false, konflikte: [] });
+      return;
+    }
+    let cancelled = false;
+    setKonfliktWarnung(prev => ({ ...prev, loading: true }));
+    const [h, min] = pruefungszeit.split(':').map(Number);
+    const endH = h + 3;
+    const bisZeit = `${String(endH > 23 ? 23 : endH).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    fetch(`${API_BASE_URL}/kalender/konflikt-check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ datum: pruefungsdatum, von: pruefungszeit, bis: bisZeit })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled) {
+          setKonfliktWarnung({ loading: false, konflikte: data.konflikte || [] });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setKonfliktWarnung({ loading: false, konflikte: [] });
+      });
+    return () => { cancelled = true; };
+  }, [neuerTermin.pruefungsdatum, neuerTermin.pruefungszeit]);
 
   // Daten laden basierend auf aktivem Tab
   useEffect(() => {
@@ -2344,6 +2379,13 @@ const PruefungsVerwaltung = () => {
           >
             <TrendingUp size={16} />
             Statistiken
+          </button>
+          <button
+            onClick={() => setActiveTab('kalender')}
+            className={`pv3-tab-btn${activeTab === 'kalender' ? ' active' : ''}`}
+          >
+            <CalendarDays size={16} />
+            Kalender
           </button>
         </div>
 
@@ -5774,6 +5816,23 @@ const PruefungsVerwaltung = () => {
                       />
                     </div>
                   </div>
+
+                  {/* Terminkonflikt-Warnung */}
+                  {konfliktWarnung.konflikte.length > 0 && (
+                    <div className="konflikt-warnung" style={{
+                      marginTop: '0.75rem',
+                      padding: '0.6rem 0.85rem',
+                      background: 'rgba(245,158,11,0.12)',
+                      border: '1px solid rgba(245,158,11,0.4)',
+                      borderRadius: '6px',
+                      color: '#f59e0b',
+                      fontSize: '0.82rem',
+                      lineHeight: 1.4
+                    }}>
+                      ⚠️ <strong>Terminkonflikt:</strong>{' '}
+                      {konfliktWarnung.konflikte.map(k => k.titel).join(', ')}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -6729,6 +6788,20 @@ const PruefungsVerwaltung = () => {
           </div>
         </div>
       , document.body)}
+
+      {activeTab === 'kalender' && (
+        <div style={{ padding: '0 0 24px 0' }}>
+          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary, #888)' }}>Kalender wird geladen…</div>}>
+            <KalenderZentrale
+              onDayClick={(date) => {
+                const dateStr = date.toISOString().split('T')[0];
+                setNeuerTermin(prev => ({ ...prev, pruefungsdatum: dateStr }));
+                setShowNeuerTerminModal(true);
+              }}
+            />
+          </Suspense>
+        </div>
+      )}
 
     </div>
   );

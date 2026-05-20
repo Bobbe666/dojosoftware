@@ -621,6 +621,14 @@ function Dashboard() {
   // ✨ Prüfungswesen - Termine & Prüfungen ✨
   const pruefungswesensCards = [
     {
+      icon: '🗓️',
+      title: 'Kalender',
+      description: 'Alle Termine, Events, Prüfungen & Trainings im Überblick',
+      path: '/dashboard/kalender',
+      badge: 'NEU',
+      featured: true
+    },
+    {
       icon: '🏆',
       title: 'Prüfungen & Termine',
       description: 'Events, Prüfungen und Termine verwalten',
@@ -676,6 +684,13 @@ function Dashboard() {
 
   // ✨ Events - Veranstaltungen & Termine ✨
   const eventsCards = [
+    {
+      icon: '🗓️',
+      title: 'Gesamtkalender',
+      description: 'Alle Termine im Überblick — Dojos, Verband, Events, Prüfungen',
+      path: '/dashboard/kalender',
+      featured: true
+    },
     {
       icon: '📅',
       title: 'Events verwalten',
