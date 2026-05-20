@@ -17,7 +17,7 @@ import {
   Globe, Award, ChevronRight, Activity, BarChart3,
   CreditCard, FileText, PieChart, RefreshCw, AlertTriangle,
   CheckCircle, Clock, UserPlus, Building, Loader2, ShoppingCart, Target, Ticket,
-  Banknote, Scroll, MapPin, ClipboardList
+  Banknote, Scroll, MapPin, ClipboardList, Network
 } from 'lucide-react';
 import TodoPanel from './TodoPanel';
 import VerbandsMitglieder from './VerbandsMitglieder';
@@ -29,6 +29,7 @@ import Lastschriftlauf from './Lastschriftlauf';
 import Zahllaeufe from './Zahllaeufe';
 import VerbandUrkundenRegister from './VerbandUrkundenRegister';
 import NationalkaderDashboard from './NationalkaderDashboard';
+import VerbandKontakte from './VerbandKontakte';
 const PartnerAdmin = lazy(() => import('./PartnerAdmin'));
 import '../styles/VerbandDashboard.css';
 
@@ -132,6 +133,7 @@ const VerbandDashboard = () => {
     { id: 'lastschrift', label: 'Lastschrift', icon: Banknote },
     { id: 'urkunden', label: 'Urkunden', icon: Scroll },
     { id: 'partner', label: 'Partner', icon: MapPin },
+    { id: 'akquisition', label: 'Akquisition', icon: Network },
     { id: 'todos',   label: 'To Do',  icon: ClipboardList },
   ];
 
@@ -579,6 +581,7 @@ const VerbandDashboard = () => {
             <PartnerAdmin />
           </Suspense>
         )}
+        {activeTab === 'akquisition' && <VerbandKontakte />}
         {activeTab === 'todos' && <TodoPanel fixedKontext="verband" />}
       </div>
     </div>

@@ -1700,6 +1700,19 @@ try {
     });
 }
 
+// VERBAND KONTAKTE (Akquisition — Kampfsportschulen & Vereine)
+try {
+  const verbandKontakteRouter = require(path.join(__dirname, "routes", "verband-kontakte.js"));
+  app.use("/api/verband-kontakte", authenticateToken, verbandKontakteRouter);
+  logger.success('Route gemountet', { path: '/api/verband-kontakte' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'verband-kontakte',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // NATIONALKADER
 try {
   const nationalkaderRouter = require(path.join(__dirname, "routes", "nationalkader.js"));
