@@ -83,8 +83,9 @@ const DojoSwitcher = ({ filterDojos, managedOnly } = {}) => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    // Auf aktuellem Tab bleiben (z.B. /dashboard/buchhaltung bleibt erhalten)
-    navigate(location.pathname);
+    // Super-Admin-only Routen: beim Wechsel zu einem Dojo zum Dashboard navigieren
+    const superAdminOnlyRoutes = /\/dashboard\/(lizenzen|passwoerter)$/;
+    navigate(superAdminOnlyRoutes.test(location.pathname) ? '/dashboard' : location.pathname);
   };
 
   const handleSwitchToSuperAdmin = () => {
