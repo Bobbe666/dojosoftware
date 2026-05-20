@@ -776,6 +776,36 @@ router.get("/not-in-run", async (req, res) => {
 });
 
 /**
+ * POST /api/lastschriftlauf/preview-stornieren
+ * Löscht offene Beiträge dauerhaft (aus der Preview heraus stornieren)
+ * Body: { beitrag_ids: [1, 2, 3] }
+ */
+router.post('/preview-stornieren', authenticateToken, async (req, res) => {
+    const secureDojoId = getSecureDojoId(req);
+    const { beitrag_ids } = req.body;
+    if (!Array.isArray(beitrag_ids) || beitrag_ids.length === 0) {
+        return res.status(400).json({ error: 'beitrag_ids fehlt oder leer' });
+    }
+    try {
+        const queryAsync = (sql, params) => new Promise((resolve, reject) => {
+            db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
+        });
+        const dojoJoin = secureDojoId
+            ? 'JOIN mitglieder m ON b.mitglied_id = m.mitglied_id AND m.dojo_id = ?'
+            : 'JOIN mitglieder m ON b.mitglied_id = m.mitglied_id';
+        const params = secureDojoId ? [beitrag_ids, secureDojoId] : [beitrag_ids];
+        const result = await queryAsync(
+            `DELETE b FROM beitraege b ${dojoJoin} WHERE b.beitrag_id IN (?) AND b.bezahlt = 0`,
+            params
+        );
+        res.json({ success: true, deleted: result.affectedRows });
+    } catch (err) {
+        logger.error('Fehler bei preview-stornieren', { error: err.message });
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
  * API-Route: Vorschau der Lastschriften (JSON)
  * GET /api/lastschriftlauf/preview
  * Query-Parameter:

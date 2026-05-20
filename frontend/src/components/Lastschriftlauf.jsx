@@ -99,6 +99,13 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const [excludedMitglieder, setExcludedMitglieder] = useState(new Set());
   const [excludedOpen, setExcludedOpen] = useState(false);
 
+  // Preview-Storno (dauerhaft stornieren)
+  const [previewStorno, setPreviewStorno] = useState(null); // item | null
+  const [previewStornoLoading, setPreviewStornoLoading] = useState(false);
+
+  // Unique key pro Preview-Item (SP-Items haben eigenen Key)
+  const itemKey = (item) => item?.is_starterpaket ? `sp_${item.sp_id}` : `m_${item?.mitglied_id}`;
+
   const handleStornoInline = async () => {
     if (!stornoModal) return;
     setStornoLoading(true);
@@ -240,7 +247,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
   const filteredPreview = React.useMemo(() => {
     if (!preview?.preview) return [];
-    let items = preview.preview.filter(i => !excludedMitglieder.has(i.mitglied_id));
+    let items = preview.preview.filter(i => !excludedMitglieder.has(itemKey(i)));
     if (previewSearch.trim()) {
       const q = previewSearch.toLowerCase();
       items = items.filter(i =>
@@ -267,16 +274,16 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   // Ausgeschlossene Mitglieder (vollständige Datensätze für die Anzeige)
   const excludedPreviewItems = React.useMemo(() => {
     if (!preview?.preview) return [];
-    return preview.preview.filter(i => excludedMitglieder.has(i.mitglied_id));
+    return preview.preview.filter(i => excludedMitglieder.has(itemKey(i)));
   }, [preview, excludedMitglieder]);
 
   // Aktive Anzahl und Summe (ohne manuell ausgeschlossene)
   const activeCount = preview?.preview
-    ? preview.preview.filter(i => !excludedMitglieder.has(i.mitglied_id)).length
+    ? preview.preview.filter(i => !excludedMitglieder.has(itemKey(i))).length
     : 0;
   const activeTotal = preview?.preview
     ? preview.preview
-        .filter(i => !excludedMitglieder.has(i.mitglied_id))
+        .filter(i => !excludedMitglieder.has(itemKey(i)))
         .reduce((sum, i) => sum + parseFloat(i.betrag || 0), 0)
     : 0;
 
@@ -542,7 +549,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           monat: selectedMonth,
           jahr: selectedYear,
           mitglieder: preview.preview
-            .filter(m => !excludedMitglieder.has(m.mitglied_id))
+            .filter(m => !excludedMitglieder.has(itemKey(m)))
             .map(m => ({
               mitglied_id: m.mitglied_id,
               name: m.name,
@@ -619,12 +626,12 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
     // Alle Beitrag-IDs aus der Vorschau sammeln — ausgeschlossene Mitglieder überspringen
     const alleBeitragIds = (preview.preview || [])
-      .filter(m => !excludedMitglieder.has(m.mitglied_id))
+      .filter(m => !excludedMitglieder.has(itemKey(m)))
       .flatMap(m => (m.beitraege || []).map(b => b.beitrag_id))
       .filter(Boolean);
-    const includedCount = (preview.preview || []).filter(m => !excludedMitglieder.has(m.mitglied_id)).length;
+    const includedCount = (preview.preview || []).filter(m => !excludedMitglieder.has(itemKey(m))).length;
     const includedTotal = (preview.preview || [])
-      .filter(m => !excludedMitglieder.has(m.mitglied_id))
+      .filter(m => !excludedMitglieder.has(itemKey(m)))
       .reduce((sum, m) => sum + parseFloat(m.betrag || 0), 0);
     const excludedNote = excludedMitglieder.size > 0
       ? `\n⚠️ ${excludedMitglieder.size} Mitglied(er) manuell ausgeschlossen (Beiträge bleiben offen).`
@@ -1508,8 +1515,8 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                   <React.Fragment key={index}>
                     <tr>
                       <td className="ll-td-expand"
-                          onClick={() => toggleRowExpanded(item.mitglied_id)}>
-                        {expandedRows.has(item.mitglied_id) ? (
+                          onClick={() => toggleRowExpanded(itemKey(item))}>
+                        {expandedRows.has(itemKey(item)) ? (
                           <ChevronDown size={18} />
                         ) : (
                           <ChevronRight size={18} />
@@ -1558,15 +1565,22 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                       <td className="ll-td-action">
                         <button
                           className="ll-btn-exclude"
-                          onClick={() => toggleExclude(item.mitglied_id)}
+                          onClick={() => toggleExclude(itemKey(item))}
                           title="Aus diesem Lauf ausschließen (Beitrag bleibt offen)"
                         >
                           Ausschließen
                         </button>
+                        <button
+                          className="ll-btn-stornieren"
+                          onClick={() => setPreviewStorno(item)}
+                          title="Dauerhaft stornieren"
+                        >
+                          Stornieren
+                        </button>
                       </td>
                     </tr>
                     {/* Details-Zeile - nur anzeigen wenn expandiert */}
-                    {expandedRows.has(item.mitglied_id) && item.beitraege && item.beitraege.length > 0 && (
+                    {expandedRows.has(itemKey(item)) && item.beitraege && item.beitraege.length > 0 && (
                       <tr className="details-row">
                         <td colSpan={100} className="ll-details-td">
                           <div className="ll-details-inner">
@@ -1638,7 +1652,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                         <td className="ll-td-action">
                           <button
                             className="ll-btn-include"
-                            onClick={() => toggleExclude(item.mitglied_id)}
+                            onClick={() => toggleExclude(itemKey(item))}
                             title="Wieder in den Lauf aufnehmen"
                           >
                             Einschließen
@@ -1819,6 +1833,69 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
               ) : (
                 <button className="btn btn-primary" onClick={closeStornoModal}>Schließen</button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Preview-Storno Modal ── */}
+      {previewStorno && (
+        <div className="modal-overlay" onClick={() => setPreviewStorno(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 460 }}>
+            <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Dauerhaft stornieren</h3>
+
+            {previewStorno.is_starterpaket ? (
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                Die Starterpaket-Bestellung <strong style={{ color: 'var(--text-primary)' }}>
+                  {previewStorno.tarif}
+                </strong> von <strong style={{ color: 'var(--text-primary)' }}>{previewStorno.name}</strong> ({formatCurrency(previewStorno.betrag)}) wird storniert und erscheint nicht mehr im Lastschriftlauf.
+              </p>
+            ) : (
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                <strong style={{ color: 'var(--text-primary)' }}>{previewStorno.anzahl_monate} offene{previewStorno.anzahl_monate !== 1 ? ' Beiträge' : ' Beitrag'}</strong> von <strong style={{ color: 'var(--text-primary)' }}>{previewStorno.name}</strong> ({formatCurrency(previewStorno.betrag)}) werden gelöscht und nicht mehr eingezogen.
+              </p>
+            )}
+
+            {previewStornoLoading && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Wird storniert…</p>
+            )}
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={() => setPreviewStorno(null)} disabled={previewStornoLoading}>
+                Abbrechen
+              </button>
+              <button
+                className="btn btn-danger"
+                disabled={previewStornoLoading}
+                onClick={async () => {
+                  setPreviewStornoLoading(true);
+                  try {
+                    const dojoParam = numericDojoId ? `?dojo_id=${numericDojoId}` : '';
+                    if (previewStorno.is_starterpaket) {
+                      await fetchWithAuth(`${config.apiBaseUrl}/starterpakete/bestellungen/${previewStorno.sp_id}/status${dojoParam}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'storniert' })
+                      });
+                    } else {
+                      const beitragIds = (previewStorno.beitraege || []).map(b => b.beitrag_id).filter(Boolean);
+                      await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/preview-stornieren${dojoParam}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ beitrag_ids: beitragIds })
+                      });
+                    }
+                    setPreviewStorno(null);
+                    await loadPreview();
+                  } catch (err) {
+                    alert('Fehler beim Stornieren: ' + (err.message || 'Unbekannt'));
+                  } finally {
+                    setPreviewStornoLoading(false);
+                  }
+                }}
+              >
+                Stornieren
+              </button>
             </div>
           </div>
         </div>

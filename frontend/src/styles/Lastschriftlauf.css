@@ -1276,7 +1276,7 @@
 }
 
 /* ===== AUSGESCHLOSSENE MITGLIEDER ===== */
-.ll-td-action { text-align: right; white-space: nowrap; }
+.ll-td-action { text-align: right; white-space: nowrap; display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center; }
 
 .ll-btn-exclude {
   padding: 0.3rem 0.65rem;
@@ -1292,6 +1292,23 @@
 .ll-btn-exclude:hover {
   background: rgba(239, 68, 68, 0.2);
   border-color: rgba(239, 68, 68, 0.7);
+}
+
+.ll-btn-stornieren {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  border-radius: var(--comp-radius-sm, 6px);
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.ll-btn-stornieren:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.9);
+  color: #fff;
 }
 
 .ll-btn-include {
