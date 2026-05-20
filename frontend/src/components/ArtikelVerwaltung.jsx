@@ -58,6 +58,12 @@ const ArtikelVerwaltung = () => {
   const [giVorlageArtikel, setGiVorlageArtikel] = useState(null); // Artikel für Bestellvorlage-Overlay
   const [giVorlageData, setGiVorlageData] = useState(null); // Vorlage-Objekt für direktes Overlay
 
+  // Quick-Create Modal
+  const [showQuickModal, setShowQuickModal] = useState(false);
+  const [quickForm, setQuickForm] = useState({ name: '', kategorie_id: '', bruttopreis: '', groessen: [], mwst: 19 });
+  const [quickSaving, setQuickSaving] = useState(false);
+  const [quickError, setQuickError] = useState('');
+
   const toggleRow = (id) => {
     setExpandedRows(prev => {
       const next = new Set(prev);
@@ -248,6 +254,56 @@ const ArtikelVerwaltung = () => {
     const state = (selectedGruppe && selectedGruppe !== 'none') ? { gruppeId: selectedGruppe } : {};
     navigate('/dashboard/artikel/neu', { state });
   };
+
+  const openQuickModal = () => {
+    const vorausKategorieId = (selectedGruppe && selectedGruppe !== 'none') ? String(selectedGruppe) : '';
+    setQuickForm({ name: '', kategorie_id: vorausKategorieId, bruttopreis: '', groessen: [], mwst: 19 });
+    setQuickError('');
+    setShowQuickModal(true);
+  };
+
+  const handleQuickSave = async () => {
+    if (!quickForm.name.trim()) { setQuickError('Artikelname ist erforderlich.'); return; }
+    if (!quickForm.kategorie_id) { setQuickError('Bitte eine Artikelgruppe wählen.'); return; }
+    if (!quickForm.bruttopreis || parseFloat(quickForm.bruttopreis) <= 0) { setQuickError('Bitte einen gültigen VK-Preis eingeben.'); return; }
+    setQuickSaving(true);
+    setQuickError('');
+    try {
+      const netto = (parseFloat(quickForm.bruttopreis) / (1 + quickForm.mwst / 100)).toFixed(4);
+      const payload = {
+        kategorie_id: quickForm.kategorie_id,
+        name: quickForm.name.trim(),
+        verkaufspreis_euro: netto,
+        mwst_prozent: quickForm.mwst,
+        hat_varianten: quickForm.groessen.length > 0,
+        varianten_groessen: quickForm.groessen,
+        aktiv: true,
+        sichtbar_kasse: true
+      };
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/artikel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success && data.data?.artikel_id) {
+        setShowQuickModal(false);
+        navigate(`/dashboard/artikel/bearbeiten/${data.data.artikel_id}`);
+      } else {
+        setQuickError(data.error || 'Fehler beim Anlegen');
+      }
+    } catch (e) {
+      setQuickError('Netzwerkfehler: ' + e.message);
+    } finally {
+      setQuickSaving(false);
+    }
+  };
+
+  const QUICK_GROESSEN = ['100', '110', '120', '130', '140', '150', '160', '170', '180', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
+  const toggleQuickGroesse = (g) => setQuickForm(prev => ({
+    ...prev,
+    groessen: prev.groessen.includes(g) ? prev.groessen.filter(x => x !== g) : [...prev.groessen, g]
+  }));
 
   const handleEdit = (artikel) => {
     navigate(`/dashboard/artikel/bearbeiten/${artikel.artikel_id}`);
@@ -1407,9 +1463,14 @@ const ArtikelVerwaltung = () => {
           </label>
         </div>
 
-        <button className="av-btn-create" onClick={handleCreate}>
-          + Neuer Artikel
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="av-btn-create" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#d4af37', fontSize: '0.8rem', padding: '0.4rem 0.85rem' }} onClick={openQuickModal} title="Schnellerfassung: nur Name, Preis und Größen">
+            ⚡ Schnell
+          </button>
+          <button className="av-btn-create" onClick={handleCreate}>
+            + Neuer Artikel
+          </button>
+        </div>
       </div>
 
       {/* Artikel Tabelle */}
@@ -1561,6 +1622,144 @@ const ArtikelVerwaltung = () => {
 
       {/* Modal - außerhalb der Tab-Bedingung */}
       {renderModal()}
+
+      {/* Quick-Create Modal */}
+      {showQuickModal && (
+        <div className="modal-overlay" onClick={() => setShowQuickModal(false)} style={{ zIndex: 1100 }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'rgba(26,26,46,0.99)',
+            border: '1px solid rgba(212,175,55,0.3)',
+            borderRadius: 12,
+            padding: '1.5rem',
+            width: '100%',
+            maxWidth: 500,
+            color: 'var(--text-1)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.6)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#d4af37' }}>⚡ Schnellerfassung</h3>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>Pflichtfelder — Rest im nächsten Schritt</p>
+              </div>
+              <button onClick={() => setShowQuickModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              {/* Artikelgruppe */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Artikelgruppe *</label>
+                <select
+                  value={quickForm.kategorie_id}
+                  onChange={e => setQuickForm(prev => ({ ...prev, kategorie_id: e.target.value }))}
+                  style={{ width: '100%', padding: '0.5rem 0.7rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, color: 'var(--text-1)', fontSize: '0.9rem' }}
+                >
+                  <option value="">Gruppe wählen…</option>
+                  {artikelgruppen.map(g => (
+                    <React.Fragment key={g.id}>
+                      <option value={g.id}>{g.name}</option>
+                      {g.unterkategorien?.map(sub => (
+                        <option key={sub.id} value={sub.id}>&nbsp;&nbsp;↳ {sub.name}</option>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </select>
+              </div>
+
+              {/* Artikelname */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Artikelname *</label>
+                <input
+                  type="text"
+                  value={quickForm.name}
+                  onChange={e => setQuickForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="z.B. Judo-Gi Einsteiger"
+                  autoFocus
+                  style={{ width: '100%', padding: '0.5rem 0.7rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, color: 'var(--text-1)', fontSize: '0.9rem', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {/* VK-Preis */}
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>VK-Preis Brutto (€) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={quickForm.bruttopreis}
+                    onChange={e => setQuickForm(prev => ({ ...prev, bruttopreis: e.target.value }))}
+                    placeholder="z.B. 49.90"
+                    style={{ width: '100%', padding: '0.5rem 0.7rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, color: 'var(--text-1)', fontSize: '0.9rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MwSt</label>
+                  <select
+                    value={quickForm.mwst}
+                    onChange={e => setQuickForm(prev => ({ ...prev, mwst: parseFloat(e.target.value) }))}
+                    style={{ padding: '0.5rem 0.6rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, color: 'var(--text-1)', fontSize: '0.9rem' }}
+                  >
+                    <option value={19}>19%</option>
+                    <option value={7}>7%</option>
+                    <option value={0}>0%</option>
+                  </select>
+                </div>
+              </div>
+              {quickForm.bruttopreis > 0 && (
+                <div style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.35)', marginTop: '-0.5rem' }}>
+                  Netto: {(parseFloat(quickForm.bruttopreis) / (1 + quickForm.mwst / 100)).toFixed(2)} €
+                </div>
+              )}
+
+              {/* Größen */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Größen (optional)</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                  {QUICK_GROESSEN.map(g => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => toggleQuickGroesse(g)}
+                      style={{
+                        padding: '0.25rem 0.55rem',
+                        borderRadius: 5,
+                        border: quickForm.groessen.includes(g) ? '1px solid rgba(212,175,55,0.6)' : '1px solid rgba(255,255,255,0.12)',
+                        background: quickForm.groessen.includes(g) ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)',
+                        color: quickForm.groessen.includes(g) ? '#d4af37' : 'rgba(255,255,255,0.5)',
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                        fontWeight: quickForm.groessen.includes(g) ? 700 : 400
+                      }}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+                {quickForm.groessen.length > 0 && (
+                  <div style={{ fontSize: '0.74rem', color: 'rgba(212,175,55,0.6)', marginTop: '0.35rem' }}>
+                    {quickForm.groessen.length} Größen gewählt
+                  </div>
+                )}
+              </div>
+
+              {quickError && (
+                <div style={{ background: 'rgba(231,76,60,0.15)', border: '1px solid rgba(231,76,60,0.3)', borderRadius: 6, padding: '0.5rem 0.75rem', color: '#e74c3c', fontSize: '0.82rem' }}>
+                  {quickError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+                <button onClick={() => setShowQuickModal(false)} style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '0.88rem' }}>
+                  Abbrechen
+                </button>
+                <button onClick={handleQuickSave} disabled={quickSaving} style={{ padding: '0.5rem 1.2rem', background: 'rgba(212,175,55,0.2)', border: '1px solid rgba(212,175,55,0.5)', borderRadius: 7, color: '#d4af37', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 700 }}>
+                  {quickSaving ? '⏳ Speichere…' : '⚡ Anlegen & Details bearbeiten'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

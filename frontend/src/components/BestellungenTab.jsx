@@ -42,10 +42,14 @@ const BestellungenTab = () => {
   const [selectedBestellung, setSelectedBestellung] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
 
+  // Lieferanten-Stammdaten
+  const [lieferanten, setLieferanten] = useState([]);
+  const [selectedLieferantId, setSelectedLieferantId] = useState('');
+
   // Neues Bestellformular
   const [orderForm, setOrderForm] = useState({
-    lieferant_name: 'Pakistan Supplier',
-    lieferant_land: 'Pakistan',
+    lieferant_name: '',
+    lieferant_land: '',
     lieferant_email: '',
     lieferant_telefon: '',
     bemerkungen: '',
@@ -99,12 +103,24 @@ const BestellungenTab = () => {
     }
   }, []);
 
+  // Lieferanten laden
+  const loadLieferanten = useCallback(async () => {
+    try {
+      const dojoId = activeDojo?.id;
+      if (!dojoId) return;
+      const res = await axios.get(`/lieferanten?dojo_id=${dojoId}`);
+      setLieferanten(res.data?.data || []);
+    } catch (e) {
+      console.error('Fehler beim Laden der Lieferanten:', e);
+    }
+  }, [activeDojo?.id]);
+
   // Alles laden
   const loadData = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadLowStockItems(), loadBestellungen()]);
+    await Promise.all([loadLowStockItems(), loadBestellungen(), loadLieferanten()]);
     setLoading(false);
-  }, [loadLowStockItems, loadBestellungen]);
+  }, [loadLowStockItems, loadBestellungen, loadLieferanten]);
 
   useEffect(() => {
     loadData();
@@ -197,9 +213,10 @@ const BestellungenTab = () => {
 
       if (response.success) {
         setShowOrderModal(false);
+        setSelectedLieferantId('');
         setOrderForm({
-          lieferant_name: 'Pakistan Supplier',
-          lieferant_land: 'Pakistan',
+          lieferant_name: '',
+          lieferant_land: '',
           lieferant_email: '',
           lieferant_telefon: '',
           bemerkungen: '',
@@ -255,6 +272,7 @@ const BestellungenTab = () => {
       beschreibung: artikel.beschreibung || '',
       bild_url: artikel.bild_url || null,
       groessen_mengen: groessenMengen,
+      varianten_bestand: artikel.varianten_bestand || {},
       stueckpreis_euro: artikel.einkaufspreis_euro || 0,
       bemerkung: ''
     };
@@ -799,6 +817,40 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
               <div className="om-col">
                 <p className="om-col__label">Lieferant</p>
 
+                {/* Dropdown gespeicherter Lieferanten */}
+                {lieferanten.length > 0 && (
+                  <div className="om-field">
+                    <label className="om-field__label">Aus Stammdaten wählen</label>
+                    <select
+                      className="om-field__input"
+                      value={selectedLieferantId}
+                      onChange={e => {
+                        const id = e.target.value;
+                        setSelectedLieferantId(id);
+                        if (id) {
+                          const lf = lieferanten.find(l => String(l.lieferant_id) === id);
+                          if (lf) setOrderForm(prev => ({
+                            ...prev,
+                            lieferant_name: lf.firmenname || '',
+                            lieferant_land: lf.land || '',
+                            lieferant_email: lf.email || '',
+                            lieferant_telefon: lf.telefon || lf.telefon_mobil || ''
+                          }));
+                        } else {
+                          setOrderForm(prev => ({ ...prev, lieferant_name: '', lieferant_land: '', lieferant_email: '', lieferant_telefon: '' }));
+                        }
+                      }}
+                    >
+                      <option value="">— Manuell eingeben —</option>
+                      {lieferanten.map(lf => (
+                        <option key={lf.lieferant_id} value={lf.lieferant_id}>
+                          {lf.firmenname}{lf.land ? ` · ${lf.land}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div className="om-field">
                   <label className="om-field__label">Name</label>
                   <input className="om-field__input" type="text"
@@ -890,11 +942,27 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                         </div>
 
                         {Object.keys(position.groessen_mengen).length > 0 && (
-                          <div className="om-position__sizes">
+                          <div className="om-bestand-grid">
+                            {/* Header-Zeile: Größen */}
+                            <div className="om-bg-cell om-bg-cell--header om-bg-cell--label">Größe</div>
+                            {Object.keys(position.groessen_mengen).map(size => (
+                              <div key={size} className="om-bg-cell om-bg-cell--header">{size}</div>
+                            ))}
+                            {/* Bestand-Zeile */}
+                            <div className="om-bg-cell om-bg-cell--label om-bg-cell--stock-label">Bestand</div>
+                            {Object.keys(position.groessen_mengen).map(size => {
+                              const stock = position.varianten_bestand?.[size] ?? '—';
+                              return (
+                                <div key={size} className={`om-bg-cell om-bg-cell--stock${stock === 0 ? ' om-bg-cell--stock-zero' : ''}`}>
+                                  {typeof stock === 'number' ? stock : '—'}
+                                </div>
+                              );
+                            })}
+                            {/* Bestellmenge-Zeile */}
+                            <div className="om-bg-cell om-bg-cell--label">Bestellen</div>
                             {Object.entries(position.groessen_mengen).map(([size, qty]) => (
-                              <div key={size} className="om-position__size-row">
-                                <span className="om-position__size-label">{size}</span>
-                                <input className="om-position__size-input" type="number" min="0"
+                              <div key={size} className="om-bg-cell om-bg-cell--input">
+                                <input className="om-bg-input" type="number" min="0"
                                   value={qty}
                                   onChange={e => handleQuantityChange(posIndex, size, e.target.value)}
                                 />

@@ -682,6 +682,79 @@
   border-color: rgba(255,255,255,0.25);
 }
 
+/* Bestandsgitter */
+.om-bestand-grid {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  gap: 1px;
+  margin-bottom: 0.5rem;
+  background: rgba(255,255,255,0.06);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.om-bg-cell {
+  padding: 0.28rem 0.3rem;
+  font-size: 0.72rem;
+  text-align: center;
+  background: rgba(255,255,255,0.03);
+}
+
+.om-bg-cell--header {
+  background: rgba(255,255,255,0.08);
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.om-bg-cell--label {
+  text-align: left;
+  padding-left: 0.5rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: 600;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.om-bg-cell--stock {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.om-bg-cell--stock-zero {
+  color: #e74c3c;
+}
+
+.om-bg-cell--stock-label {
+  color: rgba(255,255,255,0.35);
+}
+
+.om-bg-cell--input {
+  padding: 0.2rem;
+}
+
+.om-bg-input {
+  width: 100%;
+  padding: 0.22rem 0.25rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  color: rgba(255,255,255,0.9);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.om-bg-input:focus {
+  outline: none;
+  border-color: rgba(212,175,55,0.5);
+  background: rgba(212,175,55,0.08);
+}
+
 .om-position__meta {
   display: flex;
   flex-direction: column;
