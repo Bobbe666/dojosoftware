@@ -118,7 +118,7 @@ function ArtikelBestellungenPopup({ onClose, onAcknowledged, activeDojo }) {
 
   const load = useCallback(() => {
     if (!activeDojo?.id) return;
-    axios.get(withDojoParam('/api/marketing-artikel/bestellungen', activeDojo))
+    axios.get(withDojoParam('/marketing-artikel/bestellungen', activeDojo))
       .then(r => setList(r.data.bestellungen || []))
       .catch(() => setList([]))
       .finally(() => setLoading(false));
@@ -134,7 +134,7 @@ function ArtikelBestellungenPopup({ onClose, onAcknowledged, activeDojo }) {
 
   const handleAcknowledge = async () => {
     try {
-      await axios.post(withDojoParam('/api/marketing-artikel/bestellungen/acknowledge', activeDojo));
+      await axios.post(withDojoParam('/marketing-artikel/bestellungen/acknowledge', activeDojo));
       onAcknowledged();
       onClose();
     } catch (err) { console.error('Acknowledge fehlgeschlagen', err); }

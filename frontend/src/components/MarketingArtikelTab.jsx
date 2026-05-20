@@ -31,8 +31,8 @@ export default function MarketingArtikelTab() {
     if (!activeDojo?.id) return;
     try {
       const [aRes, bRes] = await Promise.all([
-        axios.get(withDojo('/api/marketing-artikel', activeDojo)),
-        axios.get(withDojo('/api/marketing-artikel/bestellungen', activeDojo)),
+        axios.get(withDojo('/marketing-artikel', activeDojo)),
+        axios.get(withDojo('/marketing-artikel/bestellungen', activeDojo)),
       ]);
       setArtikel(aRes.data.artikel || []);
       setBestellungen(bRes.data.bestellungen || []);
@@ -55,9 +55,9 @@ export default function MarketingArtikelTab() {
         lieferdatum: form.lieferdatum || null,
       };
       if (editId) {
-        await axios.put(withDojo(`/api/marketing-artikel/${editId}`, activeDojo), payload);
+        await axios.put(withDojo(`/marketing-artikel/${editId}`, activeDojo), payload);
       } else {
-        await axios.post(withDojo('/api/marketing-artikel', activeDojo), payload);
+        await axios.post(withDojo('/marketing-artikel', activeDojo), payload);
       }
       setSuccess(editId ? 'Artikel gespeichert' : 'Artikel angelegt');
       setShowForm(false); setEditId(null); setForm(EMPTY_FORM);
@@ -70,7 +70,7 @@ export default function MarketingArtikelTab() {
   const handleDelete = async (id) => {
     if (!window.confirm('Artikel wirklich löschen?')) return;
     try {
-      await axios.delete(withDojo(`/api/marketing-artikel/${id}`, activeDojo));
+      await axios.delete(withDojo(`/marketing-artikel/${id}`, activeDojo));
       load();
     } catch (e) { setError('Löschen fehlgeschlagen'); }
   };
@@ -78,14 +78,14 @@ export default function MarketingArtikelTab() {
   const handleStornieren = async (id) => {
     if (!window.confirm('Bestellung stornieren?')) return;
     try {
-      await axios.put(withDojo(`/api/marketing-artikel/bestellungen/${id}/stornieren`, activeDojo));
+      await axios.put(withDojo(`/marketing-artikel/bestellungen/${id}/stornieren`, activeDojo));
       load();
     } catch (e) { setError('Stornieren fehlgeschlagen'); }
   };
 
   const handleAcknowledge = async () => {
     try {
-      await axios.post(withDojo('/api/marketing-artikel/bestellungen/acknowledge', activeDojo));
+      await axios.post(withDojo('/marketing-artikel/bestellungen/acknowledge', activeDojo));
       load();
     } catch (e) {}
   };
