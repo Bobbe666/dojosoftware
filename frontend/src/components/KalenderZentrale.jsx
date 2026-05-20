@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import fetchWithAuth from '../utils/fetchWithAuth';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
 import config from '../config';
 import '../styles/KalenderZentrale.css';
 
