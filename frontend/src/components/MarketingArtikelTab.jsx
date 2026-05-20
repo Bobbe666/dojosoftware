@@ -104,6 +104,14 @@ export default function MarketingArtikelTab() {
   const ungelesen = bestellungen.filter(b => !b.admin_acknowledged_at).length;
   const statusColor = { offen: '#f59e0b', in_einzug: '#3b82f6', bezahlt: '#22c55e', storniert: '#6b7280' };
 
+  if (!activeDojo?.id) return (
+    <div style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted,#888)' }}>
+      <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🏫</div>
+      <div style={{ fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-primary,#fff)' }}>Kein Dojo ausgewählt</div>
+      <div style={{ fontSize: '0.85rem' }}>Bitte wähle oben im Switcher ein Dojo aus, um Artikel zu verwalten.</div>
+    </div>
+  );
+
   return (
     <div style={{ padding: '0 0 2rem' }}>
       {/* View-Switcher */}
