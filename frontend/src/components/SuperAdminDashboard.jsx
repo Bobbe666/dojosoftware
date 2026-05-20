@@ -47,6 +47,7 @@ const PlattformZugangsdaten = lazy(() => import('./PlattformZugangsdaten'));
 const AppsMonitor           = lazy(() => import('./AppsMonitor'));
 const AuditTrailTab         = lazy(() => import('./AuditTrailTab'));
 const PlatformStatusTab     = lazy(() => import('./PlatformStatusTab'));
+const OnboardingStatusTab   = lazy(() => import('./OnboardingStatusTab'));
 
 const TabLoader = () => <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Lädt…</div>;
 
@@ -1901,12 +1902,19 @@ const SuperAdminDashboard = () => {
             {softwareSection === 'lizenzen' && (
               <div>
             {renderSubTabs('dojosoftware', [
-              { id: 'lizenzen',  icon: '📜', label: 'Lizenzen' },
-              { id: 'dokumente', icon: '📂', label: 'Dokumente' },
+              { id: 'lizenzen',   icon: '📜', label: 'Lizenzen' },
+              { id: 'onboarding', icon: '🚀', label: 'Onboarding' },
+              { id: 'dokumente',  icon: '📂', label: 'Dokumente' },
             ])}
 
             {subActiveTab.dojosoftware === 'lizenzen' && (
               <DojoLizenzverwaltung />
+            )}
+
+            {subActiveTab.dojosoftware === 'onboarding' && (
+              <Suspense fallback={<TabLoader />}>
+                <OnboardingStatusTab token={token} />
+              </Suspense>
             )}
 
             {subActiveTab.dojosoftware === 'dokumente' && (

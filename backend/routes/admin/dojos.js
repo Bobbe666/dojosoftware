@@ -768,6 +768,57 @@ router.get('/subscription-audit-log', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /admin/onboarding-status — Setup-Vollständigkeit aller Dojos
+router.get('/onboarding-status', requireSuperAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT
+        d.id,
+        d.dojoname,
+        d.subdomain,
+        d.email,
+        d.inhaber,
+        d.ort,
+        d.strasse,
+        d.onboarding_completed,
+        d.subscription_plan,
+        d.subscription_status,
+        d.created_at,
+        d.trial_ends_at,
+        (d.strasse IS NOT NULL AND d.strasse != '' AND d.ort IS NOT NULL AND d.ort != '') AS hat_adresse,
+        (d.sepa_glaeubiger_id IS NOT NULL AND d.sepa_glaeubiger_id != '')                AS hat_sepa,
+        (SELECT COUNT(*) FROM tarife t WHERE t.dojo_id = d.id)                           AS tarife_count,
+        (SELECT COUNT(*) FROM mitglieder m WHERE m.dojo_id = d.id AND m.aktiv = 1)       AS mitglieder_count,
+        (SELECT COUNT(*) FROM users u WHERE u.dojo_id = d.id AND u.aktiv = 1)            AS benutzer_count,
+        (SELECT COUNT(*) FROM vertraege v
+          JOIN mitglieder m2 ON v.mitglied_id = m2.mitglied_id
+          WHERE m2.dojo_id = d.id AND v.status = 'aktiv')                                AS vertraege_count
+      FROM dojo d
+      WHERE d.ist_aktiv = 1
+      ORDER BY d.onboarding_completed ASC, d.created_at DESC
+    `);
+
+    const dojos = rows.map(r => {
+      const checks = {
+        adresse:     !!r.hat_adresse,
+        sepa:        !!r.hat_sepa,
+        tarife:      r.tarife_count > 0,
+        mitglieder:  r.mitglieder_count > 0,
+        vertraege:   r.vertraege_count > 0,
+        onboarding:  !!r.onboarding_completed,
+      };
+      const done  = Object.values(checks).filter(Boolean).length;
+      const total = Object.keys(checks).length;
+      return { ...r, checks, completion: Math.round(done / total * 100) };
+    });
+
+    res.json({ success: true, dojos });
+  } catch (error) {
+    logger.error('Fehler bei Onboarding-Status:', { error: error.message });
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
 // GET /admin/platform-metrics — Live Platform-Statistiken für Super Admin
 router.get('/platform-metrics', requireSuperAdmin, async (req, res) => {
   try {
