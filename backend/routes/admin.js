@@ -120,7 +120,7 @@ router.get('/dojos', async (req, res) => {
     const isSuperAdmin = !user.dojo_id;
     let whereClause, queryParams;
     if (isSuperAdmin) {
-      whereClause = `WHERE d.ist_aktiv = TRUE AND d.platform_managed = 1`;
+      whereClause = `WHERE d.ist_aktiv = TRUE`;
       queryParams = [];
     } else {
       whereClause = `WHERE d.ist_aktiv = TRUE AND d.id = ?`;

@@ -320,7 +320,7 @@ function Dashboard() {
 
   // Prüfe ob wir auf der Dashboard-Hauptseite sind
   const isMainDashboard = location.pathname === '/dashboard';
-  const isFullscreenRoute = /\/dashboard\/(chat|besucher-chat)/.test(location.pathname);
+  const isFullscreenRoute = /\/dashboard\/(chat|besucher-chat|lizenzen)/.test(location.pathname);
   const headerTitle = role === 'admin' ? t('header.title') : t('header.memberTitle');
 
   // ✨ Mitgliederverwaltung - Fokus auf Member-Management ✨
@@ -1306,7 +1306,7 @@ function Dashboard() {
       </header>
 
       <div className="dashboard-body">
-        {role === 'admin' && (
+        {role === 'admin' && !isFullscreenRoute && (
           <DashboardSidebar
             tabs={tabs}
             activeTab={activeTab}
