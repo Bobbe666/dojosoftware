@@ -9,6 +9,43 @@ const router = express.Router();
 const { requireSuperAdmin } = require('./shared');
 const { syncPlanFeatures } = require('../../middleware/featureAccess');
 
+// PUT /dojos/bulk-extend-trial - Mehrere Trials gleichzeitig verlängern
+router.put('/dojos/bulk-extend-trial', requireSuperAdmin, async (req, res) => {
+  try {
+    const { dojo_ids, days } = req.body;
+
+    if (!Array.isArray(dojo_ids) || dojo_ids.length === 0) {
+      return res.status(400).json({ error: 'Keine Dojo-IDs angegeben' });
+    }
+    if (!days || days < 1 || days > 365) {
+      return res.status(400).json({ error: 'Tage müssen zwischen 1 und 365 liegen' });
+    }
+
+    const placeholders = dojo_ids.map(() => '?').join(',');
+    const [dojos] = await db.promise().query(
+      `SELECT id, dojoname, trial_ends_at FROM dojo WHERE id IN (${placeholders})`,
+      dojo_ids
+    );
+
+    const results = [];
+    for (const dojo of dojos) {
+      const newDate = new Date(dojo.trial_ends_at || new Date());
+      newDate.setDate(newDate.getDate() + parseInt(days));
+      await db.promise().query(
+        `UPDATE dojo SET trial_ends_at = ?, subscription_status = 'trial' WHERE id = ?`,
+        [newDate, dojo.id]
+      );
+      results.push({ id: dojo.id, dojoname: dojo.dojoname, new_trial_ends_at: newDate });
+    }
+
+    logger.info('Bulk Trial verlängert:', { count: results.length, days });
+    res.json({ success: true, updated: results.length, days_added: days, dojos: results });
+  } catch (error) {
+    logger.error('Fehler beim Bulk-Trial-Verlängern:', error);
+    res.status(500).json({ error: 'Fehler beim Bulk-Verlängern', details: error.message });
+  }
+});
+
 // PUT /dojos/:id/extend-trial - Trial verlängern
 router.put('/dojos/:id/extend-trial', requireSuperAdmin, async (req, res) => {
   try {
