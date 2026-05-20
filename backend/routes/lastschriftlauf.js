@@ -780,7 +780,7 @@ router.get("/not-in-run", async (req, res) => {
  * Löscht offene Beiträge dauerhaft (aus der Preview heraus stornieren)
  * Body: { beitrag_ids: [1, 2, 3] }
  */
-router.post('/preview-stornieren', authenticateToken, async (req, res) => {
+router.post('/preview-stornieren', async (req, res) => {
     const secureDojoId = getSecureDojoId(req);
     const { beitrag_ids } = req.body;
     if (!Array.isArray(beitrag_ids) || beitrag_ids.length === 0) {
