@@ -1054,16 +1054,56 @@ router.get("/preview", async (req, res) => {
         }
         const in_verarbeitung = Object.values(processingMap);
 
-        const totalAmount = results.reduce((sum, r) => sum + parseFloat(r.gesamt_betrag || 0), 0).toFixed(2);
+        // SP-Bestellungen (Starterpaket) in Preview einbeziehen
+        const spFilter = secureDojoId ? 'AND sb.dojo_id = ?' : '';
+        const spPreviewRows = await queryAsync(
+            `SELECT sb.id, sb.mitglied_id, sb.gesamtpreis_cent, sp.name AS paket_name,
+                    m.vorname, m.nachname, m.iban, sm.mandatsreferenz, sm.bankname
+             FROM starterpaket_bestellungen sb
+             JOIN mitglieder m ON sb.mitglied_id = m.mitglied_id
+             JOIN starterpakete sp ON sb.paket_id = sp.paket_id
+             JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+             WHERE sb.status = 'offen'
+               AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+               AND sm.mandatsreferenz IS NOT NULL
+               ${spFilter}`,
+            secureDojoId ? [secureDojoId] : []
+        );
+        const spPreviewItems = spPreviewRows.map(sp => ({
+            mitglied_id: sp.mitglied_id,
+            name: `${sp.vorname || ''} ${sp.nachname || ''}`.trim(),
+            iban: maskIBAN(sp.iban),
+            betrag: sp.gesamtpreis_cent / 100,
+            brutto_betrag: sp.gesamtpreis_cent / 100,
+            gutschrift_betrag: 0,
+            beitraege_betrag: sp.gesamtpreis_cent / 100,
+            anzahl_monate: 0,
+            offene_monate: 'Einmalig',
+            beitraege: [],
+            mandatsreferenz: sp.mandatsreferenz || 'KEIN MANDAT',
+            tarif: `Starterpaket: ${sp.paket_name}`,
+            zahlungszyklus: 'einmalig',
+            bank: sp.bankname || 'Unbekannt',
+            ratenplan_id: null,
+            ratenplan_aufschlag: 0,
+            raten_ausstehend: 0,
+            is_starterpaket: true,
+            sp_id: sp.id
+        }));
+
+        const totalAmount = (
+            results.reduce((sum, r) => sum + parseFloat(r.gesamt_betrag || 0), 0) +
+            spPreviewRows.reduce((sum, sp) => sum + sp.gesamtpreis_cent / 100, 0)
+        ).toFixed(2);
 
         res.json({
             success: true,
-            count: results.length,
+            count: results.length + spPreviewItems.length,
             total_amount: totalAmount,
             monat: monat,
             jahr: jahr,
             primary_bank: mostCommonBank || 'Gemischte Banken',
-            preview: preview,
+            preview: [...preview, ...spPreviewItems],
             ohne_tarif: ohne_tarif,
             in_verarbeitung: in_verarbeitung
         });

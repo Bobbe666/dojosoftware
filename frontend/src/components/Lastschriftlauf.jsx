@@ -1524,14 +1524,20 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                         <code>{item.iban}</code>
                       </td>
                       <td>
-                        <span className="badge badge-warning ll-badge-mr">
-                          {item.anzahl_monate} {item.anzahl_monate === 1 ? 'Monat' : 'Monate'}
-                        </span>
-                        <br />
-                        <small className="u-text-secondary">{item.offene_monate}</small>
+                        {item.is_starterpaket ? (
+                          <span className="badge badge-info ll-badge-mr">Einmalig</span>
+                        ) : (
+                          <>
+                            <span className="badge badge-warning ll-badge-mr">
+                              {item.anzahl_monate} {item.anzahl_monate === 1 ? 'Monat' : 'Monate'}
+                            </span>
+                            <br />
+                            <small className="u-text-secondary">{item.offene_monate}</small>
+                          </>
+                        )}
                       </td>
                       <td>
-                        <strong className={`ll-betrag-value${item.anzahl_monate > 1 ? ' ll-betrag-value--warn' : ''}`}>
+                        <strong className={`ll-betrag-value${!item.is_starterpaket && item.anzahl_monate > 1 ? ' ll-betrag-value--warn' : ''}`}>
                           {formatCurrency(item.betrag)}
                         </strong>
                         {item.gutschrift_betrag > 0 && (
