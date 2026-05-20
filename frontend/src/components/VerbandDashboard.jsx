@@ -30,6 +30,7 @@ import Zahllaeufe from './Zahllaeufe';
 import VerbandUrkundenRegister from './VerbandUrkundenRegister';
 import NationalkaderDashboard from './NationalkaderDashboard';
 import VerbandKontakte from './VerbandKontakte';
+import Events from './Events';
 const PartnerAdmin = lazy(() => import('./PartnerAdmin'));
 import '../styles/VerbandDashboard.css';
 
@@ -572,7 +573,7 @@ const VerbandDashboard = () => {
         {activeTab === 'support' && <SupportTickets bereich="verband" />}
         {activeTab === 'nationalkader' && <NationalkaderDashboard />}
         {activeTab === 'turniere' && <TurniereContent />}
-        {activeTab === 'events' && <EventsContent />}
+        {activeTab === 'events' && <Events />}
         {activeTab === 'finanzen' && <FinanzenContent />}
         {activeTab === 'lastschrift' && <LastschriftContent />}
         {activeTab === 'urkunden' && <VerbandUrkundenRegister />}
