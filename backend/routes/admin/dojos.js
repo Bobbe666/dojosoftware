@@ -92,7 +92,8 @@ router.get('/dojos/statistics', requireSuperAdmin, async (req, res) => {
 // GET /dojos - Alle Dojos auflisten
 router.get('/dojos', requireSuperAdmin, async (req, res) => {
   try {
-    const { filter } = req.query;
+    const { filter, include_storage } = req.query;
+    const withStorage = include_storage !== 'false';
 
     logger.info(`[DOJOS-DEBUG] Request filter: "${filter}"`);
 
@@ -131,13 +132,18 @@ router.get('/dojos', requireSuperAdmin, async (req, res) => {
 
     logger.info(`[DOJOS-DEBUG] SQL returned ${dojos.length} dojos: ${dojos.map(d => `${d.id}:${d.dojoname}`).join(', ')}`);
 
-    const storageMap = await calculateAllDojosStorageUsage(dojos.map(d => d.id));
-    const dojosWithStorage = dojos.map(dojo => {
-      const storageData = storageMap[dojo.id] || { total_mb: 0, total_kb: 0, details: {} };
-      return { ...dojo, storage_mb: storageData.total_mb, storage_kb: storageData.total_kb, storage_details: storageData.details };
-    });
+    let dojosWithStorage;
+    if (withStorage) {
+      const storageMap = await calculateAllDojosStorageUsage(dojos.map(d => d.id));
+      dojosWithStorage = dojos.map(dojo => {
+        const storageData = storageMap[dojo.id] || { total_mb: 0, total_kb: 0, details: {} };
+        return { ...dojo, storage_mb: storageData.total_mb, storage_kb: storageData.total_kb, storage_details: storageData.details };
+      });
+    } else {
+      dojosWithStorage = dojos.map(dojo => ({ ...dojo, storage_mb: null, storage_kb: null, storage_details: null }));
+    }
 
-    logger.info(`[DOJOS-DEBUG] Returning ${dojosWithStorage.length} dojos with storage`);
+    logger.info(`[DOJOS-DEBUG] Returning ${dojosWithStorage.length} dojos (storage: ${withStorage})`);
 
     res.json({ success: true, count: dojosWithStorage.length, dojos: dojosWithStorage });
   } catch (error) {
@@ -834,34 +840,45 @@ router.get('/mrr', requireSuperAdmin, async (req, res) => {
 // GET /admin/onboarding-status — Setup-Vollständigkeit aller Dojos
 router.get('/onboarding-status', requireSuperAdmin, async (req, res) => {
   try {
-    const [rows] = await db.promise().query(`
-      SELECT
-        d.id,
-        d.dojoname,
-        d.subdomain,
-        d.email,
-        d.inhaber,
-        d.ort,
-        d.strasse,
-        d.onboarding_completed,
-        d.subscription_plan,
-        d.subscription_status,
-        d.created_at,
-        d.trial_ends_at,
-        (d.strasse IS NOT NULL AND d.strasse != '' AND d.ort IS NOT NULL AND d.ort != '') AS hat_adresse,
-        (d.sepa_glaeubiger_id IS NOT NULL AND d.sepa_glaeubiger_id != '')                AS hat_sepa,
-        (SELECT COUNT(*) FROM tarife t WHERE t.dojo_id = d.id)                           AS tarife_count,
-        (SELECT COUNT(*) FROM mitglieder m WHERE m.dojo_id = d.id AND m.aktiv = 1)       AS mitglieder_count,
-        (SELECT COUNT(*) FROM admin_users u WHERE u.dojo_id = d.id AND u.aktiv = 1)       AS benutzer_count,
-        (SELECT COUNT(*) FROM vertraege v
-          JOIN mitglieder m2 ON v.mitglied_id = m2.mitglied_id
-          WHERE m2.dojo_id = d.id AND v.status = 'aktiv')                                AS vertraege_count
-      FROM dojo d
-      WHERE d.ist_aktiv = 1
-      ORDER BY d.onboarding_completed ASC, d.created_at DESC
-    `);
+    // Base query + batch-counts via LEFT JOIN statt korrelierter Subqueries (N×4 → 5 Queries)
+    const [[rows], [tarifeCounts], [mitgliederCounts], [benutzerCounts], [vertraegeCounts]] = await Promise.all([
+      db.promise().query(`
+        SELECT
+          d.id, d.dojoname, d.subdomain, d.email, d.inhaber, d.ort, d.strasse,
+          d.onboarding_completed, d.subscription_plan, d.subscription_status,
+          d.created_at, d.trial_ends_at,
+          (d.strasse IS NOT NULL AND d.strasse != '' AND d.ort IS NOT NULL AND d.ort != '') AS hat_adresse,
+          (d.sepa_glaeubiger_id IS NOT NULL AND d.sepa_glaeubiger_id != '')                AS hat_sepa
+        FROM dojo d WHERE d.ist_aktiv = 1
+        ORDER BY d.onboarding_completed ASC, d.created_at DESC
+      `),
+      db.promise().query(`SELECT dojo_id, COUNT(*) as cnt FROM tarife GROUP BY dojo_id`),
+      db.promise().query(`SELECT dojo_id, COUNT(*) as cnt FROM mitglieder WHERE aktiv = 1 GROUP BY dojo_id`),
+      db.promise().query(`SELECT dojo_id, COUNT(*) as cnt FROM admin_users WHERE aktiv = 1 GROUP BY dojo_id`),
+      db.promise().query(`
+        SELECT m.dojo_id, COUNT(*) as cnt
+        FROM vertraege v
+        JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+        WHERE v.status = 'aktiv'
+        GROUP BY m.dojo_id
+      `),
+    ]);
 
-    const dojos = rows.map(r => {
+    const toMap = (arr) => { const m = {}; arr.forEach(r => { m[r.dojo_id] = parseInt(r.cnt) || 0; }); return m; };
+    const tarife = toMap(tarifeCounts);
+    const mitglieder = toMap(mitgliederCounts);
+    const benutzer = toMap(benutzerCounts);
+    const vertraege = toMap(vertraegeCounts);
+
+    const enrichedRows = rows.map(r => ({
+      ...r,
+      tarife_count:     tarife[r.id]     || 0,
+      mitglieder_count: mitglieder[r.id] || 0,
+      benutzer_count:   benutzer[r.id]   || 0,
+      vertraege_count:  vertraege[r.id]  || 0,
+    }));
+
+    const dojos = enrichedRows.map(r => {
       const checks = {
         adresse:     !!r.hat_adresse,
         sepa:        !!r.hat_sepa,

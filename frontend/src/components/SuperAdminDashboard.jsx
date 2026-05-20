@@ -742,36 +742,16 @@ const SuperAdminDashboard = () => {
     setError('');
 
     try {
-      // Alle Calls gleichzeitig starten — interne + externe parallel (kein Waterfall)
-      const [tdaRes, globalRes, dojosRes, overviewRes, hofResult, evResult, acResult, sslResult] = await Promise.allSettled([
+      // Phase 1: Kritische interne Calls — schnell, blockieren Loading-State
+      const [tdaRes, globalRes, overviewRes] = await Promise.allSettled([
         axios.get('/admin/tda-stats',        { headers: { Authorization: `Bearer ${token}` } }),
         axios.get('/admin/global-stats',     { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('/admin/dojos',            { headers: { Authorization: `Bearer ${token}` } }),
         axios.get('/admin/overview-summary', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('https://hof.tda-intl.org/api/stats/overview').then(r => r.json()),
-        axios.get('/plattform-zentrale/turniere', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('https://academy.tda-intl.org/api/admin/public-stats').then(r => r.json()),
-        axios.get('/admin/ssl-status',       { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       if (tdaRes.status === 'fulfilled')     setTdaStats(tdaRes.value.data.stats);
       if (globalRes.status === 'fulfilled')  setGlobalStats(globalRes.value.data.stats);
-      if (dojosRes.status === 'fulfilled')   setDojos(dojosRes.value.data.dojos);
       if (overviewRes.status === 'fulfilled' && overviewRes.value.data.success) setOverviewSummary(overviewRes.value.data);
-
-      if (hofResult.status === 'fulfilled' && hofResult.value?.success) setHofStats(hofResult.value.stats);
-
-      if (evResult.status === 'fulfilled') {
-        const turniere = evResult.value.data?.turniere || [];
-        const heute = new Date(); heute.setHours(0, 0, 0, 0);
-        const upcoming = turniere.filter(t => new Date(t.start_datum || t.datum) >= heute);
-        const offen = turniere.filter(t => t.anmeldeschluss && new Date(t.anmeldeschluss) >= heute);
-        const naechstes = upcoming.sort((a, b) => new Date(a.start_datum || a.datum) - new Date(b.start_datum || b.datum))[0];
-        setEventStats({ gesamt: turniere.length, upcoming: upcoming.length, offen: offen.length, naechstes });
-      }
-
-      if (acResult.status === 'fulfilled' && acResult.value?.success) setAcademyStats(acResult.value.stats);
-      if (sslResult.status === 'fulfilled' && sslResult.value?.data?.success) setSslWarnings(sslResult.value.data.warnings || []);
 
       // Daily Briefing: einmal pro Tag anzeigen
       const today = new Date().toDateString();
@@ -784,6 +764,38 @@ const SuperAdminDashboard = () => {
     } finally {
       setLoading(false);
     }
+
+    // Phase 2: Hintergrund-Calls — blockieren NICHT den Loading-State
+    // Dojos ohne Storage (schnell), externe Services, SSL (langsam)
+    const authHeader = { Authorization: `Bearer ${token}` };
+    const fetchWithTimeout = (url, timeout = 5000) => {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      return fetch(url, { signal: controller.signal }).then(r => r.json()).finally(() => clearTimeout(id));
+    };
+
+    Promise.allSettled([
+      axios.get('/admin/dojos?include_storage=false', { headers: authHeader }),
+      axios.get('/plattform-zentrale/turniere',        { headers: authHeader }),
+      fetchWithTimeout('https://hof.tda-intl.org/api/stats/overview', 5000),
+      fetchWithTimeout('https://academy.tda-intl.org/api/admin/public-stats', 5000),
+      axios.get('/admin/ssl-status', { headers: authHeader }),
+    ]).then(([dojosRes, evResult, hofResult, acResult, sslResult]) => {
+      if (dojosRes.status === 'fulfilled')   setDojos(dojosRes.value.data.dojos);
+
+      if (evResult.status === 'fulfilled') {
+        const turniere = evResult.value.data?.turniere || [];
+        const heute = new Date(); heute.setHours(0, 0, 0, 0);
+        const upcoming = turniere.filter(t => new Date(t.start_datum || t.datum) >= heute);
+        const offen = turniere.filter(t => t.anmeldeschluss && new Date(t.anmeldeschluss) >= heute);
+        const naechstes = upcoming.sort((a, b) => new Date(a.start_datum || a.datum) - new Date(b.start_datum || b.datum))[0];
+        setEventStats({ gesamt: turniere.length, upcoming: upcoming.length, offen: offen.length, naechstes });
+      }
+
+      if (hofResult.status === 'fulfilled' && hofResult.value?.success) setHofStats(hofResult.value.stats);
+      if (acResult.status === 'fulfilled' && acResult.value?.success) setAcademyStats(acResult.value.stats);
+      if (sslResult.status === 'fulfilled' && sslResult.value?.data?.success) setSslWarnings(sslResult.value.data.warnings || []);
+    });
   };
 
   const closeBriefing = () => {
