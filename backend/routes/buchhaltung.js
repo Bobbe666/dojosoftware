@@ -1447,7 +1447,7 @@ router.post('/belege/ocr', requireBuchhaltungAccess, ocrUpload.single('bild'), a
     const mediaType = req.file.mimetype;
 
     // Modelle in Reihenfolge: neues zuerst, Fallback bei Überlastung (529)
-    const ocrModels = ['claude-haiku-4-5-20251001', 'claude-3-5-haiku-20241022'];
+    const ocrModels = ['claude-haiku-4-5-20251001', 'claude-sonnet-4-5-20250929'];
     let response, lastOcrError;
     for (const model of ocrModels) {
       try {
