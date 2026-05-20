@@ -828,6 +828,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     ab: new Date().toISOString().split('T')[0],
     beitraege_aktion: 'behalten'
   });
+  const [vertragsfreiError, setVertragsfreiError] = useState('');
 
   // Abgeleitete Zähler für Status-Badges (schmal oben in Sidebar)
   const offeneDokumente = Number(mitglied?.dokumente_offen) || 0;
@@ -7989,32 +7990,43 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                   Offene Beiträge ab diesem Datum
-                </label>
+                </div>
                 {[
                   { val: 'behalten',   label: 'Behalten',                desc: 'Werden weiterhin per Lastschrift eingezogen' },
                   { val: 'stornieren', label: 'Stornieren',              desc: 'Werden gelöscht und nicht mehr eingezogen' },
                   { val: 'erlassen',   label: 'Als bezahlt markieren',   desc: 'Werden als erlassen / bezahlt geführt' }
-                ].map(opt => (
-                  <label
-                    key={opt.val}
-                    style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', marginBottom: '0.6rem', cursor: 'pointer' }}
-                  >
-                    <input
-                      type="radio"
-                      name="beitraege_aktion"
-                      value={opt.val}
-                      checked={vertragsfreiForm.beitraege_aktion === opt.val}
-                      onChange={() => setVertragsfreiForm(f => ({ ...f, beitraege_aktion: opt.val }))}
-                      style={{ marginTop: 3 }}
-                    />
-                    <span>
-                      <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{opt.label}</strong>
-                      <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{opt.desc}</span>
-                    </span>
-                  </label>
-                ))}
+                ].map(opt => {
+                  const active = vertragsfreiForm.beitraege_aktion === opt.val;
+                  return (
+                    <div
+                      key={opt.val}
+                      onClick={() => setVertragsfreiForm(f => ({ ...f, beitraege_aktion: opt.val }))}
+                      style={{
+                        display: 'flex', alignItems: 'flex-start', gap: '0.7rem',
+                        marginBottom: '0.5rem', cursor: 'pointer',
+                        padding: '0.55rem 0.75rem', borderRadius: 8,
+                        border: `1px solid ${active ? 'rgba(234,179,8,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                        background: active ? 'rgba(234,179,8,0.08)' : 'rgba(255,255,255,0.03)',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      <div style={{
+                        width: 16, height: 16, borderRadius: '50%', flexShrink: 0, marginTop: 2,
+                        border: `2px solid ${active ? '#EAB308' : 'rgba(255,255,255,0.3)'}`,
+                        background: active ? '#EAB308' : 'transparent',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        {active && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1a1a2e' }} />}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>{opt.label}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 1 }}>{opt.desc}</div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
@@ -8026,16 +8038,26 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </p>
           )}
 
+          {vertragsfreiError && (
+            <div style={{ marginBottom: '0.75rem', padding: '0.55rem 0.75rem', borderRadius: 7, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: '0.85rem' }}>
+              {vertragsfreiError}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
             <button
-              onClick={() => setVertragsfreiModal(null)}
+              onClick={() => { setVertragsfreiModal(null); setVertragsfreiError(''); }}
               style={{ padding: '0.5rem 1rem', borderRadius: 7, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.88rem' }}
             >
               Abbrechen
             </button>
             <button
               onClick={async () => {
-                if (vertragsfreiModal === 'stellen' && !vertragsfreiForm.grund.trim()) return;
+                if (vertragsfreiModal === 'stellen' && !vertragsfreiForm.grund.trim()) {
+                  setVertragsfreiError('Bitte einen Grund angeben.');
+                  return;
+                }
+                setVertragsfreiError('');
                 try {
                   const payload = vertragsfreiModal === 'stellen'
                     ? { vertragsfrei: 1, vertragsfrei_grund: vertragsfreiForm.grund, vertragsfrei_ab: vertragsfreiForm.ab, beitraege_aktion: vertragsfreiForm.beitraege_aktion }
@@ -8049,7 +8071,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   }));
                   setVertragsfreiModal(null);
                 } catch (err) {
-                  console.error('Fehler beim Aktualisieren:', err);
+                  const msg = err.response?.data?.error || err.message || 'Unbekannter Fehler';
+                  setVertragsfreiError(`Fehler: ${msg}`);
                 }
               }}
               style={{
