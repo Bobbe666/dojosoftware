@@ -825,6 +825,22 @@ db.promise().query(`
   ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 `).catch(err => logger.warn('Migration 168 (ignoriert):', { error: err.message }));
 
+// Migration 169: Doppelte Magicline-Beitragsimporte bereinigen + UNIQUE Constraint
+db.promise().query(`
+  DELETE b1 FROM beitraege b1
+  INNER JOIN beitraege b2
+    ON b1.magicline_transaction_id = b2.magicline_transaction_id
+    AND b1.beitrag_id > b2.beitrag_id
+  WHERE b1.magicline_transaction_id IS NOT NULL
+`).then(([r]) => {
+  if (r.affectedRows > 0) logger.info('Migration 169: Magicline-Duplikate bereinigt', { entfernt: r.affectedRows });
+}).catch(err => logger.warn('Migration 169a (ignoriert):', { error: err.message }));
+
+db.promise().query(`
+  ALTER TABLE beitraege
+  ADD UNIQUE KEY uq_magicline_transaction (magicline_transaction_id)
+`).catch(err => logger.warn('Migration 169b (ignoriert):', { error: err.message }));
+
 // BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
 try {
   const buchhaltungRoutes = require('./routes/buchhaltung');
