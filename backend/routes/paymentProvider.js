@@ -703,4 +703,123 @@ router.post('/refund', authenticateToken, async (req, res) => {
     }
 });
 
+// GET /api/payment-provider/stripe-abgleich/:mitglied_id
+// Vergleicht Stripe-Charges mit DB-Beitraegen — Admin/Super-Admin only
+router.get('/stripe-abgleich/:mitglied_id', authenticateToken, async (req, res) => {
+    try {
+        const db = require('../db');
+        const pool = db.promise();
+        const mitgliedId = parseInt(req.params.mitglied_id);
+
+        // Mitglied laden
+        const [[mitglied]] = await pool.query(
+            'SELECT mitglied_id, vorname, nachname, email, dojo_id FROM mitglieder WHERE mitglied_id = ?',
+            [mitgliedId]
+        );
+        if (!mitglied) return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+
+        const dojoId = mitglied.dojo_id;
+        const provider = await PaymentProviderFactory.getProvider(dojoId);
+
+        if (!provider.stripe) {
+            return res.status(400).json({
+                error: 'Stripe für dieses Dojo nicht konfiguriert',
+                dojo_id: dojoId,
+                mitglied: `${mitglied.vorname} ${mitglied.nachname}`
+            });
+        }
+
+        // Stripe: Customer per E-Mail suchen
+        let stripeCharges = [];
+        let stripeCustomerId = null;
+        try {
+            // Suche per Metadata (mitglied_id) UND per Email
+            const [byMeta, byEmail] = await Promise.all([
+                provider.stripe.paymentIntents.search({
+                    query: `metadata['mitglied_id']:'${mitgliedId}'`,
+                    limit: 100
+                }).catch(() => ({ data: [] })),
+                mitglied.email ? provider.stripe.customers.search({
+                    query: `email:'${mitglied.email}'`,
+                    limit: 10
+                }).catch(() => ({ data: [] })) : Promise.resolve({ data: [] })
+            ]);
+
+            // Customer ID aus E-Mail-Suche
+            if (byEmail.data.length > 0) {
+                stripeCustomerId = byEmail.data[0].id;
+                // Charges für diesen Customer laden
+                const charges = await provider.stripe.charges.list({
+                    customer: stripeCustomerId,
+                    limit: 100
+                }).catch(() => ({ data: [] }));
+                stripeCharges = charges.data.map(c => ({
+                    id: c.id,
+                    amount: c.amount / 100,
+                    currency: c.currency,
+                    status: c.status,
+                    created: new Date(c.created * 1000).toISOString().split('T')[0],
+                    description: c.description,
+                    payment_method_details: c.payment_method_details?.type,
+                    failure_message: c.failure_message
+                }));
+            }
+
+            // Payment Intents aus Metadata-Suche hinzufügen
+            const piCharges = byMeta.data.map(pi => ({
+                id: pi.id,
+                amount: pi.amount / 100,
+                currency: pi.currency,
+                status: pi.status,
+                created: new Date(pi.created * 1000).toISOString().split('T')[0],
+                description: pi.description,
+                payment_intent: true
+            }));
+            // Deduplizieren
+            const existingIds = new Set(stripeCharges.map(c => c.id));
+            piCharges.forEach(c => { if (!existingIds.has(c.id)) stripeCharges.push(c); });
+        } catch (stripeErr) {
+            logger.warn('Stripe-Abfrage Fehler:', { error: stripeErr.message });
+        }
+
+        // DB-Beitraege laden
+        const [dbBeitraege] = await pool.query(
+            `SELECT beitrag_id, betrag, zahlungsdatum, zahlungsart, bezahlt,
+                    magicline_transaction_id, magicline_description
+             FROM beitraege WHERE mitglied_id = ? ORDER BY zahlungsdatum DESC`,
+            [mitgliedId]
+        );
+
+        // Stripe-Charges nach Datum gruppieren für einfachen Vergleich
+        const stripeNachDatum = {};
+        stripeCharges.forEach(c => {
+            if (!stripeNachDatum[c.created]) stripeNachDatum[c.created] = [];
+            stripeNachDatum[c.created].push(c);
+        });
+
+        // Mögliche Duplikate identifizieren
+        const duplikateStripe = [];
+        const gesehenIds = new Set();
+        stripeCharges.forEach(c => {
+            const key = `${c.created}_${c.amount}`;
+            if (gesehenIds.has(key)) duplikateStripe.push(c);
+            else gesehenIds.add(key);
+        });
+
+        res.json({
+            mitglied: { id: mitgliedId, name: `${mitglied.vorname} ${mitglied.nachname}`, email: mitglied.email, dojo_id: dojoId },
+            stripe_customer_id: stripeCustomerId,
+            stripe_charges_anzahl: stripeCharges.length,
+            stripe_charges: stripeCharges.sort((a, b) => b.created.localeCompare(a.created)),
+            stripe_duplikate: duplikateStripe,
+            db_beitraege_anzahl: dbBeitraege.length,
+            db_beitraege: dbBeitraege
+        });
+
+    } catch (error) {
+        logger.error('Stripe-Abgleich Fehler:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;
