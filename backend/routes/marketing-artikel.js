@@ -11,8 +11,9 @@ router.get('/', async (req, res) => {
   try {
     const dojoId = getSecureDojoId(req);
     logger.warn('[DEBUG marketing-artikel GET]', {
-      user_role: req.user?.role, user_rolle: req.user?.rolle,
-      user_dojo_id: req.user?.dojo_id, query_dojo_id: req.query?.dojo_id,
+      user_keys: req.user ? Object.keys(req.user) : 'NO_USER',
+      user_raw: req.user ? JSON.stringify(req.user).substring(0, 200) : 'null',
+      query_dojo_id: req.query?.dojo_id,
       resolved_dojoId: dojoId
     });
     if (!dojoId) return res.status(400).json({ error: 'dojo_id fehlt' });
