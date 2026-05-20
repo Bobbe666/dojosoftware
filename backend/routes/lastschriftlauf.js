@@ -1515,6 +1515,7 @@ router.post("/stripe/setup-all", async (req, res) => {
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND sm.iban IS NOT NULL
               AND (m.stripe_customer_id IS NULL OR sm.stripe_payment_method_id IS NULL)
+              AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
               AND m.dojo_id = ?
         ` : `
             SELECT
@@ -1526,6 +1527,7 @@ router.post("/stripe/setup-all", async (req, res) => {
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND sm.iban IS NOT NULL
               AND (m.stripe_customer_id IS NULL OR sm.stripe_payment_method_id IS NULL)
+              AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
         `;
         const mitglieder = await queryAsync(mitgliederQuery, dojoId ? [dojoId] : []);
 
