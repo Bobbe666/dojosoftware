@@ -2621,7 +2621,7 @@ try {
 // ─── MARKETING ARTIKEL ────────────────────────────────────────────────────────
 try {
   const marketingArtikelRouter = require('./routes/marketing-artikel');
-  app.use('/api/marketing-artikel', marketingArtikelRouter);
+  app.use('/api/marketing-artikel', authenticateToken, marketingArtikelRouter);
   logger.success('Route gemountet', { path: '/api/marketing-artikel' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', { route: 'marketing-artikel', error: error.message });
