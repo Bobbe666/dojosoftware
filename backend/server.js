@@ -876,19 +876,19 @@ db.promise().query(`UPDATE dojo_subscriptions s JOIN subscription_plans p ON p.p
   .catch(err => logger.warn('Migration 170e (ignoriert):', { error: err.message }));
 
 // Migration 171: Performance-Indexes für Super-Admin-Dashboard-Queries
-pool.query(`CREATE INDEX IF NOT EXISTS idx_mitglieder_dojo_aktiv ON mitglieder(dojo_id, aktiv)`)
+db.promise().query(`CREATE INDEX IF NOT EXISTS idx_mitglieder_dojo_aktiv ON mitglieder(dojo_id, aktiv)`)
   .catch(err => logger.warn('Migration 171a (ignoriert):', { error: err.message }));
-pool.query(`CREATE INDEX IF NOT EXISTS idx_kurse_dojo ON kurse(dojo_id)`)
+db.promise().query(`CREATE INDEX IF NOT EXISTS idx_kurse_dojo ON kurse(dojo_id)`)
   .catch(err => logger.warn('Migration 171b (ignoriert):', { error: err.message }));
-pool.query(`CREATE INDEX IF NOT EXISTS idx_trainer_dojo ON trainer(dojo_id)`)
+db.promise().query(`CREATE INDEX IF NOT EXISTS idx_trainer_dojo ON trainer(dojo_id)`)
   .catch(err => logger.warn('Migration 171c (ignoriert):', { error: err.message }));
-pool.query(`CREATE INDEX IF NOT EXISTS idx_tarife_dojo ON tarife(dojo_id)`)
+db.promise().query(`CREATE INDEX IF NOT EXISTS idx_tarife_dojo ON tarife(dojo_id)`)
   .catch(err => logger.warn('Migration 171d (ignoriert):', { error: err.message }));
-pool.query(`CREATE INDEX IF NOT EXISTS idx_admin_users_dojo_aktiv ON admin_users(dojo_id, aktiv)`)
+db.promise().query(`CREATE INDEX IF NOT EXISTS idx_admin_users_dojo_aktiv ON admin_users(dojo_id, aktiv)`)
   .catch(err => logger.warn('Migration 171e (ignoriert):', { error: err.message }));
-pool.query(`CREATE INDEX IF NOT EXISTS idx_vertraege_mitglied_status ON vertraege(mitglied_id, status)`)
+db.promise().query(`CREATE INDEX IF NOT EXISTS idx_vertraege_mitglied_status ON vertraege(mitglied_id, status)`)
   .catch(err => logger.warn('Migration 171f (ignoriert):', { error: err.message }));
-pool.query(`CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at, dojo_id)`)
+db.promise().query(`CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at, dojo_id)`)
   .catch(err => logger.warn('Migration 171g (ignoriert):', { error: err.message }));
 
 // BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
