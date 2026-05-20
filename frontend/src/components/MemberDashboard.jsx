@@ -217,6 +217,24 @@ const MemberDashboard = () => {
       .catch(() => {});
   }, []);
 
+  // Marketing-Artikel: verfügbare Artikel + eigene Bestellungen
+  const [marketingArtikel, setMarketingArtikel] = useState([]);
+  const [meineArtikelBestellungen, setMeineArtikelBestellungen] = useState([]);
+  const [artikelBestellLoading, setArtikelBestellLoading] = useState(null);
+  const [artikelBestellSuccess, setArtikelBestellSuccess] = useState('');
+  useEffect(() => {
+    const djId = activeDojo?.id || memberData?.dojo_id;
+    if (!djId || !user?.mitglied_id) return;
+    fetchWithAuth(`${config.apiBaseUrl}/marketing-artikel/member?dojo_id=${djId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.success) setMarketingArtikel(d.artikel || []); })
+      .catch(() => {});
+    fetchWithAuth(`${config.apiBaseUrl}/marketing-artikel/member/meine-bestellungen?dojo_id=${djId}&mitglied_id=${user.mitglied_id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setMeineArtikelBestellungen(d.bestellungen || []); })
+      .catch(() => {});
+  }, [activeDojo?.id, memberData?.dojo_id, user?.mitglied_id]);
+
   // App-Onboarding: einmalig beim ersten Login nach Vertragserstellung
   const onboardingKey = `app_onboarded_${user?.mitglied_id}`;
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -1260,6 +1278,35 @@ const MemberDashboard = () => {
   // Debug: Log memberData status on render
   console.log('🎨 MemberDashboard Render - memberData:', memberData ? 'vorhanden' : 'nicht vorhanden', memberData);
   console.log('🎨 Aktuelle Gürtel:', currentBelts.map(b => b.name).join(', '));
+
+  const handleArtikelBestellen = async (artikelId) => {
+    const djId = activeDojo?.id || memberData?.dojo_id;
+    if (!djId || !user?.mitglied_id) return;
+    setArtikelBestellLoading(artikelId);
+    setArtikelBestellSuccess('');
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/marketing-artikel/${artikelId}/bestellen?dojo_id=${djId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mitglied_id: user.mitglied_id, menge: 1 }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setArtikelBestellSuccess('Bestellung erfolgreich übermittelt!');
+        // Bestellungen neu laden
+        fetchWithAuth(`${config.apiBaseUrl}/marketing-artikel/member/meine-bestellungen?dojo_id=${djId}&mitglied_id=${user.mitglied_id}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => { if (d) setMeineArtikelBestellungen(d.bestellungen || []); })
+          .catch(() => {});
+      } else {
+        setArtikelBestellSuccess('Fehler: ' + (data.error || 'Unbekannt'));
+      }
+    } catch (e) {
+      setArtikelBestellSuccess('Fehler beim Bestellen');
+    } finally {
+      setArtikelBestellLoading(null);
+    }
+  };
 
   return (
     <div className="dashboard-container">
@@ -2465,6 +2512,78 @@ const MemberDashboard = () => {
             )}
 
 
+
+            {/* Marketing-Artikel: Vorverkauf & Bestellung */}
+            {marketingArtikel.length > 0 && (
+              <div className="md-info-card" style={{ '--card-accent': '#d4af37' }}>
+                <div className="mb-flex-center-gap" style={{ marginBottom: 12 }}>
+                  <div className="mb-icon-lg">🛍️</div>
+                  <h4 className="md-section-heading" style={{ margin: 0 }}>Aktionen & Bestellungen</h4>
+                </div>
+                {artikelBestellSuccess && (
+                  <div style={{
+                    background: artikelBestellSuccess.startsWith('Fehler') ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.12)',
+                    border: `1px solid ${artikelBestellSuccess.startsWith('Fehler') ? '#ef4444' : '#22c55e'}`,
+                    borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: 10,
+                    fontSize: '0.82rem', color: artikelBestellSuccess.startsWith('Fehler') ? '#fca5a5' : '#86efac',
+                  }}>{artikelBestellSuccess}</div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {marketingArtikel.map(a => {
+                    const bereitsbestellt = meineArtikelBestellungen.some(b => b.artikel_name === a.name && b.status !== 'storniert');
+                    const typLabel = { bestellung: 'Bestellung', vorverkauf: 'Vorverkauf', beides: 'Vorverkauf' }[a.typ] || 'Bestellung';
+                    const typColor = { bestellung: '#3b82f6', vorverkauf: '#f59e0b', beides: '#f59e0b' }[a.typ] || '#888';
+                    return (
+                      <div key={a.id} style={{
+                        background: 'var(--bg-primary, #0f172a)',
+                        border: '1px solid var(--border-color, #334155)',
+                        borderRadius: 10, padding: '12px 14px',
+                        display: 'flex', gap: 12, alignItems: 'flex-start',
+                      }}>
+                        {a.bild_url && <img src={a.bild_url} alt="" style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary, #e2e8f0)' }}>{a.name}</span>
+                            <span style={{ background: typColor, color: '#fff', borderRadius: 4, padding: '1px 7px', fontSize: '0.68rem', fontWeight: 600 }}>{typLabel}</span>
+                          </div>
+                          {a.beschreibung && <p style={{ fontSize: '0.78rem', color: 'var(--text-muted, #94a3b8)', margin: '0 0 6px' }}>{a.beschreibung}</p>}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                            <div>
+                              <span style={{ fontWeight: 700, fontSize: '1rem', color: '#d4af37' }}>{(a.preis_cent / 100).toFixed(2)} €</span>
+                              {a.lieferdatum && (
+                                <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginLeft: 8 }}>
+                                  Lieferung: {new Date(a.lieferdatum).toLocaleDateString('de-DE')}
+                                </span>
+                              )}
+                              {a.vorverkauf_bis && (
+                                <span style={{ fontSize: '0.72rem', color: '#f59e0b', marginLeft: 8 }}>
+                                  bis {new Date(a.vorverkauf_bis).toLocaleDateString('de-DE')}
+                                </span>
+                              )}
+                            </div>
+                            {bereitsbestellt ? (
+                              <span style={{ fontSize: '0.78rem', color: '#22c55e', fontWeight: 600 }}>✓ Bestellt</span>
+                            ) : (
+                              <button
+                                onClick={() => handleArtikelBestellen(a.id)}
+                                disabled={artikelBestellLoading === a.id}
+                                style={{
+                                  padding: '0.35rem 1rem', borderRadius: 8, border: 'none',
+                                  background: '#d4af37', color: '#000', fontWeight: 700,
+                                  cursor: artikelBestellLoading === a.id ? 'wait' : 'pointer',
+                                  fontSize: '0.82rem', opacity: artikelBestellLoading === a.id ? 0.7 : 1,
+                                }}>
+                                {artikelBestellLoading === a.id ? 'Wird bestellt…' : 'Jetzt bestellen'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Trainings-Erinnerungen */}
             <TrainingReminders />

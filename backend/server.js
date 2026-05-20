@@ -762,6 +762,47 @@ db.promise().query(`
     ADD COLUMN IF NOT EXISTS vertragsfrei_ab DATE DEFAULT NULL
 `).catch(err => logger.warn('Migration 166 (ignoriert):', { error: err.message }));
 
+// Migration 167: Marketing-Artikel & Bestellungen
+db.promise().query(`
+  CREATE TABLE IF NOT EXISTS marketing_artikel (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dojo_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    beschreibung TEXT,
+    preis_cent INT NOT NULL DEFAULT 0,
+    bild_url VARCHAR(500),
+    typ ENUM('vorverkauf','bestellung','beides') NOT NULL DEFAULT 'bestellung',
+    vorverkauf_bis DATE,
+    lieferdatum DATE,
+    max_menge INT DEFAULT NULL,
+    aktiv TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT DEFAULT 0,
+    erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_dojo (dojo_id),
+    INDEX idx_aktiv (aktiv)
+  ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+`).catch(err => logger.warn('Migration 167a (ignoriert):', { error: err.message }));
+
+db.promise().query(`
+  CREATE TABLE IF NOT EXISTS marketing_bestellungen (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dojo_id INT NOT NULL,
+    artikel_id INT NOT NULL,
+    mitglied_id INT NOT NULL,
+    menge INT NOT NULL DEFAULT 1,
+    preis_cent INT NOT NULL,
+    status ENUM('offen','in_einzug','bezahlt','storniert') NOT NULL DEFAULT 'offen',
+    zahllauf_id INT DEFAULT NULL,
+    anmerkung TEXT,
+    admin_acknowledged_at DATETIME DEFAULT NULL,
+    erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_dojo (dojo_id),
+    INDEX idx_status (status),
+    INDEX idx_mitglied (mitglied_id),
+    INDEX idx_artikel (artikel_id)
+  ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+`).catch(err => logger.warn('Migration 167b (ignoriert):', { error: err.message }));
+
 // Migration 148: Dateianhang für bank_transaktionen
 db.promise().query(`
   ALTER TABLE bank_transaktionen
@@ -2575,6 +2616,15 @@ try {
   logger.success('Route gemountet', { path: '/api/partner' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', { route: 'partner', error: error.message });
+}
+
+// ─── MARKETING ARTIKEL ────────────────────────────────────────────────────────
+try {
+  const marketingArtikelRouter = require('./routes/marketing-artikel');
+  app.use('/api/marketing-artikel', marketingArtikelRouter);
+  logger.success('Route gemountet', { path: '/api/marketing-artikel' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'marketing-artikel', error: error.message });
 }
 
 // ─── HOMEPAGE BUILDER ─────────────────────────────────────────────────────────

@@ -677,6 +677,18 @@ router.get('/cockpit-uebersicht', async (req, res) => {
       anstehende_lastschriften,
     });
 
+    // ── 5b. Neue Artikel-Bestellungen (nicht zur Kenntnis genommen) ─────────
+    let neue_artikel_bestellungen = 0;
+    try {
+      const [[{ ab_count }]] = await pool.query(
+        `SELECT COUNT(*) AS ab_count FROM marketing_bestellungen
+         WHERE admin_acknowledged_at IS NULL
+           ${dojoFilterM}`,
+        dojoParams
+      );
+      neue_artikel_bestellungen = Number(ab_count) || 0;
+    } catch (_) { /* Tabelle noch nicht migriert */ }
+
     // ── 6. Neue Verträge (nicht zur Kenntnis genommen) ───────────────────────
     let neue_vertraege_unbestaetigt = 0;
     try {
@@ -727,6 +739,7 @@ router.get('/cockpit-uebersicht', async (req, res) => {
       offene_mahnungen:                 Number(offene_mahnungen)              || 0,
       anstehende_lastschriften:         Number(anstehende_lastschriften)      || 0,
       neue_vertraege_unbestaetigt,
+      neue_artikel_bestellungen,
       fehlgeschlagene_lastschriften,
     });
   } catch (error) {

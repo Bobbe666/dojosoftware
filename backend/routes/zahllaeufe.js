@@ -379,6 +379,18 @@ router.post("/", async (req, res) => {
             logger.info(`${spResult.affectedRows} Starterpaket-Bestellungen als bezahlt markiert (Zahllauf #${zahllauf_id})`);
         }
 
+        // Marketing-Artikel-Bestellungen 'in_einzug' → 'bezahlt'
+        try {
+            const maSql = effectiveDojoId
+                ? `UPDATE marketing_bestellungen SET status = 'bezahlt', zahllauf_id = ? WHERE status = 'in_einzug' AND dojo_id = ?`
+                : `UPDATE marketing_bestellungen SET status = 'bezahlt', zahllauf_id = ? WHERE status = 'in_einzug'`;
+            const maParams = effectiveDojoId ? [zahllauf_id, effectiveDojoId] : [zahllauf_id];
+            const maResult = await queryAsync(maSql, maParams);
+            if (maResult.affectedRows > 0) {
+                logger.info(`${maResult.affectedRows} Marketing-Bestellungen als bezahlt markiert (Zahllauf #${zahllauf_id})`);
+            }
+        } catch (_) { /* Tabelle noch nicht migriert */ }
+
         logger.info(`Zahllauf #${zahllauf_id} erstellt, ${markedCount} Beiträge als bezahlt markiert`);
 
         res.json({

@@ -110,6 +110,82 @@ function GeburtstagePopup({ typ, onClose, activeDojo }) {
   return createPortal(popup, document.body);
 }
 
+// ─── Artikel-Bestellungen-Popup ──────────────────────────────────────────────
+function ArtikelBestellungenPopup({ onClose, onAcknowledged, activeDojo }) {
+  const [list, setList] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const overlayRef = useRef(null);
+
+  const load = useCallback(() => {
+    if (!activeDojo?.id) return;
+    axios.get(withDojoParam('/api/marketing-artikel/bestellungen', activeDojo))
+      .then(r => setList(r.data.bestellungen || []))
+      .catch(() => setList([]))
+      .finally(() => setLoading(false));
+  }, [activeDojo]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleAcknowledge = async () => {
+    try {
+      await axios.post(withDojoParam('/api/marketing-artikel/bestellungen/acknowledge', activeDojo));
+      onAcknowledged();
+      onClose();
+    } catch (err) { console.error('Acknowledge fehlgeschlagen', err); }
+  };
+
+  const statusColor = { offen: '#f59e0b', in_einzug: '#3b82f6', bezahlt: '#22c55e', storniert: '#6b7280' };
+
+  const popup = (
+    <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div style={{ background: 'rgba(26,26,46,0.99)', border: '1px solid rgba(212,175,55,.25)', borderRadius: '12px', padding: '20px 24px', minWidth: '360px', maxWidth: '580px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 32px rgba(0,0,0,.5)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexShrink: 0 }}>
+          <span style={{ fontWeight: 700, fontSize: '.9rem', color: 'var(--text-primary, #fff)' }}>🛍️ Neue Artikel-Bestellungen</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted, #888)', fontSize: '1.1rem', lineHeight: 1, padding: '2px 6px', borderRadius: '4px' }}>×</button>
+        </div>
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted, #888)', fontSize: '.85rem' }}>Wird geladen…</div>
+          ) : !list || list.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted, #888)', fontSize: '.85rem' }}>Keine neuen Bestellungen.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {list.filter(b => !b.admin_acknowledged_at).map((b, i) => (
+                <div key={i} style={{ background: 'var(--bg-secondary, rgba(255,255,255,.04))', border: '1px solid rgba(212,175,55,.18)', borderRadius: '8px', padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                    <span style={{ fontWeight: 700, fontSize: '.9rem', color: 'var(--text-primary, #fff)' }}>{b.vorname} {b.nachname}</span>
+                    <span style={{ fontSize: '.68rem', color: 'var(--text-muted, #888)', marginLeft: 8 }}>
+                      {new Date(b.erstellt_am).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '.82rem', color: 'var(--text-muted,#94a3b8)' }}>{b.artikel_name} × {b.menge}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                    <span style={{ fontWeight: 700, color: '#d4af37', fontSize: '.85rem' }}>{(b.preis_cent / 100).toFixed(2)} €</span>
+                    <span style={{ background: statusColor[b.status] || '#888', color: '#fff', borderRadius: 4, padding: '1px 8px', fontSize: '.72rem', fontWeight: 600 }}>{b.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ marginTop: '16px', flexShrink: 0 }}>
+          <button onClick={handleAcknowledge} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#d4af37', color: '#000', fontWeight: 700, cursor: 'pointer', fontSize: '.85rem' }}>
+            Alle als gelesen markieren
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+  return createPortal(popup, document.body);
+}
+
 // ─── Neue-Verträge-Popup ─────────────────────────────────────────────────────
 
 function NeueVertraegePopup({ onClose, onAcknowledged, activeDojo }) {
@@ -329,6 +405,15 @@ const CARDS = [
     color: '#22c55e',
   },
   {
+    key: 'neue_artikel_bestellungen',
+    icon: '🛍️',
+    label: 'Artikel-Bestellungen',
+    path: null,
+    popup: 'artikel_bestellungen',
+    urgent: false,
+    color: '#d4af37',
+  },
+  {
     key: 'fehlgeschlagene_lastschriften',
     icon: '❌',
     label: 'Fehlgeschl. Einzüge',
@@ -382,7 +467,7 @@ const CockpitUebersicht = () => {
 
   // Nach Kenntnisnahme: Zähler sofort auf 0 setzen + neu laden
   const handleAcknowledged = () => {
-    setData(prev => prev ? { ...prev, neue_vertraege_unbestaetigt: 0 } : prev);
+    setData(prev => prev ? { ...prev, neue_vertraege_unbestaetigt: 0, neue_artikel_bestellungen: 0 } : prev);
     load();
   };
 
@@ -533,6 +618,13 @@ const CockpitUebersicht = () => {
       )}
       {activePopup === 'neue_vertraege' && (
         <NeueVertraegePopup
+          activeDojo={activeDojo}
+          onClose={() => setActivePopup(null)}
+          onAcknowledged={handleAcknowledged}
+        />
+      )}
+      {activePopup === 'artikel_bestellungen' && (
+        <ArtikelBestellungenPopup
           activeDojo={activeDojo}
           onClose={() => setActivePopup(null)}
           onAcknowledged={handleAcknowledged}

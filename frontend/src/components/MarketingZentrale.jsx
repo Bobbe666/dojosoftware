@@ -7,7 +7,7 @@ import React, { useState, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, CalendarDays, Zap, Loader2, Users, Gift,
-  Megaphone, TrendingUp, Target, Sparkles, Mail, Share2, Facebook, Tag
+  Megaphone, TrendingUp, Target, Sparkles, Mail, Share2, Facebook, Tag, ShoppingBag
 } from 'lucide-react';
 import '../styles/MarketingZentrale.css';
 
@@ -19,6 +19,7 @@ const MarketingGeburtstage    = lazy(() => import('./MarketingGeburtstage'));
 const MarketingNewsletter     = lazy(() => import('./MarketingNewsletter'));
 const MarketingAktionen       = lazy(() => import('./MarketingAktionen'));
 const SonderaktionenTab       = lazy(() => import('./SonderaktionenTab'));
+const MarketingArtikelTab     = lazy(() => import('./MarketingArtikelTab'));
 
 const TABS = [
   {
@@ -69,6 +70,13 @@ const TABS = [
     label:     'Aktionen',
     icon:      Tag,
     desc:      'Sonderaktionen & Rabatte schalten',
+    highlight: true,
+  },
+  {
+    id:        'artikel',
+    label:     'Artikel & Shop',
+    icon:      ShoppingBag,
+    desc:      'Artikel für Mitglieder anlegen — Vorverkauf oder Bestellung',
     highlight: true,
   },
 ];
@@ -191,6 +199,9 @@ export default function MarketingZentrale({ embedded = false }) {
         )}
         {activeTab === 'sonderaktionen' && (
           <Suspense fallback={<LazyFallback />}><SonderaktionenTab nurMarketing={true} /></Suspense>
+        )}
+        {activeTab === 'artikel' && (
+          <Suspense fallback={<LazyFallback />}><MarketingArtikelTab /></Suspense>
         )}
 
       </div>

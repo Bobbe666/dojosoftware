@@ -153,6 +153,34 @@ router.get("/", async (req, res) => {
 
         const results = await queryAsync(query);
 
+        // Marketing-Artikel-Bestellungen für SEPA-Mitglieder ebenfalls einziehen
+        const maOrders = await queryAsync(`
+            SELECT mb.id, mb.mitglied_id, mb.preis_cent, mb.menge, ma.name AS artikel_name,
+                   m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
+                   sm.mandatsreferenz, sm.erstellungsdatum AS mandat_datum
+            FROM marketing_bestellungen mb
+            JOIN mitglieder m ON mb.mitglied_id = m.mitglied_id
+            JOIN marketing_artikel ma ON mb.artikel_id = ma.id
+            JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+            WHERE mb.status = 'offen'
+              AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND sm.mandatsreferenz IS NOT NULL
+        `);
+        const maRows = maOrders.map(ma => ({
+            mandatsreferenz: ma.mandatsreferenz,
+            iban: ma.iban,
+            bic: ma.bic,
+            kontoinhaber: ma.kontoinhaber || `${ma.vorname} ${ma.nachname}`,
+            vorname: ma.vorname,
+            nachname: ma.nachname,
+            mitglied_id: ma.mitglied_id,
+            mandat_datum: ma.mandat_datum,
+            tarif_name: `Artikel: ${ma.artikel_name}`,
+            monatlicher_beitrag: ma.preis_cent / 100,
+            offene_rechnungen: 0,
+            ratenplan_id: null,
+        }));
+
         // Offene Starterpaket-Bestellungen für SEPA-Mitglieder ebenfalls einziehen
         const spOrders = await queryAsync(`
             SELECT sb.id, sb.mitglied_id, sb.gesamtpreis_cent,
@@ -183,7 +211,7 @@ router.get("/", async (req, res) => {
             ratenplan_id: null,
         }));
 
-        const allContracts = [...results, ...spRows];
+        const allContracts = [...results, ...spRows, ...maRows];
 
         if (allContracts.length === 0) {
             return res.status(404).json({
@@ -212,6 +240,16 @@ router.get("/", async (req, res) => {
         if (selectedBank) {
             res.setHeader('X-Creditor-IBAN', selectedBank.iban || '');
             res.setHeader('X-Creditor-Name', selectedBank.kontoinhaber || '');
+        }
+
+        // Marketing-Artikel-Bestellungen als 'in_einzug' markieren
+        if (maOrders.length > 0) {
+            const maIds = maOrders.map(ma => ma.id);
+            await queryAsync(
+                'UPDATE marketing_bestellungen SET status = ? WHERE id IN (?)',
+                ['in_einzug', maIds]
+            );
+            logger.info(`${maIds.length} Marketing-Artikel-Bestellungen als 'in_einzug' markiert`);
         }
 
         // Starterpaket-Bestellungen als 'in_einzug' markieren (warten auf Zahllauf-Bestätigung)
@@ -799,23 +837,39 @@ router.get("/not-in-run", async (req, res) => {
  */
 router.post('/preview-stornieren', async (req, res) => {
     const secureDojoId = getSecureDojoId(req);
-    const { beitrag_ids } = req.body;
-    if (!Array.isArray(beitrag_ids) || beitrag_ids.length === 0) {
-        return res.status(400).json({ error: 'beitrag_ids fehlt oder leer' });
+    const { beitrag_ids, ma_ids } = req.body;
+    const hasBeitraege = Array.isArray(beitrag_ids) && beitrag_ids.length > 0;
+    const hasMaIds = Array.isArray(ma_ids) && ma_ids.length > 0;
+    if (!hasBeitraege && !hasMaIds) {
+        return res.status(400).json({ error: 'beitrag_ids oder ma_ids fehlt' });
     }
     try {
         const queryAsync = (sql, params) => new Promise((resolve, reject) => {
             db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
         });
-        const dojoJoin = secureDojoId
-            ? 'JOIN mitglieder m ON b.mitglied_id = m.mitglied_id AND m.dojo_id = ?'
-            : 'JOIN mitglieder m ON b.mitglied_id = m.mitglied_id';
-        const params = secureDojoId ? [beitrag_ids, secureDojoId] : [beitrag_ids];
-        const result = await queryAsync(
-            `DELETE b FROM beitraege b ${dojoJoin} WHERE b.beitrag_id IN (?) AND b.bezahlt = 0`,
-            params
-        );
-        res.json({ success: true, deleted: result.affectedRows });
+        let deleted = 0;
+        let storniert = 0;
+        if (hasBeitraege) {
+            const dojoJoin = secureDojoId
+                ? 'JOIN mitglieder m ON b.mitglied_id = m.mitglied_id AND m.dojo_id = ?'
+                : 'JOIN mitglieder m ON b.mitglied_id = m.mitglied_id';
+            const params = secureDojoId ? [beitrag_ids, secureDojoId] : [beitrag_ids];
+            const result = await queryAsync(
+                `DELETE b FROM beitraege b ${dojoJoin} WHERE b.beitrag_id IN (?) AND b.bezahlt = 0`,
+                params
+            );
+            deleted = result.affectedRows;
+        }
+        if (hasMaIds) {
+            const maParams = secureDojoId ? [ma_ids, secureDojoId] : [ma_ids];
+            const maWhere = secureDojoId ? 'WHERE id IN (?) AND dojo_id = ?' : 'WHERE id IN (?)';
+            const result = await queryAsync(
+                `UPDATE marketing_bestellungen SET status = 'storniert' ${maWhere}`,
+                maParams
+            );
+            storniert = result.affectedRows;
+        }
+        res.json({ success: true, deleted, storniert });
     } catch (err) {
         logger.error('Fehler bei preview-stornieren', { error: err.message });
         res.status(500).json({ error: err.message });
@@ -1101,6 +1155,43 @@ router.get("/preview", async (req, res) => {
         }
         const in_verarbeitung = Object.values(processingMap);
 
+        // Marketing-Artikel-Bestellungen in Preview einbeziehen
+        const maFilter = secureDojoId ? 'AND mb.dojo_id = ?' : '';
+        const maPreviewRows = await queryAsync(
+            `SELECT mb.id, mb.mitglied_id, mb.preis_cent, mb.menge, ma.name AS artikel_name,
+                    m.vorname, m.nachname, m.iban, sm.mandatsreferenz, sm.bankname
+             FROM marketing_bestellungen mb
+             JOIN mitglieder m ON mb.mitglied_id = m.mitglied_id
+             JOIN marketing_artikel ma ON mb.artikel_id = ma.id
+             JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+             WHERE mb.status = 'offen'
+               AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+               AND sm.mandatsreferenz IS NOT NULL
+               ${maFilter}`,
+            secureDojoId ? [secureDojoId] : []
+        );
+        const maPreviewItems = maPreviewRows.map(ma => ({
+            mitglied_id: ma.mitglied_id,
+            name: `${ma.vorname || ''} ${ma.nachname || ''}`.trim(),
+            iban: maskIBAN(ma.iban),
+            betrag: ma.preis_cent / 100,
+            brutto_betrag: ma.preis_cent / 100,
+            gutschrift_betrag: 0,
+            beitraege_betrag: ma.preis_cent / 100,
+            anzahl_monate: 0,
+            offene_monate: 'Einmalig',
+            beitraege: [],
+            mandatsreferenz: ma.mandatsreferenz || 'KEIN MANDAT',
+            tarif: `Artikel: ${ma.artikel_name}`,
+            zahlungszyklus: 'einmalig',
+            bank: ma.bankname || 'Unbekannt',
+            ratenplan_id: null,
+            ratenplan_aufschlag: 0,
+            raten_ausstehend: 0,
+            is_marketing_artikel: true,
+            ma_id: ma.id
+        }));
+
         // SP-Bestellungen (Starterpaket) in Preview einbeziehen
         const spFilter = secureDojoId ? 'AND sb.dojo_id = ?' : '';
         const spPreviewRows = await queryAsync(
@@ -1140,17 +1231,18 @@ router.get("/preview", async (req, res) => {
 
         const totalAmount = (
             results.reduce((sum, r) => sum + parseFloat(r.gesamt_betrag || 0), 0) +
-            spPreviewRows.reduce((sum, sp) => sum + sp.gesamtpreis_cent / 100, 0)
+            spPreviewRows.reduce((sum, sp) => sum + sp.gesamtpreis_cent / 100, 0) +
+            maPreviewRows.reduce((sum, ma) => sum + ma.preis_cent / 100, 0)
         ).toFixed(2);
 
         res.json({
             success: true,
-            count: results.length + spPreviewItems.length,
+            count: results.length + spPreviewItems.length + maPreviewItems.length,
             total_amount: totalAmount,
             monat: monat,
             jahr: jahr,
             primary_bank: mostCommonBank || 'Gemischte Banken',
-            preview: [...preview, ...spPreviewItems],
+            preview: [...preview, ...spPreviewItems, ...maPreviewItems],
             ohne_tarif: ohne_tarif,
             in_verarbeitung: in_verarbeitung
         });
