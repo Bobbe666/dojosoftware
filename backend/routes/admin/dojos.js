@@ -787,7 +787,7 @@ router.get('/mrr', requireSuperAdmin, async (req, res) => {
       LEFT JOIN subscription_plans sp ON sp.plan_name = d.subscription_plan
       WHERE d.subscription_status IN ('active', 'trial')
         AND d.ist_aktiv = 1
-      ORDER BY sp.price_monthly DESC NULLS LAST, d.dojoname ASC
+      ORDER BY COALESCE(sp.price_monthly, -1) DESC, d.dojoname ASC
     `);
 
     // MRR pro Dojo berechnen
