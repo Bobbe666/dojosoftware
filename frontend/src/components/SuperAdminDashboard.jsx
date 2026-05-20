@@ -45,6 +45,8 @@ const Auswertungen        = lazy(() => import('./Auswertungen'));
 const PlattformZentrale   = lazy(() => import('./PlattformZentrale'));
 const PlattformZugangsdaten = lazy(() => import('./PlattformZugangsdaten'));
 const AppsMonitor           = lazy(() => import('./AppsMonitor'));
+const AuditTrailTab         = lazy(() => import('./AuditTrailTab'));
+const PlatformStatusTab     = lazy(() => import('./PlatformStatusTab'));
 
 const TabLoader = () => <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Lädt…</div>;
 
@@ -649,7 +651,7 @@ const SuperAdminDashboard = () => {
     dojosoftware: 'lizenzen',
     verband: 'verbandsmitglieder',
     finanzen: 'finanzen',
-    system: 'benutzer',
+    system: 'status',
     plattform: 'zentrale',
   });
   const setSubTab = (group, tab) => setSubActiveTab(prev => ({ ...prev, [group]: tab }));
@@ -2352,13 +2354,21 @@ const SuperAdminDashboard = () => {
         {activeTab === 'system' && (
           <div>
             {renderSubTabs('system', [
-              { id: 'benutzer',    icon: '👤', label: 'Benutzer' },
-              { id: 'email',       icon: '✉️', label: 'E-Mail' },
-              { id: 'passwoerter', icon: '🔑', label: 'Passwörter' },
-              { id: 'security',    icon: '🛡️', label: 'Security' },
-              { id: 'kalender',    icon: '📅', label: 'iCloud Kalender' },
-              { id: 'backup',      icon: '💾', label: 'Backups' }
+              { id: 'status',       icon: '🟢', label: 'Status' },
+              { id: 'benutzer',     icon: '👤', label: 'Benutzer' },
+              { id: 'email',        icon: '✉️', label: 'E-Mail' },
+              { id: 'passwoerter',  icon: '🔑', label: 'Passwörter' },
+              { id: 'security',     icon: '🛡️', label: 'Security' },
+              { id: 'kalender',     icon: '📅', label: 'iCloud Kalender' },
+              { id: 'backup',       icon: '💾', label: 'Backups' },
+              { id: 'aktivitaeten', icon: '📋', label: 'Aktivitäten' }
             ])}
+
+            {subActiveTab.system === 'status' && (
+              <Suspense fallback={<TabLoader />}>
+                <PlatformStatusTab token={token} />
+              </Suspense>
+            )}
 
             {subActiveTab.system === 'benutzer' && (
               <UsersTab token={token} />
@@ -2525,6 +2535,12 @@ const SuperAdminDashboard = () => {
               <div className="section-card">
                 <BackupEinstellungen />
               </div>
+            )}
+
+            {subActiveTab.system === 'aktivitaeten' && (
+              <Suspense fallback={<TabLoader />}>
+                <AuditTrailTab token={token} />
+              </Suspense>
             )}
           </div>
         )}

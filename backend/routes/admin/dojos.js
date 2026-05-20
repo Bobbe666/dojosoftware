@@ -768,4 +768,74 @@ router.get('/subscription-audit-log', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /admin/platform-metrics — Live Platform-Statistiken für Super Admin
+router.get('/platform-metrics', requireSuperAdmin, async (req, res) => {
+  try {
+    const pool = db.promise();
+    const dbStart = Date.now();
+    await pool.query('SELECT 1');
+    const dbLatency = Date.now() - dbStart;
+
+    const [[dojosByPlan]] = await pool.query(`
+      SELECT
+        subscription_plan,
+        subscription_status,
+        COUNT(*) AS anzahl
+      FROM dojo
+      GROUP BY subscription_plan, subscription_status
+      ORDER BY anzahl DESC
+    `);
+
+    const [[todayActivity]] = await pool.query(`
+      SELECT
+        kategorie,
+        COUNT(*) AS anzahl
+      FROM audit_log
+      WHERE DATE(created_at) = CURDATE()
+      GROUP BY kategorie
+      ORDER BY anzahl DESC
+    `);
+
+    const [[topDojos]] = await pool.query(`
+      SELECT
+        dojo_id,
+        dojo_name,
+        COUNT(*) AS aktionen
+      FROM audit_log
+      WHERE DATE(created_at) = CURDATE()
+        AND dojo_id IS NOT NULL
+      GROUP BY dojo_id, dojo_name
+      ORDER BY aktionen DESC
+      LIMIT 8
+    `);
+
+    const [[totalToday]] = await pool.query(`
+      SELECT COUNT(*) AS total FROM audit_log WHERE DATE(created_at) = CURDATE()
+    `);
+
+    const [[memberStats]] = await pool.query(`
+      SELECT
+        COUNT(*) AS gesamt,
+        SUM(CASE WHEN status = 'aktiv' THEN 1 ELSE 0 END) AS aktiv
+      FROM mitglieder
+    `);
+
+    res.json({
+      success: true,
+      uptime_s: Math.floor(process.uptime()),
+      memory_mb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      db_latency_ms: dbLatency,
+      timestamp: new Date().toISOString(),
+      dojos_by_plan: Array.isArray(dojosByPlan) ? dojosByPlan : [dojosByPlan].filter(Boolean),
+      today_activity: Array.isArray(todayActivity) ? todayActivity : [todayActivity].filter(Boolean),
+      top_dojos_today: Array.isArray(topDojos) ? topDojos : [topDojos].filter(Boolean),
+      total_actions_today: totalToday?.total || 0,
+      members: memberStats || {}
+    });
+  } catch (error) {
+    logger.error('Fehler bei Platform-Metrics:', { error: error.message });
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
 module.exports = router;

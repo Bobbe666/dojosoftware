@@ -44,6 +44,15 @@ const PRIORITAET_CONFIG = {
   kritisch: { label: 'Kritisch', color: 'var(--error)', pulse: true }
 };
 
+const PLAN_CONFIG = {
+  enterprise: { label: 'Enterprise', color: '#d4af37', bg: 'rgba(212,175,55,0.15)', icon: '👑' },
+  pro:        { label: 'Pro',        color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)', icon: '⭐' },
+  basic:      { label: 'Basic',      color: '#4ea8de', bg: 'rgba(78,168,222,0.15)', icon: '📦' },
+  free:       { label: 'Free',       color: '#27ae60', bg: 'rgba(39,174,96,0.15)',  icon: '🆓' },
+  custom:     { label: 'Custom',     color: '#e36209', bg: 'rgba(227,98,9,0.15)',   icon: '🔧' },
+  trial:      { label: 'Trial',      color: '#7f8c8d', bg: 'rgba(127,140,141,0.15)', icon: '🕐' },
+};
+
 const SupportTickets = ({
   bereich = 'dojo',  // 'dojo' | 'verband' | 'org'
   showAllBereiche = false,  // Für SuperAdmin: Alle Bereiche anzeigen
@@ -67,7 +76,8 @@ const SupportTickets = ({
     kategorie: '',
     bereich: showAllBereiche ? '' : bereich,
     prioritaet: '',
-    zugewiesen: ''
+    zugewiesen: '',
+    subscription_plan: ''
   });
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -329,6 +339,21 @@ const SupportTickets = ({
     );
   };
 
+  const renderPlanBadge = (plan) => {
+    if (!plan) return null;
+    const cfg = PLAN_CONFIG[plan] || { label: plan, color: '#888', bg: 'rgba(136,136,136,0.15)', icon: '📋' };
+    return (
+      <span style={{
+        background: cfg.bg, color: cfg.color,
+        padding: '2px 7px', borderRadius: '4px',
+        fontSize: '11px', fontWeight: 700,
+        whiteSpace: 'nowrap', letterSpacing: '0.02em'
+      }}>
+        {cfg.icon} {cfg.label}
+      </span>
+    );
+  };
+
   // Kompakte Ansicht für Dashboard-Widget
   if (compact) {
     return (
@@ -577,6 +602,21 @@ const SupportTickets = ({
             </div>
           )}
 
+          {isSuperAdmin && (
+            <div className="filter-group">
+              <label>Abo-Plan</label>
+              <select
+                value={filters.subscription_plan}
+                onChange={(e) => setFilters({...filters, subscription_plan: e.target.value})}
+              >
+                <option value="">Alle Pläne</option>
+                {Object.entries(PLAN_CONFIG).map(([key, cfg]) => (
+                  <option key={key} value={key}>{cfg.icon} {cfg.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <button
             className="btn-reset-filter"
             onClick={() => setFilters({
@@ -584,7 +624,8 @@ const SupportTickets = ({
               kategorie: '',
               bereich: showAllBereiche ? '' : bereich,
               prioritaet: '',
-              zugewiesen: ''
+              zugewiesen: '',
+              subscription_plan: ''
             })}
           >
             Filter zurücksetzen
@@ -621,6 +662,7 @@ const SupportTickets = ({
                 <div className="ticket-card-header">
                   <span className="ticket-nummer">{ticket.ticket_nummer}</span>
                   {showAllBereiche && renderBereichBadge(ticket.bereich)}
+                  {isSuperAdmin && ticket.subscription_plan && renderPlanBadge(ticket.subscription_plan)}
                   {renderStatusBadge(ticket.status)}
                 </div>
 
@@ -667,6 +709,7 @@ const SupportTickets = ({
               <div className="detail-title">
                 <span className="ticket-nummer">{selectedTicket.ticket_nummer}</span>
                 {showAllBereiche && renderBereichBadge(selectedTicket.bereich)}
+                {isSuperAdmin && selectedTicket.subscription_plan && renderPlanBadge(selectedTicket.subscription_plan)}
               </div>
               <button className="btn-close" onClick={() => setSelectedTicket(null)}>
                 <X size={20} />
@@ -705,6 +748,16 @@ const SupportTickets = ({
                 <span className="meta-label">Priorität:</span>
                 {renderPrioritaetBadge(selectedTicket.prioritaet)}
               </div>
+
+              {isSuperAdmin && selectedTicket.dojo_name && (
+                <div className="meta-row">
+                  <span className="meta-label">Dojo:</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    {selectedTicket.dojo_name}
+                    {selectedTicket.subscription_plan && renderPlanBadge(selectedTicket.subscription_plan)}
+                  </span>
+                </div>
+              )}
 
               <div className="meta-row">
                 <span className="meta-label">Erstellt von:</span>

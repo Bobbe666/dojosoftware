@@ -117,16 +117,20 @@ const istBearbeiter = (user) => {
 // GET /api/support-tickets - Tickets abrufen (gefiltert nach Rolle)
 router.get('/', async (req, res) => {
   try {
-    const { status, kategorie, bereich, prioritaet, zugewiesen, limit = 50, offset = 0 } = req.query;
+    const { status, kategorie, bereich, prioritaet, zugewiesen, subscription_plan, limit = 50, offset = 0 } = req.query;
     const user = req.user;
 
     let query = `
       SELECT t.*,
         (SELECT COUNT(*) FROM support_ticket_nachrichten WHERE ticket_id = t.id) as nachrichten_count,
         (SELECT COUNT(*) FROM support_ticket_anhaenge WHERE ticket_id = t.id) as anhaenge_count,
-        u.username as zugewiesen_name
+        u.username as zugewiesen_name,
+        d.dojoname as dojo_name,
+        d.subscription_plan,
+        d.subscription_status
       FROM support_tickets t
       LEFT JOIN users u ON t.zugewiesen_an = u.id
+      LEFT JOIN dojo d ON t.dojo_id = d.id
       WHERE 1=1
     `;
     const params = [];
@@ -166,6 +170,10 @@ router.get('/', async (req, res) => {
       params.push(user.user_id || user.id);
     } else if (zugewiesen === 'niemand') {
       query += ' AND t.zugewiesen_an IS NULL';
+    }
+    if (subscription_plan) {
+      query += ' AND d.subscription_plan = ?';
+      params.push(subscription_plan);
     }
 
     query += ' ORDER BY t.created_at DESC LIMIT ? OFFSET ?';
