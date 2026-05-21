@@ -1421,6 +1421,43 @@ router.get('/euer/verkauf-detail/:id', requireBuchhaltungAccess, (req, res) => {
 });
 
 // ===================================================================
+// 📲 iOS Share Target: Temporärer Upload ohne Auth (mit Secret)
+// ===================================================================
+const shareStore = new Map(); // token → { buffer, mimetype, filename, expires }
+setInterval(() => {
+  const now = Date.now();
+  for (const [t, e] of shareStore) if (e.expires < now) shareStore.delete(t);
+}, 60000);
+
+const shareUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
+
+router.post('/share-upload', shareUpload.single('bild'), (req, res) => {
+  const secret = req.query.secret || req.headers['x-share-secret'];
+  if (!secret || secret !== process.env.SHARE_UPLOAD_SECRET) return res.status(401).json({ error: 'Unauthorized' });
+  if (!req.file) return res.status(400).json({ error: 'Kein Bild' });
+  const token = crypto.randomBytes(16).toString('hex');
+  shareStore.set(token, {
+    buffer: req.file.buffer,
+    mimetype: req.file.mimetype,
+    filename: req.file.originalname || 'beleg.jpg',
+    expires: Date.now() + 5 * 60 * 1000,
+  });
+  res.json({ token, url: `/?share-token=${token}` });
+});
+
+router.get('/share-token/:token', requireBuchhaltungAccess, (req, res) => {
+  const entry = shareStore.get(req.params.token);
+  if (!entry || entry.expires < Date.now()) {
+    shareStore.delete(req.params.token);
+    return res.status(404).json({ error: 'Token abgelaufen' });
+  }
+  shareStore.delete(req.params.token);
+  res.set('Content-Type', entry.mimetype);
+  res.set('Content-Disposition', `attachment; filename="${encodeURIComponent(entry.filename)}"`);
+  res.send(entry.buffer);
+});
+
+// ===================================================================
 // 🤖 POST /api/buchhaltung/belege/ocr - Beleg mit KI auslesen
 // ===================================================================
 const ocrUpload = multer({
