@@ -131,7 +131,9 @@ router.post('/extern', (req, res) => {
 });
 
 // Hilfsfunktion: Erstellt automatisch eine Rechnung für eine Prüfungsgebühr
-async function createPruefungsRechnung(mitglied_id, pruefungsgebuehr, pruefungsdatum, stilName, dojoId) {
+// zahlungsart: 'lastschrift' → Beleg-Rechnung + Beitrag für Lastschriftlauf
+//              'rechnung'    → Offene Rechnung, kein Lastschrift-Beitrag
+async function createPruefungsRechnung(mitglied_id, pruefungsgebuehr, pruefungsdatum, stilName, dojoId, zahlungsart = 'lastschrift') {
   const pool = db.promise();
   const heute = new Date();
   const datumPrefix = `${heute.getFullYear()}${String(heute.getMonth() + 1).padStart(2, '0')}`;
@@ -148,11 +150,13 @@ async function createPruefungsRechnung(mitglied_id, pruefungsgebuehr, pruefungsd
   const faellig = new Date(pruefungsdatum || heute);
   const fDate = faellig.toISOString().split('T')[0];
   const beschreibung = `Prüfungsgebühr${stilName ? ' – ' + stilName : ''}`;
+  const isLastschrift = zahlungsart === 'lastschrift';
+  const dbZahlungsart = isLastschrift ? 'Lastschrift' : 'Rechnung';
 
   const [result] = await pool.query(
-    `INSERT INTO rechnungen (rechnungsnummer, mitglied_id, datum, faelligkeitsdatum, betrag, netto_betrag, brutto_betrag, mwst_satz, mwst_betrag, art, beschreibung, status, dojo_id)
-     VALUES (?, ?, CURDATE(), ?, ?, ?, ?, 0, 0, 'pruefungsgebuehr', ?, 'offen', ?)`,
-    [rechnungsnummer, mitglied_id, fDate, betrag, betrag, betrag, beschreibung, dojoId]
+    `INSERT INTO rechnungen (rechnungsnummer, mitglied_id, datum, faelligkeitsdatum, betrag, netto_betrag, brutto_betrag, mwst_satz, mwst_betrag, art, beschreibung, status, zahlungsart, dojo_id)
+     VALUES (?, ?, CURDATE(), ?, ?, ?, ?, 0, 0, 'pruefungsgebuehr', ?, 'offen', ?, ?)`,
+    [rechnungsnummer, mitglied_id, fDate, betrag, betrag, betrag, beschreibung, dbZahlungsart, dojoId]
   );
   const rechnungId = result.insertId;
 
@@ -162,12 +166,14 @@ async function createPruefungsRechnung(mitglied_id, pruefungsgebuehr, pruefungsd
     [rechnungId, beschreibung, betrag, betrag]
   );
 
-  // Beitrag für Lastschriftlauf anlegen — verknüpft mit Rechnung (art + rechnung_id)
-  await pool.query(
-    `INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description, art, rechnung_id)
-     VALUES (?, ?, ?, 'Lastschrift', 0, ?, ?, 'pruefungsgebuehr', ?)`,
-    [mitglied_id, betrag, fDate, dojoId, beschreibung, rechnungId]
-  );
+  // Nur bei Lastschrift: Beitrag für Lastschriftlauf anlegen
+  if (isLastschrift) {
+    await pool.query(
+      `INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description, art, rechnung_id)
+       VALUES (?, ?, ?, 'Lastschrift', 0, ?, ?, 'pruefungsgebuehr', ?)`,
+      [mitglied_id, betrag, fDate, dojoId, beschreibung, rechnungId]
+    );
+  }
 
   return rechnungId;
 }
@@ -244,12 +250,14 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
         const pruefungId = result.insertId;
         res.status(201).json({ success: true, message: 'Mitglied erfolgreich zur Prüfung zugelassen', pruefung_id: pruefungId, mitglied_id });
 
-        // Auto-Rechnung erstellen wenn Gebühr aktiviert
+        // Auto-Rechnung: direkt aus zahlungsart ableiten (rechnung oder lastschrift → immer Rechnung)
         (async () => {
           try {
-            // Effektiven auto_verrechnen-Wert ermitteln: pruefungen-Wert > termin-Wert > 0
-            let effektiv = autoVerrechnenValue;
-            if (effektiv === null) {
+            const sollRechnung = (zahlungsart === 'rechnung' || zahlungsart === 'lastschrift') && finaleGebuehr && finaleGebuehr > 0;
+
+            // Fallback auf altes gebuehr_auto_verrechnen-Feld wenn zahlungsart nicht gesetzt
+            let effektiv = sollRechnung ? 1 : autoVerrechnenValue;
+            if (!sollRechnung && effektiv === null) {
               const pool = db.promise();
               const [[termin]] = await pool.query(
                 `SELECT ptv.gebuehr_auto_verrechnen FROM pruefungstermin_vorlagen ptv
@@ -261,15 +269,14 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
 
             if (effektiv === 1 && finaleGebuehr && finaleGebuehr > 0) {
               const pool = db.promise();
-              // Idempotenz-Check: keine zweite Rechnung wenn bereits vorhanden
               const [[existingPruefung]] = await pool.query('SELECT gebuehr_rechnung_id FROM pruefungen WHERE pruefung_id = ?', [pruefungId]);
               if (existingPruefung?.gebuehr_rechnung_id) {
                 logger.warn('Auto-Rechnung übersprungen — bereits vorhanden', { pruefungId, rechnung_id: existingPruefung.gebuehr_rechnung_id });
               } else {
                 const [[stilRow]] = await pool.query('SELECT name FROM stile WHERE stil_id = ? LIMIT 1', [stil_id]);
-                const rechnungId = await createPruefungsRechnung(mitglied_id, finaleGebuehr, finalPruefungsdatum, stilRow?.name || '', dojo_id);
+                const rechnungId = await createPruefungsRechnung(mitglied_id, finaleGebuehr, finalPruefungsdatum, stilRow?.name || '', dojo_id, zahlungsart || 'lastschrift');
                 await pool.query('UPDATE pruefungen SET gebuehr_rechnung_id = ? WHERE pruefung_id = ?', [rechnungId, pruefungId]);
-                logger.info('Auto-Rechnung für Prüfungsgebühr erstellt', { pruefungId, rechnungId, mitglied_id, betrag: finaleGebuehr });
+                logger.info('Auto-Rechnung für Prüfungsgebühr erstellt', { pruefungId, rechnungId, mitglied_id, betrag: finaleGebuehr, zahlungsart });
               }
             }
           } catch (autoErr) {

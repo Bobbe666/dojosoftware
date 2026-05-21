@@ -1472,6 +1472,30 @@ h2.pv3-zug-h2 {
   font-weight: normal;
 }
 
+/* Zahlungsart-Infobox (ersetzt Checkbox) */
+.pv3-zahlungsart-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  border-radius: 7px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin-top: 0.4rem;
+}
+.pv3-zahlungsart-info--rechnung {
+  background: rgba(212, 175, 55, 0.07);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: rgba(255, 255, 255, 0.7);
+}
+.pv3-zahlungsart-info--lastschrift {
+  background: rgba(99, 179, 237, 0.07);
+  border: 1px solid rgba(99, 179, 237, 0.22);
+  color: rgba(255, 255, 255, 0.7);
+}
+.pv3-zahlungsart-info-icon { flex-shrink: 0; font-size: 0.95rem; }
+.pv3-zahlungsart-info strong { color: rgba(255, 255, 255, 0.9); font-weight: 600; }
+
 /* Inline Grad-Selects in der Zugelassen-Zeile */
 .pv3-inline-grad-select {
   padding: 2px 4px;

@@ -5892,8 +5892,9 @@ const PruefungsVerwaltung = () => {
                         className="pv3-dark-input"
                       >
                         <option value="">— Bitte wählen —</option>
-                        <option value="bar">Barzahlung</option>
+                        <option value="rechnung">Rechnung / Überweisung</option>
                         <option value="lastschrift">SEPA-Lastschrift</option>
+                        <option value="bar">Barzahlung</option>
                       </select>
                     </div>
                     <div>
@@ -5942,19 +5943,16 @@ const PruefungsVerwaltung = () => {
                       🌐 Auf tda-vib.de veröffentlichen
                     </label>
                   </div>
-                  {neuerTermin.pruefungsgebuehr && parseFloat(neuerTermin.pruefungsgebuehr) > 0 && (
-                    <div className="pv3-oeffentlich-row pv3-gebuehr-auto-row">
-                      <input
-                        type="checkbox"
-                        id="neuerTermin_gebuehr_auto"
-                        checked={neuerTermin.gebuehr_auto_verrechnen}
-                        onChange={(e) => setNeuerTermin({ ...neuerTermin, gebuehr_auto_verrechnen: e.target.checked })}
-                        className="pv2-checkbox"
-                      />
-                      <label htmlFor="neuerTermin_gebuehr_auto" className="pv3-oeffentlich-label">
-                        💶 Prüfungsgebühr automatisch als Rechnung erstellen
-                        <span className="pv3-gebuehr-auto-hint">Bei Zulassung wird automatisch eine offene Rechnung über {parseFloat(neuerTermin.pruefungsgebuehr).toFixed(2)} € erstellt</span>
-                      </label>
+                  {neuerTermin.pruefungsgebuehr && parseFloat(neuerTermin.pruefungsgebuehr) > 0 && neuerTermin.zahlungsart === 'rechnung' && (
+                    <div className="pv3-zahlungsart-info pv3-zahlungsart-info--rechnung">
+                      <span className="pv3-zahlungsart-info-icon">💶</span>
+                      <span>Bei Zulassung wird automatisch eine <strong>offene Rechnung</strong> über {parseFloat(neuerTermin.pruefungsgebuehr).toFixed(2)} € erstellt — der Kunde zahlt per Überweisung.</span>
+                    </div>
+                  )}
+                  {neuerTermin.pruefungsgebuehr && parseFloat(neuerTermin.pruefungsgebuehr) > 0 && neuerTermin.zahlungsart === 'lastschrift' && (
+                    <div className="pv3-zahlungsart-info pv3-zahlungsart-info--lastschrift">
+                      <span className="pv3-zahlungsart-info-icon">📄</span>
+                      <span>Bei Zulassung wird ein <strong>Rechnungsbeleg</strong> über {parseFloat(neuerTermin.pruefungsgebuehr).toFixed(2)} € erstellt — Einzug erfolgt über den Lastschriftlauf.</span>
                     </div>
                   )}
                 </div>
@@ -6150,6 +6148,21 @@ const PruefungsVerwaltung = () => {
                 />
               </div>
 
+              {/* Zahlungsart */}
+              <div>
+                <label className="pv-field-label">Zahlungsart Prüfungsgebühr</label>
+                <select
+                  value={editTermin.zahlungsart || ''}
+                  onChange={(e) => setEditTermin({ ...editTermin, zahlungsart: e.target.value })}
+                  className="pv3-dark-input-sm"
+                >
+                  <option value="">— Bitte wählen —</option>
+                  <option value="rechnung">Rechnung / Überweisung</option>
+                  <option value="lastschrift">SEPA-Lastschrift</option>
+                  <option value="bar">Barzahlung</option>
+                </select>
+              </div>
+
               {/* Anmeldefrist */}
               <div>
                 <label className="pv-field-label">
@@ -6189,19 +6202,16 @@ const PruefungsVerwaltung = () => {
                 🌐 Auf tda-vib.de veröffentlichen
               </label>
             </div>
-            {editTermin.pruefungsgebuehr && parseFloat(editTermin.pruefungsgebuehr) > 0 && (
-              <div className="pv3-edit-oeffentlich-row pv3-gebuehr-auto-row">
-                <input
-                  type="checkbox"
-                  id="editTermin_gebuehr_auto"
-                  checked={editTermin.gebuehr_auto_verrechnen || false}
-                  onChange={(e) => setEditTermin({ ...editTermin, gebuehr_auto_verrechnen: e.target.checked })}
-                  className="pv2-checkbox"
-                />
-                <label htmlFor="editTermin_gebuehr_auto" className="pv3-edit-oeffentlich-label">
-                  💶 Prüfungsgebühr automatisch als Rechnung erstellen
-                  <span className="pv3-gebuehr-auto-hint">Bei Zulassung wird automatisch eine offene Rechnung über {parseFloat(editTermin.pruefungsgebuehr).toFixed(2)} € erstellt</span>
-                </label>
+            {editTermin.pruefungsgebuehr && parseFloat(editTermin.pruefungsgebuehr) > 0 && editTermin.zahlungsart === 'rechnung' && (
+              <div className="pv3-zahlungsart-info pv3-zahlungsart-info--rechnung" style={{ marginTop: '0.5rem' }}>
+                <span className="pv3-zahlungsart-info-icon">💶</span>
+                <span>Bei Zulassung wird automatisch eine <strong>offene Rechnung</strong> über {parseFloat(editTermin.pruefungsgebuehr).toFixed(2)} € erstellt — der Kunde zahlt per Überweisung.</span>
+              </div>
+            )}
+            {editTermin.pruefungsgebuehr && parseFloat(editTermin.pruefungsgebuehr) > 0 && editTermin.zahlungsart === 'lastschrift' && (
+              <div className="pv3-zahlungsart-info pv3-zahlungsart-info--lastschrift" style={{ marginTop: '0.5rem' }}>
+                <span className="pv3-zahlungsart-info-icon">📄</span>
+                <span>Bei Zulassung wird ein <strong>Rechnungsbeleg</strong> über {parseFloat(editTermin.pruefungsgebuehr).toFixed(2)} € erstellt — Einzug erfolgt über den Lastschriftlauf.</span>
               </div>
             )}
 
