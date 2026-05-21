@@ -1685,6 +1685,10 @@ router.get('/belege', requireBuchhaltungAccess, (req, res) => {
     params.push(buchungsart);
   }
 
+  if (req.query.nur_review === '1') {
+    whereClause += ' AND review_needed = TRUE';
+  }
+
   const countSql = `SELECT COUNT(*) as total FROM buchhaltung_belege WHERE ${whereClause} AND storniert = FALSE`;
   const dataSql = `
     SELECT
