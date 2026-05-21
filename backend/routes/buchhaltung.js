@@ -1705,6 +1705,8 @@ router.get('/belege', requireBuchhaltungAccess, (req, res) => {
       datei_name,
       festgeschrieben,
       storniert,
+      review_needed,
+      review_kommentar,
       erstellt_am,
       geaendert_am
     FROM buchhaltung_belege
@@ -1933,6 +1935,26 @@ router.put('/belege/:id', requireBuchhaltungAccess, (req, res) => {
 
       res.json({ message: 'Beleg erfolgreich aktualisiert' });
     });
+  });
+});
+
+// ===================================================================
+// 🔴 PATCH /api/buchhaltung/belege/:id/review - Review-Flag setzen/löschen
+// ===================================================================
+router.patch('/belege/:id/review', requireBuchhaltungAccess, (req, res) => {
+  const belegId = req.params.id;
+  const { review_needed, review_kommentar } = req.body;
+  db.query('SELECT dojo_id FROM buchhaltung_belege WHERE beleg_id = ?', [belegId], (err, rows) => {
+    if (err || rows.length === 0) return res.status(404).json({ message: 'Beleg nicht gefunden' });
+    if (!checkDojoOwnership(req, res, rows[0].dojo_id)) return;
+    db.query(
+      'UPDATE buchhaltung_belege SET review_needed = ?, review_kommentar = ? WHERE beleg_id = ?',
+      [review_needed ? 1 : 0, review_kommentar || null, belegId],
+      (err2) => {
+        if (err2) return res.status(500).json({ message: 'Fehler beim Speichern' });
+        res.json({ ok: true });
+      }
+    );
   });
 });
 
