@@ -101,6 +101,34 @@ router.get('/dojo/:subdomain', async (req, res) => {
 });
 
 /**
+ * GET /api/public/probetraining/stundenplan/:dojo_id
+ * Stundenplan-basierte Slots für Probetraining-Buchung (öffentlich)
+ */
+router.get('/stundenplan/:dojo_id', async (req, res) => {
+  try {
+    const { dojo_id } = req.params;
+    const kurse = await queryAsync(`
+      SELECT sp.stundenplan_id, sp.tag AS wochentag,
+             TIME_FORMAT(sp.uhrzeit_start, '%H:%i') AS uhrzeit_start,
+             TIME_FORMAT(sp.uhrzeit_ende, '%H:%i') AS uhrzeit_ende,
+             k.kurs_id, k.gruppenname AS kursname, k.stil AS stil_name,
+             CONCAT(t.vorname, ' ', t.nachname) AS trainer
+      FROM stundenplan sp
+      INNER JOIN kurse k ON sp.kurs_id = k.kurs_id
+      LEFT JOIN trainer t ON sp.trainer_id = t.trainer_id
+      WHERE k.dojo_id = ? AND (k.probetraining_erlaubt = 1 OR k.probetraining_erlaubt IS NULL)
+        AND k.aktiv = 1
+      ORDER BY FIELD(sp.tag, 'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'),
+               sp.uhrzeit_start
+    `, [dojo_id]);
+    res.json({ success: true, data: kurse });
+  } catch (error) {
+    logger.error('Fehler beim Laden der Probetraining-Slots', { error: error.message });
+    res.status(500).json({ success: false, error: 'Serverfehler' });
+  }
+});
+
+/**
  * POST /api/public/probetraining/buchen
  * Probetraining-Anfrage einreichen
  */
@@ -112,6 +140,7 @@ router.post('/buchen', async (req, res) => {
       nachname,
       email,
       telefon,
+      interessiert_an,
       stil_id,
       kurs_id,
       wunsch_wochentag,
@@ -206,7 +235,7 @@ router.post('/buchen', async (req, res) => {
       nachname.trim(),
       email.toLowerCase().trim(),
       telefon || null,
-      stil_id ? `Stil-ID: ${stil_id}` : null,
+      interessiert_an || (stil_id ? `Stil-ID: ${stil_id}` : null),
       kurs_id || null,
       wunsch_wochentag || (kursDetails ? kursDetails.wochentag : null),
       wunsch_uhrzeit || (kursDetails ? kursDetails.start_zeit : null),
