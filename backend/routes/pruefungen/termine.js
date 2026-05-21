@@ -228,7 +228,7 @@ router.put('/:id', (req, res) => {
   if (!termin_id || isNaN(termin_id)) return res.status(400).json({ error: 'Ungültige Termin-ID' });
 
   const secureDojoId = getSecureDojoId(req);
-  const { datum, zeit, ort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib, gebuehr_auto_verrechnen } = req.body;
+  const { datum, zeit, ort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib, gebuehr_auto_verrechnen, verlegungsgrund } = req.body;
   if (!datum || !stil_id) return res.status(400).json({ error: 'Fehlende erforderliche Felder', required: ['datum', 'stil_id'] });
 
   // Ownership-Check + altes Datum für Datumsänderungs-Erkennung
@@ -327,6 +327,7 @@ router.put('/:id', (req, res) => {
 
             const [d, m2, y] = neuesDatum.split('-').reverse().join('-').split('-');
             const datumFormatiert = `${neuesDatum.split('-')[2]}.${neuesDatum.split('-')[1]}.${neuesDatum.split('-')[0]}`;
+            const grundText = verlegungsgrund ? ` Grund: ${verlegungsgrund}` : '';
 
             for (const kandidat of betroffene) {
               // In-App-Notification anlegen
@@ -335,8 +336,8 @@ router.put('/:id', (req, res) => {
                  VALUES ('push', ?, 'Prüfungstermin geändert', ?, 'unread', 1, ?, NOW())`,
                 [
                   kandidat.email,
-                  `Hallo ${kandidat.vorname}, dein Prüfungstermin wurde auf den ${datumFormatiert} verlegt. Kannst du kommen?`,
-                  JSON.stringify({ type: 'pruefung_termin_geaendert', pruefung_id: kandidat.pruefung_id, pruefungsdatum: neuesDatum })
+                  `Hallo ${kandidat.vorname}, dein Prüfungstermin wurde auf den ${datumFormatiert} verlegt.${grundText} Kannst du kommen?`,
+                  JSON.stringify({ type: 'pruefung_termin_geaendert', pruefung_id: kandidat.pruefung_id, pruefungsdatum: neuesDatum, grund: verlegungsgrund || null })
                 ]
               );
 
@@ -347,7 +348,9 @@ router.put('/:id', (req, res) => {
               );
               const payload = JSON.stringify({
                 title: '📅 Prüfungstermin geändert',
-                body: `Neuer Termin: ${datumFormatiert}. Kannst du kommen?`,
+                body: verlegungsgrund
+                  ? `Neuer Termin: ${datumFormatiert} — ${verlegungsgrund}. Kannst du kommen?`
+                  : `Neuer Termin: ${datumFormatiert}. Kannst du kommen?`,
                 icon: '/icons/icon-192x192.png',
                 badge: '/icons/badge-72x72.png',
                 data: { url: '/member/dashboard' }

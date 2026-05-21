@@ -1788,6 +1788,7 @@ const PruefungsVerwaltung = () => {
       id: termin.vorlageData?.termin_id,
       datum: formatDateForInput(termin.datum),
       pruefungsdatum: formatDateForInput(termin.datum),
+      originalDatum: formatDateForInput(termin.datum),
       pruefungszeit: termin.zeit || '10:00',
       pruefungsort: termin.ort || '',
       pruefer_name: termin.vorlageData?.pruefer_name || '',
@@ -1798,7 +1799,8 @@ const PruefungsVerwaltung = () => {
       teilnahmebedingungen: termin.vorlageData?.teilnahmebedingungen || '',
       oeffentlich: termin.vorlageData?.oeffentlich ? true : false,
       oeffentlich_vib: termin.vorlageData?.oeffentlich_vib ? true : false,
-      gebuehr_auto_verrechnen: termin.vorlageData?.gebuehr_auto_verrechnen ? true : false
+      gebuehr_auto_verrechnen: termin.vorlageData?.gebuehr_auto_verrechnen ? true : false,
+      verlegungsgrund: ''
     });
     setShowEditTerminModal(true);
   };
@@ -1892,7 +1894,8 @@ const PruefungsVerwaltung = () => {
           teilnahmebedingungen: editTermin.teilnahmebedingungen || null,
           oeffentlich: editTermin.oeffentlich ? 1 : 0,
           oeffentlich_vib: editTermin.oeffentlich_vib ? 1 : 0,
-          gebuehr_auto_verrechnen: editTermin.gebuehr_auto_verrechnen ? 1 : 0
+          gebuehr_auto_verrechnen: editTermin.gebuehr_auto_verrechnen ? 1 : 0,
+          verlegungsgrund: editTermin.verlegungsgrund || null
         })
       });
 
@@ -6150,6 +6153,24 @@ const PruefungsVerwaltung = () => {
                   required
                 />
               </div>
+
+              {/* Verlegungsgrund — nur sichtbar wenn Datum geändert */}
+              {editTermin.pruefungsdatum && editTermin.originalDatum && editTermin.pruefungsdatum !== editTermin.originalDatum && (
+                <div className="pv2-grid-span-full">
+                  <label className="pv-field-label" style={{ color: '#fbbf24' }}>
+                    ⚠️ Grund für die Termin-Verlegung
+                    <span style={{ fontWeight: 400, color: 'var(--text-secondary)', marginLeft: '6px' }}>(wird per Push an alle Teilnehmer gesendet)</span>
+                  </label>
+                  <textarea
+                    value={editTermin.verlegungsgrund}
+                    onChange={(e) => setEditTermin({ ...editTermin, verlegungsgrund: e.target.value })}
+                    className="pv3-dark-input-sm"
+                    rows={2}
+                    style={{ resize: 'vertical', borderColor: 'rgba(251,191,36,.4)' }}
+                    placeholder="z.B. Erkrankung des Prüfers, Hallenbelegung, …"
+                  />
+                </div>
+              )}
 
               {/* Uhrzeit */}
               <div>
