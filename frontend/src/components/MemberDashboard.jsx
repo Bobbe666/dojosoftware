@@ -415,6 +415,8 @@ const MemberDashboard = () => {
 
   // Prüfungseinladungs-Popup (Lesebestätigung)
   const [pruefungsEinladungPopup, setPruefungsEinladungPopup] = useState(null);
+  const [pruefungZusageState, setPruefungZusageState] = useState({}); // { [pruefung_id]: 'ja'|'nein'|'sending' }
+  const [alternativeTermineAuswahl, setAlternativeTermineAuswahl] = useState({}); // { [pruefung_id]: Set<string> }
 
   // Apple Wallet Pass herunterladen
   const downloadApplePass = useCallback(async () => {
@@ -817,6 +819,50 @@ const MemberDashboard = () => {
       console.error('Fehler beim Speichern der Lesebestätigung', err);
     }
     setPruefungsEinladungPopup(null);
+  };
+
+  const handleTerminZusage = async (pruefung, antwort, alternativeDaten = []) => {
+    const pid = pruefung.pruefung_id;
+    setPruefungZusageState(prev => ({ ...prev, [pid]: 'sending' }));
+    try {
+      await fetchWithAuth(`${config.apiBaseUrl}/pruefungen/kandidaten/antwort`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pruefung_id: pid,
+          antwort,
+          alternative_termine: alternativeDaten
+        })
+      });
+      // Lesebestätigung setzen wenn noch nicht gesehen
+      if (!pruefung.benachrichtigung_gelesen) {
+        await fetchWithAuth(`${config.apiBaseUrl}/pruefungen/kandidaten/${pid}/gelesen`, { method: 'POST' });
+      }
+      setApprovedExams(prev => prev.map(e =>
+        e.pruefung_id === pid
+          ? { ...e, mitglied_antwort: antwort, benachrichtigung_gelesen: 1 }
+          : e
+      ));
+      setPruefungZusageState(prev => ({ ...prev, [pid]: antwort === 'kommt' ? 'ja' : 'nein' }));
+      setPruefungsEinladungPopup(null);
+    } catch (err) {
+      console.error('Fehler beim Speichern der Termin-Zusage', err);
+      setPruefungZusageState(prev => ({ ...prev, [pid]: null }));
+    }
+  };
+
+  const getAlternativeTerminOptions = (pruefungsdatum) => {
+    if (!pruefungsdatum) return [];
+    const base = new Date(pruefungsdatum);
+    base.setHours(12, 0, 0, 0);
+    const options = [];
+    for (let i = -7; i <= 7; i++) {
+      if (i === 0) continue;
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      options.push(d.toISOString().split('T')[0]);
+    }
+    return options;
   };
 
   // Lade abgeschlossene Prüfungen (Ergebnisse)
@@ -1496,49 +1542,131 @@ const MemberDashboard = () => {
       )}
 
       {/* Prüfungseinladungs-Popup (Lesebestätigung) */}
-      {pruefungsEinladungPopup && (
-        <div className="pnp-overlay" onClick={() => setPruefungsEinladungPopup(null)}>
-          <div className="pnp-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
-            <div className="pnp-header">
-              <div className="pnp-header-left">
-                <span style={{ fontSize: '20px' }}>🥋</span>
-                <span className="pnp-header-title">Gürtelprüfung – Einladung</span>
+      {pruefungsEinladungPopup && (() => {
+        const pid = pruefungsEinladungPopup.pruefung_id;
+        const zusageState = pruefungZusageState[pid];
+        const showNeinOptions = zusageState === 'nein';
+        const auswahlSet = alternativeTermineAuswahl[pid] || new Set();
+        const optionen = getAlternativeTerminOptions(pruefungsEinladungPopup.pruefungsdatum);
+
+        return (
+          <div className="pnp-overlay" onClick={() => setPruefungsEinladungPopup(null)}>
+            <div className="pnp-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+              <div className="pnp-header">
+                <div className="pnp-header-left">
+                  <span style={{ fontSize: '20px' }}>🥋</span>
+                  <span className="pnp-header-title">Gürtelprüfung – Einladung</span>
+                </div>
+                <button className="pnp-close-btn" onClick={() => setPruefungsEinladungPopup(null)} title="Schließen">✕</button>
               </div>
-              <button className="pnp-close-btn" onClick={() => setPruefungsEinladungPopup(null)} title="Schließen">✕</button>
-            </div>
-            <div className="pnp-body">
-              <p style={{ marginBottom: '0.75rem', lineHeight: '1.5' }}>
-                Du wurdest zur <strong>{pruefungsEinladungPopup.stil_name}</strong>-Prüfung eingeladen!
-              </p>
-              {pruefungsEinladungPopup.graduierung_nachher && (
-                <p style={{ marginBottom: '0.5rem' }}>
-                  🎯 Prüfung zum: <strong>{pruefungsEinladungPopup.graduierung_nachher}</strong>
+              <div className="pnp-body">
+                <p style={{ marginBottom: '0.75rem', lineHeight: '1.5' }}>
+                  Du wurdest zur <strong>{pruefungsEinladungPopup.stil_name}</strong>-Prüfung eingeladen!
                 </p>
-              )}
-              {pruefungsEinladungPopup.pruefungsdatum && (
-                <p style={{ marginBottom: '0.5rem' }}>
-                  📅 Termin: <strong>{new Date(pruefungsEinladungPopup.pruefungsdatum).toLocaleDateString('de-DE', {
-                    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
-                  })}</strong>
-                  {pruefungsEinladungPopup.pruefungszeit && ` um ${pruefungsEinladungPopup.pruefungszeit} Uhr`}
-                </p>
-              )}
-              {pruefungsEinladungPopup.pruefungsort && (
-                <p style={{ marginBottom: '0.75rem' }}>
-                  📍 Ort: <strong>{pruefungsEinladungPopup.pruefungsort}</strong>
-                </p>
-              )}
-              <button
-                className="pnp-confirm-btn"
-                style={{ marginTop: '0.5rem', width: '100%' }}
-                onClick={() => handlePruefungsEinladungGelesen(pruefungsEinladungPopup)}
-              >
-                ✓ Zur Kenntnis genommen
-              </button>
+                {pruefungsEinladungPopup.graduierung_nachher && (
+                  <p style={{ marginBottom: '0.5rem' }}>
+                    🎯 Prüfung zum: <strong>{pruefungsEinladungPopup.graduierung_nachher}</strong>
+                  </p>
+                )}
+                {pruefungsEinladungPopup.pruefungsdatum && (
+                  <p style={{ marginBottom: '0.5rem' }}>
+                    📅 Termin: <strong>{new Date(pruefungsEinladungPopup.pruefungsdatum).toLocaleDateString('de-DE', {
+                      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+                    })}</strong>
+                    {pruefungsEinladungPopup.pruefungszeit && ` um ${pruefungsEinladungPopup.pruefungszeit} Uhr`}
+                  </p>
+                )}
+                {pruefungsEinladungPopup.pruefungsort && (
+                  <p style={{ marginBottom: '0.75rem' }}>
+                    📍 Ort: <strong>{pruefungsEinladungPopup.pruefungsort}</strong>
+                  </p>
+                )}
+
+                {!showNeinOptions ? (
+                  <>
+                    <p style={{ marginBottom: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Kannst du an diesem Termin teilnehmen?
+                    </p>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
+                      <button
+                        className="pnp-confirm-btn"
+                        style={{ flex: 1, background: 'linear-gradient(135deg, #16a34a, #15803d)', opacity: zusageState === 'sending' ? 0.6 : 1 }}
+                        disabled={zusageState === 'sending'}
+                        onClick={() => handleTerminZusage(pruefungsEinladungPopup, 'kommt')}
+                      >
+                        ✅ Ja, ich kann kommen
+                      </button>
+                      <button
+                        style={{
+                          flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(239,68,68,.4)',
+                          background: 'rgba(239,68,68,.12)', color: '#f87171', fontWeight: 600, cursor: 'pointer',
+                          fontSize: '14px', opacity: zusageState === 'sending' ? 0.6 : 1
+                        }}
+                        disabled={zusageState === 'sending'}
+                        onClick={() => setPruefungZusageState(prev => ({ ...prev, [pid]: 'nein' }))}
+                      >
+                        ❌ Nein, ich kann nicht
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Schade! An welchen Terminen könntest du?
+                    </p>
+                    <p style={{ marginBottom: '0.75rem', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Wähle mögliche Alternativtermine aus (±7 Tage):
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '1rem', maxHeight: '180px', overflowY: 'auto' }}>
+                      {optionen.map(d => {
+                        const selected = auswahlSet.has(d);
+                        return (
+                          <button
+                            key={d}
+                            onClick={() => {
+                              setAlternativeTermineAuswahl(prev => {
+                                const s = new Set(prev[pid] || []);
+                                selected ? s.delete(d) : s.add(d);
+                                return { ...prev, [pid]: s };
+                              });
+                            }}
+                            style={{
+                              padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
+                              border: `1px solid ${selected ? 'rgba(99,102,241,.6)' : 'rgba(255,255,255,.15)'}`,
+                              background: selected ? 'rgba(99,102,241,.25)' : 'rgba(255,255,255,.06)',
+                              color: selected ? '#a5b4fc' : 'var(--text-secondary)',
+                              fontWeight: selected ? 600 : 400,
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            {new Date(d + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,.15)', background: 'rgba(255,255,255,.06)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '13px' }}
+                        onClick={() => setPruefungZusageState(prev => ({ ...prev, [pid]: null }))}
+                      >
+                        ← Zurück
+                      </button>
+                      <button
+                        className="pnp-confirm-btn"
+                        style={{ flex: 1, opacity: zusageState === 'sending' ? 0.6 : 1 }}
+                        disabled={zusageState === 'sending'}
+                        onClick={() => handleTerminZusage(pruefungsEinladungPopup, 'kommt_nicht', [...auswahlSet])}
+                      >
+                        {zusageState === 'sending' ? '⏳ Speichere…' : '✓ Bestätigen'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Zahlungshinweis-Banner */}
       {hatMahnung && zahlungsNachrichten.length > 0 && (
@@ -2642,6 +2770,56 @@ const MemberDashboard = () => {
                           In {getDaysUntilExam(exam.pruefungsdatum)} Tagen
                         </div>
                       )}
+
+                      {/* Termin-Zusage */}
+                      {exam.pruefungsdatum && (() => {
+                        const pid = exam.pruefung_id;
+                        const antwort = exam.mitglied_antwort;
+                        const zusageState = pruefungZusageState[pid];
+                        const showNeinOptions = zusageState === 'nein';
+                        const auswahlSet = alternativeTermineAuswahl[pid] || new Set();
+
+                        if (antwort === 'kommt') {
+                          return <div style={{ marginBottom: '8px', fontSize: '13px', color: '#4ade80', fontWeight: 600 }}>✅ Du hast zugesagt</div>;
+                        }
+                        if (antwort === 'kommt_nicht') {
+                          return <div style={{ marginBottom: '8px', fontSize: '13px', color: '#f87171', fontWeight: 600 }}>❌ Du hast abgesagt — Terminvorschläge wurden weitergeleitet</div>;
+                        }
+                        if (showNeinOptions) {
+                          const optionen = getAlternativeTerminOptions(exam.pruefungsdatum);
+                          return (
+                            <div style={{ marginBottom: '8px' }}>
+                              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Mögliche Alternativtermine (±7 Tage):</p>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '8px' }}>
+                                {optionen.map(d => {
+                                  const sel = auswahlSet.has(d);
+                                  return (
+                                    <button key={d}
+                                      onClick={() => setAlternativeTermineAuswahl(prev => { const s = new Set(prev[pid]||[]); sel ? s.delete(d) : s.add(d); return {...prev,[pid]:s}; })}
+                                      style={{ padding: '3px 8px', borderRadius: '5px', fontSize: '11px', cursor: 'pointer', border: `1px solid ${sel?'rgba(99,102,241,.6)':'rgba(255,255,255,.15)'}`, background: sel?'rgba(99,102,241,.25)':'rgba(255,255,255,.06)', color: sel?'#a5b4fc':'var(--text-secondary)', fontWeight: sel?600:400 }}
+                                    >
+                                      {new Date(d+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                <button style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,.15)', background: 'rgba(255,255,255,.06)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px' }} onClick={() => setPruefungZusageState(prev => ({...prev,[pid]:null}))}>← Zurück</button>
+                                <button className="md-exam-register-btn" style={{ flex: 1, opacity: zusageState==='sending'?0.6:1 }} disabled={zusageState==='sending'} onClick={() => handleTerminZusage(exam, 'kommt_nicht', [...auswahlSet])}>{zusageState==='sending'?'⏳':'✓ Absagen & Senden'}</button>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div style={{ marginBottom: '8px' }}>
+                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Kannst du zum Prüfungstermin kommen?</p>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button style={{ flex: 1, padding: '7px 8px', borderRadius: '6px', border: '1px solid rgba(34,197,94,.4)', background: 'rgba(34,197,94,.12)', color: '#4ade80', fontWeight: 600, cursor: 'pointer', fontSize: '12px' }} disabled={zusageState==='sending'} onClick={() => handleTerminZusage(exam, 'kommt')}>✅ Ja</button>
+                              <button style={{ flex: 1, padding: '7px 8px', borderRadius: '6px', border: '1px solid rgba(239,68,68,.4)', background: 'rgba(239,68,68,.12)', color: '#f87171', fontWeight: 600, cursor: 'pointer', fontSize: '12px' }} disabled={zusageState==='sending'} onClick={() => setPruefungZusageState(prev => ({...prev,[pid]:'nein'}))}>❌ Nein</button>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* Anmelden Button */}
                       {!exam.teilnahme_bestaetigt ? (

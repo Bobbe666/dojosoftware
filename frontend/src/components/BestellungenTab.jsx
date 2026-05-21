@@ -567,9 +567,46 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
             </div>
           </div>
           {dojoFehler && (
-            <div style={{ background: 'rgba(255,50,50,0.12)', border: '1px solid rgba(255,50,50,0.3)', borderRadius: '6px', padding: '0.6rem 0.9rem', fontSize: '0.82rem', color: '#f87171', marginBottom: '0.75rem' }}>
-              Fehler: {dojoFehler}
-            </div>
+            dojoFehler === 'Bitte ein Dojo auswählen' ? (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '1rem',
+                background: 'rgba(212,175,55,0.06)',
+                border: '1px solid rgba(212,175,55,0.22)',
+                borderRadius: '10px',
+                padding: '1rem 1.25rem',
+                marginBottom: '0.75rem',
+              }}>
+                <div style={{
+                  flexShrink: 0, width: '36px', height: '36px',
+                  background: 'rgba(212,175,55,0.12)',
+                  border: '1px solid rgba(212,175,55,0.25)',
+                  borderRadius: '8px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.1rem',
+                }}>🏯</div>
+                <div>
+                  <div style={{ fontSize: '0.83rem', fontWeight: 700, color: 'rgba(212,175,55,0.9)', letterSpacing: '0.02em', marginBottom: '0.15rem' }}>
+                    Dojo auswählen
+                  </div>
+                  <div style={{ fontSize: '0.77rem', color: 'rgba(255,255,255,0.38)', lineHeight: 1.4 }}>
+                    Wähle ein Dojo aus der Liste oben, um die zugehörigen GI-Bestellungen zu laden.
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.6rem',
+                background: 'rgba(255,50,50,0.08)',
+                border: '1px solid rgba(255,80,80,0.2)',
+                borderRadius: '8px',
+                padding: '0.65rem 1rem',
+                fontSize: '0.8rem', color: 'rgba(248,113,113,0.9)',
+                marginBottom: '0.75rem',
+              }}>
+                <span style={{ flexShrink: 0 }}>⚠</span>
+                {dojoFehler}
+              </div>
+            )
           )}
           {dojoLoading ? (
             <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', padding: '1rem 0' }}>Lädt…</div>

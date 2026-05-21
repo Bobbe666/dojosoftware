@@ -231,15 +231,20 @@ router.put('/:id', (req, res) => {
   const { datum, zeit, ort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib, gebuehr_auto_verrechnen } = req.body;
   if (!datum || !stil_id) return res.status(400).json({ error: 'Fehlende erforderliche Felder', required: ['datum', 'stil_id'] });
 
-  // Ownership-Check: Termin muss zum eigenen Dojo gehören
+  // Ownership-Check + altes Datum für Datumsänderungs-Erkennung
   const ownerCheck = secureDojoId
-    ? 'SELECT termin_id FROM pruefungstermin_vorlagen WHERE termin_id = ? AND dojo_id = ?'
-    : 'SELECT termin_id FROM pruefungstermin_vorlagen WHERE termin_id = ?';
+    ? 'SELECT termin_id, pruefungsdatum, dojo_id FROM pruefungstermin_vorlagen WHERE termin_id = ? AND dojo_id = ?'
+    : 'SELECT termin_id, pruefungsdatum, dojo_id FROM pruefungstermin_vorlagen WHERE termin_id = ?';
   const ownerParams = secureDojoId ? [termin_id, secureDojoId] : [termin_id];
 
   db.query(ownerCheck, ownerParams, (checkErr, checkRows) => {
     if (checkErr) return res.status(500).json({ error: 'Fehler beim Prüfen des Termins' });
     if (checkRows.length === 0) return res.status(404).json({ error: 'Termin nicht gefunden oder kein Zugriff' });
+
+    const altesDatum = checkRows[0].pruefungsdatum ? checkRows[0].pruefungsdatum.toISOString().split('T')[0] : null;
+    const neuesDatum = datum;
+    const datumGeaendert = altesDatum && altesDatum !== neuesDatum;
+    const terminDojoId = checkRows[0].dojo_id;
 
     const updateQuery = `
       UPDATE pruefungstermin_vorlagen SET pruefungsdatum = ?, pruefungszeit = ?, pruefungsort = ?, pruefer_name = ?,
@@ -284,8 +289,162 @@ router.put('/:id', (req, res) => {
           logger.error('[Events Sync] Fehler beim Aktualisieren des Events für Prüfungstermin:', e.message);
         }
       })();
+
+      // Bei Datumsänderung: Kandidaten-Antworten zurücksetzen + Push-Benachrichtigungen senden
+      if (datumGeaendert) {
+        (async () => {
+          try {
+            const pool = db.promise();
+
+            // Alle betroffenen Kandidaten laden
+            const [betroffene] = await pool.query(
+              `SELECT p.pruefung_id, p.mitglied_id, m.email, m.vorname
+               FROM pruefungen p
+               JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
+               WHERE DATE(p.pruefungsdatum) = ? AND p.stil_id = ? AND p.dojo_id = ? AND p.status = 'geplant'`,
+              [altesDatum, stil_id, terminDojoId]
+            );
+
+            if (betroffene.length === 0) return;
+
+            // pruefungsdatum + Antworten zurücksetzen
+            await pool.query(
+              `UPDATE pruefungen
+               SET pruefungsdatum = ?, mitglied_antwort = NULL, mitglied_antwort_am = NULL,
+                   alternative_termine = NULL, benachrichtigung_gelesen = 0, benachrichtigung_gelesen_am = NULL
+               WHERE DATE(pruefungsdatum) = ? AND stil_id = ? AND dojo_id = ? AND status = 'geplant'`,
+              [neuesDatum, altesDatum, stil_id, terminDojoId]
+            );
+
+            // Push-Benachrichtigungen an alle betroffenen Mitglieder
+            if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+              webpush.setVapidDetails(
+                process.env.VAPID_EMAIL || 'mailto:admin@dojo.tda-intl.org',
+                process.env.VAPID_PUBLIC_KEY,
+                process.env.VAPID_PRIVATE_KEY
+              );
+            }
+
+            const [d, m2, y] = neuesDatum.split('-').reverse().join('-').split('-');
+            const datumFormatiert = `${neuesDatum.split('-')[2]}.${neuesDatum.split('-')[1]}.${neuesDatum.split('-')[0]}`;
+
+            for (const kandidat of betroffene) {
+              // In-App-Notification anlegen
+              await pool.query(
+                `INSERT INTO notifications (type, recipient, subject, message, status, requires_confirmation, metadata, created_at)
+                 VALUES ('push', ?, 'Prüfungstermin geändert', ?, 'unread', 1, ?, NOW())`,
+                [
+                  kandidat.email,
+                  `Hallo ${kandidat.vorname}, dein Prüfungstermin wurde auf den ${datumFormatiert} verlegt. Kannst du kommen?`,
+                  JSON.stringify({ type: 'pruefung_termin_geaendert', pruefung_id: kandidat.pruefung_id, pruefungsdatum: neuesDatum })
+                ]
+              );
+
+              // Push senden
+              const [subs] = await pool.query(
+                'SELECT endpoint, p256dh_key, auth_key FROM push_subscriptions WHERE user_id = ? AND is_active = TRUE',
+                [kandidat.mitglied_id]
+              );
+              const payload = JSON.stringify({
+                title: '📅 Prüfungstermin geändert',
+                body: `Neuer Termin: ${datumFormatiert}. Kannst du kommen?`,
+                icon: '/icons/icon-192x192.png',
+                badge: '/icons/badge-72x72.png',
+                data: { url: '/member/dashboard' }
+              });
+              for (const sub of subs) {
+                try {
+                  await webpush.sendNotification(
+                    { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh_key, auth: sub.auth_key } },
+                    payload
+                  );
+                } catch (e) {
+                  if (e.statusCode === 410 || e.statusCode === 404) {
+                    await pool.query('UPDATE push_subscriptions SET is_active = FALSE WHERE endpoint = ?', [sub.endpoint]);
+                  }
+                }
+              }
+            }
+
+            logger.info(`[Termin-Verlegung] ${betroffene.length} Kandidaten über neuen Termin ${neuesDatum} informiert (Termin #${termin_id})`);
+          } catch (e) {
+            logger.error('[Termin-Verlegung] Fehler beim Benachrichtigen der Kandidaten:', e.message);
+          }
+        })();
+      }
     });
   });
+});
+
+// GET /termine/:id/umfrage - Termin-Zusage-Umfrage für Admin
+router.get('/:id/umfrage', async (req, res) => {
+  const termin_id = parseInt(req.params.id);
+  if (!termin_id || isNaN(termin_id)) return res.status(400).json({ error: 'Ungültige Termin-ID' });
+
+  const secureDojoId = getSecureDojoId(req);
+  try {
+    const pool = db.promise();
+
+    const ownerCheck = secureDojoId
+      ? 'SELECT termin_id, pruefungsdatum, stil_id, dojo_id FROM pruefungstermin_vorlagen WHERE termin_id = ? AND dojo_id = ?'
+      : 'SELECT termin_id, pruefungsdatum, stil_id, dojo_id FROM pruefungstermin_vorlagen WHERE termin_id = ?';
+    const [terminRows] = await pool.query(ownerCheck, secureDojoId ? [termin_id, secureDojoId] : [termin_id]);
+    if (!terminRows.length) return res.status(404).json({ error: 'Termin nicht gefunden' });
+
+    const { pruefungsdatum, stil_id, dojo_id } = terminRows[0];
+    const datum = pruefungsdatum ? pruefungsdatum.toISOString().split('T')[0] : null;
+    if (!datum) return res.json({ success: true, umfrage: null });
+
+    const [kandidaten] = await pool.query(
+      `SELECT p.pruefung_id, p.mitglied_id, m.vorname, m.nachname,
+              p.mitglied_antwort, p.mitglied_antwort_am, p.alternative_termine
+       FROM pruefungen p
+       JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
+       WHERE DATE(p.pruefungsdatum) = ? AND p.stil_id = ? AND p.dojo_id = ? AND p.status = 'geplant'`,
+      [datum, stil_id, dojo_id]
+    );
+
+    const gesamt = kandidaten.length;
+    const kannKommen = kandidaten.filter(k => k.mitglied_antwort === 'kommt').length;
+    const kannNicht = kandidaten.filter(k => k.mitglied_antwort === 'kommt_nicht').length;
+    const keineAntwort = gesamt - kannKommen - kannNicht;
+
+    // Meistgenannte alternative Termine aggregieren
+    const datumCounter = {};
+    kandidaten.forEach(k => {
+      if (k.mitglied_antwort === 'kommt_nicht' && k.alternative_termine) {
+        const daten = typeof k.alternative_termine === 'string' ? JSON.parse(k.alternative_termine) : k.alternative_termine;
+        (daten || []).forEach(d => {
+          datumCounter[d] = (datumCounter[d] || 0) + 1;
+        });
+      }
+    });
+    const alternativeDaten = Object.entries(datumCounter)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([datum, anzahl]) => ({ datum, anzahl }));
+
+    res.json({
+      success: true,
+      umfrage: {
+        gesamt,
+        kannKommen,
+        kannNicht,
+        keineAntwort,
+        alternativeDaten,
+        kandidaten: kandidaten.map(k => ({
+          pruefung_id: k.pruefung_id,
+          name: `${k.vorname} ${k.nachname}`,
+          antwort: k.mitglied_antwort,
+          antwort_am: k.mitglied_antwort_am,
+          alternative_termine: k.alternative_termine ? (typeof k.alternative_termine === 'string' ? JSON.parse(k.alternative_termine) : k.alternative_termine) : null
+        }))
+      }
+    });
+  } catch (e) {
+    logger.error('[Umfrage] Fehler:', e.message);
+    res.status(500).json({ error: 'Fehler beim Laden der Umfrage' });
+  }
 });
 
 // DELETE /termine/:id - Löscht einen Prüfungstermin

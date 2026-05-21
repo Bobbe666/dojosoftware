@@ -190,6 +190,8 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   };
 
   const [form, setForm] = useState(buildInitialForm);
+  const [fillKids, setFillKids]   = useState('');
+  const [fillAdult, setFillAdult] = useState('');
 
   // Bestell-Specs vom Artikel laden (wenn Artikel-Prop ohne Vorlage übergeben)
   useEffect(() => {
@@ -452,6 +454,11 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
   }));
 
   const setMenge   = (row, size, val) => setForm(p => ({ ...p, [row]: { ...p[row], [size]: val } }));
+  const fillAllSizes  = (row, sizes, val) => {
+    const n = parseInt(val);
+    setForm(p => ({ ...p, [row]: Object.fromEntries(sizes.map(s => [s, n > 0 ? String(n) : ''])) }));
+  };
+  const clearAllSizes = (row, sizes) => setForm(p => ({ ...p, [row]: Object.fromEntries(sizes.map(s => [s, ''])) }));
   const setMassTabelle = (groesse, key, val) =>
     setForm(p => ({
       ...p,
@@ -986,74 +993,120 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           </div>
           {/* Kinder-Tabelle */}
           {form.katKids && (
-            <div className="gv-qty-wrap">
-              <table className="gv-qty-table">
-                <thead>
-                  <tr>
-                    <th className="gv-qt-rh">Kinder / Kids</th>
-                    {SIZES_KIDS.map(s => <th key={s}>{s}</th>)}
-                    <th className="gv-qt-sum">Σ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="gv-qt-rl-empty"></td>
-                    {SIZES_KIDS.map(s => (
-                      <td key={s}><input type="number" min="0" value={form.mengenKids[s] || ''} onChange={e => setMenge('mengenKids', s, e.target.value)} /></td>
-                    ))}
-                    <td className="gv-qt-sum-cell">{totalFor('mengenKids')}</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td className="gv-qt-price-lbl">Stückpreis</td>
-                    <td colSpan={SIZES_KIDS.length} className="gv-qt-price-inp">
-                      <input type="number" min="0" step="0.01" value={form.preisKids} onChange={f('preisKids')} placeholder="0.00" />
-                      <span className="gv-qt-price-sym">{form.waehrung === 'USD' ? '$' : '€'}</span>
-                      {form.preisKids > 0 && totalFor('mengenKids') > 0 && (
-                        <span className="gv-qt-price-sum">= {(totalFor('mengenKids') * parseFloat(form.preisKids)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}</span>
-                      )}
-                    </td>
-                    <td className="gv-qt-sum-cell"></td>
-                  </tr>
-                </tfoot>
-              </table>
+            <div className="gv-qty-group">
+              <div className="gv-qty-group-header">
+                <span className="gv-qty-group-label">Kinder / Kids</span>
+                <div className="gv-fill-bar">
+                  <span className="gv-fill-label">Alle auf:</span>
+                  <input
+                    type="number" min="0" className="gv-fill-input"
+                    value={fillKids} onChange={e => setFillKids(e.target.value)}
+                    placeholder="Stück"
+                    onKeyDown={e => e.key === 'Enter' && fillAllSizes('mengenKids', SIZES_KIDS, fillKids)}
+                  />
+                  <button className="gv-fill-btn" onClick={() => fillAllSizes('mengenKids', SIZES_KIDS, fillKids)} disabled={!fillKids}>
+                    Übernehmen
+                  </button>
+                  <button className="gv-fill-clear" onClick={() => { clearAllSizes('mengenKids', SIZES_KIDS); setFillKids(''); }}>
+                    Leeren
+                  </button>
+                </div>
+                <span className="gv-qty-group-sum">{totalFor('mengenKids')} Stück</span>
+              </div>
+              <div className="gv-qty-wrap">
+                <table className="gv-qty-table">
+                  <thead>
+                    <tr>
+                      <th className="gv-qt-rh">Größe</th>
+                      {SIZES_KIDS.map(s => <th key={s}>{s}</th>)}
+                      <th className="gv-qt-sum">Σ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="gv-qt-rl-empty"></td>
+                      {SIZES_KIDS.map(s => (
+                        <td key={s}><input type="number" min="0" value={form.mengenKids[s] || ''} onChange={e => setMenge('mengenKids', s, e.target.value)} /></td>
+                      ))}
+                      <td className="gv-qt-sum-cell">{totalFor('mengenKids')}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td className="gv-qt-price-lbl">Stückpreis</td>
+                      <td colSpan={SIZES_KIDS.length} className="gv-qt-price-inp">
+                        <div className="gv-qt-price-inner">
+                          <input type="number" min="0" step="0.01" value={form.preisKids} onChange={f('preisKids')} placeholder="0.00" />
+                          <span className="gv-qt-price-sym">{form.waehrung === 'USD' ? '$' : '€'}</span>
+                          {form.preisKids > 0 && totalFor('mengenKids') > 0 && (
+                            <span className="gv-qt-price-sum">= {(totalFor('mengenKids') * parseFloat(form.preisKids)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="gv-qt-sum-cell"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
           )}
           {/* Erwachsene-Tabelle */}
           {form.katAdult && (
-            <div className="gv-qty-wrap" style={{ marginTop: '0.6rem' }}>
-              <table className="gv-qty-table">
-                <thead>
-                  <tr>
-                    <th className="gv-qt-rh">Erwachsene</th>
-                    {SIZES_ADULT.map(s => <th key={s}>{s}</th>)}
-                    <th className="gv-qt-sum">Σ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="gv-qt-rl-empty"></td>
-                    {SIZES_ADULT.map(s => (
-                      <td key={s}><input type="number" min="0" value={form.mengenAdult[s] || ''} onChange={e => setMenge('mengenAdult', s, e.target.value)} /></td>
-                    ))}
-                    <td className="gv-qt-sum-cell">{totalFor('mengenAdult')}</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td className="gv-qt-price-lbl">Stückpreis</td>
-                    <td colSpan={SIZES_ADULT.length} className="gv-qt-price-inp">
-                      <input type="number" min="0" step="0.01" value={form.preisAdult} onChange={f('preisAdult')} placeholder="0.00" />
-                      <span className="gv-qt-price-sym">{form.waehrung === 'USD' ? '$' : '€'}</span>
-                      {form.preisAdult > 0 && totalFor('mengenAdult') > 0 && (
-                        <span className="gv-qt-price-sum">= {(totalFor('mengenAdult') * parseFloat(form.preisAdult)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}</span>
-                      )}
-                    </td>
-                    <td className="gv-qt-sum-cell"></td>
-                  </tr>
-                </tfoot>
-              </table>
+            <div className="gv-qty-group">
+              <div className="gv-qty-group-header">
+                <span className="gv-qty-group-label">Erwachsene</span>
+                <div className="gv-fill-bar">
+                  <span className="gv-fill-label">Alle auf:</span>
+                  <input
+                    type="number" min="0" className="gv-fill-input"
+                    value={fillAdult} onChange={e => setFillAdult(e.target.value)}
+                    placeholder="Stück"
+                    onKeyDown={e => e.key === 'Enter' && fillAllSizes('mengenAdult', SIZES_ADULT, fillAdult)}
+                  />
+                  <button className="gv-fill-btn" onClick={() => fillAllSizes('mengenAdult', SIZES_ADULT, fillAdult)} disabled={!fillAdult}>
+                    Übernehmen
+                  </button>
+                  <button className="gv-fill-clear" onClick={() => { clearAllSizes('mengenAdult', SIZES_ADULT); setFillAdult(''); }}>
+                    Leeren
+                  </button>
+                </div>
+                <span className="gv-qty-group-sum">{totalFor('mengenAdult')} Stück</span>
+              </div>
+              <div className="gv-qty-wrap">
+                <table className="gv-qty-table">
+                  <thead>
+                    <tr>
+                      <th className="gv-qt-rh">Größe</th>
+                      {SIZES_ADULT.map(s => <th key={s}>{s}</th>)}
+                      <th className="gv-qt-sum">Σ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="gv-qt-rl-empty"></td>
+                      {SIZES_ADULT.map(s => (
+                        <td key={s}><input type="number" min="0" value={form.mengenAdult[s] || ''} onChange={e => setMenge('mengenAdult', s, e.target.value)} /></td>
+                      ))}
+                      <td className="gv-qt-sum-cell">{totalFor('mengenAdult')}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td className="gv-qt-price-lbl">Stückpreis</td>
+                      <td colSpan={SIZES_ADULT.length} className="gv-qt-price-inp">
+                        <div className="gv-qt-price-inner">
+                          <input type="number" min="0" step="0.01" value={form.preisAdult} onChange={f('preisAdult')} placeholder="0.00" />
+                          <span className="gv-qt-price-sym">{form.waehrung === 'USD' ? '$' : '€'}</span>
+                          {form.preisAdult > 0 && totalFor('mengenAdult') > 0 && (
+                            <span className="gv-qt-price-sum">= {(totalFor('mengenAdult') * parseFloat(form.preisAdult)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.waehrung === 'USD' ? '$' : '€'}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="gv-qt-sum-cell"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
           )}
           {/* Gesamtpreis */}

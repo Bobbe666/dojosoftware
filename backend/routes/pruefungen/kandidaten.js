@@ -436,13 +436,18 @@ router.post('/:pruefung_id/teilnahme-bestaetigen', (req, res) => {
 
 // POST /kandidaten/antwort - Mitglied antwortet auf Prüfungszulassung
 router.post('/antwort', (req, res) => {
-  const { pruefung_id, antwort, notification_id } = req.body;
+  const { pruefung_id, antwort, notification_id, alternative_termine } = req.body;
   if (!pruefung_id || !['kommt', 'kommt_nicht'].includes(antwort)) {
     return res.status(400).json({ error: 'pruefung_id und antwort (kommt/kommt_nicht) erforderlich.' });
   }
+
+  const alternativeJson = (antwort === 'kommt_nicht' && Array.isArray(alternative_termine) && alternative_termine.length > 0)
+    ? JSON.stringify(alternative_termine)
+    : null;
+
   db.query(
-    'UPDATE pruefungen SET mitglied_antwort = ?, mitglied_antwort_am = NOW() WHERE pruefung_id = ?',
-    [antwort, pruefung_id],
+    'UPDATE pruefungen SET mitglied_antwort = ?, mitglied_antwort_am = NOW(), alternative_termine = ? WHERE pruefung_id = ?',
+    [antwort, alternativeJson, pruefung_id],
     (err) => {
       if (err) return res.status(500).json({ error: 'Fehler beim Speichern der Antwort.' });
 
@@ -521,8 +526,8 @@ router.put('/:pruefung_id/gebuehr-auto', async (req, res) => {
   try {
     const pool = db.promise();
     const ownerCheck = secureDojoId
-      ? 'SELECT pruefung_id, mitglied_id, pruefungsgebuehr, dojo_id, status FROM pruefungen WHERE pruefung_id = ? AND dojo_id = ?'
-      : 'SELECT pruefung_id, mitglied_id, pruefungsgebuehr, dojo_id, status FROM pruefungen WHERE pruefung_id = ?';
+      ? 'SELECT pruefung_id, mitglied_id, pruefungsgebuehr, dojo_id, status, zahlungsart, gebuehr_rechnung_id FROM pruefungen WHERE pruefung_id = ? AND dojo_id = ?'
+      : 'SELECT pruefung_id, mitglied_id, pruefungsgebuehr, dojo_id, status, zahlungsart, gebuehr_rechnung_id FROM pruefungen WHERE pruefung_id = ?';
     const ownerParams = secureDojoId ? [pruefung_id, secureDojoId] : [pruefung_id];
     const [[pruefung]] = await pool.query(ownerCheck, ownerParams);
 
@@ -532,13 +537,13 @@ router.put('/:pruefung_id/gebuehr-auto', async (req, res) => {
 
     // Wenn jetzt aktiviert + noch keine Rechnung + Gebühr vorhanden → auto erstellen
     if (wert === 1 && pruefung.pruefungsgebuehr && parseFloat(pruefung.pruefungsgebuehr) > 0 && pruefung.status === 'geplant') {
-      const [[existing]] = await pool.query('SELECT gebuehr_rechnung_id FROM pruefungen WHERE pruefung_id = ?', [pruefung_id]);
-      if (!existing?.gebuehr_rechnung_id) {
+      if (!pruefung.gebuehr_rechnung_id) {
         const [[stilRow]] = await pool.query(
           `SELECT s.name FROM stile s JOIN pruefungen p ON p.stil_id = s.stil_id WHERE p.pruefung_id = ? LIMIT 1`, [pruefung_id]
         );
         const [[{ pruefungsdatum }]] = await pool.query('SELECT pruefungsdatum FROM pruefungen WHERE pruefung_id = ?', [pruefung_id]);
-        const rechnungId = await createPruefungsRechnung(pruefung.mitglied_id, pruefung.pruefungsgebuehr, pruefungsdatum, stilRow?.name || '', pruefung.dojo_id);
+        const zahlungsartFuerRechnung = pruefung.zahlungsart || 'lastschrift';
+        const rechnungId = await createPruefungsRechnung(pruefung.mitglied_id, pruefung.pruefungsgebuehr, pruefungsdatum, stilRow?.name || '', pruefung.dojo_id, zahlungsartFuerRechnung);
         await pool.query('UPDATE pruefungen SET gebuehr_rechnung_id = ? WHERE pruefung_id = ?', [rechnungId, pruefung_id]);
         logger.info('Auto-Rechnung (manuell aktiviert) erstellt', { pruefung_id, rechnungId });
         return res.json({ success: true, gebuehr_auto_verrechnen: wert, rechnung_erstellt: true, rechnung_id: rechnungId });

@@ -4632,7 +4632,7 @@ h4.pv3-grad-card-name {
 
 .pv3-candidate-row {
   display: grid;
-  grid-template-columns: minmax(130px, 1.5fr) minmax(240px, 2fr) minmax(280px, auto) auto;
+  grid-template-columns: minmax(130px, 1.5fr) minmax(240px, 2fr) minmax(340px, auto) minmax(210px, auto);
   align-items: center;
   gap: 0.5rem;
   padding: 0.38rem 1rem;
@@ -4665,6 +4665,7 @@ h4.pv3-grad-card-name {
   align-items: center;
   gap: 0.3rem;
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 @media (max-width: 700px) {

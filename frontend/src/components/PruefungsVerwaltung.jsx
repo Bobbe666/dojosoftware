@@ -226,6 +226,7 @@ const PruefungsVerwaltung = () => {
 
   // Termin-Auswahl Modal (beim Zulassen)
   const [terminAuswahlModal, setTerminAuswahlModal] = useState({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null });
+  const [ausnahmeBatchQueue, setAusnahmeBatchQueue] = useState([]); // Queue für Batch-Ausnahme-Zulassung
 
   // Filter für Kandidaten
   const [berechtigungsFilter, setBerechtigungsFilter] = useState('all'); // 'all', 'berechtigt', 'nicht_berechtigt'
@@ -1123,7 +1124,7 @@ const PruefungsVerwaltung = () => {
   };
 
   const handleZahlungsartAuswahlSelected = async (zahlungsart) => {
-    const { kandidat, isAusnahme, selectedTermin: termin } = terminAuswahlModal;
+    const { kandidat, selectedTermin: termin } = terminAuswahlModal;
     setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null });
 
     const customDaten = {
@@ -1137,16 +1138,20 @@ const PruefungsVerwaltung = () => {
       zahlungsart
     };
 
-    if (isAusnahme) {
-      if (!window.confirm(
-        `${kandidat.vorname} ${kandidat.nachname} erfüllt die zeitlichen Voraussetzungen noch nicht.\n\n` +
-        `Möchten Sie eine Ausnahme-Zulassung erteilen?`
-      )) {
-        return;
-      }
-    }
-
+    // Kein window.confirm — Warnung ist bereits im Modal sichtbar (⚠️)
     await handleKandidatZulassen(kandidat, customDaten);
+
+    // Nächsten aus der Batch-Queue öffnen
+    let nextKandidat = null;
+    setAusnahmeBatchQueue(prev => {
+      if (prev.length === 0) return prev;
+      const [next, ...remaining] = prev;
+      nextKandidat = next;
+      return remaining;
+    });
+    if (nextKandidat) {
+      setTimeout(() => openTerminAuswahl(nextKandidat, true), 150);
+    }
   };
 
   // Funktion zum Entfernen der Zulassung
@@ -1542,6 +1547,19 @@ const PruefungsVerwaltung = () => {
   const handleGebuehrRechnung = async (pruefung) => {
     setGebuehrDialog(null);
     await handleGebuehrAutoToggle({ ...pruefung, gebuehr_auto_verrechnen: null }); // force → 1
+  };
+
+  const handleBatchRechnungErstellen = async (candidates) => {
+    const ohneRechnung = candidates.filter(c => c.pruefungsgebuehr && parseFloat(c.pruefungsgebuehr) > 0 && !c.gebuehr_rechnung_id && !c.gebuehr_bezahlt);
+    if (ohneRechnung.length === 0) return;
+    setSuccess(`Erstelle ${ohneRechnung.length} Rechnung${ohneRechnung.length !== 1 ? 'en' : ''}…`);
+    let count = 0;
+    for (const p of ohneRechnung) {
+      await handleGebuehrAutoToggle({ ...p, gebuehr_auto_verrechnen: null });
+      count++;
+    }
+    setSuccess(`${count} Rechnung${count !== 1 ? 'en' : ''} erstellt`);
+    setTimeout(() => setSuccess(''), 3000);
   };
 
   // Alle als bestanden/nicht bestanden markieren
@@ -3499,13 +3517,12 @@ const PruefungsVerwaltung = () => {
                   )}
                   {nichtBerechtigt.length > 0 && (
                     <button
-                      onClick={async () => {
-                        const namen = nichtBerechtigt.map(k => `${k.vorname} ${k.nachname}`).join(', ');
-                        if (!window.confirm(
-                          `Ausnahme-Zulassung für ${nichtBerechtigt.length} Kandidat${nichtBerechtigt.length > 1 ? 'en' : ''} erteilen?\n\n${namen}`
-                        )) return;
-                        for (const k of nichtBerechtigt) await handleKandidatZulassen(k, null);
+                      onClick={() => {
+                        if (nichtBerechtigt.length === 0) return;
+                        const [first, ...rest] = nichtBerechtigt;
                         setSelectedKandidaten([]);
+                        setAusnahmeBatchQueue(rest);
+                        openTerminAuswahl(first, true);
                       }}
                       className="btn btn-warning pv3-batch-btn"
                       style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)' }}
@@ -4063,6 +4080,29 @@ const PruefungsVerwaltung = () => {
                               ✓ {group.candidates.filter(c => c.mitglied_antwort === 'kommt').length} Ja
                             </span>
                           )}
+                          {(() => {
+                            const neinKandidaten = group.candidates.filter(c => c.mitglied_antwort === 'kommt_nicht');
+                            if (neinKandidaten.length === 0) return null;
+                            // Meistgenannte alternative Termine aggregieren
+                            const datumCounter = {};
+                            neinKandidaten.forEach(c => {
+                              let daten = c.alternative_termine;
+                              if (typeof daten === 'string') { try { daten = JSON.parse(daten); } catch { daten = []; } }
+                              (daten || []).forEach(d => { datumCounter[d] = (datumCounter[d] || 0) + 1; });
+                            });
+                            const topDaten = Object.entries(datumCounter).sort((a,b) => b[1]-a[1]).slice(0,3);
+                            const tooltipText = topDaten.length > 0
+                              ? `Alternative Termine:\n${topDaten.map(([d,n]) => `${new Date(d+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})}: ${n}x`).join('\n')}`
+                              : `${neinKandidaten.length} Teilnehmer kann nicht kommen`;
+                            return (
+                              <span
+                                style={{ fontSize: '11px', background: 'rgba(239,68,68,.15)', border: '1px solid rgba(239,68,68,.35)', color: '#f87171', borderRadius: '4px', padding: '1px 6px', cursor: topDaten.length > 0 ? 'help' : 'default' }}
+                                title={tooltipText}
+                              >
+                                ✗ {neinKandidaten.length} Nein{topDaten.length > 0 && ` · ${new Date(topDaten[0][0]+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})} beliebt`}
+                              </span>
+                            );
+                          })()}
                           {group.candidates.filter(c => c.teilnahme_bestaetigt).length > 0 && (
                             <span style={{ fontSize: '11px', background: 'rgba(99,102,241,.15)', border: '1px solid rgba(99,102,241,.35)', color: '#818cf8', borderRadius: '4px', padding: '1px 6px' }}>
                               ★ {group.candidates.filter(c => c.teilnahme_bestaetigt).length} Best.
@@ -4105,6 +4145,30 @@ const PruefungsVerwaltung = () => {
                                 }}
                               >
                                 {status === 'sending' ? '⏳ Sendet…' : status === 'sent' ? '✓ Gesendet' : status === 'error' ? '✗ Fehler' : `🔔 ${ohneAntwort} erinnern`}
+                              </button>
+                            );
+                          })()}
+                          {/* Batch-Rechnung-Button: wenn Kandidaten ohne Rechnung vorhanden */}
+                          {(() => {
+                            const ohneRechnung = group.candidates.filter(c => c.pruefungsgebuehr && parseFloat(c.pruefungsgebuehr) > 0 && !c.gebuehr_rechnung_id && !c.gebuehr_bezahlt);
+                            if (ohneRechnung.length === 0) return null;
+                            return (
+                              <button
+                                onClick={() => handleBatchRechnungErstellen(group.candidates)}
+                                title={`Rechnungen für ${ohneRechnung.length} Kandidat${ohneRechnung.length !== 1 ? 'en' : ''} ohne Rechnung erstellen`}
+                                style={{
+                                  fontSize: '11px',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(255,215,0,.4)',
+                                  background: 'rgba(255,215,0,.1)',
+                                  color: '#ffd700',
+                                  cursor: 'pointer',
+                                  whiteSpace: 'nowrap',
+                                  lineHeight: 1.6,
+                                }}
+                              >
+                                💶 {ohneRechnung.length} Rechnung{ohneRechnung.length !== 1 ? 'en' : ''} erstellen
                               </button>
                             );
                           })()}
@@ -4181,7 +4245,7 @@ const PruefungsVerwaltung = () => {
                                 </div>
                               </div>
                             </div>
-                            <div className="pv3-cand-status" style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'nowrap' }}>
+                            <div className="pv3-cand-status" style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'nowrap', justifyContent: 'flex-start' }}>
                               <button
                                 onClick={() => handleAdminStatus(pruefung, { mitglied_antwort: pruefung.mitglied_antwort === 'kommt' ? null : 'kommt' })}
                                 title="Kommt"
@@ -6271,7 +6335,7 @@ const PruefungsVerwaltung = () => {
       {terminAuswahlModal.open && createPortal(
         <div
           className="pv3-auswahl-modal-overlay"
-          onClick={() => setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null })}
+          onClick={() => { setAusnahmeBatchQueue([]); setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null }); }}
         >
           <div
             className="pv3-auswahl-modal-box"
@@ -6281,6 +6345,11 @@ const PruefungsVerwaltung = () => {
               {terminAuswahlModal.step === 1
                 ? (terminAuswahlModal.isAusnahme ? 'Ausnahme-Zulassung' : 'Prüfungstermin wählen')
                 : 'Zahlungsart festlegen'}
+              {ausnahmeBatchQueue.length > 0 && (
+                <span style={{ fontSize: '0.8rem', fontWeight: 400, color: '#f59e0b', marginLeft: '0.6rem' }}>
+                  (noch {ausnahmeBatchQueue.length} weitere)
+                </span>
+              )}
             </h3>
             <p className="pv3-auswahl-muted-p">
               {terminAuswahlModal.kandidat?.vorname} {terminAuswahlModal.kandidat?.nachname} —{' '}
@@ -6352,13 +6421,17 @@ const PruefungsVerwaltung = () => {
             )}
 
             <button
-              onClick={() => terminAuswahlModal.step === 2
-                ? setTerminAuswahlModal(prev => ({ ...prev, step: 1, selectedTermin: null }))
-                : setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null })
-              }
+              onClick={() => {
+                if (terminAuswahlModal.step === 2) {
+                  setTerminAuswahlModal(prev => ({ ...prev, step: 1, selectedTermin: null }));
+                } else {
+                  setAusnahmeBatchQueue([]);
+                  setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null });
+                }
+              }}
               className="pv3-auswahl-cancel"
             >
-              {terminAuswahlModal.step === 2 ? '← Zurück' : 'Abbrechen'}
+              {terminAuswahlModal.step === 2 ? '← Zurück' : (ausnahmeBatchQueue.length > 0 ? 'Alle abbrechen' : 'Abbrechen')}
             </button>
           </div>
         </div>
