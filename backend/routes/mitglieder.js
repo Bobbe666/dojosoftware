@@ -5262,4 +5262,84 @@ router.get('/:id/ruecklastschriften-stats', authenticateToken, (req, res) => {
   });
 });
 
+/**
+ * POST /mitglieder/:id/familie/zusammenfuehren
+ * Verbindet ein bestehendes Mitglied mit einer bestehenden Familie
+ */
+router.post('/:id/familie/zusammenfuehren', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { ziel_mitglied_id } = req.body;
+  const secureDojoId = getSecureDojoId(req);
+
+  if (!ziel_mitglied_id) {
+    return res.status(400).json({ success: false, error: 'ziel_mitglied_id fehlt' });
+  }
+  if (parseInt(id) === parseInt(ziel_mitglied_id)) {
+    return res.status(400).json({ success: false, error: 'Mitglied kann nicht mit sich selbst zusammengeführt werden' });
+  }
+
+  const pool = db.promise();
+  try {
+    const dojoFilter = secureDojoId ? 'AND dojo_id = ?' : '';
+    const params = (id) => secureDojoId ? [id, secureDojoId] : [id];
+
+    const [[quellMitglied]] = await pool.query(
+      `SELECT mitglied_id, vorname, nachname, familien_id, dojo_id FROM mitglieder WHERE mitglied_id = ? ${dojoFilter}`,
+      params(id)
+    );
+    const [[zielMitglied]] = await pool.query(
+      `SELECT mitglied_id, vorname, nachname, familien_id, dojo_id FROM mitglieder WHERE mitglied_id = ? ${dojoFilter}`,
+      params(ziel_mitglied_id)
+    );
+
+    if (!quellMitglied || !zielMitglied) {
+      return res.status(404).json({ success: false, error: 'Mitglied nicht gefunden' });
+    }
+
+    // Ziel-familien_id bestimmen
+    let zielFamilienId = zielMitglied.familien_id;
+
+    if (!zielFamilienId) {
+      // Zielmitglied hat noch keine Familie → seine mitglied_id wird zur familien_id
+      zielFamilienId = zielMitglied.mitglied_id;
+      await pool.query(
+        'UPDATE mitglieder SET familien_id = ? WHERE mitglied_id = ?',
+        [zielFamilienId, zielMitglied.mitglied_id]
+      );
+    }
+
+    // Quellmitglied der Familie zuordnen
+    await pool.query(
+      'UPDATE mitglieder SET familien_id = ? WHERE mitglied_id = ?',
+      [zielFamilienId, quellMitglied.mitglied_id]
+    );
+
+    // Aktualisierte Familienliste zurückgeben
+    const [familienmitglieder] = await pool.query(
+      `SELECT m.mitglied_id, m.vorname, m.nachname, m.familien_id,
+              TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) AS alter_jahre,
+              CASE WHEN TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) < 18 THEN 1 ELSE 0 END AS ist_minderjaehrig,
+              v.status AS vertrag_status, t.name AS tarif_name,
+              m.rabatt_prozent, m.rabatt_grund
+       FROM mitglieder m
+       LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
+       LEFT JOIN tarife t ON v.tarif_id = t.id
+       WHERE m.familien_id = ?
+       ORDER BY m.vorname`,
+      [zielFamilienId]
+    );
+
+    res.json({
+      success: true,
+      familien_id: zielFamilienId,
+      familienmitglieder,
+      message: `${quellMitglied.vorname} ${quellMitglied.nachname} wurde der Familie #${zielFamilienId} hinzugefügt`
+    });
+
+  } catch (err) {
+    logger.error('Fehler bei Familie zusammenführen:', err);
+    res.status(500).json({ success: false, error: 'Datenbankfehler' });
+  }
+});
+
 module.exports = router;

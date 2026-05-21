@@ -52,6 +52,156 @@
   padding: 0.18rem 0.55rem;
 }
 
+/* ── Familie zuordnen Button ── */
+.fam-merge-btn {
+  background: transparent;
+  border: 1px solid rgba(255,215,0,0.3);
+  color: rgba(255,215,0,0.75);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.fam-merge-btn:hover {
+  background: rgba(255,215,0,0.1);
+  color: #FFD700;
+}
+
+/* ── Zusammenführen-Panel ── */
+.fam-merge-panel {
+  background: rgba(255,215,0,0.04);
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.fam-merge-hint {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.6);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+.fam-merge-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.fam-merge-search {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  color: #fff;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+}
+.fam-merge-search:focus {
+  border-color: rgba(255,215,0,0.5);
+}
+.fam-merge-search::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+.fam-merge-spinner {
+  position: absolute;
+  right: 0.75rem;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,215,0,0.2);
+  border-top-color: #FFD700;
+  border-radius: 50%;
+  animation: fam-spin 0.6s linear infinite;
+}
+@keyframes fam-spin { to { transform: rotate(360deg); } }
+
+.fam-merge-results {
+  margin-top: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.fam-merge-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.12s;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.fam-merge-result-row:last-child { border-bottom: none; }
+.fam-merge-result-row:hover { background: rgba(255,215,0,0.07); }
+.fam-merge-result-name {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.9);
+}
+.fam-merge-result-fam {
+  font-size: 0.72rem;
+  color: #FFD700;
+  background: rgba(255,215,0,0.1);
+  border: 1px solid rgba(255,215,0,0.2);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+.fam-merge-result-nofam {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.35);
+}
+
+.fam-merge-confirm {
+  margin-top: 0.75rem;
+  background: rgba(255,215,0,0.06);
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: 5px;
+  padding: 0.75rem;
+}
+.fam-merge-confirm-text {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.55;
+  margin-bottom: 0.65rem;
+}
+.fam-merge-error {
+  font-size: 0.8rem;
+  color: #f87171;
+  margin-bottom: 0.5rem;
+}
+.fam-merge-confirm-btns {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+.fam-merge-confirm-cancel {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.5);
+  font-size: 0.78rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.fam-merge-confirm-cancel:hover { color: rgba(255,255,255,0.8); }
+.fam-merge-confirm-ok {
+  background: rgba(255,215,0,0.15);
+  border: 1px solid rgba(255,215,0,0.4);
+  color: #FFD700;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.3rem 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.fam-merge-confirm-ok:hover:not(:disabled) { background: rgba(255,215,0,0.25); }
+.fam-merge-confirm-ok:disabled { opacity: 0.5; cursor: default; }
+
 /* ── Family member list ── */
 .fam-member-list {
   display: flex;

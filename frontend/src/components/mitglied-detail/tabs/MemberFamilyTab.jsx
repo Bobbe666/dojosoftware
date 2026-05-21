@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import config from '../../../config/config';
 import './MemberFamilyTab.css';
 
@@ -25,28 +25,94 @@ const MemberFamilyTab = ({ mitglied, updatedData, editMode, handleChange, Custom
   const [familienId, setFamilienId] = useState(null);
   const [loadingFamilie, setLoadingFamilie] = useState(false);
 
-  useEffect(() => {
-    const fetchFamilienmitglieder = async () => {
-      if (!mitglied?.mitglied_id) return;
-      setLoadingFamilie(true);
-      try {
-        const token = localStorage.getItem('dojo_auth_token');
-        const response = await fetch(`${config.apiBaseUrl}/mitglieddetail/${mitglied.mitglied_id}/familie`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setFamilienId(data.familien_id);
-          setFamilienmitglieder(data.familienmitglieder || []);
-        }
-      } catch (error) {
-        console.error('Fehler beim Laden der Familienmitglieder:', error);
-      } finally {
-        setLoadingFamilie(false);
+  // Zusammenführen
+  const [showZusammen, setShowZusammen] = useState(false);
+  const [suchQuery, setSuchQuery] = useState('');
+  const [suchErgebnisse, setSuchErgebnisse] = useState([]);
+  const [suchLoading, setSuchLoading] = useState(false);
+  const [gewaehlt, setGewaehlt] = useState(null); // { mitglied_id, vorname, nachname, familien_id }
+  const [zusammenLoading, setZusammenLoading] = useState(false);
+  const [zusammenError, setZusammenError] = useState('');
+  const searchTimer = useRef(null);
+
+  const token = localStorage.getItem('dojo_auth_token');
+
+  const fetchFamilie = async () => {
+    if (!mitglied?.mitglied_id) return;
+    setLoadingFamilie(true);
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/mitglieddetail/${mitglied.mitglied_id}/familie`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFamilienId(data.familien_id);
+        setFamilienmitglieder(data.familienmitglieder || []);
       }
-    };
-    fetchFamilienmitglieder();
+    } catch (error) {
+      console.error('Fehler beim Laden der Familienmitglieder:', error);
+    } finally {
+      setLoadingFamilie(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFamilie();
   }, [mitglied?.mitglied_id, mitglied?.familien_id]);
+
+  // Mitglieder-Suche mit Debounce
+  useEffect(() => {
+    if (!suchQuery.trim() || suchQuery.length < 2) {
+      setSuchErgebnisse([]);
+      return;
+    }
+    setSuchLoading(true);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${config.apiBaseUrl}/mitglieder?search=${encodeURIComponent(suchQuery)}&limit=8`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        const data = await res.json();
+        setSuchErgebnisse(
+          Array.isArray(data)
+            ? data.filter(m => m.mitglied_id !== mitglied?.mitglied_id)
+            : []
+        );
+      } catch {
+        setSuchErgebnisse([]);
+      } finally {
+        setSuchLoading(false);
+      }
+    }, 300);
+  }, [suchQuery]);
+
+  const handleZusammenfuehren = async () => {
+    if (!gewaehlt) return;
+    setZusammenLoading(true);
+    setZusammenError('');
+    try {
+      const res = await fetch(`${config.apiBaseUrl}/mitglieder/${mitglied.mitglied_id}/familie/zusammenfuehren`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ziel_mitglied_id: gewaehlt.mitglied_id })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Fehler');
+      // Zurücksetzen und neu laden
+      setShowZusammen(false);
+      setSuchQuery('');
+      setSuchErgebnisse([]);
+      setGewaehlt(null);
+      setFamilienId(data.familien_id);
+      setFamilienmitglieder(data.familienmitglieder || []);
+    } catch (err) {
+      setZusammenError(err.message);
+    } finally {
+      setZusammenLoading(false);
+    }
+  };
 
   const SelectComponent = CustomSelect || (({ value, onChange, options, className }) => (
     <select className={className} value={value} onChange={onChange}>
@@ -120,8 +186,73 @@ const MemberFamilyTab = ({ mitglied, updatedData, editMode, handleChange, Custom
       <div className="fam-card">
         <div className="fam-card-head-row">
           <h3 className="fam-section-title">👨‍👩‍👧 Familienmitglieder</h3>
-          {familienId && <span className="fam-id-badge">Familie #{familienId}</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {familienId && <span className="fam-id-badge">Familie #{familienId}</span>}
+            <button
+              type="button"
+              className="fam-merge-btn"
+              onClick={() => { setShowZusammen(v => !v); setGewaehlt(null); setSuchQuery(''); setSuchErgebnisse([]); setZusammenError(''); }}
+              title="Zur Familie eines anderen Mitglieds hinzufügen"
+            >
+              {showZusammen ? '✕ Abbrechen' : '🔗 Familie zuordnen'}
+            </button>
+          </div>
         </div>
+
+        {/* ── Zusammenführen-Panel ── */}
+        {showZusammen && (
+          <div className="fam-merge-panel">
+            <p className="fam-merge-hint">
+              Suche nach dem Mitglied, mit dessen Familie <strong>{mitglied.vorname} {mitglied.nachname}</strong> zusammengeführt werden soll.
+            </p>
+            <div className="fam-merge-search-wrap">
+              <input
+                type="text"
+                className="fam-merge-search"
+                placeholder="Name eingeben…"
+                value={suchQuery}
+                onChange={e => { setSuchQuery(e.target.value); setGewaehlt(null); }}
+                autoFocus
+              />
+              {suchLoading && <span className="fam-merge-spinner" />}
+            </div>
+
+            {suchErgebnisse.length > 0 && !gewaehlt && (
+              <div className="fam-merge-results">
+                {suchErgebnisse.map(m => (
+                  <div
+                    key={m.mitglied_id}
+                    className="fam-merge-result-row"
+                    onClick={() => setGewaehlt(m)}
+                  >
+                    <span className="fam-merge-result-name">{m.vorname} {m.nachname}</span>
+                    {m.familien_id
+                      ? <span className="fam-merge-result-fam">Familie #{m.familien_id}</span>
+                      : <span className="fam-merge-result-nofam">Noch keine Familie</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {gewaehlt && (
+              <div className="fam-merge-confirm">
+                <div className="fam-merge-confirm-text">
+                  <strong>{mitglied.vorname} {mitglied.nachname}</strong> wird der Familie von <strong>{gewaehlt.vorname} {gewaehlt.nachname}</strong>
+                  {gewaehlt.familien_id ? ` (Familie #${gewaehlt.familien_id})` : ''} hinzugefügt.
+                </div>
+                {zusammenError && <div className="fam-merge-error">{zusammenError}</div>}
+                <div className="fam-merge-confirm-btns">
+                  <button type="button" className="fam-merge-confirm-cancel" onClick={() => setGewaehlt(null)}>
+                    ← Andere wählen
+                  </button>
+                  <button type="button" className="fam-merge-confirm-ok" onClick={handleZusammenfuehren} disabled={zusammenLoading}>
+                    {zusammenLoading ? 'Wird zusammengeführt…' : '✓ Bestätigen'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {loadingFamilie ? (
           <div className="fam-loading">Lade Familienmitglieder…</div>
