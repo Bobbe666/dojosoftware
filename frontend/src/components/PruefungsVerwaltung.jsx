@@ -2621,54 +2621,37 @@ const PruefungsVerwaltung = () => {
                         )}
                         <div className="pv3-ab-spacer" />
                         {termin.anzahl > 0 && !termin.isVorlage && (
-                          <>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setDruckAuswahlModal({ open: true, termin, selected: termin.pruefungen.map(p => p.pruefung_id), vorlage: 'pruefungsurkunde' }); }}
-                              className="pv3-ab-btn pv3-ab-btn--print"
-                              title="Urkunden drucken – Vorlage wählen"
-                            >
-                              <Printer size={12} />
-                              Alle drucken
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setDruckAuswahlModal({ open: true, termin, selected: termin.pruefungen.map(p => p.pruefung_id), vorlage: 'pruefungsurkunde' }); }}
-                              className="pv3-ab-icon"
-                              title="Auswahl für Urkunden-Druck"
-                            >
-                              <Printer size={16} />
-                            </button>
-                          </>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDruckAuswahlModal({ open: true, termin, selected: termin.pruefungen.map(p => p.pruefung_id), vorlage: 'pruefungsurkunde' }); }}
+                            className="pv3-ab-btn pv3-ab-btn--print"
+                            title="Urkunden drucken – Vorlage wählen"
+                          >
+                            <Printer size={12} />
+                            Urkunden
+                          </button>
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); handlePruefungslistePDF(termin); }}
                           className="pv3-ab-icon"
-                          title="Server-PDF Teilnehmerliste"
+                          title="Teilnehmerliste als PDF"
                         >
-                          <FileText size={18} />
+                          <FileText size={16} />
                         </button>
-                        {termin.anzahl > 0 && !termin.isVorlage && (
-                          <button
-                            disabled
-                            className="pv3-ab-icon pv3-ab-icon--disabled"
-                            title="Urkunden drucken — kommt in Kürze"
-                            onClick={e => e.stopPropagation()}
-                          >
-                            <Scroll size={18} />
-                          </button>
-                        )}
                         <button
                           onClick={(e) => { e.stopPropagation(); handleTerminBearbeiten(termin); }}
-                          className="pv3-ab-icon"
-                          title="Termin bearbeiten"
+                          className="pv3-ab-btn"
+                          title="Termin bearbeiten (Datum, Ort, Verlegungsgrund)"
+                          style={{ color: 'rgba(255,215,0,0.65)', borderColor: 'rgba(255,215,0,0.15)' }}
                         >
-                          <Edit size={18} />
+                          <Edit size={12} />
+                          Bearbeiten
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleTerminLoeschen(termin); }}
                           className="pv3-ab-icon pv3-ab-icon--red"
                           title="Termin löschen"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </div>
@@ -3357,20 +3340,6 @@ const PruefungsVerwaltung = () => {
             </div>
           )}
 
-          {/* Kalenderübersicht */}
-          <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border, rgba(255,255,255,0.08))', paddingTop: '1.5rem' }}>
-            <KalenderErrorBoundary>
-              <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#d4af37', fontWeight: 600 }}>Kalender wird geladen…</div>}>
-                <KalenderZentrale
-                  onDayClick={(date) => {
-                    const dateStr = date.toISOString().split('T')[0];
-                    setNeuerTermin(prev => ({ ...prev, pruefungsdatum: dateStr }));
-                    setShowNeuerTerminModal(true);
-                  }}
-                />
-              </Suspense>
-            </KalenderErrorBoundary>
-          </div>
         </div>
       )}
 
