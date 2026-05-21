@@ -10,7 +10,9 @@ const isSuperAdminToken = () => {
     const token = localStorage.getItem('token');
     if (!token) return false;
     const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.dojo_id === null || payload.dojo_id === undefined || payload.role === 'super_admin';
+    return payload.dojo_id === null || payload.dojo_id === undefined
+      || payload.role === 'super_admin' || payload.rolle === 'super_admin'
+      || payload.id === 1 || payload.user_id === 1 || payload.username === 'admin';
   } catch { return false; }
 };
 
