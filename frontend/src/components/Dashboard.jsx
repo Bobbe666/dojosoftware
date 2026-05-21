@@ -544,7 +544,8 @@ function Dashboard() {
       description: 'Dojos verwalten, Design, Theme, Verträge & Steuern',
       path: '/dashboard/dojos',
       badge: 'DESIGN',
-      featured: true
+      featured: true,
+      superAdminOnly: true
     },
     {
       icon: '📥',
@@ -1860,7 +1861,7 @@ function Dashboard() {
                             </>
                           ) : (
                             <div className="nav-cards">
-                              {einstellungenCards.map((card, index) => (
+                              {einstellungenCards.filter(card => !card.superAdminOnly || isSuperAdmin).map((card, index) => (
                                 <div
                                   key={index}
                                   onClick={() => card.action ? setEinstellungenView(card.action) : handleNavigation(card.path)}

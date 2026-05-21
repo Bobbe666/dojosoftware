@@ -115,12 +115,19 @@ router.get('/dojos', async (req, res) => {
     const user = req.user;
     if (!user) return res.status(401).json({ error: 'Nicht authentifiziert' });
 
-    // Super-Admin: nur platform_managed Dojos (TDA + eigene)
+    // Super-Admin: nur platform_managed Dojos (TDA + eigene, KEINE Lizenz-Kunden)
     // Dojo-Admin: nur sein eigenes Dojo
     const isSuperAdmin = !user.dojo_id;
     let whereClause, queryParams;
     if (isSuperAdmin) {
-      whereClause = `WHERE d.ist_aktiv = TRUE`;
+      // Lizenz-Kunden ausschließen: nur Dojos ohne eigenen vollwertigen Admin (= TDA-verwaltete Standorte)
+      whereClause = `WHERE d.ist_aktiv = TRUE AND (
+        d.id = 2 OR d.ist_hauptdojo = 1 OR d.id NOT IN (
+          SELECT DISTINCT dojo_id FROM admin_users
+          WHERE dojo_id IS NOT NULL AND dojo_id != 2
+          AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
+        )
+      )`;
       queryParams = [];
     } else {
       whereClause = `WHERE d.ist_aktiv = TRUE AND d.id = ?`;

@@ -5,6 +5,15 @@ import '../styles/DojosVerwaltung.css';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
+const isSuperAdminToken = () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.dojo_id === null || payload.dojo_id === undefined || payload.role === 'super_admin';
+  } catch { return false; }
+};
+
 const DojosVerwaltung = () => {
   const navigate = useNavigate();
 
@@ -14,6 +23,10 @@ const DojosVerwaltung = () => {
   const [statistics, setStatistics] = useState(null);
 
   useEffect(() => {
+    if (!isSuperAdminToken()) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
     loadDojos();
     loadGesamtStatistiken();
   }, []);
