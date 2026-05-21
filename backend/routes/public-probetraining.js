@@ -117,7 +117,6 @@ router.get('/stundenplan/:dojo_id', async (req, res) => {
       INNER JOIN kurse k ON sp.kurs_id = k.kurs_id
       LEFT JOIN trainer t ON sp.trainer_id = t.trainer_id
       WHERE k.dojo_id = ? AND (k.probetraining_erlaubt = 1 OR k.probetraining_erlaubt IS NULL)
-        AND k.aktiv = 1
       ORDER BY FIELD(sp.tag, 'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'),
                sp.uhrzeit_start
     `, [dojo_id]);
