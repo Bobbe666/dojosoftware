@@ -231,17 +231,19 @@ router.put('/:id', (req, res) => {
   const { datum, zeit, ort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib, gebuehr_auto_verrechnen, verlegungsgrund } = req.body;
   if (!datum || !stil_id) return res.status(400).json({ error: 'Fehlende erforderliche Felder', required: ['datum', 'stil_id'] });
 
-  // Ownership-Check + altes Datum für Datumsänderungs-Erkennung
+  // Ownership-Check + altes Datum für Datumsänderungs-Erkennung (DATE_FORMAT → kein Timezone-Bug)
   const ownerCheck = secureDojoId
-    ? 'SELECT termin_id, pruefungsdatum, dojo_id FROM pruefungstermin_vorlagen WHERE termin_id = ? AND dojo_id = ?'
-    : 'SELECT termin_id, pruefungsdatum, dojo_id FROM pruefungstermin_vorlagen WHERE termin_id = ?';
+    ? 'SELECT termin_id, DATE_FORMAT(pruefungsdatum, \'%Y-%m-%d\') AS pruefungsdatum, dojo_id, stil_id AS alter_stil_id FROM pruefungstermin_vorlagen WHERE termin_id = ? AND dojo_id = ?'
+    : 'SELECT termin_id, DATE_FORMAT(pruefungsdatum, \'%Y-%m-%d\') AS pruefungsdatum, dojo_id, stil_id AS alter_stil_id FROM pruefungstermin_vorlagen WHERE termin_id = ?';
   const ownerParams = secureDojoId ? [termin_id, secureDojoId] : [termin_id];
 
   db.query(ownerCheck, ownerParams, (checkErr, checkRows) => {
     if (checkErr) return res.status(500).json({ error: 'Fehler beim Prüfen des Termins' });
     if (checkRows.length === 0) return res.status(404).json({ error: 'Termin nicht gefunden oder kein Zugriff' });
 
-    const altesDatum = checkRows[0].pruefungsdatum ? checkRows[0].pruefungsdatum.toISOString().split('T')[0] : null;
+    // pruefungsdatum kommt jetzt als String (kein Date-Objekt) → kein Timezone-Shift möglich
+    const altesDatum = checkRows[0].pruefungsdatum || null;
+    const alterStilId = checkRows[0].alter_stil_id;
     const neuesDatum = datum;
     const datumGeaendert = altesDatum && altesDatum !== neuesDatum;
     const terminDojoId = checkRows[0].dojo_id;
@@ -296,13 +298,13 @@ router.put('/:id', (req, res) => {
           try {
             const pool = db.promise();
 
-            // Alle betroffenen Kandidaten laden
+            // Alle betroffenen Kandidaten laden (alter stil_id, nicht der ggf. neue aus dem Request)
             const [betroffene] = await pool.query(
               `SELECT p.pruefung_id, p.mitglied_id, m.email, m.vorname
                FROM pruefungen p
                JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
                WHERE DATE(p.pruefungsdatum) = ? AND p.stil_id = ? AND p.dojo_id = ? AND p.status = 'geplant'`,
-              [altesDatum, stil_id, terminDojoId]
+              [altesDatum, alterStilId, terminDojoId]
             );
 
             if (betroffene.length === 0) return;
@@ -313,7 +315,7 @@ router.put('/:id', (req, res) => {
                SET pruefungsdatum = ?, mitglied_antwort = NULL, mitglied_antwort_am = NULL,
                    alternative_termine = NULL, benachrichtigung_gelesen = 0, benachrichtigung_gelesen_am = NULL
                WHERE DATE(pruefungsdatum) = ? AND stil_id = ? AND dojo_id = ? AND status = 'geplant'`,
-              [neuesDatum, altesDatum, stil_id, terminDojoId]
+              [neuesDatum, altesDatum, alterStilId, terminDojoId]
             );
 
             // Push-Benachrichtigungen an alle betroffenen Mitglieder
