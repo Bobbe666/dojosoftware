@@ -856,6 +856,105 @@ router.post('/neue-vertraege-acknowledge', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/verlauf — monatliche Trends (12 Monate)
+router.get('/verlauf', async (req, res) => {
+  try {
+    const secureDojoId = getSecureDojoId(req);
+    if (!secureDojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt' });
+    const pool = db.promise();
+
+    // Generiere letzte 12 Monate
+    const months = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' });
+      months.push({ key, label });
+    }
+    const fromDate = months[0].key + '-01';
+
+    const [[mitgliederRows], [beitraegeRows]] = await Promise.all([
+      pool.query(
+        `SELECT DATE_FORMAT(eintrittsdatum, '%Y-%m') AS monat, COUNT(*) AS wert
+         FROM mitglieder
+         WHERE dojo_id = ? AND eintrittsdatum >= ?
+         GROUP BY monat ORDER BY monat ASC`,
+        [secureDojoId, fromDate]
+      ),
+      pool.query(
+        `SELECT DATE_FORMAT(zahlungsdatum, '%Y-%m') AS monat, COUNT(*) AS wert
+         FROM beitraege
+         WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?
+         GROUP BY monat ORDER BY monat ASC`,
+        [secureDojoId, fromDate]
+      ),
+    ]);
+
+    const mitMap = Object.fromEntries(mitgliederRows.map(r => [r.monat, Number(r.wert)]));
+    const beiMap = Object.fromEntries(beitraegeRows.map(r => [r.monat, Number(r.wert)]));
+
+    const data = months.map(m => ({
+      monat: m.label,
+      neue_mitglieder: mitMap[m.key] || 0,
+      offene_beitraege: beiMap[m.key] || 0,
+    }));
+
+    res.json({ success: true, data });
+  } catch (error) {
+    logger.error('Verlauf Fehler:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/dashboard/interessenten-liste
+router.get('/interessenten-liste', async (req, res) => {
+  try {
+    const secureDojoId = getSecureDojoId(req);
+    if (!secureDojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt' });
+    const pool = db.promise();
+    const [rows] = await pool.query(
+      `SELECT id, vorname, nachname, email, telefon, status, interessiert_an, prioritaet,
+              DATE_FORMAT(erstkontakt_datum, '%d.%m.%Y') AS kontakt_datum_fmt,
+              DATE_FORMAT(erstellt_am, '%d.%m.%Y') AS erstellt_fmt
+       FROM interessenten
+       WHERE dojo_id = ? AND archiviert = FALSE
+       ORDER BY
+         FIELD(prioritaet, 'hoch', 'mittel', 'niedrig'),
+         erstellt_am DESC
+       LIMIT 25`,
+      [secureDojoId]
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    logger.error('Interessenten-Liste Fehler:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/dashboard/checkins-heute-liste
+router.get('/checkins-heute-liste', async (req, res) => {
+  try {
+    const secureDojoId = getSecureDojoId(req);
+    if (!secureDojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt' });
+    const pool = db.promise();
+    const [rows] = await pool.query(
+      `SELECT m.mitglied_id, m.vorname, m.nachname, m.foto_pfad,
+              TIME_FORMAT(c.checkin_time, '%H:%i') AS zeit
+       FROM checkins c
+       JOIN mitglieder m ON m.mitglied_id = c.mitglied_id
+       WHERE m.dojo_id = ? AND DATE(c.checkin_time) = CURDATE() AND c.status = 'active'
+       ORDER BY c.checkin_time DESC
+       LIMIT 30`,
+      [secureDojoId]
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    logger.error('Checkins-heute-Liste Fehler:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/dashboard/neueste-mitglieder
 router.get('/neueste-mitglieder', async (req, res) => {
   try {

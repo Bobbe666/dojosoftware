@@ -42,11 +42,15 @@
   flex-direction: column;
   gap: 0.3rem;
   transition: border-color 0.15s, background 0.15s;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
 }
 
 .du-kpi-card:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .du-kpi-card--gold {
@@ -57,6 +61,12 @@
 .du-kpi-card--gold:hover {
   background: rgba(255, 215, 0, 0.07);
   border-color: rgba(255, 215, 0, 0.3);
+}
+
+.du-kpi-card--active {
+  border-color: rgba(255, 215, 0, 0.45) !important;
+  background: rgba(255, 215, 0, 0.08) !important;
+  box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.2);
 }
 
 .du-kpi-icon {
@@ -77,6 +87,131 @@
   color: rgba(255, 255, 255, 0.45);
   font-weight: 500;
   letter-spacing: 0.03em;
+}
+
+.du-kpi-hint {
+  font-size: 0.63rem;
+  color: rgba(255, 215, 0, 0.38);
+  margin-top: 0.25rem;
+  letter-spacing: 0.02em;
+}
+
+/* ── Detail Panel ── */
+.du-detail-panel {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  animation: du-slide-in 0.18s ease;
+}
+
+@keyframes du-slide-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.du-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.du-detail-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.du-detail-close {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.4);
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.du-detail-close:hover {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Chart ── */
+.du-chart-wrap {
+  margin-top: 0.25rem;
+}
+
+.du-chart-subtitle {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0 0 0.75rem;
+}
+
+/* ── Detail list (check-ins, interessenten) ── */
+.du-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.du-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.du-detail-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.du-detail-time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+/* ── Interessenten avatar + status ── */
+.du-int-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(108, 160, 220, 0.15);
+  border: 1px solid rgba(108, 160, 220, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6ca0dc;
+  flex-shrink: 0;
+}
+
+.du-int-status {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 /* ── Alert row ── */
