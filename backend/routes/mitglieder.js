@@ -1705,7 +1705,7 @@ router.get('/stil-erinnerungen', async (req, res) => {
     const pool = db.promise();
 
     let where = `m.erstellt_am < DATE_SUB(NOW(), INTERVAL 7 DAY)
-      AND m.status = 'aktiv'
+      AND m.aktiv = 1
       AND m.stil_erinnerung_dismissed = 0
       AND NOT EXISTS (SELECT 1 FROM mitglied_stile ms WHERE ms.mitglied_id = m.mitglied_id)
       AND NOT EXISTS (SELECT 1 FROM mitglied_stil_data msd WHERE msd.mitglied_id = m.mitglied_id)`;

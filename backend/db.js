@@ -54,22 +54,8 @@ function connectDatabase() {
     });
 
     db.on("error", (err) => {
-        // Verbindungs-Fehler (ETIMEDOUT, ECONNRESET, PROTOCOL_CONNECTION_LOST etc.)
-        // sollen den Prozess NICHT crashen — mysql2 Pool erholt sich automatisch
-        const connectionErrors = [
-            "PROTOCOL_CONNECTION_LOST",
-            "ETIMEDOUT",
-            "ECONNRESET",
-            "ECONNREFUSED",
-            "ENOTFOUND",
-        ];
-        if (connectionErrors.includes(err.code) || err.fatal) {
-            console.error("⚠️ MySQL Verbindungsfehler (wird ignoriert):", err.code || err.message);
-        } else {
-            // Nur bei echten, unerwarteten Pool-Fehlern weiterschmeißen
-            console.error("❌ MySQL Fehler (unerwartet):", err);
-            throw err;
-        }
+        // Alle Pool-Fehler loggen, aber NIEMALS throw — würde Prozess crashen
+        console.error("⚠️ MySQL Pool-Fehler (wird ignoriert):", err.code || err.message);
     });
 }
 
