@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X, BookOpen, ChevronDown, ChevronUp, Check } from 'lucide-react';
 
 const fmt = (dateStr) => {
@@ -68,7 +69,7 @@ const StilZuweisungModal = ({ mitglied, dojoId, onDone, onClose }) => {
     }
   };
 
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
       background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -163,7 +164,8 @@ const StilZuweisungModal = ({ mitglied, dojoId, onDone, onClose }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
