@@ -31,6 +31,7 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 import openApiBlob from '../utils/openApiBlob';
 import LastschriftAutomatik from './LastschriftAutomatik';
 import '../styles/LastschriftAutomatik.css';
+import LastschriftAutoProtokollBanner from './LastschriftAutoProtokollBanner';
 import '../styles/StripeStornoVerwaltung.css';
 import Zahllaeufe from './Zahllaeufe';
 
@@ -733,6 +734,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
   return (
     <div className="lastschriftlauf-container">
+      <LastschriftAutoProtokollBanner dojoId={dojoId} />
       {/* Header - nur anzeigen wenn nicht embedded */}
       {!embedded && (
       <div className="lastschriftlauf-header">

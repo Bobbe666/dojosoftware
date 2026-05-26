@@ -467,6 +467,104 @@ function initCronJobs() {
     }
   });
 
+  // ── Auto-Lastschrift Artikelverkäufe ──────────────────────────────────────
+  // Täglich um 00:05 Uhr — zieht offene Lastschrift-Verkäufe automatisch ein
+  cron.schedule('5 0 * * *', async () => {
+    try {
+      const dojos = await queryAsync(
+        `SELECT id, dojoname FROM dojo WHERE auto_lastschrift_verkaeufe = 1`
+      );
+      if (!dojos.length) return;
+      logger.info(`🏦 Auto-Lastschrift Artikelverkäufe: ${dojos.length} Dojo(s) aktiv`);
+
+      for (const dojo of dojos) {
+        try {
+          const verkaeufe = await queryAsync(`
+            SELECT v.verkauf_id, v.mitglied_id, v.brutto_gesamt_cent, v.bon_nummer, v.verkauf_datum,
+                   m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
+                   sm.mandatsreferenz, sm.erstellungsdatum AS mandat_datum
+            FROM verkaeufe v
+            JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+            JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+            WHERE v.dojo_id = ?
+              AND v.zahlungsart = 'lastschrift'
+              AND v.zahlungsstatus = 'offen'
+              AND (v.storniert = 0 OR v.storniert IS NULL)
+            ORDER BY v.verkauf_timestamp
+          `, [dojo.id]);
+
+          if (!verkaeufe.length) {
+            logger.info(`Auto-Lastschrift ${dojo.dojoname}: keine offenen Verkäufe`);
+            continue;
+          }
+
+          // Standard-Bank holen
+          const banken = await queryAsync(
+            `SELECT * FROM dojo_banken WHERE dojo_id = ? AND ist_standard = 1 AND ist_aktiv = 1 LIMIT 1`,
+            [dojo.id]
+          );
+          const bank = banken[0] || null;
+
+          // CSV aufbauen
+          const lines = [];
+          if (bank) {
+            lines.push(`# SEPA Auto-Lastschrift Artikelverkäufe - ${dojo.dojoname}`);
+            lines.push(`# Gläubiger: ${bank.kontoinhaber || bank.bank_name}`);
+            lines.push(`# Gläubiger-IBAN: ${bank.iban}`);
+            lines.push(`# Gläubiger-BIC: ${bank.bic || ''}`);
+            lines.push(`# Gläubiger-ID: ${bank.sepa_glaeubiger_id || ''}`);
+            lines.push(`# Erstellt am: ${new Date().toLocaleString('de-DE')}`);
+            lines.push('');
+          }
+          lines.push('Mandatsreferenz;IBAN;BIC;Kontoinhaber;Betrag;Währung;Verwendungszweck;Mandat-Datum;Bon-Nummer');
+
+          let gesamtCent = 0;
+          for (const v of verkaeufe) {
+            gesamtCent += v.brutto_gesamt_cent || 0;
+            lines.push([
+              v.mandatsreferenz || `DOJO-${v.mitglied_id}-TEMP`,
+              v.iban,
+              v.bic || '',
+              `"${v.kontoinhaber || `${v.vorname} ${v.nachname}`}"`,
+              ((v.brutto_gesamt_cent || 0) / 100).toFixed(2),
+              'EUR',
+              `"Artikelverkauf Bon-Nr. ${v.bon_nummer}"`,
+              v.mandat_datum ? new Date(v.mandat_datum).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+              v.bon_nummer
+            ].join(';'));
+          }
+
+          // Verkäufe als 'in_einzug' markieren
+          const ids = verkaeufe.map(v => v.verkauf_id);
+          await queryAsync(
+            `UPDATE verkaeufe SET zahlungsstatus = 'in_einzug' WHERE verkauf_id IN (?)`,
+            [ids]
+          );
+
+          // Protokoll-Eintrag speichern
+          await queryAsync(
+            `INSERT INTO lastschrift_auto_protokoll (dojo_id, anzahl_verkaeufe, gesamt_betrag_cent, csv_inhalt, status, gelesen)
+             VALUES (?, ?, ?, ?, 'verarbeitet', 0)`,
+            [dojo.id, verkaeufe.length, gesamtCent, lines.join('\n')]
+          );
+
+          logger.info(`✅ Auto-Lastschrift ${dojo.dojoname}: ${verkaeufe.length} Verkäufe, ${(gesamtCent / 100).toFixed(2)} EUR`);
+        } catch (dojoErr) {
+          logger.error(`Auto-Lastschrift Fehler Dojo ${dojo.id}:`, { error: dojoErr.message });
+          try {
+            await queryAsync(
+              `INSERT INTO lastschrift_auto_protokoll (dojo_id, anzahl_verkaeufe, gesamt_betrag_cent, status, fehler_meldung, gelesen)
+               VALUES (?, 0, 0, 'fehler', ?, 0)`,
+              [dojo.id, dojoErr.message]
+            );
+          } catch (_) {}
+        }
+      }
+    } catch (err) {
+      logger.error('Auto-Lastschrift Cron-Job Fehler:', { error: err.message });
+    }
+  });
+
   logger.info('✅ Cron-Jobs initialisiert', {
     jobs: [
       {
@@ -518,6 +616,11 @@ function initCronJobs() {
         name: 'Event-Erinnerungen',
         schedule: '08:30:00 täglich',
         description: 'Sendet Push-Erinnerungen 7 Tage und 1 Tag vor Events an Angemeldete'
+      },
+      {
+        name: 'Auto-Lastschrift Artikelverkäufe',
+        schedule: '00:05:00 täglich',
+        description: 'Zieht offene Lastschrift-Verkäufe automatisch ein wenn Dojo-Setting aktiv'
       }
     ]
   });

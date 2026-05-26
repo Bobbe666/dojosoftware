@@ -1122,6 +1122,22 @@ const EinstellungenDojo = () => {
                     Wenn aktiviert, werden neue Mitglieder bei der Registrierung automatisch für Stripe-Lastschriften eingerichtet.
                   </small>
                 </div>
+                <div className="form-group checkbox-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="auto_lastschrift_verkaeufe"
+                      checked={!!dojo.auto_lastschrift_verkaeufe}
+                      onChange={(e) => handleChange({ target: { name: 'auto_lastschrift_verkaeufe', value: e.target.checked }})}
+                      disabled={!isEditing}
+                    />
+                    Artikelverkäufe automatisch per Lastschrift einziehen
+                  </label>
+                  <small className="form-help">
+                    Täglich um 00:05 Uhr werden alle offenen Kassen-Verkäufe mit Zahlungsart "Lastschrift" automatisch
+                    verarbeitet und eine SEPA-CSV erstellt. Am nächsten Tag erscheint eine Bestätigung im Lastschriftlauf.
+                  </small>
+                </div>
                 <div className="form-group">
                   <label>E-Mail für Lastschrift-Benachrichtigungen</label>
                   <input

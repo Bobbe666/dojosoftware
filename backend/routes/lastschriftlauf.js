@@ -2514,4 +2514,85 @@ function queryAsync(sql, params) {
     });
 }
 
+// ── Auto-Lastschrift Protokoll ────────────────────────────────────────────────
+
+/**
+ * GET /api/lastschriftlauf/auto-protokoll
+ * Ungelesene Einträge für Banner-Benachrichtigung
+ */
+router.get('/auto-protokoll', async (req, res) => {
+    const dojoId = getSecureDojoId(req);
+    const isSuperAdmin = !dojoId && req.user?.role === 'super_admin';
+    if (!dojoId && !isSuperAdmin) return res.status(400).json({ error: 'Kein Dojo' });
+    try {
+        let rows;
+        if (isSuperAdmin) {
+            // Super-Admin sieht alle ungelesenen Einträge (mit Dojo-Name)
+            rows = await queryAsync(
+                `SELECT p.id, p.dojo_id, d.dojoname, p.erstellt_am, p.anzahl_verkaeufe,
+                        p.gesamt_betrag_cent, p.status, p.fehler_meldung, p.gelesen
+                 FROM lastschrift_auto_protokoll p
+                 JOIN dojo d ON p.dojo_id = d.id
+                 WHERE p.gelesen = 0
+                 ORDER BY p.erstellt_am DESC LIMIT 20`
+            );
+        } else {
+            rows = await queryAsync(
+                `SELECT id, dojo_id, erstellt_am, anzahl_verkaeufe, gesamt_betrag_cent, status, fehler_meldung, gelesen
+                 FROM lastschrift_auto_protokoll
+                 WHERE dojo_id = ? AND gelesen = 0
+                 ORDER BY erstellt_am DESC LIMIT 10`,
+                [dojoId]
+            );
+        }
+        res.json({ success: true, entries: rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * PUT /api/lastschriftlauf/auto-protokoll/:id/lesen
+ * Eintrag als gelesen markieren
+ */
+router.put('/auto-protokoll/:id/lesen', async (req, res) => {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo' });
+    try {
+        await queryAsync(
+            `UPDATE lastschrift_auto_protokoll SET gelesen = 1, gelesen_am = NOW()
+             WHERE id = ? AND dojo_id = ?`,
+            [req.params.id, dojoId]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * GET /api/lastschriftlauf/auto-protokoll/:id/csv
+ * CSV-Datei herunterladen
+ */
+router.get('/auto-protokoll/:id/csv', async (req, res) => {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo' });
+    try {
+        const rows = await queryAsync(
+            `SELECT csv_inhalt, erstellt_am FROM lastschrift_auto_protokoll
+             WHERE id = ? AND dojo_id = ?`,
+            [req.params.id, dojoId]
+        );
+        if (!rows.length || !rows[0].csv_inhalt) {
+            return res.status(404).json({ error: 'Nicht gefunden' });
+        }
+        const dateStr = new Date(rows[0].erstellt_am).toISOString().split('T')[0];
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="Auto_Lastschrift_${dateStr}.csv"`);
+        res.send('﻿' + rows[0].csv_inhalt);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
