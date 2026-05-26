@@ -42,6 +42,7 @@ import DashboardUebersicht from './DashboardUebersicht';
 import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
 import CockpitUebersicht from './CockpitUebersicht';
+import StilErinnerungBanner from './StilErinnerungBanner';
 import TrainingDashboard from './TrainingDashboard';
 import CommunityBoard from './CommunityBoard';
 import TodoPanel from './TodoPanel';
@@ -1355,6 +1356,7 @@ function Dashboard() {
               <TrialBanner stats={stats} />
 
               {/* 📊 Cockpit-Übersicht: Heute & diese Woche */}
+              {role === 'admin' && activeDojo?.id && <StilErinnerungBanner dojoId={activeDojo.id} />}
               {(role === 'admin' || role === 'super_admin') && <CockpitUebersicht />}
 
               {/* Navigation basierend auf Rolle */}

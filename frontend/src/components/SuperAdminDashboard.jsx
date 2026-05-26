@@ -17,6 +17,7 @@ import {
 import '../styles/SuperAdminDashboard.css';
 import TodoPanel from './TodoPanel';
 import LastschriftAutoProtokollBanner from './LastschriftAutoProtokollBanner';
+import StilErinnerungBanner from './StilErinnerungBanner';
 
 // Lazy-load all tab-specific components so they don't block initial render
 const StatisticsTab       = lazy(() => import('./StatisticsTab'));
@@ -1523,6 +1524,7 @@ const SuperAdminDashboard = () => {
         {activeTab === 'overview' && (
           <>
             <LastschriftAutoProtokollBanner dojoId="all" />
+            <StilErinnerungBanner dojoId="all" />
             {/* ── Zone 1: KPI-Leiste ──────────────────────────────────── */}
             <div className="compact-stats-bar sad2-mb-15">
               <div className="compact-stat">
