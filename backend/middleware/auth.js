@@ -67,7 +67,7 @@ const authenticateToken = (req, res, next) => {
  * Middleware: Nur für Admins
  */
 const requireAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
+  if (!req.user || !['admin', 'super_admin'].includes(req.user.role)) {
     return res.status(403).json({ message: "Admin-Berechtigung erforderlich" });
   }
   next();
