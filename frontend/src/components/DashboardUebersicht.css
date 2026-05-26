@@ -1,0 +1,241 @@
+/* ============================================================
+   DashboardUebersicht — scoped styles (prefix: du-)
+   ============================================================ */
+
+.du-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0.25rem 0;
+}
+
+/* ── Section title ── */
+.du-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 215, 0, 0.7);
+  margin: 0 0 0.85rem;
+}
+
+/* ── KPI Grid ── */
+.du-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+}
+
+@media (max-width: 900px) {
+  .du-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .du-kpi-grid { grid-template-columns: 1fr; }
+}
+
+.du-kpi-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.du-kpi-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.du-kpi-card--gold {
+  border-color: rgba(255, 215, 0, 0.18);
+  background: rgba(255, 215, 0, 0.04);
+}
+
+.du-kpi-card--gold:hover {
+  background: rgba(255, 215, 0, 0.07);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.du-kpi-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  margin-bottom: 0.1rem;
+}
+
+.du-kpi-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #FFD700;
+  line-height: 1;
+}
+
+.du-kpi-label {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+/* ── Alert row ── */
+.du-alert-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.du-alert-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s, background 0.15s;
+  text-decoration: none;
+}
+
+.du-alert-chip:hover { opacity: 0.82; }
+
+.du-alert-chip--yellow {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.25);
+  color: #FFD700;
+}
+
+.du-alert-chip--orange {
+  background: rgba(255, 152, 0, 0.12);
+  border-color: rgba(255, 152, 0, 0.28);
+  color: #ff9800;
+}
+
+.du-alert-chip--red {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #f87171;
+}
+
+.du-alert-chip--green {
+  background: rgba(80, 200, 100, 0.1);
+  border-color: rgba(80, 200, 100, 0.25);
+  color: #50c864;
+}
+
+.du-alert-chip--muted {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: default;
+}
+
+/* ── Neueste Mitglieder ── */
+.du-member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.du-member-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s;
+  text-decoration: none;
+}
+
+.du-member-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.du-member-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #FFD700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.du-member-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.du-member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.du-member-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.du-member-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.1rem;
+}
+
+.du-member-date {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.du-member-tarif {
+  font-size: 0.68rem;
+  color: rgba(255, 215, 0, 0.6);
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  border-radius: 3px;
+  padding: 0.05rem 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.du-member-arrow {
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.du-empty {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+  padding: 0.5rem 0;
+}
+
+.du-loading {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+  padding: 0.5rem 0;
+}

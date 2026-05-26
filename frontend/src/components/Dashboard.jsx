@@ -38,6 +38,7 @@ import TrialBanner from './TrialBanner';
 import LanguageSwitcher from './LanguageSwitcher';
 import AgbStatusWidget from './AgbStatusWidget';
 import VisitorChatAlerts from './chat/VisitorChatAlerts';
+import DashboardUebersicht from './DashboardUebersicht';
 import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
 import CockpitUebersicht from './CockpitUebersicht';
@@ -278,6 +279,7 @@ function Dashboard() {
 
   // Tab-Definitionen
   const baseTabs = [
+    { id: 'uebersicht', label: 'Dashboard', icon: '🏠' },
     { id: 'checkin', label: t('tabs.checkin'), icon: '📱' },
     { id: 'mitglieder', label: t('tabs.mitglieder'), icon: '👥' },
     { id: 'pruefungswesen', label: t('tabs.pruefungswesen'), icon: '🏆' },
@@ -1361,6 +1363,9 @@ function Dashboard() {
                   <>
                     {/* Tab Content */}
                     <div className="tab-content">
+                      {/* 🏠 Dashboard Übersicht */}
+                      {activeTab === 'uebersicht' && <DashboardUebersicht />}
+
                       {/* ✨ Check-in Systems Tab ✨ */}
                       {activeTab === 'checkin' && (
                         <div className="nav-cards">

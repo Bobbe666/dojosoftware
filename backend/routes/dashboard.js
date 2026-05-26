@@ -856,4 +856,30 @@ router.post('/neue-vertraege-acknowledge', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/neueste-mitglieder
+router.get('/neueste-mitglieder', async (req, res) => {
+  try {
+    const secureDojoId = getSecureDojoId(req);
+    if (!secureDojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt' });
+    const pool = db.promise();
+    const [rows] = await pool.query(
+      `SELECT m.mitglied_id, m.vorname, m.nachname,
+              DATE_FORMAT(m.eintrittsdatum, '%d.%m.%Y') AS eintrittsdatum_fmt,
+              m.eintrittsdatum,
+              m.foto_pfad, t.name AS tarif_name
+       FROM mitglieder m
+       LEFT JOIN vertraege v ON v.mitglied_id = m.mitglied_id AND v.status = 'aktiv'
+       LEFT JOIN tarife t ON t.id = v.tarif_id
+       WHERE m.aktiv = 1 AND m.dojo_id = ?
+       ORDER BY m.eintrittsdatum DESC, m.mitglied_id DESC
+       LIMIT 10`,
+      [secureDojoId]
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    logger.error('Neueste-Mitglieder Fehler:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
