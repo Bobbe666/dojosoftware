@@ -589,6 +589,46 @@ router.put('/:id/archivieren', (req, res) => {
   });
 });
 
+// PUT /:id/stornieren - Rechnung stornieren
+router.put('/:id/stornieren', async (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
+  const { id } = req.params;
+  const { grund } = req.body;
+
+  try {
+    const pool = db.promise();
+
+    // Rechnung laden + Zugriff prüfen
+    const [rows] = await pool.query(
+      `SELECT r.rechnung_id, r.status, r.rechnungsnummer
+       FROM rechnungen r
+       LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+       WHERE r.rechnung_id = ?
+         ${secureDojoId ? 'AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))' : ''}`,
+      secureDojoId ? [id, secureDojoId, secureDojoId] : [id]
+    );
+
+    if (!rows.length) return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden' });
+
+    const rechnung = rows[0];
+    if (rechnung.status === 'storniert') {
+      return res.status(400).json({ success: false, error: 'Rechnung ist bereits storniert' });
+    }
+
+    await pool.query(
+      `UPDATE rechnungen SET status = 'storniert', storno_grund = ?, storniert_am = NOW()
+       WHERE rechnung_id = ?`,
+      [grund || null, id]
+    );
+
+    logger.info('Rechnung storniert', { rechnung_id: id, rechnungsnummer: rechnung.rechnungsnummer, grund });
+    res.json({ success: true, message: `Rechnung ${rechnung.rechnungsnummer} wurde storniert` });
+  } catch (err) {
+    logger.error('Fehler beim Stornieren der Rechnung:', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // DELETE /:id - Rechnung löschen
 router.delete('/:id', (req, res) => {
   // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token

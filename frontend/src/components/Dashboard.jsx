@@ -1356,7 +1356,6 @@ function Dashboard() {
               <TrialBanner stats={stats} />
 
               {/* 📊 Cockpit-Übersicht: Heute & diese Woche */}
-              {role === 'admin' && activeDojo?.id && <StilErinnerungBanner dojoId={activeDojo.id} />}
               {(role === 'admin' || role === 'super_admin') && <CockpitUebersicht />}
 
               {/* Navigation basierend auf Rolle */}

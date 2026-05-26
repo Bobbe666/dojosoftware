@@ -84,6 +84,11 @@ const Rechnungsverwaltung = () => {
   const [editForm, setEditForm] = useState({});
   const [editSaving, setEditSaving] = useState(false);
 
+  // Storno-Modal State
+  const [stornoModal, setStornoModal] = useState(null); // { rechnung }
+  const [stornoGrund, setStornoGrund] = useState('');
+  const [stornoSaving, setStornoSaving] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -172,6 +177,31 @@ const Rechnungsverwaltung = () => {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}`, { method: 'DELETE' });
       if (res.ok) { loadData(); }
     } catch (error) { console.error('Fehler beim Löschen:', error); }
+  };
+
+  const handleStornieren = async () => {
+    if (!stornoModal) return;
+    setStornoSaving(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${stornoModal.rechnung.rechnung_id}/stornieren`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grund: stornoGrund.trim() || null })
+      });
+      if (res.ok) {
+        setStornoModal(null);
+        setStornoGrund('');
+        if (showModal) closeModal();
+        loadData();
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Fehler beim Stornieren');
+      }
+    } catch (err) {
+      alert('Netzwerkfehler');
+    } finally {
+      setStornoSaving(false);
+    }
   };
 
   const handleShowDetails = async (rechnung_id) => {
@@ -841,6 +871,11 @@ const Rechnungsverwaltung = () => {
               <button className="btn btn-secondary" onClick={() => handleDrucken(modalRechnung.rechnung_id)}>
                 <Printer size={15} /> Drucken
               </button>
+              {modalRechnung.status !== 'storniert' && (
+                <button className="btn btn-danger" onClick={() => { setStornoModal({ rechnung: modalRechnung }); setStornoGrund(''); }}>
+                  <X size={15} /> Stornieren
+                </button>
+              )}
               <button className="btn btn-secondary" onClick={closeModal}>
                 {t('common:buttons.close')}
               </button>
@@ -952,6 +987,43 @@ const Rechnungsverwaltung = () => {
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Storno-Modal */}
+      {stornoModal && (
+        <div className="modal-overlay" onClick={() => setStornoModal(null)}>
+          <div className="modal-content" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title"><X size={17} style={{ marginRight: 8, color: '#e74c3c' }} />Rechnung stornieren</h2>
+              <button className="close-btn" onClick={() => setStornoModal(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: 16, color: 'var(--text-sekundaer)' }}>
+                Rechnung <strong>{stornoModal.rechnung.rechnungsnummer}</strong> ({stornoModal.rechnung.mitglied_name}) wirklich stornieren?
+                Diese Aktion kann nicht rückgängig gemacht werden.
+              </p>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
+                Stornogrund (optional):
+              </label>
+              <input
+                className="form-input"
+                type="text"
+                placeholder="z. B. Doppelte Buchung, Kundenwunsch …"
+                value={stornoGrund}
+                onChange={e => setStornoGrund(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleStornieren()}
+                autoFocus
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setStornoModal(null)}>Abbrechen</button>
+              <button className="btn btn-danger" onClick={handleStornieren} disabled={stornoSaving}>
+                <X size={15} /> {stornoSaving ? 'Wird storniert…' : 'Jetzt stornieren'}
+              </button>
             </div>
           </div>
         </div>

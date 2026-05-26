@@ -6,6 +6,7 @@ import {
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { useDojoContext } from '../context/DojoContext';
+import StilErinnerungBanner from './StilErinnerungBanner';
 import './DashboardUebersicht.css';
 
 function withDojoParam(url, activeDojo) {
@@ -146,6 +147,9 @@ export default function DashboardUebersicht() {
 
   return (
     <div className="du-wrap">
+      {/* ── Stil-Erinnerungen ── */}
+      {activeDojo?.id && <StilErinnerungBanner dojoId={activeDojo.id} />}
+
       {/* ── KPI Grid ── */}
       <div>
         <div className="du-section-title">Übersicht</div>
