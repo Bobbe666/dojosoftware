@@ -71,7 +71,8 @@ if [[ "$MODE" == "all" || "$MODE" == "backend" ]]; then
   # Server: git pull + npm install (nur wenn package.json geändert) + pm2 restart
   ssh $SSH_OPT "$SSH_HOST" "
     cd $SOURCE_REMOTE
-    git pull 2>&1 | tail -3
+    git fetch origin 2>&1 | tail -1
+    git reset --hard origin/main 2>&1 | tail -1
     # npm install nur wenn package-lock.json geändert wurde
     if git diff HEAD@{1} --name-only 2>/dev/null | grep -q 'package-lock.json\|package.json'; then
       echo '  → npm install (package.json geändert)...'
