@@ -49,6 +49,7 @@ const AuditTrailTab         = lazy(() => import('./AuditTrailTab'));
 const PlatformStatusTab     = lazy(() => import('./PlatformStatusTab'));
 const OnboardingStatusTab   = lazy(() => import('./OnboardingStatusTab'));
 const MRRTab                = lazy(() => import('./MRRTab'));
+const InfraChecks           = lazy(() => import('./InfraChecks'));
 
 const TabLoader = () => <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Lädt…</div>;
 
@@ -2385,6 +2386,7 @@ const SuperAdminDashboard = () => {
               { id: 'email',        icon: '✉️', label: 'E-Mail' },
               { id: 'passwoerter',  icon: '🔑', label: 'Passwörter' },
               { id: 'security',     icon: '🛡️', label: 'Security' },
+              { id: 'infrastruktur', icon: '🔍', label: 'Infrastruktur' },
               { id: 'kalender',     icon: '📅', label: 'iCloud Kalender' },
               { id: 'backup',       icon: '💾', label: 'Backups' },
               { id: 'aktivitaeten', icon: '📋', label: 'Aktivitäten' }
@@ -2450,6 +2452,12 @@ const SuperAdminDashboard = () => {
 
             {subActiveTab.system === 'security' && (
               <SecurityDashboard />
+            )}
+
+            {subActiveTab.system === 'infrastruktur' && (
+              <Suspense fallback={<TabLoader />}>
+                <InfraChecks />
+              </Suspense>
             )}
 
             {subActiveTab.system === 'kalender' && (

@@ -2588,4 +2588,92 @@ router.get('/ssl-status', requireSuperAdmin, async (req, res) => {
   });
 });
 
+// GET /api/admin/infra-checks — Service-Health, PM2-Status, SSL
+router.get('/infra-checks', requireSuperAdmin, async (req, res) => {
+  const { exec } = require('child_process');
+  const https = require('https');
+  const http = require('http');
+
+  const checkUrl = (url) => new Promise((resolve) => {
+    const start = Date.now();
+    const mod = url.startsWith('https') ? https : http;
+    const timer = setTimeout(() => resolve({ ok: false, status: null, ms: -1, error: 'timeout' }), 6000);
+    const req2 = mod.get(url, { timeout: 6000 }, (resp) => {
+      clearTimeout(timer);
+      resolve({ ok: resp.statusCode < 500, status: resp.statusCode, ms: Date.now() - start });
+      resp.resume();
+    });
+    req2.on('error', (e) => { clearTimeout(timer); resolve({ ok: false, status: null, ms: Date.now() - start, error: e.code || e.message }); });
+    req2.on('timeout', () => { req2.destroy(); clearTimeout(timer); resolve({ ok: false, status: null, ms: -1, error: 'timeout' }); });
+  });
+
+  const SERVICES = [
+    { name: 'DojoSoftware',       url: 'https://dojo.tda-intl.org',      icon: '🥋' },
+    { name: 'Events Platform',    url: 'https://events.tda-intl.org',     icon: '🏆' },
+    { name: 'Familien Sternchen', url: 'https://kids.tda-intl.org',       icon: '⭐' },
+    { name: 'Hall of Fame',       url: 'https://hof.tda-intl.org',        icon: '🌟' },
+    { name: 'Check-IN',           url: 'https://checkin.tda-intl.org',    icon: '✅' },
+    { name: 'Member App VIB',     url: 'https://app.tda-vib.de',          icon: '🏅' },
+    { name: 'Finanzen',           url: 'https://finanzen.tda-intl.org',   icon: '💰' },
+  ];
+
+  const pm2Check = () => new Promise((resolve) => {
+    exec('pm2 jlist 2>/dev/null', { timeout: 10000 }, (err, stdout) => {
+      try {
+        const list = JSON.parse(stdout || '[]');
+        resolve(list.map(p => ({
+          name: p.name,
+          id: p.pm_id,
+          status: p.pm2_env?.status || 'unknown',
+          uptime: p.pm2_env?.pm_uptime || null,
+          restarts: p.pm2_env?.restart_time || 0,
+          memory: p.monit?.memory || 0,
+          cpu: p.monit?.cpu || 0,
+          pid: p.pid || null
+        })));
+      } catch (_) { resolve([]); }
+    });
+  });
+
+  const sslCheck = () => new Promise((resolve) => {
+    const fsSync = require('fs');
+    exec('certbot certificates 2>/dev/null', { timeout: 30000 }, (err, stdout) => {
+      try {
+        const certs = [];
+        const blocks = (stdout || '').split(/\n(?=  Certificate Name:)/);
+        for (const block of blocks) {
+          const nameMatch = block.match(/Certificate Name:\s+(\S+)/);
+          if (!nameMatch) continue;
+          const domainsMatch = block.match(/Domains:\s+(.+)/);
+          const validMatch = block.match(/VALID:\s+(\d+)\s+days?/);
+          const expiredMatch = /EXPIRED/.test(block);
+          const expiryDateMatch = block.match(/Expiry Date:\s+([\d-]+ [\d:]+)/);
+          const daysLeft = validMatch ? parseInt(validMatch[1]) : (expiredMatch ? 0 : null);
+          let status = 'ok';
+          if (daysLeft === null) status = 'unknown';
+          else if (expiredMatch || daysLeft === 0) status = 'expired';
+          else if (daysLeft <= 7) status = 'critical';
+          else if (daysLeft <= 30) status = 'warning';
+          let renewalType = 'auto';
+          try {
+            const conf = fsSync.readFileSync(`/etc/letsencrypt/renewal/${nameMatch[1].trim()}.conf`, 'utf8');
+            if (conf.includes('authenticator = manual') || conf.includes('dns-01')) renewalType = 'manual';
+          } catch (_) {}
+          certs.push({ name: nameMatch[1].trim(), domains: domainsMatch ? domainsMatch[1].trim() : '', daysLeft, expiryDate: expiryDateMatch ? expiryDateMatch[1] : null, status, renewalType });
+        }
+        certs.sort((a, b) => (a.daysLeft ?? 999) - (b.daysLeft ?? 999));
+        resolve(certs);
+      } catch (_) { resolve([]); }
+    });
+  });
+
+  const [serviceResults, processes, sslCerts] = await Promise.all([
+    Promise.all(SERVICES.map(async (s) => ({ ...s, ...(await checkUrl(s.url)) }))),
+    pm2Check(),
+    sslCheck()
+  ]);
+
+  res.json({ success: true, services: serviceResults, processes, sslCerts, checkedAt: new Date().toISOString() });
+});
+
 module.exports = router;
