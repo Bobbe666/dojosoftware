@@ -206,6 +206,45 @@ router.delete('/unblock-ip/:ip', async (req, res) => {
 });
 
 /**
+ * DELETE /api/security/cleanup
+ * Löscht Auto-Block-Logs und alte gelöste Events
+ */
+router.delete('/cleanup', async (req, res) => {
+  try {
+    const db = require('../db');
+    const { mode = 'auto_blocks' } = req.query;
+
+    let deleted = 0;
+
+    if (mode === 'auto_blocks' || mode === 'all') {
+      // Auto-Block-Logs löschen
+      const [r1] = await db.promise().query(
+        `DELETE FROM security_alerts
+         WHERE alert_type = 'other'
+           AND description LIKE 'IP automatisch blockiert%'`
+      );
+      deleted += r1.affectedRows;
+    }
+
+    if (mode === 'resolved' || mode === 'all') {
+      // Alte gelöste Events (> 30 Tage) löschen
+      const [r2] = await db.promise().query(
+        `DELETE FROM security_alerts
+         WHERE resolved = TRUE
+           AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)`
+      );
+      deleted += r2.affectedRows;
+    }
+
+    console.log(`Security Cleanup: ${deleted} Einträge gelöscht (mode: ${mode})`);
+    res.json({ success: true, deleted, mode });
+  } catch (error) {
+    console.error('Cleanup-Fehler:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/security/alert-types
  * Verfügbare Alert-Typen für Filter
  */

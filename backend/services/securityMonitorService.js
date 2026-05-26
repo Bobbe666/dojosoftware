@@ -79,6 +79,7 @@ const securityMonitorService = {
       dojo_id,
       description,
       blocked = false,
+      resolved = false,
       metadata = {}
     } = alertData;
 
@@ -87,8 +88,8 @@ const securityMonitorService = {
       const [result] = await db.promise().query(
         `INSERT INTO security_alerts
          (alert_type, severity, ip_address, user_agent, request_path, request_method,
-          request_body, user_id, dojo_id, description, blocked, metadata)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          request_body, user_id, dojo_id, description, blocked, resolved, metadata)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           alert_type,
           severity,
@@ -101,6 +102,7 @@ const securityMonitorService = {
           dojo_id,
           description,
           blocked,
+          resolved,
           JSON.stringify(metadata)
         ]
       );
@@ -201,10 +203,11 @@ const securityMonitorService = {
 
         await this.logAlert({
           alert_type: 'other',
-          severity: 'high',
+          severity: 'low',
           ip_address,
           description: `IP automatisch blockiert nach ${alertCount} Sicherheitsereignissen`,
-          blocked: true
+          blocked: true,
+          resolved: true
         });
       }
     } catch (error) {
@@ -326,13 +329,14 @@ const securityMonitorService = {
         [days]
       );
 
-      // Gesamtzahlen
+      // Gesamtzahlen (ohne Auto-Block-Logs)
       const [totals] = await db.promise().query(
         `SELECT
            COUNT(*) as total_alerts,
-           SUM(CASE WHEN resolved = FALSE THEN 1 ELSE 0 END) as unresolved,
+           SUM(CASE WHEN resolved = FALSE AND NOT (alert_type = 'other' AND description LIKE 'IP automatisch blockiert%') THEN 1 ELSE 0 END) as unresolved,
            SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical_count,
-           SUM(CASE WHEN blocked = TRUE THEN 1 ELSE 0 END) as blocked_count
+           SUM(CASE WHEN blocked = TRUE THEN 1 ELSE 0 END) as blocked_count,
+           SUM(CASE WHEN alert_type = 'other' AND description LIKE 'IP automatisch blockiert%' THEN 1 ELSE 0 END) as auto_block_count
          FROM security_alerts
          WHERE created_at > DATE_SUB(NOW(), INTERVAL ? DAY)`,
         [days]

@@ -161,6 +161,7 @@ const SecurityDashboard = () => {
   const [alertTypes, setAlertTypes] = useState([]);
   const [severities, setSeverities] = useState([]);
   const [showExplanations, setShowExplanations] = useState(false);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -234,6 +235,19 @@ const SecurityDashboard = () => {
     } catch (error) {
       console.error('Fehler beim Laden der Alert-Typen:', error);
     }
+  };
+
+  const cleanup = async (mode) => {
+    const labels = { auto_blocks: 'Auto-Block-Logs', resolved: 'alte gelöste Events (>30 Tage)', all: 'alle Auto-Blocks + alte gelöste Events' };
+    if (!window.confirm(`${labels[mode]} wirklich löschen?`)) return;
+    setCleanupLoading(true);
+    try {
+      const token = localStorage.getItem('dojo_auth_token');
+      const r = await fetch(`/api/security/cleanup?mode=${mode}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      const d = await r.json();
+      if (d.success) { alert(`✓ ${d.deleted} Einträge gelöscht`); loadData(); }
+    } catch (e) { console.error(e); }
+    finally { setCleanupLoading(false); }
   };
 
   const resolveAlert = async (alertId) => {
@@ -329,10 +343,16 @@ const SecurityDashboard = () => {
             <p>Angriffserkennung und Monitoring</p>
           </div>
         </div>
-        <button className="btn-refresh" onClick={loadData}>
-          <RefreshCw size={18} />
-          Aktualisieren
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button className="btn-refresh" onClick={() => cleanup('auto_blocks')} disabled={cleanupLoading}
+            title="Auto-Block-Logs löschen (kein Handlungsbedarf, nur Systemlogs)">
+            🧹 Auto-Blocks löschen
+          </button>
+          <button className="btn-refresh" onClick={loadData}>
+            <RefreshCw size={18} />
+            Aktualisieren
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -350,7 +370,7 @@ const SecurityDashboard = () => {
         >
           <AlertTriangle size={18} />
           Alle Warnungen
-          {stats?.summary?.unresolved > 0 && (
+          {(stats?.summary?.unresolved || 0) > 0 && (
             <span className="badge">{stats.summary.unresolved}</span>
           )}
         </button>
@@ -386,7 +406,12 @@ const SecurityDashboard = () => {
               </div>
               <div className="stat-info">
                 <span className="stat-value">{stats.summary?.unresolved || 0}</span>
-                <span className="stat-label">Ungelöst</span>
+                <span className="stat-label">Ungelöst (echte)</span>
+                {stats.summary?.auto_block_count > 0 && (
+                  <span style={{ fontSize: '0.7rem', color: '#666', marginTop: 2 }}>
+                    + {stats.summary.auto_block_count} Auto-Blocks
+                  </span>
+                )}
               </div>
             </div>
             <div className="stat-card">
