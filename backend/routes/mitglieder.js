@@ -1698,6 +1698,44 @@ router.get("/print", async (req, res) => {
   }
 });
 
+// ── GET /api/mitglieder/stil-erinnerungen ── Mitglieder ohne Stil nach 7 Tagen ─
+router.get('/stil-erinnerungen', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    const pool = db.promise();
+
+    let where = `m.erstellt_am < DATE_SUB(NOW(), INTERVAL 7 DAY)
+      AND m.status = 'aktiv'
+      AND m.stil_erinnerung_dismissed = 0
+      AND NOT EXISTS (SELECT 1 FROM mitglied_stile ms WHERE ms.mitglied_id = m.mitglied_id)
+      AND NOT EXISTS (SELECT 1 FROM mitglied_stil_data msd WHERE msd.mitglied_id = m.mitglied_id)`;
+    const params = [];
+
+    if (dojoId) {
+      where += ' AND m.dojo_id = ?';
+      params.push(dojoId);
+    }
+
+    const [rows] = await pool.query(
+      `SELECT m.mitglied_id, m.vorname, m.nachname, m.email, m.erstellt_am,
+              d.dojoname,
+              u.last_login_at
+       FROM mitglieder m
+       LEFT JOIN dojo d ON m.dojo_id = d.id
+       LEFT JOIN users u ON u.mitglied_id = m.mitglied_id
+       WHERE ${where}
+       ORDER BY m.erstellt_am ASC
+       LIMIT 50`,
+      params
+    );
+
+    res.json({ success: true, entries: rows });
+  } catch (err) {
+    logger.error('Stil-Erinnerungen Fehler:', err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
 // ✅ API: Einzelnes Mitglied VOLLPROFIL abrufen - SICHERHEITSFIX: Dojo-Isolation
 router.get("/:id", (req, res) => {
     const id = parseInt(req.params.id, 10);
@@ -5339,44 +5377,6 @@ router.post('/:id/familie/zusammenfuehren', authenticateToken, async (req, res) 
   } catch (err) {
     logger.error('Fehler bei Familie zusammenführen:', err);
     res.status(500).json({ success: false, error: 'Datenbankfehler' });
-  }
-});
-
-// ── GET /api/mitglieder/stil-erinnerungen ── Mitglieder ohne Stil nach 7 Tagen ─
-router.get('/stil-erinnerungen', async (req, res) => {
-  try {
-    const dojoId = getSecureDojoId(req);
-    const pool = db.promise();
-
-    let where = `m.erstellt_am < DATE_SUB(NOW(), INTERVAL 7 DAY)
-      AND m.status = 'aktiv'
-      AND m.stil_erinnerung_dismissed = 0
-      AND NOT EXISTS (SELECT 1 FROM mitglied_stile ms WHERE ms.mitglied_id = m.mitglied_id)
-      AND NOT EXISTS (SELECT 1 FROM mitglied_stil_data msd WHERE msd.mitglied_id = m.mitglied_id)`;
-    const params = [];
-
-    if (dojoId) {
-      where += ' AND m.dojo_id = ?';
-      params.push(dojoId);
-    }
-
-    const [rows] = await pool.query(
-      `SELECT m.mitglied_id, m.vorname, m.nachname, m.email, m.erstellt_am,
-              d.dojoname,
-              u.last_login_at
-       FROM mitglieder m
-       LEFT JOIN dojo d ON m.dojo_id = d.id
-       LEFT JOIN users u ON u.mitglied_id = m.mitglied_id
-       WHERE ${where}
-       ORDER BY m.erstellt_am ASC
-       LIMIT 50`,
-      params
-    );
-
-    res.json({ success: true, entries: rows });
-  } catch (err) {
-    logger.error('Stil-Erinnerungen Fehler:', err);
-    res.status(500).json({ error: 'Datenbankfehler' });
   }
 });
 
