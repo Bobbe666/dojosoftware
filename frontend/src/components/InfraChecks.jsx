@@ -45,6 +45,8 @@ export default function InfraChecks() {
   const [checkedAt, setCheckedAt] = useState(null);
   const [auditData, setAuditData] = useState(null);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [fixState, setFixState] = useState({}); // { [appName]: { loading, result } }
+  const [fixOutput, setFixOutput] = useState(null); // { appName, output, dryRun }
 
   const load = async () => {
     setLoading(true);
@@ -76,6 +78,22 @@ export default function InfraChecks() {
       console.error('npm audit Fehler:', e);
     } finally {
       setAuditLoading(false);
+    }
+  };
+
+  const runFix = async (appName, dryRun) => {
+    setFixState(prev => ({ ...prev, [appName]: { loading: true } }));
+    setFixOutput(null);
+    try {
+      const token = localStorage.getItem('dojo_auth_token');
+      const res = await axios.post('/admin/npm-audit/fix', { appName, dryRun }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFixState(prev => ({ ...prev, [appName]: { loading: false, done: !dryRun } }));
+      setFixOutput({ appName, output: res.data.output, dryRun, fixed: res.data.fixed, summary: res.data.summary });
+      if (!dryRun) loadAudit(); // Ergebnisse neu laden nach echtem Fix
+    } catch (e) {
+      setFixState(prev => ({ ...prev, [appName]: { loading: false, error: true } }));
     }
   };
 
@@ -267,16 +285,18 @@ export default function InfraChecks() {
                   <th style={{ color: '#22c55e' }}>Niedrig</th>
                   <th>Gesamt</th>
                   <th>Kritische Pakete</th>
+                  <th>Aktion</th>
                 </tr>
               </thead>
               <tbody>
                 {auditData.results.map((r) => {
                   const hasIssue = (r.counts?.critical || 0) > 0 || (r.counts?.high || 0) > 0;
+                  const fs = fixState[r.name] || {};
                   return (
                     <tr key={r.name} className={hasIssue ? 'ic-tr--warn' : ''}>
                       <td className="ic-td-name">{r.name}</td>
                       {r.error ? (
-                        <td colSpan={6} style={{ color: 'var(--text-3)', fontSize: '0.78rem' }}>{r.error}</td>
+                        <td colSpan={7} style={{ color: 'var(--text-3)', fontSize: '0.78rem' }}>{r.error}</td>
                       ) : (
                         <>
                           <td><span style={{ color: r.counts.critical > 0 ? '#ef4444' : 'var(--text-3)', fontWeight: r.counts.critical > 0 ? 700 : 400 }}>{r.counts.critical}</span></td>
@@ -299,6 +319,31 @@ export default function InfraChecks() {
                               </div>
                             ) : '—'}
                           </td>
+                          <td>
+                            {r.counts.total > 0 && (
+                              <div className="ic-fix-btns">
+                                <button
+                                  className="ic-fix-btn ic-fix-btn--dry"
+                                  disabled={fs.loading}
+                                  title="Zeigt was geändert würde — ohne zu installieren"
+                                  onClick={() => runFix(r.name, true)}
+                                >
+                                  {fs.loading ? '…' : '🔍 Dry Run'}
+                                </button>
+                                <button
+                                  className="ic-fix-btn ic-fix-btn--apply"
+                                  disabled={fs.loading}
+                                  title="Führt npm audit fix aus (nur semver-kompatibel, kein --force)"
+                                  onClick={() => {
+                                    if (window.confirm(`npm audit fix auf "${r.name}" ausführen?\nNur semver-kompatible Updates (kein --force).`))
+                                      runFix(r.name, false);
+                                  }}
+                                >
+                                  {fs.loading ? '…' : fs.done ? '✓ Fertig' : '⚡ Fix'}
+                                </button>
+                              </div>
+                            )}
+                          </td>
                         </>
                       )}
                     </tr>
@@ -306,6 +351,17 @@ export default function InfraChecks() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Fix Output */}
+        {fixOutput && (
+          <div className="ic-fix-output">
+            <div className="ic-fix-output-header">
+              <strong>{fixOutput.dryRun ? '🔍 Dry Run' : '⚡ Fix ausgeführt'} — {fixOutput.appName}</strong>
+              <button className="ic-fix-close" onClick={() => setFixOutput(null)}>✕</button>
+            </div>
+            <pre className="ic-fix-pre">{fixOutput.output}</pre>
           </div>
         )}
       </section>

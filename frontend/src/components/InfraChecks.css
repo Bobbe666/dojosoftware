@@ -191,8 +191,66 @@
   font-family: monospace;
   background: rgba(0,0,0,0.2);
 }
-.ic-fix-dot {
-  font-size: 0.6rem;
-  opacity: 0.7;
-  title: 'Fix verfügbar';
+.ic-fix-dot { font-size: 0.6rem; opacity: 0.7; }
+
+/* Fix buttons */
+.ic-fix-btns { display: flex; gap: 0.3rem; }
+.ic-fix-btn {
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.ic-fix-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ic-fix-btn--dry {
+  background: rgba(124,106,247,0.1);
+  border-color: rgba(124,106,247,0.3);
+  color: #a78bfa;
+}
+.ic-fix-btn--dry:hover:not(:disabled) { background: rgba(124,106,247,0.2); }
+.ic-fix-btn--apply {
+  background: rgba(16,185,129,0.1);
+  border-color: rgba(16,185,129,0.3);
+  color: #10b981;
+}
+.ic-fix-btn--apply:hover:not(:disabled) { background: rgba(16,185,129,0.2); }
+
+/* Fix output */
+.ic-fix-output {
+  margin-top: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ic-fix-output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  background: rgba(255,255,255,0.04);
+  font-size: 0.83rem;
+}
+.ic-fix-close {
+  background: none;
+  border: none;
+  color: var(--text-3,#888);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0 0.2rem;
+}
+.ic-fix-pre {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: var(--text-2, #ccc);
+  background: rgba(0,0,0,0.2);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 300px;
+  overflow-y: auto;
 }

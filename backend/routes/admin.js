@@ -2641,6 +2641,51 @@ router.get('/npm-audit', requireSuperAdmin, async (req, res) => {
   res.json({ success: true, results, checkedAt: new Date().toISOString() });
 });
 
+// POST /api/admin/npm-audit/fix — npm audit fix für eine App
+router.post('/npm-audit/fix', requireSuperAdmin, async (req, res) => {
+  const { exec } = require('child_process');
+  const path = require('path');
+  const fsSync = require('fs');
+
+  const { appName, dryRun = true } = req.body;
+  if (!appName) return res.status(400).json({ success: false, error: 'appName fehlt' });
+
+  const backendRoot = path.join(__dirname, '..');
+  const APP_PATHS = {
+    'DojoSoftware Backend':  backendRoot,
+    'DojoSoftware Frontend': path.join(backendRoot, '..', 'frontend'),
+    'TDA Events Backend':    '/var/www/tda-events-source/backend',
+    'Kids App Backend':      '/var/www/kids-app/backend',
+    'HOF Backend':           '/var/www/hofsoftware/backend',
+    'Checkin App':           '/var/www/checkin-app',
+  };
+
+  const appPath = APP_PATHS[appName];
+  if (!appPath) return res.status(404).json({ success: false, error: 'App nicht gefunden' });
+  if (!fsSync.existsSync(path.join(appPath, 'package.json'))) {
+    return res.status(404).json({ success: false, error: 'package.json nicht gefunden' });
+  }
+
+  const cmd = dryRun ? 'npm audit fix --dry-run 2>&1' : 'npm audit fix 2>&1';
+  logger.info(`npm audit fix: ${appName} (dryRun=${dryRun})`);
+
+  exec(cmd, { cwd: appPath, timeout: 60000 }, (err, stdout) => {
+    const output = stdout || '';
+    // Zähle behobene Pakete aus npm output
+    const fixedMatch = output.match(/fixed (\d+) vulnerabilit/i);
+    const addedMatch = output.match(/added (\d+),/i);
+    const changedMatch = output.match(/changed (\d+),/i);
+    res.json({
+      success: true,
+      dryRun,
+      appName,
+      output: output.slice(-3000), // Max 3KB Output
+      fixed: fixedMatch ? parseInt(fixedMatch[1]) : null,
+      summary: [addedMatch?.[0], changedMatch?.[0]].filter(Boolean).join(', ') || null
+    });
+  });
+});
+
 // GET /api/admin/infra-checks — Service-Health, PM2-Status, SSL
 router.get('/infra-checks', requireSuperAdmin, async (req, res) => {
   const { exec } = require('child_process');
