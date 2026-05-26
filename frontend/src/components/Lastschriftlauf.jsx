@@ -1069,18 +1069,12 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
       {/* Warning-Boxen: nebeneinander (zugeklappt) / untereinander (aufgeklappt) */}
         {(missingMandates.length > 0 || ohneTarif.length > 0 || inVerarbeitung.length > 0) && (
-          <div style={{
-            display: 'flex',
-            flexDirection: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? 'column' : 'row',
-            gap: '0.6rem',
-            marginBottom: '0.6rem',
-            alignItems: 'flex-start'
-          }}>
+          <div className={`ll-warn-row${(inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? ' ll-warn-row--expanded' : ''}`}>
 
         {/* In Verarbeitung bei Stripe */}
         {inVerarbeitung.length > 0 && (
-          <div className="in-verarbeitung-info" style={{ flex: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? 'none' : 1, minWidth: 0, width: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? '100%' : undefined }}>
-            <Clock size={22} style={{ marginTop: inVerarbeitungOpen ? '0.15rem' : '0' }} />
+          <div className={`in-verarbeitung-info${inVerarbeitungOpen ? ' ll-warnbox--open' : ' ll-warnbox--collapsed'}`}>
+            <Clock size={18} style={{ marginTop: '0.1rem' }} />
             <div style={{ flex: 1 }}>
               <div className="warn-card-header" onClick={() => setInVerarbeitungOpen(o => !o)}>
                 <h3>Einzug läuft — warte auf Rückmeldung ({inVerarbeitung.length})</h3>
@@ -1139,8 +1133,8 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
         {/* Ohne-Tarif Warning */}
         {ohneTarif.length > 0 && (
-          <div className="ohne-tarif-warning" style={{ flex: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? 'none' : 1, minWidth: 0, width: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? '100%' : undefined }}>
-            <AlertCircle size={22} style={{ marginTop: ohneTarifOpen ? '0.15rem' : '0' }} />
+          <div className={`ohne-tarif-warning${ohneTarifOpen ? ' ll-warnbox--open' : ' ll-warnbox--collapsed'}`}>
+            <AlertCircle size={18} style={{ marginTop: '0.1rem' }} />
             <div style={{ flex: 1 }}>
               <div className="warn-card-header" onClick={() => setOhneTarifOpen(o => !o)}>
                 <h3>Kein SEPA-Mandat — nicht im Lauf ({ohneTarif.length})</h3>
@@ -1175,8 +1169,8 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
         {/* Fehlende Mandate */}
         {missingMandates.length > 0 && (
-          <div className="warning-box" style={{ flex: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? 'none' : 1, minWidth: 0, width: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? '100%' : undefined }}>
-            <AlertCircle size={24} style={{ marginTop: missingMandatesOpen ? '0.2rem' : '0' }} />
+          <div className={`warning-box${missingMandatesOpen ? ' ll-warnbox--open' : ' ll-warnbox--collapsed'}`}>
+            <AlertCircle size={18} style={{ marginTop: '0.1rem' }} />
             <div style={{ flex: 1 }}>
               <div className="warn-card-header" onClick={() => setMissingMandatesOpen(o => !o)}>
                 <h3>⚠️ Fehlende SEPA-Mandate ({missingMandates.length})</h3>
