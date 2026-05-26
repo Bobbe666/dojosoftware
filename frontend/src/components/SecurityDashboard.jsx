@@ -326,142 +326,112 @@ const SecurityDashboard = () => {
 
   if (loading) {
     return (
-      <div className="security-dashboard loading">
-        <RefreshCw className="spin" size={32} />
-        <p>Lade Sicherheitsdaten...</p>
+      <div className="sd-loading">
+        <RefreshCw className="sd-spin" size={18} />
+        <span>Lade Sicherheitsdaten…</span>
       </div>
     );
   }
 
   return (
-    <div className="security-dashboard">
-      <div className="security-header">
-        <div className="header-title">
-          <Shield size={32} />
+    <div className="sd">
+      {/* Header */}
+      <div className="sd-header">
+        <div className="sd-header-left">
+          <Shield size={18} />
           <div>
-            <h1>Sicherheits-Dashboard</h1>
-            <p>Angriffserkennung und Monitoring</p>
+            <div className="sd-header-title">Sicherheits-Dashboard</div>
+            <div className="sd-header-sub">Angriffserkennung &amp; Monitoring</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <button className="btn-refresh" onClick={() => cleanup('auto_blocks')} disabled={cleanupLoading}
-            title="Auto-Block-Logs löschen (kein Handlungsbedarf, nur Systemlogs)">
-            🧹 Auto-Blocks löschen
+        <div className="sd-header-actions">
+          <button className="sd-btn sd-btn--cleanup" onClick={() => cleanup('auto_blocks')} disabled={cleanupLoading}
+            title="Auto-Block-Logs löschen">
+            🧹 Auto-Blocks
           </button>
-          <button className="btn-refresh" onClick={loadData}>
-            <RefreshCw size={18} />
+          <button className="sd-btn sd-btn--refresh" onClick={loadData}>
+            <RefreshCw size={13} />
             Aktualisieren
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="security-tabs">
-        <button
-          className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          <Activity size={18} />
-          Übersicht
+      <div className="sd-tabs">
+        <button className={`sd-tab${activeTab === 'overview' ? ' sd-tab--active' : ''}`} onClick={() => setActiveTab('overview')}>
+          <Activity size={14} /> Übersicht
         </button>
-        <button
-          className={`tab ${activeTab === 'alerts' ? 'active' : ''}`}
-          onClick={() => setActiveTab('alerts')}
-        >
-          <AlertTriangle size={18} />
-          Alle Warnungen
+        <button className={`sd-tab${activeTab === 'alerts' ? ' sd-tab--active' : ''}`} onClick={() => setActiveTab('alerts')}>
+          <AlertTriangle size={14} /> Warnungen
           {(stats?.summary?.unresolved || 0) > 0 && (
-            <span className="badge">{stats.summary.unresolved}</span>
+            <span className="sd-badge">{stats.summary.unresolved}</span>
           )}
         </button>
-        <button
-          className={`tab ${activeTab === 'blocked' ? 'active' : ''}`}
-          onClick={() => setActiveTab('blocked')}
-        >
-          <Ban size={18} />
-          Blockierte IPs
-          {blockedIPs.length > 0 && (
-            <span className="badge">{blockedIPs.length}</span>
-          )}
+        <button className={`sd-tab${activeTab === 'blocked' ? ' sd-tab--active' : ''}`} onClick={() => setActiveTab('blocked')}>
+          <Ban size={14} /> Blockierte IPs
+          {blockedIPs.length > 0 && <span className="sd-badge">{blockedIPs.length}</span>}
         </button>
       </div>
 
       {/* Overview Tab */}
       {activeTab === 'overview' && stats && (
-        <div className="overview-content">
-          {/* Stats Cards */}
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon total">
-                <Activity size={24} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value">{stats.summary?.total_alerts || 0}</span>
-                <span className="stat-label">Ereignisse (7 Tage)</span>
+        <>
+          {/* Stats Row */}
+          <div className="sd-stats">
+            <div className="sd-stat">
+              <div className="sd-stat-icon sd-stat-icon--total"><Activity size={16} /></div>
+              <div className="sd-stat-body">
+                <span className="sd-stat-val">{stats.summary?.total_alerts || 0}</span>
+                <span className="sd-stat-lbl">Ereignisse (7 Tage)</span>
               </div>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon warning">
-                <AlertTriangle size={24} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value">{stats.summary?.unresolved || 0}</span>
-                <span className="stat-label">Ungelöst (echte)</span>
+            <div className="sd-stat">
+              <div className="sd-stat-icon sd-stat-icon--warn"><AlertTriangle size={16} /></div>
+              <div className="sd-stat-body">
+                <span className="sd-stat-val">{stats.summary?.unresolved || 0}</span>
+                <span className="sd-stat-lbl">Ungelöst</span>
                 {stats.summary?.auto_block_count > 0 && (
-                  <span style={{ fontSize: '0.7rem', color: '#666', marginTop: 2 }}>
-                    + {stats.summary.auto_block_count} Auto-Blocks
-                  </span>
+                  <span className="sd-stat-sub">+{stats.summary.auto_block_count} Auto-Blocks</span>
                 )}
               </div>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon critical">
-                <AlertCircle size={24} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value">{stats.summary?.critical_count || 0}</span>
-                <span className="stat-label">Kritisch</span>
+            <div className="sd-stat">
+              <div className="sd-stat-icon sd-stat-icon--crit"><AlertCircle size={16} /></div>
+              <div className="sd-stat-body">
+                <span className="sd-stat-val">{stats.summary?.critical_count || 0}</span>
+                <span className="sd-stat-lbl">Kritisch</span>
               </div>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon blocked">
-                <Ban size={24} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value">{stats.summary?.blocked_count || 0}</span>
-                <span className="stat-label">Blockiert</span>
+            <div className="sd-stat">
+              <div className="sd-stat-icon sd-stat-icon--block"><Ban size={16} /></div>
+              <div className="sd-stat-body">
+                <span className="sd-stat-val">{stats.summary?.blocked_count || 0}</span>
+                <span className="sd-stat-lbl">Blockiert</span>
               </div>
             </div>
           </div>
 
-          {/* Ungelöste kritische Alerts */}
+          {/* Kritische Warnungen */}
           {stats.unresolvedCritical?.length > 0 && (
-            <div className="critical-alerts-section">
-              <h3>
-                <AlertCircle size={20} />
-                Kritische Warnungen
-              </h3>
-              <div className="alert-list">
+            <div className="sd-section">
+              <div className="sd-section-head sd-section-head--crit">
+                <AlertCircle size={14} /> Kritische Warnungen
+              </div>
+              <div className="sd-section-body">
                 {stats.unresolvedCritical.slice(0, 5).map(alert => (
-                  <div key={alert.id} className={`alert-item severity-${alert.severity}`}>
-                    <div className="alert-badge" style={{ '--severity-color': getSeverityColor(alert.severity) }}>
-                      {getSeverityLabel(alert.severity)}
-                    </div>
-                    <div className="alert-content">
-                      <span className="alert-type">{getAlertTypeLabel(alert.alert_type)}</span>
-                      <span className="alert-desc">{alert.description}</span>
-                      <span className="alert-meta">
-                        <Globe size={12} /> {alert.ip_address || 'Unbekannt'}
-                        <Clock size={12} /> {formatDate(alert.created_at)}
+                  <div key={alert.id} className={`sd-alert sd-alert--${alert.severity}`}>
+                    <span className={`sd-sev sd-sev--${alert.severity}`}>{getSeverityLabel(alert.severity)}</span>
+                    <div className="sd-alert-body">
+                      <span className="sd-alert-type">{getAlertTypeLabel(alert.alert_type)}</span>
+                      <span className="sd-alert-desc">{alert.description}</span>
+                      <span className="sd-alert-meta">
+                        <Globe size={11} />{alert.ip_address || 'Unbekannt'}
+                        <Clock size={11} />{formatDate(alert.created_at)}
                       </span>
                     </div>
                     {!alert.resolved && (
-                      <button
-                        className="btn-resolve"
-                        onClick={() => resolveAlert(alert.id)}
-                        title="Als gelöst markieren"
-                      >
-                        <CheckCircle size={16} />
+                      <button className="sd-resolve-btn" onClick={() => resolveAlert(alert.id)} title="Als gelöst markieren">
+                        <CheckCircle size={13} />
                       </button>
                     )}
                   </div>
@@ -470,64 +440,50 @@ const SecurityDashboard = () => {
             </div>
           )}
 
-          {/* Alerts nach Typ */}
+          {/* Ereignisse nach Typ */}
           {stats.alertsByType?.length > 0 && (
-            <div className="alerts-by-type">
-              <h3>
-                <TrendingUp size={20} />
-                Ereignisse nach Typ (7 Tage)
-              </h3>
-              <div className="type-grid">
+            <div className="sd-section">
+              <div className="sd-section-head">
+                <TrendingUp size={14} /> Ereignisse nach Typ (7 Tage)
+              </div>
+              <div className="sd-type-grid">
                 {stats.alertsByType.map((item, idx) => {
                   const info = getAlertTypeInfo(item.alert_type);
                   return (
-                    <div key={idx} className="type-item type-item-with-desc">
-                      <div className="type-header">
-                        <span className="type-icon">{info.icon}</span>
-                        <span className="type-name">{getAlertTypeLabel(item.alert_type)}</span>
-                        <span className="type-count">{item.count}</span>
-                        <span
-                          className="type-severity"
-                          style={{ '--severity-color': getSeverityColor(item.severity) }}
-                        >
-                          {getSeverityLabel(item.severity)}
-                        </span>
+                    <div key={idx} className="sd-type-card">
+                      <div className="sd-type-top">
+                        <span className="sd-type-icon">{info.icon}</span>
+                        <span className="sd-type-name">{getAlertTypeLabel(item.alert_type)}</span>
+                        <span className="sd-type-count">{item.count}</span>
                       </div>
-                      <p className="type-desc">{info.kurzinfo}</p>
-                      <p className="type-bewertung">{info.bewertung}</p>
+                      <div className="sd-type-sub">{info.kurzinfo}</div>
+                      <div className="sd-type-bewertung">{info.bewertung}</div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Erklärungen – aufklappbar */}
-              <div className="erklaerungen-toggle" onClick={() => setShowExplanations(v => !v)}>
-                <Info size={16} />
+              <div className="sd-expl-toggle" onClick={() => setShowExplanations(v => !v)}>
+                <Info size={13} />
                 <span>Was bedeuten diese Ereignisse?</span>
-                {showExplanations ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                {showExplanations ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
               </div>
 
               {showExplanations && (
-                <div className="erklaerungen-liste">
+                <div className="sd-expl-list">
                   {stats.alertsByType.map((item, idx) => {
                     const info = getAlertTypeInfo(item.alert_type);
                     return (
-                      <div key={idx} className="erklaerung-item">
-                        <div className="erklaerung-header">
-                          <span className="erklaerung-icon">{info.icon}</span>
+                      <div key={idx} className="sd-expl-item">
+                        <div className="sd-expl-head">
+                          <span>{info.icon}</span>
                           <strong>{getAlertTypeLabel(item.alert_type)}</strong>
-                          <span className="erklaerung-kurzinfo">{info.kurzinfo}</span>
+                          <span className="sd-expl-kurzinfo">{info.kurzinfo}</span>
                         </div>
-                        <p className="erklaerung-desc">{info.beschreibung}</p>
-                        <div className="erklaerung-meta">
-                          <div className="erklaerung-row">
-                            <span className="erklaerung-label">Einschätzung:</span>
-                            <span>{info.bewertung}</span>
-                          </div>
-                          <div className="erklaerung-row">
-                            <span className="erklaerung-label">Empfohlene Aktion:</span>
-                            <span>{info.aktion}</span>
-                          </div>
+                        <p className="sd-expl-desc">{info.beschreibung}</p>
+                        <div className="sd-expl-rows">
+                          <div className="sd-expl-row"><span className="sd-expl-lbl">Einschätzung:</span><span>{info.bewertung}</span></div>
+                          <div className="sd-expl-row"><span className="sd-expl-lbl">Empfehlung:</span><span>{info.aktion}</span></div>
                         </div>
                       </div>
                     );
@@ -537,140 +493,92 @@ const SecurityDashboard = () => {
             </div>
           )}
 
-          {/* Keine Alerts */}
           {(!stats.alertsByType || stats.alertsByType.length === 0) && (
-            <div className="no-alerts">
-              <CheckCircle size={48} />
-              <h3>Alles in Ordnung!</h3>
-              <p>Keine Sicherheitsereignisse in den letzten 7 Tagen.</p>
+            <div className="sd-empty">
+              <CheckCircle size={36} />
+              <strong>Alles in Ordnung!</strong>
+              <span>Keine Sicherheitsereignisse in den letzten 7 Tagen.</span>
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Alerts Tab */}
       {activeTab === 'alerts' && (
-        <div className="alerts-content">
-          {/* Filter */}
-          <div className="alerts-filter">
-            <Filter size={18} />
-            <select
-              value={filters.severity}
-              onChange={e => setFilters(prev => ({ ...prev, severity: e.target.value }))}
-            >
+        <div className="sd-section">
+          <div className="sd-filter">
+            <Filter size={14} />
+            <select value={filters.severity} onChange={e => setFilters(prev => ({ ...prev, severity: e.target.value }))}>
               <option value="">Alle Schweregrade</option>
-              {severities.map(s => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
+              {severities.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
-            <select
-              value={filters.alert_type}
-              onChange={e => setFilters(prev => ({ ...prev, alert_type: e.target.value }))}
-            >
+            <select value={filters.alert_type} onChange={e => setFilters(prev => ({ ...prev, alert_type: e.target.value }))}>
               <option value="">Alle Typen</option>
-              {alertTypes.map(t => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
+              {alertTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
-            <select
-              value={filters.resolved}
-              onChange={e => setFilters(prev => ({ ...prev, resolved: e.target.value }))}
-            >
+            <select value={filters.resolved} onChange={e => setFilters(prev => ({ ...prev, resolved: e.target.value }))}>
               <option value="">Alle</option>
               <option value="false">Ungelöst</option>
               <option value="true">Gelöst</option>
             </select>
           </div>
-
-          {/* Alert List */}
-          <div className="full-alert-list">
+          <div className="sd-section-body">
             {alerts.length === 0 ? (
-              <div className="no-alerts">
-                <CheckCircle size={32} />
-                <p>Keine Warnungen gefunden</p>
-              </div>
-            ) : (
-              alerts.map(alert => {
-                const info = getAlertTypeInfo(alert.alert_type);
-                return (
-                <div key={alert.id} className={`alert-item severity-${alert.severity} ${alert.resolved ? 'resolved' : ''}`}>
-                  <div className="alert-badge" style={{ '--severity-color': getSeverityColor(alert.severity) }}>
-                    {getSeverityLabel(alert.severity)}
-                  </div>
-                  <div className="alert-content">
-                    <span className="alert-type">
-                      <span className="alert-type-icon">{info.icon}</span>
-                      {getAlertTypeLabel(alert.alert_type)}
-                    </span>
-                    <span className="alert-inline-info">{info.kurzinfo} — {info.bewertung}</span>
-                    <span className="alert-desc">{alert.description}</span>
-                    <span className="alert-meta">
-                      <Globe size={12} /> {alert.ip_address || 'Unbekannt'}
-                      <Clock size={12} /> {formatDate(alert.created_at)}
-                      {alert.request_path && (
-                        <>
-                          <Eye size={12} /> {alert.request_path.substring(0, 50)}
-                        </>
-                      )}
+              <div className="sd-empty"><CheckCircle size={28} /><span>Keine Warnungen gefunden</span></div>
+            ) : alerts.map(alert => {
+              const info = getAlertTypeInfo(alert.alert_type);
+              return (
+                <div key={alert.id} className={`sd-alert sd-alert--${alert.severity}${alert.resolved ? ' sd-alert--resolved' : ''}`}>
+                  <span className={`sd-sev sd-sev--${alert.severity}`}>{getSeverityLabel(alert.severity)}</span>
+                  <div className="sd-alert-body">
+                    <span className="sd-alert-type">{info.icon} {getAlertTypeLabel(alert.alert_type)}</span>
+                    <span className="sd-alert-hint">{info.kurzinfo} — {info.bewertung}</span>
+                    <span className="sd-alert-desc">{alert.description}</span>
+                    <span className="sd-alert-meta">
+                      <Globe size={11} />{alert.ip_address || 'Unbekannt'}
+                      <Clock size={11} />{formatDate(alert.created_at)}
+                      {alert.request_path && <><Eye size={11} />{alert.request_path.substring(0, 50)}</>}
                     </span>
                   </div>
-                  <div className="alert-actions">
+                  <div>
                     {alert.resolved ? (
-                      <span className="resolved-badge">
-                        <CheckCircle size={14} /> Gelöst
-                      </span>
+                      <span className="sd-resolved-tag"><CheckCircle size={12} /> Gelöst</span>
                     ) : (
-                      <button
-                        className="btn-resolve"
-                        onClick={() => resolveAlert(alert.id)}
-                        title="Als gelöst markieren"
-                      >
-                        <CheckCircle size={16} />
+                      <button className="sd-resolve-btn" onClick={() => resolveAlert(alert.id)} title="Als gelöst markieren">
+                        <CheckCircle size={13} />
                       </button>
                     )}
                   </div>
                 </div>
-                );
-              })
-            )}
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* Blocked IPs Tab */}
       {activeTab === 'blocked' && (
-        <div className="blocked-content">
+        <div className="sd-section">
+          <div className="sd-section-head"><Ban size={14} /> Blockierte IPs</div>
           {blockedIPs.length === 0 ? (
-            <div className="no-alerts">
-              <Unlock size={32} />
-              <p>Keine IPs blockiert</p>
-            </div>
+            <div className="sd-empty"><Unlock size={28} /><span>Keine IPs blockiert</span></div>
           ) : (
-            <div className="blocked-list">
+            <div className="sd-blocked-list">
               {blockedIPs.map(ip => (
-                <div key={ip.id} className="blocked-item">
-                  <div className="blocked-icon">
-                    <Ban size={20} />
+                <div key={ip.id} className="sd-blocked-row">
+                  <div className="sd-blocked-icon"><Ban size={14} /></div>
+                  <div className="sd-blocked-info">
+                    <div className="sd-blocked-ip">{ip.ip_address}</div>
+                    <div className="sd-blocked-reason">{ip.reason}</div>
+                    <div className="sd-blocked-meta">
+                      Seit: {formatDate(ip.created_at)}
+                      {ip.blocked_until && !ip.permanent && <> · Bis: {formatDate(ip.blocked_until)}</>}
+                      {ip.permanent && <> · <strong>Permanent</strong></>}
+                      {ip.alert_count && <> · {ip.alert_count} Ereignisse</>}
+                    </div>
                   </div>
-                  <div className="blocked-info">
-                    <span className="blocked-ip">{ip.ip_address}</span>
-                    <span className="blocked-reason">{ip.reason}</span>
-                    <span className="blocked-meta">
-                      Blockiert seit: {formatDate(ip.created_at)}
-                      {ip.blocked_until && !ip.permanent && (
-                        <> | Bis: {formatDate(ip.blocked_until)}</>
-                      )}
-                      {ip.permanent && <> | <strong>Permanent</strong></>}
-                      {ip.alert_count && <> | {ip.alert_count} Ereignisse</>}
-                    </span>
-                  </div>
-                  <button
-                    className="btn-unblock"
-                    onClick={() => unblockIP(ip.ip_address)}
-                    title="IP entsperren"
-                  >
-                    <Unlock size={16} />
-                    Entsperren
+                  <button className="sd-unblock-btn" onClick={() => unblockIP(ip.ip_address)}>
+                    <Unlock size={12} /> Entsperren
                   </button>
                 </div>
               ))}
