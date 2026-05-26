@@ -259,6 +259,7 @@ const ImpressumPage = lazyWithReload(() => import(/* webpackChunkName: "marketin
 const AboutPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/AboutPage"));
 const DatenschutzPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/DatenschutzPage"));
 const AGBPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/AGBPage"));
+const WiderrufsPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/WiderrufsPage"));
 const HelpPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/HelpPage"));
 const GaleriePage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/GaleriePage"));
 const DemoPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/DemoPage"));
@@ -600,6 +601,7 @@ const App = () => {
               <Route path="/about" element={<Suspense fallback={<LazyLoadFallback />}><AboutPage /></Suspense>} />
               <Route path="/datenschutz" element={<Suspense fallback={<LazyLoadFallback />}><DatenschutzPage /></Suspense>} />
               <Route path="/agb" element={<Suspense fallback={<LazyLoadFallback />}><AGBPage /></Suspense>} />
+              <Route path="/widerruf" element={<Suspense fallback={<LazyLoadFallback />}><WiderrufsPage /></Suspense>} />
               <Route path="/help" element={<Suspense fallback={<LazyLoadFallback />}><HelpPage /></Suspense>} />
               <Route path="/galerie" element={<Suspense fallback={<LazyLoadFallback />}><GaleriePage /></Suspense>} />
               <Route path="/demo" element={<Suspense fallback={<LazyLoadFallback />}><DemoPage /></Suspense>} />

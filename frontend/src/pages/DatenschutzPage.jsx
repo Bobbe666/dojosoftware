@@ -274,6 +274,7 @@ const DatenschutzPage = () => {
             <Link to="/">Startseite</Link>
             <Link to="/impressum">Impressum</Link>
             <Link to="/agb">AGB</Link>
+            <Link to="/widerruf">Widerruf</Link>
           </div>
         </div>
       </footer>

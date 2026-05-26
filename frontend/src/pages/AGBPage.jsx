@@ -315,6 +315,7 @@ const AGBPage = () => {
             <Link to="/">Startseite</Link>
             <Link to="/datenschutz">Datenschutz</Link>
             <Link to="/impressum">Impressum</Link>
+            <Link to="/widerruf">Widerruf</Link>
           </div>
         </div>
       </footer>
