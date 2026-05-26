@@ -925,77 +925,54 @@ router.get('/verlauf', async (req, res) => {
 
     let mitgliederRows, beitraegeRows;
 
-    if (zeitraum === 'monat') {
-      // Gruppierung nach Kalenderwoche
-      const [mr] = await pool.query(
-        `SELECT CONCAT(YEAR(eintrittsdatum), '-W', LPAD(WEEK(eintrittsdatum, 1), 2, '0')) AS monat,
-                COUNT(*) AS wert
-         FROM mitglieder
-         WHERE dojo_id = ? AND eintrittsdatum >= ?
-         GROUP BY monat ORDER BY monat ASC`,
-        [secureDojoId, fromDate]
-      );
-      const [br] = await pool.query(
-        `SELECT CONCAT(YEAR(zahlungsdatum), '-W', LPAD(WEEK(zahlungsdatum, 1), 2, '0')) AS monat,
-                SUM(betrag) AS betrag_sum
-         FROM beitraege
-         WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?
-         GROUP BY monat ORDER BY monat ASC`,
-        [secureDojoId, fromDate]
-      );
-      mitgliederRows = mr; beitraegeRows = br;
-    } else if (zeitraum === 'woche') {
-      const [mr] = await pool.query(
-        `SELECT DATE_FORMAT(eintrittsdatum, '%Y-%m-%d') AS monat, COUNT(*) AS wert
-         FROM mitglieder WHERE dojo_id = ? AND eintrittsdatum >= ?
-         GROUP BY monat ORDER BY monat ASC`,
-        [secureDojoId, fromDate]
-      );
-      const [br] = await pool.query(
-        `SELECT DATE_FORMAT(zahlungsdatum, '%Y-%m-%d') AS monat, SUM(betrag) AS betrag_sum
-         FROM beitraege WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?
-         GROUP BY monat ORDER BY monat ASC`,
-        [secureDojoId, fromDate]
-      );
-      mitgliederRows = mr; beitraegeRows = br;
-    } else if (zeitraum === 'jahr') {
-      const [mr] = await pool.query(
-        `SELECT DATE_FORMAT(eintrittsdatum, '%Y') AS monat, COUNT(*) AS wert
-         FROM mitglieder WHERE dojo_id = ? AND eintrittsdatum >= ?
-         GROUP BY monat ORDER BY monat ASC`,
-        [secureDojoId, fromDate]
-      );
-      const [br] = await pool.query(
-        `SELECT DATE_FORMAT(zahlungsdatum, '%Y') AS monat, SUM(betrag) AS betrag_sum
-         FROM beitraege WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?
-         GROUP BY monat ORDER BY monat ASC`,
-        [secureDojoId, fromDate]
-      );
-      mitgliederRows = mr; beitraegeRows = br;
-    } else {
-      // quartal + letzte12 — nach Monat
-      const [mr] = await pool.query(
-        `SELECT DATE_FORMAT(eintrittsdatum, '%Y-%m') AS monat, COUNT(*) AS wert
-         FROM mitglieder WHERE dojo_id = ? AND eintrittsdatum >= ?
-         GROUP BY monat ORDER BY monat ASC`,
-        [secureDojoId, fromDate]
-      );
-      const [br] = await pool.query(
-        `SELECT DATE_FORMAT(zahlungsdatum, '%Y-%m') AS monat, SUM(betrag) AS betrag_sum
-         FROM beitraege WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?
-         GROUP BY monat ORDER BY monat ASC`,
-        [secureDojoId, fromDate]
-      );
-      mitgliederRows = mr; beitraegeRows = br;
-    }
+    const dateFmt = zeitraum === 'woche'
+      ? '%Y-%m-%d'
+      : zeitraum === 'monat'
+        ? null  // Sonderfall Woche
+        : zeitraum === 'jahr'
+          ? '%Y'
+          : '%Y-%m';
 
+    const buildKey = zeitraum === 'monat'
+      ? `CONCAT(YEAR(##), '-W', LPAD(WEEK(##, 1), 2, '0'))`
+      : `DATE_FORMAT(##, '${dateFmt}')`;
+
+    const mitKey = buildKey.replace(/##/g, 'eintrittsdatum');
+    const beiKey = buildKey.replace(/##/g, 'zahlungsdatum');
+
+    const [mr] = await pool.query(
+      `SELECT ${mitKey} AS monat, COUNT(*) AS wert
+       FROM mitglieder WHERE dojo_id = ? AND eintrittsdatum >= ?
+       GROUP BY monat ORDER BY monat ASC`,
+      [secureDojoId, fromDate]
+    );
+    mitgliederRows = mr;
+
+    // Beiträge: eingezogen (bezahlt=1) und geplant/offen (bezahlt=0) — getrennt
+    const [brEingezogen] = await pool.query(
+      `SELECT ${beiKey} AS monat, SUM(betrag) AS betrag_sum
+       FROM beitraege WHERE dojo_id = ? AND bezahlt = 1 AND zahlungsdatum >= ?
+       GROUP BY monat ORDER BY monat ASC`,
+      [secureDojoId, fromDate]
+    );
+    const [brGeplant] = await pool.query(
+      `SELECT ${beiKey} AS monat, SUM(betrag) AS betrag_sum
+       FROM beitraege WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?
+       GROUP BY monat ORDER BY monat ASC`,
+      [secureDojoId, fromDate]
+    );
+    beitraegeRows = { eingezogen: brEingezogen, geplant: brGeplant };
+
+    const round2 = (v) => Math.round(Number(v) * 100) / 100;
     const mitMap = Object.fromEntries(mitgliederRows.map(r => [r.monat, Number(r.wert)]));
-    const beiMap = Object.fromEntries(beitraegeRows.map(r => [r.monat, Math.round(Number(r.betrag_sum) * 100) / 100]));
+    const eingMap = Object.fromEntries(beitraegeRows.eingezogen.map(r => [r.monat, round2(r.betrag_sum)]));
+    const geplMap = Object.fromEntries(beitraegeRows.geplant.map(r => [r.monat, round2(r.betrag_sum)]));
 
     const data = points.map(p => ({
       monat: p.label,
       neue_mitglieder: mitMap[p.key] || 0,
-      offene_beitraege_euro: beiMap[p.key] || 0,
+      eingezogen: eingMap[p.key] || 0,
+      geplant: geplMap[p.key] || 0,
     }));
 
     res.json({ success: true, data });

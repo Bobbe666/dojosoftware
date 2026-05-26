@@ -234,29 +234,43 @@ export default function DashboardUebersicht() {
             </div>
 
             <div className="du-chart-card">
-              <div className="du-chart-card-title">💸 Offene Beiträge</div>
-              <p className="du-chart-subtitle">Betrag in € pro Zeitraum</p>
+              <div className="du-chart-card-title">💰 Beitragsentwicklung</div>
+              <p className="du-chart-subtitle">Eingezogen vs. Ausstehend in €</p>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={verlauf} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                   <XAxis dataKey="monat" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }} />
                   <YAxis
                     tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }}
-                    tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : `${v}`}
+                    tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : String(v)}
                   />
                   <Tooltip
                     contentStyle={CHART_TOOLTIP_STYLE}
-                    cursor={{ stroke: 'rgba(248,113,113,0.15)' }}
-                    formatter={(v) => [`${Number(v).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`, 'Offene Beiträge']}
+                    cursor={{ stroke: 'rgba(255,255,255,0.08)' }}
+                    formatter={(v, name) => [
+                      `${Number(v).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`,
+                      name,
+                    ]}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '0.72rem', paddingTop: '6px' }} />
+                  <Line
+                    type="monotone"
+                    dataKey="eingezogen"
+                    stroke="#50c864"
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: '#50c864', strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                    name="Eingezogen"
                   />
                   <Line
                     type="monotone"
-                    dataKey="offene_beitraege_euro"
-                    stroke="#f87171"
+                    dataKey="geplant"
+                    stroke="#FFD700"
                     strokeWidth={2}
-                    dot={{ r: 3, fill: '#f87171', strokeWidth: 0 }}
+                    strokeDasharray="5 3"
+                    dot={{ r: 3, fill: '#FFD700', strokeWidth: 0 }}
                     activeDot={{ r: 5 }}
-                    name="Offene Beiträge"
+                    name="Ausstehend"
                   />
                 </LineChart>
               </ResponsiveContainer>
