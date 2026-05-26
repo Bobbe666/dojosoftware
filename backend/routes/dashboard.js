@@ -856,48 +856,146 @@ router.post('/neue-vertraege-acknowledge', async (req, res) => {
   }
 });
 
-// GET /api/dashboard/verlauf — monatliche Trends (12 Monate)
+// GET /api/dashboard/verlauf — Trends mit Zeitraum-Auswahl
+// ?zeitraum=woche|monat|quartal|letzte12|jahr  (default: letzte12)
 router.get('/verlauf', async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     if (!secureDojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt' });
     const pool = db.promise();
+    const zeitraum = req.query.zeitraum || 'letzte12';
 
-    // Generiere letzte 12 Monate
-    const months = [];
+    // Datenpunkte generieren
     const now = new Date();
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = d.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' });
-      months.push({ key, label });
-    }
-    const fromDate = months[0].key + '-01';
+    let points = [];
 
-    const [[mitgliederRows], [beitraegeRows]] = await Promise.all([
-      pool.query(
-        `SELECT DATE_FORMAT(eintrittsdatum, '%Y-%m') AS monat, COUNT(*) AS wert
+    if (zeitraum === 'woche') {
+      // Letzte 7 Tage, gruppiert nach Tag
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const label = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+        points.push({ key, label, groupFmt: '%Y-%m-%d', keyFmt: key });
+      }
+    } else if (zeitraum === 'monat') {
+      // Letzte 4 Wochen, gruppiert nach Kalenderwoche
+      for (let i = 3; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i * 7);
+        const week = getISOWeek(d);
+        const year = d.getFullYear();
+        const key = `${year}-W${String(week).padStart(2,'0')}`;
+        const label = `KW ${week}`;
+        points.push({ key, label, groupFmt: 'year-week' });
+      }
+    } else if (zeitraum === 'quartal') {
+      // Letzte 3 Monate
+      for (let i = 2; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const label = d.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+        points.push({ key, label, groupFmt: '%Y-%m' });
+      }
+    } else if (zeitraum === 'jahr') {
+      // Letzte 5 Jahre, gruppiert nach Jahr
+      for (let i = 4; i >= 0; i--) {
+        const year = now.getFullYear() - i;
+        points.push({ key: String(year), label: String(year), groupFmt: '%Y' });
+      }
+    } else {
+      // letzte12 (default) — letzte 12 Monate
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const label = d.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' });
+        points.push({ key, label, groupFmt: '%Y-%m' });
+      }
+    }
+
+    const fromDate = zeitraum === 'woche'
+      ? points[0].key
+      : zeitraum === 'monat'
+        ? (() => { const d = new Date(now); d.setDate(d.getDate() - 27); return d.toISOString().split('T')[0]; })()
+        : zeitraum === 'quartal'
+          ? points[0].key + '-01'
+          : zeitraum === 'jahr'
+            ? points[0].key + '-01-01'
+            : points[0].key + '-01';
+
+    let mitgliederRows, beitraegeRows;
+
+    if (zeitraum === 'monat') {
+      // Gruppierung nach Kalenderwoche
+      const [mr] = await pool.query(
+        `SELECT CONCAT(YEAR(eintrittsdatum), '-W', LPAD(WEEK(eintrittsdatum, 1), 2, '0')) AS monat,
+                COUNT(*) AS wert
          FROM mitglieder
          WHERE dojo_id = ? AND eintrittsdatum >= ?
          GROUP BY monat ORDER BY monat ASC`,
         [secureDojoId, fromDate]
-      ),
-      pool.query(
-        `SELECT DATE_FORMAT(zahlungsdatum, '%Y-%m') AS monat, COUNT(*) AS wert
+      );
+      const [br] = await pool.query(
+        `SELECT CONCAT(YEAR(zahlungsdatum), '-W', LPAD(WEEK(zahlungsdatum, 1), 2, '0')) AS monat,
+                SUM(betrag) AS betrag_sum
          FROM beitraege
          WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?
          GROUP BY monat ORDER BY monat ASC`,
         [secureDojoId, fromDate]
-      ),
-    ]);
+      );
+      mitgliederRows = mr; beitraegeRows = br;
+    } else if (zeitraum === 'woche') {
+      const [mr] = await pool.query(
+        `SELECT DATE_FORMAT(eintrittsdatum, '%Y-%m-%d') AS monat, COUNT(*) AS wert
+         FROM mitglieder WHERE dojo_id = ? AND eintrittsdatum >= ?
+         GROUP BY monat ORDER BY monat ASC`,
+        [secureDojoId, fromDate]
+      );
+      const [br] = await pool.query(
+        `SELECT DATE_FORMAT(zahlungsdatum, '%Y-%m-%d') AS monat, SUM(betrag) AS betrag_sum
+         FROM beitraege WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?
+         GROUP BY monat ORDER BY monat ASC`,
+        [secureDojoId, fromDate]
+      );
+      mitgliederRows = mr; beitraegeRows = br;
+    } else if (zeitraum === 'jahr') {
+      const [mr] = await pool.query(
+        `SELECT DATE_FORMAT(eintrittsdatum, '%Y') AS monat, COUNT(*) AS wert
+         FROM mitglieder WHERE dojo_id = ? AND eintrittsdatum >= ?
+         GROUP BY monat ORDER BY monat ASC`,
+        [secureDojoId, fromDate]
+      );
+      const [br] = await pool.query(
+        `SELECT DATE_FORMAT(zahlungsdatum, '%Y') AS monat, SUM(betrag) AS betrag_sum
+         FROM beitraege WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?
+         GROUP BY monat ORDER BY monat ASC`,
+        [secureDojoId, fromDate]
+      );
+      mitgliederRows = mr; beitraegeRows = br;
+    } else {
+      // quartal + letzte12 — nach Monat
+      const [mr] = await pool.query(
+        `SELECT DATE_FORMAT(eintrittsdatum, '%Y-%m') AS monat, COUNT(*) AS wert
+         FROM mitglieder WHERE dojo_id = ? AND eintrittsdatum >= ?
+         GROUP BY monat ORDER BY monat ASC`,
+        [secureDojoId, fromDate]
+      );
+      const [br] = await pool.query(
+        `SELECT DATE_FORMAT(zahlungsdatum, '%Y-%m') AS monat, SUM(betrag) AS betrag_sum
+         FROM beitraege WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?
+         GROUP BY monat ORDER BY monat ASC`,
+        [secureDojoId, fromDate]
+      );
+      mitgliederRows = mr; beitraegeRows = br;
+    }
 
     const mitMap = Object.fromEntries(mitgliederRows.map(r => [r.monat, Number(r.wert)]));
-    const beiMap = Object.fromEntries(beitraegeRows.map(r => [r.monat, Number(r.wert)]));
+    const beiMap = Object.fromEntries(beitraegeRows.map(r => [r.monat, Math.round(Number(r.betrag_sum) * 100) / 100]));
 
-    const data = months.map(m => ({
-      monat: m.label,
-      neue_mitglieder: mitMap[m.key] || 0,
-      offene_beitraege: beiMap[m.key] || 0,
+    const data = points.map(p => ({
+      monat: p.label,
+      neue_mitglieder: mitMap[p.key] || 0,
+      offene_beitraege_euro: beiMap[p.key] || 0,
     }));
 
     res.json({ success: true, data });
@@ -906,6 +1004,14 @@ router.get('/verlauf', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
 
 // GET /api/dashboard/interessenten-liste
 router.get('/interessenten-liste', async (req, res) => {

@@ -144,15 +144,73 @@
   border-color: rgba(255, 255, 255, 0.3);
 }
 
+/* ── Charts nebeneinander ── */
+.du-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+@media (max-width: 700px) {
+  .du-charts-row { grid-template-columns: 1fr; }
+}
+
+.du-chart-card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 1rem 1.1rem 0.75rem;
+}
+
+.du-chart-card-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.1rem;
+}
+
+/* ── Zeitraum-Selector ── */
+.du-zeitraum-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.du-zeitraum-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+  letter-spacing: 0.03em;
+}
+
+.du-zeitraum-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.du-zeitraum-btn--active {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.35);
+  color: #FFD700;
+}
+
 /* ── Chart ── */
 .du-chart-wrap {
   margin-top: 0.25rem;
 }
 
 .du-chart-subtitle {
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.35);
-  margin: 0 0 0.75rem;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0 0 0.6rem;
 }
 
 /* ── Detail list (check-ins, interessenten) ── */
