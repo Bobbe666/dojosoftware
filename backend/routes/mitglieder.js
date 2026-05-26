@@ -1704,7 +1704,7 @@ router.get('/stil-erinnerungen', async (req, res) => {
     const dojoId = getSecureDojoId(req);
     const pool = db.promise();
 
-    let where = `m.erstellt_am < DATE_SUB(NOW(), INTERVAL 7 DAY)
+    let where = `m.eintrittsdatum < DATE_SUB(CURDATE(), INTERVAL 7 DAY)
       AND m.aktiv = 1
       AND m.stil_erinnerung_dismissed = 0
       AND NOT EXISTS (SELECT 1 FROM mitglied_stile ms WHERE ms.mitglied_id = m.mitglied_id)
@@ -1717,14 +1717,14 @@ router.get('/stil-erinnerungen', async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      `SELECT m.mitglied_id, m.vorname, m.nachname, m.email, m.erstellt_am,
+      `SELECT m.mitglied_id, m.vorname, m.nachname, m.email, m.eintrittsdatum,
               d.dojoname,
               u.last_login_at
        FROM mitglieder m
        LEFT JOIN dojo d ON m.dojo_id = d.id
        LEFT JOIN users u ON u.mitglied_id = m.mitglied_id
        WHERE ${where}
-       ORDER BY m.erstellt_am ASC
+       ORDER BY m.eintrittsdatum ASC
        LIMIT 50`,
       params
     );

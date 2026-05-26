@@ -88,7 +88,7 @@ const StilZuweisungModal = ({ mitglied, dojoId, onDone, onClose }) => {
         </div>
 
         <p style={{ margin: '0 0 1rem', color: '#aaa', fontSize: '0.8rem' }}>
-          Mitglied seit {fmt(mitglied.erstellt_am)} · noch kein Stil zugewiesen
+          Mitglied seit {fmt(mitglied.eintrittsdatum)} · noch kein Stil zugewiesen
         </p>
 
         {stile.length > 0 ? (
@@ -228,7 +228,7 @@ const StilErinnerungBanner = ({ dojoId }) => {
               <strong style={{ color: '#fbbf24' }}>
                 {e.vorname} {e.nachname}{e.dojoname ? ` (${e.dojoname})` : ''}:
               </strong>{' '}
-              Kein Stil zugewiesen · Mitglied seit {daysSince(e.erstellt_am)} Tagen
+              Kein Stil zugewiesen · Mitglied seit {daysSince(e.eintrittsdatum)} Tagen
               {!e.last_login_at && <span style={{ color: '#f87171', marginLeft: '0.4rem' }}>· noch nie eingeloggt</span>}
             </div>
             <button onClick={() => setActiveModal(e.mitglied_id)} title="Stil zuweisen" style={{
