@@ -2588,6 +2588,59 @@ router.get('/ssl-status', requireSuperAdmin, async (req, res) => {
   });
 });
 
+// GET /api/admin/npm-audit — npm audit für alle Backend-Apps auf dem Server
+router.get('/npm-audit', requireSuperAdmin, async (req, res) => {
+  const { exec } = require('child_process');
+  const path = require('path');
+  const fsSync = require('fs');
+
+  const backendRoot = path.join(__dirname, '..');
+
+  const candidates = [
+    { name: 'DojoSoftware Backend',  path: backendRoot },
+    { name: 'DojoSoftware Frontend', path: path.join(backendRoot, '..', 'frontend') },
+    { name: 'TDA Events Backend',    path: '/var/www/tda-events-source/backend' },
+    { name: 'Kids App Backend',      path: '/var/www/kids-app/backend' },
+    { name: 'HOF Backend',           path: '/var/www/hofsoftware/backend' },
+    { name: 'Checkin App',           path: '/var/www/checkin-app' },
+  ].filter(a => {
+    try { return fsSync.existsSync(path.join(a.path, 'package.json')) && fsSync.existsSync(path.join(a.path, 'node_modules')); }
+    catch (_) { return false; }
+  });
+
+  const auditOne = (appPath) => new Promise((resolve) => {
+    exec('npm audit --json 2>/dev/null', { cwd: appPath, timeout: 45000 }, (err, stdout) => {
+      try {
+        const result = JSON.parse(stdout || '{}');
+        const meta = result.metadata?.vulnerabilities || {};
+        const vulns = result.vulnerabilities || {};
+        const topVulns = Object.values(vulns)
+          .filter(v => v.severity === 'critical' || v.severity === 'high')
+          .slice(0, 6)
+          .map(v => ({ name: v.name, severity: v.severity, fixAvailable: !!v.fixAvailable }));
+        resolve({
+          counts: {
+            critical: meta.critical || 0,
+            high:     meta.high     || 0,
+            moderate: meta.moderate || 0,
+            low:      meta.low      || 0,
+            total:    meta.total    || 0
+          },
+          topVulns
+        });
+      } catch (_) {
+        resolve({ error: 'Parse-Fehler', counts: {}, topVulns: [] });
+      }
+    });
+  });
+
+  const results = await Promise.all(
+    candidates.map(async (a) => ({ name: a.name, ...(await auditOne(a.path)) }))
+  );
+
+  res.json({ success: true, results, checkedAt: new Date().toISOString() });
+});
+
 // GET /api/admin/infra-checks — Service-Health, PM2-Status, SSL
 router.get('/infra-checks', requireSuperAdmin, async (req, res) => {
   const { exec } = require('child_process');

@@ -165,3 +165,34 @@
 .ic-badge--crit { background: rgba(239,68,68,0.12); color: #ef4444; }
 .ic-badge--neutral { background: rgba(255,255,255,0.06); color: var(--text-3,#888); }
 .ic-renew-badge { font-size: 0.73rem; color: var(--text-3,#888); }
+
+/* npm Audit */
+.ic-audit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.ic-vuln-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.ic-vuln-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
+  border: 1px solid;
+  font-size: 0.72rem;
+  font-family: monospace;
+  background: rgba(0,0,0,0.2);
+}
+.ic-fix-dot {
+  font-size: 0.6rem;
+  opacity: 0.7;
+  title: 'Fix verfügbar';
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Clock, Cpu, HardDrive, Activity } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Clock, Cpu, HardDrive, Activity, Package } from 'lucide-react';
 import './InfraChecks.css';
 
 const fmt = (ms) => ms < 0 ? '—' : ms < 1000 ? `${ms}ms` : `${(ms/1000).toFixed(1)}s`;
@@ -36,10 +36,15 @@ const pm2Badge = (status) => {
   return <span className="ic-badge">{status}</span>;
 };
 
+const severityColor = { critical: '#ef4444', high: '#f97316', moderate: '#f59e0b', low: '#22c55e' };
+const severityLabel = { critical: 'Kritisch', high: 'Hoch', moderate: 'Mittel', low: 'Niedrig' };
+
 export default function InfraChecks() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [checkedAt, setCheckedAt] = useState(null);
+  const [auditData, setAuditData] = useState(null);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -56,6 +61,21 @@ export default function InfraChecks() {
       console.error('InfraChecks Fehler:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAudit = async () => {
+    setAuditLoading(true);
+    try {
+      const token = localStorage.getItem('dojo_auth_token');
+      const res = await axios.get('/admin/npm-audit', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) setAuditData(res.data);
+    } catch (e) {
+      console.error('npm audit Fehler:', e);
+    } finally {
+      setAuditLoading(false);
     }
   };
 
@@ -216,6 +236,79 @@ export default function InfraChecks() {
           </section>
         </>
       )}
+
+      {/* npm Audit */}
+      <section className="ic-section">
+        <div className="ic-audit-header">
+          <h3 className="ic-section-title" style={{ margin: 0 }}>📦 npm Audit — Abhängigkeiten</h3>
+          <button className="ic-refresh" onClick={loadAudit} disabled={auditLoading}>
+            <Package size={14} className={auditLoading ? 'ic-spin' : ''} />
+            {auditLoading ? 'Prüft… (~20s)' : auditData ? 'Erneut prüfen' : 'Jetzt prüfen'}
+          </button>
+        </div>
+        {!auditData && !auditLoading && (
+          <p className="ic-empty" style={{ marginTop: '0.5rem' }}>Noch nicht geprüft — dauert ~10–20 Sekunden.</p>
+        )}
+        {auditLoading && (
+          <div className="ic-loading">
+            <RefreshCw size={18} className="ic-spin" />
+            <span>npm audit läuft für alle Apps… kann bis zu 20s dauern</span>
+          </div>
+        )}
+        {auditData && !auditLoading && (
+          <div className="ic-table-wrap" style={{ marginTop: '0.5rem' }}>
+            <table className="ic-table">
+              <thead>
+                <tr>
+                  <th>App</th>
+                  <th style={{ color: '#ef4444' }}>Kritisch</th>
+                  <th style={{ color: '#f97316' }}>Hoch</th>
+                  <th style={{ color: '#f59e0b' }}>Mittel</th>
+                  <th style={{ color: '#22c55e' }}>Niedrig</th>
+                  <th>Gesamt</th>
+                  <th>Kritische Pakete</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditData.results.map((r) => {
+                  const hasIssue = (r.counts?.critical || 0) > 0 || (r.counts?.high || 0) > 0;
+                  return (
+                    <tr key={r.name} className={hasIssue ? 'ic-tr--warn' : ''}>
+                      <td className="ic-td-name">{r.name}</td>
+                      {r.error ? (
+                        <td colSpan={6} style={{ color: 'var(--text-3)', fontSize: '0.78rem' }}>{r.error}</td>
+                      ) : (
+                        <>
+                          <td><span style={{ color: r.counts.critical > 0 ? '#ef4444' : 'var(--text-3)', fontWeight: r.counts.critical > 0 ? 700 : 400 }}>{r.counts.critical}</span></td>
+                          <td><span style={{ color: r.counts.high > 0 ? '#f97316' : 'var(--text-3)', fontWeight: r.counts.high > 0 ? 700 : 400 }}>{r.counts.high}</span></td>
+                          <td><span style={{ color: r.counts.moderate > 0 ? '#f59e0b' : 'var(--text-3)' }}>{r.counts.moderate}</span></td>
+                          <td><span style={{ color: 'var(--text-3)' }}>{r.counts.low}</span></td>
+                          <td>{r.counts.total === 0
+                            ? <span className="ic-badge ic-badge--ok">✓ sauber</span>
+                            : <span className="ic-badge ic-badge--warn">{r.counts.total}</span>
+                          }</td>
+                          <td>
+                            {r.topVulns?.length > 0 ? (
+                              <div className="ic-vuln-list">
+                                {r.topVulns.map((v, i) => (
+                                  <span key={i} className="ic-vuln-chip" style={{ borderColor: severityColor[v.severity] + '66', color: severityColor[v.severity] }}>
+                                    {v.name}
+                                    {v.fixAvailable && <span className="ic-fix-dot" title="Fix verfügbar">●</span>}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : '—'}
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
