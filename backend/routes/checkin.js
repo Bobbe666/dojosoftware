@@ -5,6 +5,30 @@ const router = express.Router();
 const db = require('../db');
 const QRCode = require('qrcode');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Multer für Mitglied-Fotos
+const memberFotoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../uploads/member-fotos');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    cb(null, `member-${req.params.mitglied_id}-${Date.now()}${ext}`);
+  }
+});
+const memberFotoUpload = multer({
+  storage: memberFotoStorage,
+  fileFilter: (req, file, cb) => {
+    if (['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Nur JPEG, PNG oder WebP erlaubt'), false);
+  },
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 // ============================================
 // HELPER FUNCTIONS
@@ -1157,6 +1181,58 @@ router.get('/course-avg', async (req, res) => {
       ) sub
     `, [stundenplan_id]);
     res.json({ success: true, avg: Math.round(rows[0]?.avg_count || 0), sessions: rows[0]?.sessions || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Mitglied-Foto Upload ──────────────────────────────────────────────────────
+router.post('/member-photo/:mitglied_id', memberFotoUpload.single('foto'), async (req, res) => {
+  const { mitglied_id } = req.params;
+  if (!req.file) return res.status(400).json({ error: 'Kein Bild hochgeladen' });
+
+  const dojoId = getSecureDojoId(req);
+  const fotoUrl = `/uploads/member-fotos/${req.file.filename}`;
+
+  try {
+    // Altes Foto löschen falls vorhanden
+    const existing = await queryAsync(
+      'SELECT foto_pfad FROM mitglieder WHERE mitglied_id = ?' + (dojoId ? ' AND dojo_id = ?' : ''),
+      dojoId ? [mitglied_id, dojoId] : [mitglied_id]
+    );
+    if (existing[0]?.foto_pfad) {
+      const oldFile = path.join(__dirname, '..', existing[0].foto_pfad);
+      if (fs.existsSync(oldFile)) fs.unlink(oldFile, () => {});
+    }
+
+    await queryAsync(
+      'UPDATE mitglieder SET foto_pfad = ? WHERE mitglied_id = ?' + (dojoId ? ' AND dojo_id = ?' : ''),
+      dojoId ? [fotoUrl, mitglied_id, dojoId] : [fotoUrl, mitglied_id]
+    );
+    res.json({ success: true, foto_pfad: fotoUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Mitglied-Foto löschen ─────────────────────────────────────────────────────
+router.delete('/member-photo/:mitglied_id', async (req, res) => {
+  const { mitglied_id } = req.params;
+  const dojoId = getSecureDojoId(req);
+  try {
+    const rows = await queryAsync(
+      'SELECT foto_pfad FROM mitglieder WHERE mitglied_id = ?' + (dojoId ? ' AND dojo_id = ?' : ''),
+      dojoId ? [mitglied_id, dojoId] : [mitglied_id]
+    );
+    if (rows[0]?.foto_pfad) {
+      const file = path.join(__dirname, '..', rows[0].foto_pfad);
+      if (fs.existsSync(file)) fs.unlink(file, () => {});
+    }
+    await queryAsync(
+      'UPDATE mitglieder SET foto_pfad = NULL WHERE mitglied_id = ?' + (dojoId ? ' AND dojo_id = ?' : ''),
+      dojoId ? [mitglied_id, dojoId] : [mitglied_id]
+    );
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
