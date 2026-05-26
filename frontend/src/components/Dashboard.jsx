@@ -43,6 +43,7 @@ import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
 import CockpitUebersicht from './CockpitUebersicht';
 import StilErinnerungBanner from './StilErinnerungBanner';
+import ChangelogPopup from './ChangelogPopup';
 import TrainingDashboard from './TrainingDashboard';
 import CommunityBoard from './CommunityBoard';
 import TodoPanel from './TodoPanel';
@@ -1354,6 +1355,7 @@ function Dashboard() {
 
               {/* 🔔 Trial/Subscription Banner */}
               <TrialBanner stats={stats} />
+              <ChangelogPopup />
 
               {/* 📊 Cockpit-Übersicht: Heute & diese Woche */}
               {(role === 'admin' || role === 'super_admin') && <CockpitUebersicht />}
