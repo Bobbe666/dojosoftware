@@ -62,8 +62,8 @@ const WiderrufsPage = () => {
               </p>
               <p style={{ marginLeft: '1rem' }}>
                 <strong>TDA International</strong><br />
-                Hauptstraße 1<br />
-                90xxx Nürnberg<br />
+                Ohmstr. 14<br />
+                84137 Vilsbiburg<br />
                 E-Mail: <a href="mailto:info@tda-intl.com">info@tda-intl.com</a>
               </p>
               <p>
@@ -142,8 +142,8 @@ const WiderrufsPage = () => {
                 <p>An:</p>
                 <p>
                   TDA International<br />
-                  Hauptstraße 1<br />
-                  90xxx Nürnberg<br />
+                  Ohmstr. 14<br />
+                  84137 Vilsbiburg<br />
                   E-Mail: info@tda-intl.com
                 </p>
                 <p>
