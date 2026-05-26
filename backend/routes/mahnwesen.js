@@ -288,8 +288,8 @@ router.put("/beitraege/:beitrag_id/bezahlt", (req, res) => {
     const secureDojoId = getSecureDojoId(req);
 
     const query = secureDojoId
-        ? `UPDATE beitraege SET bezahlt = 1 WHERE beitrag_id = ? AND dojo_id = ?`
-        : `UPDATE beitraege SET bezahlt = 1 WHERE beitrag_id = ?`;
+        ? `UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW() WHERE beitrag_id = ? AND dojo_id = ?`
+        : `UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW() WHERE beitrag_id = ?`;
     const params = secureDojoId ? [beitrag_id, secureDojoId] : [beitrag_id];
 
     db.query(query, params, (err, result) => {

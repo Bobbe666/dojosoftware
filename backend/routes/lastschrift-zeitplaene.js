@@ -492,7 +492,7 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
                         if (mitgliedData.beitraege) {
                             for (const beitrag of mitgliedData.beitraege) {
                                 await queryAsync(
-                                    'UPDATE beitraege SET bezahlt = 1, zahlungsart = ?, euer_ausblenden = 1 WHERE beitrag_id = ?',
+                                    'UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = ?, euer_ausblenden = 1 WHERE beitrag_id = ?',
                                     ['Stripe SEPA (Auto)', beitrag.beitrag_id]
                                 );
                             }

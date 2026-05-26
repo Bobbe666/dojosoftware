@@ -219,7 +219,7 @@ router.put("/:id", authenticateToken, (req, res) => {
         );
       } else if (beitraegeAktion === 'erlassen') {
         await pool.query(
-          'UPDATE beitraege SET bezahlt = 1, euer_ausblenden = 1 WHERE mitglied_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?',
+          'UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), euer_ausblenden = 1 WHERE mitglied_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?',
           [id, vertragsfreiAb]
         );
       }

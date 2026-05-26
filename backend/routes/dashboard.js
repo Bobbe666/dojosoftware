@@ -948,13 +948,16 @@ router.get('/verlauf', async (req, res) => {
     );
     mitgliederRows = mr;
 
-    // Beiträge: eingezogen (bezahlt=1) und geplant/offen (bezahlt=0) — getrennt
+    // Beiträge eingezogen: nach bezahlt_am (echter Eingang), Fallback zahlungsdatum für alte Datensätze
+    const beiEingKeyRaw = buildKey.replace(/##/g, 'COALESCE(bezahlt_am, zahlungsdatum)');
     const [brEingezogen] = await pool.query(
-      `SELECT ${beiKey} AS monat, SUM(betrag) AS betrag_sum
-       FROM beitraege WHERE dojo_id = ? AND bezahlt = 1 AND zahlungsdatum >= ?
+      `SELECT ${beiEingKeyRaw} AS monat, SUM(betrag) AS betrag_sum
+       FROM beitraege WHERE dojo_id = ? AND bezahlt = 1
+         AND COALESCE(bezahlt_am, zahlungsdatum) >= ?
        GROUP BY monat ORDER BY monat ASC`,
       [secureDojoId, fromDate]
     );
+    // Beiträge geplant: ausstehende nach Fälligkeitsdatum
     const [brGeplant] = await pool.query(
       `SELECT ${beiKey} AS monat, SUM(betrag) AS betrag_sum
        FROM beitraege WHERE dojo_id = ? AND bezahlt = 0 AND zahlungsdatum >= ?

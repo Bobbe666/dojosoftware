@@ -497,7 +497,7 @@ router.put('/:pruefung_id/gebuehr-bar', async (req, res) => {
         [rechnungId]
       );
       await pool.query(
-        `UPDATE beitraege SET bezahlt = 1, zahlungsart = 'Bar' WHERE rechnung_id = ?`,
+        `UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = 'Bar' WHERE rechnung_id = ?`,
         [rechnungId]
       );
       logger.info('Verknüpfte Rechnung + Beitrag als bar bezahlt markiert', { pruefung_id, rechnungId });

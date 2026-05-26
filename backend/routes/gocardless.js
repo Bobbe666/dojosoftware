@@ -350,7 +350,7 @@ async function handlePaymentSuccess(paymentId) {
         const amountEur = payment.amount / 100;
         const [updated] = await pool.query(
             `UPDATE beitraege
-             SET bezahlt = 1, zahlungsdatum = NOW(), zahlungsart = 'gocardless'
+             SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = 'gocardless'
              WHERE mitglied_id = ?
                AND bezahlt = 0
              ORDER BY faellig_am ASC

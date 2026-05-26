@@ -853,7 +853,8 @@ router.post('/preview-stornieren', async (req, res) => {
             const dojoJoin = secureDojoId
                 ? 'JOIN mitglieder m ON b.mitglied_id = m.mitglied_id AND m.dojo_id = ?'
                 : 'JOIN mitglieder m ON b.mitglied_id = m.mitglied_id';
-            const params = secureDojoId ? [beitrag_ids, secureDojoId] : [beitrag_ids];
+            // dojo_id kommt vor IN(?) im SQL → Reihenfolge: [secureDojoId, beitrag_ids]
+            const params = secureDojoId ? [secureDojoId, beitrag_ids] : [beitrag_ids];
             const result = await queryAsync(
                 `DELETE b FROM beitraege b ${dojoJoin} WHERE b.beitrag_id IN (?) AND b.bezahlt = 0`,
                 params
@@ -1824,7 +1825,7 @@ router.post("/stripe/execute", async (req, res) => {
                     if (mitgliedData && mitgliedData.beitraege) {
                         for (const beitrag of mitgliedData.beitraege) {
                             await queryAsync(
-                                'UPDATE beitraege SET bezahlt = 1, zahlungsart = ? WHERE beitrag_id = ?',
+                                'UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = ? WHERE beitrag_id = ?',
                                 ['Stripe SEPA', beitrag.beitrag_id]
                             );
                             // Verknüpfte Rechnung + Prüfung als bezahlt markieren
@@ -2306,7 +2307,7 @@ router.post("/stripe/retry-single", async (req, res) => {
         if (trans?.status === 'succeeded' && beitraege.length > 0) {
             for (const b of beitraege) {
                 await queryAsync(
-                    'UPDATE beitraege SET bezahlt = 1, zahlungsart = ? WHERE beitrag_id = ?',
+                    'UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = ? WHERE beitrag_id = ?',
                     ['Stripe SEPA', b.beitrag_id]
                 );
                 if (b.rechnung_id) {

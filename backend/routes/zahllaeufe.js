@@ -339,9 +339,9 @@ router.post("/", async (req, res) => {
                 const updateSql = effectiveDojoId
                     ? `UPDATE beitraege b
                        JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
-                       SET b.bezahlt = 1, b.zahllauf_id = ?, b.euer_ausblenden = 1
+                       SET b.bezahlt = 1, b.bezahlt_am = NOW(), b.zahllauf_id = ?, b.euer_ausblenden = 1
                        WHERE b.beitrag_id IN (${placeholders}) AND b.bezahlt = 0 AND m.dojo_id = ?`
-                    : `UPDATE beitraege SET bezahlt = 1, zahllauf_id = ?, euer_ausblenden = 1
+                    : `UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahllauf_id = ?, euer_ausblenden = 1
                        WHERE beitrag_id IN (${placeholders}) AND bezahlt = 0`;
                 const updateParams = effectiveDojoId
                     ? [zahllauf_id, ...validIds, effectiveDojoId]
@@ -435,7 +435,7 @@ router.post("/:id/abschliessen", async (req, res) => {
             if (validIds.length > 0) {
                 const placeholders = validIds.map(() => '?').join(',');
                 const upd = await queryAsync(
-                    `UPDATE beitraege SET bezahlt = 1, zahllauf_id = ?, euer_ausblenden = 1 WHERE beitrag_id IN (${placeholders}) AND bezahlt = 0`,
+                    `UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahllauf_id = ?, euer_ausblenden = 1 WHERE beitrag_id IN (${placeholders}) AND bezahlt = 0`,
                     [id, ...validIds]
                 );
                 markedCount = upd.affectedRows;
@@ -478,7 +478,7 @@ router.post("/:id/abschliessen", async (req, res) => {
             const upd = await queryAsync(`
                 UPDATE beitraege b
                 JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
-                SET b.bezahlt = 1, b.zahllauf_id = ?, b.euer_ausblenden = 1
+                SET b.bezahlt = 1, b.bezahlt_am = NOW(), b.zahllauf_id = ?, b.euer_ausblenden = 1
                 WHERE b.bezahlt = 0
                   AND b.zahlungsdatum >= ? AND b.zahlungsdatum <= ?
                   AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')

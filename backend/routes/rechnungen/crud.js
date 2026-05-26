@@ -541,7 +541,7 @@ router.put('/:id', async (req, res) => {
 
     if (status === 'bezahlt') {
       db.query(
-        `UPDATE beitraege SET bezahlt = 1, zahlungsart = COALESCE(?, zahlungsart) WHERE rechnung_id = ? AND bezahlt = 0`,
+        `UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = COALESCE(?, zahlungsart) WHERE rechnung_id = ? AND bezahlt = 0`,
         [zahlungsart || null, id],
         (bErr) => {
           if (bErr) logger.error('Fehler beim Sync beitrag.bezahlt nach rechnung.bezahlt:', { error: bErr.message });
