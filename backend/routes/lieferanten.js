@@ -32,16 +32,20 @@ router.use(authenticateToken);
 
 router.get('/', (req, res) => {
   const dojoId = getSecureDojoId(req);
-  if (!dojoId) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
 
-  db.query(
-    'SELECT * FROM lieferanten WHERE dojo_id = ? AND aktiv = 1 ORDER BY firmenname ASC',
-    [dojoId],
-    (err, results) => {
-      if (err) return res.status(500).json({ success: false, message: 'Datenbankfehler' });
-      res.json({ success: true, data: results });
-    }
-  );
+  // Super-Admin ohne dojo_id: alle Lieferanten aller Dojos
+  const isSuperAdmin = !req.user?.dojo_id && (req.user?.rolle === 'admin' || req.user?.role === 'admin');
+  if (!dojoId && !isSuperAdmin) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
+
+  const sql = dojoId
+    ? 'SELECT *, (SELECT dojoname FROM dojo WHERE id = l.dojo_id) AS dojo_name FROM lieferanten l WHERE dojo_id = ? AND aktiv = 1 ORDER BY firmenname ASC'
+    : 'SELECT *, (SELECT dojoname FROM dojo WHERE id = l.dojo_id) AS dojo_name FROM lieferanten l WHERE aktiv = 1 ORDER BY firmenname ASC';
+  const params = dojoId ? [dojoId] : [];
+
+  db.query(sql, params, (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Datenbankfehler' });
+    res.json({ success: true, data: results });
+  });
 });
 
 router.get('/:id', (req, res) => {

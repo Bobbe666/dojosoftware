@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
+import { useAuth } from '../context/AuthContext';
 import '../styles/BestellvorlagenTab.css';
 
 // ── Karate-Gi Größen ────────────────────────────────────────────────────────
@@ -101,6 +102,8 @@ const EMPTY_FORM = {
 // ── Komponente ───────────────────────────────────────────────────────────────
 export default function BestellvorlagenTab() {
   const { activeDojo } = useDojoContext();
+  const { user } = useAuth();
+  const isSuperAdmin = (user?.role === 'admin' || user?.rolle === 'admin') && !user?.dojo_id;
   const dojoId = activeDojo?.id;
 
   const [mode, setMode]               = useState('list');
@@ -135,9 +138,15 @@ export default function BestellvorlagenTab() {
   }, [dojoId]);
 
   const loadLieferanten = useCallback(async () => {
-    if (!dojoId) return;
-    try { const res = await axios.get(`/lieferanten?dojo_id=${dojoId}`); setLieferanten(res.data?.data || []); } catch {}
-  }, [dojoId]);
+    if (!dojoId && !isSuperAdmin) return;
+    const url = dojoId ? `/lieferanten?dojo_id=${dojoId}` : '/lieferanten';
+    try {
+      const res = await axios.get(url);
+      setLieferanten(res.data?.data || []);
+    } catch (e) {
+      console.error('Lieferanten laden fehlgeschlagen:', e?.response?.status, e?.message);
+    }
+  }, [dojoId, isSuperAdmin]);
 
   const loadDateien = useCallback(async (vorlagenId) => {
     if (!dojoId || !vorlagenId) return;
@@ -675,7 +684,7 @@ export default function BestellvorlagenTab() {
                 <label className="bvt-label">Lieferant</label>
                 <select className="bvt-input" value={form.lieferant_id} onChange={f('lieferant_id')}>
                   <option value="">— kein Lieferant —</option>
-                  {lieferanten.map(l => <option key={l.lieferant_id} value={l.lieferant_id}>{l.firmenname}</option>)}
+                  {lieferanten.map(l => <option key={l.lieferant_id} value={l.lieferant_id}>{l.firmenname}{l.dojo_name && !dojoId ? ` (${l.dojo_name})` : ''}</option>)}
                 </select>
               </div>
               <div className="bvt-field">
