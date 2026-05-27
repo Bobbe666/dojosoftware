@@ -1433,14 +1433,6 @@ function Dashboard() {
               {/* 📊 Cockpit-Übersicht: Heute & diese Woche */}
               {(role === 'admin' || role === 'super_admin') && <CockpitUebersicht />}
 
-              {/* 🎯 Entwicklungsziele-Widget (Enterprise oder Super-Admin mit ausgewähltem Dojo) */}
-              {activeDojo?.id && (
-                (role === 'admin' && subscription?.plan_type === 'enterprise') ||
-                role === 'super_admin'
-              ) && (
-                <EntwicklungsWidget onTabChange={setActiveTab} />
-              )}
-
               {/* Navigation basierend auf Rolle */}
               <div className="dashboard-navigation">
                 {role === 'admin' ? (
@@ -1448,7 +1440,12 @@ function Dashboard() {
                     {/* Tab Content */}
                     <div className="tab-content">
                       {/* 🏠 Dashboard Übersicht */}
-                      {activeTab === 'uebersicht' && <DashboardUebersicht />}
+                      {activeTab === 'uebersicht' && <>
+                        {activeDojo?.id && (isSuperAdmin || subscription?.plan_type === 'enterprise') && (
+                          <EntwicklungsWidget onTabChange={setActiveTab} />
+                        )}
+                        <DashboardUebersicht />
+                      </>}
 
                       {/* ✨ Check-in Systems Tab ✨ */}
                       {activeTab === 'checkin' && (
