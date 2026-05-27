@@ -980,15 +980,22 @@ const ArtikelFormular = ({ mode }) => {
             {/* SCHNELLEINGABE VK BRUTTO — ohne EK */}
             {(() => {
               const mwst = parseFloat(formData.mwst_prozent) || 19;
-              const netto = vkBruttoInput ? parseFloat(vkBruttoInput) / (1 + mwst / 100) : null;
+              const mwstFaktor = 1 + mwst / 100;
+              // Cent-genaue Berechnung: Netto-Cent so wählen, dass Kasse (Math.round(netto*mwst))
+              // nicht über den eingegebenen Brutto-Cent hinausschießt (verhindert Aufrundung)
+              const brutto_cent = vkBruttoInput ? Math.round(parseFloat(vkBruttoInput) * 100) : 0;
+              let netto_cent = brutto_cent > 0 ? Math.round(brutto_cent / mwstFaktor) : 0;
+              if (netto_cent > 0 && Math.round(netto_cent * mwstFaktor) > brutto_cent) netto_cent--;
+              const netto = netto_cent > 0 ? netto_cent / 100 : null;
               const hasVk = parseFloat(formData.verkaufspreis_euro) > 0;
+              const gespeichertNettoCent = hasVk ? Math.round(parseFloat(formData.verkaufspreis_euro) * 100) : 0;
               return (
                 <div className="af3-schnell-box">
                   <div className="af3-schnell-label">
                     ⚡ VK Brutto direkt eingeben
                     {hasVk && (
                       <span className="af3-schnell-saved">
-                        Gespeichert: {(parseFloat(formData.verkaufspreis_euro) * (1 + mwst / 100)).toFixed(2)} € brutto
+                        Gespeichert: {(Math.round(gespeichertNettoCent * mwstFaktor) / 100).toFixed(2)} € brutto
                       </span>
                     )}
                   </div>

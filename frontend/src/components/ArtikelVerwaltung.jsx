@@ -272,7 +272,12 @@ const ArtikelVerwaltung = () => {
     setQuickSaving(true);
     setQuickError('');
     try {
-      const netto = (parseFloat(quickForm.bruttopreis) / (1 + quickForm.mwst / 100)).toFixed(4);
+      // Cent-genaue Netto-Berechnung: verhindert Aufrundung (z.B. 24,99/7% → 25,00 statt 24,98)
+      const brutto_cent_q = Math.round(parseFloat(quickForm.bruttopreis) * 100);
+      const mwstFaktor_q = 1 + quickForm.mwst / 100;
+      let netto_cent_q = Math.round(brutto_cent_q / mwstFaktor_q);
+      if (Math.round(netto_cent_q * mwstFaktor_q) > brutto_cent_q) netto_cent_q--;
+      const netto = (netto_cent_q / 100).toFixed(2);
       const payload = {
         kategorie_id: quickForm.kategorie_id,
         name: quickForm.name.trim(),
@@ -1492,7 +1497,7 @@ const ArtikelVerwaltung = () => {
           <tbody>
             {sortedArtikel.map(item => {
               const isExpanded = expandedRows.has(item.artikel_id);
-              const mwst = item.mwst_satz || 19;
+              const mwst = item.mwst_prozent || 19;
               return (
                 <React.Fragment key={item.artikel_id}>
                   {/* Kompakte Hauptzeile */}
