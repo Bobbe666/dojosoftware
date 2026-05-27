@@ -29,6 +29,7 @@ import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
 import '../styles/MitgliedDetail.css';
 import MemberHeader from './MemberHeader.jsx';
 import UmfragePopup from './UmfragePopup.jsx';
+import NewsPopup from './NewsPopup.jsx';
 import BadgeDisplay from './BadgeDisplay';
 import MemberCheckin from './MemberCheckin.jsx';
 import MemberQRCode from './MemberQRCode.jsx';
@@ -1357,6 +1358,9 @@ const MemberDashboard = () => {
   return (
     <div className="dashboard-container">
       <MemberHeader />
+
+      {/* News-Popup: erscheint bei als_popup=1 markierten News */}
+      <NewsPopup />
 
       {/* Umfragen-Popup: erscheint beim Login wenn offene Umfragen vorhanden */}
       <UmfragePopup />

@@ -11,6 +11,26 @@ const { getSecureDojoId }   = require('../middleware/tenantSecurity');
 const db   = require('../db');
 const pool = db.promise();
 
+// GET /api/umfragen/public?dojo_id=X — öffentlich: aktive Umfragen für Website-Anzeige
+router.get('/public', async (req, res) => {
+  try {
+    const { dojo_id } = req.query;
+    if (!dojo_id) return res.status(400).json({ success: false, error: 'dojo_id fehlt' });
+    const [rows] = await pool.query(
+      `SELECT id, titel, beschreibung, typ, daten, bild_url, gueltig_bis, erstellt_am
+       FROM umfragen
+       WHERE status = 'aktiv' AND dojo_id = ?
+         AND (gueltig_bis IS NULL OR gueltig_bis >= CURDATE())
+       ORDER BY erstellt_am DESC
+       LIMIT 5`,
+      [parseInt(dojo_id)]
+    );
+    res.json({ success: true, umfragen: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.use(authenticateToken);
 
 // ── Bild-Upload ───────────────────────────────────────────────────────────────

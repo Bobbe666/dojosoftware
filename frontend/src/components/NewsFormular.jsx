@@ -445,6 +445,7 @@ function NewsFormular({ mode = 'create' }) {
     kategorie: 'allgemein',
     tags: [],
     featured: false,
+    als_popup: false,
     geplant_am: '',
     ablauf_am: '',
     meta_titel: '',
@@ -564,6 +565,7 @@ function NewsFormular({ mode = 'create' }) {
         kategorie: d.kategorie || 'allgemein',
         tags,
         featured: !!d.featured,
+        als_popup: !!d.als_popup,
         geplant_am: toLocalDt(d.geplant_am),
         ablauf_am: toLocalDt(d.ablauf_am),
         meta_titel: d.meta_titel || '',
@@ -656,6 +658,7 @@ function NewsFormular({ mode = 'create' }) {
         kategorie: formData.kategorie,
         tags: formData.tags.length > 0 ? JSON.stringify(formData.tags) : null,
         featured: formData.featured ? 1 : 0,
+        als_popup: formData.als_popup ? 1 : 0,
         geplant_am: formData.geplant_am || null,
         ablauf_am: formData.ablauf_am || null,
         meta_titel: formData.meta_titel || null,
@@ -1020,6 +1023,25 @@ function NewsFormular({ mode = 'create' }) {
                     <input
                       type="checkbox" id="featured-cb" name="featured"
                       checked={formData.featured} onChange={handleChange}
+                    />
+                    <span className="toggle-slider" />
+                  </span>
+                </label>
+
+                {/* Popup Toggle */}
+                <label
+                  className={`featured-toggle${formData.als_popup ? ' active' : ''}`}
+                  htmlFor="popup-cb"
+                  style={{ borderColor: formData.als_popup ? 'rgba(239,68,68,0.5)' : undefined }}
+                >
+                  <span className="featured-toggle-text">
+                    <span className="featured-toggle-label">🔔 Wichtige Info (Popup)</span>
+                    <span className="featured-toggle-hint">Erscheint als Popup auf der Mitglieder-Startseite</span>
+                  </span>
+                  <span className="toggle-switch">
+                    <input
+                      type="checkbox" id="popup-cb" name="als_popup"
+                      checked={formData.als_popup} onChange={handleChange}
                     />
                     <span className="toggle-slider" />
                   </span>

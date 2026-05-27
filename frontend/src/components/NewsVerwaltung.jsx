@@ -169,6 +169,7 @@ function NewsVerwaltung({ embedded = false }) {
                 <div className="news-badges">
                   {getStatusBadge(item.status)}
                   {item.featured ? <span className="news-featured-badge">⭐ Featured</span> : null}
+                  {item.als_popup ? <span className="news-featured-badge" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}>🔔 Popup</span> : null}
                   {item.kategorie && item.kategorie !== 'allgemein' && (
                     <span className="news-kategorie-badge">{KATEGORIEN_LABEL[item.kategorie] || item.kategorie}</span>
                   )}

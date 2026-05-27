@@ -66,7 +66,7 @@ router.get('/', authenticateToken, async (req, res) => {
     );
     const [news] = await pool.query(
       `SELECT id, titel, kurzbeschreibung, inhalt, zielgruppe, auf_intl, status, kategorie, tags,
-              featured, geplant_am, ablauf_am, meta_titel, meta_beschreibung,
+              featured, als_popup, geplant_am, ablauf_am, meta_titel, meta_beschreibung,
               bild_url, bilder_json, bild_captions, autor_id, dojo_id, veroeffentlicht_am, created_at
        FROM news_articles WHERE ${whereClause}
        ORDER BY created_at DESC LIMIT ? OFFSET ?`,
@@ -104,7 +104,7 @@ router.get('/public', authenticateToken, async (req, res) => {
 
     const [news] = await pool.query(
       `SELECT id, titel, kurzbeschreibung, inhalt, zielgruppe, kategorie, tags,
-              featured, bild_url, bilder_json, bild_captions, veroeffentlicht_am, geplant_am, created_at
+              featured, als_popup, bild_url, bilder_json, bild_captions, veroeffentlicht_am, geplant_am, created_at
        FROM news_articles WHERE ${whereClause}
        ORDER BY COALESCE(veroeffentlicht_am, geplant_am, created_at) DESC LIMIT 50`,
       params
@@ -116,15 +116,23 @@ router.get('/public', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/news/homepage - News für TDA-VIB Homepage (öffentlich)
+// GET /api/news/homepage - News für TDA-VIB Homepage (öffentlich, optional dojo_id Filter)
 router.get('/homepage', async (req, res) => {
   try {
+    const { dojo_id } = req.query;
+    let whereClause = publicStatusClause;
+    const params = [];
+    if (dojo_id) {
+      whereClause += ' AND (dojo_id = ? OR dojo_id IS NULL)';
+      params.push(parseInt(dojo_id));
+    }
     const [news] = await pool.query(
-      `SELECT id, titel, kurzbeschreibung, inhalt, kategorie, tags, featured,
+      `SELECT id, titel, kurzbeschreibung, inhalt, kategorie, tags, featured, als_popup,
               bild_url, bilder_json, bild_captions, meta_titel, meta_beschreibung,
               veroeffentlicht_am, geplant_am, created_at
-       FROM news_articles WHERE ${publicStatusClause}
-       ORDER BY COALESCE(veroeffentlicht_am, geplant_am, created_at) DESC LIMIT 10`
+       FROM news_articles WHERE ${whereClause}
+       ORDER BY COALESCE(veroeffentlicht_am, geplant_am, created_at) DESC LIMIT 20`,
+      params
     );
     res.json({ news });
   } catch (error) {
@@ -161,7 +169,7 @@ router.post('/', authenticateToken, async (req, res) => {
     const {
       titel, inhalt, kurzbeschreibung, zielgruppe, auf_intl, status,
       bild_url, bilder_json, bild_captions,
-      kategorie, tags, featured, geplant_am, ablauf_am, meta_titel, meta_beschreibung
+      kategorie, tags, featured, als_popup, geplant_am, ablauf_am, meta_titel, meta_beschreibung
     } = req.body;
     const autorId = req.user.id || req.user.user_id;
     const secureDojoId = getSecureDojoId(req);
@@ -174,14 +182,14 @@ router.post('/', authenticateToken, async (req, res) => {
       `INSERT INTO news_articles
         (titel, inhalt, kurzbeschreibung, zielgruppe, auf_intl, status,
          autor_id, veroeffentlicht_am, dojo_id, bild_url, bilder_json, bild_captions,
-         kategorie, tags, featured, geplant_am, ablauf_am, meta_titel, meta_beschreibung)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         kategorie, tags, featured, als_popup, geplant_am, ablauf_am, meta_titel, meta_beschreibung)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         titel, inhalt, kurzbeschreibung || null,
         zielgruppe || 'alle_dojos', auf_intl ? 1 : 0, status || 'entwurf',
         autorId, veroeffentlichtAm, secureDojoId,
         bild_url || null, bilder_json || null, bild_captions || null,
-        kategorie || 'allgemein', tags || null, featured ? 1 : 0,
+        kategorie || 'allgemein', tags || null, featured ? 1 : 0, als_popup ? 1 : 0,
         geplant_am || null, ablauf_am || null,
         meta_titel || null, meta_beschreibung || null
       ]
@@ -201,7 +209,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const {
       titel, inhalt, kurzbeschreibung, zielgruppe, auf_intl, status,
       bild_url, bilder_json, bild_captions,
-      kategorie, tags, featured, geplant_am, ablauf_am, meta_titel, meta_beschreibung
+      kategorie, tags, featured, als_popup, geplant_am, ablauf_am, meta_titel, meta_beschreibung
     } = req.body;
     const secureDojoId = getSecureDojoId(req);
 
@@ -224,18 +232,19 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const newBildCaptions = bild_captions !== undefined ? (bild_captions || null) : existing[0].bild_captions;
     const newAufIntl = auf_intl !== undefined ? (auf_intl ? 1 : 0) : existing[0].auf_intl;
 
+    const newAlsPopup = als_popup !== undefined ? (als_popup ? 1 : 0) : existing[0].als_popup;
     await pool.query(
       `UPDATE news_articles
        SET titel = ?, inhalt = ?, kurzbeschreibung = ?, zielgruppe = ?, auf_intl = ?, status = ?,
            veroeffentlicht_am = ?, bild_url = ?, bilder_json = ?, bild_captions = ?,
-           kategorie = ?, tags = ?, featured = ?, geplant_am = ?, ablauf_am = ?,
+           kategorie = ?, tags = ?, featured = ?, als_popup = ?, geplant_am = ?, ablauf_am = ?,
            meta_titel = ?, meta_beschreibung = ?
        WHERE id = ?`,
       [
         titel, inhalt, kurzbeschreibung || null,
         zielgruppe || 'alle_dojos', newAufIntl, status || 'entwurf',
         veroeffentlichtAm, newBildUrl, newBilderJson, newBildCaptions,
-        kategorie || 'allgemein', tags || null, featured ? 1 : 0,
+        kategorie || 'allgemein', tags || null, featured ? 1 : 0, newAlsPopup,
         geplant_am || null, ablauf_am || null,
         meta_titel || null, meta_beschreibung || null,
         id
