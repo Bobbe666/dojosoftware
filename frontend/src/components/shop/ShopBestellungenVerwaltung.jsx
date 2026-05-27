@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { useDojoContext } from '../../context/DojoContext';
+import { useAuth } from '../../context/AuthContext';
 
 const STATUS_LABELS = {
   offen: { label: 'Offen', color: '#F59E0B' },
@@ -19,6 +21,16 @@ const SP_STATUS = {
 const STATUS_FLOW = ['offen', 'in_bearbeitung', 'versendet', 'abgeschlossen'];
 
 export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
+  const { activeDojo } = useDojoContext();
+  const { user } = useAuth();
+
+  // Ermittle die Dojo-ID verlässlich aus Kontext (Fallback: Prop, dann JWT)
+  const isSuperAdmin = (user?.role === 'admin' || user?.rolle === 'admin') && !user?.dojo_id;
+  const contextDojoId = (activeDojo && typeof activeDojo === 'object') ? activeDojo.id : null;
+  const resolvedDojoId = contextDojoId || dojoId || null;
+  // Für Super-Admin Query-Param bauen, reguläre Admins nutzen JWT
+  const resolvedDojoParam = dojoParam || (isSuperAdmin && resolvedDojoId ? `?dojo_id=${resolvedDojoId}` : '');
+
   const [activeTab, setActiveTab] = useState('shop');
 
   // ── Shop-Bestellungen State ────────────────────────────────────────
@@ -59,9 +71,9 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
     try {
       const params = new URLSearchParams({ page, limit: LIMIT });
       if (statusFilter) params.append('status', statusFilter);
-      // dojoParam ist z.B. '?dojo_id=2' — muss mit & angehängt werden
-      const sep = dojoParam ? (dojoParam.startsWith('?') ? '&' : '?') : '';
-      const { data } = await axios.get(`/shop/admin/bestellungen?${params}${dojoParam ? sep + dojoParam.replace('?', '') : ''}`);
+      // resolvedDojoParam ist z.B. '?dojo_id=2' — muss mit & angehängt werden
+      const sep = resolvedDojoParam ? (resolvedDojoParam.startsWith('?') ? '&' : '?') : '';
+      const { data } = await axios.get(`/shop/admin/bestellungen?${params}${resolvedDojoParam ? sep + resolvedDojoParam.replace('?', '') : ''}`);
       setBestellungen(data.bestellungen);
       setTotal(data.total);
     } catch (err) {
@@ -69,7 +81,7 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, dojoParam]);
+  }, [page, statusFilter, resolvedDojoParam]);
 
   useEffect(() => { loadBestellungen(); }, [loadBestellungen]);
 
@@ -79,8 +91,8 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
     try {
       const params = new URLSearchParams({ page: spPage, limit: SP_LIMIT });
       if (spStatusFilter) params.append('status', spStatusFilter);
-      const sep = dojoParam ? (dojoParam.startsWith('?') ? '&' : '?') : '';
-      const url = `/starterpakete/bestellungen?${params}${dojoParam ? sep + dojoParam.replace('?', '') : ''}`;
+      const sep = resolvedDojoParam ? (resolvedDojoParam.startsWith('?') ? '&' : '?') : '';
+      const url = `/starterpakete/bestellungen?${params}${resolvedDojoParam ? sep + resolvedDojoParam.replace('?', '') : ''}`;
       const { data } = await axios.get(url);
       if (data.success) {
         setSpBestellungen(data.bestellungen);
@@ -91,7 +103,7 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
     } finally {
       setSpLoading(false);
     }
-  }, [spPage, spStatusFilter, dojoParam]);
+  }, [spPage, spStatusFilter, resolvedDojoParam]);
 
   useEffect(() => {
     if (activeTab === 'starterpakete') loadSpBestellungen();
@@ -105,13 +117,10 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
     setNbError('');
     setNbSuccess('');
     setNbLoading(true);
-    // dojoParam ist leer für reguläre Admins (JWT reicht). Für Super-Admin
-    // ohne gewähltes Dojo: dojoId-Prop als Fallback nutzen.
-    const effectiveParam = dojoParam || (dojoId ? `?dojo_id=${dojoId}` : '');
     try {
       const [paketeRes, mitgliederRes] = await Promise.all([
-        axios.get(`/starterpakete${effectiveParam}`),
-        axios.get(`/mitglieder/all${effectiveParam}`),
+        axios.get(`/starterpakete${resolvedDojoParam}`),
+        axios.get(`/mitglieder/all${resolvedDojoParam}`),
       ]);
       setNbPakete((paketeRes.data.pakete || []).filter(p => p.aktiv));
       setNbMitglieder(mitgliederRes.data || []);
@@ -139,12 +148,11 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
     }
     setNbSaving(true);
     setNbError('');
-    const effectiveParam = dojoParam || (dojoId ? `?dojo_id=${dojoId}` : '');
     let erfolge = 0;
     let fehler = 0;
     for (const mitglied_id of nbSelectedMitglieder) {
       try {
-        await axios.post(`/starterpakete/${nbSelectedPaket}/bestellen${effectiveParam}`, { mitglied_id });
+        await axios.post(`/starterpakete/${nbSelectedPaket}/bestellen${resolvedDojoParam}`, { mitglied_id });
         erfolge++;
       } catch {
         fehler++;
@@ -163,8 +171,8 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
 
   const updateSpStatus = async (id, status) => {
     try {
-      const sep = dojoParam ? (dojoParam.startsWith('?') ? '&' : '?') : '';
-      await axios.patch(`/starterpakete/bestellungen/${id}/status${dojoParam ? dojoParam : ''}`, { status });
+      const sep = resolvedDojoParam ? (resolvedDojoParam.startsWith('?') ? '&' : '?') : '';
+      await axios.patch(`/starterpakete/bestellungen/${id}/status${resolvedDojoParam ? resolvedDojoParam : ''}`, { status });
       setSpBestellungen(prev => prev.map(b => b.id === id ? { ...b, status } : b));
       if (selectedSp?.id === id) setSelectedSp(prev => ({ ...prev, status }));
     } catch (err) {
@@ -176,7 +184,7 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
     setDetailLoading(true);
     setSelectedBestellung(b);
     try {
-      const { data } = await axios.get(`/shop/admin/bestellungen/${b.id}${dojoParam}`);
+      const { data } = await axios.get(`/shop/admin/bestellungen/${b.id}${resolvedDojoParam}`);
       setSelectedBestellung(data);
       setTrackingForm({
         tracking_nummer: data.tracking_nummer || '',
@@ -191,7 +199,7 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.patch(`/shop/admin/bestellungen/${id}/status${dojoParam}`, { status });
+      await axios.patch(`/shop/admin/bestellungen/${id}/status${resolvedDojoParam}`, { status });
       loadBestellungen();
       if (selectedBestellung?.id === id) {
         setSelectedBestellung(prev => ({ ...prev, status }));
@@ -204,7 +212,7 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
   const saveTracking = async () => {
     if (!selectedBestellung) return;
     try {
-      await axios.patch(`/shop/admin/bestellungen/${selectedBestellung.id}/tracking${dojoParam}`, trackingForm);
+      await axios.patch(`/shop/admin/bestellungen/${selectedBestellung.id}/tracking${resolvedDojoParam}`, trackingForm);
       setSelectedBestellung(prev => ({ ...prev, ...trackingForm, status: 'versendet' }));
       setShowTracking(false);
       loadBestellungen();
