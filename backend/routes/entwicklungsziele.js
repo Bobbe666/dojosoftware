@@ -242,7 +242,7 @@ router.get('/statistiken', authenticateToken, requireSuperAdmin, async (req, res
     if (kontext_id) {
       dojoQuery = `SELECT COUNT(*) as count FROM mitglieder m
         JOIN dojo d ON m.dojo_id = d.id
-        WHERE d.ist_aktiv = 1 AND d.dojoname NOT LIKE '%demo%' AND m.dojo_id = ?`;
+        WHERE d.ist_aktiv = 1 AND d.dojoname NOT LIKE '%demo%' AND m.dojo_id = ? AND m.aktiv = 1`;
       dojoParams.push(kontext_id);
     }
     const [dojoResult] = await db.promise().query(dojoQuery, dojoParams);

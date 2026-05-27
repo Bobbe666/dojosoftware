@@ -1433,8 +1433,11 @@ function Dashboard() {
               {/* 📊 Cockpit-Übersicht: Heute & diese Woche */}
               {(role === 'admin' || role === 'super_admin') && <CockpitUebersicht />}
 
-              {/* 🎯 Entwicklungsziele-Widget (Enterprise) */}
-              {role === 'admin' && subscription?.plan_type === 'enterprise' && (
+              {/* 🎯 Entwicklungsziele-Widget (Enterprise oder Super-Admin mit ausgewähltem Dojo) */}
+              {activeDojo?.id && (
+                (role === 'admin' && subscription?.plan_type === 'enterprise') ||
+                role === 'super_admin'
+              ) && (
                 <EntwicklungsWidget onTabChange={setActiveTab} />
               )}
 
@@ -1721,7 +1724,7 @@ function Dashboard() {
                       {activeTab === 'entwicklung' && (
                         subscription?.plan_type === 'enterprise' ? (
                           <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
-                            <ZieleEntwicklung bereich="dojo" showFinanzrechner={true} showNavigation={false} />
+                            <ZieleEntwicklung bereich="dojo" kontextId={activeDojo?.id || null} showFinanzrechner={true} showNavigation={false} />
                           </Suspense>
                         ) : (
                           <div className="feature-upgrade-banner">
