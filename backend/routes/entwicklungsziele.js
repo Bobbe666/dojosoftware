@@ -388,9 +388,12 @@ router.get('/widget', authenticateToken, requireAdmin, async (req, res) => {
         [secureDojoId]
       ),
       db.promise().query(
-        `SELECT typ, ziel_wert FROM entwicklungsziele
-         WHERE kontext_typ = 'dojo' AND kontext_id = ? AND jahr = ?
-           AND typ IN ('dojo_mitglieder', 'umsatz')`,
+        `SELECT typ, ziel_wert, kontext_id FROM entwicklungsziele
+         WHERE kontext_typ = 'dojo'
+           AND (kontext_id = ? OR kontext_id IS NULL)
+           AND jahr = ?
+           AND typ IN ('dojo_mitglieder', 'umsatz')
+         ORDER BY (kontext_id IS NULL) ASC`,
         [secureDojoId, currentYear]
       ).then(([rows]) => rows)
     ]);
