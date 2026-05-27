@@ -10,7 +10,7 @@ const fmtIn   = (d) => d ? (d instanceof Date ? d.toISOString().split('T')[0] : 
 const STATUS_L = { entwurf: 'Entwurf', aktiv: 'Aktiv', beendet: 'Beendet' };
 const STATUS_C = { entwurf: '#94a3b8', aktiv: '#4ade80', beendet: '#f87171' };
 const TYP_L    = { ja_nein: 'Ja / Nein', kommentar: 'Nur Kommentar', beides: 'Ja/Nein + Kommentar', datum_auswahl: 'Datumsabfrage' };
-const EMPTY    = { titel: '', beschreibung: '', typ: 'ja_nein', status: 'entwurf', gueltig_bis: '', daten: [] };
+const EMPTY    = { titel: '', beschreibung: '', typ: 'ja_nein', status: 'entwurf', als_popup: false, gueltig_bis: '', daten: [] };
 
 const card = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, overflow: 'hidden' };
 const inp  = { width: '100%', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: '#e2e8f0', fontSize: '0.88rem', boxSizing: 'border-box' };
@@ -85,7 +85,7 @@ export default function UmfragenDashboard() {
   };
   const openEdit = (u) => {
     setEditId(u.id);
-    setForm({ titel: u.titel, beschreibung: u.beschreibung || '', typ: u.typ, status: u.status, gueltig_bis: fmtIn(u.gueltig_bis), daten: Array.isArray(u.daten) ? u.daten : [] });
+    setForm({ titel: u.titel, beschreibung: u.beschreibung || '', typ: u.typ, status: u.status, als_popup: !!u.als_popup, gueltig_bis: fmtIn(u.gueltig_bis), daten: Array.isArray(u.daten) ? u.daten : [] });
     setFormErr(''); setModalStep(1);
     setExistingBildUrl(u.bild_url || null); resetModalBild();
     setShowModal(true);
@@ -280,6 +280,28 @@ export default function UmfragenDashboard() {
             <input style={inp} type="date" value={form.gueltig_bis} onChange={f('gueltig_bis')} />
           </div>
         </div>
+
+        {/* Popup Toggle */}
+        <label style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0.65rem 0.85rem',
+          background: form.als_popup ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.03)',
+          border: `1px solid ${form.als_popup ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.1)'}`,
+          borderRadius: 8, cursor: 'pointer',
+        }}>
+          <span>
+            <span style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', color: form.als_popup ? '#ef4444' : 'rgba(255,255,255,0.85)' }}>
+              🔔 Als Popup auf Startseite anzeigen
+            </span>
+            <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)' }}>
+              Erscheint als Hinweis-Popup beim Öffnen der Mitglieder-App
+            </span>
+          </span>
+          <input type="checkbox" checked={form.als_popup}
+            onChange={e => setForm(p => ({ ...p, als_popup: e.target.checked }))}
+            style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#ef4444' }}
+          />
+        </label>
 
         {/* Bild-Upload */}
         <div>

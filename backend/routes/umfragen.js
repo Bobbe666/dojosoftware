@@ -17,7 +17,7 @@ router.get('/public', async (req, res) => {
     const { dojo_id } = req.query;
     if (!dojo_id) return res.status(400).json({ success: false, error: 'dojo_id fehlt' });
     const [rows] = await pool.query(
-      `SELECT id, titel, beschreibung, typ, daten, bild_url, gueltig_bis, erstellt_am
+      `SELECT id, titel, beschreibung, typ, daten, bild_url, als_popup, gueltig_bis, erstellt_am
        FROM umfragen
        WHERE status = 'aktiv' AND dojo_id = ?
          AND (gueltig_bis IS NULL OR gueltig_bis >= CURDATE())
@@ -158,7 +158,7 @@ router.post('/', async (req, res) => {
   const dojoId     = getDojoId(req);
   if (!superAdmin && !dojoId) return res.status(403).json({ error: 'Nicht autorisiert' });
 
-  const { titel, beschreibung, typ, status, ziel_platformen, gueltig_bis, daten } = req.body;
+  const { titel, beschreibung, typ, status, als_popup, ziel_platformen, gueltig_bis, daten } = req.body;
   if (!titel) return res.status(400).json({ error: 'Titel erforderlich' });
 
   const autorId    = req.user.id || req.user.user_id || req.user.admin_id;
@@ -166,11 +166,11 @@ router.post('/', async (req, res) => {
 
   try {
     const [r] = await pool.query(
-      `INSERT INTO umfragen (dojo_id, titel, beschreibung, typ, status, ziel_platformen, daten, erstellt_von, gueltig_bis)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO umfragen (dojo_id, titel, beschreibung, typ, status, als_popup, ziel_platformen, daten, erstellt_von, gueltig_bis)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         umfrageDojo, titel, beschreibung || null,
-        typ || 'ja_nein', status || 'entwurf',
+        typ || 'ja_nein', status || 'entwurf', als_popup ? 1 : 0,
         JSON.stringify(Array.isArray(ziel_platformen) ? ziel_platformen : ['dojo']),
         daten ? JSON.stringify(daten) : null,
         autorId, gueltig_bis || null,
@@ -226,7 +226,7 @@ router.put('/:id', async (req, res) => {
   const dojoId     = getDojoId(req);
   if (!superAdmin && !dojoId) return res.status(403).json({ error: 'Nicht autorisiert' });
 
-  const { titel, beschreibung, typ, status, ziel_platformen, gueltig_bis, daten } = req.body;
+  const { titel, beschreibung, typ, status, als_popup, ziel_platformen, gueltig_bis, daten } = req.body;
   try {
     const whereExtra  = superAdmin && !dojoId ? '' : ' AND dojo_id = ?';
     const checkParams = superAdmin && !dojoId ? [req.params.id] : [req.params.id, dojoId];
@@ -234,10 +234,10 @@ router.put('/:id', async (req, res) => {
     if (!check.length) return res.status(403).json({ error: 'Nicht autorisiert oder nicht gefunden' });
 
     await pool.query(
-      `UPDATE umfragen SET titel=?, beschreibung=?, typ=?, status=?, ziel_platformen=?, gueltig_bis=?, daten=? WHERE id=?`,
+      `UPDATE umfragen SET titel=?, beschreibung=?, typ=?, status=?, als_popup=?, ziel_platformen=?, gueltig_bis=?, daten=? WHERE id=?`,
       [
         titel, beschreibung || null,
-        typ || 'ja_nein', status || 'entwurf',
+        typ || 'ja_nein', status || 'entwurf', als_popup ? 1 : 0,
         JSON.stringify(Array.isArray(ziel_platformen) ? ziel_platformen : ['dojo']),
         gueltig_bis || null,
         daten ? JSON.stringify(daten) : null,
