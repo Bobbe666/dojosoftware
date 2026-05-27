@@ -2798,3 +2798,18 @@ io.on('connection', (socket) => {
     socket.leave(room);
   });
 });
+
+// Verhindert Prozess-Crash bei unbehandelten Promise-Rejections (z.B. DB-Timeouts)
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection — Prozess läuft weiter', {
+    reason: reason?.message || String(reason),
+    stack: reason?.stack
+  });
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception — Prozess läuft weiter', {
+    message: err.message,
+    stack: err.stack
+  });
+});

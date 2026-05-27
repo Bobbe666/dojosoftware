@@ -109,13 +109,14 @@ const LastschriftAutomatik = ({ dojoId }) => {
   useEffect(() => { load(); }, [load]);
 
   const loadHistory = async (zeitplanId) => {
-    if (ausfuehrungen[zeitplanId]) {
+    if (ausfuehrungen[zeitplanId]?.length > 0) {
       setExpandedHistory(prev => prev === zeitplanId ? null : zeitplanId);
       return;
     }
     try {
+      const historyParam = dojoId ? `?dojo_id=${dojoId}` : '';
       const res = await fetchWithAuth(
-        `${config.apiBaseUrl}/lastschrift-zeitplaene/${zeitplanId}/ausfuehrungen`
+        `${config.apiBaseUrl}/lastschrift-zeitplaene/${zeitplanId}/ausfuehrungen${historyParam}`
       );
       const data = await res.json();
       setAusfuehrungen(prev => ({ ...prev, [zeitplanId]: data.ausfuehrungen || data || [] }));
