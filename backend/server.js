@@ -8,8 +8,10 @@ const path = require("path");
 const fs = require("fs");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./swagger");
+// Swagger nur in Development laden — spart ~25MB RAM in Production
+const isDev = process.env.NODE_ENV !== 'production';
+const swaggerUi = isDev ? require("swagger-ui-express") : null;
+const swaggerSpec = isDev ? require("./swagger") : null;
 require("dotenv").config();
 
 // ── Sentry Fehler-Monitoring ──────────────────────────────────────────────────
@@ -247,20 +249,19 @@ const writeAuditMiddleware = require('./middleware/writeAuditMiddleware');
 app.use('/api', writeAuditMiddleware);
 logger.success('Write-Audit-Logging aktiviert', { coverage: 'POST/PUT/PATCH/DELETE auf /api/*' });
 
-// API Documentation mit Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'DojoSoftware API Documentation',
-}));
-
-// OpenAPI Spec als JSON
-app.get('/api-docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
-
-logger.info('Swagger UI available at /api-docs');
+// API Documentation — nur in Development
+if (isDev && swaggerUi && swaggerSpec) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'DojoSoftware API Documentation',
+  }));
+  app.get('/api-docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+  logger.info('Swagger UI available at /api-docs');
+}
 
 // Cache-Bereinigungsseite — löscht alle SW-Caches + HTTP-Cache im Browser und leitet weiter
 app.get('/api/update', (req, res) => {

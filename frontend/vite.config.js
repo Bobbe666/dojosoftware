@@ -90,6 +90,10 @@ export default defineConfig({
           if (id.includes('/node_modules/grapesjs')) {
             return 'editor';
           }
+          // Tiptap Editor (Rich-Text) — separater Chunk, nur bei Editor-Routen nötig
+          if (id.includes('/node_modules/@tiptap/')) {
+            return 'vendor-tiptap';
+          }
         },
         // Bessere Chunk-Namen
         chunkFileNames: (chunkInfo) => {
