@@ -42,6 +42,18 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
   const [selectedSp, setSelectedSp] = useState(null);
   const SP_LIMIT = 20;
 
+  // ── Neue Bestellung Modal State ───────────────────────────────────
+  const [showNeueBestellung, setShowNeueBestellung] = useState(false);
+  const [nbPakete, setNbPakete] = useState([]);
+  const [nbMitglieder, setNbMitglieder] = useState([]);
+  const [nbSelectedPaket, setNbSelectedPaket] = useState('');
+  const [nbMitgliedSearch, setNbMitgliedSearch] = useState('');
+  const [nbSelectedMitglieder, setNbSelectedMitglieder] = useState([]);
+  const [nbLoading, setNbLoading] = useState(false);
+  const [nbSaving, setNbSaving] = useState(false);
+  const [nbError, setNbError] = useState('');
+  const [nbSuccess, setNbSuccess] = useState('');
+
   const loadBestellungen = useCallback(async () => {
     setLoading(true);
     try {
@@ -84,6 +96,62 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
   useEffect(() => {
     if (activeTab === 'starterpakete') loadSpBestellungen();
   }, [activeTab, loadSpBestellungen]);
+
+  const openNeueBestellung = async () => {
+    setShowNeueBestellung(true);
+    setNbSelectedPaket('');
+    setNbSelectedMitglieder([]);
+    setNbMitgliedSearch('');
+    setNbError('');
+    setNbSuccess('');
+    setNbLoading(true);
+    try {
+      const [paketeRes, mitgliederRes] = await Promise.all([
+        axios.get(`/starterpakete${dojoParam}`),
+        axios.get(`/mitglieder/all${dojoParam}`),
+      ]);
+      setNbPakete((paketeRes.data.pakete || []).filter(p => p.aktiv));
+      setNbMitglieder(mitgliederRes.data || []);
+    } catch {
+      setNbError('Fehler beim Laden der Daten');
+    } finally {
+      setNbLoading(false);
+    }
+  };
+
+  const toggleNbMitglied = (id) => {
+    setNbSelectedMitglieder(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const submitNeueBestellung = async () => {
+    if (!nbSelectedPaket || nbSelectedMitglieder.length === 0) {
+      setNbError('Bitte Paket und mindestens ein Mitglied auswählen');
+      return;
+    }
+    setNbSaving(true);
+    setNbError('');
+    let erfolge = 0;
+    let fehler = 0;
+    for (const mitglied_id of nbSelectedMitglieder) {
+      try {
+        await axios.post(`/starterpakete/${nbSelectedPaket}/bestellen${dojoParam}`, { mitglied_id });
+        erfolge++;
+      } catch {
+        fehler++;
+      }
+    }
+    setNbSaving(false);
+    if (fehler === 0) {
+      setNbSuccess(`${erfolge} Bestellung${erfolge !== 1 ? 'en' : ''} erfolgreich angelegt.`);
+      setNbSelectedMitglieder([]);
+      loadSpBestellungen();
+    } else {
+      setNbError(`${erfolge} erfolgreich, ${fehler} fehlgeschlagen.`);
+      if (erfolge > 0) loadSpBestellungen();
+    }
+  };
 
   const updateSpStatus = async (id, status) => {
     try {
@@ -377,7 +445,23 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
           <div className="shop-bestellungen-list">
             <div className="shop-admin-header" style={{ marginBottom: '0.875rem' }}>
               <h2 style={{ fontSize: '1rem' }}>Starterpaket-Bestellungen ({spTotal})</h2>
-              <div className="shop-filter-bar">
+              <div className="shop-filter-bar" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  onClick={openNeueBestellung}
+                  style={{
+                    padding: '0.45rem 0.9rem',
+                    background: 'linear-gradient(135deg, #d4af37, #b8962e)',
+                    color: '#1a1a2e',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  + Neue Bestellung
+                </button>
                 <select value={spStatusFilter} onChange={e => { setSpStatusFilter(e.target.value); setSpPage(1); }}>
                   <option value="">Alle Status</option>
                   {Object.entries(SP_STATUS).map(([k, v]) => (
@@ -515,6 +599,209 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
           </div>
         </div>
       )}
+
+      {/* ── Neue Bestellung Modal ── */}
+      {showNeueBestellung && (() => {
+        const filteredMitglieder = nbMitglieder.filter(m => {
+          if (!nbMitgliedSearch) return true;
+          const name = `${m.vorname} ${m.nachname}`.toLowerCase();
+          return name.includes(nbMitgliedSearch.toLowerCase());
+        });
+        const selectedPaketObj = nbPakete.find(p => p.paket_id === parseInt(nbSelectedPaket, 10));
+
+        return (
+          <div
+            onClick={e => { if (e.target === e.currentTarget) setShowNeueBestellung(false); }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(0,0,0,0.7)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '1rem',
+            }}
+          >
+            <div style={{
+              background: 'rgba(26,26,46,0.99)',
+              border: '1px solid rgba(212,175,55,0.3)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              width: '100%',
+              maxWidth: '540px',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, color: '#d4af37', fontSize: '1.1rem' }}>🎁 Neue Starterpaket-Bestellung</h3>
+                <button
+                  onClick={() => setShowNeueBestellung(false)}
+                  style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '1.3rem', cursor: 'pointer', padding: '0.2rem 0.4rem' }}
+                >✕</button>
+              </div>
+
+              {nbLoading ? (
+                <div style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center', padding: '2rem 0' }}>Lade Daten…</div>
+              ) : (<>
+                {/* Paket auswählen */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.4rem' }}>
+                    Starterpaket *
+                  </label>
+                  <select
+                    value={nbSelectedPaket}
+                    onChange={e => setNbSelectedPaket(e.target.value)}
+                    style={{
+                      width: '100%', padding: '0.55rem 0.75rem',
+                      background: 'rgba(255,255,255,0.07)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: '6px', color: 'inherit',
+                      fontSize: '0.9rem', fontFamily: 'inherit',
+                    }}
+                  >
+                    <option value="">— Bitte auswählen —</option>
+                    {nbPakete.map(p => (
+                      <option key={p.paket_id} value={p.paket_id}>
+                        {p.name}{p.stil_name ? ` (${p.stil_name})` : ''} · {formatEur(p.endpreis_cent || 0)}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedPaketObj && (
+                    <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', margin: '0.3rem 0 0' }}>
+                      {selectedPaketObj.beschreibung || ''}
+                    </p>
+                  )}
+                </div>
+
+                {/* Mitglieder auswählen */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.4rem' }}>
+                    Mitglieder * ({nbSelectedMitglieder.length} ausgewählt)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Mitglied suchen…"
+                    value={nbMitgliedSearch}
+                    onChange={e => setNbMitgliedSearch(e.target.value)}
+                    style={{
+                      width: '100%', padding: '0.5rem 0.75rem',
+                      background: 'rgba(255,255,255,0.07)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: '6px', color: 'inherit',
+                      fontSize: '0.88rem', fontFamily: 'inherit',
+                      marginBottom: '0.4rem', boxSizing: 'border-box',
+                    }}
+                  />
+                  <div style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    maxHeight: '260px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.03)',
+                  }}>
+                    {nbMitglieder.length === 0 ? (
+                      <div style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Keine Mitglieder gefunden</div>
+                    ) : filteredMitglieder.length === 0 ? (
+                      <div style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Keine Treffer</div>
+                    ) : (
+                      filteredMitglieder.map(m => {
+                        const checked = nbSelectedMitglieder.includes(m.mitglied_id);
+                        return (
+                          <div
+                            key={m.mitglied_id}
+                            onClick={() => toggleNbMitglied(m.mitglied_id)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '0.6rem',
+                              padding: '0.45rem 0.75rem',
+                              cursor: 'pointer',
+                              background: checked ? 'rgba(212,175,55,0.1)' : 'transparent',
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                              transition: 'background 0.15s',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleNbMitglied(m.mitglied_id)}
+                              onClick={e => e.stopPropagation()}
+                              style={{ accentColor: '#d4af37', width: '14px', height: '14px', cursor: 'pointer', flexShrink: 0 }}
+                            />
+                            <span style={{ fontSize: '0.88rem' }}>
+                              <strong>{m.nachname}</strong>, {m.vorname}
+                            </span>
+                            {m.stile && (
+                              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>{m.stile}</span>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                  {nbMitglieder.length > 0 && (
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.35rem' }}>
+                      <button
+                        onClick={() => setNbSelectedMitglieder(filteredMitglieder.map(m => m.mitglied_id))}
+                        style={{ background: 'none', border: 'none', color: '#d4af37', fontSize: '0.78rem', cursor: 'pointer', padding: 0 }}
+                      >
+                        Alle auswählen
+                      </button>
+                      <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.78rem' }}>·</span>
+                      <button
+                        onClick={() => setNbSelectedMitglieder([])}
+                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', cursor: 'pointer', padding: 0 }}
+                      >
+                        Auswahl leeren
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {nbError && <p style={{ margin: 0, color: '#EF4444', fontSize: '0.85rem' }}>{nbError}</p>}
+                {nbSuccess && <p style={{ margin: 0, color: '#22C55E', fontSize: '0.85rem' }}>{nbSuccess}</p>}
+
+                {/* Aktions-Buttons */}
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: 'auto' }}>
+                  <button
+                    onClick={() => setShowNeueBestellung(false)}
+                    style={{
+                      padding: '0.55rem 1.1rem',
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: '6px', color: 'inherit',
+                      fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    Schließen
+                  </button>
+                  <button
+                    onClick={submitNeueBestellung}
+                    disabled={nbSaving || !nbSelectedPaket || nbSelectedMitglieder.length === 0}
+                    style={{
+                      padding: '0.55rem 1.25rem',
+                      background: nbSaving || !nbSelectedPaket || nbSelectedMitglieder.length === 0
+                        ? 'rgba(255,255,255,0.1)'
+                        : 'linear-gradient(135deg, #d4af37, #b8962e)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: nbSaving || !nbSelectedPaket || nbSelectedMitglieder.length === 0
+                        ? 'rgba(255,255,255,0.3)'
+                        : '#1a1a2e',
+                      fontWeight: 700, fontSize: '0.88rem',
+                      cursor: nbSaving || !nbSelectedPaket || nbSelectedMitglieder.length === 0 ? 'not-allowed' : 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {nbSaving
+                      ? 'Wird gespeichert…'
+                      : `${nbSelectedMitglieder.length > 0 ? nbSelectedMitglieder.length + ' ' : ''}Bestellung${nbSelectedMitglieder.length !== 1 ? 'en' : ''} anlegen`}
+                  </button>
+                </div>
+              </>)}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
