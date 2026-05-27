@@ -3,33 +3,89 @@ import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import '../styles/BestellvorlagenTab.css';
 
+// ── Karate-Gi Größen ────────────────────────────────────────────────────────
 const SIZES = {
   '128': [140, 150, 160, 165, 170, 175, 180, 185, 190, 195, 200],
   '188': [130, 140, 150, 160, 170, 180, 190, 200],
 };
-
 const EMPTY_MENGEN = (model) =>
   SIZES[model].reduce((acc, s) => ({ ...acc, [s]: '' }), {});
 
+// ── Neue Produkttyp-Größen ──────────────────────────────────────────────────
+const SIZES_BOXHANDSCHUHE  = ['6 oz', '8 oz', '10 oz', '12 oz', '14 oz', '16 oz'];
+const SIZES_BANDAGEN       = ['2,5 m', '3 m', '4 m', '4,5 m', 'Einheitsgröße'];
+const SIZES_STD            = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+function getSizesForTyp(typ) {
+  switch (typ) {
+    case 'boxhandschuhe':    return SIZES_BOXHANDSCHUHE;
+    case 'bandagen':         return SIZES_BANDAGEN;
+    case 'fussschoner':
+    case 'schienbeinschoner': return SIZES_STD;
+    default:                 return null; // Gi und patches: eigene Logik
+  }
+}
+
+function getPositionenForTyp(typ) {
+  switch (typ) {
+    case 'karate_gi':
+      return ['Linkes Revers', 'Rechtes Revers', 'Rücken oben', 'Rücken Mitte',
+              'Linker Ärmel', 'Rechter Ärmel', 'Hosenbein', 'Kragen'];
+    case 'boxhandschuhe':
+      return ['Handrücken', 'Seitenfläche', 'Handgelenk', 'Klettverschluss'];
+    case 'bandagen':
+      return ['Außenseite', 'Klettverschluss'];
+    case 'fussschoner':
+      return ['Ristbereich (Außen)', 'Seitenfläche', 'Klettverschluss'];
+    case 'schienbeinschoner':
+      return ['Schienbein (Vorderseite)', 'Seitenfläche', 'Klettverschluss'];
+    case 'patches':
+      return ['Mitte', 'Rand / Bordüre'];
+    default:
+      return [];
+  }
+}
+
+// ── Optionen-Listen ─────────────────────────────────────────────────────────
+const MATERIALIEN    = ['100% Baumwolle', 'Baumwolle/Polyester', 'Canvas', 'Synthetik'];
+const WEBARTEN       = ['Single Weave', 'Double Weave', 'Kata', 'Kumite / Leicht'];
+const GRAMMATUREN    = ['8 oz (~270 g/m²)', '10 oz (~340 g/m²)', '12 oz (~400 g/m²)', '14 oz (~470 g/m²)'];
+const LABEL_LANG     = ['Deutsch', 'Englisch', 'Französisch', 'Japanisch'];
+const LABEL_ART      = ['Gewebtes Etikett', 'Gedrucktes Etikett', 'Eingestickt'];
+const LABEL_POS      = ['Nacken (innen)', 'Seitennaht', 'Hosenbund (innen)'];
+
+const BOX_MATERIAL   = ['Echtleder', 'PU-Leder', 'Vinyl / Kunstleder'];
+const BOX_VERSCHLUSS = ['Klettverschluss', 'Schnürung'];
+const BOX_FUELLUNG   = ['EVA-Schaum', 'Memory-Schaum', 'Multi-Layer-Schaum'];
+const BOX_FUTTER     = ['Satin', 'Mesh / Klimatisiert'];
+
+const BAND_MATERIAL  = ['100% Baumwolle', 'Semi-elastisch (Baumwolle/Elasthan)', 'Vollstretch'];
+
+const SCHUTZ_MATERIAL   = ['EVA-Schaum', 'Leder', 'PU-Leder', 'Hard-Shell (PP/ABS)'];
+const SCHUTZ_VERSCHLUSS = ['Klettverschluss', 'Ärmel / Sleeve'];
+const SCHIEN_TYP        = ['Mit Spannschutz', 'Ohne Spannschutz'];
+
+const PATCH_FORM        = ['Kreis', 'Rechteck', 'Wappenschild', 'Oval', 'Freiform'];
+const PATCH_TECHNIK     = ['Stickerei (gestickt)', 'Webdruck', 'Direktdruck', 'Sublimationsdruck'];
+const PATCH_BEFESTIGUNG = ['Ohne (Aufnäher)', 'Bügelvlies (iron-on)', 'Klett / Velcro', 'Selbstklebend'];
+
+// ── Typ-Metadaten ───────────────────────────────────────────────────────────
+const TYP_META = {
+  karate_gi:       { label: 'Karate-Gi',        icon: '🥋' },
+  patches:         { label: 'Patches',           icon: '🔰' },
+  boxhandschuhe:   { label: 'Boxhandschuhe',     icon: '🥊' },
+  bandagen:        { label: 'Bandagen',          icon: '🩹' },
+  fussschoner:     { label: 'Fußschoner',        icon: '🦶' },
+  schienbeinschoner: { label: 'Schienbeinschoner', icon: '🦵' },
+  allgemein:       { label: 'Allgemein',         icon: '📦' },
+};
+
+// ── Leere Spez-Defaults ─────────────────────────────────────────────────────
 const EMPTY_SPEZ = {
   material: [], materialText: '', webart: [], grammatur: [],
   labelText: '', labelSprachen: ['Deutsch', 'Englisch'],
   labelArt: [], labelPosition: [], labelZusatz: '',
 };
-
-const MATERIALIEN = ['100% Baumwolle', 'Baumwolle/Polyester', 'Canvas', 'Synthetik'];
-const WEBARTEN    = ['Single Weave', 'Double Weave', 'Kata', 'Kumite / Leicht'];
-const GRAMMATUREN = ['8 oz (~270 g/m²)', '10 oz (~340 g/m²)', '12 oz (~400 g/m²)', '14 oz (~470 g/m²)'];
-const LABEL_LANG  = ['Deutsch', 'Englisch', 'Französisch', 'Japanisch'];
-const LABEL_ART   = ['Gewebtes Etikett', 'Gedrucktes Etikett', 'Eingestickt'];
-const LABEL_POS   = ['Nacken (innen)', 'Seitennaht', 'Hosenbund (innen)'];
-
-const POSITIONEN = [
-  'Linkes Revers', 'Rechtes Revers', 'Rücken oben', 'Rücken Mitte',
-  'Linker Ärmel', 'Rechter Ärmel', 'Hosenbein', 'Kragen',
-];
-
-const TYP_LABELS = { karate_gi: 'Karate-Gi', allgemein: 'Allgemein' };
 
 const EMPTY_FORM = {
   name: '', typ: 'karate_gi', lieferant_id: '', modell: '128',
@@ -42,27 +98,27 @@ const EMPTY_FORM = {
   katKids: true, katAdult: true,
 };
 
+// ── Komponente ───────────────────────────────────────────────────────────────
 export default function BestellvorlagenTab() {
   const { activeDojo } = useDojoContext();
   const dojoId = activeDojo?.id;
 
-  const [mode, setMode] = useState('list');
-  const [vorlagen, setVorlagen] = useState([]);
-  const [artikel, setArtikel] = useState([]);
+  const [mode, setMode]               = useState('list');
+  const [vorlagen, setVorlagen]       = useState([]);
+  const [artikel, setArtikel]         = useState([]);
   const [lieferanten, setLieferanten] = useState([]);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [selectedId, setSelectedId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [search, setSearch] = useState('');
-  const [dateien, setDateien] = useState([]);
+  const [form, setForm]               = useState(EMPTY_FORM);
+  const [selectedId, setSelectedId]   = useState(null);
+  const [loading, setLoading]         = useState(false);
+  const [saving, setSaving]           = useState(false);
+  const [error, setError]             = useState('');
+  const [success, setSuccess]         = useState('');
+  const [search, setSearch]           = useState('');
+  const [dateien, setDateien]         = useState([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef(null);
 
-  // ── Laden ───────────────────────────────────────────────────────────────────
-
+  // ── Laden ──────────────────────────────────────────────────────────────────
   const loadVorlagen = useCallback(async () => {
     if (!dojoId) return;
     setLoading(true);
@@ -73,7 +129,7 @@ export default function BestellvorlagenTab() {
     finally { setLoading(false); }
   }, [dojoId]);
 
-  const loadArtikel     = useCallback(async () => {
+  const loadArtikel = useCallback(async () => {
     if (!dojoId) return;
     try { const res = await axios.get(`/artikel?dojo_id=${dojoId}`); setArtikel(res.data?.data || []); } catch {}
   }, [dojoId]);
@@ -91,13 +147,11 @@ export default function BestellvorlagenTab() {
   useEffect(() => { loadVorlagen(); }, [loadVorlagen]);
   useEffect(() => { loadArtikel(); loadLieferanten(); }, [loadArtikel, loadLieferanten]);
 
-  // ── Hilfen ──────────────────────────────────────────────────────────────────
-
-  const f  = (key) => (e) => setForm(p => ({ ...p, [key]: e.target.value }));
-  const fb = (key) => (e) => setForm(p => ({ ...p, [key]: e.target.checked }));
-
-  const fSpez = (key) => (e) =>
-    setForm(p => ({ ...p, spezifikation: { ...p.spezifikation, [key]: e.target.value } }));
+  // ── Hilfen ─────────────────────────────────────────────────────────────────
+  const f    = (key)  => (e)  => setForm(p => ({ ...p, [key]: e.target.value }));
+  const fb   = (key)  => (e)  => setForm(p => ({ ...p, [key]: e.target.checked }));
+  const fSpez  = (key) => (e)  => setForm(p => ({ ...p, spezifikation: { ...p.spezifikation, [key]: e.target.value } }));
+  const fbSpez = (key) => (e)  => setForm(p => ({ ...p, spezifikation: { ...p.spezifikation, [key]: e.target.checked } }));
 
   const toggleSpez = (key, val) =>
     setForm(p => {
@@ -108,7 +162,7 @@ export default function BestellvorlagenTab() {
   const switchModell = (modell) => {
     const oldSizes = SIZES[form.modell];
     const newSizes = SIZES[modell];
-    const migrate = (old) => {
+    const migrate  = (old) => {
       const next = {};
       newSizes.forEach(s => { next[s] = oldSizes.includes(s) ? (old[s] || '') : ''; });
       return next;
@@ -116,15 +170,33 @@ export default function BestellvorlagenTab() {
     setForm(p => ({ ...p, modell, mengenKids: migrate(p.mengenKids), mengenAdult: migrate(p.mengenAdult) }));
   };
 
+  const handleTypChange = (e) => {
+    const newTyp   = e.target.value;
+    const newSizes = getSizesForTyp(newTyp);
+    const newMengen = newSizes ? newSizes.reduce((acc, s) => ({ ...acc, [s]: '' }), {}) : {};
+    setForm(p => ({
+      ...p,
+      typ: newTyp,
+      stickerei_pos: [],
+      spezifikation: { ...EMPTY_SPEZ, mengen: newMengen },
+    }));
+  };
+
   const togglePos     = (pos) => setForm(p => ({ ...p, stickerei_pos: p.stickerei_pos.includes(pos) ? p.stickerei_pos.filter(x => x !== pos) : [...p.stickerei_pos, pos] }));
   const toggleArtikel = (id)  => setForm(p => ({ ...p, artikel_ids:   p.artikel_ids.includes(id)    ? p.artikel_ids.filter(x => x !== id)   : [...p.artikel_ids, id] }));
 
-  const setMenge  = (row, size, val) => setForm(p => ({ ...p, [row]: { ...p[row], [size]: val } }));
-  const totalFor  = (row) => Object.values(form[row]).reduce((s, v) => s + (parseInt(v) || 0), 0);
-  const grandTot  = () => totalFor('mengenKids') + totalFor('mengenAdult');
+  // Gi Mengen
+  const setMenge   = (row, size, val) => setForm(p => ({ ...p, [row]: { ...p[row], [size]: val } }));
+  const totalFor   = (row) => Object.values(form[row]).reduce((s, v) => s + (parseInt(v) || 0), 0);
+  const grandTot   = () => totalFor('mengenKids') + totalFor('mengenAdult');
 
-  // ── CRUD ────────────────────────────────────────────────────────────────────
+  // Generische Mengen (für alle Nicht-Gi-Typen)
+  const setMengeGeneric = (size, val) =>
+    setForm(p => ({ ...p, spezifikation: { ...p.spezifikation, mengen: { ...(p.spezifikation.mengen || {}), [size]: val } } }));
+  const totalGeneric = () =>
+    Object.values(form.spezifikation.mengen || {}).reduce((s, v) => s + (parseInt(v) || 0), 0);
 
+  // ── CRUD ───────────────────────────────────────────────────────────────────
   const uploadDatei = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !selectedId) return;
@@ -159,24 +231,36 @@ export default function BestellvorlagenTab() {
       let spezObj = { ...EMPTY_SPEZ };
       if (data.spezifikation) { try { spezObj = { ...EMPTY_SPEZ, ...JSON.parse(data.spezifikation) }; } catch {} }
 
-      const model        = data.modell || '128';
-      const mengenKids   = spezObj.mengenKids  ? { ...EMPTY_MENGEN(model), ...spezObj.mengenKids  } : EMPTY_MENGEN(model);
-      const mengenAdult  = spezObj.mengenAdult ? { ...EMPTY_MENGEN(model), ...spezObj.mengenAdult } : EMPTY_MENGEN(model);
+      const typ   = data.typ || 'karate_gi';
+      const model = data.modell || '128';
+
+      // Gi-spezifische Mengen
+      const mengenKids  = spezObj.mengenKids  ? { ...EMPTY_MENGEN(model), ...spezObj.mengenKids  } : EMPTY_MENGEN(model);
+      const mengenAdult = spezObj.mengenAdult ? { ...EMPTY_MENGEN(model), ...spezObj.mengenAdult } : EMPTY_MENGEN(model);
+
+      // Generische Mengen für Nicht-Gi-Typen
+      const typSizes  = getSizesForTyp(typ);
+      const defaultMengen = typSizes ? typSizes.reduce((acc, s) => ({ ...acc, [s]: '' }), {}) : {};
+      if (!spezObj.mengen) spezObj.mengen = defaultMengen;
+      else spezObj.mengen = { ...defaultMengen, ...spezObj.mengen };
+
       const { mengenKids: _k, mengenAdult: _a, ...cleanSpez } = spezObj;
 
       setForm({
-        name: data.name || '', typ: data.typ || 'karate_gi',
-        lieferant_id: String(data.lieferant_id || ''),
-        modell: model, modell_name: data.modell_name || '',
+        name: data.name || '', typ,
+        lieferant_id:   String(data.lieferant_id || ''),
+        modell:         model,
+        modell_name:    data.modell_name || '',
         artikel_nr_vorl: data.artikel_nr_vorl || '',
-        farbe: data.farbe || 'Weiß', wkf: !!data.wkf,
-        stickerei_pos: Array.isArray(pos) ? pos : [],
+        farbe:          data.farbe || 'Weiß',
+        wkf:            !!data.wkf,
+        stickerei_pos:  Array.isArray(pos) ? pos : [],
         stickerei_text: data.stickerei_text || '',
         stickerei_farben: data.stickerei_farben || 'Gold, Schwarz',
         stickerei_datei: data.stickerei_datei || '',
-        bemerkungen: data.bemerkungen || '',
-        artikel_ids: data.artikel_ids || [],
-        spezifikation: cleanSpez,
+        bemerkungen:    data.bemerkungen || '',
+        artikel_ids:    data.artikel_ids || [],
+        spezifikation:  cleanSpez,
         mengenKids, mengenAdult,
         katKids: true, katAdult: true,
       });
@@ -192,15 +276,27 @@ export default function BestellvorlagenTab() {
     if (!form.name.trim()) { setError('Name ist Pflichtfeld.'); return; }
     setSaving(true); setError('');
     try {
+      const isGi = form.typ === 'karate_gi';
+      const spezPayload = isGi
+        ? { ...form.spezifikation, mengenKids: form.mengenKids, mengenAdult: form.mengenAdult }
+        : form.spezifikation;
+
       const payload = {
-        name: form.name, typ: form.typ,
-        lieferant_id: form.lieferant_id ? Number(form.lieferant_id) : null,
-        modell: form.modell, modell_name: form.modell_name,
-        artikel_nr_vorl: form.artikel_nr_vorl, farbe: form.farbe, wkf: form.wkf ? 1 : 0,
-        stickerei_pos: form.stickerei_pos, stickerei_text: form.stickerei_text,
-        stickerei_farben: form.stickerei_farben, stickerei_datei: form.stickerei_datei,
-        bemerkungen: form.bemerkungen, artikel_ids: form.artikel_ids,
-        spezifikation: JSON.stringify({ ...form.spezifikation, mengenKids: form.mengenKids, mengenAdult: form.mengenAdult }),
+        name:           form.name,
+        typ:            form.typ,
+        lieferant_id:   form.lieferant_id ? Number(form.lieferant_id) : null,
+        modell:         form.modell,
+        modell_name:    form.modell_name,
+        artikel_nr_vorl: form.artikel_nr_vorl,
+        farbe:          form.farbe,
+        wkf:            form.wkf ? 1 : 0,
+        stickerei_pos:  form.stickerei_pos,
+        stickerei_text: form.stickerei_text,
+        stickerei_farben: form.stickerei_farben,
+        stickerei_datei: form.stickerei_datei,
+        bemerkungen:    form.bemerkungen,
+        artikel_ids:    form.artikel_ids,
+        spezifikation:  JSON.stringify(spezPayload),
       };
       if (mode === 'new') {
         await axios.post(`/bestellvorlagen?dojo_id=${dojoId}`, payload);
@@ -222,12 +318,16 @@ export default function BestellvorlagenTab() {
     catch { setError('Fehler beim Löschen.'); }
   };
 
-  // ── Formular-Ansicht ────────────────────────────────────────────────────────
-
+  // ── Formular-Render ─────────────────────────────────────────────────────────
   if (mode === 'new' || mode === 'edit') {
-    const spez  = form.spezifikation || {};
-    const sizes = SIZES[form.modell];
+    const spez      = form.spezifikation || {};
+    const isGi      = form.typ === 'karate_gi';
+    const isPatches = form.typ === 'patches';
+    const typSizes  = getSizesForTyp(form.typ);
+    const typPos    = getPositionenForTyp(form.typ);
+    const sizes     = SIZES[form.modell]; // nur für Gi
 
+    // Chip-Auswahl-Hilfselement
     const SpezChip = ({ options, field }) => (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.3rem' }}>
         {options.map(opt => {
@@ -250,149 +350,9 @@ export default function BestellvorlagenTab() {
       </div>
     );
 
-    return (
-      <div className="bvt-form-page">
-        <div className="bvt-form-header">
-          <div>
-            <span className="bvt-form-title">{mode === 'new' ? 'Neue Bestellvorlage' : form.name}</span>
-            <span className="bvt-form-sub">{mode === 'new' ? 'Vorlage erfassen' : 'Bearbeiten'}</span>
-          </div>
-          <div className="bvt-form-actions">
-            <button className="bvt-btn bvt-btn--ghost" onClick={cancel}>Abbrechen</button>
-            <button className="bvt-btn bvt-btn--primary" onClick={save} disabled={saving}>
-              {saving ? 'Speichert…' : 'Speichern'}
-            </button>
-          </div>
-        </div>
-
-        {error && <div className="bvt-alert bvt-alert--err">{error}</div>}
-
-        {/* ── 2-Spalten oben: Grunddaten + Stickerei ── */}
-        <div className="bvt-form-grid" style={{ marginBottom: '1rem' }}>
-          <div className="bvt-form-col">
-            <div className="bvt-section">
-              <p className="bvt-section-label">Grunddaten</p>
-              <div className="bvt-field">
-                <label className="bvt-label">Name *</label>
-                <input className="bvt-input" value={form.name} onChange={f('name')} placeholder="z. B. Vereins-Gi Hayashi WKF" />
-              </div>
-              <div className="bvt-field">
-                <label className="bvt-label">Typ</label>
-                <select className="bvt-input" value={form.typ} onChange={f('typ')}>
-                  <option value="karate_gi">Karate-Gi</option>
-                  <option value="allgemein">Allgemein</option>
-                </select>
-              </div>
-              <div className="bvt-field">
-                <label className="bvt-label">Lieferant</label>
-                <select className="bvt-input" value={form.lieferant_id} onChange={f('lieferant_id')}>
-                  <option value="">— kein Lieferant —</option>
-                  {lieferanten.map(l => <option key={l.lieferant_id} value={l.lieferant_id}>{l.firmenname}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div className="bvt-section">
-              <p className="bvt-section-label">Modell</p>
-              <div className="bvt-model-row">
-                <div className={`bvt-model-card ${form.modell === '128' ? 'active' : ''}`} onClick={() => switchModell('128')}>
-                  <div className="bvt-model-card__name">Modell 128</div>
-                  <div className="bvt-model-card__detail">11 Größen · 140–200 cm</div>
-                </div>
-                <div className={`bvt-model-card ${form.modell === '188' ? 'active' : ''}`} onClick={() => switchModell('188')}>
-                  <div className="bvt-model-card__name">Modell 188</div>
-                  <div className="bvt-model-card__detail">8 Größen · 130–200 cm</div>
-                </div>
-              </div>
-              <div className="bvt-field">
-                <label className="bvt-label">Modellbezeichnung</label>
-                <input className="bvt-input" value={form.modell_name} onChange={f('modell_name')} placeholder="z. B. Hayashi Tenno WKF Approved" />
-              </div>
-              <div className="bvt-field">
-                <label className="bvt-label">Artikel-Nr.</label>
-                <input className="bvt-input" value={form.artikel_nr_vorl} onChange={f('artikel_nr_vorl')} placeholder="z. B. 0270" />
-              </div>
-              <div className="bvt-field">
-                <label className="bvt-label">Farbe / Ausführung</label>
-                <input className="bvt-input" value={form.farbe} onChange={f('farbe')} />
-              </div>
-              <label className="bvt-check-row">
-                <input type="checkbox" checked={form.wkf} onChange={fb('wkf')} />
-                WKF-zugelassen / WKF Approved
-              </label>
-            </div>
-          </div>
-
-          <div className="bvt-form-col">
-            <div className="bvt-section">
-              <p className="bvt-section-label">Stickerei</p>
-              <div className="bvt-pos-grid" style={{ marginBottom: '0.65rem' }}>
-                {POSITIONEN.map(pos => (
-                  <label key={pos} className={`bvt-pos-item ${form.stickerei_pos.includes(pos) ? 'active' : ''}`}>
-                    <input type="checkbox" checked={form.stickerei_pos.includes(pos)} onChange={() => togglePos(pos)} style={{ display: 'none' }} />
-                    {pos}
-                  </label>
-                ))}
-              </div>
-              <div className="bvt-field">
-                <label className="bvt-label">Schriftzug / Text</label>
-                <input className="bvt-input" value={form.stickerei_text} onChange={f('stickerei_text')} placeholder="z. B. Kampfkunstschule Schreiner · TDA" />
-              </div>
-              <div className="bvt-field">
-                <label className="bvt-label">Garnfarben</label>
-                <input className="bvt-input" value={form.stickerei_farben} onChange={f('stickerei_farben')} />
-              </div>
-              <div className="bvt-field">
-                <label className="bvt-label">Bemerkungen</label>
-                <textarea className="bvt-textarea" rows="3" value={form.bemerkungen} onChange={f('bemerkungen')} placeholder="Sonderwünsche, Verpackungsvorschriften …" />
-              </div>
-            </div>
-
-            {/* Logos & Dateien */}
-            <div className="bvt-section">
-              <p className="bvt-section-label">Logos &amp; Dateien</p>
-              {mode === 'edit' ? (
-                <>
-                  <div className="bvt-upload-zone" onClick={() => fileInputRef.current?.click()}>
-                    <input ref={fileInputRef} type="file" style={{ display: 'none' }}
-                      accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
-                      onChange={uploadDatei} />
-                    {uploadingFile
-                      ? <span className="bvt-upload-hint">Wird hochgeladen…</span>
-                      : <span className="bvt-upload-hint">+ Datei hochladen (Logos, Stickerei-Dateien, PDFs …)</span>}
-                  </div>
-                  {dateien.length > 0 && (
-                    <div className="bvt-datei-list">
-                      {dateien.map(d => {
-                        const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name);
-                        return (
-                          <div key={d.datei_id} className="bvt-datei-item">
-                            {isImg
-                              ? <img className="bvt-datei-thumb" src={d.pfad} alt={d.original_name} />
-                              : <div className="bvt-datei-icon">📎</div>}
-                            <div className="bvt-datei-info">
-                              <div className="bvt-datei-name">{d.original_name}</div>
-                              <div className="bvt-datei-size">
-                                {d.groesse_bytes > 1024*1024 ? `${(d.groesse_bytes/1024/1024).toFixed(1)} MB` : `${Math.round(d.groesse_bytes/1024)} KB`}
-                              </div>
-                            </div>
-                            <button className="bvt-datei-del" onClick={() => deleteDatei(d.datei_id)} title="Löschen">×</button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="bvt-upload-hint" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>
-                  Vorlage erst speichern, dann Dateien hochladen.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Produktspezifikation (volle Breite) ── */}
+    // ── Typ-spezifischer Spezifikations-Block ────────────────────────────────
+    const renderTypSpez = () => {
+      if (isGi) return (
         <div className="bvt-section" style={{ marginBottom: '1rem' }}>
           <p className="bvt-section-label">Produktspezifikation</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem 1.25rem' }}>
@@ -412,8 +372,152 @@ export default function BestellvorlagenTab() {
             </div>
           </div>
         </div>
+      );
 
-        {/* ── Mengenbestellung (volle Breite) ── */}
+      if (form.typ === 'boxhandschuhe') return (
+        <div className="bvt-section" style={{ marginBottom: '1rem' }}>
+          <p className="bvt-section-label">Produktspezifikation — Boxhandschuhe</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1.25rem' }}>
+            <div className="bvt-field">
+              <label className="bvt-label">Material (Außenmaterial)</label>
+              <SpezChip options={BOX_MATERIAL} field="material" />
+              <input className="bvt-input" style={{ marginTop: '0.4rem' }}
+                value={spez.materialText || ''} onChange={fSpez('materialText')} placeholder="Exakte Materialangabe / Spezifikation" />
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Verschluss</label>
+              <SpezChip options={BOX_VERSCHLUSS} field="verschluss" />
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Polsterung / Füllung</label>
+              <SpezChip options={BOX_FUELLUNG} field="fuellung" />
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Innenfutter</label>
+              <SpezChip options={BOX_FUTTER} field="futter" />
+            </div>
+          </div>
+          <label className="bvt-check-row" style={{ marginTop: '0.6rem' }}>
+            <input type="checkbox" checked={!!spez.wkfApproved} onChange={fbSpez('wkfApproved')} />
+            WKF / WAKO zugelassen
+          </label>
+        </div>
+      );
+
+      if (form.typ === 'bandagen') return (
+        <div className="bvt-section" style={{ marginBottom: '1rem' }}>
+          <p className="bvt-section-label">Produktspezifikation — Bandagen</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1.25rem' }}>
+            <div className="bvt-field">
+              <label className="bvt-label">Material</label>
+              <SpezChip options={BAND_MATERIAL} field="material" />
+              <input className="bvt-input" style={{ marginTop: '0.4rem' }}
+                value={spez.materialText || ''} onChange={fSpez('materialText')} placeholder="z. B. 100% Baumwolle, 350 g/m²" />
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Breite (cm)</label>
+              <input className="bvt-input" type="number" min="1" max="20"
+                value={spez.breite || ''} onChange={fSpez('breite')} placeholder="5 (Standard)" />
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.25rem', display: 'block' }}>Standard: 5 cm</span>
+            </div>
+          </div>
+        </div>
+      );
+
+      if (form.typ === 'fussschoner') return (
+        <div className="bvt-section" style={{ marginBottom: '1rem' }}>
+          <p className="bvt-section-label">Produktspezifikation — Fußschoner</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1.25rem' }}>
+            <div className="bvt-field">
+              <label className="bvt-label">Material</label>
+              <SpezChip options={SCHUTZ_MATERIAL} field="material" />
+              <input className="bvt-input" style={{ marginTop: '0.4rem' }}
+                value={spez.materialText || ''} onChange={fSpez('materialText')} placeholder="Exakte Materialspezifikation" />
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Befestigung</label>
+              <SpezChip options={SCHUTZ_VERSCHLUSS} field="verschluss" />
+            </div>
+          </div>
+          <label className="bvt-check-row" style={{ marginTop: '0.6rem' }}>
+            <input type="checkbox" checked={!!spez.wkfKumite} onChange={fbSpez('wkfKumite')} />
+            WKF Kumite zugelassen
+          </label>
+        </div>
+      );
+
+      if (form.typ === 'schienbeinschoner') return (
+        <div className="bvt-section" style={{ marginBottom: '1rem' }}>
+          <p className="bvt-section-label">Produktspezifikation — Schienbeinschoner</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1.25rem' }}>
+            <div className="bvt-field">
+              <label className="bvt-label">Ausführung</label>
+              <SpezChip options={SCHIEN_TYP} field="shienTyp" />
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Material</label>
+              <SpezChip options={SCHUTZ_MATERIAL} field="material" />
+              <input className="bvt-input" style={{ marginTop: '0.4rem' }}
+                value={spez.materialText || ''} onChange={fSpez('materialText')} placeholder="Exakte Materialspezifikation" />
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Befestigung</label>
+              <SpezChip options={SCHUTZ_VERSCHLUSS} field="verschluss" />
+            </div>
+          </div>
+          <label className="bvt-check-row" style={{ marginTop: '0.6rem' }}>
+            <input type="checkbox" checked={!!spez.wkfKumite} onChange={fbSpez('wkfKumite')} />
+            WKF Kumite zugelassen
+          </label>
+        </div>
+      );
+
+      if (form.typ === 'patches') return (
+        <div className="bvt-section" style={{ marginBottom: '1rem' }}>
+          <p className="bvt-section-label">Produktspezifikation — Patches</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1.25rem' }}>
+            <div className="bvt-field">
+              <label className="bvt-label">Form</label>
+              <SpezChip options={PATCH_FORM} field="patchForm" />
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Herstellungsverfahren</label>
+              <SpezChip options={PATCH_TECHNIK} field="technik" />
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Befestigung</label>
+              <SpezChip options={PATCH_BEFESTIGUNG} field="befestigung" />
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Maße</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                <div>
+                  <span style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '0.2rem' }}>Breite (cm)</span>
+                  <input className="bvt-input" type="number" min="0.5" step="0.5"
+                    value={spez.breite || ''} onChange={fSpez('breite')} placeholder="z. B. 8" />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '0.2rem' }}>Höhe (cm)</span>
+                  <input className="bvt-input" type="number" min="0.5" step="0.5"
+                    value={spez.hoehe || ''} onChange={fSpez('hoehe')} placeholder="z. B. 8" />
+                </div>
+              </div>
+            </div>
+            <div className="bvt-field">
+              <label className="bvt-label">Mindestbestellmenge</label>
+              <input className="bvt-input" type="number" min="1"
+                value={spez.mindestmenge || ''} onChange={fSpez('mindestmenge')} placeholder="z. B. 50" />
+            </div>
+          </div>
+        </div>
+      );
+
+      return null;
+    };
+
+    // ── Mengenbestellung-Block ───────────────────────────────────────────────
+    const renderMengen = () => {
+      if (isGi) return (
         <div className="bvt-section" style={{ marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>Mengenbestellung</span>
@@ -467,35 +571,291 @@ export default function BestellvorlagenTab() {
             </table>
           </div>
         </div>
+      );
 
-        {/* ── Label-Spezifikation (volle Breite) ── */}
+      if (isPatches) return (
         <div className="bvt-section" style={{ marginBottom: '1rem' }}>
-          <p className="bvt-section-label">Pflegekennzeichnung &amp; Label-Spezifikation</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1.25rem' }}>
-            <div className="bvt-field">
-              <label className="bvt-label">Material-Text (Label)</label>
-              <input className="bvt-input" value={spez.labelText || ''} onChange={fSpez('labelText')} placeholder="z. B. 100% Baumwolle / 100% Cotton" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>Bestellmenge</span>
+          </div>
+          <div className="bvt-field" style={{ maxWidth: 220 }}>
+            <label className="bvt-label">Gesamtmenge (Stück)</label>
+            <input className="bvt-input" type="number" min="1"
+              value={spez.mengeGesamt || ''} onChange={fSpez('mengeGesamt')} placeholder="z. B. 100" />
+          </div>
+        </div>
+      );
+
+      if (typSizes) return (
+        <div className="bvt-section" style={{ marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>Mengenbestellung</span>
+            <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>
+              Gesamt: <strong style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.95rem' }}>{totalGeneric()} Stück</strong>
+            </span>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+              <thead>
+                <tr>
+                  {typSizes.map(s => (
+                    <th key={s} style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', padding: '0.35rem 0.75rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)', minWidth: 60 }}>{s}</th>
+                  ))}
+                  <th style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', padding: '0.35rem 0.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)', minWidth: 40 }}>Σ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  {typSizes.map(s => (
+                    <td key={s} style={{ border: '1px solid rgba(255,255,255,0.06)', padding: 0 }}>
+                      <input type="number" min="0"
+                        value={(spez.mengen || {})[s] || ''}
+                        onChange={e => setMengeGeneric(s, e.target.value)}
+                        style={{ width: '100%', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.85)', textAlign: 'center', fontSize: '0.9rem', padding: '0.5rem 0', outline: 'none', MozAppearance: 'textfield', minWidth: 60 }} />
+                    </td>
+                  ))}
+                  <td style={{ fontWeight: 700, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.7)', padding: '0.5rem', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>{totalGeneric()}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+
+      return null;
+    };
+
+    // ── Logo / Aufdruck Positionen ───────────────────────────────────────────
+    const logoLabel = isGi ? 'Stickerei' : (isPatches ? 'Druck / Stickerei' : 'Logo & Aufdruck');
+
+    return (
+      <div className="bvt-form-page">
+        <div className="bvt-form-header">
+          <div>
+            <span className="bvt-form-title">{mode === 'new' ? 'Neue Bestellvorlage' : form.name}</span>
+            <span className="bvt-form-sub">{mode === 'new' ? 'Vorlage erfassen' : 'Bearbeiten'}</span>
+          </div>
+          <div className="bvt-form-actions">
+            <button className="bvt-btn bvt-btn--ghost" onClick={cancel}>Abbrechen</button>
+            <button className="bvt-btn bvt-btn--primary" onClick={save} disabled={saving}>
+              {saving ? 'Speichert…' : 'Speichern'}
+            </button>
+          </div>
+        </div>
+
+        {error && <div className="bvt-alert bvt-alert--err">{error}</div>}
+
+        {/* ── 2-Spalten oben ─────────────────────────────────────────────── */}
+        <div className="bvt-form-grid" style={{ marginBottom: '1rem' }}>
+          {/* Linke Spalte */}
+          <div className="bvt-form-col">
+            <div className="bvt-section">
+              <p className="bvt-section-label">Grunddaten</p>
+              <div className="bvt-field">
+                <label className="bvt-label">Name *</label>
+                <input className="bvt-input" value={form.name} onChange={f('name')}
+                  placeholder={isGi ? 'z. B. Vereins-Gi Hayashi WKF' : isPatches ? 'z. B. Vereins-Patch TDA' : `z. B. Vereins-${TYP_META[form.typ]?.label || ''}`} />
+              </div>
+              <div className="bvt-field">
+                <label className="bvt-label">Typ</label>
+                <select className="bvt-input" value={form.typ} onChange={handleTypChange}>
+                  {Object.entries(TYP_META).map(([k, v]) => (
+                    <option key={k} value={k}>{v.icon} {v.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="bvt-field">
+                <label className="bvt-label">Lieferant</label>
+                <select className="bvt-input" value={form.lieferant_id} onChange={f('lieferant_id')}>
+                  <option value="">— kein Lieferant —</option>
+                  {lieferanten.map(l => <option key={l.lieferant_id} value={l.lieferant_id}>{l.firmenname}</option>)}
+                </select>
+              </div>
+              <div className="bvt-field">
+                <label className="bvt-label">{isGi ? 'Artikel-Nr.' : 'Artikel-Nr. / Referenz'}</label>
+                <input className="bvt-input" value={form.artikel_nr_vorl} onChange={f('artikel_nr_vorl')} placeholder="z. B. 0270" />
+              </div>
+              <div className="bvt-field">
+                <label className="bvt-label">{isGi ? 'Farbe / Ausführung' : 'Farbe'}</label>
+                <input className="bvt-input" value={form.farbe} onChange={f('farbe')} placeholder={isGi ? 'Weiß' : 'z. B. Rot/Schwarz'} />
+              </div>
+              {!isPatches && (
+                <label className="bvt-check-row">
+                  <input type="checkbox" checked={form.wkf} onChange={fb('wkf')} />
+                  WKF-zugelassen / WKF Approved
+                </label>
+              )}
             </div>
-            <div className="bvt-field">
-              <label className="bvt-label">Zusatztext auf Label</label>
-              <input className="bvt-input" value={spez.labelZusatz || ''} onChange={fSpez('labelZusatz')} placeholder="z. B. Made exclusively for KKS Schreiner" />
+
+            {/* Modell-Auswahl: nur für Gi */}
+            {isGi && (
+              <div className="bvt-section">
+                <p className="bvt-section-label">Modell</p>
+                <div className="bvt-model-row">
+                  <div className={`bvt-model-card ${form.modell === '128' ? 'active' : ''}`} onClick={() => switchModell('128')}>
+                    <div className="bvt-model-card__name">Modell 128</div>
+                    <div className="bvt-model-card__detail">11 Größen · 140–200 cm</div>
+                  </div>
+                  <div className={`bvt-model-card ${form.modell === '188' ? 'active' : ''}`} onClick={() => switchModell('188')}>
+                    <div className="bvt-model-card__name">Modell 188</div>
+                    <div className="bvt-model-card__detail">8 Größen · 130–200 cm</div>
+                  </div>
+                </div>
+                <div className="bvt-field">
+                  <label className="bvt-label">Modellbezeichnung</label>
+                  <input className="bvt-input" value={form.modell_name} onChange={f('modell_name')} placeholder="z. B. Hayashi Tenno WKF Approved" />
+                </div>
+              </div>
+            )}
+
+            {/* Produktbezeichnung für Nicht-Gi-Typen */}
+            {!isGi && (
+              <div className="bvt-section">
+                <p className="bvt-section-label">Produktdaten</p>
+                <div className="bvt-field">
+                  <label className="bvt-label">Produktbezeichnung / Modell</label>
+                  <input className="bvt-input" value={form.modell_name} onChange={f('modell_name')}
+                    placeholder={
+                      form.typ === 'boxhandschuhe' ? 'z. B. Hayashi Pro Bag Gloves' :
+                      form.typ === 'bandagen' ? 'z. B. Hayashi Elastische Bandagen' :
+                      form.typ === 'fussschoner' ? 'z. B. Hayashi Karate Fußschoner WKF' :
+                      form.typ === 'schienbeinschoner' ? 'z. B. Hayashi Kumite Schienbeinschoner' :
+                      form.typ === 'patches' ? 'z. B. Vereins-Patch rund, 8 cm' : 'Modellbezeichnung'
+                    } />
+                </div>
+                <div className="bvt-field">
+                  <label className="bvt-label">Bemerkungen</label>
+                  <textarea className="bvt-textarea" rows="3" value={form.bemerkungen} onChange={f('bemerkungen')}
+                    placeholder="Sonderwünsche, Verpackungsvorschriften, Hinweise …" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Rechte Spalte */}
+          <div className="bvt-form-col">
+            <div className="bvt-section">
+              <p className="bvt-section-label">{logoLabel}</p>
+
+              {typPos.length > 0 && (
+                <div className="bvt-pos-grid" style={{ marginBottom: '0.65rem' }}>
+                  {typPos.map(pos => (
+                    <label key={pos} className={`bvt-pos-item ${form.stickerei_pos.includes(pos) ? 'active' : ''}`}>
+                      <input type="checkbox" checked={form.stickerei_pos.includes(pos)} onChange={() => togglePos(pos)} style={{ display: 'none' }} />
+                      {pos}
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              <div className="bvt-field">
+                <label className="bvt-label">{isGi ? 'Schriftzug / Text' : 'Logo-Text / Schriftzug'}</label>
+                <input className="bvt-input" value={form.stickerei_text} onChange={f('stickerei_text')}
+                  placeholder={isPatches ? 'z. B. TDA Deutschland' : 'z. B. Kampfkunstschule Schreiner · TDA'} />
+              </div>
+              <div className="bvt-field">
+                <label className="bvt-label">{isGi ? 'Garnfarben' : 'Garn- / Druckfarben'}</label>
+                <input className="bvt-input" value={form.stickerei_farben} onChange={f('stickerei_farben')} placeholder="z. B. Gold, Schwarz" />
+              </div>
+
+              {/* Gi-spezifisch: Bemerkungen */}
+              {isGi && (
+                <div className="bvt-field">
+                  <label className="bvt-label">Bemerkungen</label>
+                  <textarea className="bvt-textarea" rows="3" value={form.bemerkungen} onChange={f('bemerkungen')}
+                    placeholder="Sonderwünsche, Verpackungsvorschriften …" />
+                </div>
+              )}
             </div>
-            <div className="bvt-field">
-              <label className="bvt-label">Label-Sprachen</label>
-              <SpezChip options={LABEL_LANG} field="labelSprachen" />
-            </div>
-            <div className="bvt-field">
-              <label className="bvt-label">Label-Art</label>
-              <SpezChip options={LABEL_ART} field="labelArt" />
-            </div>
-            <div className="bvt-field">
-              <label className="bvt-label">Label-Position</label>
-              <SpezChip options={LABEL_POS} field="labelPosition" />
+
+            {/* Logos & Dateien */}
+            <div className="bvt-section">
+              <p className="bvt-section-label">
+                {isPatches ? 'Design-Dateien & Vorlagen' : 'Logos & Dateien'}
+              </p>
+              {mode === 'edit' ? (
+                <>
+                  <div className="bvt-upload-zone" onClick={() => fileInputRef.current?.click()}>
+                    <input ref={fileInputRef} type="file" style={{ display: 'none' }}
+                      accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
+                      onChange={uploadDatei} />
+                    {uploadingFile
+                      ? <span className="bvt-upload-hint">Wird hochgeladen…</span>
+                      : <span className="bvt-upload-hint">
+                          {isPatches
+                            ? '+ Datei hochladen (Design, AI, EPS, Stickerei-Datei …)'
+                            : '+ Datei hochladen (Logos, Stickerei-Dateien, PDFs …)'}
+                        </span>}
+                  </div>
+                  {dateien.length > 0 && (
+                    <div className="bvt-datei-list">
+                      {dateien.map(d => {
+                        const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name);
+                        return (
+                          <div key={d.datei_id} className="bvt-datei-item">
+                            {isImg
+                              ? <img className="bvt-datei-thumb" src={d.pfad} alt={d.original_name} />
+                              : <div className="bvt-datei-icon">📎</div>}
+                            <div className="bvt-datei-info">
+                              <div className="bvt-datei-name">{d.original_name}</div>
+                              <div className="bvt-datei-size">
+                                {d.groesse_bytes > 1024*1024 ? `${(d.groesse_bytes/1024/1024).toFixed(1)} MB` : `${Math.round(d.groesse_bytes/1024)} KB`}
+                              </div>
+                            </div>
+                            <button className="bvt-datei-del" onClick={() => deleteDatei(d.datei_id)} title="Löschen">×</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="bvt-upload-hint" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>
+                  Vorlage erst speichern, dann Dateien hochladen.
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* ── Artikel-Zuordnung (volle Breite) ── */}
+        {/* ── Typ-spezifische Spezifikation (volle Breite) ───────────────── */}
+        {renderTypSpez()}
+
+        {/* ── Mengenbestellung (volle Breite) ───────────────────────────── */}
+        {renderMengen()}
+
+        {/* ── Pflegekennzeichnung / Label (volle Breite) — nicht für Patches ── */}
+        {!isPatches && (
+          <div className="bvt-section" style={{ marginBottom: '1rem' }}>
+            <p className="bvt-section-label">Pflegekennzeichnung &amp; Label-Spezifikation</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1.25rem' }}>
+              <div className="bvt-field">
+                <label className="bvt-label">Material-Text (Label)</label>
+                <input className="bvt-input" value={spez.labelText || ''} onChange={fSpez('labelText')}
+                  placeholder="z. B. 100% Baumwolle / 100% Cotton" />
+              </div>
+              <div className="bvt-field">
+                <label className="bvt-label">Zusatztext auf Label</label>
+                <input className="bvt-input" value={spez.labelZusatz || ''} onChange={fSpez('labelZusatz')}
+                  placeholder="z. B. Made exclusively for KKS Schreiner" />
+              </div>
+              <div className="bvt-field">
+                <label className="bvt-label">Label-Sprachen</label>
+                <SpezChip options={LABEL_LANG} field="labelSprachen" />
+              </div>
+              <div className="bvt-field">
+                <label className="bvt-label">Label-Art</label>
+                <SpezChip options={LABEL_ART} field="labelArt" />
+              </div>
+              <div className="bvt-field">
+                <label className="bvt-label">Label-Position</label>
+                <SpezChip options={LABEL_POS} field="labelPosition" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Artikel-Zuordnung (volle Breite) ──────────────────────────── */}
         <div className="bvt-section">
           <p className="bvt-section-label">Artikel-Zuordnung</p>
           {artikel.length === 0 ? (
@@ -522,7 +882,6 @@ export default function BestellvorlagenTab() {
   }
 
   // ── Listen-Ansicht ──────────────────────────────────────────────────────────
-
   const filtered = vorlagen.filter(v =>
     !search || v.name.toLowerCase().includes(search.toLowerCase()) ||
     (v.lieferant_name || '').toLowerCase().includes(search.toLowerCase())
@@ -544,27 +903,30 @@ export default function BestellvorlagenTab() {
         <div className="bvt-empty">{vorlagen.length === 0 ? 'Noch keine Bestellvorlagen erfasst.' : 'Keine Treffer.'}</div>
       ) : (
         <div className="bvt-cards">
-          {filtered.map(v => (
-            <div key={v.vorlage_id} className="bvt-card">
-              <div className="bvt-card__main">
-                <div className="bvt-card__name">{v.name}</div>
-                <div className="bvt-card__sub">
-                  {v.lieferant_name ? `Lieferant: ${v.lieferant_name}` : 'Kein Lieferant'}
-                  {' · '}
-                  {v.artikel_count === 1 ? '1 Artikel verknüpft' : `${v.artikel_count || 0} Artikel verknüpft`}
+          {filtered.map(v => {
+            const meta = TYP_META[v.typ] || { label: v.typ, icon: '📦' };
+            return (
+              <div key={v.vorlage_id} className="bvt-card">
+                <div className="bvt-card__main">
+                  <div className="bvt-card__name">{meta.icon} {v.name}</div>
+                  <div className="bvt-card__sub">
+                    {v.lieferant_name ? `Lieferant: ${v.lieferant_name}` : 'Kein Lieferant'}
+                    {' · '}
+                    {v.artikel_count === 1 ? '1 Artikel verknüpft' : `${v.artikel_count || 0} Artikel verknüpft`}
+                  </div>
+                  <div className="bvt-card__meta">
+                    <span className={`bvt-badge ${v.typ === 'karate_gi' ? 'bvt-badge--gold' : ''}`}>{meta.label}</span>
+                    {v.typ === 'karate_gi' && v.modell && <span className="bvt-badge">Modell {v.modell}</span>}
+                    {v.wkf && <span className="bvt-badge bvt-badge--gold">WKF</span>}
+                  </div>
                 </div>
-                <div className="bvt-card__meta">
-                  <span className={`bvt-badge ${v.typ === 'karate_gi' ? 'bvt-badge--gold' : ''}`}>{TYP_LABELS[v.typ] || v.typ}</span>
-                  {v.modell && <span className="bvt-badge">Modell {v.modell}</span>}
-                  {v.wkf    && <span className="bvt-badge bvt-badge--gold">WKF</span>}
+                <div className="bvt-card__actions">
+                  <button className="bvt-btn bvt-btn--ghost bvt-btn--sm" onClick={() => openEdit(v)}>Bearbeiten</button>
+                  <button className="bvt-btn bvt-btn--danger bvt-btn--sm" onClick={() => del(v.vorlage_id)}>Entfernen</button>
                 </div>
               </div>
-              <div className="bvt-card__actions">
-                <button className="bvt-btn bvt-btn--ghost bvt-btn--sm" onClick={() => openEdit(v)}>Bearbeiten</button>
-                <button className="bvt-btn bvt-btn--danger bvt-btn--sm" onClick={() => del(v.vorlage_id)}>Entfernen</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
