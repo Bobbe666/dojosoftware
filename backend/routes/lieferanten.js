@@ -33,14 +33,16 @@ router.use(authenticateToken);
 router.get('/', (req, res) => {
   const dojoId = getSecureDojoId(req);
 
-  // Super-Admin ohne dojo_id: alle Lieferanten aller Dojos
   const isSuperAdmin = !req.user?.dojo_id && (req.user?.rolle === 'admin' || req.user?.role === 'admin');
   if (!dojoId && !isSuperAdmin) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
 
-  const sql = dojoId
-    ? 'SELECT *, (SELECT dojoname FROM dojo WHERE id = l.dojo_id) AS dojo_name FROM lieferanten l WHERE dojo_id = ? AND aktiv = 1 ORDER BY firmenname ASC'
-    : 'SELECT *, (SELECT dojoname FROM dojo WHERE id = l.dojo_id) AS dojo_name FROM lieferanten l WHERE aktiv = 1 ORDER BY firmenname ASC';
-  const params = dojoId ? [dojoId] : [];
+  // alle=1 → jeder Admin darf alle aktiven Lieferanten sehen (z. B. für Bestellvorlagen)
+  const showAll = isSuperAdmin || req.query.alle === '1';
+
+  const sql = showAll
+    ? 'SELECT *, (SELECT dojoname FROM dojo WHERE id = l.dojo_id) AS dojo_name FROM lieferanten l WHERE aktiv = 1 ORDER BY firmenname ASC'
+    : 'SELECT *, (SELECT dojoname FROM dojo WHERE id = l.dojo_id) AS dojo_name FROM lieferanten l WHERE dojo_id = ? AND aktiv = 1 ORDER BY firmenname ASC';
+  const params = showAll ? [] : [dojoId];
 
   db.query(sql, params, (err, results) => {
     if (err) return res.status(500).json({ success: false, message: 'Datenbankfehler' });

@@ -118,8 +118,10 @@ export default function BestellvorlagenTab() {
   const [success, setSuccess]         = useState('');
   const [search, setSearch]           = useState('');
   const [dateien, setDateien]         = useState([]);
-  const [uploadingFile, setUploadingFile] = useState(false);
-  const fileInputRef = useRef(null);
+  const [uploadingFile, setUploadingFile] = useState(null); // null | 'general' | positionName
+  const fileInputRef    = useRef(null);
+  const posFileRef      = useRef(null);
+  const posUploadPos    = useRef(null); // welche Position gerade uploaden wird
 
   // ── Laden ──────────────────────────────────────────────────────────────────
   const loadVorlagen = useCallback(async () => {
@@ -139,7 +141,8 @@ export default function BestellvorlagenTab() {
 
   const loadLieferanten = useCallback(async () => {
     if (!dojoId && !isSuperAdmin) return;
-    const url = dojoId ? `/lieferanten?dojo_id=${dojoId}` : '/lieferanten';
+    // alle=1: auch Lieferanten anderer Dojos sichtbar (für Bestellvorlagen-Kontext)
+    const url = dojoId ? `/lieferanten?dojo_id=${dojoId}&alle=1` : '/lieferanten';
     try {
       const res = await axios.get(url);
       setLieferanten(res.data?.data || []);
@@ -192,7 +195,16 @@ export default function BestellvorlagenTab() {
   };
 
   const togglePos     = (pos) => setForm(p => ({ ...p, stickerei_pos: p.stickerei_pos.includes(pos) ? p.stickerei_pos.filter(x => x !== pos) : [...p.stickerei_pos, pos] }));
-  const toggleArtikel = (id)  => setForm(p => ({ ...p, artikel_ids:   p.artikel_ids.includes(id)    ? p.artikel_ids.filter(x => x !== id)   : [...p.artikel_ids, id] }));
+  const toggleArtikel = (id) => {
+    const art = artikel.find(a => a.artikel_id === id);
+    setForm(p => {
+      const isAdding = !p.artikel_ids.includes(id);
+      const newIds   = isAdding ? [...p.artikel_ids, id] : p.artikel_ids.filter(x => x !== id);
+      // Artikel-Nr. automatisch übernehmen wenn das Feld noch leer ist
+      const autoNr   = isAdding && art?.artikel_nummer && !p.artikel_nr_vorl ? art.artikel_nummer : p.artikel_nr_vorl;
+      return { ...p, artikel_ids: newIds, artikel_nr_vorl: autoNr };
+    });
+  };
 
   // Gi Mengen
   const setMenge   = (row, size, val) => setForm(p => ({ ...p, [row]: { ...p[row], [size]: val } }));
@@ -209,14 +221,35 @@ export default function BestellvorlagenTab() {
   const uploadDatei = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !selectedId) return;
-    setUploadingFile(true);
+    setUploadingFile('general');
     try {
       const fd = new FormData();
       fd.append('datei', file);
       const res = await axios.post(`/bestellvorlagen/${selectedId}/dateien?dojo_id=${dojoId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       if (res.data?.datei) setDateien(prev => [...prev, res.data.datei]);
     } catch { setError('Datei konnte nicht hochgeladen werden.'); }
-    finally { setUploadingFile(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
+    finally { setUploadingFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }
+  };
+
+  const triggerPosUpload = (position) => {
+    posUploadPos.current = position;
+    posFileRef.current?.click();
+  };
+
+  const uploadDateiFuerPosition = async (e) => {
+    const file = e.target.files?.[0];
+    const position = posUploadPos.current;
+    if (!file || !selectedId || !position) return;
+    if (posFileRef.current) posFileRef.current.value = '';
+    setUploadingFile(position);
+    try {
+      const fd = new FormData();
+      fd.append('datei', file);
+      fd.append('tag', position);
+      const res = await axios.post(`/bestellvorlagen/${selectedId}/dateien?dojo_id=${dojoId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      if (res.data?.datei) setDateien(prev => [...prev, res.data.datei]);
+    } catch { setError('Datei konnte nicht hochgeladen werden.'); }
+    finally { setUploadingFile(null); posUploadPos.current = null; }
   };
 
   const deleteDatei = async (dateiId) => {
@@ -759,15 +792,75 @@ export default function BestellvorlagenTab() {
                     <label key={pos} className={`bvt-pos-item ${form.stickerei_pos.includes(pos) ? 'active' : ''}`}>
                       <input type="checkbox" checked={form.stickerei_pos.includes(pos)} onChange={() => togglePos(pos)} style={{ display: 'none' }} />
                       {pos}
+                      {mode === 'edit' && form.stickerei_pos.includes(pos) && dateien.filter(d => d.tag === pos).length > 0 && (
+                        <span style={{ marginLeft: 4, fontSize: '0.65rem', background: 'rgba(212,175,55,0.2)', borderRadius: 8, padding: '0.05rem 0.3rem', color: '#c8a44a' }}>
+                          {dateien.filter(d => d.tag === pos).length}
+                        </span>
+                      )}
                     </label>
                   ))}
                 </div>
               )}
 
+              {/* Per-Position Datei-Upload (nur im Edit-Modus) */}
+              {mode === 'edit' && form.stickerei_pos.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                  {form.stickerei_pos.map(pos => {
+                    const posFiles = dateien.filter(d => d.tag === pos);
+                    return (
+                      <div key={pos} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, padding: '0.4rem 0.6rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: posFiles.length ? '0.35rem' : 0 }}>
+                          <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', flex: 1 }}>{pos}</span>
+                          <button onClick={() => triggerPosUpload(pos)} disabled={uploadingFile === pos}
+                            style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 4, padding: '0.12rem 0.45rem', cursor: 'pointer', color: '#c8a44a', fontSize: '0.73rem', whiteSpace: 'nowrap' }}>
+                            {uploadingFile === pos ? '⏳' : '+ Datei'}
+                          </button>
+                        </div>
+                        {posFiles.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                            {posFiles.map(d => {
+                              const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name);
+                              return (
+                                <div key={d.datei_id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '0.1rem 0.3rem 0.1rem 0.2rem', fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)' }}>
+                                  {isImg
+                                    ? <img src={d.pfad} alt="" style={{ width: 18, height: 18, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />
+                                    : <span style={{ flexShrink: 0 }}>📎</span>}
+                                  <span style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.original_name}</span>
+                                  <button onClick={() => deleteDatei(d.datei_id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: '0.8rem', padding: 0, lineHeight: 1, flexShrink: 0 }}>×</button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               <div className="bvt-field">
                 <label className="bvt-label">{isGi ? 'Schriftzug / Text' : 'Logo-Text / Schriftzug'}</label>
-                <input className="bvt-input" value={form.stickerei_text} onChange={f('stickerei_text')}
-                  placeholder={isPatches ? 'z. B. TDA Deutschland' : 'z. B. Kampfkunstschule Schreiner · TDA'} />
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'flex-start' }}>
+                  <input className="bvt-input" style={{ flex: 1 }} value={form.stickerei_text} onChange={f('stickerei_text')}
+                    placeholder={isPatches ? 'z. B. TDA Deutschland' : 'z. B. Kampfkunstschule Schreiner · TDA'} />
+                  {mode === 'edit' && (
+                    <button onClick={() => triggerPosUpload('Logo-Text / Schriftzug')} title="Design-Datei für Schriftzug hochladen"
+                      disabled={uploadingFile === 'Logo-Text / Schriftzug'}
+                      style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: 6, padding: '0.45rem 0.6rem', cursor: 'pointer', color: '#c8a44a', fontSize: '0.85rem', flexShrink: 0 }}>
+                      {uploadingFile === 'Logo-Text / Schriftzug' ? '⏳' : '📎'}
+                    </button>
+                  )}
+                </div>
+                {mode === 'edit' && dateien.filter(d => d.tag === 'Logo-Text / Schriftzug').map(d => {
+                  const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name);
+                  return (
+                    <div key={d.datei_id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '0.1rem 0.3rem 0.1rem 0.2rem', fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)' }}>
+                      {isImg ? <img src={d.pfad} alt="" style={{ width: 18, height: 18, objectFit: 'cover', borderRadius: 2 }} /> : <span>📎</span>}
+                      <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.original_name}</span>
+                      <button onClick={() => deleteDatei(d.datei_id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: '0.8rem', padding: 0 }}>×</button>
+                    </div>
+                  );
+                })}
               </div>
               <div className="bvt-field">
                 <label className="bvt-label">{isGi ? 'Garnfarben' : 'Garn- / Druckfarben'}</label>
@@ -791,21 +884,25 @@ export default function BestellvorlagenTab() {
               </p>
               {mode === 'edit' ? (
                 <>
+                  {/* Versteckter Input für Positions-Upload */}
+                  <input ref={posFileRef} type="file" style={{ display: 'none' }}
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
+                    onChange={uploadDateiFuerPosition} />
                   <div className="bvt-upload-zone" onClick={() => fileInputRef.current?.click()}>
                     <input ref={fileInputRef} type="file" style={{ display: 'none' }}
                       accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.ai,.eps,.dst,.pes,.exp,.jef,.vp3"
                       onChange={uploadDatei} />
-                    {uploadingFile
+                    {uploadingFile === 'general'
                       ? <span className="bvt-upload-hint">Wird hochgeladen…</span>
                       : <span className="bvt-upload-hint">
                           {isPatches
-                            ? '+ Datei hochladen (Design, AI, EPS, Stickerei-Datei …)'
-                            : '+ Datei hochladen (Logos, Stickerei-Dateien, PDFs …)'}
+                            ? '+ Allgemeine Datei hochladen (Design, AI, EPS, Stickerei-Datei …)'
+                            : '+ Allgemeine Datei hochladen (Logos, Stickerei-Dateien, PDFs …)'}
                         </span>}
                   </div>
-                  {dateien.length > 0 && (
+                  {dateien.filter(d => !d.tag).length > 0 && (
                     <div className="bvt-datei-list">
-                      {dateien.map(d => {
+                      {dateien.filter(d => !d.tag).map(d => {
                         const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name);
                         return (
                           <div key={d.datei_id} className="bvt-datei-item">
