@@ -2609,7 +2609,8 @@ router.get('/npm-audit', requireSuperAdmin, async (req, res) => {
   });
 
   const auditOne = (appPath) => new Promise((resolve) => {
-    exec('npm audit --json 2>/dev/null', { cwd: appPath, timeout: 45000 }, (err, stdout) => {
+    // --prefer-offline vermeidet langsame Registry-Abfragen
+    exec('npm audit --json --prefer-offline 2>/dev/null', { cwd: appPath, timeout: 20000 }, (err, stdout) => {
       try {
         const result = JSON.parse(stdout || '{}');
         const meta = result.metadata?.vulnerabilities || {};
@@ -2629,14 +2630,16 @@ router.get('/npm-audit', requireSuperAdmin, async (req, res) => {
           topVulns
         });
       } catch (_) {
-        resolve({ error: 'Parse-Fehler', counts: {}, topVulns: [] });
+        resolve({ error: 'Timeout oder Parse-Fehler', counts: {}, topVulns: [] });
       }
     });
   });
 
-  const results = await Promise.all(
-    candidates.map(async (a) => ({ name: a.name, ...(await auditOne(a.path)) }))
-  );
+  // Sequenziell statt parallel — verhindert Server-Überlastung durch gleichzeitige npm-Prozesse
+  const results = [];
+  for (const a of candidates) {
+    results.push({ name: a.name, ...(await auditOne(a.path)) });
+  }
 
   res.json({ success: true, results, checkedAt: new Date().toISOString() });
 });

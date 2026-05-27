@@ -2522,7 +2522,7 @@ function queryAsync(sql, params) {
  */
 router.get('/auto-protokoll', async (req, res) => {
     const dojoId = getSecureDojoId(req);
-    const isSuperAdmin = !dojoId && req.user?.role === 'super_admin';
+    const isSuperAdmin = !req.user?.dojo_id;
     if (!dojoId && !isSuperAdmin) return res.status(400).json({ error: 'Kein Dojo' });
     try {
         let rows;

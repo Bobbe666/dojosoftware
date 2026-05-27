@@ -66,16 +66,20 @@ export default function InfraChecks() {
     }
   };
 
+  const [auditError, setAuditError] = useState(null);
+
   const loadAudit = async () => {
     setAuditLoading(true);
+    setAuditError(null);
     try {
       const token = localStorage.getItem('dojo_auth_token');
       const res = await axios.get('/admin/npm-audit', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 150000 // 2.5 Min — läuft sequenziell durch alle Apps
       });
       if (res.data.success) setAuditData(res.data);
     } catch (e) {
-      console.error('npm audit Fehler:', e);
+      setAuditError(e.response?.status === 502 ? 'Server-Timeout — npm audit dauert zu lange. Bitte erneut versuchen.' : 'Fehler beim Laden des Audits.');
     } finally {
       setAuditLoading(false);
     }
@@ -264,13 +268,16 @@ export default function InfraChecks() {
             {auditLoading ? 'Prüft… (~20s)' : auditData ? 'Erneut prüfen' : 'Jetzt prüfen'}
           </button>
         </div>
-        {!auditData && !auditLoading && (
-          <p className="ic-empty" style={{ marginTop: '0.5rem' }}>Noch nicht geprüft — dauert ~10–20 Sekunden.</p>
+        {!auditData && !auditLoading && !auditError && (
+          <p className="ic-empty" style={{ marginTop: '0.5rem' }}>Noch nicht geprüft — dauert ~2 Minuten (läuft sequenziell).</p>
+        )}
+        {auditError && !auditLoading && (
+          <p style={{ color: '#f87171', fontSize: '0.82rem', marginTop: '0.5rem' }}>⚠ {auditError}</p>
         )}
         {auditLoading && (
           <div className="ic-loading">
             <RefreshCw size={18} className="ic-spin" />
-            <span>npm audit läuft für alle Apps… kann bis zu 20s dauern</span>
+            <span>npm audit läuft für alle Apps… kann bis zu 2 Minuten dauern</span>
           </div>
         )}
         {auditData && !auditLoading && (
