@@ -2335,6 +2335,10 @@ router.put("/:id",
             message: 'Mitglied erfolgreich aktualisiert',
             updated_fields: updateFields
         });
+
+        if (updateFields.stil_id) {
+            autoStarterpaketBestellung(id, [updateFields.stil_id]);
+        }
     });
 });
 
@@ -2466,6 +2470,7 @@ router.post('/stil/:stil_id/assign', async (req, res) => {
       );
     }
     res.json({ success: true });
+    autoStarterpaketBestellung(mitglied_id, [stil_id]);
   } catch (err) {
     logger.error('Fehler beim Zuweisen des Stils:', err);
     res.status(500).json({ error: 'Fehler beim Zuweisen' });
@@ -2558,6 +2563,7 @@ router.post("/:id/stile", async (req, res) => {
         }
 
         res.json({ success: true, message: "Stile erfolgreich aktualisiert", mitglied_id, stile });
+        autoStarterpaketBestellung(mitglied_id, stile);
     } catch (err) {
         logger.error('Fehler beim Speichern der Stile:', err);
         res.status(500).json({ error: "Fehler beim Speichern der Stile" });
@@ -5404,5 +5410,43 @@ router.put('/:id/stil-erinnerung-dismiss', async (req, res) => {
     res.status(500).json({ error: 'Datenbankfehler' });
   }
 });
+
+// Legt automatisch eine Starterpaket-Bestellung an wenn ein Stil zugewiesen wird
+async function autoStarterpaketBestellung(mitglied_id, stil_ids) {
+  if (!stil_ids?.length) return;
+  const pool = db.promise();
+  try {
+    const [[member]] = await pool.query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
+    if (!member?.dojo_id) return;
+    const dojo_id = member.dojo_id;
+
+    for (const stil_id of stil_ids) {
+      const [[paket]] = await pool.query(
+        'SELECT paket_id FROM starterpakete WHERE stil_id = ? AND dojo_id = ? AND aktiv = 1 LIMIT 1',
+        [stil_id, dojo_id]
+      );
+      if (!paket) continue;
+
+      const [existing] = await pool.query(
+        "SELECT id FROM starterpaket_bestellungen WHERE mitglied_id = ? AND paket_id = ? AND status != 'storniert'",
+        [mitglied_id, paket.paket_id]
+      );
+      if (existing.length > 0) continue;
+
+      const [[preisRow]] = await pool.query(
+        'SELECT COALESCE(SUM(ROUND(einzelpreis_cent * menge * (1 - rabatt_prozent/100))), 0) as gesamt FROM starterpaket_positionen WHERE paket_id = ? AND pflicht = 1',
+        [paket.paket_id]
+      );
+
+      await pool.query(
+        'INSERT INTO starterpaket_bestellungen (dojo_id, paket_id, mitglied_id, gesamtpreis_cent, status) VALUES (?, ?, ?, ?, ?)',
+        [dojo_id, paket.paket_id, mitglied_id, preisRow?.gesamt || 0, 'offen']
+      );
+      logger.info(`Starterpaket auto-erstellt: Mitglied ${mitglied_id}, Paket ${paket.paket_id}, Stil ${stil_id}`);
+    }
+  } catch (err) {
+    logger.error('Fehler bei auto Starterpaket-Bestellung:', { err: err.message, mitglied_id });
+  }
+}
 
 module.exports = router;
