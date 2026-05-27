@@ -1549,6 +1549,27 @@ const PruefungsVerwaltung = () => {
     await handleGebuehrAutoToggle({ ...pruefung, gebuehr_auto_verrechnen: null }); // force → 1
   };
 
+  const handleGebuehrNull = async (pruefung) => {
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    try {
+      const res = await fetch(`${API_BASE_URL}/pruefungen/kandidaten/${pruefung.pruefung_id}/gebuehr-null`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Fehler');
+      setZugelassenePruefungen(prev =>
+        prev.map(p => p.pruefung_id === pruefung.pruefung_id
+          ? { ...p, pruefungsgebuehr: 0, gebuehr_bezahlt: 1, gebuehr_auto_verrechnen: 0, zahlungsart: 'kostenlos', gebuehr_rechnung_id: null }
+          : p)
+      );
+      setGebuehrDialog(null);
+      setSuccess('Prüfungsgebühr erlassen (0 €)');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleBatchRechnungErstellen = async (candidates) => {
     const ohneRechnung = candidates.filter(c => c.pruefungsgebuehr && parseFloat(c.pruefungsgebuehr) > 0 && !c.gebuehr_rechnung_id && !c.gebuehr_bezahlt);
     if (ohneRechnung.length === 0) return;
@@ -6823,18 +6844,24 @@ const PruefungsVerwaltung = () => {
             <p style={{ margin: '0 0 1.25rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>
               {gebuehrDialog.vorname} {gebuehrDialog.nachname} — {parseFloat(gebuehrDialog.pruefungsgebuehr).toFixed(2)} €
             </p>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <button
                 onClick={() => handleGebuehrBar(gebuehrDialog)}
-                style={{ flex: 1, padding: '0.75rem', borderRadius: 8, border: '1px solid rgba(34,197,94,0.4)', background: 'rgba(34,197,94,0.12)', color: '#4ade80', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+                style={{ flex: 1, minWidth: 90, padding: '0.75rem', borderRadius: 8, border: '1px solid rgba(34,197,94,0.4)', background: 'rgba(34,197,94,0.12)', color: '#4ade80', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
               >
                 💵 Bar
               </button>
               <button
                 onClick={() => handleGebuehrRechnung(gebuehrDialog)}
-                style={{ flex: 1, padding: '0.75rem', borderRadius: 8, border: '1px solid rgba(255,215,0,0.4)', background: 'rgba(255,215,0,0.1)', color: '#ffd700', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+                style={{ flex: 1, minWidth: 90, padding: '0.75rem', borderRadius: 8, border: '1px solid rgba(255,215,0,0.4)', background: 'rgba(255,215,0,0.1)', color: '#ffd700', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
               >
                 🧾 Rechnung
+              </button>
+              <button
+                onClick={() => handleGebuehrNull(gebuehrDialog)}
+                style={{ flex: 1, minWidth: 90, padding: '0.75rem', borderRadius: 8, border: '1px solid rgba(168,85,247,0.4)', background: 'rgba(168,85,247,0.1)', color: '#c084fc', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+              >
+                🎁 Kostenlos
               </button>
             </div>
             <button

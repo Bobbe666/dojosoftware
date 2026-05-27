@@ -511,6 +511,49 @@ router.put('/:pruefung_id/gebuehr-bar', async (req, res) => {
   }
 });
 
+// PUT /kandidaten/:pruefung_id/gebuehr-null - Gebühr auf 0 setzen (kostenlos)
+router.put('/:pruefung_id/gebuehr-null', async (req, res) => {
+  const pruefung_id = parseInt(req.params.pruefung_id);
+  if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+
+  const secureDojoId = getSecureDojoId(req);
+  try {
+    const pool = db.promise();
+
+    // Zugriff prüfen + bestehende Rechnung holen
+    const ownerCheck = secureDojoId
+      ? 'SELECT pruefung_id, gebuehr_rechnung_id FROM pruefungen WHERE pruefung_id = ? AND dojo_id = ?'
+      : 'SELECT pruefung_id, gebuehr_rechnung_id FROM pruefungen WHERE pruefung_id = ?';
+    const ownerParams = secureDojoId ? [pruefung_id, secureDojoId] : [pruefung_id];
+    const [[pruefung]] = await pool.query(ownerCheck, ownerParams);
+    if (!pruefung) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
+
+    // Gebühr auf 0 setzen, als bezahlt markieren, Auto-Verrechnung deaktivieren
+    await pool.query(
+      `UPDATE pruefungen
+       SET pruefungsgebuehr = 0, gebuehr_bezahlt = 1, gebuehr_bezahlt_am = CURDATE(),
+           gebuehr_auto_verrechnen = 0, zahlungsart = 'kostenlos', gebuehr_rechnung_id = NULL
+       WHERE pruefung_id = ?`,
+      [pruefung_id]
+    );
+
+    // Eventuell bereits erstellte Rechnung stornieren
+    if (pruefung.gebuehr_rechnung_id) {
+      await pool.query(
+        `UPDATE rechnungen SET status = 'storniert', storno_grund = 'Gebühr erlassen', storniert_am = NOW()
+         WHERE rechnung_id = ?`,
+        [pruefung.gebuehr_rechnung_id]
+      );
+    }
+
+    logger.info('Prüfungsgebühr auf 0 gesetzt (kostenlos)', { pruefung_id });
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Fehler bei Gebühr-Null:', { error: err.message });
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
 // PUT /kandidaten/:pruefung_id/gebuehr-auto - Individuelle Gebühren-Einstellung überschreiben
 router.put('/:pruefung_id/gebuehr-auto', async (req, res) => {
   const pruefung_id = parseInt(req.params.pruefung_id);
