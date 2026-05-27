@@ -89,9 +89,9 @@ router.get('/admin', authenticateToken, async (req, res) => {
     const { von = today, bis } = req.query;
     const dateBis = bis || von;
     const [rows] = await pool.query(
-      `SELECT a.*, m.vorname, m.nachname, m.email
+      `SELECT a.*, COALESCE(m.vorname, '?') AS vorname, COALESCE(m.nachname, '') AS nachname, m.email
        FROM abwesenheiten a
-       JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
+       LEFT JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
        WHERE a.dojo_id = ? AND a.datum <= ? AND COALESCE(a.datum_bis, a.datum) >= ?
        ORDER BY a.datum ASC, a.gemeldet_um DESC`,
       [dojo_id, dateBis, von]
