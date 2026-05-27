@@ -137,3 +137,43 @@
   cursor: not-allowed;
 }
 .ufp-btn-absenden:not(:disabled):hover { opacity: 0.88; }
+
+.ufp-bild {
+  width: 100%;
+  border-radius: 10px;
+  max-height: 220px;
+  object-fit: cover;
+}
+
+.ufp-datum-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ufp-datum-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+}
+
+.ufp-datum-label {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.ufp-datum-toggle {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.ufp-datum-toggle .ufp-btn-jn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+}
