@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -26,14 +26,14 @@ import StandortSwitcher from './StandortSwitcher';
 import MemberDashboard from './MemberDashboard';
 import AdminRegistrationPopup from './AdminRegistrationPopup';
 import SetupWizard from './SetupWizard';
-import SuperAdminDashboard from './SuperAdminDashboard';
-import VerbandDashboard from './VerbandDashboard';
-import SupportDashboard from './SupportDashboard';
-import ShopDashboard from './shop/ShopDashboard';
-import MarketingHub from './MarketingHub';
-import HofDashboard from './HofDashboard';
-import SupportTickets from './SupportTickets';
-import FeatureBoard from './FeatureBoard';
+const SuperAdminDashboard = lazy(() => import('./SuperAdminDashboard'));
+const VerbandDashboard = lazy(() => import('./VerbandDashboard'));
+const SupportDashboard = lazy(() => import('./SupportDashboard'));
+const ShopDashboard = lazy(() => import('./shop/ShopDashboard'));
+const MarketingHub = lazy(() => import('./MarketingHub'));
+const HofDashboard = lazy(() => import('./HofDashboard'));
+const SupportTickets = lazy(() => import('./SupportTickets'));
+const FeatureBoard = lazy(() => import('./FeatureBoard'));
 import TrialBanner from './TrialBanner';
 import LanguageSwitcher from './LanguageSwitcher';
 import AgbStatusWidget from './AgbStatusWidget';
@@ -980,7 +980,9 @@ function Dashboard() {
 
         <div className="dashboard-content">
           <main className="dashboard-main">
-            <SuperAdminDashboard />
+            <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
+              <SuperAdminDashboard />
+            </Suspense>
           </main>
         </div>
       </div>
@@ -1043,7 +1045,9 @@ function Dashboard() {
 
         <div className="dashboard-content">
           <main className="dashboard-main">
-            <VerbandDashboard />
+            <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
+              <VerbandDashboard />
+            </Suspense>
           </main>
         </div>
       </div>
@@ -1106,7 +1110,9 @@ function Dashboard() {
 
         <div className="dashboard-content">
           <main className="dashboard-main">
-            <SupportDashboard />
+            <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
+              <SupportDashboard />
+            </Suspense>
           </main>
         </div>
       </div>
@@ -1151,7 +1157,9 @@ function Dashboard() {
         </header>
         <div className="dashboard-content">
           <main className="dashboard-main">
-            <ShopDashboard />
+            <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
+              <ShopDashboard />
+            </Suspense>
           </main>
         </div>
       </div>
@@ -1195,7 +1203,9 @@ function Dashboard() {
         </header>
         <div className="dashboard-content">
           <main className="dashboard-main">
-            <MarketingHub />
+            <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
+              <MarketingHub />
+            </Suspense>
           </main>
         </div>
       </div>
@@ -1575,7 +1585,9 @@ function Dashboard() {
                       {/* 🏛️ Hall of Fame Tab */}
                       {activeTab === 'hof' && (
                         <div className="content-card">
-                          <HofDashboard />
+                          <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
+                            <HofDashboard />
+                          </Suspense>
                         </div>
                       )}
 
@@ -1971,8 +1983,16 @@ function Dashboard() {
                                 ← Zurück
                               </button>
                               {hilfeSupportView === 'hilfe' && <HilfeCenter />}
-                              {hilfeSupportView === 'support' && <SupportTickets bereich="dojo" />}
-                              {hilfeSupportView === 'wunschliste' && <FeatureBoard adminMode={true} />}
+                              {hilfeSupportView === 'support' && (
+                                <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
+                                  <SupportTickets bereich="dojo" />
+                                </Suspense>
+                              )}
+                              {hilfeSupportView === 'wunschliste' && (
+                                <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
+                                  <FeatureBoard adminMode={true} />
+                                </Suspense>
+                              )}
                             </>
                           )}
                         </div>
