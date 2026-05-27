@@ -969,4 +969,77 @@ router.get('/platform-metrics', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /admin/perf-status — Performance-Metriken für Super Admin
+router.get('/perf-status', requireSuperAdmin, async (req, res) => {
+  const pool = db.promise();
+  const path = require('path');
+  const fs = require('fs');
+
+  // 1. DB-Indizes: prüfen ob unsere Performance-Indizes existieren
+  const [indexes] = await pool.query(`
+    SELECT TABLE_NAME, INDEX_NAME, COLUMN_NAME, SEQ_IN_INDEX
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND INDEX_NAME IN (
+        'idx_mitglied_ratenplan_mitglied_aktiv',
+        'idx_rechnungen_mitglied_status',
+        'idx_rechnungen_erstellt_am',
+        'idx_pruefungen_mitglied_stil_status',
+        'idx_stripe_transaktion_mitglied_status',
+        'idx_stripe_batch_dojo_status',
+        'idx_rechnung_aktionen_rechnung_zeit',
+        'idx_mitglieder_dojo_aktiv',
+        'idx_mitglieder_dojo_id',
+        'idx_anwesenheit_dojo_datum',
+        'idx_pruefungen_dojo_id'
+      )
+    ORDER BY TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX
+  `);
+
+  // Indizes gruppieren: { INDEX_NAME: { table, columns[] } }
+  const idxMap = {};
+  for (const row of indexes) {
+    if (!idxMap[row.INDEX_NAME]) {
+      idxMap[row.INDEX_NAME] = { table: row.TABLE_NAME, columns: [] };
+    }
+    idxMap[row.INDEX_NAME].columns.push(row.COLUMN_NAME);
+  }
+
+  // 2. Frontend-Bundle: Chunk-Größen aus dem gebauten dist/assets lesen
+  let chunks = [];
+  try {
+    const distPath = path.join(__dirname, '..', '..', '..', 'frontend', 'dist', 'assets');
+    if (fs.existsSync(distPath)) {
+      const files = fs.readdirSync(distPath).filter(f => f.endsWith('.js'));
+      chunks = files
+        .map(f => {
+          const stat = fs.statSync(path.join(distPath, f));
+          return { name: f.replace(/-[A-Z0-9]{8}\.js$/, '').replace(/^.*\//, ''), file: f, sizeKB: Math.round(stat.size / 1024) };
+        })
+        .filter(c => c.sizeKB > 50)
+        .sort((a, b) => b.sizeKB - a.sizeKB)
+        .slice(0, 10);
+    }
+  } catch (_) {}
+
+  // 3. Swagger: in Production deaktiviert?
+  const swaggerDisabled = process.env.NODE_ENV === 'production';
+
+  // 4. RAM des aktuellen Prozesses
+  const heapMB = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+  const rssMB  = Math.round(process.memoryUsage().rss / 1024 / 1024);
+
+  res.json({
+    success: true,
+    db_indexes: Object.entries(idxMap).map(([name, info]) => ({
+      name,
+      table: info.table,
+      columns: info.columns
+    })),
+    bundle_chunks: chunks,
+    swagger_disabled: swaggerDisabled,
+    memory: { heap_mb: heapMB, rss_mb: rssMB }
+  });
+});
+
 module.exports = router;

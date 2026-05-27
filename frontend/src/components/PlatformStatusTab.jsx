@@ -88,9 +88,25 @@ function DiskBar({ usedGB, totalGB, percent }) {
   );
 }
 
+// Erklärungen zu den Indizes (für das UI)
+const INDEX_INFO = {
+  idx_mitglied_ratenplan_mitglied_aktiv: { label: 'Ratenpläne pro Mitglied', why: 'Beschleunigt Abfragen aktiver Beitragsratenpläne beim Öffnen eines Mitglieds.' },
+  idx_rechnungen_mitglied_status:        { label: 'Rechnungen Mitglied+Status', why: 'Filter "offene Rechnungen eines Mitglieds" — häufig beim Mitgliedsprofil.' },
+  idx_rechnungen_erstellt_am:            { label: 'Rechnungen nach Datum', why: 'Beschleunigt Zeitraum-Auswertungen und Finanzberichte.' },
+  idx_pruefungen_mitglied_stil_status:   { label: 'Prüfungen Mitglied+Stil', why: 'Prüft ob ein Mitglied bereits in einem Stil geprüft wurde (Kandidaten-Prüfung).' },
+  idx_stripe_transaktion_mitglied_status:{ label: 'Stripe Transaktionen', why: 'Lastschrift-Status pro Mitglied — wird bei jedem Lauf abgefragt.' },
+  idx_stripe_batch_dojo_status:          { label: 'Stripe Batches pro Dojo', why: 'Offene/laufende Lastschrift-Batches eines Dojos schneller finden.' },
+  idx_rechnung_aktionen_rechnung_zeit:   { label: 'Rechnungs-Aktionslog', why: 'Sortierter Verlauf pro Rechnung ohne Full-Table-Scan.' },
+  idx_mitglieder_dojo_aktiv:             { label: 'Mitglieder Dojo+Aktiv', why: 'Kern-Index: alle aktiven Mitglieder eines Dojos (meistgenutzte Query).' },
+  idx_mitglieder_dojo_id:                { label: 'Mitglieder nach Dojo', why: 'Tenant-Isolation — jede Multi-Tenant-Query filtert zuerst nach Dojo.' },
+  idx_anwesenheit_dojo_datum:            { label: 'Anwesenheit Dojo+Datum', why: 'Check-In Auswertungen und Tages-Listen ohne Full-Scan.' },
+  idx_pruefungen_dojo_id:                { label: 'Prüfungen nach Dojo', why: 'Alle Prüfungen eines Dojos — Basis für Prüfungsverwaltung.' },
+};
+
 export default function PlatformStatusTab({ token }) {
   const [metrics, setMetrics]   = useState(null);
   const [infra, setInfra]       = useState(null);
+  const [perf, setPerf]         = useState(null);
   const [loading, setLoading]   = useState(false);
   const [infraLoading, setInfraLoading] = useState(false);
   const [lastFetch, setLastFetch] = useState(null);
@@ -123,11 +139,21 @@ export default function PlatformStatusTab({ token }) {
     }
   }, [token]);
 
+  const loadPerf = useCallback(async () => {
+    try {
+      const res = await axios.get('/admin/perf-status', { headers });
+      setPerf(res.data);
+    } catch (e) {
+      console.error('Perf-Status Fehler:', e);
+    }
+  }, [token]);
+
   const loadAll = useCallback(() => {
     loadMetrics();
     loadInfra();
+    loadPerf();
     setCountdown(AUTO_REFRESH_INTERVAL);
-  }, [loadMetrics, loadInfra]);
+  }, [loadMetrics, loadInfra, loadPerf]);
 
   useEffect(() => {
     loadAll();
@@ -415,6 +441,115 @@ export default function PlatformStatusTab({ token }) {
           </div>
         </div>
       )}
+
+      {/* ⚡ Performance-Optimierungen */}
+      <div className="section-card" style={{ marginTop: '1rem' }}>
+        <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem' }}>⚡ Performance-Optimierungen</h4>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+
+          {/* 1. DB-Indizes */}
+          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '0.85rem', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+              <span style={{ fontSize: '16px' }}>🗄️</span>
+              <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-1)' }}>Datenbank-Indizes</span>
+              {perf && (
+                <span style={{ marginLeft: 'auto', background: 'rgba(39,174,96,0.15)', border: '1px solid rgba(39,174,96,0.3)', color: '#27ae60', borderRadius: 5, padding: '0.1rem 0.45rem', fontSize: '11px', fontWeight: 700 }}>
+                  {perf.db_indexes?.length ?? 0} aktiv
+                </span>
+              )}
+            </div>
+            <p style={{ color: 'var(--text-3)', fontSize: '11px', marginBottom: '0.65rem', lineHeight: 1.5 }}>
+              Composite-Indizes auf häufig kombinierten Spalten. Beschleunigen WHERE-Klauseln mit mehreren Bedingungen um 30–80%.
+            </p>
+            {perf?.db_indexes ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                {perf.db_indexes.map((idx, i) => {
+                  const info = INDEX_INFO[idx.name] || { label: idx.name, why: '' };
+                  return (
+                    <div key={i} title={info.why} style={{
+                      padding: '0.3rem 0.5rem', borderRadius: 5,
+                      background: 'rgba(39,174,96,0.08)', border: '1px solid rgba(39,174,96,0.2)',
+                      fontSize: '11px', cursor: 'default'
+                    }}>
+                      <div style={{ color: '#27ae60', fontWeight: 600 }}>{info.label || idx.name}</div>
+                      <div style={{ color: 'var(--text-3)', fontSize: '10px', marginTop: '1px' }}>
+                        {idx.table} · ({idx.columns.join(', ')})
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ color: 'var(--text-3)', fontSize: '12px' }}>Lade…</div>
+            )}
+          </div>
+
+          {/* 2. Backend RAM */}
+          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '0.85rem', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+              <span style={{ fontSize: '16px' }}>🧠</span>
+              <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-1)' }}>Backend RAM</span>
+              {perf && (
+                <span style={{ marginLeft: 'auto', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', color: '#3b82f6', borderRadius: 5, padding: '0.1rem 0.45rem', fontSize: '11px', fontWeight: 700 }}>
+                  {perf.memory?.heap_mb ?? '—'} MB Heap
+                </span>
+              )}
+            </div>
+            <p style={{ color: 'var(--text-3)', fontSize: '11px', marginBottom: '0.65rem', lineHeight: 1.5 }}>
+              Swagger UI wird in Production nicht mehr geladen — spart ~20–30 MB RAM. Swagger ist weiterhin in der lokalen Entwicklungsumgebung verfügbar.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '0.3rem 0.5rem', background: 'rgba(255,255,255,0.04)', borderRadius: 5 }}>
+                <span style={{ color: 'var(--text-3)' }}>Heap (Node.js)</span>
+                <span style={{ color: 'var(--text-2)', fontWeight: 600 }}>{perf?.memory?.heap_mb ?? '—'} MB</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '0.3rem 0.5rem', background: 'rgba(255,255,255,0.04)', borderRadius: 5 }}>
+                <span style={{ color: 'var(--text-3)' }}>RSS (Gesamt)</span>
+                <span style={{ color: 'var(--text-2)', fontWeight: 600 }}>{perf?.memory?.rss_mb ?? '—'} MB</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '0.3rem 0.5rem', borderRadius: 5, background: perf?.swagger_disabled ? 'rgba(39,174,96,0.08)' : 'rgba(231,76,60,0.08)', border: `1px solid ${perf?.swagger_disabled ? 'rgba(39,174,96,0.2)' : 'rgba(231,76,60,0.2)'}` }}>
+                <span style={{ color: 'var(--text-3)' }}>Swagger UI</span>
+                <span style={{ color: perf?.swagger_disabled ? '#27ae60' : '#e74c3c', fontWeight: 600 }}>
+                  {perf?.swagger_disabled ? '✓ deaktiviert' : '⚠ aktiv'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Frontend Bundle */}
+          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '0.85rem', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+              <span style={{ fontSize: '16px' }}>📦</span>
+              <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-1)' }}>Frontend Bundle</span>
+            </div>
+            <p style={{ color: 'var(--text-3)', fontSize: '11px', marginBottom: '0.65rem', lineHeight: 1.5 }}>
+              Große Libraries (Tiptap Editor, Charts, Icons) sind in separaten Chunks. Der Browser cached sie unabhängig — nur bei erstmaligem Besuch der jeweiligen Seite geladen.
+            </p>
+            {perf?.bundle_chunks ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                {perf.bundle_chunks.map((c, i) => {
+                  const barPct = Math.min(100, Math.round(c.sizeKB / 5));
+                  const color = c.sizeKB > 400 ? '#f39c12' : c.sizeKB > 200 ? '#3b82f6' : '#27ae60';
+                  return (
+                    <div key={i}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '2px' }}>
+                        <span style={{ color: 'var(--text-2)' }}>{c.name}</span>
+                        <span style={{ color, fontWeight: 600 }}>{c.sizeKB} KB</span>
+                      </div>
+                      <div style={{ height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ width: `${barPct}%`, height: '100%', background: color, borderRadius: 2 }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ color: 'var(--text-3)', fontSize: '12px' }}>Lade…</div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
