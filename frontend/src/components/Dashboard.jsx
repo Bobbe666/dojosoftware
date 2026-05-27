@@ -44,6 +44,7 @@ import DashboardUebersicht from './DashboardUebersicht';
 import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
 import CockpitUebersicht from './CockpitUebersicht';
+import EntwicklungsWidget from './EntwicklungsWidget';
 import StilErinnerungBanner from './StilErinnerungBanner';
 import ChangelogPopup from './ChangelogPopup';
 import TrainingDashboard from './TrainingDashboard';
@@ -1431,6 +1432,11 @@ function Dashboard() {
 
               {/* 📊 Cockpit-Übersicht: Heute & diese Woche */}
               {(role === 'admin' || role === 'super_admin') && <CockpitUebersicht />}
+
+              {/* 🎯 Entwicklungsziele-Widget (Enterprise) */}
+              {role === 'admin' && subscription?.plan_type === 'enterprise' && (
+                <EntwicklungsWidget onTabChange={setActiveTab} />
+              )}
 
               {/* Navigation basierend auf Rolle */}
               <div className="dashboard-navigation">

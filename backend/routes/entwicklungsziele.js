@@ -368,4 +368,44 @@ router.get('/vergleiche', authenticateToken, requireSuperAdmin, async (req, res)
   }
 });
 
+// Dojo-Widget: IST vs SOLL für aktuelles Jahr (reguläre Dojo-Admins)
+router.get('/widget', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const secureDojoId = getSecureDojoId(req);
+    if (!secureDojoId) {
+      return res.status(400).json({ error: 'Keine Dojo-ID' });
+    }
+
+    const currentYear = new Date().getFullYear();
+
+    const [[mitgliederResult], [tarifResult], zieleResult] = await Promise.all([
+      db.promise().query(
+        'SELECT COUNT(*) as count FROM mitglieder WHERE aktiv = 1 AND dojo_id = ?',
+        [secureDojoId]
+      ),
+      db.promise().query(
+        'SELECT AVG(price_cents)/100 as avg_beitrag FROM tarife WHERE dojo_id = ? AND active = 1 AND ist_archiviert = 0 AND price_cents > 0',
+        [secureDojoId]
+      ),
+      db.promise().query(
+        `SELECT typ, ziel_wert FROM entwicklungsziele
+         WHERE kontext_typ = 'dojo' AND kontext_id = ? AND jahr = ?
+           AND typ IN ('dojo_mitglieder', 'umsatz')`,
+        [secureDojoId, currentYear]
+      ).then(([rows]) => rows)
+    ]);
+
+    const ist_mitglieder = mitgliederResult[0]?.count || 0;
+    const avgBeitrag = parseFloat(tarifResult[0]?.avg_beitrag) || 0;
+    const ist_umsatz = Math.round(ist_mitglieder * avgBeitrag * 12);
+    const soll_mitglieder = parseFloat(zieleResult.find(z => z.typ === 'dojo_mitglieder')?.ziel_wert) || 0;
+    const soll_umsatz = parseFloat(zieleResult.find(z => z.typ === 'umsatz')?.ziel_wert) || 0;
+
+    res.json({ ist_mitglieder, soll_mitglieder, ist_umsatz, soll_umsatz, year: currentYear });
+  } catch (error) {
+    logger.error('Fehler beim Laden der Widget-Daten:', { error });
+    res.status(500).json({ error: 'Fehler beim Laden' });
+  }
+});
+
 module.exports = router;
