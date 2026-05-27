@@ -18,7 +18,7 @@ const SP_STATUS = {
 
 const STATUS_FLOW = ['offen', 'in_bearbeitung', 'versendet', 'abgeschlossen'];
 
-export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
+export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
   const [activeTab, setActiveTab] = useState('shop');
 
   // ── Shop-Bestellungen State ────────────────────────────────────────
@@ -105,15 +105,22 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
     setNbError('');
     setNbSuccess('');
     setNbLoading(true);
+    // dojoParam ist leer für reguläre Admins (JWT reicht). Für Super-Admin
+    // ohne gewähltes Dojo: dojoId-Prop als Fallback nutzen.
+    const effectiveParam = dojoParam || (dojoId ? `?dojo_id=${dojoId}` : '');
     try {
       const [paketeRes, mitgliederRes] = await Promise.all([
-        axios.get(`/starterpakete${dojoParam}`),
-        axios.get(`/mitglieder/all${dojoParam}`),
+        axios.get(`/starterpakete${effectiveParam}`),
+        axios.get(`/mitglieder/all${effectiveParam}`),
       ]);
       setNbPakete((paketeRes.data.pakete || []).filter(p => p.aktiv));
       setNbMitglieder(mitgliederRes.data || []);
-    } catch {
-      setNbError('Fehler beim Laden der Daten');
+    } catch (err) {
+      if (err.response?.status === 400) {
+        setNbError('Kein Dojo ausgewählt — bitte zuerst ein Dojo im Dashboard aktivieren.');
+      } else {
+        setNbError('Fehler beim Laden der Daten');
+      }
     } finally {
       setNbLoading(false);
     }
@@ -132,11 +139,12 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '' }) {
     }
     setNbSaving(true);
     setNbError('');
+    const effectiveParam = dojoParam || (dojoId ? `?dojo_id=${dojoId}` : '');
     let erfolge = 0;
     let fehler = 0;
     for (const mitglied_id of nbSelectedMitglieder) {
       try {
-        await axios.post(`/starterpakete/${nbSelectedPaket}/bestellen${dojoParam}`, { mitglied_id });
+        await axios.post(`/starterpakete/${nbSelectedPaket}/bestellen${effectiveParam}`, { mitglied_id });
         erfolge++;
       } catch {
         fehler++;
