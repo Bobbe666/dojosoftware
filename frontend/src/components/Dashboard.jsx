@@ -27,6 +27,7 @@ import MemberDashboard from './MemberDashboard';
 import AdminRegistrationPopup from './AdminRegistrationPopup';
 import SetupWizard from './SetupWizard';
 const TrialExpired = lazy(() => import('./TrialExpired'));
+const ZieleEntwicklung = lazy(() => import('./ZieleEntwicklung'));
 const SuperAdminDashboard = lazy(() => import('./SuperAdminDashboard'));
 const VerbandDashboard = lazy(() => import('./VerbandDashboard'));
 const SupportDashboard = lazy(() => import('./SupportDashboard'));
@@ -55,7 +56,7 @@ function Dashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const { token, logout, user } = useAuth();
-  const { hasFeature } = useSubscription();
+  const { hasFeature, subscription } = useSubscription();
   const { getDojoFilterParam, selectedDojo, activeDojo } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter für alle API-Calls
   const { standorte } = useStandortContext(); // Multi-Location support
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
@@ -312,6 +313,7 @@ function Dashboard() {
     { id: 'events', label: t('tabs.events'), icon: '📅' },
     { id: 'training', label: 'Training', icon: '⏱' },
     { id: 'todos', label: 'To Do', icon: '✅' },
+    { id: 'entwicklung', label: 'Entwicklung', icon: '📈' },
     { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
     { id: 'community', label: 'Community', icon: '🏘️' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
@@ -1700,6 +1702,28 @@ function Dashboard() {
                             <h3 className="feature-upgrade-title">To-Do System</h3>
                             <p className="feature-upgrade-desc">
                               Aufgaben erstellen, zuweisen und verfolgen — für das gesamte Team.<br />
+                              Verfügbar im <strong>Enterprise-Plan</strong>.
+                            </p>
+                            <button className="feature-upgrade-btn" onClick={() => handleNavigation('/dashboard/plan')}>
+                              Jetzt upgraden →
+                            </button>
+                          </div>
+                        )
+                      )}
+
+                      {/* 📈 Entwicklung & 5-Jahresplan Tab (Enterprise) */}
+                      {activeTab === 'entwicklung' && (
+                        subscription?.plan_type === 'enterprise' ? (
+                          <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
+                            <ZieleEntwicklung bereich="dojo" showFinanzrechner={true} showNavigation={false} />
+                          </Suspense>
+                        ) : (
+                          <div className="feature-upgrade-banner">
+                            <div className="feature-upgrade-icon">📈</div>
+                            <h3 className="feature-upgrade-title">Entwicklung & 5-Jahresplan</h3>
+                            <p className="feature-upgrade-desc">
+                              Plane die Entwicklung deines Dojos über 5 Jahre — Mitgliederziele, Umsatzprognosen
+                              und Finanzrechner in einem Dashboard.<br />
                               Verfügbar im <strong>Enterprise-Plan</strong>.
                             </p>
                             <button className="feature-upgrade-btn" onClick={() => handleNavigation('/dashboard/plan')}>
