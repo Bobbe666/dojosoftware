@@ -2771,7 +2771,9 @@ router.get('/infra-checks', requireSuperAdmin, async (req, res) => {
     sslCheck()
   ]);
 
-  res.json({ success: true, services: serviceResults, processes, sslCerts, checkedAt: new Date().toISOString() });
+  const disk = getServerDiskUsage();
+
+  res.json({ success: true, services: serviceResults, processes, sslCerts, disk, checkedAt: new Date().toISOString() });
 });
 
 module.exports = router;
