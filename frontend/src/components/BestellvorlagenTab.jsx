@@ -178,7 +178,7 @@ export default function BestellvorlagenTab() {
       ...p,
       typ: newTyp,
       stickerei_pos: [],
-      spezifikation: { ...EMPTY_SPEZ, mengen: newMengen },
+      spezifikation: { ...EMPTY_SPEZ, mengen: newMengen, ...(newTyp === 'patches' ? { durchmesser: 8, umfang: (Math.PI * 8).toFixed(1) } : {}) },
     }));
   };
 
@@ -492,14 +492,21 @@ export default function BestellvorlagenTab() {
               <label className="bvt-label">Maße</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
                 <div>
-                  <span style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '0.2rem' }}>Breite (cm)</span>
+                  <span style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '0.2rem' }}>Durchmesser (cm)</span>
                   <input className="bvt-input" type="number" min="0.5" step="0.5"
-                    value={spez.breite || ''} onChange={fSpez('breite')} placeholder="z. B. 8" />
+                    value={spez.durchmesser ?? 8}
+                    onChange={e => {
+                      const d = parseFloat(e.target.value) || '';
+                      setForm(p => ({ ...p, spezifikation: { ...p.spezifikation, durchmesser: d, umfang: d ? (Math.PI * d).toFixed(1) : '' } }));
+                    }}
+                    placeholder="8" />
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '0.2rem' }}>Höhe (cm)</span>
-                  <input className="bvt-input" type="number" min="0.5" step="0.5"
-                    value={spez.hoehe || ''} onChange={fSpez('hoehe')} placeholder="z. B. 8" />
+                  <span style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '0.2rem' }}>Umfang (cm)</span>
+                  <input className="bvt-input" type="number" min="0.5" step="0.1"
+                    value={spez.umfang ?? (spez.durchmesser ? (Math.PI * spez.durchmesser).toFixed(1) : (Math.PI * 8).toFixed(1))}
+                    onChange={fSpez('umfang')}
+                    placeholder={(Math.PI * 8).toFixed(1)} />
                 </div>
               </div>
             </div>
