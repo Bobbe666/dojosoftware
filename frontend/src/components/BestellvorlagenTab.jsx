@@ -979,7 +979,7 @@ export default function BestellvorlagenTab() {
                 const selected = form.artikel_ids.includes(a.artikel_id);
                 return (
                   <label key={a.artikel_id} className={`bvt-artikel-item ${selected ? 'selected' : ''}`} onClick={() => toggleArtikel(a.artikel_id)}>
-                    <input type="checkbox" checked={selected} onChange={() => toggleArtikel(a.artikel_id)} onClick={e => e.stopPropagation()} />
+                    <input type="checkbox" checked={selected} readOnly onClick={e => e.stopPropagation()} />
                     <div>
                       <div className="bvt-artikel-name">{a.name}</div>
                       {a.artikel_nummer && <div className="bvt-artikel-nr">#{a.artikel_nummer}</div>}
