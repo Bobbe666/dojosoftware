@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,7 @@ import StandortSwitcher from './StandortSwitcher';
 import MemberDashboard from './MemberDashboard';
 import AdminRegistrationPopup from './AdminRegistrationPopup';
 import SetupWizard from './SetupWizard';
+const TrialExpired = lazy(() => import('./TrialExpired'));
 const SuperAdminDashboard = lazy(() => import('./SuperAdminDashboard'));
 const VerbandDashboard = lazy(() => import('./VerbandDashboard'));
 const SupportDashboard = lazy(() => import('./SupportDashboard'));
@@ -111,6 +112,28 @@ function Dashboard() {
       setShowSetupWizard(true);
     }
   }, [role, activeDojo]);
+
+  // E-Mail-Verifikation: Status prüfen (einmalig beim Mount)
+  const [emailVerified, setEmailVerified] = useState(true);
+  const [resendingVerification, setResendingVerification] = useState(false);
+  useEffect(() => {
+    if (role !== 'admin' || !token) return;
+    axios.get('/auth/verification-status', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setEmailVerified(r.data?.verified !== false))
+      .catch(() => {});
+  }, [role, token]);
+
+  const handleResendVerification = useCallback(async () => {
+    setResendingVerification(true);
+    try {
+      await axios.post('/auth/resend-verification');
+      alert('Verifikations-Link wurde erneut gesendet. Bitte prüfe dein Postfach.');
+    } catch {
+      alert('Fehler beim Senden. Bitte versuche es später erneut.');
+    } finally {
+      setResendingVerification(false);
+    }
+  }, []);
 
   // Tab-State für Dashboard
   const [activeTab, setActiveTab] = useState('checkin');
@@ -905,6 +928,15 @@ function Dashboard() {
     return <MemberDashboard />;
   }
 
+  // Subscription abgelaufen → Sperrseite
+  if (role === 'admin' && activeDojo?.id && !loading && stats.subscription_status === 'expired') {
+    return (
+      <Suspense fallback={null}>
+        <TrialExpired trialInfo={{ dojoname: activeDojo?.dojoname, trial_ends_at: stats.trial_ends_at }} />
+      </Suspense>
+    );
+  }
+
   // 🏆 Super-Admin Dashboard: Zeige erweiterte Ansicht für TDA Int'l Org (NUR auf Hauptseite!)
   console.log('🔍 Super-Admin Dashboard Check:', { role, selectedDojo, isMainDashboard, pathname: location.pathname });
   if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'super-admin' && isMainDashboard) {
@@ -1365,6 +1397,34 @@ function Dashboard() {
 
               {/* 🔔 Trial/Subscription Banner */}
               <TrialBanner stats={stats} />
+
+              {/* 📧 E-Mail-Verifikations-Banner */}
+              {!emailVerified && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.08))',
+                  border: '1px solid rgba(245,158,11,0.4)',
+                  borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1rem',
+                  fontSize: '0.9rem'
+                }}>
+                  <span style={{ fontSize: '1.2rem' }}>📧</span>
+                  <span style={{ flex: 1, color: 'var(--text-1)' }}>
+                    Bitte bestätige deine E-Mail-Adresse. Schau in dein Postfach (ggf. Spam).
+                  </span>
+                  <button
+                    onClick={handleResendVerification}
+                    disabled={resendingVerification}
+                    style={{
+                      background: 'rgba(245,158,11,0.2)', border: '1px solid rgba(245,158,11,0.5)',
+                      borderRadius: '6px', padding: '4px 10px', cursor: 'pointer',
+                      color: '#f59e0b', fontSize: '0.82rem', whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {resendingVerification ? 'Sende…' : 'Erneut senden'}
+                  </button>
+                </div>
+              )}
+
               <ChangelogPopup />
 
               {/* 📊 Cockpit-Übersicht: Heute & diese Woche */}

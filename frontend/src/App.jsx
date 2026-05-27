@@ -57,6 +57,8 @@ import SupportPortal from "./components/SupportPortal";
 // LAZY LOADED - Dashboard & Hauptbereiche
 // ============================================================================
 const Dashboard = lazyWithReload(() => import(/* webpackChunkName: "dashboard" */ "./components/Dashboard"));
+const PasswordReset = lazyWithReload(() => import(/* webpackChunkName: "auth" */ "./components/PasswordReset"));
+const VerifyEmail = lazyWithReload(() => import(/* webpackChunkName: "auth" */ "./components/VerifyEmail"));
 const DashboardTdaVib = lazyWithReload(() => import(/* webpackChunkName: "dashboard-tda" */ "./components/DashboardTdaVib"));
 const DashboardStart = lazyWithReload(() => import(/* webpackChunkName: "dashboard-start" */ "./components/DashboardStart"));
 
@@ -592,6 +594,8 @@ const App = () => {
               {/* ======== PUBLIC ROUTES ======== */}
               <Route path="/login" element={<LoginRouteHandler />} />
               <Route path="/sso-login" element={<SSOLogin />} />
+              <Route path="/password-reset" element={<Suspense fallback={<LazyLoadFallback />}><PasswordReset /></Suspense>} />
+              <Route path="/verify-email" element={<Suspense fallback={<LazyLoadFallback />}><VerifyEmail /></Suspense>} />
 
               {/* Public Marketing Pages - Lazy Loaded */}
               <Route path="/pricing" element={<Suspense fallback={<LazyLoadFallback />}><PricingPage /></Suspense>} />

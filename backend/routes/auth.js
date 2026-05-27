@@ -1465,7 +1465,8 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
       [user.id, token]
     );
 
-    const resetUrl = `https://app.tda-vib.de/password-reset?token=${token}`;
+    const origin = req.headers.origin || `https://${req.get('host')}`;
+    const resetUrl = `${origin}/password-reset?token=${token}`;
 
     const html = `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#1a1a2e;color:#e2e8f0;padding:32px;border-radius:12px">
@@ -1516,6 +1517,111 @@ router.post('/reset-password-token', async (req, res) => {
     res.json({ success: true, message: 'Passwort erfolgreich zurückgesetzt.' });
   } catch (err) {
     logger.error('reset-password-token Fehler', { error: err.message });
+    res.status(500).json({ message: 'Serverfehler' });
+  }
+});
+
+// ===================================================================
+// EMAIL VERIFICATION
+// ===================================================================
+
+// POST /auth/verify-email — Token aus Verifikations-Email bestätigen
+router.post('/verify-email', async (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ message: 'Token erforderlich' });
+
+  try {
+    const pool = db.promise();
+    const [[row]] = await pool.query(
+      `SELECT admin_user_id FROM email_verification_tokens
+       WHERE token = ? AND used = 0 AND expires_at > NOW()`,
+      [token]
+    );
+
+    if (!row) return res.status(400).json({ message: 'Link ungültig oder abgelaufen.' });
+
+    await pool.query(
+      'UPDATE admin_users SET email_verifiziert = TRUE WHERE id = ?',
+      [row.admin_user_id]
+    );
+    await pool.query(
+      'UPDATE email_verification_tokens SET used = 1 WHERE token = ?',
+      [token]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('verify-email Fehler', { error: err.message });
+    res.status(500).json({ message: 'Serverfehler' });
+  }
+});
+
+// GET /auth/verification-status — Prüft ob der aktuelle Admin-User verifiziert ist
+router.get('/verification-status', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.json({ verified: true });
+
+  try {
+    const token = authHeader.slice(7);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.id || decoded.user_id;
+    if (!userId) return res.json({ verified: true });
+
+    const [[user]] = await db.promise().query(
+      'SELECT email_verifiziert FROM admin_users WHERE id = ?',
+      [userId]
+    );
+
+    res.json({ verified: !user || user.email_verifiziert === 1 || user.email_verifiziert === true });
+  } catch {
+    res.json({ verified: true }); // bei Fehler nicht blockieren
+  }
+});
+
+// POST /auth/resend-verification — Neuen Verifikations-Link anfordern
+router.post('/resend-verification', authenticateToken, async (req, res) => {
+  try {
+    const pool = db.promise();
+    const userId = req.user?.id || req.user?.user_id;
+    const [[user]] = await pool.query(
+      'SELECT id, email, vorname, dojo_id FROM admin_users WHERE id = ?',
+      [userId]
+    );
+
+    if (!user) return res.status(404).json({ message: 'Benutzer nicht gefunden' });
+
+    const [[sub]] = await pool.query(
+      'SELECT subdomain FROM dojo_subscriptions WHERE dojo_id = ?',
+      [user.dojo_id]
+    );
+
+    await pool.query(
+      'UPDATE email_verification_tokens SET used = 1 WHERE admin_user_id = ?',
+      [user.id]
+    );
+
+    const crypto = require('crypto');
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    await pool.query(
+      `INSERT INTO email_verification_tokens (admin_user_id, token, expires_at)
+       VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))`,
+      [user.id, verificationToken]
+    );
+
+    const subdomain = sub?.subdomain || 'dojo';
+    const origin = req.headers.origin || `https://${subdomain}.dojo.tda-intl.org`;
+    const verificationUrl = `${origin}/verify-email?token=${verificationToken}`;
+
+    const { sendVerificationEmail } = require('../services/emailTemplates');
+    await sendVerificationEmail(user.email, {
+      name: user.vorname,
+      verificationToken,
+      verificationUrl
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('resend-verification Fehler', { error: err.message });
     res.status(500).json({ message: 'Serverfehler' });
   }
 });

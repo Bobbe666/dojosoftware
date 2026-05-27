@@ -37,7 +37,6 @@ const SetupWizard = ({ onClose }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [tarifCount, setTarifCount] = useState(null);
-  const [nichtMehrAnzeigen, setNichtMehrAnzeigen] = useState(false);
 
   const [form, setForm] = useState({
     dojoname: '', inhaber: '', strasse: '', hausnummer: '',
@@ -169,13 +168,9 @@ const SetupWizard = ({ onClose }) => {
     onClose();
   };
 
-  const handleDismiss = async () => {
-    if (nichtMehrAnzeigen) {
-      await save({ onboarding_completed: 1 });
-      if (activeDojo?.id) {
-        localStorage.setItem(`setup_wizard_done_${activeDojo.id}`, '1');
-      }
-      refreshDojos?.();
+  const handleDismiss = () => {
+    if (activeDojo?.id) {
+      localStorage.setItem(`setup_wizard_done_${activeDojo.id}`, '1');
     }
     onClose();
   };
@@ -414,14 +409,9 @@ const SetupWizard = ({ onClose }) => {
 
         {/* Footer */}
         <div className="sw-footer">
-          <label className="sw-dismiss-check">
-            <input
-              type="checkbox"
-              checked={nichtMehrAnzeigen}
-              onChange={e => setNichtMehrAnzeigen(e.target.checked)}
-            />
-            <span>Nicht mehr anzeigen</span>
-          </label>
+          <span className="sw-dismiss-hint" style={{ fontSize: '0.8rem', color: 'var(--text-3)' }}>
+            Später ausfüllen → Einstellungen → Mein Dojo
+          </span>
 
           <div className="sw-footer-nav">
             {step > 0 && currentStepId !== 'fertig' && (

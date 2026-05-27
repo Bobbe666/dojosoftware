@@ -3,7 +3,8 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const db = require('../db');
-const { sendWelcomeEmail } = require('../services/emailTemplates');
+const { sendWelcomeEmail, sendVerificationEmail } = require('../services/emailTemplates');
+const crypto = require('crypto');
 const saasSettings = require('../services/saasSettingsService');
 const { syncPlanFeatures } = require('../middleware/featureAccess');
 
@@ -203,7 +204,7 @@ router.post('/register-dojo', async (req, res) => {
 
     await connection.query(
       `INSERT INTO admin_users (dojo_id, username, vorname, nachname, email, password, rolle, email_verifiziert, aktiv)
-       VALUES (?, ?, ?, ?, ?, ?, 'admin', TRUE, TRUE)`,
+       VALUES (?, ?, ?, ?, ?, ?, 'admin', FALSE, TRUE)`,
       [dojo_id, owner_email.toLowerCase().split('@')[0], vorname, nachname, owner_email.toLowerCase(), hashedPassword]
     );
 
@@ -309,6 +310,31 @@ router.post('/register-dojo', async (req, res) => {
       logger.info(`Willkommens-Email gesendet an ${owner_email}`);
     } catch (emailErr) {
       logger.warn(`Willkommens-Email konnte nicht gesendet werden: ${emailErr.message}`);
+    }
+
+    // Verifikations-Email senden
+    try {
+      const [[newUser]] = await db.promise().query(
+        'SELECT id FROM admin_users WHERE email = ? AND dojo_id = ?',
+        [owner_email.toLowerCase(), dojo_id]
+      );
+      if (newUser) {
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        await db.promise().query(
+          `INSERT INTO email_verification_tokens (admin_user_id, token, expires_at)
+           VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))`,
+          [newUser.id, verificationToken]
+        );
+        const verificationUrl = `https://${subdomain}.dojo.tda-intl.org/verify-email?token=${verificationToken}`;
+        await sendVerificationEmail(owner_email, {
+          name: owner_name,
+          verificationToken,
+          verificationUrl
+        });
+        logger.info(`Verifikations-Email gesendet an ${owner_email}`);
+      }
+    } catch (verifyErr) {
+      logger.warn(`Verifikations-Email konnte nicht gesendet werden: ${verifyErr.message}`);
     }
 
     // ===== ERFOLG! =====
