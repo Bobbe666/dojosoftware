@@ -271,8 +271,12 @@ class StripeDataevProvider {
             await this.updatePaymentIntentStatus(paymentIntent.id, 'failed');
             logger.info(`❌ Payment failed: ${paymentIntent.id}`);
 
+            const err = paymentIntent.last_payment_error;
+            const errorCode    = err?.code || err?.decline_code || null;
+            const errorMessage = err?.message || null;
+
             // Lastschrift-Transaktion + Batch aktualisieren
-            await this.markLastschriftTransaktionFehlgeschlagen(paymentIntent.id);
+            await this.markLastschriftTransaktionFehlgeschlagen(paymentIntent.id, errorCode, errorMessage);
 
             // Erstelle offene Zahlung für das Mitglied
             const mitgliedId = paymentIntent.metadata?.mitglied_id;
@@ -356,7 +360,7 @@ class StripeDataevProvider {
     /**
      * Markiert eine Lastschrift-Transaktion als fehlgeschlagen und aktualisiert den Batch.
      */
-    async markLastschriftTransaktionFehlgeschlagen(stripePaymentIntentId) {
+    async markLastschriftTransaktionFehlgeschlagen(stripePaymentIntentId, errorCode = null, errorMessage = null) {
         const [rows] = await db.promise().query(
             `SELECT id, batch_id FROM stripe_lastschrift_transaktion
              WHERE stripe_payment_intent_id = ? LIMIT 1`,
@@ -368,9 +372,11 @@ class StripeDataevProvider {
 
         await db.promise().query(
             `UPDATE stripe_lastschrift_transaktion
-             SET status = 'failed', processed_at = NOW()
+             SET status = 'failed', processed_at = NOW(),
+                 error_code    = COALESCE(?, error_code),
+                 error_message = COALESCE(?, error_message)
              WHERE id = ?`,
-            [transaktion.id]
+            [errorCode, errorMessage, transaktion.id]
         );
 
         await db.promise().query(

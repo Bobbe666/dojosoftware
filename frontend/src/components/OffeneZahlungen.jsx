@@ -13,6 +13,44 @@ import {
 import '../styles/OffeneZahlungen.css';
 
 const fmt = (val) => parseFloat(val || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+
+const STRIPE_FEHLER_CODES = {
+  account_closed:                              { label: 'Konto geschlossen',       color: '#ef4444' },
+  insufficient_funds:                          { label: 'Keine Deckung',            color: '#f59e0b' },
+  bank_account_restricted:                     { label: 'Konto gesperrt',           color: '#f59e0b' },
+  debit_not_authorized:                        { label: 'Lastschrift nicht autorisiert', color: '#8b5cf6' },
+  payment_method_bank_account_declined:        { label: 'Bank abgelehnt',           color: '#ef4444' },
+  payment_method_not_available:                { label: 'Zahlungsmethode n/v',      color: '#6b7280' },
+  no_account:                                  { label: 'Konto unbekannt',          color: '#ef4444' },
+  bank_ownership_changed:                      { label: 'Kontowechsel',             color: '#f59e0b' },
+  do_not_honor:                                { label: 'Allg. Ablehnung',          color: '#ef4444' },
+  generic_decline:                             { label: 'Abgelehnt',                color: '#ef4444' },
+  invalid_account:                             { label: 'Ungültiges Konto',         color: '#ef4444' },
+  new_account_information_available:           { label: 'Neue Kontodaten nötig',    color: '#f59e0b' },
+  could_not_process:                           { label: 'Verarbeitung fehlgesch.',  color: '#6b7280' },
+  charge_exceeds_source_limit:                 { label: 'Limit überschritten',      color: '#f59e0b' },
+  fraudulent:                                  { label: 'Betrugsverdacht',          color: '#dc2626' },
+  // SEPA-Rückgabecodes (R-Nachrichten)
+  AC01: { label: 'IBAN ungültig (AC01)',        color: '#ef4444' },
+  AC04: { label: 'Konto geschlossen (AC04)',    color: '#ef4444' },
+  AC06: { label: 'Konto gesperrt (AC06)',       color: '#f59e0b' },
+  AM04: { label: 'Keine Deckung (AM04)',        color: '#f59e0b' },
+  MD01: { label: 'Kein Mandat (MD01)',          color: '#8b5cf6' },
+  MD06: { label: 'Widerspruch Zahler (MD06)',   color: '#8b5cf6' },
+  MD07: { label: 'Kontoinhaber gest. (MD07)',   color: '#6b7280' },
+  MS02: { label: 'Unbekannter Grund (MS02)',    color: '#6b7280' },
+  MS03: { label: 'Nicht angegeben (MS03)',      color: '#6b7280' },
+};
+
+const getFehlerBadge = (code) => {
+  if (!code) return null;
+  const f = STRIPE_FEHLER_CODES[code];
+  return (
+    <span className="oz-error-code" style={{ '--ec-color': f?.color || '#6b7280' }}>
+      {f?.label || code}
+    </span>
+  );
+};
 const maskIban = (iban) => iban ? iban.replace(/(.{4})(.+)(.{4})$/, (_, a, m, e) => a + m.replace(/./g, '·') + e) : '—';
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '—';
 const currentMonthLabel = new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
@@ -598,11 +636,15 @@ const OffeneZahlungen = () => {
                           <td><span className="oz-badge-neutral">{String(t.monat).padStart(2, '0')}/{t.jahr}</span></td>
                           <td><code className="oz-iban">{maskIban(t.iban)}</code></td>
                           <td>
-                            <span className="oz-error-msg">
-                              {t.error_message
-                                ? t.error_message.length > 60 ? t.error_message.slice(0, 60) + '…' : t.error_message
-                                : <span className="oz-text-muted">—</span>}
-                            </span>
+                            <div className="oz-error-cell">
+                              {getFehlerBadge(t.error_code)}
+                              {t.error_message && (
+                                <span className="oz-error-msg">
+                                  {t.error_message.length > 55 ? t.error_message.slice(0, 55) + '…' : t.error_message}
+                                </span>
+                              )}
+                              {!t.error_code && !t.error_message && <span className="oz-text-muted">—</span>}
+                            </div>
                           </td>
                           <td className="oz-text-muted">{fmtDate(t.created_at)}</td>
                           <td><code className="oz-text-muted" style={{ fontSize: '0.72rem' }}>#{t.batch_id}</code></td>
@@ -621,13 +663,22 @@ const OffeneZahlungen = () => {
                           <tr className="oz-tr--expanded">
                             <td colSpan={9}>
                               <div className="oz-expanded-detail">
+                                {t.error_code && (
+                                  <div className="oz-detail-field oz-detail-field--highlight">
+                                    <span className="oz-detail-label"><AlertCircle size={12} /> Fehlercode</span>
+                                    <div className="oz-detail-error-wrap">
+                                      {getFehlerBadge(t.error_code)}
+                                      <code className="oz-detail-code">{t.error_code}</code>
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="oz-detail-field">
+                                  <span className="oz-detail-label"><Info size={12} /> Fehlermeldung (Stripe)</span>
+                                  <span>{t.error_message || '—'}</span>
+                                </div>
                                 <div className="oz-detail-field">
                                   <span className="oz-detail-label"><Hash size={12} /> Stripe PI</span>
                                   <code>{t.stripe_payment_intent_id || '—'}</code>
-                                </div>
-                                <div className="oz-detail-field">
-                                  <span className="oz-detail-label"><Info size={12} /> Vollständiger Fehler</span>
-                                  <span>{t.error_message || '—'}</span>
                                 </div>
                                 <div className="oz-detail-field">
                                   <span className="oz-detail-label"><Banknote size={12} /> Beitrags-IDs</span>

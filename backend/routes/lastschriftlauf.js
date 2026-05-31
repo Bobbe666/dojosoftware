@@ -2102,9 +2102,13 @@ router.get("/stripe/failed-transactions", async (req, res) => {
         const rows = await queryAsync(`
             SELECT
                 slt.id, slt.batch_id, slt.mitglied_id, slt.betrag, slt.status,
-                slt.error_message, slt.created_at, slt.beitrag_ids,
+                slt.error_code, slt.error_message, slt.stripe_payment_intent_id,
+                slt.created_at, slt.beitrag_ids,
                 slb.monat, slb.jahr,
-                m.vorname, m.nachname, m.email, m.dojo_id
+                m.vorname, m.nachname, m.email, m.dojo_id,
+                (SELECT sm.iban FROM sepa_mandate sm
+                 WHERE sm.mitglied_id = slt.mitglied_id AND sm.status = 'aktiv'
+                 LIMIT 1) AS iban
             FROM stripe_lastschrift_transaktion slt
             JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
             JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
