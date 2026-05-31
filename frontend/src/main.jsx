@@ -173,25 +173,13 @@ if (BUILT_VERSION) {
   setTimeout(checkVersion, 10000);
 }
 
-// ── Service Worker: Push-Notifications + Auto-Update ─────────────────────────
+// ── Service Worker: Push-Notifications ───────────────────────────────────────
+// HINWEIS: SW hat keinen fetch-Handler und kein Caching — nur Push-Notifications.
+// Deshalb kein auto-reload auf controllerchange (würde Update-Loop erzeugen).
 if ('serviceWorker' in navigator) {
-  // SOFORT registrieren (nicht erst auf 'load' warten) damit controllerchange
-  // nicht verpasst wird falls der neue SW schon vor dem load-Event übernimmt
-  const hadController = !!navigator.serviceWorker.controller;
-
-  // Neuer SW übernimmt Kontrolle → Seite neu laden damit frische Dateien geladen werden
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (hadController) window.location.reload();
-  });
-
   navigator.serviceWorker.register('/sw.js', {
     scope: '/',
-    updateViaCache: 'none', // sw.js IMMER vom Netzwerk holen, nie aus Cache
-  }).then(reg => {
-    // SW-Update prüfen wenn User zum Tab zurückkommt
-    const checkForUpdate = () => { if (!document.hidden) reg.update().catch(() => {}); };
-    document.addEventListener('visibilitychange', checkForUpdate);
-    window.addEventListener('focus', checkForUpdate);
+    updateViaCache: 'none',
   }).catch(err => {
     console.warn('[SW] Registrierung fehlgeschlagen:', err.message);
   });

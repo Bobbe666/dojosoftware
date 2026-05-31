@@ -1,58 +1,173 @@
-/* ===== MEMBER HEADER CSS ===== */
+/* ===== MEMBER PORTAL HEADER — Washi Light ===== */
 
-/* Shared margin for header buttons */
-.header-btn-mr {
-  margin-right: 0.5rem;
+/* Override des dunklen Dashboard-Headers für das Mitglieder-Portal */
+.mh-portal.dashboard-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2d9ce !important;
+  box-shadow: 0 1px 8px rgba(26,21,18,0.07) !important;
+  padding: 0 1.5rem !important;
+  height: 60px !important;
+  min-height: 60px !important;
 }
 
-/* Shared margin for icon spans inside header buttons */
-.header-icon-mr {
-  margin-right: 0.25rem;
+/* Logo kleiner + runder */
+.mh-logo {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 8px !important;
+  object-fit: cover;
 }
 
-/* Familien-Switcher im Header */
+/* Titel-Block: Dojoname + Begrüßung untereinander */
+.mh-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+}
+.mh-dojo-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1512;
+  letter-spacing: -0.01em;
+}
+.mh-greeting {
+  font-size: 0.72rem;
+  color: #7a6a5a;
+  font-weight: 400;
+}
+
+/* Override h2 im Header */
+.mh-portal.dashboard-header h2 {
+  display: none !important;
+}
+
+/* Rechte Seite */
+.mh-actions {
+  gap: 0.35rem !important;
+  align-items: center;
+}
+
+/* Einheitlicher Button-Stil */
+.mh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  height: 34px;
+  padding: 0 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e2d9ce;
+  background: transparent;
+  color: #4a3c30;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.mh-btn:hover {
+  background: #f4f0eb;
+  border-color: #c4b8aa;
+  color: #1a1512;
+}
+
+/* Icon-only Buttons */
+.mh-btn--icon {
+  width: 34px;
+  padding: 0;
+  font-size: 1rem;
+}
+
+/* Zurück-Button */
+.mh-btn--back {
+  color: #9e2a2b;
+  border-color: rgba(158,42,43,0.3);
+}
+.mh-btn--back:hover {
+  background: rgba(158,42,43,0.06);
+  border-color: rgba(158,42,43,0.5);
+  color: #7d1f20;
+}
+
+/* Logout-Button */
+.mh-btn--logout {
+  color: #7a6a5a;
+}
+.mh-btn--logout:hover {
+  color: #9e2a2b;
+  border-color: rgba(158,42,43,0.3);
+  background: rgba(158,42,43,0.05);
+}
+.mh-logout-label {
+  font-size: 0.8rem;
+}
+
+/* Familien-Switcher — an neue Farben anpassen */
 .family-switcher-header {
   display: flex;
   gap: 4px;
   align-items: center;
 }
-
 .family-switcher-header-btn {
-  padding: 4px 14px;
+  padding: 4px 12px;
   border-radius: 16px;
-  border: 1.5px solid var(--color-primary, #c9a84c);
+  border: 1.5px solid #9e2a2b;
   background: transparent;
-  color: var(--color-primary, #c9a84c);
-  font-size: 0.82rem;
+  color: #9e2a2b;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   white-space: nowrap;
 }
-
 .family-switcher-header-btn:hover:not(:disabled) {
-  background: var(--color-primary, #c9a84c);
-  color: #000;
+  background: rgba(158,42,43,0.1);
 }
-
 .family-switcher-header-btn--active {
-  background: var(--color-primary, #c9a84c);
-  color: #000;
+  background: #9e2a2b;
+  color: #fff;
   cursor: default;
 }
-
 .family-switcher-header-btn:disabled {
   opacity: 0.6;
   cursor: wait;
 }
 
-/* Mobile: Support + Wunschliste Buttons ausblenden (kein Platz) */
-@media (max-width: 767px) {
-  .header-btn-mr {
-    display: none;
-  }
-  /* Chat-Button bleibt sichtbar */
-  .chat-header-badge-wrap {
-    display: flex !important;
-  }
+/* Chat-Badge */
+.chat-header-badge-wrap { position: relative; }
+.chat-header-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #9e2a2b;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+  pointer-events: none;
 }
+
+/* Mobile: Support + Wunschliste ausblenden */
+.mh-desktop-only {
+  display: inline-flex;
+}
+@media (max-width: 767px) {
+  .mh-desktop-only { display: none !important; }
+  .mh-btn--back { display: none !important; }
+  .mh-logout-label { display: none; }
+  .mh-btn--logout { width: 34px; padding: 0; }
+  .mh-portal.dashboard-header { padding: 0 1rem !important; }
+}
+
+/* Entferne alte header-btn-mr Klassen die noch wo verwendet werden könnten */
+.header-btn-mr { margin-right: 0.35rem; }
+.header-icon-mr { margin-right: 0.25rem; }

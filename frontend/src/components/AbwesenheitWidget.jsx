@@ -29,6 +29,7 @@ export default function AbwesenheitWidget() {
   const [error, setError] = useState('');
   const [form, setForm] = useState({ datum: todayStr(), datum_bis: '', art: 'abwesend', notiz: '' });
   const [deletingId, setDeletingId] = useState(null);
+  const [savedMsg, setSavedMsg] = useState(false);
 
   const load = async () => {
     try {
@@ -71,6 +72,8 @@ export default function AbwesenheitWidget() {
       if (!res.ok || !data.success) throw new Error(data.error || 'Fehler');
       setShowForm(false);
       setForm({ datum: todayStr(), datum_bis: '', art: 'abwesend', notiz: '' });
+      setSavedMsg(true);
+      setTimeout(() => setSavedMsg(false), 4000);
       await load();
     } catch (e) {
       setError(e.message);
@@ -105,6 +108,12 @@ export default function AbwesenheitWidget() {
             </button>
         }
       </div>
+
+      {savedMsg && (
+        <div className="abw-saved-msg">
+          <Check size={15} /> Abwesenheit gespeichert – wir haben dich eingetragen!
+        </div>
+      )}
 
       {showForm && (
         <div className="abw-form">

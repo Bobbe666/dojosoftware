@@ -34,7 +34,20 @@ export default function UmfragePopup() {
     else setIdx(i => i + 1);
   };
 
-  if (!umfragen.length || done) return null;
+  if (!umfragen.length) return null;
+
+  if (done) return (
+    <div className="ufp-overlay" onClick={e => { if (e.target === e.currentTarget) setDone(true); }}>
+      <div className="ufp-box ufp-box--done">
+        <div className="ufp-done-icon">✓</div>
+        <h2 className="ufp-titel">Danke für deine Teilnahme!</h2>
+        <p className="ufp-beschreibung">Deine Antwort{umfragen.length > 1 ? 'en wurden' : ' wurde'} gespeichert.</p>
+        <button className="ufp-btn-absenden" onClick={() => setDone(false)} style={{ marginTop: '0.5rem' }}>
+          Schließen
+        </button>
+      </div>
+    </div>
+  );
 
   const umfrage = umfragen[idx];
   const isDatum    = umfrage.typ === 'datum_auswahl';

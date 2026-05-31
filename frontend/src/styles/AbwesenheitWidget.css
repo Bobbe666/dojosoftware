@@ -327,3 +327,21 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.abw-saved-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.9rem;
+  background: rgba(45,122,79,0.12);
+  border: 1px solid rgba(45,122,79,0.35);
+  border-radius: 8px;
+  color: #1a5c38;
+  font-size: 0.85rem;
+  font-weight: 600;
+  animation: abw-fadein 0.25s ease;
+}
+@keyframes abw-fadein {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

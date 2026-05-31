@@ -177,3 +177,20 @@
   padding: 0.35rem 0.75rem;
   font-size: 0.82rem;
 }
+
+.ufp-box--done {
+  text-align: center;
+  padding: 2.5rem 2rem;
+}
+.ufp-done-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(45,122,79,0.15);
+  border: 2px solid rgba(45,122,79,0.4);
+  color: #1a5c38;
+  font-size: 1.6rem;
+  line-height: 56px;
+  margin: 0 auto 1rem;
+  font-weight: 700;
+}

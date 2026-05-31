@@ -103,52 +103,40 @@ const MemberHeader = () => {
   return (
     <>
     <MobileBottomNav />
-    <header className="dashboard-header">
+    <header className="dashboard-header mh-portal">
       <div className="dashboard-header-left">
-        <img src={dojoLogo} alt={dojoName || 'Dojo Logo'} className="dashboard-logo" />
-        <h2>{dojoName || t('header.title')}</h2>
+        <img src={dojoLogo} alt={dojoName || 'Dojo Logo'} className="dashboard-logo mh-logo" />
+        <div className="mh-title-wrap">
+          <span className="mh-dojo-name">{dojoName || t('header.title')}</span>
+          {userDisplayName && <span className="mh-greeting">Hallo, {userDisplayName.split(' ')[0]}</span>}
+        </div>
       </div>
-      <div className="dashboard-header-right">
+      <div className="dashboard-header-right mh-actions">
         {!isMainDashboard && (
-          <button
-            onClick={handleDashboardClick}
-            className="logout-button header-btn-mr"
-          >
+          <button onClick={handleDashboardClick} className="mh-btn mh-btn--back">
             ← {t('header.dashboard')}
           </button>
         )}
 
-        {/* Chat-Button mit Ungelesen-Badge */}
         <button
           onClick={() => navigate('/member/chat')}
-          className="logout-button chat-header-badge-wrap header-btn-mr"
+          className="mh-btn mh-btn--icon chat-header-badge-wrap"
           title="Chat"
         >
           <MessageCircle size={18} />
           {unreadCount > 0 && (
-            <span className="chat-header-badge">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
+            <span className="chat-header-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
           )}
         </button>
 
-        <button
-          onClick={() => navigate('/member/support')}
-          className="logout-button header-btn-mr"
-          title={t('header.support')}
-        >
-          <span className="header-icon-mr">🎫</span>
-          <span className="logout-text">{t('header.support')}</span>
+        <button onClick={() => navigate('/member/support')} className="mh-btn mh-btn--icon mh-desktop-only" title={t('header.support')}>
+          🎫
         </button>
-        <button
-          onClick={() => navigate('/member/wunschliste')}
-          className="logout-button header-btn-mr"
-          title={t('header.wishlist')}
-        >
-          <span className="header-icon-mr">💡</span>
-          <span className="logout-text">{t('header.wishlist')}</span>
+        <button onClick={() => navigate('/member/wunschliste')} className="mh-btn mh-btn--icon mh-desktop-only" title={t('header.wishlist')}>
+          💡
         </button>
-        {familyMembers.length > 1 ? (
+
+        {familyMembers.length > 1 && (
           <div className="family-switcher-header">
             {familyMembers.map(m => (
               <button
@@ -162,29 +150,16 @@ const MemberHeader = () => {
               </button>
             ))}
           </div>
-        ) : userDisplayName ? (
-          <div className="user-display">
-            <span className="user-icon">👤</span>
-            <span className="user-name">{userDisplayName}</span>
-          </div>
-        ) : null}
+        )}
+
         <LanguageSwitcher compact={true} showLabel={false} />
-        <button className="logout-button" onClick={handleLogout}>
-          <svg
-            className="logout-icon"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-            />
+
+        <button className="mh-btn mh-btn--logout" onClick={handleLogout} title={t('header.logout')}>
+          <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span className="logout-text">{t('header.logout')}</span>
+          <span className="mh-logout-label">{t('header.logout')}</span>
         </button>
       </div>
     </header>
