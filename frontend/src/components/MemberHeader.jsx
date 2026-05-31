@@ -129,10 +129,10 @@ const MemberHeader = () => {
           )}
         </button>
 
-        <button onClick={() => navigate('/member/support')} className="mh-btn mh-btn--icon mh-desktop-only" title={t('header.support')}>
+        <button onClick={() => navigate('/member/support')} className="mh-btn mh-btn--icon" title={t('header.support')}>
           🎫
         </button>
-        <button onClick={() => navigate('/member/wunschliste')} className="mh-btn mh-btn--icon mh-desktop-only" title={t('header.wishlist')}>
+        <button onClick={() => navigate('/member/wunschliste')} className="mh-btn mh-btn--icon" title={t('header.wishlist')}>
           💡
         </button>
 
