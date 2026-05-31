@@ -1,8 +1,9 @@
-/* ===== MEMBER PORTAL HEADER — Washi Light Override ===== */
-/* Dashboard.css hat überall !important — hier ebenfalls, mit höherer Spezifität */
+/* ===== MEMBER PORTAL HEADER — Washi Light ===================================
+   Spezifität: header.mh-portal.dashboard-header = (0,0,2,1)
+   Schlägt [data-theme="X"] .dashboard-header = (0,0,2,0) aus Dashboard.css
+   =========================================================================== */
 
-/* ── Header-Container ─────────────────────────────────── */
-.mh-portal.dashboard-header {
+header.mh-portal.dashboard-header {
   background: #ffffff !important;
   border: none !important;
   border-bottom: 1px solid #e2d9ce !important;
@@ -13,19 +14,17 @@
   height: auto !important;
   min-height: 58px !important;
   padding: 0 1.5rem !important;
-  gap: 0 !important;
 }
 
-/* Gold-Shimmer-Animation aus Dashboard.css entfernen */
-.mh-portal.dashboard-header::before {
+header.mh-portal.dashboard-header::before,
+header.mh-portal.dashboard-header::after {
   display: none !important;
   animation: none !important;
   background: none !important;
 }
 
-/* ── Logo ─────────────────────────────────────────────── */
-.mh-portal .dashboard-logo,
-.mh-portal .mh-logo {
+/* Logo — Gold-Glow entfernen */
+header.mh-portal.dashboard-header .dashboard-logo {
   filter: none !important;
   height: 36px !important;
   width: 36px !important;
@@ -33,7 +32,7 @@
   object-fit: cover;
 }
 
-/* ── Titel: Dojoname + Begrüßung ─────────────────────── */
+/* Titel-Block */
 .mh-title-wrap {
   display: flex;
   flex-direction: column;
@@ -41,11 +40,16 @@
   line-height: 1.2;
 }
 .mh-dojo-name {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
   color: #1a1512 !important;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.01em !important;
   white-space: nowrap;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background-clip: unset !important;
+  text-shadow: none !important;
 }
 .mh-greeting {
   font-size: 0.7rem;
@@ -54,18 +58,20 @@
   white-space: nowrap;
 }
 
-/* ── Rechte Seite ─────────────────────────────────────── */
-.mh-portal .dashboard-header-right,
-.mh-portal .mh-actions {
+/* h2 im Header ausblenden (wird durch mh-title-wrap ersetzt) */
+header.mh-portal.dashboard-header h2 {
+  display: none !important;
+}
+
+/* Rechte Seite */
+header.mh-portal.dashboard-header .dashboard-header-right {
   display: flex !important;
   align-items: center !important;
   gap: 0.3rem !important;
-  flex-wrap: nowrap;
-  overflow: hidden;
+  flex-wrap: nowrap !important;
 }
 
-/* ── Neue Button-Klasse mh-btn ────────────────────────── */
-/* (nicht logout-button, kein Konflikt mit Dashboard.css)  */
+/* ── Button-Basisstil ──────────────────────────────────────── */
 .mh-btn {
   display: inline-flex !important;
   align-items: center !important;
@@ -82,14 +88,15 @@
   cursor: pointer !important;
   transition: background 0.15s, border-color 0.15s !important;
   white-space: nowrap !important;
-  flex-shrink: 0;
+  flex-shrink: 0 !important;
   box-shadow: none !important;
   transform: none !important;
   backdrop-filter: none !important;
   overflow: visible !important;
   position: relative !important;
 }
-.mh-btn::before { display: none !important; }
+.mh-btn::before,
+.mh-btn::after { display: none !important; }
 .mh-btn:hover {
   background: #f4f0eb !important;
   border-color: #c4b8aa !important;
@@ -97,27 +104,22 @@
   transform: none !important;
   box-shadow: none !important;
 }
-.mh-btn:active { transform: none !important; }
 
-/* Icon-only */
 .mh-btn--icon {
   width: 32px !important;
   padding: 0 !important;
   font-size: 1rem !important;
 }
 
-/* Zurück-Button */
 .mh-btn--back {
   color: #9e2a2b !important;
   border-color: rgba(158,42,43,0.3) !important;
 }
 .mh-btn--back:hover {
   background: rgba(158,42,43,0.06) !important;
-  border-color: rgba(158,42,43,0.5) !important;
   color: #7d1f20 !important;
 }
 
-/* Logout */
 .mh-btn--logout {
   color: #7a6a5a !important;
 }
@@ -126,11 +128,9 @@
   border-color: rgba(158,42,43,0.3) !important;
   background: rgba(158,42,43,0.05) !important;
 }
-.mh-logout-label {
-  font-size: 0.78rem;
-}
+.mh-logout-label { font-size: 0.78rem; }
 
-/* ── Chat-Badge ───────────────────────────────────────── */
+/* ── Chat-Badge ──────────────────────────────────────────── */
 .chat-header-badge-wrap { position: relative !important; }
 .chat-header-badge {
   position: absolute !important;
@@ -148,17 +148,16 @@
   justify-content: center !important;
   padding: 0 3px !important;
   pointer-events: none !important;
-  line-height: 1 !important;
   box-shadow: none !important;
   transform: none !important;
   animation: none !important;
 }
 
-/* ── Familien-Switcher ────────────────────────────────── */
+/* ── Familien-Switcher ───────────────────────────────────── */
 .family-switcher-header {
-  display: flex;
-  gap: 3px;
-  align-items: center;
+  display: flex !important;
+  gap: 3px !important;
+  align-items: center !important;
 }
 .family-switcher-header-btn {
   padding: 3px 10px !important;
@@ -174,13 +173,17 @@
   transform: none !important;
   backdrop-filter: none !important;
   height: auto !important;
+  min-height: unset !important;
   transition: background 0.15s !important;
+  overflow: visible !important;
 }
-.family-switcher-header-btn::before { display: none !important; }
+.family-switcher-header-btn::before,
+.family-switcher-header-btn::after { display: none !important; }
 .family-switcher-header-btn:hover:not(:disabled) {
   background: rgba(158,42,43,0.1) !important;
   transform: none !important;
   color: #9e2a2b !important;
+  box-shadow: none !important;
 }
 .family-switcher-header-btn--active {
   background: #9e2a2b !important;
@@ -192,23 +195,23 @@
   cursor: wait !important;
 }
 
-/* ── Mobile ───────────────────────────────────────────── */
+/* ── Mobile ──────────────────────────────────────────────── */
 @media (max-width: 767px) {
-  .mh-portal.dashboard-header {
+  header.mh-portal.dashboard-header {
     padding: 0 0.85rem !important;
     min-height: 54px !important;
   }
   .mh-btn--back { display: none !important; }
   .mh-logout-label { display: none !important; }
-  .mh-btn--logout {
-    width: 32px !important;
-    padding: 0 !important;
-  }
-  .family-switcher-header { display: none !important; }
-  /* Alles als Icon, kein Text */
+  .mh-btn--logout { width: 32px !important; padding: 0 !important; }
   .mh-dojo-name { font-size: 0.85rem !important; }
+  /* Familien-Switcher kompakt: nur Vornamen als kleine Pillen */
+  .family-switcher-header-btn {
+    padding: 2px 8px !important;
+    font-size: 0.72rem !important;
+  }
 }
 
-/* ── Aufräumen: alte Klassen die im JSX noch vorkommen könnten ── */
+/* Kompatibilität mit alten Klassen */
 .header-btn-mr { margin-right: 0.3rem; }
 .header-icon-mr { margin-right: 0.2rem; }
