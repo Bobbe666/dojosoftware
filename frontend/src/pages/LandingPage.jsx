@@ -165,15 +165,7 @@ function LandingPage() {
             competitors: comparisonDataJson.competitors || [],
             categories: cats
           });
-          const initialExpanded = {};
-          let expandedFirst = false;
-          cats.forEach(cat => {
-            if (cat.is_highlight && !expandedFirst) {
-              initialExpanded[cat.id] = true;
-              expandedFirst = true;
-            }
-          });
-          setExpandedCards(initialExpanded);
+          setExpandedCards({});
         }
       } catch (error) {
         console.error('Fehler beim Laden der dynamischen Daten:', error);
