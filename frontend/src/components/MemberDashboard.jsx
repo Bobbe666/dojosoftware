@@ -1730,7 +1730,43 @@ const MemberDashboard = () => {
             </div>
           </div>
 
-      {/* Today at a glance — kompakte Übersicht nach Welcome */}
+      {/* Mobile Hero: Check-in prominent + QR / Abwesenheit sekundär — GANZ OBEN */}
+      <div className="md-mobile-hero">
+        <button
+          className="md-mobile-hero-btn md-mobile-hero-btn--checkin"
+          onClick={() => handleQuickAction('checkin')}
+        >
+          <span className="md-mobile-hero-btn-icon">✅</span>
+          <div className="md-mobile-hero-btn-text">
+            <span className="md-mobile-hero-btn-label">Training einchecken</span>
+            <span className="md-mobile-hero-btn-sub">Jetzt Training erfassen</span>
+          </div>
+          <span className="md-mobile-hero-btn-chevron">›</span>
+        </button>
+        <div className="md-mobile-hero-secondary">
+          <button
+            className="md-mobile-hero-btn md-mobile-hero-btn--primary"
+            onClick={() => setShowQRCode(true)}
+          >
+            <span className="md-mobile-hero-btn-icon">📱</span>
+            <span className="md-mobile-hero-btn-label">QR-Code</span>
+            <span className="md-mobile-hero-btn-sub">Mitgliedsausweis</span>
+          </button>
+          <button
+            className={`md-mobile-hero-btn md-mobile-hero-btn--absence${showAbwesenheitWidget ? ' md-mobile-hero-btn--absence-active' : ''}`}
+            onClick={() => setShowAbwesenheitWidget(v => !v)}
+          >
+            <span className="md-mobile-hero-btn-icon">🗓️</span>
+            <span className="md-mobile-hero-btn-label">Abwesenheit</span>
+            <span className="md-mobile-hero-btn-sub">Urlaub / Pause</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Abwesenheit Widget — direkt unter Mobile Hero */}
+      {showAbwesenheitWidget && <AbwesenheitWidget />}
+
+      {/* Today at a glance — kompakte Übersicht */}
       {memberData && (
         <div className="md-today-strip">
           <div className="md-today-date">
@@ -1772,33 +1808,7 @@ const MemberDashboard = () => {
         </div>
       )}
 
-      {/* Gurt-Widget — prominente Identitäts-Karte */}
-      {memberData && currentBelts.length > 0 && (
-        <div className="md-belt-widget md-anim-fade-in-up">
-          {currentBelts.map((b, i) => {
-            const beltColor = b.farbe || '#ffffff';
-            return (
-              <div key={i} className="md-belt-row" style={{ '--belt-color': beltColor }}>
-                <div className="md-belt-stripe" style={{ background: beltColor }} />
-                <div className="md-belt-content">
-                  <div className="md-belt-name">{b.name}</div>
-                  {b.stilName && <div className="md-belt-stil">{b.stilName}</div>}
-                </div>
-                {i === 0 && stats.naechstePruefung && (
-                  <div className="md-belt-exam">
-                    <span className="md-belt-exam-icon">🏆</span>
-                    <span className="md-belt-exam-date">
-                      {new Date(stats.naechstePruefung).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Push-Benachrichtigungen Banner — ganz oben, verschwindet nach Aktivierung */}
+      {/* Push-Benachrichtigungen Banner */}
       {pushStatus !== 'unsupported' && pushStatus !== 'granted' && pushStatus !== 'denied' && (
         <div className="md-push-banner">
           <span className="md-push-banner-icon">🔔</span>
@@ -1812,42 +1822,6 @@ const MemberDashboard = () => {
           </button>
         </div>
       )}
-
-      {/* Mobile Hero: Check-in prominent + QR / Abwesenheit sekundär */}
-      <div className="md-mobile-hero">
-        <button
-          className="md-mobile-hero-btn md-mobile-hero-btn--checkin"
-          onClick={() => handleQuickAction('checkin')}
-        >
-          <span className="md-mobile-hero-btn-icon">✅</span>
-          <div className="md-mobile-hero-btn-text">
-            <span className="md-mobile-hero-btn-label">Training einchecken</span>
-            <span className="md-mobile-hero-btn-sub">Jetzt Training erfassen</span>
-          </div>
-          <span className="md-mobile-hero-btn-chevron">›</span>
-        </button>
-        <div className="md-mobile-hero-secondary">
-          <button
-            className="md-mobile-hero-btn md-mobile-hero-btn--primary"
-            onClick={() => setShowQRCode(true)}
-          >
-            <span className="md-mobile-hero-btn-icon">📱</span>
-            <span className="md-mobile-hero-btn-label">QR-Code</span>
-            <span className="md-mobile-hero-btn-sub">Mitgliedsausweis</span>
-          </button>
-          <button
-            className={`md-mobile-hero-btn md-mobile-hero-btn--absence${showAbwesenheitWidget ? ' md-mobile-hero-btn--absence-active' : ''}`}
-            onClick={() => setShowAbwesenheitWidget(v => !v)}
-          >
-            <span className="md-mobile-hero-btn-icon">🗓️</span>
-            <span className="md-mobile-hero-btn-label">Abwesenheit</span>
-            <span className="md-mobile-hero-btn-sub">Urlaub / Pause</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Abwesenheit Widget — direkt unter Mobile Hero */}
-      {showAbwesenheitWidget && <AbwesenheitWidget />}
 
       {/* Offene Popup-Umfragen — prominent, unter Hero-Buttons */}
       {pendingUmfragen.filter(u => u.als_popup).map(u => {
@@ -1965,6 +1939,32 @@ const MemberDashboard = () => {
       <div className="md-mobile-schedule-widget">
         <NextTrainingsWidget />
       </div>
+
+      {/* Gurt-Widget — weiter unten, sekundäre Info */}
+      {memberData && currentBelts.length > 0 && (
+        <div className="md-belt-widget md-anim-fade-in-up">
+          {currentBelts.map((b, i) => {
+            const beltColor = b.farbe || '#ffffff';
+            return (
+              <div key={i} className="md-belt-row" style={{ '--belt-color': beltColor }}>
+                <div className="md-belt-stripe" style={{ background: beltColor }} />
+                <div className="md-belt-content">
+                  <div className="md-belt-name">{b.name}</div>
+                  {b.stilName && <div className="md-belt-stil">{b.stilName}</div>}
+                </div>
+                {i === 0 && stats.naechstePruefung && (
+                  <div className="md-belt-exam">
+                    <span className="md-belt-exam-icon">🏆</span>
+                    <span className="md-belt-exam-date">
+                      {new Date(stats.naechstePruefung).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Ausweis + Stats: 2 Karten | Ausweis | 2 Karten */}
       {memberData && (
@@ -3168,7 +3168,7 @@ const MemberDashboard = () => {
                       <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 4, color: '#cbd5e1' }}>{u.titel}</div>
                       <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
                         ✓ Beantwortet · {u.antworten_gesamt || 0} Stimmen gesamt
-                        {u.typ !== 'kommentar' && u.antworten_gesamt > 0 && ` · ✓ ${u.antworten_ja || 0} Ja · ✗ ${u.antworten_nein || 0} Nein`}
+                        {(u.typ === 'ja_nein' || u.typ === 'beides') && u.antworten_gesamt > 0 && ` · ✓ ${u.antworten_ja || 0} Ja · ✗ ${u.antworten_nein || 0} Nein`}
                       </div>
                     </div>
                   ))}
