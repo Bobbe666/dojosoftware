@@ -349,6 +349,7 @@ const MemberDashboard = () => {
   const [umfrageAntworten, setUmfrageAntworten] = useState({}); // { [id]: { antwort, kommentar } }
   const [umfrageSending, setUmfrageSending] = useState(null);
   const [umfrageSuccess, setUmfrageSuccess] = useState(new Set());
+  const [umfrageResults, setUmfrageResults] = useState({});
 
   // Vertrag-Anpassungen (Mitglied-Sicht)
   const [meineAnpassungen, setMeineAnpassungen] = useState([]);
@@ -526,12 +527,29 @@ const MemberDashboard = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ antwort: a.antwort || null, kommentar: a.kommentar || null }),
       });
-      // Nach Abstimmung: success-Flash, dann aus pending entfernen
+      // Ergebnis laden und anzeigen
       setUmfrageSuccess(prev => new Set([...prev, umfrageId]));
+      try {
+        const resp = await fetchWithAuth(`${config.apiBaseUrl}/umfragen/dojo/aktiv`);
+        if (resp.ok) {
+          const data = await resp.json();
+          const found = (data.umfragen || []).find(u => u.id === umfrageId);
+          if (found) {
+            setUmfrageResults(prev => ({ ...prev, [umfrageId]: {
+              myAnswer: a.antwort || null,
+              myKommentar: a.kommentar || null,
+              jaCount: found.antworten_ja || 0,
+              neinCount: found.antworten_nein || 0,
+              total: found.antworten_gesamt || 1,
+            }}));
+          }
+        }
+      } catch {}
       setTimeout(() => {
         setPendingUmfragen(prev => prev.filter(u => u.id !== umfrageId));
         setUmfrageSuccess(prev => { const n = new Set(prev); n.delete(umfrageId); return n; });
-      }, 900);
+        setUmfrageResults(prev => { const n = { ...prev }; delete n[umfrageId]; return n; });
+      }, 4500);
     } catch {} finally { setUmfrageSending(null); }
   };
 
@@ -1795,72 +1813,6 @@ const MemberDashboard = () => {
         </div>
       )}
 
-      {/* Offene Popup-Umfragen — prominent oben, bis beantwortet */}
-      {pendingUmfragen.filter(u => u.als_popup).map(u => {
-        const a = umfrageAntworten[u.id] || {};
-        const hatJaNein = u.typ === 'ja_nein' || u.typ === 'beides';
-        const hatKommentar = u.typ === 'kommentar' || u.typ === 'beides';
-        const isDatum = u.typ === 'datum_auswahl';
-        const kannAbsenden = !isDatum && (hatJaNein ? a.antwort !== null : (a.kommentar || '').trim().length > 0);
-        return (
-          <div key={u.id} className={`md-anim-fade-in-up${umfrageSuccess.has(u.id) ? ' md-anim-success' : ''}`} style={{
-            margin: '0.75rem 1rem 0',
-            background: umfrageSuccess.has(u.id) ? 'rgba(34,197,94,0.12)' : 'rgba(99,102,241,0.1)',
-            border: `2px solid ${umfrageSuccess.has(u.id) ? 'rgba(34,197,94,0.45)' : 'rgba(99,102,241,0.45)'}`,
-            borderRadius: 12, padding: '1rem 1.1rem',
-            transition: 'background 0.4s, border-color 0.4s',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: '1rem' }}>📋</span>
-              <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#a5b4fc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Offene Umfrage</span>
-            </div>
-            <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: u.beschreibung ? 4 : 10 }}>{u.titel}</div>
-            {u.beschreibung && <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', marginBottom: 10 }}>{u.beschreibung}</div>}
-            {!isDatum && (
-              <>
-                {hatJaNein && (
-                  <div style={{ display: 'flex', gap: 8, marginBottom: hatKommentar ? 8 : 10 }}>
-                    {['ja', 'nein'].map(val => (
-                      <button key={val}
-                        onClick={() => setUmfrageAntworten(prev => ({ ...prev, [u.id]: { ...prev[u.id], antwort: prev[u.id]?.antwort === val ? null : val } }))}
-                        style={{ flex: 1, padding: '0.55rem', borderRadius: 8,
-                          border: `2px solid ${a.antwort === val ? (val === 'ja' ? '#22c55e' : '#ef4444') : 'rgba(255,255,255,0.15)'}`,
-                          background: a.antwort === val ? (val === 'ja' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') : 'rgba(255,255,255,0.05)',
-                          color: a.antwort === val ? (val === 'ja' ? '#86efac' : '#fca5a5') : 'rgba(255,255,255,0.6)',
-                          fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
-                        {val === 'ja' ? '✓ Ja' : '✗ Nein'}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {hatKommentar && (
-                  <textarea rows={2} placeholder="Kommentar…" value={a.kommentar || ''}
-                    onChange={e => setUmfrageAntworten(prev => ({ ...prev, [u.id]: { ...prev[u.id], kommentar: e.target.value } }))}
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: 6, padding: '0.5rem 0.7rem', color: '#e2e8f0', fontSize: '0.85rem',
-                      resize: 'vertical', marginBottom: 10, boxSizing: 'border-box' }} />
-                )}
-                <button onClick={() => submitUmfrageAntwort(u.id)}
-                  disabled={!kannAbsenden || umfrageSending === u.id}
-                  className={umfrageSuccess.has(u.id) ? 'md-anim-pop' : ''}
-                  style={{ background: umfrageSuccess.has(u.id) ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 8,
-                    color: '#fff', fontWeight: 600, padding: '0.55rem 1.4rem',
-                    cursor: kannAbsenden ? 'pointer' : 'not-allowed',
-                    opacity: kannAbsenden ? 1 : 0.4, fontSize: '0.875rem',
-                    transition: 'background 0.3s' }}>
-                  {umfrageSuccess.has(u.id) ? '✓ Gesendet!' : umfrageSending === u.id ? 'Wird gesendet…' : 'Absenden'}
-                </button>
-              </>
-            )}
-            {isDatum && (
-              <div style={{ fontSize: '0.83rem', color: 'rgba(165,180,252,0.7)', fontStyle: 'italic' }}>
-                Terminabstimmung — bitte über das Popup oben beantworten
-              </div>
-            )}
-          </div>
-        );
-      })}
-
       {/* Mobile Hero: Check-in prominent + QR / Abwesenheit sekundär */}
       <div className="md-mobile-hero">
         <button
@@ -1896,6 +1848,118 @@ const MemberDashboard = () => {
 
       {/* Abwesenheit Widget — direkt unter Mobile Hero */}
       {showAbwesenheitWidget && <AbwesenheitWidget />}
+
+      {/* Offene Popup-Umfragen — prominent, unter Hero-Buttons */}
+      {pendingUmfragen.filter(u => u.als_popup).map(u => {
+        const a = umfrageAntworten[u.id] || {};
+        const res = umfrageResults[u.id];
+        const hatJaNein = u.typ === 'ja_nein' || u.typ === 'beides';
+        const hatKommentar = u.typ === 'kommentar' || u.typ === 'beides';
+        const isDatum = u.typ === 'datum_auswahl';
+        const kannAbsenden = !isDatum && (hatJaNein ? a.antwort !== null : (a.kommentar || '').trim().length > 0);
+        const isSuccess = umfrageSuccess.has(u.id);
+        return (
+          <div key={u.id} className="md-anim-fade-in-up" style={{
+            margin: '0.75rem 1rem 0',
+            background: isSuccess ? 'rgba(34,197,94,0.08)' : 'rgba(99,102,241,0.1)',
+            border: `1.5px solid ${isSuccess ? 'rgba(34,197,94,0.35)' : 'rgba(99,102,241,0.4)'}`,
+            borderRadius: 14, padding: '1rem 1.1rem',
+            transition: 'background 0.5s, border-color 0.5s',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: '1rem' }}>{isSuccess ? '✅' : '📋'}</span>
+              <span style={{ fontWeight: 700, fontSize: '0.8rem', color: isSuccess ? '#86efac' : '#a5b4fc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {isSuccess ? 'Danke für deine Teilnahme' : 'Offene Umfrage'}
+              </span>
+            </div>
+            <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: u.beschreibung ? 4 : 10 }}>{u.titel}</div>
+            {u.beschreibung && !isSuccess && <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', marginBottom: 10 }}>{u.beschreibung}</div>}
+
+            {/* Ergebnisanzeige nach Absenden */}
+            {isSuccess && res && (
+              <div style={{ marginBottom: 8 }}>
+                {res.myAnswer && (
+                  <div style={{ fontSize: '0.85rem', color: '#86efac', marginBottom: 8, fontWeight: 600 }}>
+                    Deine Stimme: {res.myAnswer === 'ja' ? '✓ Ja' : '✗ Nein'}
+                  </div>
+                )}
+                {res.myKommentar && !res.myAnswer && (
+                  <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', marginBottom: 8, fontStyle: 'italic' }}>
+                    „{res.myKommentar}"
+                  </div>
+                )}
+                {(res.jaCount > 0 || res.neinCount > 0) && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>
+                      Aktuelles Ergebnis ({res.total} Stimmen)
+                    </div>
+                    {[
+                      { label: 'Ja', count: res.jaCount, color: '#22c55e', bg: 'rgba(34,197,94,0.25)' },
+                      { label: 'Nein', count: res.neinCount, color: '#ef4444', bg: 'rgba(239,68,68,0.2)' },
+                    ].map(({ label, count, color, bg }) => {
+                      const pct = res.total > 0 ? Math.round((count / res.total) * 100) : 0;
+                      return (
+                        <div key={label}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: 3 }}>
+                            <span style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</span>
+                            <span style={{ color, fontWeight: 700 }}>{pct}% ({count})</span>
+                          </div>
+                          <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: bg, borderRadius: 3, transition: 'width 0.8s ease' }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {res.myKommentar && !res.jaCount && !res.neinCount && (
+                  <div style={{ fontSize: '0.8rem', color: 'rgba(134,239,172,0.7)' }}>Kommentar gespeichert ✓</div>
+                )}
+              </div>
+            )}
+
+            {!isSuccess && !isDatum && (
+              <>
+                {hatJaNein && (
+                  <div style={{ display: 'flex', gap: 8, marginBottom: hatKommentar ? 8 : 10 }}>
+                    {['ja', 'nein'].map(val => (
+                      <button key={val}
+                        onClick={() => setUmfrageAntworten(prev => ({ ...prev, [u.id]: { ...prev[u.id], antwort: prev[u.id]?.antwort === val ? null : val } }))}
+                        style={{ flex: 1, padding: '0.55rem', borderRadius: 8,
+                          border: `2px solid ${a.antwort === val ? (val === 'ja' ? '#22c55e' : '#ef4444') : 'rgba(255,255,255,0.15)'}`,
+                          background: a.antwort === val ? (val === 'ja' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') : 'rgba(255,255,255,0.05)',
+                          color: a.antwort === val ? (val === 'ja' ? '#86efac' : '#fca5a5') : 'rgba(255,255,255,0.6)',
+                          fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
+                        {val === 'ja' ? '✓ Ja' : '✗ Nein'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {hatKommentar && (
+                  <textarea rows={2} placeholder="Kommentar…" value={a.kommentar || ''}
+                    onChange={e => setUmfrageAntworten(prev => ({ ...prev, [u.id]: { ...prev[u.id], kommentar: e.target.value } }))}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 6, padding: '0.5rem 0.7rem', color: '#e2e8f0', fontSize: '0.85rem',
+                      resize: 'vertical', marginBottom: 10, boxSizing: 'border-box' }} />
+                )}
+                <button onClick={() => submitUmfrageAntwort(u.id)}
+                  disabled={!kannAbsenden || umfrageSending === u.id}
+                  style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 8,
+                    color: '#fff', fontWeight: 600, padding: '0.55rem 1.4rem',
+                    cursor: kannAbsenden ? 'pointer' : 'not-allowed',
+                    opacity: kannAbsenden ? 1 : 0.4, fontSize: '0.875rem' }}>
+                  {umfrageSending === u.id ? 'Wird gesendet…' : 'Absenden'}
+                </button>
+              </>
+            )}
+            {!isSuccess && isDatum && (
+              <div style={{ fontSize: '0.83rem', color: 'rgba(165,180,252,0.7)', fontStyle: 'italic' }}>
+                Terminabstimmung — bitte über das Popup oben beantworten
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       {/* Nächste Trainings Widget — mobil prominent oben */}
       <div className="md-mobile-schedule-widget">
