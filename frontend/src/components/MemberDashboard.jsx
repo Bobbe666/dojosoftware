@@ -554,10 +554,15 @@ const MemberDashboard = () => {
           }
         }
       } catch {}
-      setTimeout(() => {
+      setTimeout(async () => {
         setPendingUmfragen(prev => prev.filter(u => u.id !== umfrageId));
         setUmfrageSuccess(prev => { const n = new Set(prev); n.delete(umfrageId); return n; });
         setUmfrageResults(prev => { const n = { ...prev }; delete n[umfrageId]; return n; });
+        // Frische Aggregatdaten für "bereits beantwortet"-Sektion laden
+        try {
+          const r = await fetchWithAuth(`${config.apiBaseUrl}/umfragen/dojo/aktiv`);
+          if (r.ok) { const d = await r.json(); setMeineUmfragen(d.umfragen || []); }
+        } catch {}
       }, 5500);
     } catch {} finally { setUmfrageSending(null); }
   };
@@ -1871,12 +1876,12 @@ const MemberDashboard = () => {
                     „{res.myKommentar}"
                   </div>
                 )}
-                {(res.jaCount > 0 || res.neinCount > 0) && (
+                {res.total > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>
                       Aktuelles Ergebnis ({res.total} Stimmen)
                     </div>
-                    {[
+                    {(res.jaCount > 0 || res.neinCount > 0) && [
                       { label: 'Ja', count: res.jaCount, color: '#22c55e', bg: 'rgba(34,197,94,0.25)' },
                       { label: 'Nein', count: res.neinCount, color: '#ef4444', bg: 'rgba(239,68,68,0.2)' },
                     ].map(({ label, count, color, bg }) => {
@@ -1895,7 +1900,7 @@ const MemberDashboard = () => {
                     })}
                   </div>
                 )}
-                {res.myKommentar && !res.jaCount && !res.neinCount && (
+                {res.myKommentar && !res.jaCount && !res.neinCount && !res.total && (
                   <div style={{ fontSize: '0.8rem', color: 'rgba(134,239,172,0.7)' }}>Kommentar gespeichert ✓</div>
                 )}
               </div>
@@ -3174,10 +3179,10 @@ const MemberDashboard = () => {
                             {res.myKommentar && !res.myAnswer && (
                               <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6, fontStyle: 'italic' }}>„{res.myKommentar}"</div>
                             )}
-                            {(res.jaCount > 0 || res.neinCount > 0) && (
+                            {res.total > 0 && (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                                 <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>Ergebnis ({res.total} Stimmen)</div>
-                                {[
+                                {(res.jaCount > 0 || res.neinCount > 0) && [
                                   { label: 'Ja', count: res.jaCount, color: '#22c55e', bg: 'rgba(34,197,94,0.25)' },
                                   { label: 'Nein', count: res.neinCount, color: '#ef4444', bg: 'rgba(239,68,68,0.2)' },
                                 ].map(({ label, count, color, bg }) => {
@@ -3196,7 +3201,7 @@ const MemberDashboard = () => {
                                 })}
                               </div>
                             )}
-                            {res.myKommentar && !res.jaCount && !res.neinCount && (
+                            {res.myKommentar && !res.jaCount && !res.neinCount && !res.total && (
                               <div style={{ fontSize: '0.8rem', color: 'rgba(134,239,172,0.7)' }}>Kommentar gespeichert ✓</div>
                             )}
                           </div>
@@ -3234,7 +3239,7 @@ const MemberDashboard = () => {
                       <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 4, color: '#cbd5e1' }}>{u.titel}</div>
                       <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
                         ✓ Beantwortet · {u.antworten_gesamt || 0} Stimmen gesamt
-                        {(u.typ === 'ja_nein' || u.typ === 'beides') && u.antworten_gesamt > 0 && ` · ✓ ${u.antworten_ja || 0} Ja · ✗ ${u.antworten_nein || 0} Nein`}
+                        {(u.typ === 'ja_nein' || u.typ === 'beides') && (u.antworten_ja > 0 || u.antworten_nein > 0) && ` · ✓ ${u.antworten_ja} Ja · ✗ ${u.antworten_nein} Nein`}
                       </div>
                     </div>
                   ))}
