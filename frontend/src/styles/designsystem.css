@@ -69,12 +69,19 @@
 }
 
 /* Basis Reset */
+html {
+  background-color: #0f0f23;
+}
+
 body {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
   background: var(--hintergrund-primary);
+  background-color: #0f0f23;
   color: var(--farbe-text);
+  /* Verhindert weißen Rand bei iOS PWA / viewport-fit:cover */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* z-index wird über das Design System gesteuert (spacing.css --z-* Variablen).
