@@ -69,42 +69,54 @@
   .md-push-banner {
     display: flex !important;
     align-items: center !important;
-    gap: 0.5rem !important;
-    background: rgba(255, 215, 0, 0.08) !important;
-    border: 1px solid rgba(255, 215, 0, 0.25) !important;
+    gap: 0.6rem !important;
+    background: rgba(255, 215, 0, 0.05) !important;
+    border: 1px solid rgba(255, 215, 0, 0.18) !important;
+    border-left: 3px solid rgba(255, 215, 0, 0.5) !important;
     border-radius: 12px !important;
-    padding: 0.65rem 0.85rem !important;
+    padding: 0.6rem 0.85rem !important;
     margin-bottom: 0.85rem !important;
+    backdrop-filter: blur(8px) !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+    animation: md-slide-in 0.3s ease-out !important;
   }
 
   .md-push-banner-icon {
-    font-size: 1.1rem !important;
+    font-size: 1.15rem !important;
     flex-shrink: 0 !important;
+    opacity: 0.9 !important;
   }
 
   .md-push-banner-text {
     flex: 1 !important;
-    font-size: 0.8rem !important;
-    color: rgba(255, 255, 255, 0.75) !important;
+    font-size: 0.78rem !important;
+    color: rgba(255, 255, 255, 0.7) !important;
     font-weight: 500 !important;
+    line-height: 1.35 !important;
   }
 
   .md-push-banner-btn {
-    background: #ffd700 !important;
-    color: #000 !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 0.35rem 0.75rem !important;
-    font-size: 0.78rem !important;
+    background: rgba(255, 215, 0, 0.15) !important;
+    color: #ffd700 !important;
+    border: 1px solid rgba(255, 215, 0, 0.4) !important;
+    border-radius: 20px !important;
+    padding: 0.3rem 0.85rem !important;
+    font-size: 0.75rem !important;
     font-weight: 700 !important;
     cursor: pointer !important;
     flex-shrink: 0 !important;
     font-family: inherit !important;
     -webkit-tap-highlight-color: transparent !important;
+    transition: background 0.15s, border-color 0.15s !important;
+    white-space: nowrap !important;
+  }
+
+  .md-push-banner-btn:active {
+    background: rgba(255, 215, 0, 0.28) !important;
   }
 
   .md-push-banner-btn:disabled {
-    opacity: 0.6 !important;
+    opacity: 0.45 !important;
   }
 
   /* --- Mobile Hero Buttons (Check-in CTA + QR / Abwesenheit) --- */

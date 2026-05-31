@@ -1882,25 +1882,28 @@
 .modal-content.checkin-modal .course-item {
   display: flex !important;
   align-items: center !important;
-  gap: 0.3rem !important;
-  padding: 0.3rem !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 0.3rem !important;
+  gap: 0.75rem !important;
+  padding: 0.75rem 0.9rem !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-left: 3px solid transparent !important;
+  border-radius: 10px !important;
   cursor: pointer !important;
-  transition: all 0.2s !important;
+  transition: all 0.18s !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 .modal-content.checkin-modal .course-item:hover {
-  background: var(--surface-3) !important;
-  border-color: var(--primary-alpha-30) !important;
-  transform: translateY(-1px) !important;
+  background: rgba(255,215,0,0.06) !important;
+  border-color: rgba(255,215,0,0.25) !important;
+  border-left-color: rgba(255,215,0,0.4) !important;
 }
 
 .modal-content.checkin-modal .course-item.selected {
-  background: var(--primary-alpha-10) !important;
-  border-color: var(--primary) !important;
-  box-shadow: 0 4px 20px var(--primary-alpha-20) !important;
+  background: rgba(255,215,0,0.1) !important;
+  border-color: rgba(255,215,0,0.35) !important;
+  border-left-color: #ffd700 !important;
+  box-shadow: 0 2px 12px rgba(255,215,0,0.12) !important;
 }
 
 .modal-content.checkin-modal .course-item.unavailable {
@@ -1910,14 +1913,14 @@
 }
 
 .modal-content.checkin-modal .course-checkbox {
-  width: 14px !important;
-  height: 14px !important;
-  border: 2px solid rgba(255, 255, 255, 0.3) !important;
-  border-radius: 0.2rem !important;
+  width: 18px !important;
+  height: 18px !important;
+  border: 2px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 5px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: all 0.2s !important;
+  transition: all 0.18s !important;
   flex-shrink: 0 !important;
 }
 
@@ -1933,25 +1936,27 @@
 
 .modal-content.checkin-modal .course-name {
   color: var(--text-primary) !important;
-  font-weight: 600 !important;
-  font-size: 0.75rem !important;
-  margin-bottom: 0.08rem !important;
+  font-weight: 700 !important;
+  font-size: 0.88rem !important;
+  margin-bottom: 0.2rem !important;
+  line-height: 1.25 !important;
 }
 
 .modal-content.checkin-modal .course-time {
-  color: var(--text-secondary) !important;
-  font-size: 0.65rem !important;
+  color: rgba(255,215,0,0.65) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
   display: flex !important;
   align-items: center !important;
   gap: 0.2rem !important;
-  margin-bottom: 0.08rem !important;
+  margin-bottom: 0.15rem !important;
 }
 
 .modal-content.checkin-modal .course-trainer,
 .modal-content.checkin-modal .course-room {
-  color: rgba(255, 255, 255, 0.6) !important;
-  font-size: 0.6rem !important;
-  margin-bottom: 0.08rem !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 0.7rem !important;
+  margin-bottom: 0.05rem !important;
 }
 
 .course-status {
@@ -2014,19 +2019,21 @@
 
 .modal-content.checkin-modal .action-buttons {
   display: flex !important;
-  gap: 0.3rem !important;
+  gap: 0.5rem !important;
   justify-content: flex-end !important;
-  margin-top: 0.4rem !important;
+  margin-top: 0.75rem !important;
 }
 
 .modal-content.checkin-modal .btn {
-  padding: 0.3rem 0.6rem !important;
+  padding: 0.6rem 1.1rem !important;
   border: none !important;
-  border-radius: 0.25rem !important;
-  font-weight: 600 !important;
+  border-radius: 10px !important;
+  font-weight: 700 !important;
   cursor: pointer !important;
-  transition: all 0.2s !important;
-  font-size: 0.65rem !important;
+  transition: all 0.18s !important;
+  font-size: 0.82rem !important;
+  min-height: 40px !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 .btn-secondary {

@@ -3,6 +3,17 @@
  * Mobile-first App-Styles für die neue "Mein Profil" Seite.
  */
 
+/* ── Animationen ──────────────────────────────────────────────────── */
+@keyframes mp-avatar-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,215,0,0); border-color: rgba(255,215,0,0.4); }
+  50%       { box-shadow: 0 0 18px 4px rgba(255,215,0,0.18); border-color: rgba(255,215,0,0.65); }
+}
+
+@keyframes mp-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Page Shell ───────────────────────────────────────────────────── */
 .mp-page {
   display: flex;
@@ -10,8 +21,8 @@
   height: 100dvh;
   background: #0a0d10;
   color: var(--text-1);
-
   overflow: hidden;
+  animation: mp-fade-in 0.3s ease-out;
 }
 
 .mp-scroll {
@@ -73,8 +84,9 @@
   align-items: center;
   gap: 1rem;
   padding: 1.25rem 1rem 1rem;
-  background: linear-gradient(180deg, var(--primary-alpha-05) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(255,215,0,0.06) 0%, transparent 100%);
   border-bottom: 1px solid var(--primary-alpha-10);
+  position: relative;
 }
 
 .mp-avatar-wrap {
@@ -86,19 +98,23 @@
 .mp-avatar-img {
   border-radius: 50%;
   object-fit: cover;
-  border: 2.5px solid var(--primary-alpha-40);
+  border: 2.5px solid rgba(255,215,0,0.45);
   display: block;
+  animation: mp-avatar-glow 3.5s ease-in-out infinite;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
 }
 
 .mp-avatar-fallback {
   border-radius: 50%;
-  background: var(--primary-alpha-12);
-  border: 2.5px solid var(--primary-alpha-35);
+  background: rgba(255,215,0,0.1);
+  border: 2.5px solid rgba(255,215,0,0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   color: var(--primary);
+  animation: mp-avatar-glow 3.5s ease-in-out infinite;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
 }
 
 .mp-avatar-edit {
@@ -175,15 +191,23 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
-  padding: 0.6rem 0.25rem;
-  background: rgba(255,215,0,0.04);
+  gap: 0.2rem;
+  padding: 0.75rem 0.25rem;
+  background: rgba(255,215,0,0.05);
   border-radius: var(--comp-radius-lg);
-  border: 1px solid var(--primary-alpha-08);
+  border: 1px solid rgba(255,215,0,0.1);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.mp-stat-card:hover {
+  border-color: rgba(255,215,0,0.22);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 0 12px rgba(255,215,0,0.06);
 }
 
 .mp-stat-num {
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 800;
   color: var(--primary);
   text-align: center;
@@ -206,10 +230,12 @@
 /* ── Sektions-Karte ───────────────────────────────────────────────── */
 .mp-section {
   margin: 0.75rem 1rem 0;
-  background: #111518;
-  border: 1px solid var(--primary-alpha-12);
+  background: rgba(17, 21, 24, 0.9);
+  border: 1px solid rgba(255,215,0,0.1);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
 
 .mp-section-header {
@@ -217,8 +243,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.8rem 1rem;
-  border-bottom: 1px solid var(--primary-alpha-08);
-  background: rgba(255,215,0,0.03);
+  border-bottom: 1px solid rgba(255,215,0,0.07);
+  background: rgba(255,215,0,0.04);
+  border-left: 3px solid rgba(255,215,0,0.45);
 }
 
 .mp-section-icon {
@@ -439,11 +466,12 @@
 }
 
 .mp-belt-swatch {
-  width: 18px;
+  width: 10px;
   height: 40px;
-  border-radius: var(--comp-radius-xs);
+  border-radius: 6px;
   flex-shrink: 0;
   background: var(--belt-color, #888);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--belt-color, #888) 45%, transparent);
 }
 
 .mp-belt-name {
