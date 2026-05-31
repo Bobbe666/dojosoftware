@@ -1722,6 +1722,69 @@ const MemberDashboard = () => {
         </div>
       )}
 
+      {/* Offene Popup-Umfragen — prominent oben, bis beantwortet */}
+      {pendingUmfragen.filter(u => u.als_popup).map(u => {
+        const a = umfrageAntworten[u.id] || {};
+        const hatJaNein = u.typ === 'ja_nein' || u.typ === 'beides';
+        const hatKommentar = u.typ === 'kommentar' || u.typ === 'beides';
+        const isDatum = u.typ === 'datum_auswahl';
+        const kannAbsenden = !isDatum && (hatJaNein ? a.antwort !== null : (a.kommentar || '').trim().length > 0);
+        return (
+          <div key={u.id} style={{
+            margin: '0.75rem 1rem 0',
+            background: 'rgba(99,102,241,0.1)',
+            border: '2px solid rgba(99,102,241,0.45)',
+            borderRadius: 12, padding: '1rem 1.1rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: '1rem' }}>📋</span>
+              <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#a5b4fc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Offene Umfrage</span>
+            </div>
+            <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: u.beschreibung ? 4 : 10 }}>{u.titel}</div>
+            {u.beschreibung && <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', marginBottom: 10 }}>{u.beschreibung}</div>}
+            {!isDatum && (
+              <>
+                {hatJaNein && (
+                  <div style={{ display: 'flex', gap: 8, marginBottom: hatKommentar ? 8 : 10 }}>
+                    {['ja', 'nein'].map(val => (
+                      <button key={val}
+                        onClick={() => setUmfrageAntworten(prev => ({ ...prev, [u.id]: { ...prev[u.id], antwort: prev[u.id]?.antwort === val ? null : val } }))}
+                        style={{ flex: 1, padding: '0.55rem', borderRadius: 8,
+                          border: `2px solid ${a.antwort === val ? (val === 'ja' ? '#22c55e' : '#ef4444') : 'rgba(255,255,255,0.15)'}`,
+                          background: a.antwort === val ? (val === 'ja' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') : 'rgba(255,255,255,0.05)',
+                          color: a.antwort === val ? (val === 'ja' ? '#86efac' : '#fca5a5') : 'rgba(255,255,255,0.6)',
+                          fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
+                        {val === 'ja' ? '✓ Ja' : '✗ Nein'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {hatKommentar && (
+                  <textarea rows={2} placeholder="Kommentar…" value={a.kommentar || ''}
+                    onChange={e => setUmfrageAntworten(prev => ({ ...prev, [u.id]: { ...prev[u.id], kommentar: e.target.value } }))}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 6, padding: '0.5rem 0.7rem', color: '#e2e8f0', fontSize: '0.85rem',
+                      resize: 'vertical', marginBottom: 10, boxSizing: 'border-box' }} />
+                )}
+                <button onClick={() => submitUmfrageAntwort(u.id)}
+                  disabled={!kannAbsenden || umfrageSending === u.id}
+                  style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 8,
+                    color: '#fff', fontWeight: 600, padding: '0.55rem 1.4rem',
+                    cursor: kannAbsenden ? 'pointer' : 'not-allowed',
+                    opacity: kannAbsenden ? 1 : 0.4, fontSize: '0.875rem' }}>
+                  {umfrageSending === u.id ? 'Wird gesendet…' : 'Absenden'}
+                </button>
+              </>
+            )}
+            {isDatum && (
+              <div style={{ fontSize: '0.83rem', color: 'rgba(165,180,252,0.7)', fontStyle: 'italic' }}>
+                Terminabstimmung — bitte über das Popup oben beantworten
+              </div>
+            )}
+          </div>
+        );
+      })}
+
       {/* Mobile Hero: QR + Check-in + Abwesenheit prominente Schnellbuttons */}
       <div className="md-mobile-hero">
         <button

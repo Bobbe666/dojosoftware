@@ -80,7 +80,7 @@ router.get('/pending', async (req, res) => {
   const userDojoId = req.user.dojo_id;
   try {
     const [rows] = await pool.query(
-      `SELECT u.id, u.titel, u.beschreibung, u.typ, u.bild_url, u.daten, u.ziel_platformen
+      `SELECT u.id, u.titel, u.beschreibung, u.typ, u.bild_url, u.daten, u.ziel_platformen, u.als_popup
        FROM umfragen u
        WHERE u.status = 'aktiv'
          AND (u.gueltig_bis IS NULL OR u.gueltig_bis >= CURDATE())

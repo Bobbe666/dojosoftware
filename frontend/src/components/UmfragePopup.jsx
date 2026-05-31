@@ -22,7 +22,7 @@ export default function UmfragePopup() {
   useEffect(() => {
     if (!token) return;
     axios.get('/umfragen/pending', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => setUmfragen(r.data.umfragen || []))
+      .then(r => setUmfragen((r.data.umfragen || []).filter(u => u.als_popup)))
       .catch(() => {});
   }, [token]);
 
@@ -142,9 +142,6 @@ export default function UmfragePopup() {
         )}
 
         <div className="ufp-footer">
-          <button className="ufp-btn-skip" onClick={weiter}>
-            Überspringen
-          </button>
           <button
             className="ufp-btn-absenden"
             onClick={absenden}
