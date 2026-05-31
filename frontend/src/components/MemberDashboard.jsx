@@ -135,6 +135,14 @@ const MemberDashboard = () => {
 
   const navigate = useNavigate();
 
+  // Washi-Light-Theme für Member-Portal erzwingen, beim Verlassen wiederherstellen
+  useEffect(() => {
+    const root = document.documentElement;
+    const prevTheme = root.getAttribute('data-theme') || 'midnight';
+    root.setAttribute('data-theme', 'tda-vib');
+    return () => root.setAttribute('data-theme', prevTheme);
+  }, []);
+
   // Haupt-Daten States
   const [stats, setStats] = useState({
     trainingsstunden: 0,

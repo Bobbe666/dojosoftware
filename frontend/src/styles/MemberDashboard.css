@@ -1977,3 +1977,153 @@
   color: var(--color-danger, #ef4444);
   margin: 4px 0 0;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   WASHI-LIGHT MEMBER PORTAL — Crimson statt Gold
+   Gilt wenn data-theme="tda-vib" aktiv ist (Member-Portal)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── CSS-Custom-Properties überschreiben ─────────────────── */
+[data-theme="tda-vib"] .dashboard-container {
+  /* Crimson statt Gold */
+  --primary:              #9e2a2b;
+  --primary-500:          #9e2a2b;
+  --primary-600:          #7d1f20;
+  --primary-hover:        #7d1f20;
+  --primary-gradient:     linear-gradient(135deg,#9e2a2b,#7d1f20);
+  --secondary:            #9e2a2b;
+  --color-gold:           #9e2a2b;
+  --color-gold-dark:      #7d1f20;
+  --gold:                 #9e2a2b;
+  --text-accent:          #9e2a2b;
+  --border-accent:        rgba(158,42,43,0.28);
+  --border-accent-hover:  rgba(158,42,43,0.5);
+  --border-focus:         #9e2a2b;
+  --primary-alpha-10:     rgba(158,42,43,0.1);
+  --primary-alpha-15:     rgba(158,42,43,0.15);
+  --primary-alpha-20:     rgba(158,42,43,0.2);
+  --primary-alpha-25:     rgba(158,42,43,0.25);
+  --primary-alpha-30:     rgba(158,42,43,0.3);
+  --primary-alpha-40:     rgba(158,42,43,0.4);
+  --primary-alpha-50:     rgba(158,42,43,0.5);
+  --secondary-alpha-10:   rgba(158,42,43,0.1);
+  --secondary-alpha-20:   rgba(158,42,43,0.2);
+  --secondary-alpha-30:   rgba(158,42,43,0.3);
+  /* Gradient-Gold → solide Farbe (verhindert gold clip-text Effekt) */
+  --gradient-gold:        #9e2a2b;
+  /* Glows + Shadows → subtil rot statt gold */
+  --glow-gold:            0 0 6px rgba(158,42,43,0.18);
+  --glow-gold-sm:         none;
+  --glow-gold-lg:         0 0 14px rgba(158,42,43,0.22);
+  --shadow-gold:          0 4px 15px rgba(158,42,43,0.18);
+  --shadow-gold-hover:    0 8px 25px rgba(158,42,43,0.28);
+  --shadow-gold-lg:       0 12px 30px rgba(158,42,43,0.22);
+  --badge-primary-bg:     rgba(158,42,43,0.1);
+  --badge-primary-text:   #9e2a2b;
+  /* Buttons */
+  --btn-ghost-bg:         rgba(158,42,43,0.06);
+  --btn-ghost-bg-hover:   rgba(158,42,43,0.12);
+}
+
+/* ── Hintergrund der ganzen Seite ────────────────────────── */
+[data-theme="tda-vib"] .dashboard-container {
+  background: #faf8f5;
+  min-height: 100vh;
+}
+
+/* ── Überschriften: kein Gold-Glow, kein Gradient-Text ───── */
+[data-theme="tda-vib"] .dashboard-container h1,
+[data-theme="tda-vib"] .dashboard-container h2,
+[data-theme="tda-vib"] .dashboard-container h3,
+[data-theme="tda-vib"] .dashboard-container h4,
+[data-theme="tda-vib"] .dashboard-container h5,
+[data-theme="tda-vib"] .dashboard-container h6 {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  text-shadow: none !important;
+  text-transform: none !important;
+}
+
+/* ── Karten / Panels ─────────────────────────────────────── */
+[data-theme="tda-vib"] .dashboard-container .stat-card,
+[data-theme="tda-vib"] .dashboard-container .content-card,
+[data-theme="tda-vib"] .dashboard-container .nav-card,
+[data-theme="tda-vib"] .dashboard-container .member-card,
+[data-theme="tda-vib"] .dashboard-container [class*="-card"],
+[data-theme="tda-vib"] .dashboard-container [class*="-panel"],
+[data-theme="tda-vib"] .dashboard-container [class*="-box"],
+[data-theme="tda-vib"] .dashboard-container [class*="-widget"] {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+  color: #1a1512 !important;
+}
+
+/* ── Allgemeiner Text ────────────────────────────────────── */
+[data-theme="tda-vib"] .dashboard-container {
+  color: #1a1512;
+}
+[data-theme="tda-vib"] .dashboard-container p,
+[data-theme="tda-vib"] .dashboard-container span,
+[data-theme="tda-vib"] .dashboard-container label,
+[data-theme="tda-vib"] .dashboard-container li {
+  color: inherit;
+}
+
+/* ── Buttons (logout-button Klasse aus Dashboard.css) ────── */
+[data-theme="tda-vib"] .dashboard-container .logout-button,
+[data-theme="tda-vib"] .dashboard-container .dashboard-button {
+  background: rgba(158,42,43,0.06) !important;
+  color: #1a1512 !important;
+  border: 1px solid rgba(158,42,43,0.2) !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+[data-theme="tda-vib"] .dashboard-container .logout-button:hover,
+[data-theme="tda-vib"] .dashboard-container .dashboard-button:hover {
+  background: rgba(158,42,43,0.12) !important;
+  color: #9e2a2b !important;
+  border-color: rgba(158,42,43,0.4) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+[data-theme="tda-vib"] .dashboard-container .logout-button::before,
+[data-theme="tda-vib"] .dashboard-container .dashboard-button::before {
+  display: none !important;
+}
+
+/* ── Input / Select / Textarea ───────────────────────────── */
+[data-theme="tda-vib"] .dashboard-container input,
+[data-theme="tda-vib"] .dashboard-container select,
+[data-theme="tda-vib"] .dashboard-container textarea {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+[data-theme="tda-vib"] .dashboard-container input:focus,
+[data-theme="tda-vib"] .dashboard-container select:focus,
+[data-theme="tda-vib"] .dashboard-container textarea:focus {
+  border-color: #9e2a2b !important;
+  box-shadow: 0 0 0 2px rgba(158,42,43,0.15) !important;
+  outline: none !important;
+}
+
+/* ── Hardcodierte Gold-Animationen überschreiben ──────────── */
+@keyframes md-pulse-ring-washi {
+  0%   { box-shadow: 0 4px 20px rgba(158,42,43,0.08), 0 0 0 0 rgba(158,42,43,0.2); }
+  70%  { box-shadow: 0 4px 20px rgba(158,42,43,0.08), 0 0 0 10px rgba(158,42,43,0); }
+  100% { box-shadow: 0 4px 20px rgba(158,42,43,0.08), 0 0 0 0 rgba(158,42,43,0); }
+}
+[data-theme="tda-vib"] .dashboard-container .md-pulse {
+  animation-name: md-pulse-ring-washi !important;
+}
+
+/* ── Logo-Glow entfernen ─────────────────────────────────── */
+[data-theme="tda-vib"] .dashboard-container .dashboard-logo,
+[data-theme="tda-vib"] .dashboard-container img[class*="logo"] {
+  filter: none !important;
+}
