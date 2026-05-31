@@ -16,12 +16,15 @@ export default function UpdateBanner() {
         if (!res.ok) return;
         const data = await res.json();
 
+        const v = data.v || data.version;
+        if (!v) return;
+
         if (currentVersionRef.current === null) {
-          currentVersionRef.current = data.version;
+          currentVersionRef.current = v;
           return;
         }
 
-        if (data.version !== currentVersionRef.current) {
+        if (v !== currentVersionRef.current) {
           setShowUpdate(true);
         }
       } catch (e) {
@@ -34,11 +37,15 @@ export default function UpdateBanner() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if ('caches' in window) {
-      caches.keys().then(names => names.forEach(n => caches.delete(n)));
+      const names = await caches.keys();
+      await Promise.all(names.map(n => caches.delete(n)));
     }
-    window.location.reload(true);
+    // Query-Param zwingt Browser, index.html frisch vom Server zu laden (kein HTTP-Cache)
+    const url = new URL(window.location.href);
+    url.searchParams.set('_v', Date.now());
+    window.location.href = url.toString();
   };
 
   if (!showUpdate) return null;

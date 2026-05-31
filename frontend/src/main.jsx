@@ -26,6 +26,13 @@ if (SENTRY_DSN) {
   });
 }
 
+// _v-Query-Param (Cache-Bypass) nach Update-Reload aus URL entfernen
+if (new URLSearchParams(window.location.search).has('_v')) {
+  const clean = new URL(window.location.href);
+  clean.searchParams.delete('_v');
+  window.history.replaceState(null, '', clean.toString());
+}
+
 // i18n - Internationalisierung
 import './locales/i18n';
 
@@ -144,17 +151,27 @@ if (BUILT_VERSION) {
     banner.innerHTML = `
       <span style="font-size:1.1rem">🔄</span>
       <span>Neue Version verfügbar</span>
-      <button onclick="window.location.reload()" style="
+      <button id="_sw_update_btn" style="
         background:rgba(212,175,55,0.2);border:1px solid rgba(212,175,55,0.6);
         color:#d4af37;border-radius:8px;padding:0.4rem 0.9rem;cursor:pointer;
         font-size:0.85rem;font-weight:600;white-space:nowrap;font-family:inherit;
       ">Jetzt aktualisieren</button>
-      <button onclick="this.closest('div').remove()" style="
+      <button id="_sw_close_btn" style="
         background:none;border:none;color:rgba(255,255,255,0.4);
         cursor:pointer;font-size:1.1rem;padding:0 0.25rem;font-family:inherit;
       ">✕</button>
     `;
     document.body.appendChild(banner);
+    document.getElementById('_sw_update_btn')?.addEventListener('click', async () => {
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map(n => caches.delete(n)));
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set('_v', Date.now());
+      window.location.href = url.toString();
+    });
+    document.getElementById('_sw_close_btn')?.addEventListener('click', () => banner.remove());
   };
 
   const checkVersion = async () => {
