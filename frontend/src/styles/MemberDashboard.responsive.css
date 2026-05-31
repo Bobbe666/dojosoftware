@@ -107,12 +107,18 @@
     opacity: 0.6 !important;
   }
 
-  /* --- Mobile Hero Buttons (QR + Check-in + Abwesenheit) --- */
+  /* --- Mobile Hero Buttons (Check-in CTA + QR / Abwesenheit) --- */
   .md-mobile-hero {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
     gap: 0.5rem !important;
     margin-bottom: 0.85rem !important;
+  }
+
+  .md-mobile-hero-secondary {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
   }
 
   .md-mobile-hero-btn {
@@ -122,27 +128,74 @@
     justify-content: center !important;
     gap: 2px !important;
     padding: 0.85rem 0.35rem !important;
-    border-radius: 14px !important;
+    border-radius: 16px !important;
     border: none !important;
     cursor: pointer !important;
     font-family: inherit !important;
     -webkit-tap-highlight-color: transparent !important;
-    transition: transform 0.15s, opacity 0.15s !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s !important;
   }
 
   .md-mobile-hero-btn:active {
-    transform: scale(0.95) !important;
-    opacity: 0.85 !important;
+    transform: scale(0.96) !important;
+    opacity: 0.88 !important;
   }
 
+  /* Check-in: großer CTA, volle Breite, horizontal */
+  .md-mobile-hero-btn--checkin {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 14px !important;
+    padding: 1rem 1.25rem !important;
+    width: 100% !important;
+    background: linear-gradient(135deg, rgba(255,215,0,0.18) 0%, rgba(200,160,0,0.08) 100%) !important;
+    border: 1.5px solid rgba(255,215,0,0.45) !important;
+    animation: md-pulse-ring 2.5s ease-out infinite !important;
+  }
+
+  .md-mobile-hero-btn--checkin:active {
+    animation: none !important;
+    box-shadow: 0 2px 8px rgba(255,215,0,0.08) !important;
+  }
+
+  .md-mobile-hero-btn--checkin .md-mobile-hero-btn-icon {
+    font-size: 1.6rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .md-mobile-hero-btn-text {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    flex: 1 !important;
+    gap: 1px !important;
+  }
+
+  .md-mobile-hero-btn--checkin .md-mobile-hero-btn-label {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #ffd700 !important;
+    letter-spacing: 0.01em !important;
+  }
+
+  .md-mobile-hero-btn--checkin .md-mobile-hero-btn-sub {
+    font-size: 0.72rem !important;
+    color: rgba(255,215,0,0.55) !important;
+  }
+
+  .md-mobile-hero-btn-chevron {
+    font-size: 1.4rem !important;
+    color: rgba(255,215,0,0.5) !important;
+    font-weight: 300 !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+  }
+
+  /* Sekundäre Buttons (QR + Abwesenheit) */
   .md-mobile-hero-btn--primary {
-    background: linear-gradient(135deg, rgba(255,215,0,0.18) 0%, rgba(255,215,0,0.08) 100%) !important;
-    border: 1.5px solid rgba(255,215,0,0.4) !important;
-  }
-
-  .md-mobile-hero-btn--secondary {
-    background: rgba(255,255,255,0.06) !important;
-    border: 1.5px solid rgba(255,255,255,0.12) !important;
+    background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.05) 100%) !important;
+    border: 1.5px solid rgba(255,215,0,0.3) !important;
   }
 
   .md-mobile-hero-btn--absence {

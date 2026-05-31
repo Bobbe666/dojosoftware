@@ -4,11 +4,11 @@ import { Home, CalendarDays, Trophy, BarChart3, User } from 'lucide-react';
 import '../styles/MobileBottomNav.css';
 
 const tabs = [
-  { icon: Home,        label: 'Home',       path: '/member/dashboard' },
-  { icon: CalendarDays,label: 'Stundenplan', path: '/member/schedule' },
-  { icon: Trophy,      label: 'Gürtel',     path: '/member/styles' },
-  { icon: BarChart3,   label: 'Stats',      path: '/member/stats' },
-  { icon: User,        label: 'Profil',     path: '/member/profile' },
+  { icon: Home,         label: 'Home',       path: '/member/dashboard' },
+  { icon: CalendarDays, label: 'Stundenplan', path: '/member/schedule' },
+  { icon: Trophy,       label: 'Gürtel',     path: '/member/styles' },
+  { icon: BarChart3,    label: 'Stats',       path: '/member/stats' },
+  { icon: User,         label: 'Profil',      path: '/member/profile' },
 ];
 
 const MobileBottomNav = () => {
@@ -27,8 +27,10 @@ const MobileBottomNav = () => {
             aria-label={label}
             aria-current={isActive ? 'page' : undefined}
           >
-            <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
-            <span>{label}</span>
+            <div className="mobile-bottom-nav__pill">
+              <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+              <span className="mobile-bottom-nav__label">{label}</span>
+            </div>
           </button>
         );
       })}

@@ -348,6 +348,7 @@ const MemberDashboard = () => {
   const [pendingUmfragen, setPendingUmfragen] = useState([]);
   const [umfrageAntworten, setUmfrageAntworten] = useState({}); // { [id]: { antwort, kommentar } }
   const [umfrageSending, setUmfrageSending] = useState(null);
+  const [umfrageSuccess, setUmfrageSuccess] = useState(new Set());
 
   // Vertrag-Anpassungen (Mitglied-Sicht)
   const [meineAnpassungen, setMeineAnpassungen] = useState([]);
@@ -525,8 +526,12 @@ const MemberDashboard = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ antwort: a.antwort || null, kommentar: a.kommentar || null }),
       });
-      // Nach Abstimmung: aus pending entfernen
-      setPendingUmfragen(prev => prev.filter(u => u.id !== umfrageId));
+      // Nach Abstimmung: success-Flash, dann aus pending entfernen
+      setUmfrageSuccess(prev => new Set([...prev, umfrageId]));
+      setTimeout(() => {
+        setPendingUmfragen(prev => prev.filter(u => u.id !== umfrageId));
+        setUmfrageSuccess(prev => { const n = new Set(prev); n.delete(umfrageId); return n; });
+      }, 900);
     } catch {} finally { setUmfrageSending(null); }
   };
 
@@ -1707,6 +1712,74 @@ const MemberDashboard = () => {
             </div>
           </div>
 
+      {/* Today at a glance — kompakte Übersicht nach Welcome */}
+      {memberData && (
+        <div className="md-today-strip">
+          <div className="md-today-date">
+            {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </div>
+          <div className="md-today-chips">
+            <div className="md-today-chip">
+              <span className="md-today-chip-val">{stats.trainingsstunden}</span>
+              <span className="md-today-chip-label">Trainings</span>
+            </div>
+            <div className="md-today-chip-divider" />
+            <div className="md-today-chip">
+              <span className="md-today-chip-val">
+                {stats.anwesenheit !== null ? `${stats.anwesenheit}%` : '—'}
+              </span>
+              <span className="md-today-chip-label">Anwesenheit</span>
+            </div>
+            <div className="md-today-chip-divider" />
+            <div className={`md-today-chip${stats.offeneBeitraege > 0 ? ' md-today-chip--warn' : ''}`}>
+              <span className="md-today-chip-val">
+                {stats.offeneBeitraege > 0 ? stats.offeneBeitraege : '✓'}
+              </span>
+              <span className="md-today-chip-label">
+                {stats.offeneBeitraege > 0 ? 'Offen' : 'Bezahlt'}
+              </span>
+            </div>
+            {stats.naechstePruefung && (
+              <>
+                <div className="md-today-chip-divider" />
+                <div className="md-today-chip md-today-chip--exam">
+                  <span className="md-today-chip-val">🏆</span>
+                  <span className="md-today-chip-label">
+                    {new Date(stats.naechstePruefung).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Gurt-Widget — prominente Identitäts-Karte */}
+      {memberData && currentBelts.length > 0 && (
+        <div className="md-belt-widget md-anim-fade-in-up">
+          {currentBelts.map((b, i) => {
+            const beltColor = b.farbe || '#ffffff';
+            return (
+              <div key={i} className="md-belt-row" style={{ '--belt-color': beltColor }}>
+                <div className="md-belt-stripe" style={{ background: beltColor }} />
+                <div className="md-belt-content">
+                  <div className="md-belt-name">{b.name}</div>
+                  {b.stilName && <div className="md-belt-stil">{b.stilName}</div>}
+                </div>
+                {i === 0 && stats.naechstePruefung && (
+                  <div className="md-belt-exam">
+                    <span className="md-belt-exam-icon">🏆</span>
+                    <span className="md-belt-exam-date">
+                      {new Date(stats.naechstePruefung).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Push-Benachrichtigungen Banner — ganz oben, verschwindet nach Aktivierung */}
       {pushStatus !== 'unsupported' && pushStatus !== 'granted' && pushStatus !== 'denied' && (
         <div className="md-push-banner">
@@ -1730,11 +1803,12 @@ const MemberDashboard = () => {
         const isDatum = u.typ === 'datum_auswahl';
         const kannAbsenden = !isDatum && (hatJaNein ? a.antwort !== null : (a.kommentar || '').trim().length > 0);
         return (
-          <div key={u.id} style={{
+          <div key={u.id} className={`md-anim-fade-in-up${umfrageSuccess.has(u.id) ? ' md-anim-success' : ''}`} style={{
             margin: '0.75rem 1rem 0',
-            background: 'rgba(99,102,241,0.1)',
-            border: '2px solid rgba(99,102,241,0.45)',
+            background: umfrageSuccess.has(u.id) ? 'rgba(34,197,94,0.12)' : 'rgba(99,102,241,0.1)',
+            border: `2px solid ${umfrageSuccess.has(u.id) ? 'rgba(34,197,94,0.45)' : 'rgba(99,102,241,0.45)'}`,
             borderRadius: 12, padding: '1rem 1.1rem',
+            transition: 'background 0.4s, border-color 0.4s',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <span style={{ fontSize: '1rem' }}>📋</span>
@@ -1768,11 +1842,13 @@ const MemberDashboard = () => {
                 )}
                 <button onClick={() => submitUmfrageAntwort(u.id)}
                   disabled={!kannAbsenden || umfrageSending === u.id}
-                  style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 8,
+                  className={umfrageSuccess.has(u.id) ? 'md-anim-pop' : ''}
+                  style={{ background: umfrageSuccess.has(u.id) ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 8,
                     color: '#fff', fontWeight: 600, padding: '0.55rem 1.4rem',
                     cursor: kannAbsenden ? 'pointer' : 'not-allowed',
-                    opacity: kannAbsenden ? 1 : 0.4, fontSize: '0.875rem' }}>
-                  {umfrageSending === u.id ? 'Wird gesendet…' : 'Absenden'}
+                    opacity: kannAbsenden ? 1 : 0.4, fontSize: '0.875rem',
+                    transition: 'background 0.3s' }}>
+                  {umfrageSuccess.has(u.id) ? '✓ Gesendet!' : umfrageSending === u.id ? 'Wird gesendet…' : 'Absenden'}
                 </button>
               </>
             )}
@@ -1785,32 +1861,37 @@ const MemberDashboard = () => {
         );
       })}
 
-      {/* Mobile Hero: QR + Check-in + Abwesenheit prominente Schnellbuttons */}
+      {/* Mobile Hero: Check-in prominent + QR / Abwesenheit sekundär */}
       <div className="md-mobile-hero">
         <button
-          className="md-mobile-hero-btn md-mobile-hero-btn--primary"
-          onClick={() => setShowQRCode(true)}
-        >
-          <span className="md-mobile-hero-btn-icon">📱</span>
-          <span className="md-mobile-hero-btn-label">QR-Code</span>
-          <span className="md-mobile-hero-btn-sub">Mitgliedsausweis</span>
-        </button>
-        <button
-          className="md-mobile-hero-btn md-mobile-hero-btn--secondary"
+          className="md-mobile-hero-btn md-mobile-hero-btn--checkin"
           onClick={() => handleQuickAction('checkin')}
         >
           <span className="md-mobile-hero-btn-icon">✅</span>
-          <span className="md-mobile-hero-btn-label">Check-in</span>
-          <span className="md-mobile-hero-btn-sub">Training erfassen</span>
+          <div className="md-mobile-hero-btn-text">
+            <span className="md-mobile-hero-btn-label">Training einchecken</span>
+            <span className="md-mobile-hero-btn-sub">Jetzt Training erfassen</span>
+          </div>
+          <span className="md-mobile-hero-btn-chevron">›</span>
         </button>
-        <button
-          className={`md-mobile-hero-btn md-mobile-hero-btn--absence${showAbwesenheitWidget ? ' md-mobile-hero-btn--absence-active' : ''}`}
-          onClick={() => setShowAbwesenheitWidget(v => !v)}
-        >
-          <span className="md-mobile-hero-btn-icon">🗓️</span>
-          <span className="md-mobile-hero-btn-label">Abwesenheit</span>
-          <span className="md-mobile-hero-btn-sub">Urlaub / Pause</span>
-        </button>
+        <div className="md-mobile-hero-secondary">
+          <button
+            className="md-mobile-hero-btn md-mobile-hero-btn--primary"
+            onClick={() => setShowQRCode(true)}
+          >
+            <span className="md-mobile-hero-btn-icon">📱</span>
+            <span className="md-mobile-hero-btn-label">QR-Code</span>
+            <span className="md-mobile-hero-btn-sub">Mitgliedsausweis</span>
+          </button>
+          <button
+            className={`md-mobile-hero-btn md-mobile-hero-btn--absence${showAbwesenheitWidget ? ' md-mobile-hero-btn--absence-active' : ''}`}
+            onClick={() => setShowAbwesenheitWidget(v => !v)}
+          >
+            <span className="md-mobile-hero-btn-icon">🗓️</span>
+            <span className="md-mobile-hero-btn-label">Abwesenheit</span>
+            <span className="md-mobile-hero-btn-sub">Urlaub / Pause</span>
+          </button>
+        </div>
       </div>
 
       {/* Abwesenheit Widget — direkt unter Mobile Hero */}

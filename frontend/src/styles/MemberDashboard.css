@@ -1,6 +1,53 @@
 /* MemberDashboard.css - Migrated from inline styles to design-system variables */
 
 /* =============================================
+   MICRO-ANIMATIONS
+   ============================================= */
+
+@keyframes md-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes md-fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes md-success-flash {
+  0%   { background: rgba(34,197,94,0.25); border-color: rgba(34,197,94,0.6); }
+  100% { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.25); }
+}
+
+@keyframes md-pulse-ring {
+  0%   { box-shadow: 0 4px 20px rgba(255,215,0,0.1), 0 0 0 0 rgba(255,215,0,0.3); }
+  70%  { box-shadow: 0 4px 20px rgba(255,215,0,0.1), 0 0 0 10px rgba(255,215,0,0); }
+  100% { box-shadow: 0 4px 20px rgba(255,215,0,0.1), 0 0 0 0 rgba(255,215,0,0); }
+}
+
+@keyframes md-slide-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.md-anim-pop {
+  animation: md-pop 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.md-anim-fade-in-up {
+  animation: md-fade-in-up 0.3s ease both;
+}
+
+.md-anim-success {
+  animation: md-success-flash 0.8s ease forwards;
+  border-color: rgba(34,197,94,0.5) !important;
+}
+
+
+
+/* =============================================
    ALERT / ZAHLUNGSHINWEIS BANNER
    ============================================= */
 
@@ -35,8 +82,12 @@
    ============================================= */
 
 .member-welcome-wrap {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   text-align: center;
+  padding: 1.25rem 1rem 1rem;
+  background: linear-gradient(180deg, rgba(255,215,0,0.04) 0%, transparent 100%);
+  border-radius: 18px;
+  border: 1px solid rgba(255,215,0,0.07);
 }
 
 .member-welcome-dojo {
@@ -87,6 +138,161 @@
 }
 
 /* =============================================
+   TODAY AT A GLANCE STRIP
+   ============================================= */
+
+.md-today-strip {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.md-today-date {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 0.6rem;
+  font-weight: 500;
+}
+
+.md-today-chips {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.md-today-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 2px;
+}
+
+.md-today-chip-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  line-height: 1;
+}
+
+.md-today-chip-label {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.md-today-chip--warn .md-today-chip-val {
+  color: #f87171;
+}
+
+.md-today-chip--warn .md-today-chip-label {
+  color: rgba(248,113,113,0.6);
+}
+
+.md-today-chip--exam .md-today-chip-label {
+  color: rgba(255,215,0,0.6);
+}
+
+.md-today-chip-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+/* =============================================
+   GURT-WIDGET
+   ============================================= */
+
+.md-belt-widget {
+  margin: 0 0 0.75rem;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.md-belt-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--belt-color, #fff) 12%, transparent) 0%,
+    rgba(255,255,255,0.02) 100%
+  );
+  position: relative;
+}
+
+.md-belt-row + .md-belt-row {
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.md-belt-stripe {
+  width: 5px;
+  height: 40px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--belt-color, #fff) 40%, transparent);
+}
+
+.md-belt-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.md-belt-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  line-height: 1.2;
+}
+
+.md-belt-stil {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.md-belt-exam {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  background: rgba(255,215,0,0.08);
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.md-belt-exam-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.md-belt-exam-date {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(255,215,0,0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* =============================================
    STAT CARDS (Linke/Rechte Spalte)
    ============================================= */
 
@@ -97,11 +303,19 @@
 }
 
 .member-stat-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--border-accent);
-  border-radius: 10px;
-  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 0.6rem 0.6rem;
   text-align: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.member-stat-card:active {
+  transform: scale(0.97);
 }
 
 .member-stat-icon {
@@ -715,13 +929,16 @@
 
 /* Variant: column layout for card body */
 .md-info-card-col {
-  background: rgba(30, 41, 59, 0.7);
+  background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  padding: 1rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
 /* Approved exams purple card variant */
