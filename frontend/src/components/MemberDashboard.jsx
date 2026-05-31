@@ -527,20 +527,29 @@ const MemberDashboard = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ antwort: a.antwort || null, kommentar: a.kommentar || null }),
       });
-      // Ergebnis laden und anzeigen
+      // Sofort minimales Ergebnis setzen — zeigt zumindest "Deine Stimme" an
+      const minimalRes = {
+        myAnswer: a.antwort || null,
+        myKommentar: a.kommentar || null,
+        jaCount: 0,
+        neinCount: 0,
+        total: 0,
+      };
       setUmfrageSuccess(prev => new Set([...prev, umfrageId]));
+      setUmfrageResults(prev => ({ ...prev, [umfrageId]: minimalRes }));
+      // Aggregat nachladen für Balken-Anzeige
       try {
         const resp = await fetchWithAuth(`${config.apiBaseUrl}/umfragen/dojo/aktiv`);
         if (resp.ok) {
           const data = await resp.json();
-          const found = (data.umfragen || []).find(u => u.id === umfrageId);
+          const found = (data.umfragen || []).find(u => Number(u.id) === Number(umfrageId));
           if (found) {
             setUmfrageResults(prev => ({ ...prev, [umfrageId]: {
               myAnswer: a.antwort || null,
               myKommentar: a.kommentar || null,
-              jaCount: found.antworten_ja || 0,
-              neinCount: found.antworten_nein || 0,
-              total: found.antworten_gesamt || 1,
+              jaCount: Number(found.antworten_ja) || 0,
+              neinCount: Number(found.antworten_nein) || 0,
+              total: Number(found.antworten_gesamt) || 1,
             }}));
           }
         }
@@ -549,7 +558,7 @@ const MemberDashboard = () => {
         setPendingUmfragen(prev => prev.filter(u => u.id !== umfrageId));
         setUmfrageSuccess(prev => { const n = new Set(prev); n.delete(umfrageId); return n; });
         setUmfrageResults(prev => { const n = { ...prev }; delete n[umfrageId]; return n; });
-      }, 4500);
+      }, 5500);
     } catch {} finally { setUmfrageSending(null); }
   };
 
