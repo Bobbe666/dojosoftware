@@ -239,6 +239,15 @@ function LandingPage() {
       {/* ── 3. HERO ── */}
       <section className="lp-hero">
         <div className="lp-hero-inner">
+          {/* Kanji Deko */}
+          <div className="lp-kanji-strip">
+            <span className="lp-kanji" title="Bu — Kampfkunst">武</span>
+            <span className="lp-kanji-divider" />
+            <span className="lp-kanji" title="Dō — Der Weg">道</span>
+            <span className="lp-kanji-divider" />
+            <span className="lp-kanji" title="Waza — Technik">技</span>
+          </div>
+
           {/* Eyebrow */}
           <div className="lp-eyebrow">
             <span className="lp-eyebrow-dot" />

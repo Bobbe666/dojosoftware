@@ -109,6 +109,11 @@ function PricingPage() {
 
       {/* Header */}
       <header className="pp-header">
+        <div className="pp-kanji-strip">
+          <span className="pp-kanji" title="Bu — Kampfkunst">武</span>
+          <span className="pp-kanji-divider" />
+          <span className="pp-kanji" title="Dō — Der Weg">道</span>
+        </div>
         <div className="pp-section-tag">Preise</div>
         <h1 className="pp-header-title">Transparent & Fair</h1>
         <p className="pp-header-sub">Wähle den Plan der zu deinem Dojo passt</p>
