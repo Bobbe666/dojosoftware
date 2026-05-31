@@ -54,6 +54,9 @@ import './styles/Dashboard-TdaVib.css';
 import './design-system/themes/theme-tda-vib.css';
 // Tab-Style-System (nach allen anderen CSS geladen — source-order gewinnt)
 import './styles/tab-styles.css';
+// Member-Portal Theme — MUSS als absolut letztes CSS geladen werden!
+// html[data-theme="tda-vib"] Selektor → Spezifität (0,2,1) schlägt alle anderen (0,2,0) Regeln.
+import './styles/MemberPortalTheme.css';
 import axios from 'axios';
 import config from './config/config.js';
 import { fetchCsrfToken, getCsrfToken } from './services/api.js';

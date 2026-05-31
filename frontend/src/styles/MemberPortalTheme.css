@@ -1,0 +1,944 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MEMBER PORTAL THEME — Washi Light + Crimson
+   Gilt wenn data-theme="tda-vib" aktiv ist (Member-Portal erzwingt dieses Theme)
+
+   Importiert in main.jsx als LETZTES CSS → gewinnt immer in der Kaskade.
+   Spezifität: html[data-theme="tda-vib"] = (0,1,1) bzw. mit Klasse (0,2,1)
+   schlägt alle [data-theme="tda-vib"] Regeln (0,2,0) aus anderen Dateien.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. CSS-Custom-Properties (Root-Level) ────────────────────────────────────── */
+html[data-theme="tda-vib"] {
+  /* Primärfarbe: Crimson statt Gold */
+  --primary:              #9e2a2b;
+  --primary-500:          #9e2a2b;
+  --primary-600:          #7d1f20;
+  --primary-hover:        #7d1f20;
+  --primary-light:        rgba(158,42,43,0.08);
+  --primary-gradient:     linear-gradient(135deg, #9e2a2b, #7d1f20);
+  --secondary:            #9e2a2b;
+  --color-primary:        #9e2a2b;
+
+  /* Gold → Crimson */
+  --color-gold:           #9e2a2b;
+  --color-gold-dark:      #7d1f20;
+  --gold:                 #9e2a2b;
+  --gradient-gold:        #9e2a2b;
+  --glow-gold:            none;
+  --glow-gold-sm:         none;
+  --glow-gold-lg:         none;
+  --shadow-gold:          0 4px 15px rgba(158,42,43,0.15);
+  --shadow-gold-hover:    0 8px 25px rgba(158,42,43,0.25);
+  --shadow-gold-lg:       0 12px 30px rgba(158,42,43,0.18);
+
+  /* Alpha-Varianten */
+  --primary-alpha-5:      rgba(158,42,43,0.05);
+  --primary-alpha-10:     rgba(158,42,43,0.10);
+  --primary-alpha-15:     rgba(158,42,43,0.15);
+  --primary-alpha-20:     rgba(158,42,43,0.20);
+  --primary-alpha-25:     rgba(158,42,43,0.25);
+  --primary-alpha-30:     rgba(158,42,43,0.30);
+  --primary-alpha-40:     rgba(158,42,43,0.40);
+  --primary-alpha-50:     rgba(158,42,43,0.50);
+  --secondary-alpha-10:   rgba(158,42,43,0.10);
+  --secondary-alpha-20:   rgba(158,42,43,0.20);
+  --secondary-alpha-30:   rgba(158,42,43,0.30);
+  --badge-primary-bg:     rgba(158,42,43,0.10);
+  --badge-primary-text:   #9e2a2b;
+  --btn-ghost-bg:         rgba(158,42,43,0.06);
+  --btn-ghost-bg-hover:   rgba(158,42,43,0.12);
+  --text-accent:          #9e2a2b;
+  --border-accent:        rgba(158,42,43,0.28);
+  --border-accent-hover:  rgba(158,42,43,0.50);
+  --border-focus:         #9e2a2b;
+
+  /* Hintergründe — neutral weiß, kein warm-Creme */
+  --bg-body:              #f7f7f8;
+  --bg-body-solid:        #f7f7f8;
+  --bg-primary:           #f7f7f8;
+  --bg-secondary:         #f0f0f1;
+  --bg-tertiary:          #f7f7f8;
+  --bg-gradient:          linear-gradient(135deg, #f7f7f8 0%, #f0f0f1 50%, #f7f7f8 100%);
+  --bg-surface:           #ffffff;
+  --bg-elevated:          #ffffff;
+  --bg-card:              #ffffff;
+  --bg-card-hover:        #fafafa;
+  --bg-card-active:       #f5f5f6;
+  --card-bg:              #ffffff;
+
+  /* Surfaces */
+  --surface-1:            rgba(26,21,18,0.02);
+  --surface-2:            rgba(26,21,18,0.04);
+  --surface-3:            rgba(26,21,18,0.06);
+  --surface-4:            rgba(26,21,18,0.09);
+  --surface-hover:        rgba(26,21,18,0.07);
+  --surface-active:       rgba(26,21,18,0.11);
+
+  /* Text */
+  --text-primary:         #1a1512;
+  --text-secondary:       #5a4d3e;
+  --text-muted:           #7a6a5a;
+  --text-1:               #1a1512;
+  --text-2:               #3a2e22;
+  --text-3:               #5a4d3e;
+  --text-4:               #7a6a5a;
+  --text-5:               #9a8a7a;
+  --text-inverse:         #ffffff;
+  --color-sumi:           #1a1512;
+
+  /* Borders */
+  --border-color:         #e2d9ce;
+  --border-1:             #e2d9ce;
+  --border-2:             #d4c8b8;
+  --border-3:             #c4b8a8;
+
+  /* Inputs */
+  --input-bg:             #ffffff;
+  --input-bg-focus:       #ffffff;
+  --input-border:         #e2d9ce;
+  --input-border-focus:   #9e2a2b;
+
+  /* Modals */
+  --modal-bg:             #ffffff;
+  --modal-bg-secondary:   #f7f7f8;
+  --modal-bg-dark:        #ffffff;
+
+  /* Tabellen */
+  --table-header-bg:      #f7f7f8;
+  --table-row-bg:         #ffffff;
+  --table-row-bg-hover:   rgba(158,42,43,0.04);
+  --table-row-bg-alt:     #fafafa;
+
+  /* Dropdowns */
+  --dropdown-bg:          #ffffff;
+
+  /* Chat-Variablen — Crimson statt Blau */
+  --chat-accent:          #9e2a2b;
+  --chat-accent-dark:     #7d1f20;
+  --chat-accent-glow:     rgba(158,42,43,0.18);
+  --chat-bubble-own:      linear-gradient(135deg, #9e2a2b 0%, #c43a3b 100%);
+  --chat-bubble-other:    #ffffff;
+  --chat-sidebar-bg:      #ffffff;
+  --chat-main-bg:         #f7f7f8;
+  --chat-header-bg:       #ffffff;
+  --chat-input-bg:        #f7f7f8;
+  --chat-active-bg:       rgba(158,42,43,0.08);
+  --chat-active-border:   #9e2a2b;
+  --chat-avatar-bg:       rgba(158,42,43,0.10);
+  --chat-avatar-color:    #9e2a2b;
+  --chat-separator:       #e2d9ce;
+}
+
+/* ── 2. Body / Seite ──────────────────────────────────────────────────────────── */
+html[data-theme="tda-vib"] body {
+  background-color: #f7f7f8 !important;
+  color: #1a1512 !important;
+}
+
+/* ── 3. Überschriften — kein Gold-Glow, kein Gradient-Text ───────────────────── */
+html[data-theme="tda-vib"] h1,
+html[data-theme="tda-vib"] h2,
+html[data-theme="tda-vib"] h3,
+html[data-theme="tda-vib"] h4,
+html[data-theme="tda-vib"] h5,
+html[data-theme="tda-vib"] h6 {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  text-shadow: none !important;
+}
+
+/* ── 4. Dashboard-Container — Haupthintergrund ────────────────────────────────── */
+html[data-theme="tda-vib"] .dashboard-container {
+  background: #f7f7f8 !important;
+  min-height: 100vh;
+  color: #1a1512;
+}
+
+/* ── 5. Allgemeine Karten / Panels / Boxen ────────────────────────────────────── */
+/* Ausnahmen: Mitglieds-Ausweis, QR-Card → behalten dunklen Look */
+html[data-theme="tda-vib"] [class*="-card"]:not(.mitglieds-ausweis):not(.mqr-card):not(.mapp-ausweis):not([class*="ausweis"]),
+html[data-theme="tda-vib"] [class*="-panel"]:not([class*="ausweis"]),
+html[data-theme="tda-vib"] [class*="-widget"]:not([class*="ausweis"]),
+html[data-theme="tda-vib"] [class*="-box"]:not([class*="ausweis"]):not([class*="toast"]):not([class*="error-box"]):not([class*="alert"]) {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+  color: #1a1512;
+}
+
+/* ── 6. Inputs / Select / Textarea ───────────────────────────────────────────── */
+html[data-theme="tda-vib"] input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+html[data-theme="tda-vib"] select,
+html[data-theme="tda-vib"] textarea {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] input:focus,
+html[data-theme="tda-vib"] select:focus,
+html[data-theme="tda-vib"] textarea:focus {
+  border-color: #9e2a2b !important;
+  box-shadow: 0 0 0 2px rgba(158,42,43,0.15) !important;
+  outline: none !important;
+}
+html[data-theme="tda-vib"] input::placeholder,
+html[data-theme="tda-vib"] textarea::placeholder {
+  color: #9a8a7a !important;
+}
+
+/* ── 7. Modals / Overlays ─────────────────────────────────────────────────────── */
+html[data-theme="tda-vib"] [class*="-modal-box"],
+html[data-theme="tda-vib"] [class*="-modal-sheet"],
+html[data-theme="tda-vib"] [class*="modal-content"],
+html[data-theme="tda-vib"] [class*="modal-inner"] {
+  background: #ffffff !important;
+  color: #1a1512 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] [class*="-overlay"]:not([class*="topbar"]) {
+  background: rgba(26,21,18,0.45) !important;
+}
+
+/* ── 8. Buttons (global) ──────────────────────────────────────────────────────── */
+html[data-theme="tda-vib"] [class*="-btn--primary"],
+html[data-theme="tda-vib"] [class*="-btn-primary"],
+html[data-theme="tda-vib"] .btn-primary {
+  background: #9e2a2b !important;
+  background-image: none !important;
+  border-color: #9e2a2b !important;
+  color: #ffffff !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] [class*="-btn--primary"]:hover,
+html[data-theme="tda-vib"] [class*="-btn-primary"]:hover,
+html[data-theme="tda-vib"] .btn-primary:hover {
+  background: #7d1f20 !important;
+  border-color: #7d1f20 !important;
+}
+/* Tab-Buttons aktiv */
+html[data-theme="tda-vib"] [class*="-tab-btn"].active,
+html[data-theme="tda-vib"] [class*="-tab"].active:not(.style-tab) {
+  color: #9e2a2b !important;
+  border-color: rgba(158,42,43,0.5) !important;
+}
+
+/* ── 9. Scrollbar ─────────────────────────────────────────────────────────────── */
+html[data-theme="tda-vib"] ::-webkit-scrollbar-track {
+  background: #f0f0f1;
+}
+html[data-theme="tda-vib"] ::-webkit-scrollbar-thumb {
+  background: #d4c8b8;
+  border-radius: 4px;
+}
+html[data-theme="tda-vib"] ::-webkit-scrollbar-thumb:hover {
+  background: #9e2a2b;
+}
+
+/* ── 10. Tabellen ─────────────────────────────────────────────────────────────── */
+html[data-theme="tda-vib"] table th {
+  background: #f7f7f8 !important;
+  color: #1a1512 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] table td {
+  border-color: #f0f0f1 !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] table tr:hover td {
+  background: rgba(158,42,43,0.03) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   KOMPONENTEN-SPEZIFISCH
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 11. MemberSchedule / Stundenplan (ms- prefix) ───────────────────────────── */
+html[data-theme="tda-vib"] .ms-content-wrapper,
+html[data-theme="tda-vib"] .ms-inner {
+  background: transparent !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .ms-header-section {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .ms-event-card,
+html[data-theme="tda-vib"] .ms-training-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+}
+html[data-theme="tda-vib"] .ms-past-card {
+  background: #f7f7f8 !important;
+  border-color: #e8e2d8 !important;
+  opacity: 0.8;
+}
+html[data-theme="tda-vib"] .ms-view-btn,
+html[data-theme="tda-vib"] .ms-filter-btn {
+  background: transparent !important;
+  border-color: #e2d9ce !important;
+  color: #4a3c30 !important;
+  box-shadow: none !important;
+}
+html[data-theme="tda-vib"] .ms-view-btn.active,
+html[data-theme="tda-vib"] .ms-view-btn:hover,
+html[data-theme="tda-vib"] .ms-filter-btn.active,
+html[data-theme="tda-vib"] .ms-filter-btn:hover {
+  background: rgba(158,42,43,0.08) !important;
+  border-color: rgba(158,42,43,0.35) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .ms-badge-primary,
+html[data-theme="tda-vib"] .ms-badge-absolviert {
+  background: rgba(158,42,43,0.10) !important;
+  color: #9e2a2b !important;
+  border-color: rgba(158,42,43,0.20) !important;
+}
+html[data-theme="tda-vib"] .ms-column-layout {
+  background: transparent !important;
+}
+
+/* ── 12. MemberPayments (mp- prefix) ─────────────────────────────────────────── */
+html[data-theme="tda-vib"] .mp-stat-card,
+html[data-theme="tda-vib"] .mp-contract-card,
+html[data-theme="tda-vib"] .mp-invoice-card,
+html[data-theme="tda-vib"] .mp-card-item {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+}
+html[data-theme="tda-vib"] .mp-contract-icon-box {
+  background: rgba(158,42,43,0.08) !important;
+  color: #9e2a2b !important;
+}
+/* Zahlungs-Button: Gold → Crimson */
+html[data-theme="tda-vib"] [class*="mp-"][class*="pay-btn"],
+html[data-theme="tda-vib"] [class*="mp-"][class*="checkout-btn"] {
+  background: #9e2a2b !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #9e2a2b !important;
+  text-shadow: none !important;
+}
+/* Stat-Values waren gold/gradient */
+html[data-theme="tda-vib"] .mp-stat-value-lg,
+html[data-theme="tda-vib"] .mp-stat-value-md {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mp-tab-btn {
+  background: transparent !important;
+  color: #5a4d3e !important;
+  border-color: transparent !important;
+}
+html[data-theme="tda-vib"] .mp-tab-btn.active {
+  color: #9e2a2b !important;
+  border-color: #9e2a2b !important;
+  background: transparent !important;
+}
+html[data-theme="tda-vib"] .mp-tab-badge--warn {
+  background: rgba(239,68,68,0.10) !important;
+  color: #dc2626 !important;
+}
+
+/* ── 13. MemberProfilePage (mp-/mpp- prefix) ─────────────────────────────────── */
+html[data-theme="tda-vib"] .mp-hero {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  box-shadow: 0 1px 6px rgba(26,21,18,0.08) !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mp-hero-name {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mp-avatar-glow {
+  filter: none !important;
+  box-shadow: 0 0 0 3px rgba(158,42,43,0.25) !important;
+}
+html[data-theme="tda-vib"] .mp-stat-num {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mp-section {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mp-section-header {
+  color: #1a1512 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .mp-row {
+  background: transparent !important;
+  border-color: #f0f0f1 !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mp-btn--outline {
+  background: transparent !important;
+  color: #9e2a2b !important;
+  border-color: rgba(158,42,43,0.35) !important;
+}
+html[data-theme="tda-vib"] .mp-btn--outline:hover {
+  background: rgba(158,42,43,0.06) !important;
+}
+/* Ausweis-Karte im Profil → dunkel lassen */
+html[data-theme="tda-vib"] .mp-ausweis-card {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%) !important;
+}
+
+/* ── 14. MemberEvents (me- prefix) ───────────────────────────────────────────── */
+html[data-theme="tda-vib"] .me-modal-box {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 8px 32px rgba(26,21,18,0.15) !important;
+}
+html[data-theme="tda-vib"] .me-modal-box h2,
+html[data-theme="tda-vib"] .me-modal-box h3,
+html[data-theme="tda-vib"] .me-modal-box p,
+html[data-theme="tda-vib"] .me-modal-box label {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .me-event-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+}
+html[data-theme="tda-vib"] .me-event-card--enrolled {
+  border-color: rgba(158,42,43,0.35) !important;
+  background: rgba(158,42,43,0.03) !important;
+}
+html[data-theme="tda-vib"] .me-btn-submit,
+html[data-theme="tda-vib"] .me-btn-register {
+  background: #9e2a2b !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #9e2a2b !important;
+  text-shadow: none !important;
+  box-shadow: 0 2px 8px rgba(158,42,43,0.25) !important;
+}
+html[data-theme="tda-vib"] .me-btn-submit:hover,
+html[data-theme="tda-vib"] .me-btn-register:hover {
+  background: #7d1f20 !important;
+  border-color: #7d1f20 !important;
+}
+html[data-theme="tda-vib"] .me-fee-box,
+html[data-theme="tda-vib"] .me-total-box {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .me-error-box {
+  background: rgba(239,68,68,0.08) !important;
+  border-color: rgba(239,68,68,0.25) !important;
+  color: #dc2626 !important;
+}
+html[data-theme="tda-vib"] .me-tab-btn {
+  background: transparent !important;
+  color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .me-tab-btn.active {
+  color: #9e2a2b !important;
+  border-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .me-tab-badge {
+  background: rgba(158,42,43,0.10) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .me-event-badge {
+  background: rgba(158,42,43,0.10) !important;
+  color: #9e2a2b !important;
+}
+
+/* ── 15. MemberStats ──────────────────────────────────────────────────────────── */
+html[data-theme="tda-vib"] .member-stats,
+html[data-theme="tda-vib"] .stats-container {
+  background: transparent !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .stat-card,
+html[data-theme="tda-vib"] .comparison-card,
+html[data-theme="tda-vib"] .goals-list {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+}
+/* Mittlere Balken: Gold → Crimson */
+html[data-theme="tda-vib"] .bar-fill.medium,
+html[data-theme="tda-vib"] .bar-fill[class*="medium"] {
+  background: linear-gradient(180deg, #9e2a2b 0%, #7d1f20 100%) !important;
+}
+html[data-theme="tda-vib"] .progress-bar {
+  background: #f0f0f1 !important;
+}
+html[data-theme="tda-vib"] .progress-bar .progress-fill {
+  background: linear-gradient(90deg, #9e2a2b, #c43a3b) !important;
+}
+/* Monats-Detail-Popup: dunkel → weiß */
+html[data-theme="tda-vib"] [class*="month-detail"],
+html[data-theme="tda-vib"] [class*="detail-popup"] {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 4px 16px rgba(26,21,18,0.12) !important;
+}
+html[data-theme="tda-vib"] .training-chart {
+  background: transparent !important;
+}
+
+/* ── 16. MemberStyles / Graduierungen (mst- prefix) ──────────────────────────── */
+html[data-theme="tda-vib"] .member-styles,
+html[data-theme="tda-vib"] .mst-container {
+  background: transparent !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mst-grad-card,
+html[data-theme="tda-vib"] .graduation-item,
+html[data-theme="tda-vib"] .exam-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+}
+html[data-theme="tda-vib"] .style-tab {
+  background: transparent !important;
+  color: #5a4d3e !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .style-tab.active {
+  background: #9e2a2b !important;
+  color: #ffffff !important;
+  border-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .mst-progress-fill,
+html[data-theme="tda-vib"] .mst-progress-bar .progress-fill {
+  background: linear-gradient(90deg, #9e2a2b, #c43a3b) !important;
+}
+/* Gradient-Titel: Gold → Dunkelrot */
+html[data-theme="tda-vib"] .mst-style-title,
+html[data-theme="tda-vib"] [class*="gradient-title"] {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  color: #1a1512 !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mst-belt-badge {
+  box-shadow: none !important;
+}
+
+/* ── 17. MemberQRCode (mqr- prefix) ──────────────────────────────────────────── */
+/* QR-Karte behält dunklen Look wie der Mitgliedsausweis */
+html[data-theme="tda-vib"] .mqr-card {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%) !important;
+  border-color: rgba(158,42,43,0.4) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+}
+html[data-theme="tda-vib"] .mqr-member-name {
+  color: rgba(255,255,255,0.95) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.95) !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mqr-card p,
+html[data-theme="tda-vib"] .mqr-card span:not(.mqr-member-name) {
+  color: rgba(255,255,255,0.70) !important;
+}
+html[data-theme="tda-vib"] .mqr-btn-action,
+html[data-theme="tda-vib"] .mqr-btn-print {
+  background: rgba(158,42,43,0.08) !important;
+  border-color: rgba(158,42,43,0.30) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .mqr-btn-close {
+  color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .mqr-hint-box {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+  color: #5a4d3e !important;
+}
+
+/* ── 18. MemberRechnungCheckout (mrc- prefix) ────────────────────────────────── */
+html[data-theme="tda-vib"] .mrc-invoice-card,
+html[data-theme="tda-vib"] .mrc-checkout-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+}
+html[data-theme="tda-vib"] .mrc-submit-btn,
+html[data-theme="tda-vib"] .mrc-btn-primary {
+  background: #9e2a2b !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #9e2a2b !important;
+  text-shadow: none !important;
+  box-shadow: 0 2px 8px rgba(158,42,43,0.25) !important;
+}
+html[data-theme="tda-vib"] .mrc-submit-btn:hover,
+html[data-theme="tda-vib"] .mrc-btn-primary:hover {
+  background: #7d1f20 !important;
+  border-color: #7d1f20 !important;
+}
+html[data-theme="tda-vib"] .mrc-total-amount,
+html[data-theme="tda-vib"] [class*="mrc-total"] {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+}
+html[data-theme="tda-vib"] .mrc-gdpr-block,
+html[data-theme="tda-vib"] .mrc-stripe-element {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mrc-btn-secondary {
+  background: transparent !important;
+  color: #5a4d3e !important;
+  border-color: #e2d9ce !important;
+}
+
+/* ── 19. MemberDashboardMobile (mapp- prefix) ────────────────────────────────── */
+html[data-theme="tda-vib"] .mapp-root {
+  background: #f7f7f8 !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mapp-topbar {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.08) !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mapp-topbar h1,
+html[data-theme="tda-vib"] .mapp-topbar h2,
+html[data-theme="tda-vib"] .mapp-topbar span {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mapp-hero {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mapp-hero-name {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+/* Mobile Ausweis → dunkel lassen */
+html[data-theme="tda-vib"] .mapp-ausweis {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%) !important;
+  border-color: rgba(158,42,43,0.45) !important;
+}
+html[data-theme="tda-vib"] .mapp-ausweis,
+html[data-theme="tda-vib"] .mapp-ausweis * {
+  color: rgba(255,255,255,0.90) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.90) !important;
+  background-clip: unset !important;
+  -webkit-background-clip: unset !important;
+}
+html[data-theme="tda-vib"] .mapp-stat {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 1px 3px rgba(26,21,18,0.06) !important;
+}
+html[data-theme="tda-vib"] .mapp-stat-value {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mapp-stat-label {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .mapp-qa-btn {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 1px 3px rgba(26,21,18,0.06) !important;
+}
+html[data-theme="tda-vib"] .mapp-qa-btn--primary {
+  background: #9e2a2b !important;
+  background-image: none !important;
+  border-color: #9e2a2b !important;
+  color: #ffffff !important;
+}
+html[data-theme="tda-vib"] .mapp-section-title,
+html[data-theme="tda-vib"] .mapp-section h2,
+html[data-theme="tda-vib"] .mapp-section h3 {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mapp-event,
+html[data-theme="tda-vib"] .mapp-news {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mapp-modal-overlay {
+  background: rgba(26,21,18,0.50) !important;
+}
+html[data-theme="tda-vib"] .mapp-modal-sheet {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mapp-tabbar {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  box-shadow: 0 -1px 6px rgba(26,21,18,0.08) !important;
+}
+html[data-theme="tda-vib"] .mapp-tab {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .mapp-tab.active,
+html[data-theme="tda-vib"] .mapp-tab[class*="active"] {
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .mapp-scroll,
+html[data-theme="tda-vib"] .mapp-content {
+  background: #f7f7f8 !important;
+}
+
+/* ── 20. Chat ─────────────────────────────────────────────────────────────────── */
+html[data-theme="tda-vib"] .chat-page {
+  background: #f7f7f8 !important;
+}
+html[data-theme="tda-vib"] .chat-sidebar {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .chat-room-list-header {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .chat-room-list-title {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .chat-room-item {
+  background: transparent !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .chat-room-item:hover {
+  background: rgba(158,42,43,0.05) !important;
+}
+html[data-theme="tda-vib"] .chat-room-item--active {
+  background: rgba(158,42,43,0.08) !important;
+}
+html[data-theme="tda-vib"] .chat-room-item--active::before {
+  background: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .chat-room-item-name {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .chat-room-item-preview {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .chat-main {
+  background: #f7f7f8 !important;
+}
+html[data-theme="tda-vib"] .chat-window {
+  background: #f7f7f8 !important;
+}
+html[data-theme="tda-vib"] .chat-window-header {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .chat-window-room-name {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .chat-window-member-count {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .chat-input-bar {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .chat-input {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .chat-input:focus {
+  border-color: #9e2a2b !important;
+  box-shadow: 0 0 0 2px rgba(158,42,43,0.12) !important;
+}
+/* Eigene Nachrichten → Crimson */
+html[data-theme="tda-vib"] .chat-message--own .chat-message-bubble {
+  background: linear-gradient(135deg, #9e2a2b 0%, #c43a3b 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(158,42,43,0.25) !important;
+}
+/* Fremde Nachrichten → weiß */
+html[data-theme="tda-vib"] .chat-message--other .chat-message-bubble {
+  background: #ffffff !important;
+  color: #1a1512 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .chat-new-btn {
+  background: #9e2a2b !important;
+  color: #ffffff !important;
+}
+html[data-theme="tda-vib"] .chat-new-btn:hover {
+  background: #7d1f20 !important;
+}
+html[data-theme="tda-vib"] .chat-room-filter input {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .chat-room-avatar {
+  background: rgba(158,42,43,0.10) !important;
+  color: #9e2a2b !important;
+}
+
+/* ── 21. Support-Portal (sp- prefix) ─────────────────────────────────────────── */
+html[data-theme="tda-vib"] .sp-app {
+  background: #f7f7f8 !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .sp-header {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .sp-header-title {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background: none !important;
+}
+html[data-theme="tda-vib"] .sp-header-tab {
+  color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .sp-header-tab.active {
+  color: #9e2a2b !important;
+  border-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .sp-login-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .sp-login-btn {
+  background: #9e2a2b !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .sp-badge {
+  background: rgba(158,42,43,0.10) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .sp-login-page {
+  background: #f7f7f8 !important;
+}
+
+/* ── 22. Mitglieds-Ausweis (dunkle Karte, heller Text) ───────────────────────── */
+html[data-theme="tda-vib"] .mitglieds-ausweis {
+  --text-1: rgba(255,255,255,0.95);
+  --text-2: rgba(255,255,255,0.85);
+  --text-3: rgba(255,255,255,0.65);
+  --text-4: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.95) !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-name {
+  color: rgba(255,255,255,0.95) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.95) !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-title h3 {
+  color: #bf3a3b !important;
+  -webkit-text-fill-color: #bf3a3b !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-title p,
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-footer {
+  color: rgba(255,255,255,0.60) !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-detail label {
+  color: rgba(255,255,255,0.50) !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-detail span {
+  color: rgba(255,255,255,0.92) !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-graduierung {
+  color: #bf3a3b !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.valid {
+  background: rgba(34,197,94,0.15) !important;
+  color: #86efac !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.invalid {
+  background: rgba(239,68,68,0.15) !important;
+  color: #fca5a5 !important;
+}
+
+/* ── 23. Navigation Grid ──────────────────────────────────────────────────────── */
+html[data-theme="tda-vib"] .member-navigation-grid {
+  background: transparent !important;
+}
+html[data-theme="tda-vib"] .nav-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+}
+html[data-theme="tda-vib"] .nav-card:hover {
+  border-color: rgba(158,42,43,0.35) !important;
+  box-shadow: 0 4px 12px rgba(158,42,43,0.10) !important;
+  background: #fafafa !important;
+}
+html[data-theme="tda-vib"] .nav-card h3,
+html[data-theme="tda-vib"] .nav-card-title,
+html[data-theme="tda-vib"] .nav-content h3 {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .nav-content p,
+html[data-theme="tda-vib"] .nav-card-description {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .nav-card .nav-badge {
+  background: rgba(158,42,43,0.10) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .nav-card .nav-badge.new {
+  background: rgba(158,42,43,0.15) !important;
+  color: #9e2a2b !important;
+}
