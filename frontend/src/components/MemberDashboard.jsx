@@ -3234,15 +3234,44 @@ const MemberDashboard = () => {
                     );
                   })}
                   {/* Bereits beantwortete / laufende Umfragen (Ergebnisübersicht) */}
-                  {meineUmfragen.filter(u => !pendingUmfragen.find(p => p.id === u.id)).map(u => (
-                    <div key={u.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '0.75rem 1rem' }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 4, color: '#cbd5e1' }}>{u.titel}</div>
-                      <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
-                        ✓ Beantwortet · {u.antworten_gesamt || 0} Stimmen gesamt
-                        {(u.typ === 'ja_nein' || u.typ === 'beides') && (u.antworten_ja > 0 || u.antworten_nein > 0) && ` · ✓ ${u.antworten_ja} Ja · ✗ ${u.antworten_nein} Nein`}
+                  {meineUmfragen.filter(u => !pendingUmfragen.find(p => p.id === u.id)).map(u => {
+                    const WDAYS_SHORT = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+                    const fmtDat = str => { const d = new Date(str + 'T00:00:00'); return `${WDAYS_SHORT[d.getDay()]}, ${d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}`; };
+                    const datumData = u.datum_ergebnis;
+                    const maxKommt = datumData ? Math.max(...datumData.map(d => d.kann_kommen)) : 0;
+                    return (
+                      <div key={u.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '0.75rem 1rem' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 4, color: '#cbd5e1' }}>{u.titel}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', marginBottom: datumData ? 8 : 0 }}>
+                          ✓ Beantwortet · {u.antworten_gesamt || 0} Teilnehmer
+                          {(u.typ === 'ja_nein' || u.typ === 'beides') && (u.antworten_ja > 0 || u.antworten_nein > 0) && ` · ✓ ${u.antworten_ja} Ja · ✗ ${u.antworten_nein} Nein`}
+                        </div>
+                        {datumData && datumData.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                            {datumData.map(d => {
+                              const isBest = d.kann_kommen === maxKommt && maxKommt > 0;
+                              const pct = d.total > 0 ? Math.round((d.kann_kommen / d.total) * 100) : 0;
+                              return (
+                                <div key={d.datum}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 2 }}>
+                                    <span style={{ color: isBest ? '#86efac' : 'rgba(255,255,255,0.55)', fontWeight: isBest ? 600 : 400 }}>
+                                      {isBest ? '⭐ ' : ''}{fmtDat(d.datum)}
+                                    </span>
+                                    <span style={{ color: isBest ? '#22c55e' : 'rgba(255,255,255,0.35)', fontWeight: isBest ? 700 : 400 }}>
+                                      {d.kann_kommen} / {d.total}
+                                    </span>
+                                  </div>
+                                  <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.07)' }}>
+                                    <div style={{ height: '100%', width: `${pct}%`, background: isBest ? 'rgba(34,197,94,0.5)' : 'rgba(99,102,241,0.3)', borderRadius: 3, transition: 'width 0.8s ease' }} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

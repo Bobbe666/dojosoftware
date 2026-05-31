@@ -349,7 +349,39 @@ router.get('/dojo/aktiv', async (req, res) => {
        ORDER BY u.erstellt_am DESC`,
       [dojoId || 0]
     );
-    res.json({ success: true, umfragen: rows.map(parseUmfrage) });
+
+    // Datum-Aggregate für datum_auswahl-Umfragen nachladen
+    const datumIds = rows.filter(u => u.typ === 'datum_auswahl').map(u => u.id);
+    let datumAggMap = {};
+    if (datumIds.length > 0) {
+      const [dRows] = await pool.query(
+        `SELECT umfrage_id,
+                DATE_FORMAT(datum, '%Y-%m-%d') AS datum,
+                SUM(kommt = 1) AS kann_kommen,
+                SUM(kommt = 0) AS kann_nicht,
+                COUNT(*) AS total
+         FROM umfrage_datum_antworten
+         WHERE umfrage_id IN (?)
+         GROUP BY umfrage_id, datum
+         ORDER BY umfrage_id, datum`,
+        [datumIds]
+      );
+      for (const r of dRows) {
+        if (!datumAggMap[r.umfrage_id]) datumAggMap[r.umfrage_id] = [];
+        datumAggMap[r.umfrage_id].push({
+          datum: r.datum,
+          kann_kommen: Number(r.kann_kommen),
+          kann_nicht: Number(r.kann_nicht),
+          total: Number(r.total),
+        });
+      }
+    }
+
+    const umfragen = rows.map(u => ({
+      ...parseUmfrage(u),
+      datum_ergebnis: datumAggMap[u.id] || null,
+    }));
+    res.json({ success: true, umfragen });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
