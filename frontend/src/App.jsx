@@ -354,11 +354,24 @@ const AdminOnlyRoute = ({ children }) => {
 const MemberOnlyRoute = ({ children }) => {
   const { token, user, loading } = useAuth();
 
+  // Washi-Light-Theme für alle Member-Seiten erzwingen
+  useEffect(() => {
+    const root = document.documentElement;
+    const prevTheme = root.getAttribute('data-theme') || 'midnight';
+    const prevBodyBg = document.body.style.backgroundColor;
+    root.setAttribute('data-theme', 'tda-vib');
+    document.body.style.backgroundColor = '#f7f7f8';
+    return () => {
+      root.setAttribute('data-theme', prevTheme);
+      document.body.style.backgroundColor = prevBodyBg;
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="app-loading-screen">
         <div className="loading-spinner-large"></div>
-        <div>Authentifizierung wird gepr�ft...</div>
+        <div>Authentifizierung wird geprüft...</div>
       </div>
     );
   }

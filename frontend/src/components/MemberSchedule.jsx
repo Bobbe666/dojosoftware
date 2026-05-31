@@ -24,8 +24,11 @@ const MemberSchedule = () => {
   useEffect(() => {
     if (user?.mitglied_id) {
       loadSchedule();
+    } else if (user !== null && user !== undefined && !user?.mitglied_id) {
+      // User geladen, aber keine mitglied_id → nicht endlos laden
+      setLoading(false);
     }
-  }, [user?.mitglied_id]);
+  }, [user?.mitglied_id, user]);
 
   const loadSchedule = async () => {
     setLoading(true);

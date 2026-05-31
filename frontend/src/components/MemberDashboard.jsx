@@ -135,18 +135,7 @@ const MemberDashboard = () => {
 
   const navigate = useNavigate();
 
-  // Washi-Light-Theme für Member-Portal erzwingen, beim Verlassen wiederherstellen
-  useEffect(() => {
-    const root = document.documentElement;
-    const prevTheme = root.getAttribute('data-theme') || 'midnight';
-    const prevBodyBg = document.body.style.backgroundColor;
-    root.setAttribute('data-theme', 'tda-vib');
-    document.body.style.backgroundColor = '#f7f7f8';
-    return () => {
-      root.setAttribute('data-theme', prevTheme);
-      document.body.style.backgroundColor = prevBodyBg;
-    };
-  }, []);
+  // Theme wird jetzt zentral in MemberOnlyRoute (App.jsx) gesetzt
 
   // Haupt-Daten States
   const [stats, setStats] = useState({
