@@ -2026,10 +2026,11 @@
 }
 
 /* ── Hintergrund der ganzen Seite — neutral weiß, kein warm-Creme ── */
+/* html-Prefix → Spezifität (0,2,1) schlägt Dashboard.css (0,2,0) unabhängig von Bundle-Reihenfolge */
 html[data-theme="tda-vib"] body {
   background-color: #f7f7f8 !important;
 }
-[data-theme="tda-vib"] .dashboard-container {
+html[data-theme="tda-vib"] .dashboard-container {
   --bg-body:      #f7f7f8;
   --bg-primary:   #f7f7f8;
   --bg-secondary: #f0f0f1;
@@ -2056,14 +2057,14 @@ html[data-theme="tda-vib"] body {
 }
 
 /* ── Karten / Panels ─────────────────────────────────────── */
-[data-theme="tda-vib"] .dashboard-container .stat-card,
-[data-theme="tda-vib"] .dashboard-container .content-card,
-[data-theme="tda-vib"] .dashboard-container .nav-card,
-[data-theme="tda-vib"] .dashboard-container .member-card,
-[data-theme="tda-vib"] .dashboard-container [class*="-card"],
-[data-theme="tda-vib"] .dashboard-container [class*="-panel"],
-[data-theme="tda-vib"] .dashboard-container [class*="-box"],
-[data-theme="tda-vib"] .dashboard-container [class*="-widget"] {
+html[data-theme="tda-vib"] .dashboard-container .stat-card,
+html[data-theme="tda-vib"] .dashboard-container .content-card,
+html[data-theme="tda-vib"] .dashboard-container .nav-card,
+html[data-theme="tda-vib"] .dashboard-container .member-card,
+html[data-theme="tda-vib"] .dashboard-container [class*="-card"],
+html[data-theme="tda-vib"] .dashboard-container [class*="-panel"],
+html[data-theme="tda-vib"] .dashboard-container [class*="-box"],
+html[data-theme="tda-vib"] .dashboard-container [class*="-widget"] {
   background: #ffffff !important;
   border-color: #e2d9ce !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
