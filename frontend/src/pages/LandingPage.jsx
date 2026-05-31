@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import config from '../config/config.js';
 import HeroSlider from '../components/HeroSlider';
@@ -10,7 +10,6 @@ const dojoLogo = '/dojo-logo.png';
 
 function LandingPage() {
   const navigate = useNavigate();
-  const cursorRef = useRef(null);
 
   // Intro Popup: einmalig pro Session
   const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('tda-intro-shown'));
@@ -26,41 +25,6 @@ function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Custom Cursor
-  useEffect(() => {
-    const cursor = cursorRef.current;
-    if (!cursor) return;
-    // Nur auf Desktop (pointer: fine)
-    if (!window.matchMedia('(pointer: fine)').matches) return;
-
-    let raf;
-    let mx = -100, my = -100;
-
-    const onMove = (e) => {
-      mx = e.clientX;
-      my = e.clientY;
-    };
-
-    const animate = () => {
-      cursor.style.transform = `translate(${mx}px, ${my}px)`;
-      raf = requestAnimationFrame(animate);
-    };
-    raf = requestAnimationFrame(animate);
-
-    const onEnter = () => cursor.classList.add('lp-cursor--hover');
-    const onLeave = () => cursor.classList.remove('lp-cursor--hover');
-
-    document.addEventListener('mousemove', onMove);
-    document.querySelectorAll('button, a, [role="button"]').forEach(el => {
-      el.addEventListener('mouseenter', onEnter);
-      el.addEventListener('mouseleave', onLeave);
-    });
-
-    return () => {
-      cancelAnimationFrame(raf);
-      document.removeEventListener('mousemove', onMove);
-    };
-  }, []);
 
   // Early Bird Promo State
   const [promoData, setPromoData] = useState(null);
@@ -274,9 +238,6 @@ function LandingPage() {
 
       {/* ── 3. HERO ── */}
       <section className="lp-hero">
-        <div className="lp-hero-glow lp-hero-glow--left" />
-        <div className="lp-hero-glow lp-hero-glow--right" />
-
         <div className="lp-hero-inner">
           {/* Eyebrow */}
           <div className="lp-eyebrow">
@@ -940,7 +901,6 @@ function LandingPage() {
       )}
 
       {/* Custom Cursor */}
-      <div ref={cursorRef} className="lp-cursor" />
     </div>
   );
 }
