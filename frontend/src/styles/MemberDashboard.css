@@ -2025,9 +2025,17 @@
   --btn-ghost-bg-hover:   rgba(158,42,43,0.12);
 }
 
-/* ── Hintergrund der ganzen Seite ────────────────────────── */
+/* ── Hintergrund der ganzen Seite — neutral weiß, kein warm-Creme ── */
+html[data-theme="tda-vib"] body {
+  background-color: #f7f7f8 !important;
+}
 [data-theme="tda-vib"] .dashboard-container {
-  background: #faf8f5;
+  --bg-body:      #f7f7f8;
+  --bg-primary:   #f7f7f8;
+  --bg-secondary: #f0f0f1;
+  --bg-tertiary:  #f7f7f8;
+  --bg-gradient:  linear-gradient(135deg, #f7f7f8 0%, #f0f0f1 50%, #f7f7f8 100%);
+  background: #f7f7f8 !important;
   min-height: 100vh;
 }
 
@@ -2126,4 +2134,52 @@
 [data-theme="tda-vib"] .dashboard-container .dashboard-logo,
 [data-theme="tda-vib"] .dashboard-container img[class*="logo"] {
   filter: none !important;
+}
+
+/* ── Mitglieds-Ausweis: heller Text auf dunklem Hintergrund ─ */
+/* Die Karte hat hardcodierten dark-navy Hintergrund (#1a1a2e).
+   Im Light-Theme wären --text-1 etc. dunkel → dunkel auf dunkel.
+   Hier werden die Textvariablen lokal auf hell überschrieben.  */
+[data-theme="tda-vib"] .mitglieds-ausweis {
+  --text-1: rgba(255,255,255,0.95);
+  --text-2: rgba(255,255,255,0.85);
+  --text-3: rgba(255,255,255,0.65);
+  --text-4: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.95) !important;
+}
+[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-name {
+  color: rgba(255,255,255,0.95) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.95) !important;
+  text-shadow: none !important;
+}
+[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-graduierung {
+  color: #bf3a3b !important;
+}
+[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-title h3 {
+  color: #bf3a3b !important;
+  -webkit-text-fill-color: #bf3a3b !important;
+  text-shadow: none !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+}
+[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-title p {
+  color: rgba(255,255,255,0.6) !important;
+}
+[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-detail label {
+  color: rgba(255,255,255,0.5) !important;
+}
+[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-detail span {
+  color: rgba(255,255,255,0.92) !important;
+}
+[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-footer {
+  color: rgba(255,255,255,0.55) !important;
+}
+[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.valid {
+  background: rgba(34,197,94,0.15) !important;
+  color: #86efac !important;
+}
+[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.invalid {
+  background: rgba(239,68,68,0.15) !important;
+  color: #fca5a5 !important;
 }

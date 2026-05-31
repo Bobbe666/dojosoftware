@@ -139,8 +139,13 @@ const MemberDashboard = () => {
   useEffect(() => {
     const root = document.documentElement;
     const prevTheme = root.getAttribute('data-theme') || 'midnight';
+    const prevBodyBg = document.body.style.backgroundColor;
     root.setAttribute('data-theme', 'tda-vib');
-    return () => root.setAttribute('data-theme', prevTheme);
+    document.body.style.backgroundColor = '#f7f7f8';
+    return () => {
+      root.setAttribute('data-theme', prevTheme);
+      document.body.style.backgroundColor = prevBodyBg;
+    };
   }, []);
 
   // Haupt-Daten States
