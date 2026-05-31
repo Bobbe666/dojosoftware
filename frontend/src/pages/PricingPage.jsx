@@ -14,6 +14,8 @@ function PricingPage() {
   const [plans, setPlans] = useState([]);
   const [allFeatures, setAllFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedCards, setExpandedCards] = useState({});
+  const FEATURES_PREVIEW = 5;
 
   useEffect(() => {
     loadPlans();
@@ -202,7 +204,10 @@ function PricingPage() {
 
                 <div className="card-features">
                   <ul>
-                    {getPlanFeatureRows(plan).map((f, index) => (
+                    {(expandedCards[plan.plan_name]
+                      ? getPlanFeatureRows(plan)
+                      : getPlanFeatureRows(plan).slice(0, FEATURES_PREVIEW)
+                    ).map((f, index) => (
                       <li key={index} className={f.included ? 'feature-included' : 'feature-excluded'}>
                         <span className={f.included ? 'feature-check' : 'feature-dash'}>
                           {f.included ? '✓' : '—'}
@@ -212,6 +217,16 @@ function PricingPage() {
                       </li>
                     ))}
                   </ul>
+                  {getPlanFeatureRows(plan).length > FEATURES_PREVIEW && (
+                    <button
+                      className="features-toggle-btn"
+                      onClick={() => setExpandedCards(prev => ({ ...prev, [plan.plan_name]: !prev[plan.plan_name] }))}
+                    >
+                      {expandedCards[plan.plan_name]
+                        ? 'Weniger anzeigen ▲'
+                        : `Alle ${getPlanFeatureRows(plan).length} Features anzeigen ▼`}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

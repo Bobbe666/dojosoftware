@@ -418,6 +418,24 @@
   text-decoration: none;
 }
 
+.features-toggle-btn {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.features-toggle-btn:hover {
+  border-color: var(--primary, #e8b94c);
+  color: var(--primary, #e8b94c);
+}
+
 /* Limits-Badges */
 .plan-limits {
   display: flex;
