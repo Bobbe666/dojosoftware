@@ -14,6 +14,9 @@ header.mh-portal.dashboard-header {
   height: auto !important;
   min-height: 58px !important;
   padding: 0 1.5rem !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
 }
 
 header.mh-portal.dashboard-header::before,

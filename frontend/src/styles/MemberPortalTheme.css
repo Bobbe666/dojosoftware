@@ -977,3 +977,372 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
   background: rgba(158,42,43,0.15) !important;
   color: #9e2a2b !important;
 }
+
+/* ── 25. Mobile Hero Buttons (Training Einchecken / QR / Abwesenheit) ────────── */
+@media (max-width: 767px) {
+  /* Checkin CTA: Gold-Gradient + Gold-Text → Crimson */
+  html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin {
+    background: linear-gradient(135deg, rgba(158,42,43,0.10) 0%, rgba(158,42,43,0.05) 100%) !important;
+    border: 1.5px solid rgba(158,42,43,0.35) !important;
+    animation: none !important;
+    box-shadow: none !important;
+  }
+  html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin .md-mobile-hero-btn-label {
+    color: #9e2a2b !important;
+  }
+  html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin .md-mobile-hero-btn-sub {
+    color: rgba(158,42,43,0.55) !important;
+  }
+  html[data-theme="tda-vib"] .md-mobile-hero-btn-chevron {
+    color: rgba(158,42,43,0.5) !important;
+  }
+  /* QR-Button: Gold → Crimson */
+  html[data-theme="tda-vib"] .md-mobile-hero-btn--primary {
+    background: linear-gradient(135deg, rgba(158,42,43,0.07) 0%, rgba(158,42,43,0.03) 100%) !important;
+    border: 1.5px solid rgba(158,42,43,0.22) !important;
+  }
+  html[data-theme="tda-vib"] .md-mobile-hero-btn--primary .md-mobile-hero-btn-label {
+    color: #9e2a2b !important;
+  }
+  /* Alle Hero-Button Labels: weiß → dunkel */
+  html[data-theme="tda-vib"] .md-mobile-hero-btn-label {
+    color: #1a1512 !important;
+  }
+  html[data-theme="tda-vib"] .md-mobile-hero-btn-sub {
+    color: rgba(26,21,18,0.5) !important;
+  }
+  /* Abwesenheit: rotes Rot, Text lesbar */
+  html[data-theme="tda-vib"] .md-mobile-hero-btn--absence {
+    background: rgba(239,68,68,0.06) !important;
+    border: 1.5px solid rgba(239,68,68,0.25) !important;
+  }
+  html[data-theme="tda-vib"] .md-mobile-hero-btn--absence .md-mobile-hero-btn-label {
+    color: #dc2626 !important;
+  }
+  html[data-theme="tda-vib"] .md-mobile-hero-btn--absence .md-mobile-hero-btn-sub {
+    color: rgba(220,38,38,0.6) !important;
+  }
+  html[data-theme="tda-vib"] .md-mobile-hero-btn--absence-active {
+    background: rgba(239,68,68,0.12) !important;
+    border-color: rgba(239,68,68,0.40) !important;
+  }
+}
+
+/* ── 26. MemberCheckin Modal — Dark-Theme Farben → Washi Light ───────────────── */
+html[data-theme="tda-vib"] .modal-content.checkin-modal {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .modal-header {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .modal-header h2 {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .step-header {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .step-header h3 {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .step-header p {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .step-icon {
+  background: rgba(158,42,43,0.10) !important;
+  color: #9e2a2b !important;
+}
+/* Kurs-Items */
+html[data-theme="tda-vib"] .modal-content.checkin-modal .course-item {
+  background: rgba(26,21,18,0.02) !important;
+  border-color: #e2d9ce !important;
+  border-left-color: transparent !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .course-item:hover {
+  background: rgba(158,42,43,0.05) !important;
+  border-color: rgba(158,42,43,0.25) !important;
+  border-left-color: rgba(158,42,43,0.4) !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .course-item.selected {
+  background: rgba(158,42,43,0.08) !important;
+  border-color: rgba(158,42,43,0.35) !important;
+  border-left-color: #9e2a2b !important;
+  box-shadow: 0 2px 8px rgba(158,42,43,0.10) !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .course-name {
+  color: #1a1512 !important;
+}
+/* Kurszeit: Gold → Neutral */
+html[data-theme="tda-vib"] .modal-content.checkin-modal .course-time {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .course-trainer,
+html[data-theme="tda-vib"] .modal-content.checkin-modal .course-room {
+  color: #9a8a7a !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .course-checkbox {
+  border-color: #c4b8a8 !important;
+  background: transparent !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .course-item.selected .course-checkbox {
+  background: #9e2a2b !important;
+  border-color: #9e2a2b !important;
+  color: #ffffff !important;
+}
+/* Buttons */
+html[data-theme="tda-vib"] .modal-content.checkin-modal .btn-secondary {
+  background: rgba(26,21,18,0.06) !important;
+  color: #5a4d3e !important;
+  border: 1px solid #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .btn-primary {
+  background: #9e2a2b !important;
+  background-image: none !important;
+  color: #ffffff !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .btn-success {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  color: #ffffff !important;
+}
+/* Schliessen-Button */
+html[data-theme="tda-vib"] .modal-content.checkin-modal .close-button {
+  background: rgba(26,21,18,0.05) !important;
+  border-color: #e2d9ce !important;
+  color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .close-button:hover {
+  background: rgba(26,21,18,0.09) !important;
+  color: #9e2a2b !important;
+  border-color: rgba(158,42,43,0.30) !important;
+}
+/* Bestätigungs-Zusammenfassung */
+html[data-theme="tda-vib"] .modal-content.checkin-modal .selected-courses {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .selected-course-item {
+  background: rgba(158,42,43,0.06) !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .selected-course-item .course-name {
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .selected-course-item .course-time {
+  color: #7a6a5a !important;
+}
+
+/* ── 27. Mitglieds-Ausweis — Alle Kinder der dunklen Karte weiß ──────────────── */
+html[data-theme="tda-vib"] .mitglieds-ausweis *:not(.ausweis-status):not(.ausweis-status *):not(.ausweis-title h3) {
+  color: rgba(255,255,255,0.90) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.90) !important;
+  background-clip: unset !important;
+  -webkit-background-clip: unset !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-title h3 {
+  color: #bf3a3b !important;
+  -webkit-text-fill-color: #bf3a3b !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.valid,
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.valid * {
+  color: #86efac !important;
+  -webkit-text-fill-color: #86efac !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.invalid,
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.invalid * {
+  color: #fca5a5 !important;
+  -webkit-text-fill-color: #fca5a5 !important;
+}
+
+/* ── 28. Kalender-Inline-Styles in MemberSchedule ────────────────────────────── */
+/* Die <style> Tags in MemberSchedule.jsx haben Gold/Weiß — hier überschrieben */
+html[data-theme="tda-vib"] .calendar-view {
+  background: #ffffff !important;
+  border: 1px solid #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .calendar-header h2 {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .month-nav-btn {
+  background: rgba(26,21,18,0.04) !important;
+  border: 1px solid rgba(158,42,43,0.25) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .month-nav-btn:hover {
+  background: rgba(158,42,43,0.08) !important;
+  border-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .weekday-label {
+  color: #5a4d3e !important;
+  -webkit-text-fill-color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .calendar-day {
+  background: rgba(26,21,18,0.02) !important;
+  border: 1px solid #f0f0f1 !important;
+}
+html[data-theme="tda-vib"] .calendar-day.today {
+  background: rgba(158,42,43,0.06) !important;
+  border-color: rgba(158,42,43,0.35) !important;
+}
+html[data-theme="tda-vib"] .day-number {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .calendar-event.member-course {
+  background: rgba(158,42,43,0.10) !important;
+  border-left: 2px solid #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .calendar-event.other-course {
+  background: rgba(26,21,18,0.04) !important;
+  border-left: 2px solid #c4b8a8 !important;
+}
+html[data-theme="tda-vib"] .event-icon {
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .event-name {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .event-time {
+  color: #7a6a5a !important;
+}
+
+/* ── 29. Freunde werben Freunde — Washi Light ─────────────────────────────────── */
+html[data-theme="tda-vib"] .freunde-werben-freunde {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .referral-header,
+html[data-theme="tda-vib"] .referral-tabs,
+html[data-theme="tda-vib"] .referral-content {
+  background: transparent !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .referral-tab {
+  background: transparent !important;
+  color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .referral-tab.active {
+  color: #9e2a2b !important;
+  border-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .referral-stat-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+}
+html[data-theme="tda-vib"] .referral-message.success {
+  background: rgba(16,185,129,0.08) !important;
+  color: #047857 !important;
+}
+html[data-theme="tda-vib"] .referral-message.error {
+  background: rgba(239,68,68,0.08) !important;
+  color: #dc2626 !important;
+}
+html[data-theme="tda-vib"] .praemien-card,
+html[data-theme="tda-vib"] .praemie-card,
+html[data-theme="tda-vib"] .code-card,
+html[data-theme="tda-vib"] .staffel-item,
+html[data-theme="tda-vib"] .settings-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .settings-card-title,
+html[data-theme="tda-vib"] .settings-card-value,
+html[data-theme="tda-vib"] .settings-card-desc {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .settings-card-value.success { color: #047857 !important; }
+html[data-theme="tda-vib"] .settings-card-value.muted  { color: #9a8a7a !important; }
+html[data-theme="tda-vib"] .fwf-section-h3-gold {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .fwf-section-h3-blue {
+  color: #1d4ed8 !important;
+  -webkit-text-fill-color: #1d4ed8 !important;
+}
+html[data-theme="tda-vib"] .top-werber-item {
+  background: rgba(26,21,18,0.03) !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .bonus-system-info {
+  background: rgba(158,42,43,0.04) !important;
+  border-color: rgba(158,42,43,0.20) !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .bonus-scale .bonus-item {
+  background: rgba(26,21,18,0.04) !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .bonus-scale .bonus-item.highlight {
+  background: rgba(158,42,43,0.08) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .process-step {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .process-step .step-number {
+  background: rgba(158,42,43,0.10) !important;
+  color: #9e2a2b !important;
+  border-color: rgba(158,42,43,0.22) !important;
+}
+html[data-theme="tda-vib"] .process-step.success .step-number {
+  background: rgba(16,185,129,0.10) !important;
+  color: #047857 !important;
+  border-color: rgba(16,185,129,0.25) !important;
+}
+html[data-theme="tda-vib"] .referral-status-badge {
+  color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .fwf-code-search-wrapper {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .fwf-code-search-input {
+  background: transparent !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .fwf-code-search-icon,
+html[data-theme="tda-vib"] .fwf-code-search-clear {
+  color: #9a8a7a !important;
+}
+
+/* ── 30. Today-Strip auf Dashboard ───────────────────────────────────────────── */
+html[data-theme="tda-vib"] .md-today-strip {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .md-today-date {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .md-today-chip {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .md-today-chip-val {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+  background: none !important;
+}
+html[data-theme="tda-vib"] .md-today-chip-label {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .md-today-chip-divider {
+  background: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .md-today-chip--warn .md-today-chip-val {
+  color: #dc2626 !important;
+  -webkit-text-fill-color: #dc2626 !important;
+}
+html[data-theme="tda-vib"] .md-today-chip--exam .md-today-chip-label {
+  color: #9e2a2b !important;
+}
