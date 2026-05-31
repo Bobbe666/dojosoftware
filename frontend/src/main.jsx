@@ -166,13 +166,17 @@ if (BUILT_VERSION) {
     `;
     document.body.appendChild(banner);
     document.getElementById('_sw_update_btn')?.addEventListener('click', async () => {
-      if ('caches' in window) {
-        const names = await caches.keys();
-        await Promise.all(names.map(n => caches.delete(n)));
-      }
+      // Cache-Clearing: best effort — Navigation passiert IMMER, auch bei Fehler
+      try {
+        if ('caches' in window) {
+          const names = await caches.keys();
+          await Promise.all(names.map(n => caches.delete(n)));
+        }
+      } catch (_) {}
+      // Cache-busting URL → zwingt Browser zu frischem HTTP-Request für index.html
       const url = new URL(window.location.href);
       url.searchParams.set('_v', Date.now());
-      window.location.href = url.toString();
+      window.location.replace(url.toString());
     });
     document.getElementById('_sw_close_btn')?.addEventListener('click', () => banner.remove());
   };
