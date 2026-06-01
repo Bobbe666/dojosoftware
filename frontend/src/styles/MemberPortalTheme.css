@@ -2511,3 +2511,88 @@ html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-title p {
   color: rgba(255,255,255,0.55) !important;
   -webkit-text-fill-color: rgba(255,255,255,0.55) !important;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   UMFRAGE POPUP — Dark → Washi Light
+   ═══════════════════════════════════════════════════════════ */
+
+html[data-theme="tda-vib"] .ufp-box {
+  background: #ffffff !important;
+  border-color: #d0d0d0 !important;
+  box-shadow: 0 8px 40px rgba(26,21,18,0.12) !important;
+}
+html[data-theme="tda-vib"] .ufp-titel {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .ufp-beschreibung {
+  color: #5a4d3e !important;
+  -webkit-text-fill-color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .ufp-progress {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .ufp-kommentar {
+  background: #f7f7f7 !important;
+  border-color: #d0d0d0 !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .ufp-kommentar::placeholder {
+  color: #b0a898 !important;
+}
+html[data-theme="tda-vib"] .ufp-kommentar:focus {
+  border-color: #c0392b !important;
+}
+html[data-theme="tda-vib"] .ufp-datum-row {
+  background: #f5f5f5 !important;
+  border: 1px solid #d0d0d0 !important;
+}
+html[data-theme="tda-vib"] .ufp-datum-label {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+/* Ja-Button: grüner Akzent — gut lesbar auf weiß */
+html[data-theme="tda-vib"] .ufp-btn-ja {
+  background: rgba(34,197,94,0.08) !important;
+  border-color: rgba(34,197,94,0.4) !important;
+  color: #15803d !important;
+}
+html[data-theme="tda-vib"] .ufp-btn-ja:hover,
+html[data-theme="tda-vib"] .ufp-btn-ja.aktiv {
+  background: rgba(34,197,94,0.18) !important;
+  border-color: #16a34a !important;
+  color: #166534 !important;
+}
+/* Nein-Button: roter Akzent */
+html[data-theme="tda-vib"] .ufp-btn-nein {
+  background: rgba(220,38,38,0.07) !important;
+  border-color: rgba(220,38,38,0.35) !important;
+  color: #dc2626 !important;
+}
+html[data-theme="tda-vib"] .ufp-btn-nein:hover,
+html[data-theme="tda-vib"] .ufp-btn-nein.aktiv {
+  background: rgba(220,38,38,0.15) !important;
+  border-color: #dc2626 !important;
+  color: #b91c1c !important;
+}
+/* Absenden-Button: Washi-Rot statt Indigo/Lila */
+html[data-theme="tda-vib"] .ufp-btn-absenden {
+  background: #c0392b !important;
+  background-image: none !important;
+  color: #ffffff !important;
+}
+html[data-theme="tda-vib"] .ufp-btn-absenden:not(:disabled):hover {
+  background: #a93226 !important;
+}
+html[data-theme="tda-vib"] .ufp-btn-skip {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .ufp-btn-skip:hover {
+  color: #1a1512 !important;
+}
+/* Done-Box */
+html[data-theme="tda-vib"] .ufp-done-icon {
+  background: rgba(22,163,74,0.08) !important;
+  border-color: rgba(22,163,74,0.35) !important;
+  color: #166534 !important;
+}
