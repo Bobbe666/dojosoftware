@@ -185,17 +185,44 @@ const MemberCheckin = ({ onClose }) => {
     return timeString.substring(0, 5); // HH:MM
   };
 
+  // Inline-Styles für zuverlässiges iOS-Scroll (kein CSS kann das überschreiben)
+  const overlayStyle = {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.75)',
+    backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+    zIndex: 9999,
+    overflow: 'hidden',
+    display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+    padding: '4vh 1rem 0',
+  };
+  const modalStyle = {
+    maxWidth: '450px', width: '100%',
+    height: '92vh',
+    overflow: 'hidden',
+    display: 'flex', flexDirection: 'column',
+    borderRadius: '1rem',
+    position: 'relative',
+  };
+  const bodyStyle = {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',
+    padding: '0.75rem',
+  };
+
   if (!memberData) {
     return (
-      <div className="modal-overlay member-checkin-modal" onClick={onClose}>
-        <div className="modal-content checkin-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
+      <div className="modal-overlay member-checkin-modal" style={overlayStyle} onClick={onClose}>
+        <div className="modal-content checkin-modal" style={modalStyle} onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header" style={{ flexShrink: 0 }}>
             <h2>Check-in</h2>
             <button onClick={onClose} className="close-button">
               <X size={24} />
             </button>
           </div>
-          <div className="modal-body">
+          <div className="modal-body" style={bodyStyle}>
             {loading ? (
               <div className="loading">Lade Daten...</div>
             ) : (
@@ -208,16 +235,16 @@ const MemberCheckin = ({ onClose }) => {
   }
 
   return (
-    <div className="modal-overlay member-checkin-modal" onClick={onClose}>
-      <div className="modal-content checkin-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className="modal-overlay member-checkin-modal" style={overlayStyle} onClick={onClose}>
+      <div className="modal-content checkin-modal" style={modalStyle} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header" style={{ flexShrink: 0 }}>
           <h2>Check-in für {memberData.vorname} {memberData.nachname}</h2>
           <button onClick={onClose} className="close-button">
             <X size={24} />
           </button>
         </div>
 
-        <div className="modal-body">
+        <div className="modal-body" style={bodyStyle}>
           {error && (
             <div className="message error">
               {error}

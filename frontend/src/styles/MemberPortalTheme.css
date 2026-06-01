@@ -724,9 +724,35 @@ html[data-theme="tda-vib"] .mapp-tab.active,
 html[data-theme="tda-vib"] .mapp-tab[class*="active"] {
   color: #9e2a2b !important;
 }
+/* Gold-Pill-Hintergrund auf neutrales Crimson-Tint ändern */
+html[data-theme="tda-vib"] .mapp-tab.active .mapp-tab-icon-wrap,
+html[data-theme="tda-vib"] .mapp-tab[class*="active"] .mapp-tab-icon-wrap {
+  background: rgba(158,42,43,0.09) !important;
+}
 html[data-theme="tda-vib"] .mapp-scroll,
 html[data-theme="tda-vib"] .mapp-content {
   background: #f7f7f8 !important;
+}
+/* Stats-Kacheln: Text nicht abschneiden auf kleinen Handys */
+html[data-theme="tda-vib"] .mapp-stat-value {
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+html[data-theme="tda-vib"] .mapp-stat-label {
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
+}
+/* Training Reminders: kein roter Glow */
+html[data-theme="tda-vib"] .training-reminders .reminder-card.active {
+  border-color: rgba(158,42,43,0.35) !important;
+  background: rgba(158,42,43,0.04) !important;
+  box-shadow: none !important;
+}
+html[data-theme="tda-vib"] .training-reminders .reminder-icon {
+  color: #9e2a2b !important;
 }
 
 /* ── 20. Chat ─────────────────────────────────────────────────────────────────── */
