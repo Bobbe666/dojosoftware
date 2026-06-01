@@ -954,7 +954,7 @@ html[data-theme="tda-vib"] .nav-card {
 }
 html[data-theme="tda-vib"] .nav-card:hover {
   border-color: rgba(158,42,43,0.35) !important;
-  box-shadow: 0 4px 12px rgba(158,42,43,0.10) !important;
+  box-shadow: 0 4px 12px rgba(26,21,18,0.09) !important;
   background: #fafafa !important;
 }
 html[data-theme="tda-vib"] .nav-card h3,
@@ -980,12 +980,18 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
 
 /* ── 25. Mobile Hero Buttons (Training Einchecken / QR / Abwesenheit) ────────── */
 @media (max-width: 767px) {
-  /* Checkin CTA: Gold-Gradient + Gold-Text → Crimson */
-  html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin {
-    background: linear-gradient(135deg, rgba(158,42,43,0.10) 0%, rgba(158,42,43,0.05) 100%) !important;
-    border: 1.5px solid rgba(158,42,43,0.35) !important;
+  /* Alle Hero-Buttons: weißer Hintergrund — kein rosa Tint */
+  html[data-theme="tda-vib"] .md-mobile-hero-btn {
+    background: #ffffff !important;
+    border: 1.5px solid #e2d9ce !important;
     animation: none !important;
-    box-shadow: none !important;
+    box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+  }
+  html[data-theme="tda-vib"] .md-mobile-hero-btn::before,
+  html[data-theme="tda-vib"] .md-mobile-hero-btn::after { display: none !important; }
+  /* Checkin-Button: Crimson-Akzent via Border */
+  html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin {
+    border-color: rgba(158,42,43,0.30) !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin .md-mobile-hero-btn-label {
     color: #9e2a2b !important;
@@ -994,12 +1000,11 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
     color: rgba(158,42,43,0.55) !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn-chevron {
-    color: rgba(158,42,43,0.5) !important;
+    color: rgba(26,21,18,0.35) !important;
   }
-  /* QR-Button: Gold → Crimson */
+  /* QR-Button: subtiler Crimson-Rand */
   html[data-theme="tda-vib"] .md-mobile-hero-btn--primary {
-    background: linear-gradient(135deg, rgba(158,42,43,0.07) 0%, rgba(158,42,43,0.03) 100%) !important;
-    border: 1.5px solid rgba(158,42,43,0.22) !important;
+    border-color: rgba(158,42,43,0.22) !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--primary .md-mobile-hero-btn-label {
     color: #9e2a2b !important;
@@ -1011,20 +1016,19 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
   html[data-theme="tda-vib"] .md-mobile-hero-btn-sub {
     color: rgba(26,21,18,0.5) !important;
   }
-  /* Abwesenheit: rotes Rot, Text lesbar */
+  /* Abwesenheit: roter Rand, neutraler Hintergrund */
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence {
-    background: rgba(239,68,68,0.06) !important;
-    border: 1.5px solid rgba(239,68,68,0.25) !important;
+    border-color: rgba(239,68,68,0.30) !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence .md-mobile-hero-btn-label {
     color: #dc2626 !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence .md-mobile-hero-btn-sub {
-    color: rgba(220,38,38,0.6) !important;
+    color: rgba(220,38,38,0.55) !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence-active {
-    background: rgba(239,68,68,0.12) !important;
-    border-color: rgba(239,68,68,0.40) !important;
+    background: rgba(239,68,68,0.05) !important;
+    border-color: rgba(239,68,68,0.35) !important;
   }
 }
 
@@ -1134,6 +1138,67 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .selected-course-item .c
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .selected-course-item .course-time {
   color: #7a6a5a !important;
+}
+/* Progress-Steps im Checkin: hardcodiertes #FFD700/FFA500 → Crimson */
+html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-step.active {
+  background: #9e2a2b !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(158,42,43,0.20) !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-step.completed {
+  background: rgba(158,42,43,0.12) !important;
+  border-color: rgba(158,42,43,0.25) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-step.inactive {
+  background: rgba(26,21,18,0.04) !important;
+  border-color: #e2d9ce !important;
+  color: #9a8a7a !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-line.completed {
+  background: rgba(158,42,43,0.35) !important;
+  box-shadow: none !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-line.inactive {
+  background: #e2d9ce !important;
+}
+/* Succes-Meldung: pink → grün */
+html[data-theme="tda-vib"] .modal-content.checkin-modal .message.success {
+  background: rgba(16,185,129,0.07) !important;
+  border-color: rgba(16,185,129,0.28) !important;
+  color: #047857 !important;
+  box-shadow: none !important;
+}
+/* Such-Container im Checkin: weiß-transparent → echtes Weiß */
+html[data-theme="tda-vib"] .modal-content.checkin-modal .search-container {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.08) !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .search-container:focus-within {
+  border-color: rgba(158,42,43,0.45) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(158,42,43,0.12) !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .search-input {
+  background: transparent !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .search-input::placeholder {
+  color: #9a8a7a !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .search-icon {
+  color: #9a8a7a !important;
+}
+html[data-theme="tda-vib"] .modal-content.checkin-modal .search-clear {
+  color: #9a8a7a !important;
+}
+/* Modal-Close-Button */
+html[data-theme="tda-vib"] .checkin-modal-close,
+html[data-theme="tda-vib"] .modal-content.checkin-modal .checkin-modal-close {
+  background: rgba(26,21,18,0.05) !important;
+  border-color: #e2d9ce !important;
+  color: #5a4d3e !important;
 }
 
 /* ── 27. Mitglieds-Ausweis — Alle Kinder der dunklen Karte weiß ──────────────── */
@@ -1377,22 +1442,9 @@ html[data-theme="tda-vib"] .md-today-chip--exam .md-today-chip-label {
   }
 }
 
-/* ── 32. Mobile Container & Header — Layout-Fixes ──────────────────────── */
+/* ── 32. Mobile Header — Sticky ─────────────────────────────────────────── */
 @media (max-width: 767px) {
-  /* iOS Browser-Chrome verbergen:
-     body-Scroll sperren → Safari zeigt seine Navigationsleiste nicht.
-     dashboard-container wird der interne Scroll-Bereich. */
-  html[data-theme="tda-vib"] body {
-    overflow-y: hidden !important;
-  }
-  html[data-theme="tda-vib"] .dashboard-container {
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    /* svh = kleinstes stabiles Viewport-Maß (ohne Browser-Chrome) */
-    height: 100svh !important;
-    height: 100vh !important; /* Fallback für ältere Browser */
-  }
-  /* Header klebt am oberen Rand des Scroll-Containers */
+  /* Header klebt am oberen Rand — normales Body-Scroll bleibt erhalten */
   html[data-theme="tda-vib"] header.mh-portal.dashboard-header {
     position: sticky !important;
     top: 0 !important;
@@ -1493,6 +1545,17 @@ html[data-theme="tda-vib"] .member-referral-title {
 }
 html[data-theme="tda-vib"] .member-referral-subtitle {
   color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .member-stat-value.md-stat-value--success {
+  color: #059669 !important;
+  -webkit-text-fill-color: #059669 !important;
+}
+html[data-theme="tda-vib"] .member-stat-value.md-stat-value--error {
+  color: #dc2626 !important;
+  -webkit-text-fill-color: #dc2626 !important;
+}
+html[data-theme="tda-vib"] .member-stat-sublabel.md-stat-sublabel--error {
+  color: #dc2626 !important;
 }
 
 /* ── 35. MemberStyles (Gürtel-Seite) — Washi Light ──────────────────────── */
@@ -1736,6 +1799,26 @@ html[data-theme="tda-vib"] .abw-saved-msg {
   border-color: rgba(16,185,129,0.25) !important;
   color: #047857 !important;
 }
+/* Datum-Inputs: color-scheme dark → normal, Ränder sichtbar */
+html[data-theme="tda-vib"] .abw-form-field input[type="date"],
+html[data-theme="tda-vib"] .abw-form-field input[type="text"],
+html[data-theme="tda-vib"] .abw-form-field input {
+  background: #ffffff !important;
+  border: 1px solid #e2d9ce !important;
+  color: #1a1512 !important;
+  color-scheme: normal !important;
+}
+html[data-theme="tda-vib"] .abw-form-field input:focus {
+  border-color: rgba(158,42,43,0.45) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(158,42,43,0.10) !important;
+}
+/* Textarea Rand sichtbar */
+html[data-theme="tda-vib"] .abw-notiz {
+  background: #ffffff !important;
+  border: 1px solid #e2d9ce !important;
+  color: #1a1512 !important;
+}
 
 /* ── 40. StilAuswahlModal — Gold → Crimson ───────────────────────────────── */
 html[data-theme="tda-vib"] .sa-step-dot.active {
@@ -1753,4 +1836,54 @@ html[data-theme="tda-vib"] .sa-paket-total div:last-child {
 html[data-theme="tda-vib"] .sa-btn-primary {
   background: #9e2a2b !important;
   color: #fff !important;
+}
+
+/* ── 41. Dashboard Gürtel-Widget — Washi Light ───────────────────────────── */
+/* .md-belt-widget: Dark-Theme Ränder + Hintergründe → Washi Light */
+html[data-theme="tda-vib"] .md-belt-widget {
+  border-color: #e2d9ce !important;
+  background: #ffffff !important;
+}
+html[data-theme="tda-vib"] .md-belt-row {
+  /* color-mix Gradient auf weißem Bg = kaum sichtbare Tinte */
+  background: #ffffff !important;
+}
+html[data-theme="tda-vib"] .md-belt-row + .md-belt-row {
+  border-top-color: #f0ece7 !important;
+}
+/* Gürtel-Name war #e2e8f0 (fast weiß) → lesbar */
+html[data-theme="tda-vib"] .md-belt-name {
+  color: #1a1512 !important;
+}
+/* Stil-Name war rgba(255,255,255,0.4) → lesbar */
+html[data-theme="tda-vib"] .md-belt-stil {
+  color: #9a8a7a !important;
+}
+/* Prüfungs-Badge: Gold → Neutral */
+html[data-theme="tda-vib"] .md-belt-exam {
+  background: rgba(26,21,18,0.03) !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .md-belt-exam-date {
+  color: #7a6a5a !important;
+}
+/* Gürtel-Stripe Glow entfernen */
+html[data-theme="tda-vib"] .md-belt-stripe {
+  box-shadow: none !important;
+}
+
+/* ── 42. Allgemeine Hover-Glows — Neutral statt Rosa ─────────────────────── */
+/* box-shadow mit crimson alpha sieht auf Weiß rosa aus → neutral */
+html[data-theme="tda-vib"] .cta-tile:hover {
+  box-shadow: 0 2px 8px rgba(26,21,18,0.10) !important;
+}
+html[data-theme="tda-vib"] .member-stat-card:hover,
+html[data-theme="tda-vib"] .member-stat-card:active {
+  box-shadow: 0 2px 8px rgba(26,21,18,0.10) !important;
+}
+/* Quick-Tiles Hover: Gold-Tint → Neutral */
+html[data-theme="tda-vib"] .cta-tile-quick:hover {
+  background: rgba(26,21,18,0.05) !important;
+  border-color: rgba(158,42,43,0.25) !important;
+  box-shadow: 0 2px 6px rgba(26,21,18,0.08) !important;
 }
