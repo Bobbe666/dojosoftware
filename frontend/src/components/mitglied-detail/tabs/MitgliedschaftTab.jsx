@@ -943,10 +943,10 @@ const MitgliedschaftTab = ({
               </div>
 
               {/* Payment mini-summary */}
-              {finanzDaten.length > 0 && (() => {
+              {beitraege.length > 0 && (() => {
                 const heute = new Date(); heute.setHours(23, 59, 59, 999);
-                const fBezahlt = finanzDaten.filter(f => f.bezahlt === 1 || f.bezahlt === true || f.bezahlt === '1');
-                const fOffen   = finanzDaten.filter(f => !(f.bezahlt === 1 || f.bezahlt === true || f.bezahlt === '1') && new Date(f.zahlungsdatum || f.datum || 0) <= heute);
+                const fBezahlt = beitraege.filter(f => f.bezahlt === 1 || f.bezahlt === true || f.bezahlt === '1');
+                const fOffen   = beitraege.filter(f => !(f.bezahlt === 1 || f.bezahlt === true || f.bezahlt === '1') && new Date(f.zahlungsdatum || f.datum || 0) <= heute);
                 const sumBez   = fBezahlt.reduce((s, f) => s + parseFloat(f.betrag || 0), 0);
                 const sumOff   = fOffen.reduce((s, f) => s + parseFloat(f.betrag || 0), 0);
                 const letzte   = fBezahlt.map(f => ({ ...f, _d: new Date(f.zahlungsdatum || f.datum) })).sort((a, b) => b._d - a._d)[0];
@@ -1244,7 +1244,7 @@ const MitgliedschaftTab = ({
                     const aktuellesJahr = aktuellesDatum.getFullYear();
                     
                     // Prüfe ob bereits ein Beitrag für diesen Monat existiert
-                    const existiertBereits = finanzDaten.some(f => {
+                    const existiertBereits = beitraege.some(f => {
                       if (f.magicline_description) return false;
                       // Datum als String auslesen (vermeidet UTC-Timezone-Bug bei new Date('YYYY-MM-DD'))
                       const dateStr = f.zahlungsdatum ? f.zahlungsdatum.toString().substring(0, 10) : null;
@@ -1313,7 +1313,7 @@ const MitgliedschaftTab = ({
               // Wichtig: lokale Date-Methoden verwenden, da mysql2 DATE-Spalten als
               // JS-Date (lokale Mitternacht CET) zurückgibt, die JSON-serialisiert als
               // UTC-String erscheinen → substring(0,7) gibt falschen Monat (UTC-1h)
-              const _echteMonateSet = new Set(finanzDaten.map(f => {
+              const _echteMonateSet = new Set(beitraege.map(f => {
                 if (!f.zahlungsdatum) return null;
                 const d = new Date(f.zahlungsdatum);
                 if (isNaN(d.getTime())) return null;
@@ -1361,7 +1361,7 @@ const MitgliedschaftTab = ({
                 }
               }
 
-              const alleBeitraege = [...finanzDaten, ...zukuenftigeBeitraege, ...ratenplanBeitraege];
+              const alleBeitraege = [...beitraege, ...zukuenftigeBeitraege, ...ratenplanBeitraege];
 
               // Sortiere nach Datum (neueste zuerst)
               alleBeitraege.sort((a, b) => {
@@ -1438,14 +1438,14 @@ const MitgliedschaftTab = ({
                   {/* ── KPI-Karten (aus ehem. Finanzübersicht) ── */}
                   {(() => {
                     const _kpiHeute = new Date(); _kpiHeute.setHours(23, 59, 59, 999);
-                    const bezahlteZahlungen = finanzDaten.filter(f => f.bezahlt);
-                    const offeneZahlungen = finanzDaten.filter(f => !f.bezahlt && new Date(f.zahlungsdatum || f.datum || 0) <= _kpiHeute);
-                    const geplanteZahlungen = finanzDaten.filter(f => !f.bezahlt && new Date(f.zahlungsdatum || f.datum || '9999-12-31') > _kpiHeute);
+                    const bezahlteZahlungen = beitraege.filter(f => f.bezahlt);
+                    const offeneZahlungen = beitraege.filter(f => !f.bezahlt && new Date(f.zahlungsdatum || f.datum || 0) <= _kpiHeute);
+                    const geplanteZahlungen = beitraege.filter(f => !f.bezahlt && new Date(f.zahlungsdatum || f.datum || '9999-12-31') > _kpiHeute);
                     const gesamtBezahlt = bezahlteZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
                     const gesamtOffen = offeneZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
                     const gesamtGeplant = geplanteZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
                     const gesamtBetrag = gesamtBezahlt + gesamtOffen;
-                    const durchschnittBeitrag = finanzDaten.length > 0 ? gesamtBetrag / finanzDaten.length : 0;
+                    const durchschnittBeitrag = beitraege.length > 0 ? gesamtBetrag / beitraege.length : 0;
                     const letzteZahlung = bezahlteZahlungen.length > 0
                       ? [...bezahlteZahlungen].sort((a, b) => new Date(b.zahlungsdatum || b.datum) - new Date(a.zahlungsdatum || a.datum))[0]
                       : null;
@@ -1531,15 +1531,15 @@ const MitgliedschaftTab = ({
                     const _zhpToggle = () => setCollapsedPeriods(prev => ({...prev, statistik: !prev['statistik']}));
                     const isPaid = p => p.bezahlt === true || p.bezahlt === 1 || p.bezahlt === "1" || String(p.bezahlt) === "1";
                     const _zhpHeute = new Date(); _zhpHeute.setHours(23, 59, 59, 999);
-                    const paidList = finanzDaten.filter(isPaid);
-                    const offenList = finanzDaten.filter(p => !isPaid(p));
+                    const paidList = beitraege.filter(isPaid);
+                    const offenList = beitraege.filter(p => !isPaid(p));
                     const ueberfaelligList = offenList.filter(p => new Date(p.zahlungsdatum || p.datum || 0) <= _zhpHeute);
                     const geplanteList = offenList.filter(p => new Date(p.zahlungsdatum || p.datum || '9999-12-31') > _zhpHeute);
                     const totalBezahlt = paidList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
                     const totalUeberfaellig = ueberfaelligList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
                     const totalGeplant = geplanteList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
                     const letzteZahlung = [...paidList].sort((a,b) => new Date(b.zahlungsdatum) - new Date(a.zahlungsdatum))[0];
-                    const sorted = [...finanzDaten].sort((a,b) => new Date(b.zahlungsdatum||b.datum) - new Date(a.zahlungsdatum||a.datum));
+                    const sorted = [...beitraege].sort((a,b) => new Date(b.zahlungsdatum||b.datum) - new Date(a.zahlungsdatum||a.datum));
                     const fmt = n => parseFloat(n||0).toLocaleString('de-DE', {minimumFractionDigits:2});
                     const uniqueMonths = new Set(paidList.map(p => {
                       const d = new Date(p.zahlungsdatum||p.datum); return `${d.getFullYear()}-${d.getMonth()}`;
@@ -2048,8 +2048,8 @@ const MitgliedschaftTab = ({
       <RatenzahlungTab
         mitglied_id={id}
         monatsbeitrag={parseFloat(
-          finanzDaten?.aktuellerVertrag?.monatsbeitrag ||
-          finanzDaten?.monatsbeitrag ||
+          beitraege?.aktuellerVertrag?.monatsbeitrag ||
+          beitraege?.monatsbeitrag ||
           0
         )}
       />
