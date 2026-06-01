@@ -36,30 +36,29 @@ const MemberSchedule = () => {
       const mitgliedId = user.mitglied_id;
       const API_BASE = config.apiBaseUrl;
 
-      // 1. Lade kommende Termine (Listenansicht)
-      const termineResponse = await fetchWithAuth(`${API_BASE}/stundenplan/member/${mitgliedId}/termine`);
+      // Alle 4 Requests parallel — statt 4× warten nur 1× warten
+      const [termineResponse, stundenplanResponse, eventsResponse, anwesenheitResponse] =
+        await Promise.all([
+          fetchWithAuth(`${API_BASE}/stundenplan/member/${mitgliedId}/termine`),
+          fetchWithAuth(`${API_BASE}/stundenplan`),
+          fetchWithAuth(`${API_BASE}/events/member/${mitgliedId}`),
+          fetchWithAuth(`${API_BASE}/anwesenheit/${mitgliedId}`),
+        ]);
+
       if (termineResponse.ok) {
-        const termineData = await termineResponse.json();
-        setSchedule(termineData);
+        setSchedule(await termineResponse.json());
       }
 
-      // 2. Lade kompletten Stundenplan (Kalenderansicht)
-      const stundenplanResponse = await fetchWithAuth(`${API_BASE}/stundenplan`);
       let stundenplanData = [];
       if (stundenplanResponse.ok) {
         stundenplanData = await stundenplanResponse.json();
         setFullStundenplan(stundenplanData);
       }
 
-      // 3. Lade einmalige Events (Weißwurstfrühstück, Turniere, etc.)
-      const eventsResponse = await fetchWithAuth(`${API_BASE}/events/member/${mitgliedId}`);
       if (eventsResponse.ok) {
         const eventsData = await eventsResponse.json();
         setMemberEvents(eventsData.events || []);
       }
-
-      // 4. Lade vergangene Anwesenheiten
-      const anwesenheitResponse = await fetchWithAuth(`${API_BASE}/anwesenheit/${mitgliedId}`);
 
       // Konvertiere Anwesenheitsdaten zu Termin-Format (nur die letzten 20)
       const anwesenheitData = anwesenheitResponse.ok ? await anwesenheitResponse.json() : [];

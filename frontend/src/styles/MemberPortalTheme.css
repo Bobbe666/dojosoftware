@@ -632,7 +632,7 @@ html[data-theme="tda-vib"] .mapp-root {
 html[data-theme="tda-vib"] .mapp-topbar {
   background: #ffffff !important;
   border-color: #e2d9ce !important;
-  box-shadow: 0 1px 4px rgba(26,21,18,0.08) !important;
+  box-shadow: 0 1px 3px rgba(26,21,18,0.06) !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .mapp-topbar h1,
@@ -643,11 +643,21 @@ html[data-theme="tda-vib"] .mapp-topbar span {
   background: none !important;
   text-shadow: none !important;
 }
+/* Dojo-Name in Topbar: neutrales Dunkel, kein Crimson */
+html[data-theme="tda-vib"] .mapp-topbar-dojo {
+  color: #4a3c30 !important;
+  opacity: 1 !important;
+}
+/* Kanji + Hero ohne Karten-Optik */
 html[data-theme="tda-vib"] .mapp-hero {
-  background: #ffffff !important;
-  border-color: #e2d9ce !important;
-  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mapp-hero-kanji {
+  color: rgba(26,21,18,0.25) !important;
+  opacity: 1 !important;
 }
 html[data-theme="tda-vib"] .mapp-hero-name {
   color: #1a1512 !important;
@@ -655,6 +665,16 @@ html[data-theme="tda-vib"] .mapp-hero-name {
   background: none !important;
   text-shadow: none !important;
 }
+/* Belt-Badge + Hero-Meta neutral */
+html[data-theme="tda-vib"] .mapp-belt-badge {
+  background: #f0ede9 !important;
+  border-color: #e2d9ce !important;
+  color: #4a3c30 !important;
+}
+html[data-theme="tda-vib"] .mapp-hero-meta {
+  color: #7a6a5a !important;
+}
+
 /* Mobile Ausweis → dunkel lassen */
 html[data-theme="tda-vib"] .mapp-ausweis {
   background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%) !important;
@@ -724,14 +744,15 @@ html[data-theme="tda-vib"] .mapp-tabbar {
 html[data-theme="tda-vib"] .mapp-tab {
   color: #7a6a5a !important;
 }
+/* Aktiver Tab: dunkles Braun statt Crimson — kein rosarotes Aufleuchten */
 html[data-theme="tda-vib"] .mapp-tab.active,
 html[data-theme="tda-vib"] .mapp-tab[class*="active"] {
-  color: #9e2a2b !important;
+  color: #1a1512 !important;
 }
-/* Tab Icon-Wrap: neutrales Grau, kein farbiger Tint */
+/* Tab Icon-Wrap: neutrales Grau */
 html[data-theme="tda-vib"] .mapp-tab.active .mapp-tab-icon-wrap,
 html[data-theme="tda-vib"] .mapp-tab[class*="active"] .mapp-tab-icon-wrap {
-  background: rgba(26,21,18,0.07) !important;
+  background: rgba(26,21,18,0.06) !important;
 }
 /* ── Alle verbleibenden var(--primary-alpha) Hintergründe → neutral ──────────── */
 
@@ -1140,11 +1161,11 @@ html[data-theme="tda-vib"] .mobile-bottom-nav__tab {
   color: rgba(26,21,18,0.35) !important;
 }
 html[data-theme="tda-vib"] .mobile-bottom-nav__tab--active {
-  color: #9e2a2b !important;
+  color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .mobile-bottom-nav__tab--active .mobile-bottom-nav__pill {
-  background: rgba(158,42,43,0.07) !important;
-  border-color: rgba(158,42,43,0.18) !important;
+  background: rgba(26,21,18,0.06) !important;
+  border-color: rgba(26,21,18,0.12) !important;
   box-shadow: none !important;
 }
 html[data-theme="tda-vib"] .mobile-bottom-nav__tab--active svg {
