@@ -45,8 +45,9 @@ const MemberSchedule = () => {
           fetchWithAuth(`${API_BASE}/anwesenheit/${mitgliedId}`),
         ]);
 
+      let termineData = [];
       if (termineResponse.ok) {
-        setSchedule(await termineResponse.json());
+        termineData = await termineResponse.json();
       }
 
       let stundenplanData = [];
@@ -54,6 +55,40 @@ const MemberSchedule = () => {
         stundenplanData = await stundenplanResponse.json();
         setFullStundenplan(stundenplanData);
       }
+
+      // Fallback: Wenn keine persönlichen Termine (keine Anwesenheitshistorie),
+      // generiere Termine aus dem vollen Stundenplan (nächste 4 Wochen)
+      if (termineData.length === 0 && stundenplanData.length > 0) {
+        const dayMap = { Sonntag:0, Montag:1, Dienstag:2, Mittwoch:3, Donnerstag:4, Freitag:5, Samstag:6 };
+        const today = new Date();
+        const end = new Date(); end.setDate(today.getDate() + 28);
+        const generated = [];
+        for (const kurs of stundenplanData) {
+          const target = dayMap[kurs.tag];
+          if (target === undefined) continue;
+          let d = new Date(today);
+          while (d.getDay() !== target) d.setDate(d.getDate() + 1);
+          while (d <= end) {
+            generated.push({
+              id: `${kurs.id}-${d.toISOString().split('T')[0]}`,
+              title: kurs.kursname || kurs.gruppenname || 'Training',
+              trainer: `${kurs.trainer_vorname||''} ${kurs.trainer_nachname||''}`.trim() || 'Trainer',
+              zeit: `${kurs.uhrzeit_start} - ${kurs.uhrzeit_ende}`,
+              datum: d.toISOString().split('T')[0],
+              raum: kurs.raumname || 'Dojo',
+              typ: 'training',
+              status: 'bestätigt',
+              stundenplan_id: kurs.id,
+              stil: kurs.stil,
+            });
+            d = new Date(d); d.setDate(d.getDate() + 7);
+          }
+        }
+        generated.sort((a, b) => new Date(a.datum) - new Date(b.datum));
+        termineData = generated;
+      }
+
+      setSchedule(termineData);
 
       if (eventsResponse.ok) {
         const eventsData = await eventsResponse.json();
