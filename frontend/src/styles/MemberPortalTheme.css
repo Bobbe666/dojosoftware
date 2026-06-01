@@ -729,6 +729,74 @@ html[data-theme="tda-vib"] .mapp-tab.active .mapp-tab-icon-wrap,
 html[data-theme="tda-vib"] .mapp-tab[class*="active"] .mapp-tab-icon-wrap {
   background: rgba(158,42,43,0.09) !important;
 }
+/* ── Alle verbleibenden var(--primary-alpha) Hintergründe → neutral ──────────── */
+
+/* TrainingReminders: Settings-Button + Reminder-Card */
+html[data-theme="tda-vib"] .training-reminders .settings-button {
+  background: #f4f0eb !important;
+  border-color: #e2d9ce !important;
+  color: #4a3c30 !important;
+}
+html[data-theme="tda-vib"] .training-reminders .settings-button:hover,
+html[data-theme="tda-vib"] .training-reminders .settings-button--active {
+  background: #ece8e2 !important;
+  border-color: #c4b8aa !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .training-reminders .reminder-settings {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .training-reminders .reminder-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+
+/* MemberDashboard: Event-Badge, Referral, Graduation-Badge, Progress-Row */
+html[data-theme="tda-vib"] .member-event-badge.register {
+  background: rgba(158,42,43,0.07) !important;
+  border-color: rgba(158,42,43,0.2) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .member-referral-wrap {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .md-referral-praemie {
+  background: #f4f0eb !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .md-graduation-badge {
+  background: rgba(158,42,43,0.08) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .md-progress-row {
+  border-bottom-color: #e2d9ce !important;
+}
+
+/* Alle weiteren primary-alpha Borders und Hintergründe global neutralisieren */
+html[data-theme="tda-vib"] [class*="member-"] {
+  --primary-alpha-05: rgba(26,21,18,0.03);
+  --primary-alpha-08: rgba(26,21,18,0.04);
+  --primary-alpha-10: rgba(26,21,18,0.05);
+  --primary-alpha-12: rgba(26,21,18,0.05);
+  --primary-alpha-15: rgba(26,21,18,0.06);
+  --primary-alpha-20: rgba(26,21,18,0.07);
+  --primary-alpha-25: rgba(26,21,18,0.09);
+  --primary-alpha-30: rgba(26,21,18,0.10);
+  --primary-alpha-35: rgba(26,21,18,0.12);
+  --primary-alpha-40: rgba(26,21,18,0.14);
+  --primary-alpha-50: rgba(26,21,18,0.18);
+}
+html[data-theme="tda-vib"] .training-reminders {
+  --primary-alpha-05: rgba(26,21,18,0.03);
+  --primary-alpha-10: rgba(26,21,18,0.05);
+  --primary-alpha-20: rgba(26,21,18,0.07);
+  --primary-alpha-25: rgba(26,21,18,0.09);
+  --primary-alpha-30: rgba(26,21,18,0.10);
+  --primary-alpha-50: rgba(26,21,18,0.18);
+}
+
 html[data-theme="tda-vib"] .mapp-scroll,
 html[data-theme="tda-vib"] .mapp-content {
   background: #f7f7f8 !important;
