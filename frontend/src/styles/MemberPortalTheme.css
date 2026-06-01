@@ -2064,3 +2064,67 @@ html[data-theme="tda-vib"] .cta-tile-quick:hover {
   border-color: rgba(158,42,43,0.25) !important;
   box-shadow: 0 2px 6px rgba(26,21,18,0.08) !important;
 }
+
+/* ── 43. Desktop Dashboard — alle verbleibenden Crimson-Texte neutralisieren ── */
+
+/* Dojo-Name + Kanji im Hero */
+html[data-theme="tda-vib"] .member-welcome-dojo {
+  color: #4a3c30 !important;
+  -webkit-text-fill-color: #4a3c30 !important;
+  text-shadow: none !important;
+}
+html[data-theme="tda-vib"] .member-welcome-kanji {
+  color: rgba(26,21,18,0.18) !important;
+  -webkit-text-fill-color: rgba(26,21,18,0.18) !important;
+  opacity: 1 !important;
+}
+html[data-theme="tda-vib"] .member-welcome-title {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+  background: none !important;
+  background-clip: unset !important;
+  -webkit-background-clip: unset !important;
+}
+
+/* Stat-Icons, Section-Titles, HOF-Title */
+html[data-theme="tda-vib"] .member-stat-icon,
+html[data-theme="tda-vib"] .md-section-heading-primary,
+html[data-theme="tda-vib"] .md-hof-title,
+html[data-theme="tda-vib"] .md-modal-pruefung-value,
+html[data-theme="tda-vib"] .md-modal-fee-value {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+
+/* Events: Wochentag + Titel neutral, Link bleibt Crimson */
+html[data-theme="tda-vib"] .member-event-weekday,
+html[data-theme="tda-vib"] .member-events-title {
+  color: #4a3c30 !important;
+}
+
+/* Stat-Values: Crimson → dunkel (Zahlen sollten nicht rot leuchten) */
+html[data-theme="tda-vib"] .member-stat-value {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+
+/* Unread-Notifications: dezentes Dunkel statt leuchtendes Crimson */
+html[data-theme="tda-vib"] .md-notif-item--unread {
+  background: rgba(26,21,18,0.03) !important;
+  border-color: rgba(26,21,18,0.10) !important;
+}
+html[data-theme="tda-vib"] .md-notif-title--unread {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+
+/* Alle Lucide-Icons innerhalb des Dashboards: neutral wenn sie primary-Farbe haben */
+html[data-theme="tda-vib"] .dashboard-content svg[class*="icon"],
+html[data-theme="tda-vib"] .dashboard-content .u-text-accent {
+  color: #4a3c30 !important;
+}
+
+/* NextTrainingsWidget + member-Karten: border neutral */
+html[data-theme="tda-vib"] [class*="member-"]:not(button):not(a):not(.member-stat-value--ok):not(.member-stat-value--err) {
+  border-color: #e2d9ce;
+}
