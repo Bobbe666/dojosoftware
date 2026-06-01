@@ -23,6 +23,12 @@ const MemberCheckin = ({ onClose }) => {
   
   const API_BASE = config.apiBaseUrl;
 
+  // Body-Scroll sperren solange Modal offen — verhindert iOS-Scroll-Leck
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   // Lade Mitgliedsdaten und Kurse
   useEffect(() => {
     loadMemberAndCourses();

@@ -1200,6 +1200,27 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .checkin-modal-close {
   border-color: #e2d9ce !important;
   color: #5a4d3e !important;
 }
+/* Scroll-Containment: verhindert iOS-Scroll-Leck durch das Modal */
+html[data-theme="tda-vib"] .modal-content.checkin-modal .modal-body {
+  overscroll-behavior: contain !important;
+}
+/* Mobile: Header kompakter + X-Icon kleiner */
+@media (max-width: 767px) {
+  html[data-theme="tda-vib"] .modal-content.checkin-modal .modal-header {
+    padding: 0.45rem 0.65rem !important;
+  }
+  html[data-theme="tda-vib"] .modal-content.checkin-modal .modal-header h2 {
+    font-size: 0.82rem !important;
+    gap: 0.35rem !important;
+  }
+  html[data-theme="tda-vib"] .modal-content.checkin-modal .close-button {
+    padding: 0.25rem !important;
+  }
+  html[data-theme="tda-vib"] .modal-content.checkin-modal .close-button svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
 
 /* ── 27. Mitglieds-Ausweis — Alle Kinder der dunklen Karte weiß ──────────────── */
 html[data-theme="tda-vib"] .mitglieds-ausweis *:not(.ausweis-status):not(.ausweis-status *):not(.ausweis-title h3) {
