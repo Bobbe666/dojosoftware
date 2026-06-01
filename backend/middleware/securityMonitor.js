@@ -19,6 +19,15 @@ function getClientIP(req) {
 }
 
 /**
+ * IPs die niemals geblockt werden (Admin/Owner-IPs)
+ */
+const TRUSTED_IPS = [
+  '61.8.153.10',   // Owner/Admin
+  '127.0.0.1',
+  '::1',
+];
+
+/**
  * Pfade die von intensiver Prüfung ausgenommen sind (interne API-Routen + öffentliche Endpunkte)
  */
 const SAFE_PATH_PREFIXES = [
@@ -45,7 +54,13 @@ const securityMonitorMiddleware = async (req, res, next) => {
   const method = req.method;
 
   try {
-    // 0. Sichere interne API-Pfade und öffentliche Endpunkte ZUERST überspringen
+    // 0a. Vertrauenswürdige IPs niemals blockieren
+    if (TRUSTED_IPS.includes(ip)) {
+      req.clientIP = ip;
+      return next();
+    }
+
+    // 0b. Sichere interne API-Pfade und öffentliche Endpunkte ZUERST überspringen
     const isSafePath = SAFE_PATH_PREFIXES.some(prefix => path.startsWith(prefix));
     if (isSafePath) {
       req.clientIP = ip;
