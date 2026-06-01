@@ -20,8 +20,10 @@ const MemberCheckin = ({ onClose }) => {
   const [error, setError]                                     = useState('');
   const [success, setSuccess]                                 = useState('');
   const [step, setStep]                                       = useState(1);
-  const [checkedInCourses, setCheckedInCourses]               = useState([]);
+  const [checkedInCourses, setCheckedInCourses]               = useState([]); // stundenplan_ids (aktiv)
+  const [activeCheckins, setActiveCheckins]                   = useState([]); // [{stundenplan_id, checkin_id, kurs_name, stil}]
   const [trainerCheckedInCourses, setTrainerCheckedInCourses] = useState([]);
+  const [checkoutLoading, setCheckoutLoading]                 = useState(null); // checkin_id das gerade ausgecheckt wird
 
   const API_BASE = config.apiBaseUrl;
 
@@ -78,7 +80,13 @@ const MemberCheckin = ({ onClose }) => {
       if (checkinsRes.ok) {
         const r = await checkinsRes.json();
         if (r.success) {
-          setCheckedInCourses(r.stundenplan_ids || []);
+          const active = (r.checkins || []).filter(c => c.status === 'active');
+          setCheckedInCourses(active.map(c => c.stundenplan_id));
+          setActiveCheckins(active.map(c => ({
+            stundenplan_id: c.stundenplan_id,
+            checkin_id:     c.checkin_id,
+            kurs_name:      c.kurs_name,
+          })));
           setTrainerCheckedInCourses(
             (r.checkins || [])
               .filter(c => c.status === 'completed' && c.checkin_method === 'manual')
@@ -142,6 +150,28 @@ const MemberCheckin = ({ onClose }) => {
       setError('Check-in Fehler: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const executeCheckout = async (checkinId) => {
+    setCheckoutLoading(checkinId);
+    try {
+      const response = await fetchWithAuth(`${API_BASE}/checkin/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checkin_id: checkinId }),
+      });
+      if (!response.ok) {
+        const t = await response.text();
+        let msg;
+        try { msg = JSON.parse(t).error; } catch { msg = t; }
+        throw new Error(msg || `HTTP ${response.status}`);
+      }
+      await loadMemberAndCourses();
+    } catch (err) {
+      setError('Abmelden fehlgeschlagen: ' + err.message);
+    } finally {
+      setCheckoutLoading(null);
     }
   };
 
@@ -234,6 +264,55 @@ const MemberCheckin = ({ onClose }) => {
                   <p style={{ fontSize: '0.72rem', margin: 0, opacity: 0.7 }}>Wähle die Kurse aus, für die du dich anmelden möchtest</p>
                 </div>
               </div>
+
+              {/* ── Bereits angemeldete Kurse ── */}
+              {activeCheckins.length > 0 && (
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#16a34a', marginBottom: '0.3rem' }}>
+                    ✓ Bereits angemeldet
+                  </div>
+                  {activeCheckins.map(({ stundenplan_id, checkin_id, kurs_name }) => {
+                    const course = coursesToday.find(c => c.stundenplan_id === stundenplan_id);
+                    const title = course ? getCourseTitle(course) : (kurs_name || '—');
+                    const subtitle = course ? getCourseSubtitle(course) : null;
+                    return (
+                      <div key={checkin_id} style={{
+                        display: 'flex', alignItems: 'center', gap: '0.6rem',
+                        padding: '0.6rem 0.85rem',
+                        background: 'rgba(22,163,74,0.07)',
+                        border: '1px solid rgba(22,163,74,0.25)',
+                        borderLeft: '3px solid #16a34a',
+                        borderRadius: '10px',
+                        marginBottom: '0.3rem',
+                      }}>
+                        <div style={{ color: '#16a34a', fontSize: '1rem', flexShrink: 0 }}>✓</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>{title}</div>
+                          {subtitle && <div style={{ fontSize: '0.7rem', opacity: 0.65, marginTop: '0.1rem' }}>{subtitle}</div>}
+                        </div>
+                        <button
+                          onClick={() => executeCheckout(checkin_id)}
+                          disabled={checkoutLoading === checkin_id}
+                          style={{
+                            background: 'rgba(239,68,68,0.1)',
+                            border: '1px solid rgba(239,68,68,0.3)',
+                            borderRadius: '7px',
+                            color: '#ef4444',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            padding: '0.3rem 0.6rem',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {checkoutLoading === checkin_id ? '…' : 'Abmelden'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {loading ? (
                 <div className="loading">Lade Kurse...</div>

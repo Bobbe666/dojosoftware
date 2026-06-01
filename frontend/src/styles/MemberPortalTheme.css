@@ -31,26 +31,30 @@ html[data-theme="tda-vib"] {
   --shadow-gold-hover:    0 8px 25px rgba(158,42,43,0.25);
   --shadow-gold-lg:       0 12px 30px rgba(158,42,43,0.18);
 
-  /* Alpha-Varianten */
-  --primary-alpha-5:      rgba(158,42,43,0.05);
-  --primary-alpha-10:     rgba(158,42,43,0.10);
-  --primary-alpha-15:     rgba(158,42,43,0.15);
-  --primary-alpha-20:     rgba(158,42,43,0.20);
-  --primary-alpha-25:     rgba(158,42,43,0.25);
-  --primary-alpha-30:     rgba(158,42,43,0.30);
-  --primary-alpha-40:     rgba(158,42,43,0.40);
-  --primary-alpha-50:     rgba(158,42,43,0.50);
-  --secondary-alpha-10:   rgba(158,42,43,0.10);
-  --secondary-alpha-20:   rgba(158,42,43,0.20);
-  --secondary-alpha-30:   rgba(158,42,43,0.30);
-  --badge-primary-bg:     rgba(158,42,43,0.10);
+  /* Alpha-Varianten: NEUTRAL (kein rosa Schimmer auf Hintergründen/Icons) */
+  --primary-alpha-5:      rgba(26,21,18,0.03);
+  --primary-alpha-08:     rgba(26,21,18,0.04);
+  --primary-alpha-10:     rgba(26,21,18,0.05);
+  --primary-alpha-12:     rgba(26,21,18,0.06);
+  --primary-alpha-15:     rgba(26,21,18,0.07);
+  --primary-alpha-20:     rgba(26,21,18,0.09);
+  --primary-alpha-25:     rgba(26,21,18,0.11);
+  --primary-alpha-30:     rgba(26,21,18,0.13);
+  --primary-alpha-35:     rgba(26,21,18,0.15);
+  --primary-alpha-40:     rgba(26,21,18,0.17);
+  --primary-alpha-50:     rgba(26,21,18,0.22);
+  --secondary-alpha-10:   rgba(26,21,18,0.05);
+  --secondary-alpha-20:   rgba(26,21,18,0.09);
+  --secondary-alpha-30:   rgba(26,21,18,0.13);
+  --badge-primary-bg:     rgba(158,42,43,0.08);
   --badge-primary-text:   #9e2a2b;
-  --btn-ghost-bg:         rgba(158,42,43,0.06);
-  --btn-ghost-bg-hover:   rgba(158,42,43,0.12);
+  --btn-ghost-bg:         rgba(26,21,18,0.04);
+  --btn-ghost-bg-hover:   rgba(26,21,18,0.08);
   --text-accent:          #9e2a2b;
-  --border-accent:        rgba(158,42,43,0.28);
-  --border-accent-hover:  rgba(158,42,43,0.50);
+  --border-accent:        #e2d9ce;
+  --border-accent-hover:  #c4b8aa;
   --border-focus:         #9e2a2b;
+  --primary-light:        rgba(26,21,18,0.05);
 
   /* Hintergründe — neutral weiß, kein warm-Creme */
   --bg-body:              #f7f7f8;
@@ -724,10 +728,10 @@ html[data-theme="tda-vib"] .mapp-tab.active,
 html[data-theme="tda-vib"] .mapp-tab[class*="active"] {
   color: #9e2a2b !important;
 }
-/* Gold-Pill-Hintergrund auf neutrales Crimson-Tint ändern */
+/* Tab Icon-Wrap: neutrales Grau, kein farbiger Tint */
 html[data-theme="tda-vib"] .mapp-tab.active .mapp-tab-icon-wrap,
 html[data-theme="tda-vib"] .mapp-tab[class*="active"] .mapp-tab-icon-wrap {
-  background: rgba(158,42,43,0.09) !important;
+  background: rgba(26,21,18,0.07) !important;
 }
 /* ── Alle verbleibenden var(--primary-alpha) Hintergründe → neutral ──────────── */
 
