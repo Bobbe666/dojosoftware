@@ -1754,12 +1754,14 @@
   background: rgba(0, 0, 0, 0.7) !important;
   backdrop-filter: blur(8px) !important;
   z-index: 9999 !important;
-  /* Overlay scrollt — das ist der einzige Scroll-Container */
-  overflow-y: scroll !important;
-  -webkit-overflow-scrolling: touch !important;
-  overscroll-behavior: none !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding-top: 5vh !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
   animation: fadeIn 0.2s ease-out !important;
-  padding: 5vh 1rem 3rem !important;
 }
 
 .modal-content.checkin-modal {
@@ -1768,19 +1770,16 @@
   border-radius: 1rem !important;
   max-width: 450px !important;
   width: 100% !important;
-  /* Kein fixes height — Inhalt bestimmt Höhe, Overlay scrollt */
-  height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
+  height: 90vh !important;      /* feste Höhe = Flex-Kinder wissen wann zu scrollen */
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
   animation: slideDown 0.3s ease-out !important;
   position: relative !important;
   margin: 0 auto !important;
   padding: 0 !important;
   min-width: unset !important;
-  min-height: unset !important;
-  display: flex !important;
-  flex-direction: column !important;
 }
 
 .modal-content.checkin-modal .modal-header {
@@ -1831,8 +1830,11 @@
 
 .modal-content.checkin-modal .modal-body {
   padding: 0.75rem !important;
-  overflow: visible !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
   flex: 1 !important;
+  min-height: 0 !important;
 }
 
 /* Course Selection Styles - Spezifisch für Member Check-in */
