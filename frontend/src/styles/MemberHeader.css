@@ -115,12 +115,12 @@ header.mh-portal.dashboard-header .dashboard-header-right {
 }
 
 .mh-btn--back {
-  color: #9e2a2b !important;
-  border-color: rgba(158,42,43,0.3) !important;
+  color: #2d2520 !important;
+  border-color: rgba(26,21,18,0.3) !important;
 }
 .mh-btn--back:hover {
-  background: rgba(158,42,43,0.06) !important;
-  color: #7d1f20 !important;
+  background: rgba(26,21,18,0.06) !important;
+  color: #1a1512 !important;
 }
 
 /* Auf Mobile nicht nötig — MobileBottomNav übernimmt Navigation */
@@ -134,9 +134,9 @@ header.mh-portal.dashboard-header .dashboard-header-right {
   color: #7a6a5a !important;
 }
 .mh-btn--logout:hover {
-  color: #9e2a2b !important;
-  border-color: rgba(158,42,43,0.3) !important;
-  background: rgba(158,42,43,0.05) !important;
+  color: #2d2520 !important;
+  border-color: rgba(26,21,18,0.3) !important;
+  background: rgba(26,21,18,0.05) !important;
 }
 .mh-logout-label { font-size: 0.78rem; }
 
@@ -146,7 +146,7 @@ header.mh-portal.dashboard-header .dashboard-header-right {
   position: absolute !important;
   top: -5px !important;
   right: -5px !important;
-  background: #9e2a2b !important;
+  background: #2d2520 !important;
   color: #fff !important;
   font-size: 0.6rem !important;
   font-weight: 700 !important;
@@ -172,9 +172,9 @@ header.mh-portal.dashboard-header .dashboard-header-right {
 .family-switcher-header-btn {
   padding: 3px 10px !important;
   border-radius: 14px !important;
-  border: 1.5px solid #9e2a2b !important;
+  border: 1.5px solid #2d2520 !important;
   background: transparent !important;
-  color: #9e2a2b !important;
+  color: #2d2520 !important;
   font-size: 0.78rem !important;
   font-weight: 600 !important;
   cursor: pointer !important;
@@ -190,13 +190,13 @@ header.mh-portal.dashboard-header .dashboard-header-right {
 .family-switcher-header-btn::before,
 .family-switcher-header-btn::after { display: none !important; }
 .family-switcher-header-btn:hover:not(:disabled) {
-  background: rgba(158,42,43,0.1) !important;
+  background: rgba(26,21,18,0.1) !important;
   transform: none !important;
-  color: #9e2a2b !important;
+  color: #2d2520 !important;
   box-shadow: none !important;
 }
 .family-switcher-header-btn--active {
-  background: #9e2a2b !important;
+  background: #2d2520 !important;
   color: #fff !important;
   cursor: default !important;
 }
