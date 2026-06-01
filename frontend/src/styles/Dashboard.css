@@ -2056,3 +2056,84 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(255, 215, 0, 0.35);
 }
+
+/* ===================================================================
+   KOMPAKTE DASHBOARD-NAVIGATIONS-KARTEN
+   Höhere Spezifität als components.css .nav-card (überschreibt padding:2rem)
+   =================================================================== */
+.dashboard-navigation .nav-cards .nav-card {
+  padding: 0.7rem 0.95rem !important;
+  border-radius: var(--radius-lg) !important;
+  gap: 0.25rem !important;
+  animation: none !important;
+}
+
+.dashboard-navigation .nav-cards .nav-card .nav-content {
+  padding-top: 0 !important;
+}
+
+.dashboard-navigation .nav-cards .nav-card .nav-card-header {
+  align-items: center !important;
+  min-height: 0 !important;
+  gap: 0.5rem !important;
+  margin: 0 !important;
+}
+
+.dashboard-navigation .nav-cards .nav-card .nav-card-header h3 {
+  margin: 0 !important;
+  font-size: clamp(0.82rem, 0.95vw, 1rem) !important;
+  line-height: 1.2 !important;
+}
+
+.dashboard-navigation .nav-cards .nav-card .nav-icon {
+  font-size: 1.2rem !important;
+}
+
+.dashboard-navigation .nav-cards .nav-card .nav-content p {
+  font-size: 0.7rem !important;
+  line-height: 1.25 !important;
+  margin: 2px 0 0 0 !important;
+  opacity: 0.72;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dashboard-navigation .nav-cards .nav-card .nav-count {
+  font-size: 0.78em !important;
+  opacity: 0.85;
+}
+
+.dashboard-navigation .nav-cards .nav-card .nav-arrow {
+  font-size: 1.1rem !important;
+}
+
+/* ===================================================================
+   HEADER-ELEMENTE auf einheitliche Höhe (Switcher, Chat, Dropdown)
+   =================================================================== */
+.dashboard-header-right > * {
+  height: 40px !important;
+  box-sizing: border-box !important;
+}
+.dashboard-header-right .logout-button,
+.dashboard-header-right .dashboard-button,
+.dashboard-header-right .dojo-switcher-trigger,
+.dashboard-header-right .standort-switcher-trigger,
+.dashboard-header-right .dashboard-user-btn {
+  height: 40px !important;
+  min-height: 40px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+/* Dojo-/Standort-Switcher Wrapper auch auf volle Höhe */
+.dashboard-header-right .dojo-switcher,
+.dashboard-header-right .standort-switcher,
+.dashboard-header-right .dashboard-user-wrap {
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+}
