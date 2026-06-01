@@ -277,8 +277,8 @@ const LazyLoadFallback = () => (
 const ProtectedRoute = ({ children }) => {
   const { token, loading } = useAuth();
 
-  // 🔧 DEVELOPMENT BYPASS - lokal immer durchlassen nach initialem Load
-  if (import.meta.env.MODE === 'development') {
+  // 🔧 DEV BYPASS - nur wenn VITE_DEV_BYPASS=true in .env (Production-Build ignoriert das)
+  if (import.meta.env.VITE_DEV_BYPASS === 'true') {
     return loading ? (
       <div className="app-loading-screen">
         <div className="loading-spinner-large"></div>
@@ -332,8 +332,8 @@ const DashboardNotFound = () => {
 const AdminOnlyRoute = ({ children }) => {
   const { token, user, loading } = useAuth();
 
-  // Dev-Bypass: lokal immer durchlassen
-  if (import.meta.env.MODE === 'development') {
+  // Dev-Bypass: nur wenn VITE_DEV_BYPASS=true in .env
+  if (import.meta.env.VITE_DEV_BYPASS === 'true') {
     return loading ? (
       <div className="app-loading-screen">
         <div className="loading-spinner-large"></div>
