@@ -1772,7 +1772,7 @@
   width: 450px !important;
   max-height: calc(100vh - 4rem) !important;
   height: auto !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
   animation: slideDown 0.3s ease-out !important;
   position: relative !important;
@@ -1780,6 +1780,8 @@
   padding: 0 !important;
   min-width: unset !important;
   min-height: unset !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .modal-content.checkin-modal .modal-header {
@@ -1789,12 +1791,13 @@
   justify-content: space-between !important;
   align-items: center !important;
   background: rgba(255, 255, 255, 0.05) !important;
-  position: relative !important;
+  position: sticky !important;
   top: 0 !important;
   z-index: 10 !important;
   backdrop-filter: blur(10px) !important;
   margin-bottom: 0 !important;
   padding-bottom: 0.75rem !important;
+  flex-shrink: 0 !important;
 }
 
 .modal-content.checkin-modal .modal-header h2 {
@@ -1829,7 +1832,9 @@
 
 .modal-content.checkin-modal .modal-body {
   padding: 0.75rem !important;
-  overflow: visible !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  flex: 1 !important;
 }
 
 /* Course Selection Styles - Spezifisch für Member Check-in */

@@ -1346,3 +1346,411 @@ html[data-theme="tda-vib"] .md-today-chip--warn .md-today-chip-val {
 html[data-theme="tda-vib"] .md-today-chip--exam .md-today-chip-label {
   color: #9e2a2b !important;
 }
+
+/* ── 31. MobileBottomNav — Washi Light ────────────────────────────────────── */
+@media (max-width: 767px) {
+  html[data-theme="tda-vib"] .mobile-bottom-nav {
+    background: rgba(255,255,255,0.97) !important;
+    border-top: 1px solid #e2d9ce !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    box-shadow: 0 -1px 0 rgba(26,21,18,0.06), 0 -4px 12px rgba(26,21,18,0.06) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  html[data-theme="tda-vib"] .mobile-bottom-nav__tab {
+    color: rgba(26,21,18,0.35) !important;
+  }
+  html[data-theme="tda-vib"] .mobile-bottom-nav__tab--active {
+    color: #9e2a2b !important;
+  }
+  html[data-theme="tda-vib"] .mobile-bottom-nav__tab--active .mobile-bottom-nav__pill {
+    background: rgba(158,42,43,0.08) !important;
+    border-color: rgba(158,42,43,0.20) !important;
+    box-shadow: none !important;
+  }
+  html[data-theme="tda-vib"] .mobile-bottom-nav__tab--active svg {
+    filter: none !important;
+    color: #9e2a2b !important;
+  }
+}
+
+/* ── 32. Mobile Container & Header — Layout-Fixes ──────────────────────── */
+@media (max-width: 767px) {
+  /* iOS Browser-Chrome verbergen:
+     body-Scroll sperren → Safari zeigt seine Navigationsleiste nicht.
+     dashboard-container wird der interne Scroll-Bereich. */
+  html[data-theme="tda-vib"] body {
+    overflow-y: hidden !important;
+  }
+  html[data-theme="tda-vib"] .dashboard-container {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    /* svh = kleinstes stabiles Viewport-Maß (ohne Browser-Chrome) */
+    height: 100svh !important;
+    height: 100vh !important; /* Fallback für ältere Browser */
+  }
+  /* Header klebt am oberen Rand des Scroll-Containers */
+  html[data-theme="tda-vib"] header.mh-portal.dashboard-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 200 !important;
+  }
+  /* Dojoname auf Mobile ausblenden → genug Platz für Buttons rechts */
+  html[data-theme="tda-vib"] header.mh-portal.dashboard-header .mh-dojo-name {
+    display: none !important;
+  }
+  html[data-theme="tda-vib"] header.mh-portal.dashboard-header .dashboard-header-left {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  html[data-theme="tda-vib"] header.mh-portal.dashboard-header .dashboard-header-right {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    justify-content: flex-end !important;
+  }
+}
+
+/* ── 33. Mitgliedsausweis-Karte — White Text auf Black Card ──────────────── */
+html[data-theme="tda-vib"] .mitgliedsausweis * {
+  color: rgba(255,255,255,0.90) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.90) !important;
+  background-clip: unset !important;
+  -webkit-background-clip: unset !important;
+}
+/* Crimson-Akzente auf der Karte */
+html[data-theme="tda-vib"] .mitgliedsausweis .ausweis-title .title-jp,
+html[data-theme="tda-vib"] .mitgliedsausweis .ausweis-kanji,
+html[data-theme="tda-vib"] .mitgliedsausweis .ausweis-info-row .info-label,
+html[data-theme="tda-vib"] .mitgliedsausweis .ausweis-motto {
+  color: #bf3a3b !important;
+  -webkit-text-fill-color: #bf3a3b !important;
+}
+html[data-theme="tda-vib"] .mitgliedsausweis .ausweis-website {
+  color: rgba(255,255,255,0.55) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.55) !important;
+}
+/* Apple-Wallet-Button: außerhalb der Karte */
+html[data-theme="tda-vib"] .apple-wallet-btn {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .apple-wallet-btn * {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+
+/* ── 34. Dashboard Stat-Cards & Quick-Actions — Washi Light ──────────────── */
+html[data-theme="tda-vib"] .member-stat-card {
+  background: #ffffff !important;
+  border: 1px solid #e2d9ce !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html[data-theme="tda-vib"] .member-stat-label {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .member-stat-value {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .member-stat-sublabel {
+  color: #9a8a7a !important;
+}
+html[data-theme="tda-vib"] .member-belt-stripe {
+  border-color: rgba(26,21,18,0.18) !important;
+}
+html[data-theme="tda-vib"] .cta-tile-quick {
+  background: rgba(26,21,18,0.03) !important;
+  border: 1px solid #e2d9ce !important;
+  box-shadow: none !important;
+}
+html[data-theme="tda-vib"] .cta-tile-quick::before,
+html[data-theme="tda-vib"] .cta-tile-quick::after { display: none !important; }
+html[data-theme="tda-vib"] .cta-tile-quick:hover {
+  background: rgba(158,42,43,0.06) !important;
+  border-color: rgba(158,42,43,0.25) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html[data-theme="tda-vib"] .cta-tile-qr {
+  background: rgba(158,42,43,0.06) !important;
+  border-color: rgba(158,42,43,0.20) !important;
+}
+/* Referral-Widget im Dashboard */
+html[data-theme="tda-vib"] .member-referral-wrap {
+  background: rgba(158,42,43,0.04) !important;
+  border: 1px solid rgba(158,42,43,0.18) !important;
+}
+html[data-theme="tda-vib"] .member-referral-title {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .member-referral-subtitle {
+  color: #5a4d3e !important;
+}
+
+/* ── 35. MemberStyles (Gürtel-Seite) — Washi Light ──────────────────────── */
+html[data-theme="tda-vib"] .mst-gradient-title {
+  background: linear-gradient(135deg, #9e2a2b, #bf3a3b, #9e2a2b) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+html[data-theme="tda-vib"] .mst-empty-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .mst-stil-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .mst-stil-header {
+  background: rgba(158,42,43,0.05) !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .mst-belt-current {
+  background: rgba(26,21,18,0.04) !important;
+  border-color: rgba(158,42,43,0.25) !important;
+}
+html[data-theme="tda-vib"] .mst-belt-next {
+  background: rgba(26,21,18,0.02) !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .mst-progress-track {
+  background: rgba(26,21,18,0.10) !important;
+}
+html[data-theme="tda-vib"] .mst-progress-fill {
+  background: linear-gradient(90deg, #9e2a2b, #bf3a3b) !important;
+  box-shadow: 0 0 8px rgba(158,42,43,0.30) !important;
+}
+html[data-theme="tda-vib"] .mst-exam-box {
+  background: rgba(26,21,18,0.04) !important;
+  border: 1px solid #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .mst-exam-box-label {
+  color: #9a8a7a !important;
+}
+html[data-theme="tda-vib"] .mst-grad-name--past {
+  color: #5a4d3e !important;
+  -webkit-text-fill-color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .mst-grad-name--future {
+  color: #9a8a7a !important;
+  -webkit-text-fill-color: #9a8a7a !important;
+}
+html[data-theme="tda-vib"] .mst-grad-connector {
+  background: rgba(26,21,18,0.18) !important;
+}
+html[data-theme="tda-vib"] .mst-grad-connector--past {
+  background: rgba(16,185,129,0.45) !important;
+}
+html[data-theme="tda-vib"] .mst-exam-date-primary {
+  color: #9a8a7a !important;
+  -webkit-text-fill-color: #9a8a7a !important;
+}
+html[data-theme="tda-vib"] .mst-exam-date-primary--set {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .member-styles .hours-value {
+  background: rgba(158,42,43,0.08) !important;
+  border-color: rgba(158,42,43,0.20) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .member-styles .tracker-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .member-styles .tracker-card:hover {
+  background: #fafafa !important;
+  border-color: rgba(158,42,43,0.25) !important;
+  transform: none !important;
+}
+html[data-theme="tda-vib"] .member-styles .training-tracker-section {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .member-styles .progress-bar {
+  background: rgba(26,21,18,0.08) !important;
+}
+html[data-theme="tda-vib"] .member-styles .progress-fill {
+  background: linear-gradient(90deg, #9e2a2b, #bf3a3b) !important;
+  box-shadow: none !important;
+}
+
+/* ── 36. QR-Code Modal — Druck-Button fix ─────────────────────────────────── */
+html[data-theme="tda-vib"] .mqr-btn-print {
+  background: rgba(158,42,43,0.07) !important;
+  border: 2px solid rgba(158,42,43,0.40) !important;
+  color: #9e2a2b !important;
+}
+
+/* ── 37. Dashboard — primary-alpha-10 Backgrounds → Neutral ─────────────── */
+/* Alle Elemente die var(--primary-alpha-10/15) als Hintergrund nutzen:
+   rgba(158,42,43,0.10) sieht auf weißem Hintergrund rosa aus */
+html[data-theme="tda-vib"] .member-event-badge.register {
+  background: rgba(158,42,43,0.06) !important;
+  border-color: rgba(158,42,43,0.18) !important;
+}
+html[data-theme="tda-vib"] .md-referral-praemie {
+  background: rgba(26,21,18,0.03) !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .md-graduation-badge {
+  background: rgba(158,42,43,0.06) !important;
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .md-modal-fee-card {
+  background: rgba(26,21,18,0.03) !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .md-notif-item {
+  background: rgba(26,21,18,0.02) !important;
+  border-color: rgba(26,21,18,0.10) !important;
+}
+html[data-theme="tda-vib"] .md-notif-item--unread {
+  background: rgba(158,42,43,0.04) !important;
+  border-color: rgba(158,42,43,0.15) !important;
+}
+html[data-theme="tda-vib"] .md-notif-title {
+  color: #5a4d3e !important;
+  -webkit-text-fill-color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .md-notif-title--unread {
+  color: #9e2a2b !important;
+  -webkit-text-fill-color: #9e2a2b !important;
+}
+/* CTA-Tiles auf dem Dashboard */
+html[data-theme="tda-vib"] .cta-tile {
+  background: #ffffff !important;
+  border: 1px solid #e2d9ce !important;
+  box-shadow: 0 1px 3px rgba(26,21,18,0.06) !important;
+  animation: none !important;
+}
+html[data-theme="tda-vib"] .cta-tile::before,
+html[data-theme="tda-vib"] .cta-tile::after { display: none !important; }
+html[data-theme="tda-vib"] .cta-tile:hover {
+  background: #f7f5f3 !important;
+  border-color: rgba(158,42,43,0.22) !important;
+  box-shadow: 0 2px 6px rgba(26,21,18,0.09) !important;
+  transform: translateY(-1px) !important;
+}
+/* Notification-Panel (PNP) */
+html[data-theme="tda-vib"] .pnp-panel,
+html[data-theme="tda-vib"] .pnp-inner {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .pnp-close-btn {
+  color: #5a4d3e !important;
+}
+
+/* ── 38. Chat-Seite — Washi Light ────────────────────────────────────────── */
+/* var(--surface) hat keinen tda-vib Override → fällt auf #1a1a2e (dark) zurück */
+html[data-theme="tda-vib"] {
+  --surface: #f7f7f8;
+  --surface-alt: #f0f0f1;
+}
+html[data-theme="tda-vib"] .chat-status-tabs {
+  background: #f0f0f1 !important;
+  border-bottom: 1px solid #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .chat-status-tab {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .chat-status-tab:hover {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .chat-room-filter {
+  background: #ffffff !important;
+  border-bottom-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .chat-room-filter input {
+  background: #f7f7f8 !important;
+  color: #1a1512 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .chat-room-filter input::placeholder {
+  color: #9a8a7a !important;
+}
+html[data-theme="tda-vib"] .crs-status-btn {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+  color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .crs-status-btn--active {
+  border-color: #9e2a2b !important;
+  background: rgba(158,42,43,0.07) !important;
+  color: #9e2a2b !important;
+}
+
+/* ── 39. AbwesenheitWidget — Washi Light ─────────────────────────────────── */
+/* Entfernt den roten/orangen Gradient-Stripe oben am Widget */
+html[data-theme="tda-vib"] .abw-widget::before {
+  display: none !important;
+}
+/* Trennlinien sichtbar */
+html[data-theme="tda-vib"] .abw-form {
+  border-top-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .abw-list {
+  border-top-color: #e2d9ce !important;
+}
+/* Quick-Auswahl Chips */
+html[data-theme="tda-vib"] .abw-quick {
+  background: rgba(26,21,18,0.04) !important;
+  border-color: #e2d9ce !important;
+  color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .abw-quick:hover {
+  background: rgba(26,21,18,0.08) !important;
+  border-color: #c4b8a8 !important;
+  color: #1a1512 !important;
+}
+/* Art-Buttons (Krankheit / Urlaub etc.) — war rosa auf Weiß */
+html[data-theme="tda-vib"] .abw-art-btn {
+  background: rgba(26,21,18,0.04) !important;
+  border-color: #e2d9ce !important;
+  color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .abw-art-btn--active {
+  background: rgba(239,68,68,0.08) !important;
+  border-color: rgba(239,68,68,0.30) !important;
+  color: #dc2626 !important;
+}
+html[data-theme="tda-vib"] .abw-art-btn:hover:not(.abw-art-btn--active) {
+  background: rgba(26,21,18,0.08) !important;
+  border-color: #c4b8a8 !important;
+  color: #1a1512 !important;
+}
+/* Gespeichert-Meldung */
+html[data-theme="tda-vib"] .abw-saved-msg {
+  background: rgba(16,185,129,0.08) !important;
+  border-color: rgba(16,185,129,0.25) !important;
+  color: #047857 !important;
+}
+
+/* ── 40. StilAuswahlModal — Gold → Crimson ───────────────────────────────── */
+html[data-theme="tda-vib"] .sa-step-dot.active {
+  background: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .sa-step-line.active {
+  background: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .sa-paket-total {
+  background: rgba(158,42,43,0.06) !important;
+}
+html[data-theme="tda-vib"] .sa-paket-total div:last-child {
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .sa-btn-primary {
+  background: #9e2a2b !important;
+  color: #fff !important;
+}

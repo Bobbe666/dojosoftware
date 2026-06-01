@@ -148,7 +148,8 @@ const ClubMemberLogin = () => {
 
       setSuccessMessage(`Willkommen zurück, ${userData.vorname || userData.username}!`);
 
-      await refreshDojos();
+      // refreshDojos is non-critical — navigate regardless of whether it succeeds
+      refreshDojos().catch((e) => console.warn('refreshDojos:', e));
 
       const userRole = userData.rolle || userData.role;
       if (userRole === 'mitglied' || userRole === 'member') {
