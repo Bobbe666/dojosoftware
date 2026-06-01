@@ -50,8 +50,8 @@ html[data-theme="tda-vib"] {
   --btn-ghost-bg:         rgba(26,21,18,0.04);
   --btn-ghost-bg-hover:   rgba(26,21,18,0.08);
   --text-accent:          #2d2520;
-  --border-accent:        #e2d9ce;
-  --border-accent-hover:  #c4b8aa;
+  --border-accent:        #d0d0d0;
+  --border-accent-hover:  #b8b8b8;
   --border-focus:         #2d2520;
   --primary-light:        rgba(26,21,18,0.05);
 
@@ -90,15 +90,15 @@ html[data-theme="tda-vib"] {
   --color-sumi:           #1a1512;
 
   /* Borders */
-  --border-color:         #e2d9ce;
-  --border-1:             #e2d9ce;
+  --border-color:         #d0d0d0;
+  --border-1:             #d0d0d0;
   --border-2:             #d4c8b8;
   --border-3:             #c4b8a8;
 
   /* Inputs */
   --input-bg:             #ffffff;
   --input-bg-focus:       #ffffff;
-  --input-border:         #e2d9ce;
+  --input-border:         #d0d0d0;
   --input-border-focus:   #2d2520;
 
   /* Modals */
@@ -129,7 +129,7 @@ html[data-theme="tda-vib"] {
   --chat-active-border:   #2d2520;
   --chat-avatar-bg:       rgba(26,21,18,0.10);
   --chat-avatar-color:    #2d2520;
-  --chat-separator:       #e2d9ce;
+  --chat-separator:       #d0d0d0;
 }
 
 /* ── 2. Body / Seite ──────────────────────────────────────────────────────────── */
@@ -167,7 +167,7 @@ html[data-theme="tda-vib"] [class*="-panel"]:not([class*="ausweis"]),
 html[data-theme="tda-vib"] [class*="-widget"]:not([class*="ausweis"]),
 html[data-theme="tda-vib"] [class*="-box"]:not([class*="ausweis"]):not([class*="toast"]):not([class*="error-box"]):not([class*="alert"]) {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
   color: #1a1512;
 }
@@ -177,7 +177,7 @@ html[data-theme="tda-vib"] input:not([type="range"]):not([type="checkbox"]):not(
 html[data-theme="tda-vib"] select,
 html[data-theme="tda-vib"] textarea {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] input:focus,
@@ -199,7 +199,7 @@ html[data-theme="tda-vib"] [class*="modal-content"],
 html[data-theme="tda-vib"] [class*="modal-inner"] {
   background: #ffffff !important;
   color: #1a1512 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] [class*="-overlay"]:not([class*="topbar"]) {
   background: rgba(26,21,18,0.45) !important;
@@ -244,7 +244,7 @@ html[data-theme="tda-vib"] ::-webkit-scrollbar-thumb:hover {
 html[data-theme="tda-vib"] table th {
   background: #f7f7f8 !important;
   color: #1a1512 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] table td {
   border-color: #f0f0f1 !important;
@@ -270,7 +270,7 @@ html[data-theme="tda-vib"] .ms-header-section {
 html[data-theme="tda-vib"] .ms-event-card,
 html[data-theme="tda-vib"] .ms-training-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
 }
@@ -282,7 +282,7 @@ html[data-theme="tda-vib"] .ms-past-card {
 html[data-theme="tda-vib"] .ms-view-btn,
 html[data-theme="tda-vib"] .ms-filter-btn {
   background: transparent !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #4a3c30 !important;
   box-shadow: none !important;
 }
@@ -310,7 +310,7 @@ html[data-theme="tda-vib"] .mp-contract-card,
 html[data-theme="tda-vib"] .mp-invoice-card,
 html[data-theme="tda-vib"] .mp-card-item {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
 }
@@ -355,7 +355,7 @@ html[data-theme="tda-vib"] .mp-tab-badge--warn {
 /* ── 13. MemberProfilePage (mp-/mpp- prefix) ─────────────────────────────────── */
 html[data-theme="tda-vib"] .mp-hero {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   box-shadow: 0 1px 6px rgba(26,21,18,0.08) !important;
   color: #1a1512 !important;
 }
@@ -377,13 +377,13 @@ html[data-theme="tda-vib"] .mp-stat-num {
 }
 html[data-theme="tda-vib"] .mp-section {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .mp-section-header {
   color: #1a1512 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .mp-row {
   background: transparent !important;
@@ -406,7 +406,7 @@ html[data-theme="tda-vib"] .mp-ausweis-card {
 /* ── 14. MemberEvents (me- prefix) ───────────────────────────────────────────── */
 html[data-theme="tda-vib"] .me-modal-box {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 8px 32px rgba(26,21,18,0.15) !important;
 }
@@ -421,7 +421,7 @@ html[data-theme="tda-vib"] .me-modal-box label {
 }
 html[data-theme="tda-vib"] .me-event-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
 }
@@ -446,7 +446,7 @@ html[data-theme="tda-vib"] .me-btn-register:hover {
 html[data-theme="tda-vib"] .me-fee-box,
 html[data-theme="tda-vib"] .me-total-box {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .me-error-box {
@@ -481,7 +481,7 @@ html[data-theme="tda-vib"] .stat-card,
 html[data-theme="tda-vib"] .comparison-card,
 html[data-theme="tda-vib"] .goals-list {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
 }
@@ -500,7 +500,7 @@ html[data-theme="tda-vib"] .progress-bar .progress-fill {
 html[data-theme="tda-vib"] [class*="month-detail"],
 html[data-theme="tda-vib"] [class*="detail-popup"] {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 4px 16px rgba(26,21,18,0.12) !important;
 }
@@ -518,14 +518,14 @@ html[data-theme="tda-vib"] .mst-grad-card,
 html[data-theme="tda-vib"] .graduation-item,
 html[data-theme="tda-vib"] .exam-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
 }
 html[data-theme="tda-vib"] .style-tab {
   background: transparent !important;
   color: #5a4d3e !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .style-tab.active {
   background: #2d2520 !important;
@@ -577,7 +577,7 @@ html[data-theme="tda-vib"] .mqr-btn-close {
 }
 html[data-theme="tda-vib"] .mqr-hint-box {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #5a4d3e !important;
 }
 
@@ -585,7 +585,7 @@ html[data-theme="tda-vib"] .mqr-hint-box {
 html[data-theme="tda-vib"] .mrc-invoice-card,
 html[data-theme="tda-vib"] .mrc-checkout-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
 }
@@ -614,13 +614,13 @@ html[data-theme="tda-vib"] [class*="mrc-total"] {
 html[data-theme="tda-vib"] .mrc-gdpr-block,
 html[data-theme="tda-vib"] .mrc-stripe-element {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .mrc-btn-secondary {
   background: transparent !important;
   color: #5a4d3e !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 
 /* ── 19. MemberDashboardMobile (mapp- prefix) ────────────────────────────────── */
@@ -630,7 +630,7 @@ html[data-theme="tda-vib"] .mapp-root {
 }
 html[data-theme="tda-vib"] .mapp-topbar {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   box-shadow: 0 1px 3px rgba(26,21,18,0.06) !important;
   color: #1a1512 !important;
 }
@@ -667,7 +667,7 @@ html[data-theme="tda-vib"] .mapp-hero-name {
 /* Belt-Badge + Hero-Meta neutral */
 html[data-theme="tda-vib"] .mapp-belt-badge {
   background: #f0ede9 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #4a3c30 !important;
 }
 html[data-theme="tda-vib"] .mapp-hero-meta {
@@ -688,7 +688,7 @@ html[data-theme="tda-vib"] .mapp-ausweis * {
 }
 html[data-theme="tda-vib"] .mapp-stat {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 1px 3px rgba(26,21,18,0.06) !important;
 }
@@ -703,7 +703,7 @@ html[data-theme="tda-vib"] .mapp-stat-label {
 }
 html[data-theme="tda-vib"] .mapp-qa-btn {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 1px 3px rgba(26,21,18,0.06) !important;
 }
@@ -724,7 +724,7 @@ html[data-theme="tda-vib"] .mapp-section h3 {
 html[data-theme="tda-vib"] .mapp-event,
 html[data-theme="tda-vib"] .mapp-news {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .mapp-modal-overlay {
@@ -732,12 +732,12 @@ html[data-theme="tda-vib"] .mapp-modal-overlay {
 }
 html[data-theme="tda-vib"] .mapp-modal-sheet {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .mapp-tabbar {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   box-shadow: 0 -1px 6px rgba(26,21,18,0.08) !important;
 }
 html[data-theme="tda-vib"] .mapp-tab {
@@ -758,22 +758,22 @@ html[data-theme="tda-vib"] .mapp-tab[class*="active"] .mapp-tab-icon-wrap {
 /* TrainingReminders: Settings-Button + Reminder-Card */
 html[data-theme="tda-vib"] .training-reminders .settings-button {
   background: #f4f0eb !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #4a3c30 !important;
 }
 html[data-theme="tda-vib"] .training-reminders .settings-button:hover,
 html[data-theme="tda-vib"] .training-reminders .settings-button--active {
   background: #ece8e2 !important;
-  border-color: #c4b8aa !important;
+  border-color: #b8b8b8 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .training-reminders .reminder-settings {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .training-reminders .reminder-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 
 /* MemberDashboard: Event-Badge, Referral, Graduation-Badge, Progress-Row */
@@ -784,18 +784,18 @@ html[data-theme="tda-vib"] .member-event-badge.register {
 }
 html[data-theme="tda-vib"] .member-referral-wrap {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .md-referral-praemie {
   background: #f4f0eb !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .md-graduation-badge {
   background: rgba(26,21,18,0.08) !important;
   color: #2d2520 !important;
 }
 html[data-theme="tda-vib"] .md-progress-row {
-  border-bottom-color: #e2d9ce !important;
+  border-bottom-color: #d0d0d0 !important;
 }
 
 /* Alle weiteren primary-alpha Borders und Hintergründe global neutralisieren */
@@ -853,11 +853,11 @@ html[data-theme="tda-vib"] .chat-page {
 }
 html[data-theme="tda-vib"] .chat-sidebar {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .chat-room-list-header {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .chat-room-list-title {
@@ -890,7 +890,7 @@ html[data-theme="tda-vib"] .chat-window {
 }
 html[data-theme="tda-vib"] .chat-window-header {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .chat-window-room-name {
@@ -901,11 +901,11 @@ html[data-theme="tda-vib"] .chat-window-member-count {
 }
 html[data-theme="tda-vib"] .chat-input-bar {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .chat-input {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .chat-input:focus {
@@ -922,7 +922,7 @@ html[data-theme="tda-vib"] .chat-message--own .chat-message-bubble {
 html[data-theme="tda-vib"] .chat-message--other .chat-message-bubble {
   background: #ffffff !important;
   color: #1a1512 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .chat-new-btn {
   background: #2d2520 !important;
@@ -933,7 +933,7 @@ html[data-theme="tda-vib"] .chat-new-btn:hover {
 }
 html[data-theme="tda-vib"] .chat-room-filter input {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .chat-room-avatar {
@@ -948,7 +948,7 @@ html[data-theme="tda-vib"] .sp-app {
 }
 html[data-theme="tda-vib"] .sp-header {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .sp-header-title {
@@ -965,7 +965,7 @@ html[data-theme="tda-vib"] .sp-header-tab.active {
 }
 html[data-theme="tda-vib"] .sp-login-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .sp-login-btn {
@@ -1029,7 +1029,7 @@ html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.invalid {
 @media (max-width: 767px) {
   html[data-theme="tda-vib"] .mobile-bottom-nav {
     background: rgba(255,255,255,0.97) !important;
-    border-top: 1px solid #e2d9ce !important;
+    border-top: 1px solid #d0d0d0 !important;
     box-shadow: 0 -1px 6px rgba(26,21,18,0.08), 0 -4px 16px rgba(26,21,18,0.04) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
@@ -1066,7 +1066,7 @@ html[data-theme="tda-vib"] .member-navigation-grid {
 }
 html[data-theme="tda-vib"] .nav-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
 }
@@ -1101,7 +1101,7 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
   /* Alle Hero-Buttons: neutrales Grau — kein farbiger Schimmer */
   html[data-theme="tda-vib"] .md-mobile-hero-btn {
     background: #ffffff !important;
-    border: 1.5px solid #e2d9ce !important;
+    border: 1.5px solid #d0d0d0 !important;
     animation: none !important;
     box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
   }
@@ -1109,7 +1109,7 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
   html[data-theme="tda-vib"] .md-mobile-hero-btn::after { display: none !important; }
   /* Checkin-Button: neutral, kein roter Rand */
   html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin {
-    border-color: #e2d9ce !important;
+    border-color: #d0d0d0 !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin .md-mobile-hero-btn-label {
     color: #1a1512 !important;
@@ -1122,7 +1122,7 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
   }
   /* QR-Button: neutraler Rand */
   html[data-theme="tda-vib"] .md-mobile-hero-btn--primary {
-    border-color: #e2d9ce !important;
+    border-color: #d0d0d0 !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--primary .md-mobile-hero-btn-label {
     color: #1a1512 !important;
@@ -1136,7 +1136,7 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
   }
   /* Abwesenheit: neutraler Rand */
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence {
-    border-color: #e2d9ce !important;
+    border-color: #d0d0d0 !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence .md-mobile-hero-btn-label {
     color: #1a1512 !important;
@@ -1146,15 +1146,15 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence-active {
     background: rgba(26,21,18,0.04) !important;
-    border-color: #c4b8aa !important;
+    border-color: #b8b8b8 !important;
   }
 }
 
 /* ── 26. MobileBottomNav — dark → hell im tda-vib Theme ─────────────────────── */
 html[data-theme="tda-vib"] .mobile-bottom-nav {
   background: rgba(255, 255, 255, 0.97) !important;
-  border-top: 1px solid #e2d9ce !important;
-  box-shadow: 0 -1px 0 #e2d9ce, 0 -4px 16px rgba(26,21,18,0.06) !important;
+  border-top: 1px solid #d0d0d0 !important;
+  box-shadow: 0 -1px 0 #d0d0d0, 0 -4px 16px rgba(26,21,18,0.06) !important;
 }
 html[data-theme="tda-vib"] .mobile-bottom-nav__tab {
   color: rgba(26,21,18,0.35) !important;
@@ -1174,7 +1174,7 @@ html[data-theme="tda-vib"] .mobile-bottom-nav__tab--active svg {
 /* ── 27. Meine Termine Liste/Kachel-Toggle — lesbarer im tda-vib Theme ───────── */
 html[data-theme="tda-vib"] .ms-view-btn {
   background: #f4f0eb !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #4a3c30 !important;
 }
 html[data-theme="tda-vib"] .ms-view-btn--active {
@@ -1184,17 +1184,17 @@ html[data-theme="tda-vib"] .ms-view-btn--active {
 }
 html[data-theme="tda-vib"] .ms-view-btn:not(.ms-view-btn--active):hover {
   background: #ece8e2 !important;
-  border-color: #c4b8aa !important;
+  border-color: #b8b8b8 !important;
 }
 
 /* ── 28. MemberCheckin Modal — Dark-Theme Farben → Washi Light ───────────────── */
 html[data-theme="tda-vib"] .modal-content.checkin-modal {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .modal-header {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .modal-header h2 {
   color: #2d2520 !important;
@@ -1204,7 +1204,7 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .modal-header h2 {
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .step-header {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .step-header h3 {
   color: #2d2520 !important;
@@ -1220,7 +1220,7 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .step-icon {
 /* Kurs-Items */
 html[data-theme="tda-vib"] .modal-content.checkin-modal .course-item {
   background: rgba(26,21,18,0.02) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   border-left-color: transparent !important;
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .course-item:hover {
@@ -1258,7 +1258,7 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .course-item.selected .c
 html[data-theme="tda-vib"] .modal-content.checkin-modal .btn-secondary {
   background: rgba(26,21,18,0.06) !important;
   color: #5a4d3e !important;
-  border: 1px solid #e2d9ce !important;
+  border: 1px solid #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .btn-primary {
   background: #2d2520 !important;
@@ -1272,7 +1272,7 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .btn-success {
 /* Schliessen-Button */
 html[data-theme="tda-vib"] .modal-content.checkin-modal .close-button {
   background: rgba(26,21,18,0.05) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #5a4d3e !important;
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .close-button:hover {
@@ -1283,7 +1283,7 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .close-button:hover {
 /* Bestätigungs-Zusammenfassung */
 html[data-theme="tda-vib"] .modal-content.checkin-modal .selected-courses {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .selected-course-item {
   background: rgba(26,21,18,0.06) !important;
@@ -1307,7 +1307,7 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-step.completed
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-step.inactive {
   background: rgba(26,21,18,0.04) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #9a8a7a !important;
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-line.completed {
@@ -1315,7 +1315,7 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-line.completed
   box-shadow: none !important;
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-line.inactive {
-  background: #e2d9ce !important;
+  background: #d0d0d0 !important;
 }
 /* Succes-Meldung: pink → grün */
 html[data-theme="tda-vib"] .modal-content.checkin-modal .message.success {
@@ -1327,7 +1327,7 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .message.success {
 /* Such-Container im Checkin: weiß-transparent → echtes Weiß */
 html[data-theme="tda-vib"] .modal-content.checkin-modal .search-container {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.08) !important;
 }
 html[data-theme="tda-vib"] .modal-content.checkin-modal .search-container:focus-within {
@@ -1352,7 +1352,7 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .search-clear {
 html[data-theme="tda-vib"] .checkin-modal-close,
 html[data-theme="tda-vib"] .modal-content.checkin-modal .checkin-modal-close {
   background: rgba(26,21,18,0.05) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #5a4d3e !important;
 }
 /* Scroll-Containment: verhindert iOS-Scroll-Leck durch das Modal */
@@ -1403,7 +1403,7 @@ html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.invalid * {
 /* Die <style> Tags in MemberSchedule.jsx haben Gold/Weiß — hier überschrieben */
 html[data-theme="tda-vib"] .calendar-view {
   background: #ffffff !important;
-  border: 1px solid #e2d9ce !important;
+  border: 1px solid #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .calendar-header h2 {
   color: #1a1512 !important;
@@ -1473,7 +1473,7 @@ html[data-theme="tda-vib"] .referral-tab.active {
 }
 html[data-theme="tda-vib"] .referral-stat-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
 }
@@ -1491,7 +1491,7 @@ html[data-theme="tda-vib"] .code-card,
 html[data-theme="tda-vib"] .staffel-item,
 html[data-theme="tda-vib"] .settings-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .settings-card-title,
@@ -1511,7 +1511,7 @@ html[data-theme="tda-vib"] .fwf-section-h3-blue {
 }
 html[data-theme="tda-vib"] .top-werber-item {
   background: rgba(26,21,18,0.03) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .bonus-system-info {
@@ -1521,7 +1521,7 @@ html[data-theme="tda-vib"] .bonus-system-info {
 }
 html[data-theme="tda-vib"] .bonus-scale .bonus-item {
   background: rgba(26,21,18,0.04) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .bonus-scale .bonus-item.highlight {
@@ -1546,7 +1546,7 @@ html[data-theme="tda-vib"] .referral-status-badge {
 }
 html[data-theme="tda-vib"] .fwf-code-search-wrapper {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .fwf-code-search-input {
   background: transparent !important;
@@ -1560,7 +1560,7 @@ html[data-theme="tda-vib"] .fwf-code-search-clear {
 /* ── 30. Today-Strip auf Dashboard ───────────────────────────────────────────── */
 html[data-theme="tda-vib"] .md-today-strip {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .md-today-date {
   color: #1a1512 !important;
@@ -1578,7 +1578,7 @@ html[data-theme="tda-vib"] .md-today-chip-label {
   color: #7a6a5a !important;
 }
 html[data-theme="tda-vib"] .md-today-chip-divider {
-  background: #e2d9ce !important;
+  background: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .md-today-chip--warn .md-today-chip-val {
   color: #dc2626 !important;
@@ -1592,7 +1592,7 @@ html[data-theme="tda-vib"] .md-today-chip--exam .md-today-chip-label {
 @media (max-width: 767px) {
   html[data-theme="tda-vib"] .mobile-bottom-nav {
     background: rgba(255,255,255,0.97) !important;
-    border-top: 1px solid #e2d9ce !important;
+    border-top: 1px solid #d0d0d0 !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
     box-shadow: 0 -1px 0 rgba(26,21,18,0.06), 0 -4px 12px rgba(26,21,18,0.06) !important;
@@ -1675,7 +1675,7 @@ html[data-theme="tda-vib"] .apple-wallet-btn * {
 /* ── 34. Dashboard Stat-Cards & Quick-Actions — Washi Light ──────────────── */
 html[data-theme="tda-vib"] .member-stat-card {
   background: #ffffff !important;
-  border: 1px solid #e2d9ce !important;
+  border: 1px solid #d0d0d0 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -1695,7 +1695,7 @@ html[data-theme="tda-vib"] .member-belt-stripe {
 }
 html[data-theme="tda-vib"] .cta-tile-quick {
   background: rgba(26,21,18,0.03) !important;
-  border: 1px solid #e2d9ce !important;
+  border: 1px solid #d0d0d0 !important;
   box-shadow: none !important;
 }
 html[data-theme="tda-vib"] .cta-tile-quick::before,
@@ -1743,15 +1743,15 @@ html[data-theme="tda-vib"] .mst-gradient-title {
 }
 html[data-theme="tda-vib"] .mst-empty-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .mst-stil-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .mst-stil-header {
   background: rgba(26,21,18,0.05) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .mst-belt-current {
   background: rgba(26,21,18,0.04) !important;
@@ -1759,7 +1759,7 @@ html[data-theme="tda-vib"] .mst-belt-current {
 }
 html[data-theme="tda-vib"] .mst-belt-next {
   background: rgba(26,21,18,0.02) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .mst-progress-track {
   background: rgba(26,21,18,0.10) !important;
@@ -1770,7 +1770,7 @@ html[data-theme="tda-vib"] .mst-progress-fill {
 }
 html[data-theme="tda-vib"] .mst-exam-box {
   background: rgba(26,21,18,0.04) !important;
-  border: 1px solid #e2d9ce !important;
+  border: 1px solid #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .mst-exam-box-label {
   color: #9a8a7a !important;
@@ -1804,7 +1804,7 @@ html[data-theme="tda-vib"] .member-styles .hours-value {
 }
 html[data-theme="tda-vib"] .member-styles .tracker-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .member-styles .tracker-card:hover {
   background: #fafafa !important;
@@ -1813,7 +1813,7 @@ html[data-theme="tda-vib"] .member-styles .tracker-card:hover {
 }
 html[data-theme="tda-vib"] .member-styles .training-tracker-section {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .member-styles .progress-bar {
   background: rgba(26,21,18,0.08) !important;
@@ -1839,7 +1839,7 @@ html[data-theme="tda-vib"] .member-event-badge.register {
 }
 html[data-theme="tda-vib"] .md-referral-praemie {
   background: rgba(26,21,18,0.03) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .md-graduation-badge {
   background: rgba(26,21,18,0.06) !important;
@@ -1847,7 +1847,7 @@ html[data-theme="tda-vib"] .md-graduation-badge {
 }
 html[data-theme="tda-vib"] .md-modal-fee-card {
   background: rgba(26,21,18,0.03) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .md-notif-item {
   background: rgba(26,21,18,0.02) !important;
@@ -1868,7 +1868,7 @@ html[data-theme="tda-vib"] .md-notif-title--unread {
 /* CTA-Tiles auf dem Dashboard */
 html[data-theme="tda-vib"] .cta-tile {
   background: #ffffff !important;
-  border: 1px solid #e2d9ce !important;
+  border: 1px solid #d0d0d0 !important;
   box-shadow: 0 1px 3px rgba(26,21,18,0.06) !important;
   animation: none !important;
 }
@@ -1884,7 +1884,7 @@ html[data-theme="tda-vib"] .cta-tile:hover {
 html[data-theme="tda-vib"] .pnp-panel,
 html[data-theme="tda-vib"] .pnp-inner {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .pnp-close-btn {
@@ -1899,7 +1899,7 @@ html[data-theme="tda-vib"] {
 }
 html[data-theme="tda-vib"] .chat-status-tabs {
   background: #f0f0f1 !important;
-  border-bottom: 1px solid #e2d9ce !important;
+  border-bottom: 1px solid #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .chat-status-tab {
   color: #7a6a5a !important;
@@ -1909,19 +1909,19 @@ html[data-theme="tda-vib"] .chat-status-tab:hover {
 }
 html[data-theme="tda-vib"] .chat-room-filter {
   background: #ffffff !important;
-  border-bottom-color: #e2d9ce !important;
+  border-bottom-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .chat-room-filter input {
   background: #f7f7f8 !important;
   color: #1a1512 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .chat-room-filter input::placeholder {
   color: #9a8a7a !important;
 }
 html[data-theme="tda-vib"] .crs-status-btn {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #5a4d3e !important;
 }
 html[data-theme="tda-vib"] .crs-status-btn--active {
@@ -1937,15 +1937,15 @@ html[data-theme="tda-vib"] .abw-widget::before {
 }
 /* Trennlinien sichtbar */
 html[data-theme="tda-vib"] .abw-form {
-  border-top-color: #e2d9ce !important;
+  border-top-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .abw-list {
-  border-top-color: #e2d9ce !important;
+  border-top-color: #d0d0d0 !important;
 }
 /* Quick-Auswahl Chips */
 html[data-theme="tda-vib"] .abw-quick {
   background: rgba(26,21,18,0.04) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #5a4d3e !important;
 }
 html[data-theme="tda-vib"] .abw-quick:hover {
@@ -1956,7 +1956,7 @@ html[data-theme="tda-vib"] .abw-quick:hover {
 /* Art-Buttons (Krankheit / Urlaub etc.) — war rosa auf Weiß */
 html[data-theme="tda-vib"] .abw-art-btn {
   background: rgba(26,21,18,0.04) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #5a4d3e !important;
 }
 html[data-theme="tda-vib"] .abw-art-btn--active {
@@ -1980,7 +1980,7 @@ html[data-theme="tda-vib"] .abw-form-field input[type="date"],
 html[data-theme="tda-vib"] .abw-form-field input[type="text"],
 html[data-theme="tda-vib"] .abw-form-field input {
   background: #ffffff !important;
-  border: 1px solid #e2d9ce !important;
+  border: 1px solid #d0d0d0 !important;
   color: #1a1512 !important;
   color-scheme: normal !important;
 }
@@ -1992,7 +1992,7 @@ html[data-theme="tda-vib"] .abw-form-field input:focus {
 /* Textarea Rand sichtbar */
 html[data-theme="tda-vib"] .abw-notiz {
   background: #ffffff !important;
-  border: 1px solid #e2d9ce !important;
+  border: 1px solid #d0d0d0 !important;
   color: #1a1512 !important;
 }
 
@@ -2017,7 +2017,7 @@ html[data-theme="tda-vib"] .sa-btn-primary {
 /* ── 41. Dashboard Gürtel-Widget — Washi Light ───────────────────────────── */
 /* .md-belt-widget: Dark-Theme Ränder + Hintergründe → Washi Light */
 html[data-theme="tda-vib"] .md-belt-widget {
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   background: #ffffff !important;
 }
 html[data-theme="tda-vib"] .md-belt-row {
@@ -2038,7 +2038,7 @@ html[data-theme="tda-vib"] .md-belt-stil {
 /* Prüfungs-Badge: Gold → Neutral */
 html[data-theme="tda-vib"] .md-belt-exam {
   background: rgba(26,21,18,0.03) !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .md-belt-exam-date {
   color: #7a6a5a !important;
@@ -2125,7 +2125,7 @@ html[data-theme="tda-vib"] .dashboard-content .u-text-accent {
 
 /* NextTrainingsWidget + member-Karten: border neutral */
 html[data-theme="tda-vib"] [class*="member-"]:not(button):not(a):not(.member-stat-value--ok):not(.member-stat-value--err) {
-  border-color: #e2d9ce;
+  border-color: #d0d0d0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -2137,7 +2137,7 @@ html[data-theme="tda-vib"] [class*="member-"]:not(button):not(a):not(.member-sta
 /* ── NextTrainingsWidget: weiße Schrift → dunkel, dunkel BG → hell ─── */
 html[data-theme="tda-vib"] .ntw-wrap {
   background: #ffffff !important;
-  border: 1px solid #e2d9ce !important;
+  border: 1px solid #d0d0d0 !important;
   box-shadow: 0 1px 4px rgba(26,21,18,0.06) !important;
   backdrop-filter: none !important;
 }
@@ -2152,12 +2152,12 @@ html[data-theme="tda-vib"] .ntw-link:hover {
 }
 html[data-theme="tda-vib"] .ntw-card {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   border-left-color: transparent !important;
 }
 html[data-theme="tda-vib"] .ntw-card--today {
   background: #f0ede9 !important;
-  border-color: #c4b8aa !important;
+  border-color: #b8b8b8 !important;
   border-left-color: #2d2520 !important;
   box-shadow: none !important;
 }
@@ -2169,7 +2169,7 @@ html[data-theme="tda-vib"] .ntw-day-num {
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .ntw-divider {
-  background: #e2d9ce !important;
+  background: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .ntw-kurs {
   color: #1a1512 !important;
@@ -2187,7 +2187,7 @@ html[data-theme="tda-vib"] .ntw-empty {
 /* ── TrainingReminders: Dark → Light ─────────────────────────────── */
 html[data-theme="tda-vib"] .training-reminders {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .training-reminders .reminders-title h3 {
   color: #1a1512 !important;
@@ -2195,7 +2195,7 @@ html[data-theme="tda-vib"] .training-reminders .reminders-title h3 {
 }
 html[data-theme="tda-vib"] .training-reminders .reminder-card {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .training-reminders .reminder-course h4 {
   color: #1a1512 !important;
@@ -2213,7 +2213,7 @@ html[data-theme="tda-vib"] .training-reminders .no-reminders p {
 }
 html[data-theme="tda-vib"] .training-reminders .course-preview {
   background: #f7f7f8 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .training-reminders .course-name {
   color: #1a1512 !important;
@@ -2228,7 +2228,7 @@ html[data-theme="tda-vib"] .training-reminders .reminder-settings h4 {
 }
 html[data-theme="tda-vib"] .training-reminders .dismiss-button {
   background: #f0ede9 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #4a3c30 !important;
 }
 html[data-theme="tda-vib"] .tr-course-name {
@@ -2240,7 +2240,7 @@ html[data-theme="tda-vib"] .ms-card,
 html[data-theme="tda-vib"] .ms-event-card,
 html[data-theme="tda-vib"] .ms-past-card {
   background: #ffffff !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .ms-card-title,
@@ -2251,7 +2251,7 @@ html[data-theme="tda-vib"] .ms-card-title-xs {
 html[data-theme="tda-vib"] .ms-badge-absolviert {
   background: rgba(26,21,18,0.06) !important;
   color: #4a3c30 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 html[data-theme="tda-vib"] .ms-icon-primary-alpha {
   color: #4a3c30 !important;
@@ -2259,7 +2259,7 @@ html[data-theme="tda-vib"] .ms-icon-primary-alpha {
 html[data-theme="tda-vib"] .ms-past-icon-box {
   background: #f0ede9 !important;
   color: #4a3c30 !important;
-  border-color: #e2d9ce !important;
+  border-color: #d0d0d0 !important;
 }
 
 /* ── Alle rgba(255,255,255,x) Texte die auf weißem Grund unsichtbar ── */
@@ -2273,7 +2273,73 @@ html[data-theme="tda-vib"] .member-contract-btn,
 html[data-theme="tda-vib"] [class*="vertrag-btn"],
 html[data-theme="tda-vib"] [class*="contract-btn"] {
   background: #f0ede9 !important;
-  border: 1px solid #c4b8aa !important;
+  border: 1px solid #b8b8b8 !important;
   color: #1a1512 !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   WASHI-ROT (朱色 Shu-iro) — gezielter roter Akzent
+   ═══════════════════════════════════════════════════════════ */
+
+/* Mitgliedskarte: roter Strich OBEN */
+html[data-theme="tda-vib"] .mapp-ausweis::after {
+  background: linear-gradient(90deg, transparent, #c0392b 30%, #c0392b 70%, transparent) !important;
+  height: 2px !important;
+}
+
+/* Mitgliedskarte: roter Strich UNTEN */
+html[data-theme="tda-vib"] .mapp-ausweis::before {
+  /* Wir nutzen ::before für den unteren Strich statt des Kanji-Watermarks */
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  top: auto !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 2px !important;
+  width: auto !important;
+  font-size: 0 !important;
+  background: linear-gradient(90deg, transparent, #c0392b 30%, #c0392b 70%, transparent) !important;
+  transform: none !important;
+  color: transparent !important;
+  pointer-events: none !important;
+}
+
+/* Hero-Kanji (武 道): Washi-Rot */
+html[data-theme="tda-vib"] .mapp-hero-kanji {
+  color: #c0392b !important;
+  opacity: 0.55 !important;
+}
+
+/* Topbar-Buttons: leicht sichtbarer Hintergrund für bessere Lesbarkeit */
+html[data-theme="tda-vib"] .mapp-notif-btn {
+  background: rgba(26,21,18,0.06) !important;
+  color: #1a1512 !important;
+  border: 1px solid #d0d0d0 !important;
+}
+html[data-theme="tda-vib"] .mapp-notif-btn:hover {
+  background: rgba(26,21,18,0.10) !important;
+}
+html[data-theme="tda-vib"] .mapp-notif-btn svg {
+  color: #1a1512 !important;
+}
+
+/* Topbar selbst: leicht abgesetzt vom weißen Hintergrund */
+html[data-theme="tda-vib"] .mapp-topbar {
+  background: #f5f5f5 !important;
+  border-bottom: 1px solid #d0d0d0 !important;
+}
+
+/* Scroll-Bereich leicht abgesetzt */
+html[data-theme="tda-vib"] .mapp-scroll,
+html[data-theme="tda-vib"] .mapp-content {
+  background: #f7f7f7 !important;
+}
+
+/* Bottom-Tabbar: leicht abgesetzt */
+html[data-theme="tda-vib"] .mapp-tabbar {
+  background: #f5f5f5 !important;
+  border-top: 1px solid #d0d0d0 !important;
 }
 
