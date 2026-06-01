@@ -1524,10 +1524,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">🖥️</span>
-                                <h3>
-                                  Check-in Anzeige
-                                  <span className="nav-count">(LIVE)</span>
-                                </h3>
+                                <h3>Check-in Anzeige</h3>
                               </div>
                               <p>Check-in Display für 2. Monitor</p>
                             </div>
@@ -1542,10 +1539,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">📚</span>
-                                <h3>
-                                  Stundenplan Anzeige
-                                  <span className="nav-count">(AUTO)</span>
-                                </h3>
+                                <h3>Stundenplan Anzeige</h3>
                               </div>
                               <p>Rotierender Stundenplan für 2. Monitor</p>
                             </div>
