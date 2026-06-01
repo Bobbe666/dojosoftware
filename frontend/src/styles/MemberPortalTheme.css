@@ -2343,3 +2343,97 @@ html[data-theme="tda-vib"] .mapp-tabbar {
   border-top: 1px solid #d0d0d0 !important;
 }
 
+
+/* ═══════════════════════════════════════════════════════════
+   MEMBER PROFILE PAGE — Dark → Washi Light
+   ═══════════════════════════════════════════════════════════ */
+
+html[data-theme="tda-vib"] .mp-page {
+  background: #f7f7f7 !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mp-topbar {
+  background: #f5f5f5 !important;
+  border-bottom-color: #d0d0d0 !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mp-topbar-title {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mp-back,
+html[data-theme="tda-vib"] .mp-logout-btn {
+  color: #4a3c30 !important;
+  background: rgba(26,21,18,0.05) !important;
+  border-color: #d0d0d0 !important;
+}
+html[data-theme="tda-vib"] .mp-scroll {
+  background: #f7f7f7 !important;
+}
+html[data-theme="tda-vib"] .mp-hero {
+  background: #ffffff !important;
+  border-bottom-color: #d0d0d0 !important;
+}
+html[data-theme="tda-vib"] .mp-stat-bar {
+  background: #f5f5f5 !important;
+  border-bottom-color: #d0d0d0 !important;
+}
+html[data-theme="tda-vib"] .mp-stat-card {
+  background: #ffffff !important;
+  border-color: #d0d0d0 !important;
+}
+html[data-theme="tda-vib"] .mp-stat-card .mp-stat-val {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mp-stat-card .mp-stat-label {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .mp-section {
+  background: #ffffff !important;
+  border-color: #d0d0d0 !important;
+}
+html[data-theme="tda-vib"] .mp-section-title {
+  color: #1a1512 !important;
+  border-bottom-color: #d0d0d0 !important;
+}
+html[data-theme="tda-vib"] .mp-row-label {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .mp-row-value {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mp-avatar-edit {
+  background: #f0f0f0 !important;
+  border-color: #d0d0d0 !important;
+  color: #4a3c30 !important;
+}
+/* Mitgliedsausweis innerhalb Profil: dunkel lassen */
+html[data-theme="tda-vib"] .mp-ausweis-card {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+}
+html[data-theme="tda-vib"] .mp-toast {
+  background: #1a1512 !important;
+  color: #ffffff !important;
+  border-color: #333 !important;
+}
+html[data-theme="tda-vib"] .mp-btn {
+  background: #2d2520 !important;
+  color: #ffffff !important;
+  border-color: #2d2520 !important;
+}
+html[data-theme="tda-vib"] .mp-btn--outline {
+  background: transparent !important;
+  color: #2d2520 !important;
+  border-color: #2d2520 !important;
+}
+html[data-theme="tda-vib"] .mp-input,
+html[data-theme="tda-vib"] .mp-textarea,
+html[data-theme="tda-vib"] .mp-select {
+  background: #ffffff !important;
+  border-color: #d0d0d0 !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .mp-loading,
+html[data-theme="tda-vib"] .mp-error {
+  background: #f7f7f7 !important;
+  color: #1a1512 !important;
+}
