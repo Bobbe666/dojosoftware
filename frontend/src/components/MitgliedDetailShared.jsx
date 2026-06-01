@@ -3220,7 +3220,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           size={70}
                           level="M"
                           bgColor="#ffffff"
-                          fgColor="#000000"
+                          fgColor="#8b1a1a"
                         />
                       </div>
                     </div>
@@ -3229,7 +3229,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   {/* Footer */}
                   <div className="ausweis-footer">
                     <div className="ausweis-motto">心技体 — Shin Gi Tai</div>
-                    <div className="ausweis-website">www.tda-vib.de</div>
+                    <div className="ausweis-website">www.kampfkunstschule-schreiner.de</div>
                   </div>
                 </div>
 

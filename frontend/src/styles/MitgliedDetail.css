@@ -7337,7 +7337,7 @@ option:checked {
   width: 660px;
   max-width: 660px;
   margin: 0 auto;
-  border: 3px solid var(--primary);
+  border: 3px solid #8b1a1a;
   box-sizing: border-box;
 }
 
@@ -7346,13 +7346,13 @@ option:checked {
   text-align: center !important;
   margin-bottom: 10px !important;
   padding-bottom: 10px !important;
-  border-bottom: 2px solid var(--primary) !important;
+  border-bottom: 2px solid #8b1a1a !important;
 }
 
 .ausweis-title .title-jp {
   display: block !important;
   font-size: 13px !important;
-  color: var(--primary) !important;
+  color: #8b1a1a !important;
   letter-spacing: 6px !important;
   margin-bottom: 2px !important;
 }
@@ -7386,7 +7386,7 @@ option:checked {
   height: 110px !important;
   border-radius: 50% !important;
   object-fit: cover !important;
-  border: 3px solid var(--primary) !important;
+  border: 3px solid #8b1a1a !important;
 }
 
 /* Mitte: Kanji, Name, Infos */
@@ -7400,7 +7400,7 @@ option:checked {
 
 .ausweis-kanji {
   font-size: 22px !important;
-  color: var(--primary) !important;
+  color: #8b1a1a !important;
   letter-spacing: 8px !important;
   font-weight: bold !important;
   margin-bottom: 5px !important;
@@ -7427,7 +7427,7 @@ option:checked {
 
 .ausweis-info-row .info-label {
   font-size: 11px !important;
-  color: var(--primary) !important;
+  color: #8b1a1a !important;
   text-transform: uppercase !important;
   font-weight: 600 !important;
   min-width: 100px !important;
@@ -7452,7 +7452,7 @@ option:checked {
   height: 88px !important;
   background: var(--color-sumi) !important;
   border-radius: var(--comp-radius-md) !important;
-  border: 3px solid var(--primary) !important;
+  border: 3px solid #8b1a1a !important;
   overflow: hidden !important;
 }
 
@@ -7468,7 +7468,7 @@ option:checked {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: var(--primary) !important;
+  color: #8b1a1a !important;
   font-size: 24px !important;
 }
 
@@ -7494,12 +7494,12 @@ option:checked {
   justify-content: space-between !important;
   align-items: center !important;
   padding-top: 8px !important;
-  border-top: 2px solid var(--primary) !important;
+  border-top: 2px solid #8b1a1a !important;
 }
 
 .ausweis-motto {
   font-size: 12px !important;
-  color: var(--primary) !important;
+  color: #8b1a1a !important;
   font-style: italic !important;
 }
 
