@@ -125,7 +125,8 @@ export const DojoProvider = ({ children }) => {
   useEffect(() => {
     if (!loading && dojos.length === 0) {
       const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
-      const hasDojoId = user && user.dojo_id;
+      const storedUser = JSON.parse(localStorage.getItem('dojo_user') || 'null');
+      const hasDojoId = storedUser && storedUser.dojo_id;
       if (token && hasDojoId && retryCountRef.current < 3) {
         const delay = 4000 * Math.pow(2, retryCountRef.current); // 4s, 8s, 16s
         console.log(`🔄 DojoContext: Retry #${retryCountRef.current + 1} in ${delay / 1000}s...`);
