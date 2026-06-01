@@ -365,10 +365,7 @@ html[data-theme="tda-vib"] .mp-hero-name {
   background: none !important;
   text-shadow: none !important;
 }
-html[data-theme="tda-vib"] .mp-avatar-glow {
-  filter: none !important;
-  box-shadow: 0 0 0 3px rgba(26,21,18,0.25) !important;
-}
+html[data-theme="tda-vib"] .mp-avatar-glow { box-shadow: none; border-color: rgba(0,0,0,0.15); }
 html[data-theme="tda-vib"] .mp-stat-num {
   color: #2d2520 !important;
   -webkit-text-fill-color: #2d2520 !important;

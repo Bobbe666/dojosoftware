@@ -2012,9 +2012,9 @@
   /* Gradient-Gold → solide Farbe (verhindert gold clip-text Effekt) */
   --gradient-gold:        #2d2520;
   /* Glows + Shadows → subtil rot statt gold */
-  --glow-gold:            0 0 6px rgba(26,21,18,0.18);
+  --glow-gold: none;
   --glow-gold-sm:         none;
-  --glow-gold-lg:         0 0 14px rgba(26,21,18,0.22);
+  --glow-gold-lg: none;
   --shadow-gold:          0 4px 15px rgba(26,21,18,0.18);
   --shadow-gold-hover:    0 8px 25px rgba(26,21,18,0.28);
   --shadow-gold-lg:       0 12px 30px rgba(26,21,18,0.22);

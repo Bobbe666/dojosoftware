@@ -33,8 +33,8 @@
 
 /* ── Trigger Button ── */
 .dojo-switcher-trigger {
-  background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  background: var(--btn-ghost-bg, rgba(255,255,255,0.06));
+  border: 1px solid var(--border-default);
   border-radius: var(--comp-radius-lg);
   padding: 9px 16px;
   color: var(--text-1);
@@ -48,8 +48,8 @@
 }
 
 .dojo-switcher-trigger:hover {
-  background: var(--surface-3);
-  border-color: var(--primary-alpha-30);
+  background: var(--btn-ghost-bg-hover, rgba(255,255,255,0.1));
+  border-color: var(--border-hover);
 }
 
 .dojo-switcher-indicator {
@@ -57,9 +57,9 @@
   height: 8px;
   border-radius: 50%;
   background: var(--mode-color, var(--primary));
-  box-shadow: 0 0 6px var(--mode-color, var(--primary));
+  box-shadow: none;
   flex-shrink: 0;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 .dojo-switcher-name {
