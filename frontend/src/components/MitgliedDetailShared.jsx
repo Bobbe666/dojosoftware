@@ -3158,9 +3158,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             >
           {activeTab === "allgemein" && (
             <div className="grid-container">
-              {/* Mitgliedsausweis - ganz oben */}
-              <div className="field-group card mitgliedsausweis-container">
-                <h3>Mitgliedsausweis</h3>
+              {/* Mitgliedsausweis - ganz oben (identisch zur Member-App) */}
+              <div className="mitgliedsausweis-container mds-ausweis-wrap">
                 <div className="mitgliedsausweis" ref={ausweisRef}>
                   {/* Header mit Titel */}
                   <div className="ausweis-title">
@@ -3206,7 +3205,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       <div className="ausweis-foto">
                         {(mitglied?.foto_pfad || photoPreview) ? (
                           <img
-                            src={photoPreview || (mitglied?.foto_pfad ? `${window.location.protocol}//${window.location.hostname}:3000/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png')}
+                            src={photoPreview || `${config.imageBaseUrl}/${mitglied.foto_pfad}`}
                             alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
                           />
                         ) : (
@@ -3218,7 +3217,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       <div className="ausweis-qr">
                         <QRCodeSVG
                           value={`DOJO-CHECKIN:${mitglied?.dojo_id || '0'}:${mitglied?.mitglied_id || '0'}`}
-                          size={88}
+                          size={70}
                           level="M"
                           bgColor="#ffffff"
                           fgColor="#000000"

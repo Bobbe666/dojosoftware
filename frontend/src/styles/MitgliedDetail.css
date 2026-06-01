@@ -7316,6 +7316,18 @@ option:checked {
   grid-column: 1 / -1;
 }
 
+/* Admin-Detailansicht: identisch zur Member-App (480px statt 660px) */
+.mds-ausweis-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+.mds-ausweis-wrap .mitgliedsausweis {
+  width: 480px !important;
+  max-width: 480px !important;
+}
+
 .mitgliedsausweis {
   display: block !important;
   grid-template-columns: none !important;
