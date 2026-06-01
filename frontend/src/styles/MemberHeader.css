@@ -123,6 +123,13 @@ header.mh-portal.dashboard-header .dashboard-header-right {
   color: #7d1f20 !important;
 }
 
+/* Auf Mobile nicht nötig — MobileBottomNav übernimmt Navigation */
+@media (max-width: 767px) {
+  .mh-btn--back {
+    display: none !important;
+  }
+}
+
 .mh-btn--logout {
   color: #7a6a5a !important;
 }

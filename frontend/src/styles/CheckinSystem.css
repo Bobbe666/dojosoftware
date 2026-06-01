@@ -1770,8 +1770,8 @@
   border-radius: 1rem !important;
   max-width: 450px !important;
   width: 450px !important;
+  height: calc(100vh - 4rem) !important;
   max-height: calc(100vh - 4rem) !important;
-  height: auto !important;
   overflow: hidden !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
   animation: slideDown 0.3s ease-out !important;
@@ -1835,6 +1835,8 @@
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
   flex: 1 !important;
+  min-height: 0 !important;
+  overscroll-behavior: contain !important;
 }
 
 /* Course Selection Styles - Spezifisch für Member Check-in */

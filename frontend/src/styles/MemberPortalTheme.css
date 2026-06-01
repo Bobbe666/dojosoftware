@@ -980,7 +980,7 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
 
 /* ── 25. Mobile Hero Buttons (Training Einchecken / QR / Abwesenheit) ────────── */
 @media (max-width: 767px) {
-  /* Alle Hero-Buttons: weißer Hintergrund — kein rosa Tint */
+  /* Alle Hero-Buttons: neutrales Grau — kein farbiger Schimmer */
   html[data-theme="tda-vib"] .md-mobile-hero-btn {
     background: #ffffff !important;
     border: 1.5px solid #e2d9ce !important;
@@ -989,50 +989,87 @@ html[data-theme="tda-vib"] .nav-card .nav-badge.new {
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn::before,
   html[data-theme="tda-vib"] .md-mobile-hero-btn::after { display: none !important; }
-  /* Checkin-Button: Crimson-Akzent via Border */
+  /* Checkin-Button: neutral, kein roter Rand */
   html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin {
-    border-color: rgba(158,42,43,0.30) !important;
+    border-color: #e2d9ce !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin .md-mobile-hero-btn-label {
-    color: #9e2a2b !important;
+    color: #1a1512 !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--checkin .md-mobile-hero-btn-sub {
-    color: rgba(158,42,43,0.55) !important;
+    color: rgba(26,21,18,0.5) !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn-chevron {
     color: rgba(26,21,18,0.35) !important;
   }
-  /* QR-Button: subtiler Crimson-Rand */
+  /* QR-Button: neutraler Rand */
   html[data-theme="tda-vib"] .md-mobile-hero-btn--primary {
-    border-color: rgba(158,42,43,0.22) !important;
+    border-color: #e2d9ce !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--primary .md-mobile-hero-btn-label {
-    color: #9e2a2b !important;
+    color: #1a1512 !important;
   }
-  /* Alle Hero-Button Labels: weiß → dunkel */
+  /* Alle Hero-Button Labels: dunkel-neutral */
   html[data-theme="tda-vib"] .md-mobile-hero-btn-label {
     color: #1a1512 !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn-sub {
     color: rgba(26,21,18,0.5) !important;
   }
-  /* Abwesenheit: roter Rand, neutraler Hintergrund */
+  /* Abwesenheit: neutraler Rand */
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence {
-    border-color: rgba(239,68,68,0.30) !important;
+    border-color: #e2d9ce !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence .md-mobile-hero-btn-label {
-    color: #dc2626 !important;
+    color: #1a1512 !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence .md-mobile-hero-btn-sub {
-    color: rgba(220,38,38,0.55) !important;
+    color: rgba(26,21,18,0.5) !important;
   }
   html[data-theme="tda-vib"] .md-mobile-hero-btn--absence-active {
-    background: rgba(239,68,68,0.05) !important;
-    border-color: rgba(239,68,68,0.35) !important;
+    background: rgba(26,21,18,0.04) !important;
+    border-color: #c4b8aa !important;
   }
 }
 
-/* ── 26. MemberCheckin Modal — Dark-Theme Farben → Washi Light ───────────────── */
+/* ── 26. MobileBottomNav — dark → hell im tda-vib Theme ─────────────────────── */
+html[data-theme="tda-vib"] .mobile-bottom-nav {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border-top: 1px solid #e2d9ce !important;
+  box-shadow: 0 -1px 0 #e2d9ce, 0 -4px 16px rgba(26,21,18,0.06) !important;
+}
+html[data-theme="tda-vib"] .mobile-bottom-nav__tab {
+  color: rgba(26,21,18,0.35) !important;
+}
+html[data-theme="tda-vib"] .mobile-bottom-nav__tab--active {
+  color: #9e2a2b !important;
+}
+html[data-theme="tda-vib"] .mobile-bottom-nav__tab--active .mobile-bottom-nav__pill {
+  background: rgba(158,42,43,0.07) !important;
+  border-color: rgba(158,42,43,0.18) !important;
+  box-shadow: none !important;
+}
+html[data-theme="tda-vib"] .mobile-bottom-nav__tab--active svg {
+  filter: none !important;
+}
+
+/* ── 27. Meine Termine Liste/Kachel-Toggle — lesbarer im tda-vib Theme ───────── */
+html[data-theme="tda-vib"] .ms-view-btn {
+  background: #f4f0eb !important;
+  border-color: #e2d9ce !important;
+  color: #4a3c30 !important;
+}
+html[data-theme="tda-vib"] .ms-view-btn--active {
+  background: #9e2a2b !important;
+  border-color: #9e2a2b !important;
+  color: #ffffff !important;
+}
+html[data-theme="tda-vib"] .ms-view-btn:not(.ms-view-btn--active):hover {
+  background: #ece8e2 !important;
+  border-color: #c4b8aa !important;
+}
+
+/* ── 28. MemberCheckin Modal — Dark-Theme Farben → Washi Light ───────────────── */
 html[data-theme="tda-vib"] .modal-content.checkin-modal {
   background: #ffffff !important;
   border-color: #e2d9ce !important;
