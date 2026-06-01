@@ -2480,3 +2480,34 @@ html[data-theme="tda-vib"] .btn-ausweis {
   border-color: #c0392b !important;
   color: #c0392b !important;
 }
+
+/* ── Ausweis: Text-Variablen auf Weiß setzen (dunkle Karte braucht hellen Text) */
+html[data-theme="tda-vib"] .mitglieds-ausweis {
+  --text-1: rgba(255,255,255,0.95) !important;
+  --text-2: rgba(255,255,255,0.85) !important;
+  --text-3: rgba(255,255,255,0.60) !important;
+  --text-4: rgba(255,255,255,0.40) !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-name {
+  color: rgba(255,255,255,0.95) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.95) !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-detail label {
+  color: rgba(255,255,255,0.45) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.45) !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-detail span {
+  color: rgba(255,255,255,0.90) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.90) !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-detail {
+  background: rgba(255,255,255,0.05) !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-footer {
+  color: rgba(255,255,255,0.50) !important;
+  border-top-color: rgba(255,255,255,0.10) !important;
+}
+html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-title p {
+  color: rgba(255,255,255,0.55) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.55) !important;
+}
