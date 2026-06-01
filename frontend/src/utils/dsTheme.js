@@ -105,6 +105,9 @@ export const DEFAULT_THEME = {
   sidebarBg: '',         // '' = Modus-Standard (Surface)
   sidebarText: '',       // '' = Modus-Standard
   sidebarActive: '',     // '' = Akzent
+  // ── Header (eigene Ebene) ──
+  headerBg: '',          // '' = Modus-Standard (Surface)
+  headerText: '',        // '' = Modus-Standard
   // ── Deko ──
   kanji: false,          // dezentes Kanji-Wasserzeichen im Hintergrund
   kanjiChar: '武道',      // welches Zeichen (Budō = „Kriegskunst-Weg")
@@ -312,6 +315,16 @@ export function applyThemeConfig(cfg) {
   if (c.tabStyle && c.tabStyle !== 'default') el.dataset.tabStyle = c.tabStyle;
   else delete el.dataset.tabStyle;
 
+  // ── Header (eigene Ebene, Fallback = Modus) ──
+  setOrClear(root, '--ds-header-bg', c.headerBg);
+  if (c.headerText) {
+    root.setProperty('--ds-header-text', c.headerText);
+    root.setProperty('--ds-header-border', hexToRgba(c.headerText, 0.18));
+  } else {
+    root.removeProperty('--ds-header-text');
+    root.removeProperty('--ds-header-border');
+  }
+
   // ── Kanji-Wasserzeichen ──
   if (c.kanji) {
     el.setAttribute('data-ds-kanji', 'on');
@@ -346,6 +359,13 @@ export function resetThemeConfig() {
   try { localStorage.removeItem(STORAGE_KEY); } catch {}
   applyThemeConfig(DEFAULT_THEME);
   return { ...DEFAULT_THEME };
+}
+
+/** Nur den Modus setzen (dark|light|washi) — übernimmt restliche Config */
+export function setThemeMode(mode) {
+  const next = { ...loadThemeConfig(), mode };
+  saveThemeConfig(next);
+  return next;
 }
 
 /** Themen-Preset anwenden → liefert die neue, vollständige Config zurück */

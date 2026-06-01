@@ -45,3 +45,7 @@ backend/uploads/
 # Auto-sync
 auto-commit.sh
 *.backup
+
+# Test-Coverage-Reports (auto-generiert, nicht committen)
+backend/coverage/
+

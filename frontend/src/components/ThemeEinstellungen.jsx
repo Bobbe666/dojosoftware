@@ -268,6 +268,14 @@ export default function ThemeEinstellungen() {
           onChange={v => update({ border: v })} />
       </Section>
 
+      {/* ── Header ── */}
+      <Section title="Header (Kopfleiste)">
+        <ColorField label="Hintergrund" value={cfg.headerBg} fallback="#14141f"
+          onChange={v => update({ headerBg: v })} />
+        <ColorField label="Textfarbe" value={cfg.headerText} fallback="#ffffff"
+          onChange={v => update({ headerText: v })} />
+      </Section>
+
       {/* ── Sidebar ── */}
       <Section title="Sidebar (Menü)">
         <ColorField label="Hintergrund" value={cfg.sidebarBg} fallback="#14141f"

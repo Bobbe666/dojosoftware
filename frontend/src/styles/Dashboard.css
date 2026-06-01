@@ -65,10 +65,11 @@
   align-items: center !important;
   margin-bottom: 0 !important;
   padding: 8px var(--spacing-4) !important;
-  background: var(--surface-3);
+  background: var(--ds-header-bg, var(--ds-bg-surface)) !important;
+  color: var(--ds-header-text, var(--ds-text));
   backdrop-filter: var(--glass-blur) !important;
   border-radius: var(--radius-lg) !important;
-  border: 1px solid var(--border-accent) !important;
+  border: 1px solid var(--ds-header-border, var(--border-accent)) !important;
   box-shadow: var(--shadow-lg) !important;
   position: relative !important;
   overflow: visible !important;

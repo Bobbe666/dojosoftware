@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { setThemeMode, loadThemeConfig } from '../utils/dsTheme';
 
 /**
  * Verfügbare Themes
@@ -64,6 +65,9 @@ export const ThemeProvider = ({ children }) => {
     // Versuche Theme aus localStorage zu laden
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY);
+      // Altes helles 'tda-vib' (Member-Portal-CSS) auf dem Admin-Dashboard vermeiden —
+      // Hell/Washi läuft jetzt über das ds-Modus-System. Migrieren zu Standard.
+      if (stored === 'tda-vib') return DEFAULT_THEME;
       if (stored && THEMES[stored]) {
         return stored;
       }
@@ -112,17 +116,17 @@ export const ThemeProvider = ({ children }) => {
   // Aktuelles Theme-Objekt
   const currentTheme = THEMES[theme] || THEMES[DEFAULT_THEME];
 
-  // Ist Dark Mode?
-  const isDarkMode = currentTheme.isDark;
+  // Hell/Dunkel läuft jetzt über das neue Token-System (data-ds-mode),
+  // damit der obere Schalter & die Design-Einstellungen EINE Quelle nutzen.
+  const [dsMode, setDsMode] = useState(() => loadThemeConfig().mode || 'dark');
+  const isDarkMode = dsMode === 'dark';
 
-  // Theme Toggle (für einfachen Light/Dark Switch)
+  // Toggle: dunkel ↔ washi (helles, warmes Theme) — über das ds-Token-System
   const toggleDarkMode = useCallback(() => {
-    if (isDarkMode) {
-      setTheme('tda-vib'); // Zum hellen Theme
-    } else {
-      setTheme('midnight'); // Zum dunklen Theme
-    }
-  }, [isDarkMode, setTheme]);
+    const next = isDarkMode ? 'washi' : 'dark';
+    setThemeMode(next);
+    setDsMode(next);
+  }, [isDarkMode]);
 
   const value = {
     // Aktueller Theme-ID

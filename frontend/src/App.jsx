@@ -278,8 +278,9 @@ const LazyLoadFallback = () => (
 const ProtectedRoute = ({ children }) => {
   const { token, loading } = useAuth();
 
-  // 🔧 DEV BYPASS - nur wenn VITE_DEV_BYPASS=true in .env (Production-Build ignoriert das)
-  if (import.meta.env.VITE_DEV_BYPASS === 'true') {
+  // 🔧 DEV BYPASS - NUR im echten Dev-Modus aktiv. import.meta.env.DEV ist im
+  // Production-Build IMMER false → Bypass kann live niemals greifen, egal welche .env.
+  if (import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS === 'true') {
     return loading ? (
       <div className="app-loading-screen">
         <div className="loading-spinner-large"></div>
@@ -333,8 +334,8 @@ const DashboardNotFound = () => {
 const AdminOnlyRoute = ({ children }) => {
   const { token, user, loading } = useAuth();
 
-  // Dev-Bypass: nur wenn VITE_DEV_BYPASS=true in .env
-  if (import.meta.env.VITE_DEV_BYPASS === 'true') {
+  // Dev-Bypass: NUR im echten Dev-Modus (import.meta.env.DEV) — Prod-Build = immer false
+  if (import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS === 'true') {
     return loading ? (
       <div className="app-loading-screen">
         <div className="loading-spinner-large"></div>

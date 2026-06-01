@@ -57,10 +57,10 @@
   --bg-surface: var(--color-midnight-800);
   --bg-elevated: var(--color-midnight-700);
   --bg-overlay: rgba(0, 0, 0, 0.8);
-  --bg-primary: #0f0f23;
-  --bg-secondary: #1a1a2e;
-  --bg-tertiary: #16213e;
-  --bg-gradient: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+  --bg-primary: var(--ds-bg-body);
+  --bg-secondary: var(--ds-bg-surface);
+  --bg-tertiary: var(--ds-bg-body);
+  --bg-gradient: var(--ds-bg-body);
 
   /* ===== TEXT COLORS ===== */
   --text-primary: var(--color-white);
@@ -120,9 +120,9 @@
   --transition-normal: 0.3s ease;
 
   /* ===== GLASSMORPHISM ===== */
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-bg-hover: rgba(255, 255, 255, 0.12);
-  --glass-bg-strong: rgba(0, 0, 0, 0.8);
+  --glass-bg: var(--ds-bg-card);
+  --glass-bg-hover: var(--ds-bg-card-hover);
+  --glass-bg-strong: var(--ds-bg-surface);
   --glass-border: 1px solid var(--ds-accent-20);
   --glass-blur: blur(20px);
 
@@ -136,10 +136,10 @@
 
   /* ===== SURFACE HIERARCHY (Glassmorphism-Stufen für Dark-Mode) ===== */
   /* Werden von Light-Themes überschrieben */
-  --surface-1: rgba(255, 255, 255, 0.03);    /* subtilste Fläche */
-  --surface-2: rgba(255, 255, 255, 0.05);    /* leichte Erhebung */
-  --surface-3: rgba(255, 255, 255, 0.07);    /* mittlere Erhebung */
-  --surface-4: rgba(255, 255, 255, 0.10);    /* deutliche Erhebung */
+  --surface-1: var(--ds-bg-card);            /* subtilste Fläche */
+  --surface-2: var(--ds-bg-card);            /* leichte Erhebung */
+  --surface-3: var(--ds-bg-elevated);        /* mittlere Erhebung */
+  --surface-4: var(--ds-bg-elevated);        /* deutliche Erhebung */
   --surface-hover: rgba(255, 255, 255, 0.12); /* Hover-State */
   --surface-active: rgba(255, 255, 255, 0.15); /* Aktiv/Ausgewählt */
 

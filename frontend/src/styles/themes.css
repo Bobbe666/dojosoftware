@@ -65,18 +65,18 @@ Basierend auf dem modernen Glassmorphism-Design der Stil-Verwaltung.
   --gold-rgb: 255, 215, 0;
   --dark-bg: #0f0f23;
   
-  /* Background Colors - Midnight Blue */
-  --bg-primary: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-  --bg-secondary: rgba(255, 255, 255, 0.08);
-  --bg-card: rgba(255, 255, 255, 0.08);
-  --bg-modal: rgba(15, 15, 35, 0.95);
-  --bg-glass: rgba(255, 255, 255, 0.08);
-  --bg-hover: rgba(255, 255, 255, 0.12);
-  
+  /* Background Colors - an ds-Modus gebrückt (folgt Hell/Washi) */
+  --bg-primary: var(--ds-bg-body);
+  --bg-secondary: var(--ds-bg-surface);
+  --bg-card: var(--ds-bg-card);
+  --bg-modal: rgba(15, 15, 35, 0.95);   /* Modals bleiben opak dunkel */
+  --bg-glass: var(--ds-bg-card);
+  --bg-hover: var(--ds-bg-card-hover);
+
   /* Text Colors */
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --text-muted: rgba(255, 255, 255, 0.5);
+  --text-primary: var(--ds-text);
+  --text-secondary: var(--ds-text-secondary);
+  --text-muted: var(--ds-text-muted);
   --text-accent: var(--ds-accent);
   --text-dark: #1a1a2e;
   
