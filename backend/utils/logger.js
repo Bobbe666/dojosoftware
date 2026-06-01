@@ -162,8 +162,8 @@ function log(level, message, meta = {}) {
     // SECURITY: Sensible Daten maskieren bevor sie geloggt werden
     const safeMeta = sanitizeObject(meta);
 
-    // Console-Output (Development) oder strukturiert (Production)
-    if (NODE_ENV === 'development') {
+    // Console-Output (Development/Test) oder strukturiert (Production)
+    if (NODE_ENV !== 'production') {
         const consoleMsg = formatConsoleMessage(level, message, safeMeta);
 
         switch (level) {

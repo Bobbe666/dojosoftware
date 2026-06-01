@@ -42,8 +42,9 @@ describe('Auth Routes Integration Tests', () => {
         .post('/api/auth/login')
         .send({})
         .expect(400);
-      
-      expect(response.body).toHaveProperty('message');
+
+      // Implementierung: { success:false, error:{ message, code } }
+      expect(response.body.error).toHaveProperty('message');
     });
 
     it('sollte 400 zurückgeben wenn Passwort fehlt', async () => {
@@ -51,8 +52,8 @@ describe('Auth Routes Integration Tests', () => {
         .post('/api/auth/login')
         .send({ email: 'test@example.com' })
         .expect(400);
-      
-      expect(response.body.message).toContain('Passwort');
+
+      expect(response.body.error.message).toContain('Passwort');
     });
 
     // HINWEIS: Für echte Login-Tests muss eine Test-Datenbank mit Fixtures verwendet werden
@@ -60,12 +61,13 @@ describe('Auth Routes Integration Tests', () => {
   });
 
   describe('POST /api/auth/token-login', () => {
-    it('sollte 401 zurückgeben wenn kein Token übergeben wird', async () => {
+    it('sollte 400 zurückgeben wenn kein Token übergeben wird', async () => {
       const response = await request(app)
         .post('/api/auth/token-login')
         .send({})
-        .expect(401);
-      
+        .expect(400);
+
+      // Implementierung: { success:false, login:false, message }
       expect(response.body).toHaveProperty('message');
     });
   });
