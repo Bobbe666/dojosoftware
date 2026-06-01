@@ -15,6 +15,7 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 import config from '../config/config.js';
 import MemberCheckin from './MemberCheckin.jsx';
 import MemberQRCode from './MemberQRCode.jsx';
+import MitgliedsAusweis from './MitgliedsAusweis.jsx';
 import BadgeDisplay from './BadgeDisplay';
 import '../styles/themes.css';
 import '../styles/MemberDashboardMobile.css';
@@ -525,51 +526,29 @@ const MemberDashboardMobile = () => {
             </div>
           </div>
 
-          {/* Mini-Mitgliedsausweis */}
+          {/* Vollständiger Mitgliedsausweis */}
           {memberData && (
-            <div className="mapp-ausweis">
-              {/* Linke Seite: Logo + Daten */}
-              <div className="mapp-ausweis-left">
-                <img src={dojoLogo} alt="Logo" className="mapp-ausweis-logo" />
-                <div className="mapp-ausweis-info">
-                  <div className="mapp-ausweis-dojo">格闘技学校</div>
-                  <div className="mapp-ausweis-name">
-                    {memberData.vorname} {memberData.nachname}
-                  </div>
-                  <div className="mapp-ausweis-meta">
-                    <span>Nr. {String(memberData.mitglied_id).padStart(5, '0')}</span>
-                    {memberData.eintrittsdatum && (
-                      <span>· seit {new Date(memberData.eintrittsdatum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' })}</span>
-                    )}
-                  </div>
-                  {primaryBelt && (
-                    <div className="mapp-ausweis-belt">
-                      <span className="mapp-ausweis-belt-stripe" style={{ background: primaryBelt.farbe }} />
-                      <span>{primaryBelt.name}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {/* Rechte Seite: Foto + QR */}
-              <div className="mapp-ausweis-right">
-                {memberData.foto_pfad ? (
-                  <img
-                    src={`${config.apiBaseUrl.replace('/api', '')}/${memberData.foto_pfad}`}
-                    alt="Foto"
-                    className="mapp-ausweis-foto"
-                  />
-                ) : (
-                  <div className="mapp-ausweis-foto mapp-ausweis-foto--placeholder">写</div>
-                )}
-                <QRCodeSVG
-                  value={`DOJO-CHECKIN:${memberData.dojo_id || '0'}:${memberData.mitglied_id}`}
-                  size={36}
-                  level="M"
-                  bgColor="transparent"
-                  fgColor="#ffffff"
-                  className="mapp-ausweis-qr"
-                />
-              </div>
+            <div className="mapp-ausweis-wrapper">
+              <MitgliedsAusweis
+                isModal={false}
+                mitglied={{
+                  ...memberData,
+                  mitgliedsnummer: String(memberData.mitglied_id).padStart(5, '0'),
+                  foto_url: memberData.foto_pfad
+                    ? `${config.apiBaseUrl.replace('/api', '')}/${memberData.foto_pfad}`
+                    : null,
+                  graduierung: primaryBelt ? `${primaryBelt.name}${primaryBelt.stilName ? ' · ' + primaryBelt.stilName : ''}` : null,
+                  stil: primaryBelt?.stilName || null,
+                  status: 'aktiv',
+                }}
+                dojo={{
+                  id: activeDojo?.id,
+                  dojoname: activeDojo?.dojoname,
+                  logo_url: dojoLogo,
+                  telefon: activeDojo?.telefon,
+                  email: activeDojo?.email,
+                }}
+              />
             </div>
           )}
 

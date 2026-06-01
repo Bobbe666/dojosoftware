@@ -2434,3 +2434,49 @@ html[data-theme="tda-vib"] .mp-error {
   background: #f7f7f7 !important;
   color: #1a1512 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   MITGLIEDSAUSWEIS — Washi-Rot Akzent im tda-vib Theme
+   ═══════════════════════════════════════════════════════════ */
+
+/* Wrapper: kein zusätzlicher Abstand */
+html[data-theme="tda-vib"] .mapp-ausweis-wrapper {
+  margin-bottom: 0.75rem;
+}
+html[data-theme="tda-vib"] .mapp-ausweis-wrapper .mitglieds-ausweis-container {
+  gap: 0;
+}
+/* Ausweis-Aktionen (Drucken) auf Mobile ausblenden */
+html[data-theme="tda-vib"] .mapp-ausweis-wrapper .ausweis-actions {
+  display: none !important;
+}
+
+/* Roter Akzent nur im Ausweis */
+html[data-theme="tda-vib"] .mitglieds-ausweis {
+  --primary:           #c0392b;
+  --primary-alpha-10:  rgba(192,57,43,0.10);
+  --primary-alpha-20:  rgba(192,57,43,0.20);
+  --primary-alpha-30:  rgba(192,57,43,0.30);
+  --primary-alpha-50:  rgba(192,57,43,0.50);
+  border-color: #c0392b !important;
+  box-shadow: 0 4px 20px rgba(192,57,43,0.20) !important;
+}
+html[data-theme="tda-vib"] .ausweis-header {
+  border-bottom-color: rgba(192,57,43,0.30) !important;
+}
+html[data-theme="tda-vib"] .ausweis-title h3 {
+  color: #c0392b !important;
+  -webkit-text-fill-color: #c0392b !important;
+}
+html[data-theme="tda-vib"] .ausweis-graduierung {
+  color: #c0392b !important;
+  -webkit-text-fill-color: #c0392b !important;
+}
+html[data-theme="tda-vib"] .ausweis-foto {
+  border-color: rgba(192,57,43,0.50) !important;
+}
+html[data-theme="tda-vib"] .btn-ausweis {
+  background: rgba(192,57,43,0.15) !important;
+  border-color: #c0392b !important;
+  color: #c0392b !important;
+}
