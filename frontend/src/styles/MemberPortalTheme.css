@@ -2127,3 +2127,153 @@ html[data-theme="tda-vib"] .dashboard-content .u-text-accent {
 html[data-theme="tda-vib"] [class*="member-"]:not(button):not(a):not(.member-stat-value--ok):not(.member-stat-value--err) {
   border-color: #e2d9ce;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   WASHI LIGHT — Dark-Theme-Komponenten komplett umkehren
+   Alle Komponenten die für Dark-Theme gebaut wurden (weiße Schrift,
+   dunkle Hintergründe, Gold-Akzente) werden auf Light-Theme umgestellt.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── NextTrainingsWidget: weiße Schrift → dunkel, dunkel BG → hell ─── */
+html[data-theme="tda-vib"] .ntw-wrap {
+  background: #ffffff !important;
+  border: 1px solid #e2d9ce !important;
+  box-shadow: 0 1px 4px rgba(26,21,18,0.06) !important;
+  backdrop-filter: none !important;
+}
+html[data-theme="tda-vib"] .ntw-title {
+  color: #4a3c30 !important;
+}
+html[data-theme="tda-vib"] .ntw-link {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .ntw-link:hover {
+  color: #2d2520 !important;
+}
+html[data-theme="tda-vib"] .ntw-card {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+  border-left-color: transparent !important;
+}
+html[data-theme="tda-vib"] .ntw-card--today {
+  background: #f0ede9 !important;
+  border-color: #c4b8aa !important;
+  border-left-color: #2d2520 !important;
+  box-shadow: none !important;
+}
+html[data-theme="tda-vib"] .ntw-day-name {
+  color: #4a3c30 !important;
+  opacity: 1 !important;
+}
+html[data-theme="tda-vib"] .ntw-day-num {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .ntw-divider {
+  background: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .ntw-kurs {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .ntw-time {
+  color: #4a3c30 !important;
+}
+html[data-theme="tda-vib"] .ntw-trainer {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .ntw-empty {
+  color: #7a6a5a !important;
+}
+
+/* ── TrainingReminders: Dark → Light ─────────────────────────────── */
+html[data-theme="tda-vib"] .training-reminders {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .training-reminders .reminders-title h3 {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .training-reminders .reminder-card {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .training-reminders .reminder-course h4 {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .training-reminders .reminder-trainer,
+html[data-theme="tda-vib"] .training-reminders .reminder-time,
+html[data-theme="tda-vib"] .training-reminders .reminder-details {
+  color: #5a4d3e !important;
+}
+html[data-theme="tda-vib"] .training-reminders .no-reminders {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .training-reminders .no-reminders p {
+  color: #4a3c30 !important;
+}
+html[data-theme="tda-vib"] .training-reminders .course-preview {
+  background: #f7f7f8 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .training-reminders .course-name {
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .training-reminders .course-time {
+  color: #7a6a5a !important;
+}
+html[data-theme="tda-vib"] .training-reminders .upcoming-courses h4,
+html[data-theme="tda-vib"] .training-reminders .reminder-settings h4 {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .training-reminders .dismiss-button {
+  background: #f0ede9 !important;
+  border-color: #e2d9ce !important;
+  color: #4a3c30 !important;
+}
+html[data-theme="tda-vib"] .tr-course-name {
+  color: #1a1512 !important;
+}
+
+/* ── MemberSchedule: Termine-Karten lesbar machen ─────────────────── */
+html[data-theme="tda-vib"] .ms-card,
+html[data-theme="tda-vib"] .ms-event-card,
+html[data-theme="tda-vib"] .ms-past-card {
+  background: #ffffff !important;
+  border-color: #e2d9ce !important;
+  color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .ms-card-title,
+html[data-theme="tda-vib"] .ms-card-title-xs {
+  color: #1a1512 !important;
+  -webkit-text-fill-color: #1a1512 !important;
+}
+html[data-theme="tda-vib"] .ms-badge-absolviert {
+  background: rgba(26,21,18,0.06) !important;
+  color: #4a3c30 !important;
+  border-color: #e2d9ce !important;
+}
+html[data-theme="tda-vib"] .ms-icon-primary-alpha {
+  color: #4a3c30 !important;
+}
+html[data-theme="tda-vib"] .ms-past-icon-box {
+  background: #f0ede9 !important;
+  color: #4a3c30 !important;
+  border-color: #e2d9ce !important;
+}
+
+/* ── Alle rgba(255,255,255,x) Texte die auf weißem Grund unsichtbar ── */
+html[data-theme="tda-vib"] .dashboard-container [style*="rgba(255,255,255"] {
+  color: #1a1512 !important;
+}
+
+/* ── Apple Wallet Button bleibt schwarz (ist korrekt) ─────────────── */
+/* ── Vertragsstatus-Buttons: Outline sichtbar machen ─────────────── */
+html[data-theme="tda-vib"] .member-contract-btn,
+html[data-theme="tda-vib"] [class*="vertrag-btn"],
+html[data-theme="tda-vib"] [class*="contract-btn"] {
+  background: #f0ede9 !important;
+  border: 1px solid #c4b8aa !important;
+  color: #1a1512 !important;
+}
+
