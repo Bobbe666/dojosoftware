@@ -188,14 +188,26 @@ h2 {
 
 /* ml-member-card: stat-card base overrides for member cards */
 .ml-member-card {
-  padding: 0.6rem 0.7rem;
-  border-radius: 6px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0.8rem 0.9rem;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.ml-member-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 /* ml-checkbox: selection-mode checkbox overlay */
@@ -336,21 +348,35 @@ h2 {
 .ml-page-header {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  padding-top: 0.3rem;
-  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  padding-top: 0.2rem;
+  align-items: stretch;
 }
 
-/* ml-page-title: overrides for .page-title */
+/* ml-page-title: modern, links-bündig, mit Akzent-Strich */
 .ml-page-title {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  text-align: center;
-  color: var(--primary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  text-align: left;
+  color: var(--text-1, #fff);
+  text-transform: none;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  line-height: 1.2;
+}
+
+/* Akzent-Strich vor dem Titel */
+.ml-page-title::before {
+  content: '';
+  width: 4px;
+  height: 1.4rem;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #F59E0B, #d4820a);
+  flex-shrink: 0;
 }
 
 /* ml-toolbar-row: search + buttons row */
@@ -359,7 +385,7 @@ h2 {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 /* ml-status-chips-inline: status tabs inside toolbar */
@@ -633,12 +659,13 @@ h2 {
   margin-bottom: 0.25rem;
 }
 
-/* ml-card-stile: Stile Pills Wrapper in Karten */
+/* ml-card-stile: Stile Pills Wrapper in Karten — max 1 Zeile, kein Überlauf */
 .ml-card-stile {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.2rem;
-  margin-top: 0.2rem;
+  margin-top: 0.3rem;
+  overflow: hidden;
 }
 
 /* ml-card-alter: Altersanzeige in Karte */

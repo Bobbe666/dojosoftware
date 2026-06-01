@@ -15,8 +15,8 @@ import NeuesMitgliedAnlegen from "./NeuesMitgliedAnlegen.jsx";
 // Konstanten für Grid-Layout
 const COLUMN_COUNT = 5;
 const CARD_WIDTH = 220;
-const CARD_HEIGHT = 150;
-const GAP = 6;
+const CARD_HEIGHT = 176;
+const GAP = 10;
 
 // Hilfsfunktion außerhalb der Komponente (wird nicht bei jedem Render neu erstellt)
 const calculateAge = (birthdate) => {
@@ -266,7 +266,7 @@ const VirtualGridCell = ({ columnIndex, rowIndex, style, members, columnCount, s
   if (index >= members.length) return <div style={style} />;
   const mitglied = members[index];
   return (
-    <div style={{ ...style, padding: `${GAP / 2}px` }}>
+    <div style={{ ...style, padding: `${GAP / 2}px`, boxSizing: 'border-box' }}>
       <MemberCard
         mitglied={mitglied}
         selectionMode={selectionMode}
