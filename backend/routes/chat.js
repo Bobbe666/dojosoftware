@@ -449,10 +449,21 @@ router.get('/rooms/:id/messages', async (req, res) => {
       if (!roomCheck[0]) return res.status(403).json({ message: 'Raum gehört nicht zu deinem Dojo' });
     }
 
+    // sender_name via JOIN — kein N+1 mehr
     let query = `
       SELECT m.id, m.room_id, m.sender_id, m.sender_type, m.message_type,
-             m.content, m.push_notification_id, m.sent_at, m.edited_at, m.deleted_at
+             m.content, m.push_notification_id, m.sent_at, m.edited_at, m.deleted_at,
+             CASE
+               WHEN m.sender_type = 'mitglied'
+                 THEN TRIM(CONCAT(COALESCE(mi.vorname,''), ' ', COALESCE(mi.nachname,'')))
+               WHEN au.id IS NOT NULL
+                 THEN COALESCE(NULLIF(TRIM(CONCAT(COALESCE(au.vorname,''), ' ', COALESCE(au.nachname,''))), ''), au.username, 'Unbekannt')
+               ELSE COALESCE(u.username, 'Unbekannt')
+             END AS sender_name
       FROM chat_messages m
+      LEFT JOIN mitglieder mi ON m.sender_type = 'mitglied' AND m.sender_id = mi.mitglied_id
+      LEFT JOIN admin_users au ON m.sender_type != 'mitglied' AND m.sender_id = au.id
+      LEFT JOIN users u ON m.sender_type != 'mitglied' AND m.sender_id = u.id
       WHERE m.room_id = ?`;
     const params = [room_id];
 
@@ -467,13 +478,11 @@ router.get('/rooms/:id/messages', async (req, res) => {
     const [messages] = await pool.query(query, params);
     messages.reverse(); // Älteste zuerst
 
-    // Sendernamen hinzufügen
     for (const m of messages) {
       if (m.deleted_at) {
         m.content = '[Nachricht gelöscht]';
         m.deleted = true;
       }
-      m.sender_name = await getSenderName(m.sender_id, m.sender_type);
       m.is_own = (m.sender_id === sender_id && m.sender_type === sender_type);
     }
 

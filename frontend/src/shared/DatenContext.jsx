@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { apiClient } from '../services/api';
 import { useDojoContext } from '../context/DojoContext';
 
@@ -82,7 +82,7 @@ export const DatenProvider = ({ children }) => {
     };
   }, [ladeAlleDaten]);
 
-  const value = {
+  const value = useMemo(() => ({
     kurse,
     trainer,
     stile,
@@ -93,7 +93,7 @@ export const DatenProvider = ({ children }) => {
     setTrainer,
     setStile,
     setGruppen
-  };
+  }), [kurse, trainer, stile, gruppen, loading, ladeAlleDaten]);
 
   return (
     <DatenContext.Provider value={value}>

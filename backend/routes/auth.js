@@ -1070,29 +1070,6 @@ router.put('/users/:id/password', authenticateToken, async (req, res) => {
   }
 });
 
-router.delete('/users/:id', (req, res) => {
-  const { id } = req.params;
-
-  if (id === '1') {
-    return res.status(403).json({ error: 'Super-Admin kann nicht gelöscht werden' });
-  }
-
-  const deleteQuery = 'DELETE FROM users WHERE id = ?';
-
-  db.query(deleteQuery, [id], (err, result) => {
-    if (err) {
-      logger.error('Error deleting user', { error: err.message, stack: err.stack, userId: id });
-      return res.status(500).json({ error: 'Fehler beim Löschen' });
-    }
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Benutzer nicht gefunden' });
-    }
-
-    res.json({ success: true, message: 'Benutzer erfolgreich gelöscht' });
-  });
-});
-
 // ===================================================================
 // TOKEN-BASED AUTHENTICATION (for TDA Integration)
 // ===================================================================

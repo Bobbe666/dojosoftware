@@ -224,13 +224,11 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    // Nur laden wenn Token vorhanden ist
-    if (token) {
-      fetchDashboardStatsOptimized();
-    }
-    // 🔒 TAX COMPLIANCE: Refetch when dojo filter changes!
-    // 🔄 AUTOMATISCHES UPDATE: Lädt neu wenn sich Token, Dojo-Filter oder Mitglieder ändern
-  }, [token, getDojoFilterParam, updateTrigger]); // Lädt neu wenn sich Token, Dojo-Filter oder Mitglieder ändern
+    if (!token) return;
+    let isMounted = true;
+    fetchDashboardStatsOptimized().catch(() => {});
+    return () => { isMounted = false; };
+  }, [token, getDojoFilterParam, updateTrigger]);
 
   // Lade Benutzername/Name für Anzeige im Header
   useEffect(() => {

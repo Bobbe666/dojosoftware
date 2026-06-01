@@ -333,8 +333,8 @@ VirtualizedMemberGrid.displayName = 'VirtualizedMemberGrid';
 
 const MitgliederListe = () => {
   const { t, ready } = useTranslation(['members', 'common']);
-  // CACHE BREAK - Force reload
-  const cacheBreak = Date.now();
+  const cacheBreakRef = useRef(Date.now());
+  const cacheBreak = cacheBreakRef.current;
   const { getDojoFilterParam, activeDojo, filter, dojos } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
   

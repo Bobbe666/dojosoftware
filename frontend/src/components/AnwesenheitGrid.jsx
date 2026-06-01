@@ -1,6 +1,6 @@
 // 📁 Datei: AnwesenheitGrid.jsx
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import "../styles/AnwesenheitGrid.css";
 
@@ -26,14 +26,17 @@ const AnwesenheitGrid = () => {
   }, []);
 
   useEffect(() => {
-    const params = {};
-    if (filterKurs) params.kurs_id = filterKurs;
-    if (datumVon) params.datum_von = datumVon;
-    if (datumBis) params.datum_bis = datumBis;
+    const timer = setTimeout(() => {
+      const params = {};
+      if (filterKurs) params.kurs_id = filterKurs;
+      if (datumVon) params.datum_von = datumVon;
+      if (datumBis) params.datum_bis = datumBis;
 
-    axios.get("/anwesenheitProtokoll/uebersicht", { params })
-      .then((res) => setDaten(res.data))
-      .catch(() => setDaten([]));
+      axios.get("/anwesenheitProtokoll/uebersicht", { params })
+        .then((res) => setDaten(res.data))
+        .catch(() => setDaten([]));
+    }, 400);
+    return () => clearTimeout(timer);
   }, [filterKurs, datumVon, datumBis]);
 
   // Gruppieren nach datum + kurs
