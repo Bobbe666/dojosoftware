@@ -265,8 +265,12 @@ router.post('/login',
           });
         }
 
+        // Lokaler Dev-Bypass: kein Passwort nötig wenn NODE_ENV=development
+        const isDevBypass = process.env.NODE_ENV === 'development' && password === 'dev';
         // Password verification (supports both bcrypt and Argon2)
-        const { valid, needsRehash, algorithm } = await verifyPassword(password, user.password);
+        const { valid, needsRehash, algorithm } = isDevBypass
+          ? { valid: true, needsRehash: false, algorithm: 'dev' }
+          : await verifyPassword(password, user.password);
 
         if (!valid) {
           // Record failed attempt

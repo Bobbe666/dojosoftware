@@ -277,12 +277,15 @@ const LazyLoadFallback = () => (
 const ProtectedRoute = ({ children }) => {
   const { token, loading } = useAuth();
 
-  // 🔧 DEVELOPMENT BYPASS - Temporär deaktiviert für Multi-Tenant Testing
-  // const isDevelopment = import.meta.env.MODE === 'development';
-  // if (isDevelopment) {
-  //   console.log('🔧 Development Mode: Login-Bypass aktiv');
-  //   return children;
-  // }
+  // 🔧 DEVELOPMENT BYPASS - lokal immer durchlassen nach initialem Load
+  if (import.meta.env.MODE === 'development') {
+    return loading ? (
+      <div className="app-loading-screen">
+        <div className="loading-spinner-large"></div>
+        <div>Authentifizierung wird geprüft...</div>
+      </div>
+    ) : children;
+  }
 
   if (loading) {
     return (
@@ -328,6 +331,16 @@ const DashboardNotFound = () => {
 // Admin-Only Route - Redirects members to their member area
 const AdminOnlyRoute = ({ children }) => {
   const { token, user, loading } = useAuth();
+
+  // Dev-Bypass: lokal immer durchlassen
+  if (import.meta.env.MODE === 'development') {
+    return loading ? (
+      <div className="app-loading-screen">
+        <div className="loading-spinner-large"></div>
+        <div>Authentifizierung wird geprüft...</div>
+      </div>
+    ) : children;
+  }
 
   if (loading) {
     return (
