@@ -1754,14 +1754,12 @@
   background: rgba(0, 0, 0, 0.7) !important;
   backdrop-filter: blur(8px) !important;
   z-index: 9999 !important;
-  overflow: hidden !important;
+  /* Overlay scrollt — das ist der einzige Scroll-Container */
+  overflow-y: scroll !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: none !important;
   animation: fadeIn 0.2s ease-out !important;
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: center !important;
-  padding-top: 10vh !important;
-  padding-left: var(--ui-page-padding) !important;
-  padding-right: var(--ui-page-padding) !important;
+  padding: 5vh 1rem 3rem !important;
 }
 
 .modal-content.checkin-modal {
@@ -1769,14 +1767,15 @@
   border: 2px solid var(--primary-alpha-30) !important;
   border-radius: 1rem !important;
   max-width: 450px !important;
-  width: 450px !important;
-  height: calc(100vh - 4rem) !important;
-  max-height: calc(100vh - 4rem) !important;
-  overflow: hidden !important;
+  width: 100% !important;
+  /* Kein fixes height — Inhalt bestimmt Höhe, Overlay scrollt */
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
   animation: slideDown 0.3s ease-out !important;
   position: relative !important;
-  margin: 0 !important;
+  margin: 0 auto !important;
   padding: 0 !important;
   min-width: unset !important;
   min-height: unset !important;
@@ -1792,7 +1791,7 @@
   align-items: center !important;
   background: rgba(255, 255, 255, 0.05) !important;
   position: sticky !important;
-  top: 0 !important;
+  top: -1px !important;
   z-index: 10 !important;
   backdrop-filter: blur(10px) !important;
   margin-bottom: 0 !important;
@@ -1832,11 +1831,8 @@
 
 .modal-content.checkin-modal .modal-body {
   padding: 0.75rem !important;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch !important;
+  overflow: visible !important;
   flex: 1 !important;
-  min-height: 0 !important;
-  overscroll-behavior: contain !important;
 }
 
 /* Course Selection Styles - Spezifisch für Member Check-in */
