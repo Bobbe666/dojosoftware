@@ -121,10 +121,12 @@ export const DojoProvider = ({ children }) => {
   }, [loadDojos]);
 
   // Retry-Mechanismus: falls dojos leer nach dem Laden, bis zu 3x erneut versuchen
+  // Nur für Tenant-User mit dojo_id (Super-Admins haben legitimerweise kein Dojo)
   useEffect(() => {
     if (!loading && dojos.length === 0) {
       const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
-      if (token && retryCountRef.current < 3) {
+      const hasDojoId = user && user.dojo_id;
+      if (token && hasDojoId && retryCountRef.current < 3) {
         const delay = 4000 * Math.pow(2, retryCountRef.current); // 4s, 8s, 16s
         console.log(`🔄 DojoContext: Retry #${retryCountRef.current + 1} in ${delay / 1000}s...`);
         retryTimerRef.current = setTimeout(() => {

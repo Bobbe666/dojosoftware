@@ -94,7 +94,12 @@ const authLimiter = rateLimit({
 });
 
 // Statische Dateien für Uploads servieren - MUSS VOR Content-Type Middleware kommen!
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '30d',
+  immutable: true,
+  etag: true,
+  lastModified: true,
+}));
 
 // CORS mit Sicherheitskonfiguration
 // WICHTIG: In Produktion MUSS ALLOWED_ORIGINS in .env gesetzt sein!

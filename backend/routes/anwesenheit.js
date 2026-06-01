@@ -33,6 +33,7 @@ router.get("/", (req, res) => {
             JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
             WHERE m.dojo_id = ?
             ORDER BY a.datum DESC
+            LIMIT 1000
         `;
         params = [dojoId];
     }

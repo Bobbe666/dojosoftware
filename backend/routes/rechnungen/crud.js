@@ -193,35 +193,31 @@ router.get('/statistiken', (req, res) => {
 });
 
 // GET /:id - Einzelne Rechnung mit Details
-router.get('/:id', (req, res) => {
-  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+router.get('/:id', async (req, res) => {
   const secureDojoId = getSecureDojoId(req);
   const { id } = req.params;
 
-  let rechnungQuery = `
-    SELECT
-      r.*,
-      COALESCE(CONCAT(m.vorname, ' ', m.nachname), r.extern_name) as mitglied_name,
-      COALESCE(m.email, r.extern_email) as email,
-      m.telefon,
-      m.plz,
-      m.ort
-    FROM rechnungen r
-    LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
-    WHERE r.rechnung_id = ?
-  `;
-  const rechnungParams = [id];
+  try {
+    let rechnungQuery = `
+      SELECT
+        r.*,
+        COALESCE(CONCAT(m.vorname, ' ', m.nachname), r.extern_name) as mitglied_name,
+        COALESCE(m.email, r.extern_email) as email,
+        m.telefon,
+        m.plz,
+        m.ort
+      FROM rechnungen r
+      LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      WHERE r.rechnung_id = ?
+    `;
+    const rechnungParams = [id];
 
-  if (secureDojoId) {
-    rechnungQuery += ` AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))`;
-    rechnungParams.push(secureDojoId, secureDojoId);
-  }
-
-  db.query(rechnungQuery, rechnungParams, (err, rechnungResults) => {
-    if (err) {
-      logger.error('Fehler beim Laden der Rechnung:', { error: err });
-      return res.status(500).json({ success: false, error: err.message });
+    if (secureDojoId) {
+      rechnungQuery += ` AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))`;
+      rechnungParams.push(secureDojoId, secureDojoId);
     }
+
+    const [rechnungResults] = await db.promise().query(rechnungQuery, rechnungParams);
 
     if (rechnungResults.length === 0) {
       return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden' });
@@ -229,31 +225,20 @@ router.get('/:id', (req, res) => {
 
     const rechnung = rechnungResults[0];
 
-    // Lade Positionen
-    const positionenQuery = `SELECT * FROM rechnungspositionen WHERE rechnung_id = ? ORDER BY position_nr`;
+    // Positionen und Zahlungen parallel laden
+    const [[positionen], [zahlungen]] = await Promise.all([
+      db.promise().query(`SELECT * FROM rechnungspositionen WHERE rechnung_id = ? ORDER BY position_nr`, [id]),
+      db.promise().query(`SELECT * FROM zahlungen WHERE rechnung_id = ? ORDER BY zahlungsdatum DESC`, [id]),
+    ]);
 
-    db.query(positionenQuery, [id], (posErr, positionen) => {
-      if (posErr) {
-        logger.error('Fehler beim Laden der Positionen:', { error: posErr });
-        return res.status(500).json({ success: false, error: posErr.message });
-      }
+    rechnung.positionen = positionen;
+    rechnung.zahlungen = zahlungen;
 
-      // Lade Zahlungen
-      const zahlungenQuery = `SELECT * FROM zahlungen WHERE rechnung_id = ? ORDER BY zahlungsdatum DESC`;
-
-      db.query(zahlungenQuery, [id], (zahlErr, zahlungen) => {
-        if (zahlErr) {
-          logger.error('Fehler beim Laden der Zahlungen:', { error: zahlErr });
-          return res.status(500).json({ success: false, error: zahlErr.message });
-        }
-
-        rechnung.positionen = positionen;
-        rechnung.zahlungen = zahlungen;
-
-        res.json({ success: true, data: rechnung });
-      });
-    });
-  });
+    res.json({ success: true, data: rechnung });
+  } catch (err) {
+    logger.error('Fehler beim Laden der Rechnung:', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // POST / - Neue Rechnung erstellen

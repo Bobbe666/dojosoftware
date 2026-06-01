@@ -97,6 +97,8 @@ const MemberListRow = React.memo(({
             src={`${config.imageBaseUrl}/${mitglied.foto_pfad}`}
             alt={initials}
             className="ml-list-avatar-img"
+            loading="lazy"
+            decoding="async"
             onError={() => setImgError(true)}
           />
         ) : (
@@ -195,6 +197,8 @@ const MemberCard = React.memo(({
               src={`${config.imageBaseUrl}/${mitglied.foto_pfad}`}
               alt={initials}
               className="ml-avatar"
+              loading="lazy"
+              decoding="async"
               onError={() => setImgError(true)}
             />
           ) : (

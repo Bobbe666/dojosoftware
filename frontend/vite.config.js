@@ -94,6 +94,25 @@ export default defineConfig({
           if (id.includes('/node_modules/@tiptap/')) {
             return 'vendor-tiptap';
           }
+          // Große Libraries mit seltenem Einsatz — eigene Chunks für besseres Code-Splitting
+          if (id.includes('/node_modules/socket.io-client') ||
+              id.includes('/node_modules/socket.io-parser') ||
+              id.includes('/node_modules/engine.io-client')) {
+            return 'vendor-socketio';
+          }
+          if (id.includes('/node_modules/html2canvas')) {
+            return 'vendor-html2canvas';
+          }
+          if (id.includes('/node_modules/@stripe/') ||
+              id.includes('/node_modules/stripe')) {
+            return 'vendor-stripe';
+          }
+          if (id.includes('/node_modules/@paypal/')) {
+            return 'vendor-paypal';
+          }
+          if (id.includes('/node_modules/html5-qrcode')) {
+            return 'vendor-qrcode';
+          }
         },
         // Bessere Chunk-Namen
         chunkFileNames: (chunkInfo) => {

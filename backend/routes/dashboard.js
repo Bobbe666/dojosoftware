@@ -91,7 +91,7 @@ async function getDashboardStats(dojo_id) {
 
     // Debug: Log Anwesenheits-Query
     // Zähle EINDEUTIGE Personen, die heute da waren (nicht die Summe aller Anwesenheiten)
-    const anwesenheitQuery = `SELECT COUNT(DISTINCT mitglied_id) as count FROM anwesenheit WHERE DATE(datum) = CURDATE() AND anwesend = 1${dojoFilter}`;
+    const anwesenheitQuery = `SELECT COUNT(DISTINCT mitglied_id) as count FROM anwesenheit WHERE datum >= CURDATE() AND datum < CURDATE() + INTERVAL 1 DAY AND anwesend = 1${dojoFilter}`;
     logger.debug('Anwesenheits-Query:', anwesenheitQuery);
 
     const queries = await Promise.all([
@@ -101,7 +101,7 @@ async function getDashboardStats(dojo_id) {
       db.promise().query(anwesenheitQuery).catch((err) => { logger.error('Anwesenheits-Query Fehler:', err); return [[]]; }),
       db.promise().query(`SELECT COUNT(*) as count FROM beitraege WHERE bezahlt = 0${dojoFilter}`).catch(() => [[]]),
       // Checkins: JOIN mit mitglieder für dojo_id
-      db.promise().query(`SELECT COUNT(*) as count FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE DATE(c.checkin_time) = CURDATE() AND c.status = 'active'${dojoJoinFilter}`).catch(() => [[]]),
+      db.promise().query(`SELECT COUNT(*) as count FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE c.checkin_time >= CURDATE() AND c.checkin_time < CURDATE() + INTERVAL 1 DAY AND c.status = 'active'${dojoJoinFilter}`).catch(() => [[]]),
       db.promise().query('SELECT COUNT(*) as count FROM stile').catch(() => [[]]), // Global, kein Filter
       db.promise().query('SELECT COUNT(*) as count FROM tarife').catch(() => [[]]), // Global, kein Filter
       db.promise().query('SELECT COUNT(*) as count FROM zahlungszyklen').catch(() => [[]]), // Global, kein Filter
@@ -265,7 +265,7 @@ router.get('/', async (req, res) => {
 
       try {
         const [anwesenheitResult] = await db.promise().query(
-          `SELECT COUNT(*) as count FROM anwesenheit WHERE DATE(datum) = CURDATE() AND anwesend = 1${dojoFilter}`
+          `SELECT COUNT(*) as count FROM anwesenheit WHERE datum >= CURDATE() AND datum < CURDATE() + INTERVAL 1 DAY AND anwesend = 1${dojoFilter}`
         );
         logger.debug('Anwesenheit gezählt', { count: anwesenheitResult[0]?.count });
         stats.anwesenheit = anwesenheitResult[0]?.count || 0;
@@ -321,7 +321,7 @@ router.get('/', async (req, res) => {
         // ✅ GEÄNDERT: Nur aktive Check-ins von heute + JOIN mit mitglieder für dojo_id Filter
         const dojoJoinFilter = (dojo_id && dojo_id !== 'all') ? ` AND m.dojo_id = ${parseInt(dojo_id)}` : '';
         const [checkinResult1] = await db.promise().query(
-          `SELECT COUNT(*) as count FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE DATE(c.checkin_time) = CURDATE() AND c.status = 'active'${dojoJoinFilter}`
+          `SELECT COUNT(*) as count FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE c.checkin_time >= CURDATE() AND c.checkin_time < CURDATE() + INTERVAL 1 DAY AND c.status = 'active'${dojoJoinFilter}`
         );
         logger.debug('Check-ins gezählt', { count: checkinResult1[0]?.count });
         stats.checkins_heute = checkinResult1[0]?.count || 0;
@@ -331,7 +331,7 @@ router.get('/', async (req, res) => {
         // Fallback: Alle Check-ins von heute
         try {
           const [checkinResult2] = await db.promise().query(
-            `SELECT COUNT(*) as count FROM checkins WHERE DATE(checkin_time) = CURDATE()`
+            `SELECT COUNT(*) as count FROM checkins WHERE checkin_time >= CURDATE() AND checkin_time < CURDATE() + INTERVAL 1 DAY`
           );
           logger.debug('Check-ins (Fallback) gezählt', { count: checkinResult2[0]?.count });
           stats.checkins_heute = checkinResult2[0]?.count || 0;
@@ -360,15 +360,6 @@ router.get('/', async (req, res) => {
       }
     } catch (e) {
       logger.error('❌ Stile Query komplett fehlgeschlagen:', e.message);
-    }
-
-    // 8. TABELLEN AUFLISTEN - Debug Info (behalten)
-    try {
-      logger.debug('Liste alle verfügbaren Tabellen...');
-      const [tables] = await db.promise().query(`SHOW TABLES`);
-      logger.debug('Verfügbare Tabellen:', { tables: tables.map(t => Object.values(t)[0]) });
-    } catch (e) {
-      logger.error('❌ Kann Tabellen nicht auflisten:', e.message);
     }
 
     logger.debug('Finale Dashboard-Statistiken:', { stats });
@@ -439,7 +430,7 @@ router.get('/recent', async (req, res) => {
           CONCAT(vorname, ' ', nachname) as member_name,
           eintrittsdatum
         FROM mitglieder
-        WHERE DATE(eintrittsdatum) = CURDATE()${dojoFilter}
+        WHERE eintrittsdatum >= CURDATE() AND eintrittsdatum < CURDATE() + INTERVAL 1 DAY${dojoFilter}
         ORDER BY eintrittsdatum DESC
         LIMIT 5
       `);
@@ -537,7 +528,7 @@ router.get('/checkin/today', async (req, res) => {
       JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
       LEFT JOIN stundenplan s ON c.stundenplan_id = s.stundenplan_id
       LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
-      WHERE DATE(c.checkin_time) = CURDATE() AND c.status = 'active'${dojoFilter}
+      WHERE c.checkin_time >= CURDATE() AND c.checkin_time < CURDATE() + INTERVAL 1 DAY AND c.status = 'active'${dojoFilter}
       ORDER BY c.checkin_time DESC
     `);
 
