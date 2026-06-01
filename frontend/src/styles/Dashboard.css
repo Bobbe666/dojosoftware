@@ -671,8 +671,8 @@
 /* Dashboard-spezifisch: kleinere Schrift für 5 Karten */
 .dashboard-navigation .nav-card h3,
 .dashboard-navigation .nav-card-title {
-  font-size: clamp(0.88rem, 1vw, 1.02rem) !important;
-  line-height: 1.1 !important;
+  font-size: clamp(0.82rem, 0.95vw, 1.02rem) !important;
+  line-height: 1.2 !important;
   white-space: normal !important;
   overflow: visible !important;
   text-overflow: unset !important;
@@ -683,7 +683,7 @@
   align-items: flex-start !important;
   gap: var(--spacing-1-5) !important;
   flex-wrap: wrap !important;
-  max-height: 2.4em !important;
+  /* max-height entfernt — 3+ Zeilen werden nicht mehr abgeschnitten */
   /* Farben werden in theme-midnight.css definiert */
 }
 
