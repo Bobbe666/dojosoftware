@@ -110,6 +110,10 @@ export const ChatProvider = ({ children }) => {
     setSocket(s);
     return () => {
       s.disconnect();
+      if (popupTimeoutRef.current) {
+        clearTimeout(popupTimeoutRef.current);
+        popupTimeoutRef.current = null;
+      }
     };
   }, [token]); // Nur auf token-Wechsel reagieren
 

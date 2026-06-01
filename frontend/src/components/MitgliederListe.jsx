@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useTranslation } from 'react-i18next';
 import config from '../config/config.js';
-// Grid von react-window temporär deaktiviert wegen Object.values Bug
+import { List, Grid } from 'react-window';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import "../styles/themes.css";
@@ -239,7 +239,42 @@ const MemberCard = React.memo(({
 
 MemberCard.displayName = 'MemberCard';
 
-// Virtualisiertes Grid für große Mitgliederlisten (100+ Mitglieder)
+// Virtualisierte Zeile für Listenansicht (react-window v2 rowComponent)
+const VirtualListRow = ({ index, style, members, selectionMode, selectedMembers, onToggleSelection, onNavigate }) => {
+  const mitglied = members[index];
+  if (!mitglied) return null;
+  return (
+    <div style={style}>
+      <MemberListRow
+        mitglied={mitglied}
+        selectionMode={selectionMode}
+        isSelected={selectedMembers.includes(mitglied.mitglied_id)}
+        onToggleSelection={onToggleSelection}
+        onNavigate={onNavigate}
+      />
+    </div>
+  );
+};
+
+// Virtualisierte Zelle für Karten-Grid (react-window v2 cellComponent)
+const VirtualGridCell = ({ columnIndex, rowIndex, style, members, columnCount, selectionMode, selectedMembers, onToggleSelection, onNavigate }) => {
+  const index = rowIndex * columnCount + columnIndex;
+  if (index >= members.length) return <div style={style} />;
+  const mitglied = members[index];
+  return (
+    <div style={{ ...style, padding: `${GAP / 2}px` }}>
+      <MemberCard
+        mitglied={mitglied}
+        selectionMode={selectionMode}
+        isSelected={selectedMembers.includes(mitglied.mitglied_id)}
+        onToggleSelection={onToggleSelection}
+        onNavigate={onNavigate}
+      />
+    </div>
+  );
+};
+
+// Virtualisiertes Grid für große Mitgliederlisten — rendert nur sichtbare Elemente
 const VirtualizedMemberGrid = React.memo(({
   members,
   viewMode,
@@ -250,25 +285,21 @@ const VirtualizedMemberGrid = React.memo(({
   t
 }) => {
   const containerRef = useRef(null);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(window.innerWidth);
 
-  // Schutzprüfung: Stelle sicher dass members ein Array ist
   const safeMembers = Array.isArray(members) ? members : [];
 
-  // Container-Breite messen
   useEffect(() => {
     const updateWidth = () => {
       if (containerRef.current) {
         setContainerWidth(containerRef.current.offsetWidth);
       }
     };
-
     updateWidth();
     window.addEventListener('resize', updateWidth);
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
-  // Berechne Spalten basierend auf Container-Breite
   const columnCount = useMemo(() => {
     if (containerWidth < 500) return 2;
     if (containerWidth < 800) return 3;
@@ -276,7 +307,6 @@ const VirtualizedMemberGrid = React.memo(({
     return COLUMN_COUNT;
   }, [containerWidth]);
 
-  // Empty State
   if (safeMembers.length === 0) {
     return (
       <div className="stat-card ml-empty-card">
@@ -290,41 +320,37 @@ const VirtualizedMemberGrid = React.memo(({
     );
   }
 
-  // Listen-Ansicht
+  const virtualStyle = { height: 'calc(100vh - 280px)', minHeight: '300px', width: '100%' };
+  const sharedRowProps = { members: safeMembers, selectionMode, selectedMembers, onToggleSelection, onNavigate };
+
   if (viewMode === 'list') {
     return (
       <div ref={containerRef} className="ml-list-container">
-        {safeMembers.map((mitglied) => (
-          <MemberListRow
-            key={mitglied.mitglied_id}
-            mitglied={mitglied}
-            selectionMode={selectionMode}
-            isSelected={selectedMembers.includes(mitglied.mitglied_id)}
-            onToggleSelection={onToggleSelection}
-            onNavigate={onNavigate}
-          />
-        ))}
+        <List
+          rowCount={safeMembers.length}
+          rowHeight={68}
+          rowProps={sharedRowProps}
+          rowComponent={VirtualListRow}
+          style={virtualStyle}
+        />
       </div>
     );
   }
 
-  // Karten-Ansicht (Grid)
+  const colWidth = containerWidth > 0 ? Math.floor(containerWidth / columnCount) : CARD_WIDTH + GAP;
+  const rowCount = Math.ceil(safeMembers.length / columnCount);
+
   return (
-    <div
-      ref={containerRef}
-      className="stats-grid ml-member-grid"
-      style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
-    >
-      {safeMembers.map((mitglied) => (
-        <MemberCard
-          key={mitglied.mitglied_id}
-          mitglied={mitglied}
-          selectionMode={selectionMode}
-          isSelected={selectedMembers.includes(mitglied.mitglied_id)}
-          onToggleSelection={onToggleSelection}
-          onNavigate={onNavigate}
-        />
-      ))}
+    <div ref={containerRef} className="ml-member-grid-container">
+      <Grid
+        columnCount={columnCount}
+        rowCount={rowCount}
+        columnWidth={colWidth}
+        rowHeight={CARD_HEIGHT + GAP}
+        cellProps={{ ...sharedRowProps, columnCount }}
+        cellComponent={VirtualGridCell}
+        style={virtualStyle}
+      />
     </div>
   );
 });

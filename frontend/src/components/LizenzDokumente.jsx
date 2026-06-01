@@ -581,6 +581,9 @@ export default function LizenzDokumente({ dojos = [] }) {
   const canvasCallbackRef = useCallback((canvas) => {
     // Cleanup alter Instanz
     if (sigPadRef.current) {
+      if (sigPadRef.current._onEndStroke) {
+        sigPadRef.current.removeEventListener('endStroke', sigPadRef.current._onEndStroke);
+      }
       sigPadRef.current.off();
       sigPadRef.current = null;
     }
@@ -599,7 +602,9 @@ export default function LizenzDokumente({ dojos = [] }) {
       minWidth: 0.8,
       maxWidth: 2.5,
     });
-    pad.addEventListener('endStroke', () => setSigEmpty(pad.isEmpty()));
+    const onEndStroke = () => setSigEmpty(pad.isEmpty());
+    pad.addEventListener('endStroke', onEndStroke);
+    pad._onEndStroke = onEndStroke;
     sigPadRef.current = pad;
     setSigEmpty(true);
   }, []);

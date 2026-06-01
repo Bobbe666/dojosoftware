@@ -96,15 +96,6 @@ const authLimiter = rateLimit({
 // Statische Dateien für Uploads servieren - MUSS VOR Content-Type Middleware kommen!
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// UTF-8 Encoding für JSON Responses (nicht für PDFs/Binärdaten)
-app.use((req, res, next) => {
-  // Überspringe PDF und andere Binär-Routen
-  if (!req.path.includes('/pdf') && !req.path.includes('/export')) {
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  }
-  next();
-});
-
 // CORS mit Sicherheitskonfiguration
 // WICHTIG: In Produktion MUSS ALLOWED_ORIGINS in .env gesetzt sein!
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -827,6 +818,7 @@ db.promise().query(`
 `).catch(err => logger.warn('Migration 168 (ignoriert):', { error: err.message }));
 
 // Migration 169: Doppelte Magicline-Beitragsimporte bereinigen + UNIQUE Constraint
+// Reihenfolge kritisch: erst DELETE, dann UNIQUE KEY (sequenziell via .then)
 db.promise().query(`
   DELETE b1 FROM beitraege b1
   INNER JOIN beitraege b2
@@ -835,12 +827,11 @@ db.promise().query(`
   WHERE b1.magicline_transaction_id IS NOT NULL
 `).then(([r]) => {
   if (r.affectedRows > 0) logger.info('Migration 169: Magicline-Duplikate bereinigt', { entfernt: r.affectedRows });
-}).catch(err => logger.warn('Migration 169a (ignoriert):', { error: err.message }));
-
-db.promise().query(`
-  ALTER TABLE beitraege
-  ADD UNIQUE KEY uq_magicline_transaction (magicline_transaction_id)
-`).catch(err => logger.warn('Migration 169b (ignoriert):', { error: err.message }));
+  return db.promise().query(`
+    ALTER TABLE beitraege
+    ADD UNIQUE KEY uq_magicline_transaction (magicline_transaction_id)
+  `);
+}).catch(err => logger.warn('Migration 169 (ignoriert):', { error: err.message }));
 
 // Migration 170: Artikel-Bestell-Spezifikationen (Enterprise)
 db.promise().query(`

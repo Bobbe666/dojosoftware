@@ -635,7 +635,7 @@ router.put('/rooms/:id/read', async (req, res) => {
 
       // Socket-Event: andere Teilnehmer informieren wer gelesen hat
       try {
-        const io = require('../server').io || null;
+        const io = req.app.get('io');
         const senderName = await getSenderName(sender_id, sender_type);
         if (io) {
           io.to(`chat:${room_id}`).emit('chat:read', {
