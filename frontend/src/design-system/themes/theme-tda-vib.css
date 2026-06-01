@@ -194,11 +194,11 @@ html[data-theme="tda-vib"] {
   --shadow-gold: 0 2px 8px rgba(201, 162, 39, 0.2);
   --shadow-gold-lg: 0 4px 16px rgba(201, 162, 39, 0.3);
 
-  /* ===== GLOWS (minimal for light theme) ===== */
-  --glow-gold: 0 0 8px rgba(201, 162, 39, 0.3);
-  --glow-gold-sm: 0 0 4px rgba(201, 162, 39, 0.2);
-  --glow-gold-lg: 0 0 12px rgba(201, 162, 39, 0.4);
-  --glow-orange: 0 0 8px rgba(199, 62, 58, 0.3);
+  /* ===== GLOWS — deaktiviert ===== */
+  --glow-gold: none;
+  --glow-gold-sm: none;
+  --glow-gold-lg: none;
+  --glow-orange: none;
 
   /* ===== GRADIENTS ===== */
   --gradient-gold: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark));
