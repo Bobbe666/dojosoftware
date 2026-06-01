@@ -92,6 +92,8 @@ fi
 if [[ "$MODE" == "all" || "$MODE" == "frontend" ]]; then
   echo -e "${YELLOW}▶ [2/2] Frontend bauen...${NC}"
   cd "$FRONTEND_LOCAL"
+  # dist leeren vor jedem Build — verhindert Chunk-Akkumulation (Safari "Importing module failed")
+  rm -rf dist
   CI=false npm run build 2>&1 | grep -E '✓|error|built in' | head -5
 
   # Version-Stamping: Git-Hash in sw.js schreiben damit Browser neue Version erkennt
@@ -105,8 +107,9 @@ if [[ "$MODE" == "all" || "$MODE" == "frontend" ]]; then
   echo ""
 
   echo -e "${YELLOW}  Frontend deployen (2 Webroots)...${NC}"
-  rsync -az -e "ssh $SSH_OPT" "$FRONTEND_LOCAL/dist/" "$SSH_HOST:$FRONTEND_REMOTE_1"
-  rsync -az -e "ssh $SSH_OPT" "$FRONTEND_LOCAL/dist/" "$SSH_HOST:$FRONTEND_REMOTE_2"
+  # --delete: entfernt alte Chunks vom Server (verhindert Safari "Importing module failed")
+  rsync -az --delete -e "ssh $SSH_OPT" "$FRONTEND_LOCAL/dist/" "$SSH_HOST:$FRONTEND_REMOTE_1"
+  rsync -az --delete -e "ssh $SSH_OPT" "$FRONTEND_LOCAL/dist/" "$SSH_HOST:$FRONTEND_REMOTE_2"
   echo -e "  ${GREEN}✓ Frontend deployed (dojo.tda-intl.org + app.tda-vib.de)${NC}"
   echo ""
 fi
