@@ -775,6 +775,7 @@ const MitgliedschaftTab = ({
     <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "familie" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("familie")}>👨‍👩‍👧‍👦 Familie</button>
   </div>
 
+  {mitgliedschaftSubTab === "familie" && (
   <>
     {isAdmin && (
       <div className="fam-add-banner">
@@ -801,7 +802,9 @@ const MitgliedschaftTab = ({
       />
     )}
   </>
+  )}
 
+  {mitgliedschaftSubTab === "vertrag" && (
   <div className="vtr-wrapper">
 
     {/* ── Header ── */}
@@ -1075,8 +1078,10 @@ const MitgliedschaftTab = ({
     />
 
   </div>
+  )}
 
 
+  {mitgliedschaftSubTab === "finanzen" && (
   <div className="finance-management-container">
 
 
@@ -2059,6 +2064,7 @@ const MitgliedschaftTab = ({
       <MitgliedGutscheineTab mitgliedId={id} activeDojo={activeDojo} />
     )}
   </div>
+  )}
     </>
   );
 };
