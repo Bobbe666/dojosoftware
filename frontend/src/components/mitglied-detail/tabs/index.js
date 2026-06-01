@@ -7,12 +7,8 @@ export { default as MemberMedicalTab } from './MemberMedicalTab';
 export { default as MemberFamilyTab } from './MemberFamilyTab';
 export { default as MemberStatisticsTab } from './MemberStatisticsTab';
 export { default as MemberInjuryTab } from './MemberInjuryTab';
-
-// Zukuenftige Exports (nach Extraktion):
-// export { default as MemberGeneralInfoTab } from './MemberGeneralInfoTab';
-// export { default as MemberFamilyTab } from './MemberFamilyTab';
-// export { default as MemberContractTab } from './MemberContractTab';
-// export { default as MemberFinanceTab } from './MemberFinanceTab';
-// export { default as MemberDocumentTab } from './MemberDocumentTab';
-// export { default as MemberStyleTab } from './MemberStyleTab';
-// export { default as MemberStatisticsTab } from './MemberStatisticsTab';
+export { default as NachrichtenTab } from './NachrichtenTab';
+export { default as EntwicklungTab } from './EntwicklungTab';
+export { default as GurtStilTab } from './GurtStilTab';
+export { default as DokumenteTab } from './DokumenteTab';
+export { default as MitgliedschaftTab } from './MitgliedschaftTab';
