@@ -149,10 +149,13 @@
 
 .dashboard-header-right {
   display: flex;
-  gap: var(--spacing-4);
+  gap: var(--spacing-2);
   align-items: center;
   position: relative;
   z-index: 2;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  overflow: visible;
 }
 
 /* Logout & Dashboard Buttons */
