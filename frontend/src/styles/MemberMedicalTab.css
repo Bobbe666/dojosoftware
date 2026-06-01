@@ -28,7 +28,7 @@
   font-weight: 700 !important;
   letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
-  color: #FFD700 !important;
+  color: var(--ds-accent) !important;
   margin: 0 0 0.85rem 0 !important;
   display: flex;
   align-items: center;
@@ -41,9 +41,9 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #FFD700;
-  background: rgba(255, 215, 0, 0.15);
-  border: 1px solid rgba(255, 215, 0, 0.35);
+  color: var(--ds-accent);
+  background: var(--ds-accent-15);
+  border: 1px solid var(--ds-accent-30);
   border-radius: 4px;
   padding: 0.1rem 0.45rem;
   margin-left: auto;
@@ -51,7 +51,7 @@
 
 /* Primär-Karte leicht hervorgehoben */
 .mmt-contact-card--primary {
-  border-color: rgba(255, 215, 0, 0.25) !important;
+  border-color: var(--ds-accent-25) !important;
 }
 
 /* Key-Value Zeile */
@@ -71,22 +71,22 @@
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
 }
 
 .mmt-kv-value {
   font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--ds-text);
   font-weight: 500;
 }
 
 .mmt-kv-empty {
   font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--ds-text-faint);
 }
 
 .mmt-tel-link {
-  color: #FFD700;
+  color: var(--ds-accent);
   text-decoration: none;
 }
 
@@ -139,7 +139,7 @@
 
 .mmt-placeholder {
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.28);
+  color: var(--ds-text-faint);
   font-style: italic;
 }
 
@@ -150,13 +150,13 @@
   flex-wrap: wrap;
   align-items: center;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid var(--ds-border);
 }
 
 /* Archiv */
 .mmt-archiv-box {
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--ds-border-subtle);
 }
 
 .mmt-archiv-label {
@@ -171,10 +171,10 @@
 
 /* Inputs */
 .mmt-input {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: var(--ds-bg-card-hover) !important;
+  border: 1px solid var(--ds-border-strong) !important;
   border-radius: 6px !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--ds-text) !important;
   font-size: 0.82rem !important;
   padding: 0.42rem 0.7rem !important;
   width: 100%;
@@ -184,14 +184,14 @@
 }
 
 .mmt-input:focus {
-  border-color: rgba(255, 215, 0, 0.45) !important;
+  border-color: var(--ds-accent-50) !important;
 }
 
 .mmt-select {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: var(--ds-bg-card-hover) !important;
+  border: 1px solid var(--ds-border-strong) !important;
   border-radius: 6px !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--ds-text) !important;
   font-size: 0.82rem !important;
   padding: 0.42rem 0.7rem !important;
   flex: 1;
@@ -205,10 +205,10 @@
 }
 
 .mmt-textarea {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: var(--ds-bg-card-hover) !important;
+  border: 1px solid var(--ds-border-strong) !important;
   border-radius: 6px !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--ds-text) !important;
   font-size: 0.83rem !important;
   line-height: 1.6 !important;
   padding: 0.6rem 0.8rem !important;
@@ -220,21 +220,21 @@
 }
 
 .mmt-textarea:focus {
-  border-color: rgba(255, 215, 0, 0.45) !important;
+  border-color: var(--ds-accent-50) !important;
 }
 
 .mmt-text {
   font-size: 0.85rem;
   line-height: 1.65;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text);
   margin: 0;
 }
 
 .mmt-btn {
-  background: rgba(255, 215, 0, 0.12);
-  border: 1px solid rgba(255, 215, 0, 0.35);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
   border-radius: 6px;
-  color: #FFD700;
+  color: var(--ds-accent);
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 600;
@@ -244,7 +244,7 @@
 }
 
 .mmt-btn:hover:not(:disabled) {
-  background: rgba(255, 215, 0, 0.22);
+  background: var(--ds-accent-20);
 }
 
 .mmt-btn:disabled {

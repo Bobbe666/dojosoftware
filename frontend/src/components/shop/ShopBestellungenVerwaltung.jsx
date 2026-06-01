@@ -652,16 +652,16 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
                 <h3 style={{ margin: 0, color: '#d4af37', fontSize: '1.1rem' }}>🎁 Neue Starterpaket-Bestellung</h3>
                 <button
                   onClick={() => setShowNeueBestellung(false)}
-                  style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '1.3rem', cursor: 'pointer', padding: '0.2rem 0.4rem' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--ds-text-muted)', fontSize: '1.3rem', cursor: 'pointer', padding: '0.2rem 0.4rem' }}
                 >✕</button>
               </div>
 
               {nbLoading ? (
-                <div style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center', padding: '2rem 0' }}>Lade Daten…</div>
+                <div style={{ color: 'var(--ds-text-secondary)', textAlign: 'center', padding: '2rem 0' }}>Lade Daten…</div>
               ) : (<>
                 {/* Paket auswählen */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--ds-text-secondary)', marginBottom: '0.4rem' }}>
                     Starterpaket *
                   </label>
                   <select
@@ -683,7 +683,7 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
                     ))}
                   </select>
                   {selectedPaketObj && (
-                    <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', margin: '0.3rem 0 0' }}>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--ds-text-muted)', margin: '0.3rem 0 0' }}>
                       {selectedPaketObj.beschreibung || ''}
                     </p>
                   )}
@@ -691,7 +691,7 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
 
                 {/* Mitglieder auswählen */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--ds-text-secondary)', marginBottom: '0.4rem' }}>
                     Mitglieder * ({nbSelectedMitglieder.length} ausgewählt)
                   </label>
                   <input
@@ -717,9 +717,9 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
                     background: 'rgba(255,255,255,0.03)',
                   }}>
                     {nbMitglieder.length === 0 ? (
-                      <div style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Keine Mitglieder gefunden</div>
+                      <div style={{ padding: '0.75rem', color: 'var(--ds-text-muted)', fontSize: '0.85rem' }}>Keine Mitglieder gefunden</div>
                     ) : filteredMitglieder.length === 0 ? (
-                      <div style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Keine Treffer</div>
+                      <div style={{ padding: '0.75rem', color: 'var(--ds-text-muted)', fontSize: '0.85rem' }}>Keine Treffer</div>
                     ) : (
                       filteredMitglieder.map(m => {
                         const checked = nbSelectedMitglieder.includes(m.mitglied_id);
@@ -747,7 +747,7 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
                               <strong>{m.nachname}</strong>, {m.vorname}
                             </span>
                             {m.stile && (
-                              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>{m.stile}</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--ds-text-muted)', marginLeft: 'auto' }}>{m.stile}</span>
                             )}
                           </div>
                         );
@@ -762,10 +762,10 @@ export default function ShopBestellungenVerwaltung({ dojoParam = '', dojoId }) {
                       >
                         Alle auswählen
                       </button>
-                      <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.78rem' }}>·</span>
+                      <span style={{ color: 'var(--ds-text-faint)', fontSize: '0.78rem' }}>·</span>
                       <button
                         onClick={() => setNbSelectedMitglieder([])}
-                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', cursor: 'pointer', padding: 0 }}
+                        style={{ background: 'none', border: 'none', color: 'var(--ds-text-muted)', fontSize: '0.78rem', cursor: 'pointer', padding: 0 }}
                       >
                         Auswahl leeren
                       </button>

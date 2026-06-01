@@ -34,7 +34,7 @@ const DesignTab = () => {
       previewTrack: null,
       previewNormal: {
         background: 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.04), transparent)',
-        borderRadius: '16px', color: 'rgba(255,255,255,0.85)', border: 'none',
+        borderRadius: '16px', color: 'var(--ds-text)', border: 'none',
       },
       previewActive: (color) => ({
         background: `linear-gradient(135deg, ${color}33, ${color}18, rgba(255,107,53,0.1))`,
@@ -47,7 +47,7 @@ const DesignTab = () => {
       desc: 'Minimal mit Unterstrich',
       previewTrack: null,
       previewNormal: {
-        background: 'transparent', borderRadius: '0', color: 'rgba(255,255,255,0.5)',
+        background: 'transparent', borderRadius: '0', color: 'var(--ds-text-muted)',
         borderBottom: '2px solid transparent', paddingBottom: '5px',
       },
       previewActive: (color) => ({
@@ -64,7 +64,7 @@ const DesignTab = () => {
         border: '1px solid rgba(255,255,255,0.07)',
       },
       previewNormal: {
-        background: 'transparent', borderRadius: '100px', color: 'rgba(255,255,255,0.55)', border: 'none',
+        background: 'transparent', borderRadius: '100px', color: 'var(--ds-text-muted)', border: 'none',
       },
       previewActive: (color) => ({
         background: color, borderRadius: '100px', color: '#1a1a0a', border: 'none',
@@ -79,7 +79,7 @@ const DesignTab = () => {
         border: '1px solid rgba(255,255,255,0.06)',
       },
       previewNormal: {
-        background: 'transparent', borderRadius: '7px', color: 'rgba(255,255,255,0.55)',
+        background: 'transparent', borderRadius: '7px', color: 'var(--ds-text-muted)',
         border: '1px solid transparent',
       },
       previewActive: (color) => ({
@@ -93,7 +93,7 @@ const DesignTab = () => {
       desc: 'Klare Rahmen-Ansicht',
       previewTrack: null,
       previewNormal: {
-        background: 'transparent', borderRadius: '7px', color: 'rgba(255,255,255,0.55)',
+        background: 'transparent', borderRadius: '7px', color: 'var(--ds-text-muted)',
         border: '1px solid rgba(255,255,255,0.1)',
       },
       previewActive: (color) => ({

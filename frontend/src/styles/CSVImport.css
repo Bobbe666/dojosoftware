@@ -7,7 +7,7 @@
 
 .csv-import-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--radius-xl);
   padding: var(--ui-page-padding);
 }
@@ -19,7 +19,7 @@
   gap: var(--ui-header-gap);
   margin-bottom: var(--ui-header-margin-b);
   padding-bottom: var(--ui-header-padding-b);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .csv-import-header .header-icon {
@@ -120,7 +120,7 @@
 /* Columns Section */
 .columns-section {
   background: var(--surface-1);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--radius-lg);
   padding: var(--ui-section-gap-sm);
   margin-bottom: var(--ui-section-gap);
@@ -168,7 +168,7 @@
   flex-direction: column;
   gap: 0.2rem;
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
   font-size: var(--ui-form-label);
 }
 
@@ -231,7 +231,7 @@
   gap: var(--ui-btn-gap);
   padding: var(--ui-page-padding);
   background: var(--surface-1);
-  border: 2px dashed rgba(255,255,255,0.1);
+  border: 2px dashed var(--ds-border);
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -401,7 +401,7 @@
 /* Results Lists */
 .results-list {
   background: var(--surface-1);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--radius-lg);
   padding: var(--ui-form-gap);
   margin-bottom: var(--ui-form-gap);
@@ -432,7 +432,7 @@
   align-items: center;
   gap: var(--ui-form-gap);
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
   font-size: var(--ui-form-label);
 }
 
@@ -480,7 +480,7 @@
   width: 100%;
   padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
   background: var(--surface-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--radius-md);
   color: var(--text-1);
   font-weight: 500;

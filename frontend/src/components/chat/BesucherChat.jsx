@@ -336,7 +336,7 @@ const BesucherChat = () => {
                 💬 Besucher-Chat
                 {unreadSessions.size > 0 && (
                   <span style={{
-                    background: '#e53e3e', color: '#fff',
+                    background: '#e53e3e', color: 'var(--ds-text)',
                     borderRadius: '50%', width: 20, height: 20,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 11, fontWeight: 700
@@ -443,7 +443,7 @@ const BesucherChat = () => {
                       <span>{session.source_site || 'Website'}</span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         {hasUnread && session.unread_count > 0 && (
-                          <span style={{ background: '#e53e3e', color: '#fff', borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>
+                          <span style={{ background: '#e53e3e', color: 'var(--ds-text)', borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>
                             {session.unread_count}
                           </span>
                         )}
@@ -638,7 +638,7 @@ const BesucherChat = () => {
                     disabled={!reply.trim() || sending}
                     style={{
                       background: 'var(--chat-accent)',
-                      color: '#fff',
+                      color: 'var(--ds-text)',
                       border: 'none',
                       borderRadius: 10,
                       padding: '0 20px',

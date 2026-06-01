@@ -13,14 +13,14 @@
 
 /* Active code box */
 .rcv-code-box {
-  background: rgba(212, 175, 55, 0.08);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
   border-radius: 12px;
   padding: 1.25rem;
 }
 
 .rcv-code-box-empty {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 1.25rem;
@@ -48,7 +48,7 @@
   font-family: monospace;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--color-gold, #D4AF37);
+  color: var(--color-gold, var(--ds-accent));
   letter-spacing: 0.1em;
 }
 
@@ -62,14 +62,14 @@
 }
 
 .rcv-copy-btn--default {
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  color: var(--color-gold, #D4AF37);
+  background: var(--ds-accent-15);
+  border: 1px solid var(--ds-accent-50);
+  color: var(--color-gold, var(--ds-accent));
 }
 
 .rcv-copy-btn--copied {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   color: var(--status-success);
 }
 
@@ -87,7 +87,7 @@
 }
 
 .rcv-stat-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 0.875rem 0.75rem;
@@ -121,7 +121,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   gap: 0.75rem;
@@ -145,7 +145,7 @@
 }
 
 .rcv-praemie {
-  color: #D4AF37;
+  color: var(--ds-accent);
   font-weight: 700;
   font-size: 0.9rem;
 }
@@ -159,7 +159,7 @@
 
 /* Einzeiliger Empty-State wenn gar keine Aktivität */
 .rcv-empty-inline {
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
   font-size: 0.82rem;
   padding: 0.5rem 0;
 }

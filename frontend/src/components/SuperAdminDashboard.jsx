@@ -3250,7 +3250,7 @@ const SuperAdminChatZentrale = ({ token }) => {
                         className="sad-chat-room-icon"
                         style={room.type === 'group' && room.avatar_emoji ? {
                           background: room.avatar_color || '#4f7cff',
-                          color: 'white',
+                          color: 'var(--ds-text)',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',

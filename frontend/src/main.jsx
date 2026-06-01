@@ -36,6 +36,13 @@ if (new URLSearchParams(window.location.search).has('_v')) {
 // i18n - Internationalisierung
 import './locales/i18n';
 
+// Design System — Tokens ZUERST (Quelle der Wahrheit für alle var(--ds-*))
+import './design-system/ds-tokens.css';
+import './design-system/ds-components.css';
+import './styles/custom-fonts.css';   // eigene Schriften (Karate, Bonzai)
+// Gespeicherte Theme-Anpassungen sofort anwenden (vor dem Rendern)
+import { initTheme } from './utils/dsTheme';
+initTheme();
 // Design System - Neue zentrale Styles
 import './design-system/index.css';
 
@@ -75,6 +82,10 @@ fetchCsrfToken().then(() => {
 }).catch(err => {
   console.warn('⚠️ [Security] CSRF-Token konnte nicht geladen werden:', err.message);
 });
+
+// Branding vor Login: Theme der Subdomain laden (nutzt /api/dojo-theme/public)
+import { initPublicTheme } from './utils/dsTheme';
+initPublicTheme();
 
 // Globaler Request Interceptor - Session-Auth mit JWT-Fallback
 axios.interceptors.request.use(

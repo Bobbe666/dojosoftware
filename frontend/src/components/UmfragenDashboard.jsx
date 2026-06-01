@@ -14,7 +14,7 @@ const EMPTY    = { titel: '', beschreibung: '', typ: 'ja_nein', status: 'entwurf
 
 const card = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, overflow: 'hidden' };
 const inp  = { width: '100%', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: '#e2e8f0', fontSize: '0.88rem', boxSizing: 'border-box' };
-const lbl  = { display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: 4 };
+const lbl  = { display: 'block', fontSize: '0.78rem', color: 'var(--ds-text-muted)', marginBottom: 4 };
 
 export default function UmfragenDashboard() {
   const { token }     = useAuth();
@@ -216,7 +216,7 @@ export default function UmfragenDashboard() {
             <option value="datum_auswahl">📅  Datumsabfrage (Wer kommt wann?)</option>
           </select>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, padding: '0.6rem 0.75rem', fontSize: '0.79rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, padding: '0.6rem 0.75rem', fontSize: '0.79rem', color: 'var(--ds-text-muted)', lineHeight: 1.5 }}>
           {form.typ === 'ja_nein'      && '✓/✗ Mitglieder wählen Ja oder Nein'}
           {form.typ === 'kommentar'    && '💬 Mitglieder schreiben einen freien Kommentar'}
           {form.typ === 'beides'       && '✓/✗ + 💬 Ja/Nein mit optionalem Kommentar'}
@@ -228,7 +228,7 @@ export default function UmfragenDashboard() {
     // Schritt 2 (datum_auswahl): Termine
     if (modalStep === 2 && form.typ === 'datum_auswahl') return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-        <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+        <div style={{ fontSize: '0.85rem', color: 'var(--ds-text-muted)' }}>
           Füge die Termine hinzu, für die Mitglieder abstimmen sollen.
         </div>
         <div>
@@ -243,7 +243,7 @@ export default function UmfragenDashboard() {
           </div>
         </div>
         {form.daten.length === 0 ? (
-          <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.8rem', fontStyle: 'italic', textAlign: 'center', padding: '1.5rem 0' }}>
+          <div style={{ color: 'var(--ds-text-faint)', fontSize: '0.8rem', fontStyle: 'italic', textAlign: 'center', padding: '1.5rem 0' }}>
             Noch keine Termine — bitte mindestens einen hinzufügen
           </div>
         ) : (
@@ -293,7 +293,7 @@ export default function UmfragenDashboard() {
             <span style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', color: form.als_popup ? '#ef4444' : 'rgba(255,255,255,0.85)' }}>
               🔔 Als Popup auf Startseite anzeigen
             </span>
-            <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--ds-text-muted)' }}>
               Erscheint als Hinweis-Popup beim Öffnen der Mitglieder-App
             </span>
           </span>
@@ -317,7 +317,7 @@ export default function UmfragenDashboard() {
                 onMouseEnter={e => e.currentTarget.style.opacity = 1}
                 onMouseLeave={e => e.currentTarget.style.opacity = 0}>
                 <button onClick={() => modalBildRef.current?.click()}
-                  style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6, padding: '0.4rem 0.8rem', color: '#fff', cursor: 'pointer', fontSize: '0.82rem' }}>
+                  style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6, padding: '0.4rem 0.8rem', color: 'var(--ds-text)', cursor: 'pointer', fontSize: '0.82rem' }}>
                   🔄 Ersetzen
                 </button>
                 <button onClick={removeBildInModal}
@@ -328,19 +328,19 @@ export default function UmfragenDashboard() {
             </div>
           ) : (
             <div onClick={() => modalBildRef.current?.click()}
-              style={{ border: '2px dashed rgba(255,255,255,0.15)', borderRadius: 8, padding: '1.5rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.15s', color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem' }}
+              style={{ border: '2px dashed rgba(255,255,255,0.15)', borderRadius: 8, padding: '1.5rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.15s', color: 'var(--ds-text-faint)', fontSize: '0.85rem' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(200,164,74,0.4)'}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'}>
               <div style={{ fontSize: '1.8rem', marginBottom: '0.35rem' }}>🖼</div>
               <div>Klicken zum Auswählen</div>
-              <div style={{ fontSize: '0.76rem', marginTop: 4, color: 'rgba(255,255,255,0.25)' }}>JPG, PNG, WebP — max. 5 MB</div>
+              <div style={{ fontSize: '0.76rem', marginTop: 4, color: 'var(--ds-text-faint)' }}>JPG, PNG, WebP — max. 5 MB</div>
             </div>
           )}
           <input ref={modalBildRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={e => { if (e.target.files[0]) onModalBildSelect(e.target.files[0]); e.target.value = ''; }} />
         </div>
 
-        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: 6 }}>
+        <div style={{ fontSize: '0.78rem', color: 'var(--ds-text-faint)', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: 6 }}>
           {isSuperAdmin && !dojoId ? '🌐 Erscheint für Mitglieder aller Dojos.' : '📍 Erscheint nur für Mitglieder deines Dojos.'}
         </div>
       </div>
@@ -354,20 +354,20 @@ export default function UmfragenDashboard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div>
           <h2 style={{ margin: 0, color: '#e2e8f0' }}>📋 Umfragen</h2>
-          <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: 'rgba(255,255,255,0.4)' }}>
+          <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: 'var(--ds-text-muted)' }}>
             {isSuperAdmin && !dojoId ? 'Plattformweite Umfragen' : 'Umfragen für dein Dojo'}
           </p>
         </div>
-        <button onClick={openCreate} style={{ background: 'linear-gradient(135deg,#c8a44a,#a07c28)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+        <button onClick={openCreate} style={{ background: 'linear-gradient(135deg,#c8a44a,#a07c28)', color: 'var(--ds-text)', border: 'none', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
           + Neue Umfrage
         </button>
       </div>
 
       {error && <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 8, padding: '0.75rem 1rem', marginBottom: '1rem', color: '#f87171', fontSize: '0.85rem' }}>{error}</div>}
-      {loading && <div style={{ color: 'rgba(255,255,255,0.5)' }}>Lade Umfragen…</div>}
+      {loading && <div style={{ color: 'var(--ds-text-muted)' }}>Lade Umfragen…</div>}
 
       {!loading && !umfragen.length && !error && (
-        <div style={{ ...card, padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.35)' }}>
+        <div style={{ ...card, padding: '3rem', textAlign: 'center', color: 'var(--ds-text-faint)' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📋</div>
           <div style={{ fontWeight: 600, marginBottom: '0.35rem' }}>Noch keine Umfragen</div>
           <div style={{ fontSize: '0.83rem' }}>Erstelle deine erste Umfrage — Mitglieder sehen sie beim nächsten Login als Popup.</div>
@@ -395,8 +395,8 @@ export default function UmfragenDashboard() {
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, color: '#e2e8f0', marginBottom: 2 }}>{u.titel}</div>
-                {u.beschreibung && <div style={{ fontSize: '0.83rem', color: 'rgba(255,255,255,0.5)', marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{u.beschreibung}</div>}
-                <div style={{ display: 'flex', gap: 10, fontSize: '0.77rem', color: 'rgba(255,255,255,0.4)', flexWrap: 'wrap' }}>
+                {u.beschreibung && <div style={{ fontSize: '0.83rem', color: 'var(--ds-text-muted)', marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{u.beschreibung}</div>}
+                <div style={{ display: 'flex', gap: 10, fontSize: '0.77rem', color: 'var(--ds-text-muted)', flexWrap: 'wrap' }}>
                   <span>{TYP_L[u.typ]}</span>
                   {u.typ === 'datum_auswahl' && u.daten?.length && <span style={{ color: '#c8a44a' }}>{u.daten.length} Termine</span>}
                   {u.gueltig_bis && <span>bis {fmt(u.gueltig_bis)}</span>}
@@ -406,7 +406,7 @@ export default function UmfragenDashboard() {
               </div>
 
               <div style={{ textAlign: 'right', fontSize: '0.82rem', flexShrink: 0 }}>
-                <div style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 2 }}>{u.antworten_gesamt || 0} Antworten</div>
+                <div style={{ color: 'var(--ds-text-secondary)', marginBottom: 2 }}>{u.antworten_gesamt || 0} Antworten</div>
                 {u.typ !== 'kommentar' && u.typ !== 'datum_auswahl' && (u.antworten_gesamt > 0) && (
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                     <span style={{ color: '#4ade80' }}>✓ {u.antworten_ja || 0}</span>
@@ -433,10 +433,10 @@ export default function UmfragenDashboard() {
             {detailId === u.id && (
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '1rem 1.25rem', background: 'rgba(0,0,0,0.15)' }}>
                 {detailLoad ? (
-                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Lade Ergebnisse…</div>
+                  <div style={{ color: 'var(--ds-text-muted)', fontSize: '0.85rem' }}>Lade Ergebnisse…</div>
                 ) : detail?.typ === 'datum' ? (
                   detail.ergebnis.length === 0 ? (
-                    <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem' }}>Noch keine Antworten.</div>
+                    <div style={{ color: 'var(--ds-text-faint)', fontSize: '0.85rem' }}>Noch keine Antworten.</div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {detail.ergebnis.map(e => (
@@ -468,12 +468,12 @@ export default function UmfragenDashboard() {
                   )
                 ) : (
                   !detail?.antworten?.length ? (
-                    <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem' }}>Noch keine Antworten.</div>
+                    <div style={{ color: 'var(--ds-text-faint)', fontSize: '0.85rem' }}>Noch keine Antworten.</div>
                   ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                       <thead>
                         <tr>{['Name','Dojo','Antwort','Kommentar','Datum'].map(h => (
-                          <th key={h} style={{ textAlign: 'left', color: 'rgba(255,255,255,0.4)', padding: '0.25rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)', fontWeight: 500, whiteSpace: 'nowrap' }}>{h}</th>
+                          <th key={h} style={{ textAlign: 'left', color: 'var(--ds-text-muted)', padding: '0.25rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)', fontWeight: 500, whiteSpace: 'nowrap' }}>{h}</th>
                         ))}</tr>
                       </thead>
                       <tbody>
@@ -554,12 +554,12 @@ export default function UmfragenDashboard() {
               </button>
               {modalStep < totalSteps ? (
                 <button onClick={goNext}
-                  style={{ background: 'linear-gradient(135deg,#c8a44a,#a07c28)', border: 'none', borderRadius: 6, padding: '0.45rem 1.25rem', cursor: 'pointer', color: '#fff', fontWeight: 600, fontSize: '0.85rem' }}>
+                  style={{ background: 'linear-gradient(135deg,#c8a44a,#a07c28)', border: 'none', borderRadius: 6, padding: '0.45rem 1.25rem', cursor: 'pointer', color: 'var(--ds-text)', fontWeight: 600, fontSize: '0.85rem' }}>
                   Weiter →
                 </button>
               ) : (
                 <button onClick={save} disabled={saving}
-                  style={{ background: saving ? 'rgba(200,164,74,0.4)' : 'linear-gradient(135deg,#c8a44a,#a07c28)', border: 'none', borderRadius: 6, padding: '0.45rem 1.25rem', cursor: saving ? 'default' : 'pointer', color: '#fff', fontWeight: 600, fontSize: '0.85rem' }}>
+                  style={{ background: saving ? 'rgba(200,164,74,0.4)' : 'linear-gradient(135deg,#c8a44a,#a07c28)', border: 'none', borderRadius: 6, padding: '0.45rem 1.25rem', cursor: saving ? 'default' : 'pointer', color: 'var(--ds-text)', fontWeight: 600, fontSize: '0.85rem' }}>
                   {saving ? 'Speichern…' : (editId ? '✓ Speichern' : '✓ Erstellen')}
                 </button>
               )}
@@ -573,7 +573,7 @@ export default function UmfragenDashboard() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div style={{ background: 'linear-gradient(135deg,rgba(26,26,46,0.99),rgba(15,15,35,0.99))', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 12, padding: '1.75rem', maxWidth: 420, width: '100%' }}>
             <h3 style={{ margin: '0 0 0.75rem', color: '#f87171' }}>🗑 Umfrage löschen?</h3>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: '0 0 1.25rem' }}>Die Umfrage und alle Antworten werden unwiderruflich gelöscht.</p>
+            <p style={{ color: 'var(--ds-text-secondary)', fontSize: '0.85rem', margin: '0 0 1.25rem' }}>Die Umfrage und alle Antworten werden unwiderruflich gelöscht.</p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button onClick={() => setDeleteId(null)} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, padding: '0.45rem 1rem', cursor: 'pointer', color: '#e2e8f0', fontSize: '0.85rem' }}>Abbrechen</button>
               <button onClick={confirmDelete} disabled={deleting} style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.4)', borderRadius: 6, padding: '0.45rem 1rem', cursor: 'pointer', color: '#f87171', fontSize: '0.85rem', fontWeight: 600 }}>

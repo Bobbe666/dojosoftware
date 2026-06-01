@@ -5039,7 +5039,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   />
                   <button
                     onClick={() => { setQuickFile(null); setQuickPreview(null); setQuickOcrDone(false); }}
-                    style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.7)', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.7)', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', color: 'var(--ds-text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <X size={14} />
                   </button>
@@ -5051,7 +5051,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                     </div>
                   )}
                   {quickOcrDone && !quickOcrLoading && (
-                    <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', background: 'rgba(16,185,129,.9)', color: '#fff', borderRadius: 20, padding: '5px 14px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+                    <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', background: 'rgba(16,185,129,.9)', color: 'var(--ds-text)', borderRadius: 20, padding: '5px 14px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                       <CheckCircle size={12} />
                       KI hat Daten ausgelesen — bitte prüfen
                     </div>

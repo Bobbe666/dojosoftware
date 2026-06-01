@@ -20,7 +20,7 @@ function IbanDiagnostic({ iban }) {
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: d.errors.length ? '0.4rem' : 0 }}>
         <span style={{ color: /^[A-Z]{2}$/.test(cc) && IBAN_LENGTHS[cc] ? '#4caf82' : '#e05c5c' }}>{cc}</span>
         <span style={{ color: /^\d{2}$/.test(d.checkDigits) ? '#4caf82' : '#e05c5c' }}>{d.checkDigits}</span>
-        <span style={{ color: 'rgba(255,255,255,0.55)' }}>{d.bban}</span>
+        <span style={{ color: 'var(--ds-text-muted)' }}>{d.bban}</span>
         <span style={{ marginLeft: 'auto', color: statusColor, fontWeight: 600 }}>
           {d.ok ? '✓' : '✗'} {d.iban.length} Zch{d.expectedLength ? ` / ${d.expectedLength} erw.` : ''}
         </span>
@@ -2157,7 +2157,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       {/* Vertragsbeginn für Familienmitglieder (nur in existingMemberMode) */}
       {existingMemberMode && (
         <div style={{ margin: '0.75rem 0 1rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.04)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)' }}>
-          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginBottom: '0.4rem' }}>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--ds-text-secondary)', marginBottom: '0.4rem' }}>
             Vertragsbeginn für neue Familienmitglieder *
           </label>
           <input
@@ -2699,12 +2699,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               <span style={{ fontSize: '1.3rem' }}>⚠️</span>
               <div>
                 <div style={{ fontWeight: 700, color: '#f59e0b', marginBottom: '0.3rem' }}>Super-Admin-Modus aktiv</div>
-                <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--ds-text-secondary)', lineHeight: 1.5 }}>
                   Du bist in der „Alle Dojos"-Ansicht. Bitte wähle zuerst das Ziel-Dojo für das neue Mitglied.
                 </div>
               </div>
             </div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', color: 'rgba(255,255,255,0.6)' }}>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--ds-text-secondary)' }}>
               Mitglied anlegen in:
             </label>
             <select
@@ -2713,7 +2713,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               style={{
                 width: '100%', padding: '0.7rem 1rem', borderRadius: 9, marginBottom: '1.5rem',
                 border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)',
-                color: '#fff', fontSize: '1rem', cursor: 'pointer', boxSizing: 'border-box'
+                color: 'var(--ds-text)', fontSize: '1rem', cursor: 'pointer', boxSizing: 'border-box'
               }}
             >
               <option value="">— Dojo auswählen —</option>
@@ -2724,7 +2724,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
               <button onClick={onClose} style={{
                 padding: '0.6rem 1.2rem', borderRadius: 9, border: '1px solid rgba(255,255,255,0.15)',
-                background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'inherit'
+                background: 'transparent', color: 'var(--ds-text-secondary)', cursor: 'pointer', fontFamily: 'inherit'
               }}>Abbrechen</button>
               <button
                 disabled={!superAdminSelectedDojo}
@@ -2977,7 +2977,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Rückwirkende Beiträge abrechnen</h2>
         </div>
         <div className="modal-body" style={{ padding: '1.5rem' }}>
-          <p style={{ marginTop: 0, color: 'rgba(255,255,255,0.8)' }}>
+          <p style={{ marginTop: 0, color: 'var(--ds-text-secondary)' }}>
             Der Vertrag beginnt rückwirkend am <strong>{rueckwirkendModal.vertragsbeginn}</strong>.
             Es sind <strong>{rueckwirkendModal.monate} Monat(e)</strong> offen.
             Wie sollen die ausstehenden Beiträge abgerechnet werden?
@@ -3004,8 +3004,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   style={{ marginTop: 3 }}
                 />
                 <div>
-                  <div style={{ fontWeight: 600, color: '#fff' }}>{opt.label}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)' }}>{opt.desc}</div>
+                  <div style={{ fontWeight: 600, color: 'var(--ds-text)' }}>{opt.label}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--ds-text-muted)' }}>{opt.desc}</div>
                 </div>
               </label>
             ))}
@@ -3013,7 +3013,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
           {rueckwirkendModus === 'raten' && (
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>
+              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.9rem', color: 'var(--ds-text-secondary)' }}>
                 Monatlicher Aufschlag (€)
               </label>
               <input
@@ -3026,7 +3026,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 style={{
                   width: '100%', padding: '0.6rem 0.8rem', borderRadius: 8,
                   border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)',
-                  color: '#fff', fontSize: '1rem', boxSizing: 'border-box'
+                  color: 'var(--ds-text)', fontSize: '1rem', boxSizing: 'border-box'
                 }}
               />
             </div>
@@ -3037,7 +3037,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               onClick={() => { setRueckwirkendModal(null); onClose(); }}
               style={{
                 padding: '0.6rem 1.2rem', borderRadius: 9, border: '1px solid rgba(255,255,255,0.15)',
-                background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'inherit'
+                background: 'transparent', color: 'var(--ds-text-secondary)', cursor: 'pointer', fontFamily: 'inherit'
               }}
               disabled={rueckwirkendLoading}
             >
@@ -3048,7 +3048,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               disabled={rueckwirkendLoading || (rueckwirkendModus === 'raten' && !rueckwirkendAufschlag)}
               style={{
                 padding: '0.6rem 1.4rem', borderRadius: 9, border: 'none',
-                background: '#4f8ef7', color: '#fff', cursor: 'pointer',
+                background: '#4f8ef7', color: 'var(--ds-text)', cursor: 'pointer',
                 fontWeight: 600, fontFamily: 'inherit', opacity:
                   (rueckwirkendLoading || (rueckwirkendModus === 'raten' && !rueckwirkendAufschlag)) ? 0.5 : 1
               }}

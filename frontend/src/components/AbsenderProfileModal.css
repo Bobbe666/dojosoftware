@@ -31,7 +31,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #fff;
+  color: var(--ds-text);
   background: #2a2a3a;
   border-bottom: 2px solid rgba(201,162,39,0.3);
 }
@@ -47,7 +47,7 @@
 .apm-close-btn {
   background: none;
   border: none;
-  color: #fff;
+  color: var(--ds-text);
   cursor: pointer;
 }
 
@@ -99,7 +99,7 @@
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: var(--typ-farbe, #c9a227);
+  background: var(--typ-farbe, var(--ds-accent-dark));
 }
 
 /* Input */
@@ -217,7 +217,7 @@
   width: 8px;
   align-self: stretch;
   flex-shrink: 0;
-  background: var(--pc, #c9a227);
+  background: var(--pc, var(--ds-accent-dark));
 }
 
 .apm-color-preview-label {
@@ -285,7 +285,7 @@
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
-  background: var(--pc, #c9a227);
+  background: var(--pc, var(--ds-accent-dark));
 }
 .apm-btn-save:disabled {
   opacity: 0.7;
@@ -316,7 +316,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--typ-farbe, #c9a227);
+  background: var(--typ-farbe, var(--ds-accent-dark));
   opacity: 0.13;
   pointer-events: none;
 }

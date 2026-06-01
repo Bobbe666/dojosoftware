@@ -2,7 +2,7 @@
 
 .zahlungszyklen-seite {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%);
   color: var(--text-1);
   padding: var(--ui-page-padding);
 }
@@ -214,7 +214,7 @@
   margin-bottom: 1rem !important;
   padding: 0 !important;
   padding-bottom: 1rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid var(--ds-border) !important;
   position: relative !important;
   z-index: 2 !important;
   background: none !important;
@@ -407,7 +407,7 @@
   margin-bottom: 1rem;
   padding: 0;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
   position: relative;
   z-index: 2;
   background: none !important;
@@ -466,7 +466,7 @@
 .zahlungszyklen-seite .status-badge.inactive,
 .zyklus-card .status-badge.inactive {
   background: none !important;
-  color: #9ca3af !important;
+  color: var(--ds-text-muted) !important;
   border: none !important;
 }
 
@@ -515,7 +515,7 @@
 }
 
 .zyklus-card.inactive .card-header h3 {
-  color: #9ca3af;
+  color: var(--ds-text-muted);
 }
 
 .zyklus-card.inactive::after {
@@ -634,11 +634,11 @@
   padding: 1rem 1.5rem;
   border-radius: var(--comp-radius-xl);
   margin-bottom: 1.5rem;
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--ds-danger-10);
   border: 2px solid var(--status-error);
   color: var(--status-error);
   backdrop-filter: none;
-  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 8px 32px var(--ds-danger-25);
   text-align: center;
   font-weight: 500;
   display: flex;
@@ -714,20 +714,20 @@
 }
 
 .zahlungszyklen-seite .btn-danger {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.1) 50%, transparent 100%) !important;
+  background: linear-gradient(135deg, var(--ds-danger-25) 0%, var(--ds-danger-10) 50%, transparent 100%) !important;
   color: var(--text-1) !important;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2) !important;
+  box-shadow: 0 2px 8px var(--ds-danger-25) !important;
 }
 
 .zahlungszyklen-seite .btn-danger:hover {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.5) 0%, rgba(239, 68, 68, 0.3) 50%, rgba(239, 68, 68, 0.1) 100%) !important;
+  background: linear-gradient(135deg, var(--ds-danger-25) 0%, var(--ds-danger-25) 50%, var(--ds-danger-10) 100%) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4) !important;
+  box-shadow: 0 4px 15px var(--ds-danger-25) !important;
   color: var(--text-1) !important;
 }
 
 .zahlungszyklen-seite .btn-danger::before {
-  background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.2), transparent) !important;
+  background: linear-gradient(90deg, transparent, var(--ds-danger-25), transparent) !important;
 }
 
 .zahlungszyklen-seite .btn-ghost {
@@ -737,7 +737,7 @@
 }
 
 .zahlungszyklen-seite .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--ds-bg-elevated) !important;
   box-shadow: 0 2px 8px var(--primary-alpha-20) !important;
 }
 
@@ -751,7 +751,7 @@
 }
 
 .zahlungszyklen-seite .btn-danger:active {
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2) !important;
+  box-shadow: 0 2px 6px var(--ds-danger-25) !important;
 }
 
 .zahlungszyklen-seite .btn-primary:disabled,
@@ -867,7 +867,7 @@
   align-items: center;
   gap: 0.625rem;
   padding: 0.625rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   backdrop-filter: blur(20px);
   border-radius: 10px;
   border: 1px solid var(--primary-alpha-20);
@@ -920,7 +920,7 @@
   gap: 0.5rem;
   color: var(--text-primary);
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 6px;
   font-size: 0.875rem;
 }
@@ -932,7 +932,7 @@
   gap: 0.25rem;
   color: var(--text-secondary);
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 6px;
   font-size: 0.875rem;
   font-style: italic;

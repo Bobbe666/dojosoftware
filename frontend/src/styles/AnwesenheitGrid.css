@@ -25,7 +25,7 @@
 .filterleiste input[type="date"] {
   padding: 0.5rem 0.75rem;
   font-size: var(--ui-form-input);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm);
   min-width: 160px;
   background: var(--surface-2);

@@ -22,7 +22,7 @@
 .ds-modal {
   position: relative;
   background: var(--modal-bg-dark);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--modal-radius-outer);
   width: 100%;
   max-height: 90vh;
@@ -177,7 +177,7 @@
 .ds-wizard-connector {
   height: 1px;
   width: 24px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--ds-bg-elevated);
   flex-shrink: 0;
 }
 
@@ -202,7 +202,7 @@
 
 .ds-modal-section--elevated {
   background: var(--surface-3);
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--ds-border);
 }
 
 .ds-modal-section--success {
@@ -332,7 +332,7 @@
 
 .ds-progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--status-success), #22c55e);
+  background: linear-gradient(90deg, var(--status-success), var(--ds-success));
   border-radius: var(--comp-radius-pill);
   transition: width 0.3s ease;
 }

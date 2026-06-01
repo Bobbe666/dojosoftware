@@ -3,15 +3,15 @@
    ================================================================ */
 
 :root {
-  --gs-gold:    #C9A227;
-  --gs-gold-lt: #FFD700;
+  --gs-gold:    var(--ds-accent-dark);
+  --gs-gold-lt: var(--ds-accent);
   --gs-dark:    #0e0e1a;
   --gs-card:    #141420;
   --gs-border:  #2a2a3a;
   --gs-text:    #f0f0f0;
   --gs-muted:   #888;
   --gs-danger:  #ff6b6b;
-  --gs-success: #4ade80;
+  --gs-success: var(--ds-success-soft);
   --gs-radius:  12px;
 }
 
@@ -121,7 +121,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.07);
+  background: var(--ds-bg-card-hover);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -173,7 +173,7 @@
 .gs-anlass-btn {
   padding: 0.4rem 0.9rem;
   border: 1px solid var(--gs-border);
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   color: var(--gs-muted);
   border-radius: 20px;
   font-size: 0.82rem;
@@ -253,7 +253,7 @@
 .gs-wert-btn {
   padding: 0.55rem 1.1rem;
   border: 1px solid var(--gs-border);
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   color: var(--gs-muted);
   border-radius: 8px;
   font-size: 0.9rem;
@@ -287,7 +287,7 @@
 .gs-input {
   width: 100%;
   padding: 0.6rem 0.8rem;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--gs-border);
   border-radius: 8px;
   color: var(--gs-text);
@@ -377,7 +377,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.6rem 1rem;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--gs-border);
   color: var(--gs-muted);
   font-size: 0.88rem;
@@ -428,7 +428,7 @@
 .gs-pay-tab {
   padding: 0.5rem 1.1rem;
   border: 1px solid var(--gs-border);
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
   color: var(--gs-muted);
   border-radius: 8px;
   font-size: 0.88rem;
@@ -462,7 +462,7 @@
 
 .gs-card-element {
   padding: 0.75rem 0.9rem;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--gs-border);
   border-radius: 8px;
 }
@@ -503,7 +503,7 @@
 
 .gs-info-box {
   padding: 1rem;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border: 1px solid var(--gs-border);
   border-radius: 8px;
   color: var(--gs-muted);
@@ -576,7 +576,7 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.35rem 0.8rem;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--gs-border);
   color: var(--gs-muted);
   border-radius: 6px;

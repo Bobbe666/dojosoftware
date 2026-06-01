@@ -141,7 +141,7 @@
 .te-preview-header {
   padding: 15px 20px;
   background: #2d2d2d;
-  color: white;
+  color: var(--ds-text);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -156,7 +156,7 @@
 .te-preview-close-btn {
   background: #f44336;
   border: none;
-  color: white;
+  color: var(--ds-text);
   padding: 12px 24px;
   border-radius: 6px;
   cursor: pointer;

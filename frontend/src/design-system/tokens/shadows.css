@@ -32,14 +32,14 @@
   /* ========== COLORED SHADOWS ========== */
 
   /* Gold Glow */
-  --shadow-gold: 0 4px 15px rgba(255, 215, 0, 0.3);
-  --shadow-gold-hover: 0 8px 25px rgba(255, 215, 0, 0.5);
-  --shadow-gold-intense: 0 0 30px rgba(255, 215, 0, 0.6);
+  --shadow-gold: 0 4px 15px var(--ds-accent-30);
+  --shadow-gold-hover: 0 8px 25px var(--ds-accent-50);
+  --shadow-gold-intense: 0 0 30px var(--ds-accent-50);
 
   /* Status Shadows */
-  --shadow-success: 0 4px 15px rgba(34, 197, 94, 0.3);
+  --shadow-success: 0 4px 15px var(--ds-success-25);
   --shadow-warning: 0 4px 15px rgba(245, 158, 11, 0.3);
-  --shadow-error: 0 4px 15px rgba(239, 68, 68, 0.3);
+  --shadow-error: 0 4px 15px var(--ds-danger-25);
   --shadow-info: 0 4px 15px rgba(59, 130, 246, 0.3);
 
   /* Vermillion (TDA-Vib) */
@@ -55,8 +55,8 @@
   --glass-bg-dark: rgba(255, 255, 255, 0.05);
   --glass-bg-dark-hover: rgba(255, 255, 255, 0.1);
   --glass-border-dark: 1px solid rgba(255, 255, 255, 0.1);
-  --glass-border-gold: 1px solid rgba(255, 215, 0, 0.2);
-  --glass-border-gold-hover: 1px solid rgba(255, 215, 0, 0.4);
+  --glass-border-gold: 1px solid var(--ds-accent-20);
+  --glass-border-gold-hover: 1px solid var(--ds-accent-50);
 
   /* Light Theme Glass */
   --glass-bg-light: rgba(255, 255, 255, 0.7);
@@ -79,7 +79,7 @@
   --text-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
   --text-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.2);
   --text-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.3);
-  --text-shadow-gold: 0 2px 8px rgba(255, 215, 0, 0.5);
+  --text-shadow-gold: 0 2px 8px var(--ds-accent-50);
 
   /* ========== OUTLINE ========== */
 

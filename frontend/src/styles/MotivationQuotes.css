@@ -1,7 +1,7 @@
 /* Motivation Quotes */
 .motivation-quotes {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  border: 1px solid var(--ds-accent-20);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-page-padding-sm);
   margin-bottom: 1rem;
@@ -16,7 +16,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #ffd700, #ff6b35, #8B5CF6);
+  background: linear-gradient(90deg, var(--ds-accent), #ff6b35, #8B5CF6);
   animation: shimmer 3s ease-in-out infinite;
 }
 

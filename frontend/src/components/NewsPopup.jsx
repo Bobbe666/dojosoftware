@@ -76,13 +76,13 @@ export default function NewsPopup() {
             Wichtige Information
           </span>
           {items.length > 1 && (
-            <span style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>
+            <span style={{ marginLeft: 'auto', color: 'var(--ds-text-muted)', fontSize: '0.8rem' }}>
               {idx + 1} / {items.length}
             </span>
           )}
           <button onClick={dismiss} style={{
             marginLeft: items.length > 1 ? 0 : 'auto',
-            background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)',
+            background: 'none', border: 'none', color: 'var(--ds-text-muted)',
             cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1, padding: '0 0.2rem',
           }}>✕</button>
         </div>
@@ -96,17 +96,17 @@ export default function NewsPopup() {
 
         {/* Content */}
         <div style={{ padding: '1.25rem 1.25rem 0.75rem', overflowY: 'auto', flex: 1 }}>
-          <h2 style={{ margin: '0 0 0.5rem', color: '#fff', fontSize: '1.15rem', lineHeight: 1.3 }}>
+          <h2 style={{ margin: '0 0 0.5rem', color: 'var(--ds-text)', fontSize: '1.15rem', lineHeight: 1.3 }}>
             {item.titel}
           </h2>
           {item.kurzbeschreibung && (
-            <p style={{ margin: '0 0 0.75rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+            <p style={{ margin: '0 0 0.75rem', color: 'var(--ds-text-secondary)', fontSize: '0.9rem', lineHeight: 1.5 }}>
               {item.kurzbeschreibung.replace(/<[^>]*>/g, '')}
             </p>
           )}
 
           {expanded && (
-            <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '0.75rem' }}>
+            <div style={{ color: 'var(--ds-text)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '0.75rem' }}>
               {isHtml
                 ? <div dangerouslySetInnerHTML={{ __html: item.inhalt }} />
                 : <p style={{ margin: 0, whiteSpace: 'pre-line' }}>{item.inhalt}</p>

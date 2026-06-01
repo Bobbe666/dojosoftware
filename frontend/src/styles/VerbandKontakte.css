@@ -34,7 +34,7 @@
 .vk-stat-chip:hover { border-color: var(--primary); color: var(--primary); }
 .vk-stat-chip.active { border-color: var(--primary); background: rgba(79,140,247,0.12); color: var(--primary); }
 .vk-stat-chip.faellig { border-color: var(--error); }
-.vk-stat-chip.faellig.active { background: rgba(239,68,68,0.12); color: var(--error); }
+.vk-stat-chip.faellig.active { background: var(--ds-danger-10); color: var(--error); }
 
 .vk-stat-num { font-size: 1.35rem; font-weight: 700; line-height: 1; color: inherit; }
 .vk-stat-lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: inherit; }
@@ -114,7 +114,7 @@
   border: none;
   border-radius: 8px;
   background: var(--primary);
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -260,7 +260,7 @@
   transition: all 0.15s;
   text-decoration: none;
 }
-.vk-icon-btn:hover { background: var(--bg-hover, rgba(255,255,255,0.07)); color: var(--text-primary); }
+.vk-icon-btn:hover { background: var(--bg-hover, var(--ds-bg-card-hover)); color: var(--text-primary); }
 .vk-icon-btn-danger:hover { color: var(--error); }
 .vk-icon-btn-sm { padding: 3px; }
 
@@ -272,7 +272,7 @@
   border: none;
   border-radius: 6px;
   background: var(--primary);
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -369,8 +369,8 @@
   color: #a5b4fc;
 }
 .vk-followup-banner.faellig {
-  background: rgba(239,68,68,0.1);
-  border-color: rgba(239,68,68,0.3);
+  background: var(--ds-danger-10);
+  border-color: var(--ds-danger-25);
   color: #fca5a5;
 }
 
@@ -379,7 +379,7 @@
   margin: 0 16px 10px;
   padding: 10px 14px;
   border-radius: 8px;
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
   border: 1px solid var(--border);
   display: flex;
   align-items: flex-start;
@@ -413,7 +413,7 @@
   gap: 10px;
   padding: 12px;
   border-radius: 8px;
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
   border: 1px solid var(--border);
 }
 .vk-akt-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
@@ -539,7 +539,7 @@
   padding: 9px 12px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   color: var(--text-primary);
   font-size: 0.88rem;
   font-family: inherit;
@@ -557,8 +557,8 @@
   gap: 8px;
   padding: 10px 14px;
   border-radius: 8px;
-  background: rgba(239,68,68,0.12);
-  border: 1px solid rgba(239,68,68,0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   color: #fca5a5;
   font-size: 0.85rem;
   margin-bottom: 14px;

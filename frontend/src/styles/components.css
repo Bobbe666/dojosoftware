@@ -310,7 +310,7 @@ Glassmorphism-Design mit Theme-Variablen.
 .stat-card {
   background: var(--surface-1);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   padding: var(--ui-stat-card-padding);
   transition: background 0.2s;
   cursor: default;
@@ -327,7 +327,7 @@ Glassmorphism-Design mit Theme-Variablen.
 
 /* Spezifizität 0-2-0 — überbietet alle einfachen .stat-icon Regeln */
 .stat-card .stat-icon {
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   color: var(--text-3);
   border-radius: var(--comp-radius-md);
   display: flex;
@@ -825,7 +825,7 @@ Glassmorphism-Design mit Theme-Variablen.
   padding: 0.25rem;
   background: var(--surface-1);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   flex-wrap: wrap;
 }
 
@@ -834,7 +834,7 @@ Glassmorphism-Design mit Theme-Variablen.
   padding: 0.75rem 1.5rem;
   background: transparent;
   color: var(--text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md);
   cursor: pointer;
   font-size: 1rem;
@@ -870,7 +870,7 @@ Glassmorphism-Design mit Theme-Variablen.
   padding: 0.25rem;
   background: var(--surface-1);
   border-radius: var(--comp-radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   flex-wrap: wrap;
 }
 
@@ -879,7 +879,7 @@ Glassmorphism-Design mit Theme-Variablen.
   padding: 0.5rem 1rem;
   background: transparent;
   color: var(--text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-sm);
   cursor: pointer;
   font-size: 0.875rem;
@@ -1015,7 +1015,7 @@ Glassmorphism-Design mit Theme-Variablen.
 }
 
 .theme-preview[data-theme="default"] {
-  background: linear-gradient(135deg, #0f0f23 0%, var(--bg-secondary) 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--bg-secondary) 50%, var(--ds-bg-surface) 100%);
 }
 
 .theme-preview[data-theme="blue-ocean"] {
@@ -1041,7 +1041,7 @@ Glassmorphism-Design mit Theme-Variablen.
 .preview-header {
   height: 25%;
   background: var(--surface-4);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--ds-border-strong);
 }
 
 .preview-content {
@@ -1056,7 +1056,7 @@ Glassmorphism-Design mit Theme-Variablen.
   flex: 1;
   background: var(--surface-4);
   border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
 }
 
 .preview-buttons {
@@ -1272,13 +1272,13 @@ Glassmorphism-Design mit Theme-Variablen.
   font-size: 0.875rem;
   background: var(--bg-glass, rgba(0,0,0,0.25));
   color: var(--text-primary, #f1f1f1);
-  border: 1px solid var(--border-secondary, rgba(255,255,255,0.12));
+  border: 1px solid var(--border-secondary, var(--ds-border));
   border-radius: var(--border-radius-sm, 6px);
   outline: none;
   transition: border-color 0.15s;
 }
-.u-input-sm:focus { border-color: var(--primary-500, #d4af37); }
-.u-input-sm::placeholder { color: var(--text-muted, rgba(255,255,255,0.35)); }
+.u-input-sm:focus { border-color: var(--primary-500, var(--ds-accent)); }
+.u-input-sm::placeholder { color: var(--text-muted, var(--ds-text-faint)); }
 
 /* Text Colors */
 .u-text-primary { color: var(--text-primary); }

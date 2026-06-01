@@ -2902,7 +2902,7 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                                               />
                                               <button type="button"
                                                 onClick={() => addPdFreieTechnik(pruefling.pruefung_id, kategorie, pdFreiInputText)}
-                                                style={{background:'var(--primary)',border:'none',borderRadius:'5px',color:'#fff',padding:'4px 10px',fontWeight:700,cursor:'pointer',fontSize:'13px'}}>✓</button>
+                                                style={{background:'var(--primary)',border:'none',borderRadius:'5px',color: 'var(--ds-text)',padding:'4px 10px',fontWeight:700,cursor:'pointer',fontSize:'13px'}}>✓</button>
                                               <button type="button"
                                                 onClick={() => { setPdFreiInputKey(null); setPdFreiInputText(''); }}
                                                 style={{background:'none',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'5px',color:'var(--text-muted)',padding:'4px 8px',cursor:'pointer',fontSize:'12px'}}>✕</button>
@@ -3041,16 +3041,16 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
         const pruefling = pruefungen.find(p => p.pruefung_id === protokollModal);
         const existing = protokollStatus[protokollModal];
         const datumStr = pruefling ? new Date(pruefling.pruefungsdatum).toLocaleDateString('de-DE') : '';
-        const inputStyle = { width: '100%', padding: '8px 10px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#fff', fontSize: '13px', boxSizing: 'border-box', resize: 'vertical' };
-        const labelStyle = { display: 'block', fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+        const inputStyle = { width: '100%', padding: '8px 10px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: 'var(--ds-text)', fontSize: '13px', boxSizing: 'border-box', resize: 'vertical' };
+        const labelStyle = { display: 'block', fontSize: '11px', color: 'var(--ds-text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
         return (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }} onClick={() => setProtokolModal(null)}>
             <div style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '14px', padding: '24px', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }} onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div>
-                  <h3 style={{ margin: '0 0 4px', color: '#fff', fontSize: '1.1rem' }}>📋 Prüfungsprotokoll</h3>
+                  <h3 style={{ margin: '0 0 4px', color: 'var(--ds-text)', fontSize: '1.1rem' }}>📋 Prüfungsprotokoll</h3>
                   {pruefling && (
-                    <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>
+                    <p style={{ margin: 0, color: 'var(--ds-text-muted)', fontSize: '13px' }}>
                       {pruefling.vorname} {pruefling.nachname} · {pruefling.stil_name} · {datumStr}
                       {' · '}<span style={{ color: pruefling.status === 'bestanden' ? '#4ade80' : '#f87171' }}>
                         {pruefling.status === 'bestanden' ? '✅ bestanden' : '❌ nicht bestanden'}
@@ -3058,7 +3058,7 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                     </p>
                   )}
                 </div>
-                <button onClick={() => setProtokolModal(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: '0 4px' }}>×</button>
+                <button onClick={() => setProtokolModal(null)} style={{ background: 'none', border: 'none', color: 'var(--ds-text-muted)', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: '0 4px' }}>×</button>
               </div>
 
               {existing?.gesendet_am && (
@@ -3087,7 +3087,7 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
               </div>
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px', flexWrap: 'wrap' }}>
-                <button onClick={() => setProtokolModal(null)} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+                <button onClick={() => setProtokolModal(null)} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: 'var(--ds-text-secondary)', cursor: 'pointer' }}>
                   Schließen
                 </button>
                 <button
@@ -3108,7 +3108,7 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                 )}
               </div>
               {!existing && (
-                <p style={{ margin: '10px 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.35)', textAlign: 'right' }}>
+                <p style={{ margin: '10px 0 0', fontSize: '11px', color: 'var(--ds-text-faint)', textAlign: 'right' }}>
                   Erst speichern, dann versenden.
                 </p>
               )}
@@ -3129,26 +3129,26 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
               <div>
                 <label style={{display:'block',fontSize:'12px',color:'var(--text-muted)',marginBottom:'4px'}}>Vorname *</label>
                 <input type="text" value={externForm.vorname} onChange={e => setExternForm({...externForm,vorname:e.target.value})}
-                  style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color:'#fff',fontSize:'14px',boxSizing:'border-box'}}
+                  style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color: 'var(--ds-text)',fontSize:'14px',boxSizing:'border-box'}}
                   placeholder="Tom" autoFocus />
               </div>
               <div>
                 <label style={{display:'block',fontSize:'12px',color:'var(--text-muted)',marginBottom:'4px'}}>Nachname *</label>
                 <input type="text" value={externForm.nachname} onChange={e => setExternForm({...externForm,nachname:e.target.value})}
-                  style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color:'#fff',fontSize:'14px',boxSizing:'border-box'}}
+                  style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color: 'var(--ds-text)',fontSize:'14px',boxSizing:'border-box'}}
                   placeholder="Neal" />
               </div>
             </div>
             <div style={{marginBottom:'12px'}}>
               <label style={{display:'block',fontSize:'12px',color:'var(--text-muted)',marginBottom:'4px'}}>Verein / Schule (optional)</label>
               <input type="text" value={externForm.verein} onChange={e => setExternForm({...externForm,verein:e.target.value})}
-                style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color:'#fff',fontSize:'14px',boxSizing:'border-box'}}
+                style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color: 'var(--ds-text)',fontSize:'14px',boxSizing:'border-box'}}
                 placeholder="z.B. Kampfsportschule München" />
             </div>
             <div style={{marginBottom:'12px'}}>
               <label style={{display:'block',fontSize:'12px',color:'var(--text-muted)',marginBottom:'4px'}}>Kampfsport-Stil *</label>
               <select value={externForm.stil_id} onChange={e => setExternForm({...externForm,stil_id:e.target.value,graduierung_nachher_id:''})}
-                style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color:'#fff',fontSize:'14px',boxSizing:'border-box'}}>
+                style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color: 'var(--ds-text)',fontSize:'14px',boxSizing:'border-box'}}>
                 <option value="">— Bitte wählen —</option>
                 {stile.filter(s => s.aktiv).map(s => (
                   <option key={s.stil_id} value={s.stil_id}>{s.name}</option>
@@ -3158,7 +3158,7 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
             <div style={{marginBottom:'20px'}}>
               <label style={{display:'block',fontSize:'12px',color:'var(--text-muted)',marginBottom:'4px'}}>Ziel-Graduierung *</label>
               <select value={externForm.graduierung_nachher_id} onChange={e => setExternForm({...externForm,graduierung_nachher_id:e.target.value})}
-                style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color:'#fff',fontSize:'14px',boxSizing:'border-box'}}
+                style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color: 'var(--ds-text)',fontSize:'14px',boxSizing:'border-box'}}
                 disabled={!externForm.stil_id}>
                 <option value="">— erst Stil wählen —</option>
                 {(graduierungen[parseInt(externForm.stil_id)] || []).filter(g => g.aktiv).map(g => (
@@ -3168,7 +3168,7 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
             </div>
             <div style={{display:'flex',gap:'10px',justifyContent:'flex-end'}}>
               <button onClick={() => setShowExternModal(false)} style={{padding:'8px 16px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color:'var(--text-muted)',cursor:'pointer'}}>Abbrechen</button>
-              <button onClick={handleExternHinzufuegen} style={{padding:'8px 16px',background:'rgba(99,102,241,0.8)',border:'none',borderRadius:'6px',color:'#fff',cursor:'pointer',fontWeight:600}}>Hinzufügen</button>
+              <button onClick={handleExternHinzufuegen} style={{padding:'8px 16px',background:'rgba(99,102,241,0.8)',border:'none',borderRadius:'6px',color: 'var(--ds-text)',cursor:'pointer',fontWeight:600}}>Hinzufügen</button>
             </div>
           </div>
         </div>

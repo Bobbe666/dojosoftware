@@ -15,7 +15,7 @@
   border-radius: 16px;
   padding: 2rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ds-border-subtle);
 }
 
 /* Header row */
@@ -33,7 +33,7 @@
   margin: 0;
   font-size: 1.8rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: linear-gradient(135deg, var(--ds-accent) 0%, #FFA500 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -41,8 +41,8 @@
 
 /* New-karte form box */
 .zk-form-box {
-  background: rgba(16, 185, 129, 0.08);
-  border: 2px solid rgba(16, 185, 129, 0.3);
+  background: var(--ds-success-10);
+  border: 2px solid var(--ds-success-25);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -76,9 +76,9 @@
   width: 100%;
   padding: 0.5rem;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
+  border: 1px solid var(--ds-border-strong);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text);
   font-size: 0.9rem;
 }
 
@@ -90,8 +90,8 @@
 
 /* Primary (success) button */
 .zk-btn-primary {
-  background: #10B981;
-  color: white;
+  background: var(--ds-success);
+  color: var(--ds-text);
   border: none;
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
@@ -145,7 +145,7 @@
 
 /* Individual karte card */
 .zk-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 12px;
   padding: 1.5rem;
   transition: all 0.3s ease;
@@ -176,8 +176,8 @@
 
 /* Checkin button */
 .zk-btn-checkin {
-  background: #10B981;
-  color: white;
+  background: var(--ds-success);
+  color: var(--ds-text);
   border: none;
   border-radius: 8px;
   padding: 0.5rem 1rem;
@@ -243,7 +243,7 @@
 .zk-progress-track {
   width: 100%;
   height: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -252,7 +252,7 @@
 .zk-history-section {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 /* History heading */
@@ -307,7 +307,7 @@
 .zk-history-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   color: var(--success);
   font-size: 0.8rem;
   font-weight: 600;
@@ -348,25 +348,25 @@
 
 /* Modal box */
 .zk-modal-box {
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%);
   border-radius: 16px;
   padding: 2.5rem;
   max-width: 500px;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  border: 2px solid rgba(16, 185, 129, 0.3);
+  border: 2px solid var(--ds-success-25);
   text-align: center;
 }
 
 /* Modal box wider (payment) */
 .zk-modal-box--wide {
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%);
   border-radius: 16px;
   padding: 2.5rem;
   max-width: 600px;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  border: 2px solid rgba(16, 185, 129, 0.3);
+  border: 2px solid var(--ds-success-25);
 }
 
 /* Modal emoji */
@@ -409,15 +409,15 @@
 
 /* Modal primary button */
 .zk-modal-btn-primary {
-  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--ds-success) 0%, #34D399 100%);
+  color: var(--ds-text);
   border: none;
   border-radius: 12px;
   padding: 1rem 2.5rem;
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 15px var(--ds-success-25);
   transition: all 0.3s ease;
 }
 
@@ -484,10 +484,10 @@
   font-size: 0.85rem;
   font-weight: 600;
 }
-.zk-status-badge--aktiv       { background: rgba(16,185,129,0.13);  color: var(--status-success); border: 1px solid var(--status-success); }
-.zk-status-badge--aufgebraucht { background: rgba(239,68,68,0.13);  color: var(--status-error); border: 1px solid var(--status-error); }
+.zk-status-badge--aktiv       { background: var(--ds-success-10);  color: var(--status-success); border: 1px solid var(--status-success); }
+.zk-status-badge--aufgebraucht { background: var(--ds-danger-10);  color: var(--status-error); border: 1px solid var(--status-error); }
 .zk-status-badge--abgelaufen  { background: rgba(245,158,11,0.13);  color: var(--status-warning); border: 1px solid var(--status-warning); }
-.zk-status-badge--default     { background: rgba(107,114,128,0.13); color: #6b7280; border: 1px solid #6b7280; }
+.zk-status-badge--default     { background: rgba(107,114,128,0.13); color: var(--ds-text-secondary); border: 1px solid #6b7280; }
 
 /* Progress bar fill — per-status gradient */
 .zk-progress-fill {
@@ -495,13 +495,13 @@
   border-radius: 6px;
   transition: width 0.5s ease;
 }
-.zk-progress-fill--aktiv        { background: linear-gradient(90deg, #10B981 0%, #34D399 100%); }
-.zk-progress-fill--aufgebraucht { background: linear-gradient(90deg, #ef4444 0%, #f87171 100%); }
+.zk-progress-fill--aktiv        { background: linear-gradient(90deg, var(--ds-success) 0%, #34D399 100%); }
+.zk-progress-fill--aufgebraucht { background: linear-gradient(90deg, var(--ds-danger) 0%, var(--ds-danger-soft) 100%); }
 .zk-progress-fill--abgelaufen   { background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); }
 
 /* History entry alternating rows */
 .zk-history-entry:nth-child(odd) {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
 }
 .zk-history-entry:nth-child(even) {
   background: transparent;
@@ -509,37 +509,37 @@
 
 /* Payment option — selected state + hover */
 .zk-payment-option {
-  background: rgba(255, 255, 255, 0.03);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card);
+  border: 2px solid var(--ds-border);
 }
 .zk-payment-option--selected {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%);
+  background: linear-gradient(135deg, var(--ds-success-25) 0%, rgba(52, 211, 153, 0.2) 100%);
   border: 2px solid var(--status-success);
 }
 .zk-payment-option:not(.zk-payment-option--selected):hover {
-  border-color: rgba(16, 185, 129, 0.5);
+  border-color: var(--ds-success-25);
 }
 
 /* Nachkauf confirm button */
 .zk-modal-btn-nachkauf {
-  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--ds-success) 0%, #34D399 100%);
+  color: var(--ds-text);
   border: none;
   border-radius: 12px;
   padding: 1rem 2.5rem;
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 15px var(--ds-success-25);
   transition: all 0.3s ease;
 }
 .zk-modal-btn-nachkauf:not(:disabled):hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 6px 20px var(--ds-success-25);
 }
 .zk-modal-btn-nachkauf:disabled {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.5);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text-muted);
   box-shadow: none;
   cursor: not-allowed;
 }

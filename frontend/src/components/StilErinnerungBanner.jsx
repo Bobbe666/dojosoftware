@@ -157,7 +157,7 @@ const StilZuweisungModal = ({ mitglied, dojoId, onDone, onClose }) => {
           <button onClick={save} disabled={saving || !selectedStile.length} style={{
             padding: '0.4rem 0.9rem', borderRadius: '7px', fontSize: '0.82rem', fontWeight: 600,
             background: saving || !selectedStile.length ? 'rgba(124,106,247,0.3)' : 'rgba(124,106,247,0.85)',
-            border: '1px solid rgba(124,106,247,0.5)', color: '#fff', cursor: saving ? 'wait' : 'pointer',
+            border: '1px solid rgba(124,106,247,0.5)', color: 'var(--ds-text)', cursor: saving ? 'wait' : 'pointer',
             display: 'flex', alignItems: 'center', gap: '0.3rem'
           }}>
             {saving ? '…' : <><Check size={12} /> Speichern</>}

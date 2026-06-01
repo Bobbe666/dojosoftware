@@ -48,7 +48,7 @@
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   background: var(--surface-3);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-lg);
   color: var(--text-1);
   font-size: 0.875rem;
@@ -58,7 +58,7 @@
 }
 
 .btn-refresh:hover {
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--ds-success-10);
   border-color: var(--status-success);
 }
 
@@ -90,7 +90,7 @@
   gap: 1rem;
   padding: 1.25rem;
   background: var(--surface-3);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   border-left: 4px solid var(--card-color, var(--primary));
   transition: all 0.2s ease;
@@ -124,7 +124,7 @@
   padding: 0.5rem;
   background: var(--surface-3);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
 }
 
 .support-tab {
@@ -143,20 +143,20 @@
 }
 
 .support-tab:hover {
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--ds-success-10);
   color: var(--text-1);
 }
 
 .support-tab.active {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--ds-success) 0%, #059669 100%);
   color: var(--text-1);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px var(--ds-success-25);
 }
 
 /* Content */
 .support-content {
   background: var(--surface-3);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: 16px;
   padding: 1.5rem;
   min-height: 400px;
@@ -185,8 +185,8 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, var(--ds-success-10) 0%, var(--ds-success-10) 100%);
+  border: 1px solid var(--ds-success-25);
   border-radius: var(--comp-radius-xl);
   margin-bottom: 0.5rem;
 }
@@ -224,7 +224,7 @@
   align-items: center;
   padding: 1rem 0.5rem;
   background: var(--surface-1);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-lg);
   text-align: center;
 }
@@ -305,7 +305,7 @@
 
 .statistik-card {
   background: var(--surface-1);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
 }
@@ -316,7 +316,7 @@
   font-weight: 600;
   margin: 0 0 1.25rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 /* Kategorie Bars */
@@ -341,7 +341,7 @@
 
 .kategorie-bar {
   height: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border-radius: var(--comp-radius-xs);
   overflow: hidden;
 }
@@ -367,7 +367,7 @@
   padding: 1rem;
   background: var(--surface-1);
   border-radius: var(--comp-radius-lg);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
 }
 
 .bereich-item.dojo {
@@ -462,7 +462,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--ds-success) 0%, #059669 100%);
   border-radius: 50%;
   font-size: 0.75rem;
   font-weight: 700;
@@ -492,11 +492,11 @@
 }
 
 .dropdown-item.support:hover {
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--ds-success-10);
 }
 
 .badge-green {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--ds-success) 0%, #059669 100%);
   color: var(--text-1);
 }
 
@@ -588,7 +588,7 @@
   padding: 1rem 0.5rem;
   background: var(--surface-1);
   border-radius: var(--comp-radius-lg);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
 }
 
 .feature-stat-item.neu {

@@ -2,7 +2,7 @@
 
 .aip-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 100%);
   padding: 2rem;
   color: var(--text-primary);
 }
@@ -16,8 +16,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   color: var(--text-primary);
   padding: 0.75rem 1.25rem;
   border-radius: 8px;
@@ -58,7 +58,7 @@
 }
 
 .aip-container {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   border-radius: 16px;
   padding: 2rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
@@ -104,7 +104,7 @@
 }
 
 .aip-url-box {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--ds-bg-card-hover);
   padding: 1.25rem;
   border-radius: 8px;
   margin-bottom: 2rem;
@@ -137,7 +137,7 @@
   justify-content: center;
   gap: 0.75rem;
   padding: 1rem;
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  background: linear-gradient(135deg, var(--ds-accent), var(--ds-accent-bright));
   color: var(--bg-primary);
   border: none;
   border-radius: 10px;
@@ -159,9 +159,9 @@
   justify-content: center;
   gap: 0.75rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 10px;
   font-weight: 600;
   font-size: 1rem;

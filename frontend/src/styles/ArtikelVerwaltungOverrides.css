@@ -43,8 +43,8 @@
 /* Badge im Tab */
 .artikel-verwaltung .sub-tab-btn .low-stock-badge,
 .artikel-verwaltung .sub-tab-btn .order-badge {
-  background: #ef4444 !important;
-  color: white !important;
+  background: var(--ds-danger) !important;
+  color: var(--ds-text) !important;
   padding: 0.1rem 0.4rem !important;
   border-radius: var(--comp-radius-lg) !important;
   font-size: 0.7rem !important;
@@ -91,8 +91,8 @@
 .artikel-verwaltung .search-box input {
   width: 100% !important;
   height: 34px !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: var(--ds-bg-card-hover) !important;
+  border: 1px solid var(--ds-border) !important;
   border-radius: 6px !important;
   color: var(--text-1) !important;
   padding: 0 0.75rem 0 2.1rem !important;
@@ -107,8 +107,8 @@
 }
 
 .artikel-verwaltung .search-box input:focus {
-  border-color: rgba(255, 215, 0, 0.4) !important;
-  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: var(--ds-accent-50) !important;
+  background: var(--ds-bg-card-hover) !important;
 }
 
 .artikel-verwaltung .search-icon {
@@ -125,8 +125,8 @@
 /* Kategorie Select */
 .artikel-verwaltung .search-filters select {
   height: 34px !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: var(--ds-bg-card-hover) !important;
+  border: 1px solid var(--ds-border) !important;
   border-radius: 6px !important;
   color: var(--text-2) !important;
   padding: 0 0.65rem !important;
@@ -137,7 +137,7 @@
 }
 
 .artikel-verwaltung .search-filters select:focus {
-  border-color: rgba(255, 215, 0, 0.4) !important;
+  border-color: var(--ds-accent-50) !important;
 }
 
 /* Toggle Switch für "Nur aktive Artikel" */
@@ -160,7 +160,7 @@
   -webkit-appearance: none !important;
   width: 32px !important;
   height: 17px !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--ds-bg-elevated) !important;
   border: none !important;
   border-radius: 9px !important;
   position: relative !important;
@@ -182,19 +182,19 @@
 }
 
 .artikel-verwaltung .controls-section .checkbox-label input[type="checkbox"]:checked {
-  background: linear-gradient(135deg, #ffd700, #f7931e) !important;
+  background: linear-gradient(135deg, var(--ds-accent), #f7931e) !important;
 }
 
 .artikel-verwaltung .controls-section .checkbox-label input[type="checkbox"]:checked::after {
   left: 17px !important;
-  background: #1a1a2e !important;
+  background: var(--ds-bg-surface) !important;
 }
 
 /* Neuer Artikel Button */
 .av-btn-create {
   height: 34px !important;
   padding: 0 1rem !important;
-  background: linear-gradient(135deg, #ffd700 0%, #f7931e 100%) !important;
+  background: linear-gradient(135deg, var(--ds-accent) 0%, #f7931e 100%) !important;
   color: #1a1a2e !important;
   border: none !important;
   border-radius: 6px !important;
@@ -230,7 +230,7 @@
 }
 
 .artikel-table thead {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: var(--ds-bg-card) !important;
 }
 
 .artikel-table th {
@@ -240,13 +240,13 @@
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
   color: var(--text-muted) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid var(--ds-border) !important;
   background: transparent !important;
 }
 
 .artikel-table td {
   padding: 0.875rem 0.75rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-bottom: 1px solid var(--ds-border-subtle) !important;
   vertical-align: middle !important;
   font-size: 0.9rem !important;
 }
@@ -256,7 +256,7 @@
 }
 
 .artikel-table tbody tr:hover {
-  background: rgba(255, 215, 0, 0.06) !important;
+  background: var(--ds-accent-05) !important;
 }
 
 .artikel-table tbody tr:last-child td {
@@ -296,9 +296,9 @@
   border-radius: var(--comp-radius-sm) !important;
   font-size: 0.75rem !important;
   font-weight: 500 !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: var(--ds-bg-elevated) !important;
   color: var(--text-secondary) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid var(--ds-border) !important;
   white-space: nowrap !important;
 }
 
@@ -363,7 +363,7 @@
 }
 
 .lager-status.in-stock {
-  background: rgba(34, 197, 94, 0.15) !important;
+  background: var(--ds-success-10) !important;
   color: var(--status-success) !important;
   border: 1px solid rgba(74, 222, 128, 0.3) !important;
 }
@@ -375,7 +375,7 @@
 }
 
 .lager-status.out-of-stock {
-  background: rgba(239, 68, 68, 0.15) !important;
+  background: var(--ds-danger-10) !important;
   color: var(--status-error) !important;
   border: 1px solid rgba(248, 113, 113, 0.3) !important;
 }
@@ -407,7 +407,7 @@
   justify-content: center !important;
   border-radius: var(--comp-radius-md) !important;
   background: var(--surface-2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid var(--ds-border) !important;
   color: var(--text-2) !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
@@ -423,8 +423,8 @@
 
 .artikel-table .actions .btn-danger:hover,
 .artikel-table .actions button.btn-danger:hover {
-  background: rgba(239, 68, 68, 0.15) !important;
-  border-color: rgba(239, 68, 68, 0.3) !important;
+  background: var(--ds-danger-10) !important;
+  border-color: var(--ds-danger-25) !important;
   color: var(--status-error) !important;
 }
 
@@ -494,7 +494,7 @@
   padding: 0.25rem !important;
   background: var(--surface-3) !important;
   border-radius: var(--comp-radius-xl) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid var(--ds-border) !important;
   flex-wrap: wrap !important;
 }
 
@@ -504,7 +504,7 @@
   padding: 0.75rem 1.5rem !important;
   background: transparent !important;
   color: var(--text-2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid var(--ds-border) !important;
   border-radius: var(--comp-radius-md) !important;
   cursor: pointer !important;
   font-size: 1rem !important;
@@ -518,7 +518,7 @@
 }
 
 .artikel-modal .sub-tab-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--ds-bg-elevated) !important;
   color: var(--text-1) !important;
   border-color: var(--primary-alpha-30) !important;
 }
@@ -537,7 +537,7 @@
 .tab-content-section .form-textarea {
   padding: 0.45rem 0.65rem !important;
   background: rgba(0, 0, 0, 0.3) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid var(--ds-border-strong) !important;
   border-radius: var(--comp-radius-md) !important;
   color: var(--text-1) !important;
   font-size: 0.9rem !important;
@@ -573,7 +573,7 @@
 .tab-content-section .form-input:invalid,
 .tab-content-section .form-select:invalid,
 .tab-content-section .form-textarea:invalid {
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: var(--ds-border-strong) !important;
   box-shadow: none !important;
 }
 
@@ -594,7 +594,7 @@
   gap: 0.75rem !important;
   padding: 1rem !important;
   background: rgba(0, 0, 0, 0.3) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid var(--ds-border-strong) !important;
   border-radius: var(--comp-radius-md) !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
@@ -700,7 +700,7 @@
   width: 210px;
   flex-shrink: 0;
   background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: 0.4rem;
   position: sticky;
@@ -734,7 +734,7 @@
 }
 
 .av-sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ds-bg-card-hover);
   color: var(--text-primary);
 }
 
@@ -746,7 +746,7 @@
 
 .av-sidebar-count {
   font-size: 0.72rem;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--ds-bg-elevated);
   border-radius: 10px;
   padding: 0.1rem 0.45rem;
   min-width: 22px;

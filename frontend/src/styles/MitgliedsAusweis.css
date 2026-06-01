@@ -46,7 +46,7 @@
 }
 
 .mitglieds-ausweis {
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+  background: linear-gradient(135deg, var(--ds-bg-surface) 0%, #2d2d44 100%);
   border: 3px solid var(--primary);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-section-gap-sm);
@@ -96,7 +96,7 @@
   margin: 0 auto var(--ui-form-gap);
   border-radius: 50%;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,7 +141,7 @@
 .ausweis-detail {
   text-align: center;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: var(--comp-radius-md);
 }
 
@@ -203,7 +203,7 @@
   justify-content: center;
   gap: 1.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
   color: var(--text-3);
   font-size: var(--ui-card-label);
 }

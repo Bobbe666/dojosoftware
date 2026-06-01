@@ -17,7 +17,7 @@
   gap: 1rem;
   padding: 0.85rem 1.5rem;
   background: rgba(20, 20, 34, 0.95);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+  border-bottom: 1px solid var(--ds-accent-10);
   backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
@@ -29,8 +29,8 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.85rem;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   color: var(--text-secondary, #aaa);
   border-radius: 8px;
   font-size: 0.82rem;
@@ -39,9 +39,9 @@
   flex-shrink: 0;
 }
 .mz-topbar-back:hover {
-  background: rgba(212,175,55,0.1);
-  border-color: rgba(212,175,55,0.35);
-  color: #d4af37;
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-30);
+  color: var(--ds-accent);
 }
 
 .mz-topbar-logo {
@@ -55,10 +55,10 @@
   justify-content: center;
   width: 34px;
   height: 34px;
-  background: linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.08));
-  border: 1px solid rgba(212,175,55,0.3);
+  background: linear-gradient(135deg, var(--ds-accent-20), var(--ds-accent-10));
+  border: 1px solid var(--ds-accent-30);
   border-radius: 9px;
-  color: #d4af37;
+  color: var(--ds-accent);
   flex-shrink: 0;
 }
 .mz-topbar-title {
@@ -89,7 +89,7 @@
   width: 220px;
   flex-shrink: 0;
   background: rgba(14, 14, 26, 0.7);
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid var(--ds-border-subtle);
   padding: 1rem 0.65rem;
   display: flex;
   flex-direction: column;
@@ -99,11 +99,11 @@
   max-height: calc(100vh - 57px);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(212,175,55,0.2) transparent;
+  scrollbar-color: var(--ds-accent-20) transparent;
 }
 .mz-sidebar::-webkit-scrollbar { width: 4px; }
 .mz-sidebar::-webkit-scrollbar-track { background: transparent; }
-.mz-sidebar::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.2); border-radius: 2px; }
+.mz-sidebar::-webkit-scrollbar-thumb { background: var(--ds-accent-20); border-radius: 2px; }
 
 .mz-sidebar-group {
   font-size: 0.65rem;
@@ -132,13 +132,13 @@
   position: relative;
 }
 .mz-nav-btn:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   color: var(--text-primary, #ddd);
 }
 .mz-nav-btn.active {
-  background: linear-gradient(90deg, rgba(212,175,55,0.15), rgba(212,175,55,0.06));
-  color: #d4af37;
-  border: 1px solid rgba(212,175,55,0.2);
+  background: linear-gradient(90deg, var(--ds-accent-15), var(--ds-accent-05));
+  color: var(--ds-accent);
+  border: 1px solid var(--ds-accent-20);
 }
 
 .mz-nav-icon {
@@ -148,13 +148,13 @@
   width: 28px;
   height: 28px;
   border-radius: 7px;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   flex-shrink: 0;
   transition: background 0.15s;
 }
 .mz-nav-btn.active .mz-nav-icon {
-  background: rgba(212,175,55,0.18);
-  color: #d4af37;
+  background: var(--ds-accent-20);
+  color: var(--ds-accent);
 }
 
 .mz-nav-label {
@@ -169,17 +169,17 @@
   letter-spacing: 0.04em;
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
-  background: linear-gradient(135deg, #d4af37, #f0c040);
+  background: linear-gradient(135deg, var(--ds-accent), #f0c040);
   color: #000;
   flex-shrink: 0;
 }
 .mz-nav-badge.ki {
   background: linear-gradient(135deg, #7c3aed, #a78bfa);
-  color: #fff;
+  color: var(--ds-text);
 }
 .mz-nav-badge.neu {
-  background: linear-gradient(135deg, #16a34a, #22c55e);
-  color: #fff;
+  background: linear-gradient(135deg, #16a34a, var(--ds-success));
+  color: var(--ds-text);
 }
 
 /* ── Content ─────────────────────────────────────────────────── */
@@ -195,7 +195,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.75rem 0.9rem;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
   background: rgba(20,20,34,0.4);
 }
 .mz-content-header-icon {
@@ -205,9 +205,9 @@
   width: 36px;
   height: 36px;
   border-radius: 9px;
-  background: linear-gradient(135deg, rgba(212,175,55,0.18), rgba(212,175,55,0.06));
-  border: 1px solid rgba(212,175,55,0.2);
-  color: #d4af37;
+  background: linear-gradient(135deg, var(--ds-accent-20), var(--ds-accent-05));
+  border: 1px solid var(--ds-accent-20);
+  color: var(--ds-accent);
   flex-shrink: 0;
 }
 .mz-content-header-title {
@@ -240,7 +240,7 @@
 }
 .mz-spinner {
   animation: mz-spin 1s linear infinite;
-  color: #d4af37;
+  color: var(--ds-accent);
 }
 @keyframes mz-spin {
   from { transform: rotate(0deg); }
@@ -258,7 +258,7 @@
     flex-wrap: wrap;
     padding: 0.5rem;
     border-right: none;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid var(--ds-border-subtle);
     gap: 0.25rem;
     overflow-x: auto;
     overflow-y: hidden;

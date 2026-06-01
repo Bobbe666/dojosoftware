@@ -23,7 +23,7 @@ const s = {
     border: '1px solid rgba(255,255,255,0.15)',
     borderRadius: '12px',
     width: '100%', maxWidth: '440px',
-    color: '#fff',
+    color: 'var(--ds-text)',
     boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
   },
   header: {
@@ -42,7 +42,7 @@ const s = {
   input: {
     width: '100%', padding: '0.55rem 0.75rem',
     background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: '6px', color: '#fff', fontSize: '0.95rem',
+    borderRadius: '6px', color: 'var(--ds-text)', fontSize: '0.95rem',
     boxSizing: 'border-box', outline: 'none',
   },
   error: {
@@ -62,7 +62,7 @@ const s = {
   btnCreate: {
     padding: '0.5rem 1.2rem', borderRadius: '6px', cursor: 'pointer',
     background: '#6366f1', border: 'none',
-    color: '#fff', fontSize: '0.9rem', fontWeight: 600,
+    color: 'var(--ds-text)', fontSize: '0.9rem', fontWeight: 600,
   },
 };
 

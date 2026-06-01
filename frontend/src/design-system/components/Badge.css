@@ -32,7 +32,7 @@
 .ds-badge--default {
   background: var(--surface-3);
   color: var(--text-2);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--ds-border);
 }
 
 /* Success / Aktiv */
@@ -73,15 +73,15 @@
 /* Orange */
 .ds-badge--orange {
   background: rgba(251, 146, 60, 0.08);
-  color: #fb923c;
+  color: var(--ds-warning);
   border-color: rgba(251, 146, 60, 0.3);
 }
 
 /* Ausgefüllt (Solid) */
 .ds-badge--solid-success { background: var(--status-success); color: #0f0f23; border-color: transparent; font-weight: 600; }
-.ds-badge--solid-error   { background: var(--status-error);   color: #fff;    border-color: transparent; font-weight: 600; }
+.ds-badge--solid-error   { background: var(--status-error);   color: var(--ds-text);    border-color: transparent; font-weight: 600; }
 .ds-badge--solid-warning { background: var(--status-warning);  color: #0f0f23; border-color: transparent; font-weight: 600; }
-.ds-badge--solid-indigo  { background: rgba(99,102,241,0.8);   color: #fff;    border-color: transparent; font-weight: 600; }
+.ds-badge--solid-indigo  { background: rgba(99,102,241,0.8);   color: var(--ds-text);    border-color: transparent; font-weight: 600; }
 
 /* ========== BADGE MIT PUNKT-INDIKATOR ========== */
 
@@ -112,7 +112,7 @@
   font-weight: 500;
   background: var(--surface-3);
   color: var(--text-2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   cursor: default;
 }
 
@@ -144,7 +144,7 @@
   font-size: 0.62rem;
   font-weight: 700;
   background: var(--status-error);
-  color: #fff;
+  color: var(--ds-text);
   line-height: 1;
 }
 

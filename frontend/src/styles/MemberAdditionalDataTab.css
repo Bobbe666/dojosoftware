@@ -109,7 +109,7 @@
 
 /* Table body row border */
 .mad-tr {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 /* Art badge (dynamic bg/color set via getArtStyle inline) */
@@ -121,7 +121,7 @@
 
 /* Delete button */
 .mad-btn-delete {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   border: 1px solid var(--status-error);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
@@ -146,7 +146,7 @@
 
 /* Modal box */
 .mad-modal {
-  background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(145deg, var(--ds-bg-surface) 0%, var(--ds-bg-surface) 100%);
   border-radius: 16px;
   width: 90%;
   max-width: 450px;
@@ -187,7 +187,7 @@
 .mad-form-input {
   width: 100%;
   padding: 0.75rem;
-  background: #1a1a1a;
+  background: var(--ds-bg-surface);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
   color: var(--text-primary);
@@ -205,8 +205,8 @@
 /* Cancel button */
 .mad-btn-cancel {
   padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-primary);
   cursor: pointer;

@@ -101,14 +101,14 @@
 }
 
 .nvw-step--active .nvw-step-circle {
-  background: var(--primary, #c9a227);
-  border-color: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
+  border-color: var(--primary, var(--ds-accent-dark));
   color: #000;
 }
 
 .nvw-step--done .nvw-step-circle {
-  background: var(--primary, #c9a227);
-  border-color: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
+  border-color: var(--primary, var(--ds-accent-dark));
   color: #000;
 }
 
@@ -120,7 +120,7 @@
 }
 
 .nvw-step--active .nvw-step-label {
-  color: var(--primary, #c9a227);
+  color: var(--primary, var(--ds-accent-dark));
   font-weight: 700;
 }
 
@@ -138,7 +138,7 @@
 }
 
 .nvw-step-line--done {
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
 }
 
 /* ── Schritt-Inhalt ──────────────────────────────────────────────────────── */
@@ -167,7 +167,7 @@
 }
 
 .nvw-required {
-  color: #f87171;
+  color: var(--ds-danger-soft);
 }
 
 .nvw-input {
@@ -184,7 +184,7 @@
 
 .nvw-input:focus {
   outline: none;
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
 }
 
 .nvw-input-hint {
@@ -200,7 +200,7 @@
   padding: 10px 14px;
   background: var(--surface-2, #2a2a3a);
   border-radius: 8px;
-  border-left: 3px solid var(--primary, #c9a227);
+  border-left: 3px solid var(--primary, var(--ds-accent-dark));
 }
 
 /* ── Typ-Karten ──────────────────────────────────────────────────────────── */
@@ -230,7 +230,7 @@
 }
 
 .nvw-typ-card--active {
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
   background: var(--primary-alpha-10, rgba(201,162,39,0.1));
 }
 
@@ -240,7 +240,7 @@
 }
 
 .nvw-typ-card--active .nvw-typ-icon {
-  color: var(--primary, #c9a227);
+  color: var(--primary, var(--ds-accent-dark));
 }
 
 .nvw-typ-label {
@@ -284,7 +284,7 @@
 }
 
 .nvw-profile-card--active {
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
   background: var(--primary-alpha-10, rgba(201,162,39,0.1));
 }
 
@@ -360,7 +360,7 @@
 }
 
 .nvw-empf-btn--active {
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
   background: var(--primary-alpha-10, rgba(201,162,39,0.1));
 }
 
@@ -419,7 +419,7 @@
 /* ── Fehler ──────────────────────────────────────────────────────────────── */
 .nvw-error {
   font-size: 0.88rem;
-  color: #f87171;
+  color: var(--ds-danger-soft);
   padding: 8px 12px;
   background: rgba(248,113,113,0.1);
   border: 1px solid rgba(248,113,113,0.3);
@@ -453,7 +453,7 @@
 }
 
 .nvw-dot--active {
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   width: 20px;
   border-radius: 4px;
 }
@@ -488,9 +488,9 @@
 }
 
 .nvw-btn--primary {
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   color: #000;
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
 }
 
 .nvw-btn--primary:hover { opacity: 0.88; }

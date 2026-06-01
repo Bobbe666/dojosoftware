@@ -6,8 +6,8 @@
 .dashboard-tda-vib,
 [data-theme="tda-vib"] {
   --tda-sumi: var(--color-sumi, #1a1a1a);
-  --tda-gold: var(--color-gold, #c9a227);
-  --tda-gold-light: var(--color-gold-light, #d4af37);
+  --tda-gold: var(--color-gold, var(--ds-accent-dark));
+  --tda-gold-light: var(--color-gold-light, var(--ds-accent));
   --tda-gold-text: #7a6a00;
   --tda-washi: var(--color-washi, #f5f0e6);
   --tda-washi-dark: var(--color-washi-dark, #e8e0d0);
@@ -678,7 +678,7 @@
 
 [data-theme="tda-vib"] .mitglied-detail-input:focus {
   background: #ffffff !important;
-  border-color: var(--tda-gold, #c9a227) !important;
+  border-color: var(--tda-gold, var(--ds-accent-dark)) !important;
   box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.1) !important;
 }
 
@@ -728,7 +728,7 @@
 }
 
 [data-theme="tda-vib"] .mitglied-detail-btn-primary {
-  background: var(--tda-sumi, #1a1a1a) !important;
+  background: var(--tda-sumi, var(--ds-bg-surface)) !important;
   color: var(--tda-washi, #f5f0e6) !important;
   border: 1px solid var(--tda-sumi, #1a1a1a) !important;
   box-shadow: none !important;
@@ -840,7 +840,7 @@
 [data-theme="tda-vib"] .tab-vertical-btn.active {
   background: rgba(26, 26, 26, 0.08) !important;
   color: var(--tda-sumi, #1a1a1a) !important;
-  border-left: 3px solid var(--tda-gold, #c9a227) !important;
+  border-left: 3px solid var(--tda-gold, var(--ds-accent-dark)) !important;
   box-shadow: none !important;
 }
 
@@ -949,7 +949,7 @@
 
 [data-theme="tda-vib"] .top-tabs-bar .tab-btn.active,
 [data-theme="tda-vib"] .detail-tabs .tab-btn.active {
-  background: var(--tda-sumi, #1a1a1a) !important;
+  background: var(--tda-sumi, var(--ds-bg-surface)) !important;
   color: var(--tda-washi, #f5f0e6) !important;
   border-radius: var(--comp-radius-lg) !important;
 }
@@ -1067,7 +1067,7 @@
 
 [data-theme="tda-vib"] .sub-tabs-sidebar-style .tab-vertical-btn.active {
   background: var(--tda-washi-dark, #e8e0d0) !important;
-  border-color: var(--tda-gold, #c9a227) !important;
+  border-color: var(--tda-gold, var(--ds-accent-dark)) !important;
   color: var(--tda-sumi, #1a1a1a) !important;
 }
 
@@ -1084,7 +1084,7 @@
 
 [data-theme="tda-vib"] .stil-tabs-row .tab-vertical-btn.active {
   background: var(--tda-washi-dark, #e8e0d0) !important;
-  border-color: var(--tda-gold, #c9a227) !important;
+  border-color: var(--tda-gold, var(--ds-accent-dark)) !important;
 }
 
 /* Collapsed Sidebar Specific */
@@ -1766,7 +1766,7 @@
 /* Status Badge */
 [data-theme="tda-vib"] .status-badge.active {
   background: var(--tda-bamboo, #5c6b4c) !important;
-  color: white !important;
+  color: var(--ds-text) !important;
 }
 
 /* =====================================================
@@ -1862,7 +1862,7 @@
 [data-theme="tda-vib"] .contract-actions button[class*="delete"],
 [data-theme="tda-vib"] .contract-actions button[class*="kuendigen"] {
   background: var(--tda-vermillion, #c73e3a) !important;
-  color: white !important;
+  color: var(--ds-text) !important;
 }
 
 /* Header Buttons (+ Neuer Vertrag) */
@@ -1936,8 +1936,8 @@
 }
 
 /* Gurtfarbe Display */
-[data-theme="tda-vib"] .stile-sub-tab-content span[style*="color: '#fff'"],
-[data-theme="tda-vib"] .stile-sub-tab-content span[style*="color: #fff"],
+[data-theme="tda-vib"] .stile-sub-tab-content span[style*="color: 'var(--ds-text)'"],
+[data-theme="tda-vib"] .stile-sub-tab-content span[style*="color: var(--ds-text)"],
 [data-theme="tda-vib"] .gurt-display span {
   color: var(--tda-sumi, #1a1a1a) !important;
 }
@@ -2830,7 +2830,7 @@
 
 [data-theme="tda-vib"] .freunde-werben-freunde .btn-danger {
   background: #dc2626 !important;
-  color: #ffffff !important;
+  color: var(--ds-text) !important;
   -webkit-text-fill-color: #ffffff !important;
 }
 
@@ -2946,31 +2946,31 @@
 
 /* Homepage - Original Dark Theme behalten */
 [data-theme="tda-vib"] .homepage {
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%) !important;
-  color: #ffffff !important;
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%) !important;
+  color: var(--ds-text) !important;
 }
 
 [data-theme="tda-vib"] .homepage-header {
   background: rgba(15, 15, 35, 0.95) !important;
-  border-bottom-color: rgba(255, 215, 0, 0.2) !important;
+  border-bottom-color: var(--ds-accent-20) !important;
 }
 
 [data-theme="tda-vib"] .homepage .logo h1 {
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
+  background: linear-gradient(135deg, var(--ds-accent), #ff6b35) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
 
 [data-theme="tda-vib"] .homepage .nav-links a {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--ds-text) !important;
 }
 
 [data-theme="tda-vib"] .homepage .nav-links a:hover {
-  color: #ffd700 !important;
+  color: var(--ds-accent) !important;
 }
 
 [data-theme="tda-vib"] .homepage .btn-login {
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
+  background: linear-gradient(135deg, var(--ds-accent), #ff6b35) !important;
   color: #000 !important;
 }
 
@@ -2979,58 +2979,58 @@
 }
 
 [data-theme="tda-vib"] .homepage .hero-title {
-  color: #ffffff !important;
+  color: var(--ds-text) !important;
 }
 
 [data-theme="tda-vib"] .homepage .hero-highlight {
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
+  background: linear-gradient(135deg, var(--ds-accent), #ff6b35) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
 
 [data-theme="tda-vib"] .homepage .hero-subtitle {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: var(--ds-text-secondary) !important;
 }
 
 [data-theme="tda-vib"] .homepage .btn-primary,
 [data-theme="tda-vib"] .homepage .btn-secondary {
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
+  background: linear-gradient(135deg, var(--ds-accent), #ff6b35) !important;
   color: #000 !important;
 }
 
 [data-theme="tda-vib"] .homepage .check-item {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: var(--ds-text-secondary) !important;
 }
 
 /* Login Container - Original Dark Theme behalten */
 [data-theme="tda-vib"] .login-container {
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%) !important;
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%) !important;
 }
 
 [data-theme="tda-vib"] .login-nav {
   background: rgba(15, 15, 35, 0.95) !important;
-  border-bottom-color: rgba(255, 215, 0, 0.2) !important;
+  border-bottom-color: var(--ds-accent-20) !important;
 }
 
 [data-theme="tda-vib"] .login-nav .logo-text {
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
+  background: linear-gradient(135deg, var(--ds-accent), #ff6b35) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
 
 [data-theme="tda-vib"] .login-card {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 215, 0, 0.2) !important;
+  background: var(--ds-bg-elevated) !important;
+  border-color: var(--ds-accent-20) !important;
 }
 
 [data-theme="tda-vib"] .login-card .title {
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
+  background: linear-gradient(135deg, var(--ds-accent), #ff6b35) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
 
 [data-theme="tda-vib"] .login-button {
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
+  background: linear-gradient(135deg, var(--ds-accent), #ff6b35) !important;
   color: #000 !important;
 }
 
@@ -4247,7 +4247,7 @@
 [data-theme="tda-vib"] .mahnwesen-container .btn-danger,
 [data-theme="tda-vib"] .mahnwesen-container button.btn-danger {
   background: var(--tda-vermillion) !important;
-  color: #ffffff !important;
+  color: var(--ds-text) !important;
   border: none !important;
 }
 
@@ -4301,7 +4301,7 @@
 
 [data-theme="tda-vib"] .mahnwesen-container .mahnstufe-2,
 [data-theme="tda-vib"] .mahnwesen-container .status-badge.danger {
-  background: rgba(239, 68, 68, 0.15) !important;
+  background: var(--ds-danger-10) !important;
   color: var(--tda-vermillion) !important;
   border: 1px solid rgba(199, 62, 58, 0.3) !important;
 }
@@ -4464,7 +4464,7 @@
 [data-theme="tda-vib"] .mahnwesen-container .btn-success,
 [data-theme="tda-vib"] .mahnwesen-container button.btn-success {
   background: var(--tda-bamboo) !important;
-  color: #ffffff !important;
+  color: var(--ds-text) !important;
   border: none !important;
 }
 
@@ -4476,7 +4476,7 @@
 [data-theme="tda-vib"] .mahnwesen-container .btn-warning,
 [data-theme="tda-vib"] .mahnwesen-container button.btn-warning {
   background: #d97706 !important;
-  color: #ffffff !important;
+  color: var(--ds-text) !important;
   border: none !important;
 }
 
@@ -4922,5 +4922,5 @@
 }
 
 [data-theme="tda-vib"] .lager-modal .form-input::placeholder {
-  color: #999 !important;
+  color: var(--ds-text-muted) !important;
 }

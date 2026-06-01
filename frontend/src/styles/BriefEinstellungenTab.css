@@ -95,11 +95,11 @@
 }
 
 .be-dojo-indicator strong {
-  color: var(--primary, #c9a227);
+  color: var(--primary, var(--ds-accent-dark));
 }
 
 .be-section-icon {
-  color: var(--primary, #c9a227);
+  color: var(--primary, var(--ds-accent-dark));
   flex-shrink: 0;
 }
 
@@ -186,7 +186,7 @@
 }
 
 .be-logo-zone:hover {
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
   background: rgba(201, 162, 39, 0.05);
 }
 
@@ -276,7 +276,7 @@
 }
 
 .be-din-card--active {
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
   background: rgba(201, 162, 39, 0.08);
 }
 
@@ -308,7 +308,7 @@
 .be-din-diagram-header {
   position: absolute;
   left: 0; right: 0; top: 0;
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   opacity: 0.85;
 }
 
@@ -343,7 +343,7 @@
   position: absolute;
   left: 0; right: 0; bottom: 0;
   height: 5px;
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   opacity: 0.6;
 }
 
@@ -352,7 +352,7 @@
   color: var(--text-secondary, #888);
 }
 .be-din-card--active .be-din-card-icon {
-  color: var(--primary, #c9a227);
+  color: var(--primary, var(--ds-accent-dark));
 }
 
 /* ── Custom-Margins ──────────────────────────────────────────────────────── */
@@ -389,7 +389,7 @@
 }
 
 .be-input:focus {
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
 }
 
 .be-select {
@@ -405,7 +405,7 @@
 }
 
 .be-select:focus {
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
 }
 
 /* ── Schrift-Zeile ───────────────────────────────────────────────────────── */
@@ -441,7 +441,7 @@
 .be-toggle-label input[type="radio"] {
   width: 16px;
   height: 16px;
-  accent-color: var(--primary, #c9a227);
+  accent-color: var(--primary, var(--ds-accent-dark));
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -477,13 +477,13 @@
 }
 
 .be-tiptap-btn:hover {
-  background: rgba(255,255,255,0.08);
+  background: var(--ds-bg-elevated);
   color: var(--text-primary, #eee);
 }
 
 .be-tiptap-btn--active {
   background: rgba(201,162,39,0.2);
-  color: var(--primary, #c9a227);
+  color: var(--primary, var(--ds-accent-dark));
 }
 
 .be-tiptap-content {
@@ -543,7 +543,7 @@
 
 .be-profil-card-top {
   height: 5px;
-  background: var(--pc, var(--primary, #c9a227));
+  background: var(--pc, var(--primary, var(--ds-accent-dark)));
 }
 
 .be-profil-card-header {
@@ -564,7 +564,7 @@
   padding: 0.15rem 0.5rem;
   border-radius: 20px;
   background: var(--pc22, rgba(201,162,39,0.15));
-  color: var(--pc, var(--primary, #c9a227));
+  color: var(--pc, var(--primary, var(--ds-accent-dark)));
   font-weight: 600;
 }
 
@@ -588,7 +588,7 @@
 }
 
 .be-profil-icon-btn:hover {
-  background: rgba(255,255,255,0.07);
+  background: var(--ds-bg-card-hover);
   color: var(--text-primary, #eee);
 }
 
@@ -642,7 +642,7 @@
 }
 
 .be-btn--primary {
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   color: #1a1a1a;
   border: none;
 }
@@ -678,7 +678,7 @@
 
 .be-save-status {
   font-size: 0.82rem;
-  color: var(--primary, #c9a227);
+  color: var(--primary, var(--ds-accent-dark));
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -694,8 +694,8 @@
   gap: 0.4rem;
   padding: 0.4rem 0.85rem;
   border-radius: 7px;
-  border: 1px solid var(--primary, #c9a227);
-  color: var(--primary, #c9a227);
+  border: 1px solid var(--primary, var(--ds-accent-dark));
+  color: var(--primary, var(--ds-accent-dark));
   background: transparent;
   font-size: 0.85rem;
   font-weight: 600;
@@ -879,7 +879,7 @@
   flex-direction: column;
   gap: 0.6rem;
   padding: 0.75rem;
-  border: 1px solid var(--primary, #c9a227);
+  border: 1px solid var(--primary, var(--ds-accent-dark));
   border-radius: 8px;
   background: rgba(201, 162, 39, 0.04);
 }
@@ -908,8 +908,8 @@
 }
 
 .be-add-bank-btn:hover {
-  border-color: var(--primary, #c9a227);
-  color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
+  color: var(--primary, var(--ds-accent-dark));
 }
 
 /* ── Bank-Tags (Fußzeile-Auswahl) ───────────────────────────────────────── */
@@ -1051,12 +1051,12 @@
 
 /* "Profilfarbe"-Kreis: Gold-Gradient als Symbol */
 .be-swatch--profile {
-  background: conic-gradient(#c9a227 0deg 120deg, #1a5276 120deg 240deg, #1e8449 240deg 360deg);
+  background: conic-gradient(var(--ds-accent-dark) 0deg 120deg, #1a5276 120deg 240deg, #1e8449 240deg 360deg);
   border-color: #555;
 }
 
 .be-swatch--profile:hover {
-  border-color: #c9a227;
+  border-color: var(--ds-accent-dark);
 }
 
 /* Color-Picker als runder Swatch */
@@ -1090,7 +1090,7 @@
 
 .be-slider {
   flex: 1;
-  accent-color: var(--primary, #c9a227);
+  accent-color: var(--primary, var(--ds-accent-dark));
 }
 
 .be-slider-value {
@@ -1125,8 +1125,8 @@
 }
 
 .be-logo-pos-btn--active {
-  background: var(--primary, #c9a227);
-  border-color: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
+  border-color: var(--primary, var(--ds-accent-dark));
   color: #000;
   font-weight: 600;
 }

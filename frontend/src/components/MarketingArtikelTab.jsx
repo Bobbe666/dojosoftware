@@ -137,7 +137,7 @@ export default function MarketingArtikelTab() {
           {ungelesen > 0 && (
             <span style={{
               position: 'absolute', top: -6, right: -6,
-              background: '#ef4444', color: '#fff', borderRadius: '50%',
+              background: '#ef4444', color: 'var(--ds-text)', borderRadius: '50%',
               width: 18, height: 18, fontSize: '0.7rem', fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>{ungelesen}</span>
@@ -244,7 +244,7 @@ export default function MarketingArtikelTab() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary, #fff)' }}>{a.name}</span>
-                  <span style={{ background: TYP_LABELS[a.typ]?.color || '#888', color: '#fff', borderRadius: 4, padding: '1px 7px', fontSize: '0.7rem', fontWeight: 600 }}>
+                  <span style={{ background: TYP_LABELS[a.typ]?.color || '#888', color: 'var(--ds-text)', borderRadius: 4, padding: '1px 7px', fontSize: '0.7rem', fontWeight: 600 }}>
                     {TYP_LABELS[a.typ]?.label}
                   </span>
                   {!a.aktiv && <span style={{ background: '#374151', color: '#9ca3af', borderRadius: 4, padding: '1px 7px', fontSize: '0.7rem' }}>Inaktiv</span>}
@@ -294,7 +294,7 @@ export default function MarketingArtikelTab() {
                     <td style={{ padding: '0.6rem 0.75rem' }}>{b.menge}</td>
                     <td style={{ padding: '0.6rem 0.75rem', color: '#d4af37', fontWeight: 700 }}>{(b.preis_cent / 100).toFixed(2)} €</td>
                     <td style={{ padding: '0.6rem 0.75rem' }}>
-                      <span style={{ background: statusColor[b.status] || '#888', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: '0.75rem', fontWeight: 600 }}>
+                      <span style={{ background: statusColor[b.status] || '#888', color: 'var(--ds-text)', borderRadius: 4, padding: '2px 8px', fontSize: '0.75rem', fontWeight: 600 }}>
                         {b.status}
                       </span>
                     </td>

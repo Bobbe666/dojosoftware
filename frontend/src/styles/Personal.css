@@ -172,7 +172,7 @@
 /* Personal Cards */
 .personal-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
   transition: all 0.3s ease;
@@ -206,7 +206,7 @@
 }
 
 .personal-status-badge[data-status="aktiv"] {
-  background: rgba(34, 197, 94, 0.3);
+  background: var(--ds-success-25);
   color: var(--text-1);
 }
 
@@ -262,7 +262,7 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
   min-height: 50px;
 }
 
@@ -334,7 +334,7 @@
 /* Neuer Mitarbeiter Form */
 .neuer-mitarbeiter-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
   animation: fadeInUp 0.6s ease-out both;
@@ -462,7 +462,7 @@
 .empty-state {
   text-align: center;
   background: var(--surface-2);
-  border: 2px dashed rgba(255,255,255,0.1);
+  border: 2px dashed var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: 3rem;
   max-width: 400px;
@@ -675,8 +675,8 @@
   transition: opacity 0.15s;
 }
 .lohn-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.lohn-btn--primary  { background: var(--ds-accent, #7c6ee0); color: #fff; }
-.lohn-btn--export   { background: var(--ds-success, #2ea043); color: #fff; }
+.lohn-btn--primary  { background: var(--ds-accent, #7c6ee0); color: var(--ds-text); }
+.lohn-btn--export   { background: var(--ds-success, #2ea043); color: var(--ds-text); }
 
 .lohn-summary-cards {
   display: flex;

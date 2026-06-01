@@ -330,7 +330,7 @@ const MemberStyles = () => {
                                     </p>
                                   )}
                                   {!hatProtokoll && !p.prueferkommentar && (
-                                    <p style={{fontSize:'0.72rem',color:'rgba(255,255,255,0.2)',margin:'0.25rem 0 0 0',fontStyle:'italic'}}>
+                                    <p style={{fontSize:'0.72rem',color: 'var(--ds-text-faint)',margin:'0.25rem 0 0 0',fontStyle:'italic'}}>
                                       Prüfungsprotokoll wird vorbereitet…
                                     </p>
                                   )}

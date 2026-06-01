@@ -7,7 +7,7 @@
 
 /* Dark Mode */
 [data-theme="dark"] .rechnung-erstellen-container {
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%);
 }
 
 .rechnung-editor {
@@ -69,11 +69,11 @@
   border-radius: var(--comp-radius-xs) !important;
   font-size: 0.75rem !important;
   color: var(--text-1) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--ds-bg-card-hover) !important;
 }
 
 .form-section select option {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   color: var(--text-1);
   padding: 0.5rem;
 }
@@ -123,14 +123,14 @@
   width: 100%;
   padding: 0.5rem 0.6rem;
   color: var(--text-1);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   border: 1px solid var(--primary-alpha-25);
   border-radius: var(--comp-radius-sm);
   font-size: 0.85rem;
 }
 
 .position-input select option {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   color: var(--text-1);
   padding: 0.5rem;
 }
@@ -140,7 +140,7 @@
   max-width: 60px !important;
   padding: 0.5rem 0.4rem;
   color: var(--text-1);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   border: 1px solid var(--primary-alpha-25);
   border-radius: var(--comp-radius-sm);
   font-size: 0.85rem;
@@ -156,7 +156,7 @@
 
 .btn-add {
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, var(--ds-success), #059669);
   color: var(--text-1);
   border: none;
   border-radius: var(--comp-radius-sm);
@@ -171,7 +171,7 @@
 .btn-add:hover {
   background: linear-gradient(135deg, #059669, #047857);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 8px var(--ds-success-25);
 }
 
 .rechnung-erstellen-container .btn-save {
@@ -567,7 +567,7 @@
 
 .dojo-selection-card {
   background: var(--surface-2);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: 1.25rem;
   cursor: pointer;
@@ -625,9 +625,9 @@
 }
 
 .dojo-selection-card .steuer-badge.kleinunternehmer {
-  background: rgba(34, 197, 94, 0.15);
+  background: var(--ds-success-10);
   color: var(--status-success);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid var(--ds-success-25);
 }
 
 .dojo-selection-card .steuer-badge.regelbesteuert {
@@ -704,9 +704,9 @@
 }
 
 [data-theme="tda-vib"] .dojo-selection-card .steuer-badge.kleinunternehmer {
-  background: rgba(34, 197, 94, 0.1);
+  background: var(--ds-success-10);
   color: #16a34a;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid var(--ds-success-25);
 }
 
 [data-theme="tda-vib"] .dojo-selection-card .steuer-badge.regelbesteuert {
@@ -752,20 +752,20 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-bottom: 1px solid var(--border-color, var(--ds-border));
   background: var(--header-bg, rgba(0, 0, 0, 0.2));
 }
 
 .varianten-modal-header h3 {
   margin: 0;
   font-size: 1.25rem;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-primary, var(--ds-text));
 }
 
 .modal-close-btn {
   background: transparent;
   border: none;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  color: var(--text-secondary, var(--ds-text-secondary));
   font-size: 1.75rem;
   cursor: pointer;
   padding: 0;
@@ -791,7 +791,7 @@
   display: block;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.8));
+  color: var(--text-secondary, var(--ds-text-secondary));
   margin-bottom: 0.75rem;
 }
 
@@ -808,10 +808,10 @@
 
 .variante-btn {
   padding: 0.75rem 1rem;
-  border: 2px solid var(--border-color, rgba(255, 255, 255, 0.2));
+  border: 2px solid var(--border-color, var(--ds-border-strong));
   border-radius: var(--comp-radius-md);
-  background: var(--input-bg, rgba(255, 255, 255, 0.05));
-  color: var(--text-primary, #ffffff);
+  background: var(--input-bg, var(--ds-bg-card-hover));
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -820,13 +820,13 @@
 }
 
 .variante-btn:hover {
-  border-color: var(--primary-color, #d4af37);
-  background: rgba(212, 175, 55, 0.1);
+  border-color: var(--primary-color, var(--ds-accent));
+  background: var(--ds-accent-10);
 }
 
 .variante-btn.selected {
-  border-color: var(--primary-color, #d4af37);
-  background: var(--primary-color, #d4af37);
+  border-color: var(--primary-color, var(--ds-accent));
+  background: var(--primary-color, var(--ds-accent));
   color: var(--text-on-primary, #1a1a2e);
   font-weight: 600;
 }
@@ -836,27 +836,27 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--ui-page-padding-sm);
-  background: var(--input-bg, rgba(255, 255, 255, 0.05));
+  background: var(--input-bg, var(--ds-bg-card-hover));
   border-radius: var(--comp-radius-md);
   margin-top: 1rem;
 }
 
 .varianten-preis span {
   font-size: 1rem;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.8));
+  color: var(--text-secondary, var(--ds-text-secondary));
 }
 
 .varianten-preis .preis-wert {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--primary-color, #d4af37);
+  color: var(--primary-color, var(--ds-accent));
 }
 
 .varianten-modal-actions {
   display: flex;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-top: 1px solid var(--border-color, var(--ds-border));
   background: var(--header-bg, rgba(0, 0, 0, 0.2));
 }
 
@@ -872,12 +872,12 @@
 
 .varianten-modal-actions .btn-secondary {
   background: transparent;
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
-  color: var(--text-primary, #ffffff);
+  border: 1px solid var(--border-color, var(--ds-border-strong));
+  color: var(--text-primary, var(--ds-text));
 }
 
 .varianten-modal-actions .btn-primary {
-  background: var(--primary-color, #d4af37);
+  background: var(--primary-color, var(--ds-accent));
   border: none;
   color: var(--text-on-primary, #1a1a2e);
 }
@@ -923,7 +923,7 @@
 [data-theme="tda-vib"] .variante-btn.selected {
   border-color: #6B4423;
   background: #6B4423;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 [data-theme="tda-vib"] .varianten-preis {
@@ -950,7 +950,7 @@
 
 [data-theme="tda-vib"] .varianten-modal-actions .btn-primary {
   background: #6B4423;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 /* ── Inline-style replacements (re- prefix) ─────────────────────────────── */
@@ -1156,7 +1156,7 @@
 
 /* Remove position button */
 .re-btn-remove {
-  background: rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-25);
   border: none;
   border-radius: 4px;
   color: var(--error);
@@ -1254,8 +1254,8 @@
   transform: translate(-50%, -50%);
   z-index: 9999;
   padding: 1rem;
-  background: rgba(255, 215, 0, 0.98);
-  border: 2px solid rgba(255, 215, 0, 1);
+  background: var(--ds-accent-50);
+  border: 2px solid var(--ds-accent-50);
   border-radius: 8px;
   color: var(--text-inverse);
   font-size: 0.85rem;
@@ -1306,7 +1306,7 @@
   font-size: 0.75rem;
   width: 100%;
   box-sizing: border-box;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--ds-bg-card);
   cursor: not-allowed;
 }
 
@@ -1361,8 +1361,8 @@
 .re-no-bankdata {
   flex: 1;
   padding: 1rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   text-align: center;
   min-width: 400px;
@@ -1426,7 +1426,7 @@
 /* Inline-Anlegen Modal */
 .re-inline-modal {
   background: #1a2744;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
   padding: 1.5rem;
   width: 90%;
@@ -1437,7 +1437,7 @@
   margin: 0 0 1.25rem;
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
 }
 .re-modal-field {
   margin-bottom: 0.9rem;
@@ -1445,7 +1445,7 @@
 .re-modal-field label {
   display: block;
   font-size: 0.78rem;
-  color: var(--text-secondary, rgba(255,255,255,0.5));
+  color: var(--text-secondary, var(--ds-text-muted));
   margin-bottom: 0.3rem;
 }
 .re-modal-row {
@@ -1454,8 +1454,8 @@
   gap: 0.75rem;
 }
 .re-modal-error {
-  background: rgba(239,68,68,0.1);
-  border: 1px solid rgba(239,68,68,0.35);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 6px;
   color: #fca5a5;
   font-size: 0.82rem;
@@ -1483,7 +1483,7 @@
 }
 .re-inline-modal input::placeholder,
 .re-inline-modal textarea::placeholder {
-  color: #999;
+  color: var(--ds-text-muted);
 }
 .re-modal-row--3 {
   grid-template-columns: 1fr 1fr 1fr;
@@ -1502,9 +1502,9 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-secondary, rgba(255,255,255,0.4));
+  color: var(--text-secondary, var(--ds-text-muted));
   margin: 1rem 0 0.5rem;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid var(--ds-border);
   padding-top: 0.75rem;
 }
 .re-modal-textarea {
@@ -1520,7 +1520,7 @@
   margin-bottom: 1.25rem;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--ds-border);
 }
 .re-typ-btn {
   flex: 1;
@@ -1529,8 +1529,8 @@
   font-weight: 600;
   cursor: pointer;
   border: none;
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.45);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-muted);
   transition: background 0.15s, color 0.15s;
 }
 .re-typ-btn.active {
@@ -1538,8 +1538,8 @@
   color: #93c5fd;
 }
 .re-typ-btn:hover:not(.active) {
-  background: rgba(255,255,255,0.09);
-  color: rgba(255,255,255,0.7);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text-secondary);
 }
 
 /* ── Full-width preview mode ── */
@@ -1558,10 +1558,10 @@
   background: rgba(26,26,46,0.95);
   border-radius: var(--comp-radius-md, 8px);
   margin-bottom: 0.75rem;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
 }
 .re-action-title {
-  color: rgba(255,255,255,0.7);
+  color: var(--ds-text-secondary);
   font-size: 0.9rem;
   font-weight: 600;
 }
@@ -1613,7 +1613,7 @@
 .re-rabatt-add-hint {
   text-align: right;
   font-size: 8pt;
-  color: #aaa;
+  color: var(--ds-text-muted);
   padding: 0.25rem 0;
   margin-top: 0.15rem;
 }
@@ -1630,20 +1630,20 @@
   max-height: 320px;
   overflow-y: auto;
   margin-top: 0.5rem;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: 6px;
 }
 .re-customer-item {
   padding: 0.55rem 0.75rem;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
   transition: background 0.1s;
 }
 .re-customer-item:last-child { border-bottom: none; }
 .re-customer-item:hover { background: rgba(59,130,246,0.12); }
 .re-customer-item.selected { background: rgba(59,130,246,0.18); }
-.re-customer-name { font-size: 0.88rem; color: rgba(255,255,255,0.9); }
-.re-customer-addr { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 1px; }
+.re-customer-name { font-size: 0.88rem; color: var(--ds-text); }
+.re-customer-addr { font-size: 0.75rem; color: var(--ds-text-muted); margin-top: 1px; }
 
 /* Position popup */
 .re-position-popup { max-width: 520px !important; }
@@ -1660,25 +1660,25 @@
 .re-selected-article-name {
   font-size: 0.92rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.9);
+  color: var(--ds-text);
 }
 .re-clear-article-btn {
   background: none;
   border: none;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   font-size: 0.78rem;
   cursor: pointer;
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   transition: color 0.1s;
 }
-.re-clear-article-btn:hover { color: #f87171; }
+.re-clear-article-btn:hover { color: var(--ds-danger-soft); }
 .re-artikel-nr-badge {
   display: inline-block;
   margin-left: 0.5rem;
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.5);
-  background: rgba(255,255,255,0.08);
+  color: var(--ds-text-muted);
+  background: var(--ds-bg-elevated);
   border-radius: 4px;
   padding: 0.1rem 0.4rem;
 }
@@ -1686,16 +1686,16 @@
   width: 100%;
   padding: 0.4rem;
   margin: 0.5rem 0;
-  background: rgba(239,68,68,0.12);
-  color: #f87171;
-  border: 1px solid rgba(239,68,68,0.25);
+  background: var(--ds-danger-10);
+  color: var(--ds-danger-soft);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 5px;
   cursor: pointer;
   font-size: 0.82rem;
   text-align: left;
   transition: background 0.1s;
 }
-.re-btn-delete-position:hover { background: rgba(239,68,68,0.22); }
+.re-btn-delete-position:hover { background: var(--ds-danger-25); }
 
 /* Section title row with inline toggle */
 .re-section-title-row {
@@ -1712,7 +1712,7 @@
   align-items: center;
   gap: 0.35rem;
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.55);
+  color: var(--ds-text-muted);
   cursor: pointer;
   user-select: none;
 }
@@ -1727,22 +1727,22 @@
   gap: 0.35rem;
   margin-top: 0.4rem;
   padding-top: 0.35rem;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid var(--ds-border-subtle);
 }
 .re-pos-freitext {
   width: 100%;
   resize: vertical;
   font-size: 0.78rem;
   padding: 0.3rem 0.5rem;
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.8);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-secondary);
+  border: 1px solid var(--ds-border);
   border-radius: 4px;
   font-family: inherit;
   line-height: 1.4;
 }
 .re-pos-freitext::placeholder {
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
 }
 .re-pos-leistungsdatum-wrap {
   display: flex;
@@ -1751,7 +1751,7 @@
 }
 .re-pos-leistungsdatum-label {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.5);
+  color: var(--ds-text-muted);
   white-space: nowrap;
 }
 

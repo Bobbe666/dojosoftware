@@ -133,7 +133,7 @@
   white-space: nowrap;
 }
 .le-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.le-btn--primary   { background: var(--ds-accent, #7c6ee0); color: #fff; }
+.le-btn--primary   { background: var(--ds-accent, #7c6ee0); color: var(--ds-text); }
 .le-btn--secondary { background: var(--ds-bg-card, #1e1e30); color: var(--ds-text, #e0e0e0); border: 1px solid var(--ds-border, #2a2a3e); }
 .le-btn--ghost     { background: transparent; color: var(--ds-text-muted, #888); border: 1px solid var(--ds-border, #2a2a3e); }
 .le-btn--sm        { padding: 0.3rem 0.65rem; font-size: 0.82rem; }
@@ -197,7 +197,7 @@
 .le-badge--ok      { background: color-mix(in srgb, #2ea043 18%, transparent); color: #2ea043; }
 .le-badge--no      { background: color-mix(in srgb, #d73a49 18%, transparent); color: #d73a49; }
 .le-badge--pending { background: color-mix(in srgb, #f0a500 18%, transparent); color: #f0a500; }
-.le-badge--none    { background: color-mix(in srgb, #888 18%, transparent);    color: #aaa; }
+.le-badge--none    { background: color-mix(in srgb, #888 18%, transparent);    color: var(--ds-text-muted); }
 
 /* ── Inline-Edit ──────────────────────────────────────── */
 .le-inline-edit {
@@ -313,5 +313,5 @@
   font-size: 0.95rem;
   pointer-events: none;
 }
-.le-vorlage-btn-ja   { background: #2ea043; color: #fff; }
-.le-vorlage-btn-nein { background: #d73a49; color: #fff; }
+.le-vorlage-btn-ja   { background: #2ea043; color: var(--ds-text); }
+.le-vorlage-btn-nein { background: #d73a49; color: var(--ds-text); }

@@ -3,7 +3,7 @@
   padding: var(--ui-page-padding);
   max-width: 1200px;
   margin: 0 auto;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 215, 0, 0.02));
+  background: linear-gradient(135deg, var(--ds-bg-card), var(--ds-accent-05));
   border-radius: var(--comp-radius-pill);
   position: relative;
   overflow: hidden;
@@ -118,7 +118,7 @@
 }
 
 .course-rating .course-card:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), var(--primary-alpha-08));
+  background: linear-gradient(135deg, var(--ds-bg-elevated), var(--primary-alpha-08));
   border-color: var(--primary-alpha-40);
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 8px 30px var(--primary-alpha-20);
@@ -170,7 +170,7 @@
   background: var(--surface-2);
   padding: 0.4rem 0.8rem;
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   transition: all 0.2s ease;
 }
 
@@ -181,7 +181,7 @@
 }
 
 .course-rating .detail-item svg {
-  color: rgba(255, 215, 0, 0.7);
+  color: var(--ds-accent-50);
 }
 
 /* Rating Section */
@@ -216,7 +216,7 @@
   padding: 0.5rem;
   border-radius: var(--comp-radius-xl);
   transition: all 0.3s ease;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
   position: relative;
   overflow: hidden;
 }

@@ -7,7 +7,7 @@
 
 .ds-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-lg);
   padding: 1rem 1.25rem;
 }
@@ -24,12 +24,12 @@
 
 .ds-card--elevated {
   background: var(--surface-3);
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--ds-border);
 }
 
 .ds-card--glass {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-card);
+  border-color: var(--ds-border);
   backdrop-filter: blur(10px);
 }
 
@@ -71,7 +71,7 @@
 
 .ds-card--hoverable:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--ds-border-strong);
   transform: translateY(-1px);
 }
 
@@ -84,7 +84,7 @@
   gap: 0.75rem;
   margin-bottom: 0.75rem;
   padding-bottom: 0.65rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .ds-card-title {
@@ -111,14 +111,14 @@
   gap: 0.5rem;
   margin-top: 0.75rem;
   padding-top: 0.65rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--ds-border-subtle);
 }
 
 /* ========== STAT CARD (Zahl mit Label) ========== */
 
 .ds-stat-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-lg);
   padding: 1rem 1.25rem;
   display: flex;
@@ -159,7 +159,7 @@
 
 .ds-option-card {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md);
   padding: 0.75rem 1rem;
   cursor: pointer;
@@ -170,7 +170,7 @@
 
 .ds-option-card:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--ds-border-strong);
 }
 
 .ds-option-card--selected {

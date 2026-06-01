@@ -120,7 +120,7 @@
 
 .inv-ansicht-btn.active {
   background: var(--akzent-gold, #c9a84c);
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 600;
 }
 
@@ -176,7 +176,7 @@
 }
 .inv-layout-btn.active {
   background: var(--akzent-gold, #c9a84c);
-  color: #fff;
+  color: var(--ds-text);
 }
 
 /* ============================================
@@ -185,7 +185,7 @@
 
 .inv-list-wrap {
   border-radius: 10px;
-  border: 1.5px solid rgba(255,255,255,0.12);
+  border: 1.5px solid var(--ds-border);
   overflow: hidden;
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
@@ -195,9 +195,9 @@
   border-left: 3px solid transparent;
   transition: background 0.12s;
 }
-.inv-list-item + .inv-list-item { border-top: 1px solid rgba(255,255,255,0.06); }
-.inv-list-item:hover { background: rgba(255,255,255,0.03); }
-.inv-list-item.expanded { background: rgba(255,255,255,0.03); }
+.inv-list-item + .inv-list-item { border-top: 1px solid var(--ds-border-subtle); }
+.inv-list-item:hover { background: var(--ds-bg-card); }
+.inv-list-item.expanded { background: var(--ds-bg-card); }
 
 .inv-list-row {
   display: grid;
@@ -239,9 +239,9 @@
 }
 
 .inv-list-detail {
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid var(--ds-border-subtle);
   padding: 0.65rem 1rem 0.75rem 1.4rem;
-  background: rgba(255,255,255,0.02);
+  background: var(--ds-bg-card);
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
@@ -270,8 +270,8 @@
 /* Karte */
 .inv-card {
   background: var(--hintergrund-hauptfarbe);
-  border: 1.5px solid rgba(255,255,255,0.12);
-  border-top: 3px solid rgba(255,255,255,0.12);
+  border: 1.5px solid var(--ds-border);
+  border-top: 3px solid var(--ds-border);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -365,7 +365,7 @@
   font-size: 0.62rem;
   padding: 0 5px;
   border-radius: 8px;
-  background: rgba(255,255,255,0.07);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--rand-farbe);
   color: var(--text-sekundaer);
 }
@@ -438,7 +438,7 @@
 .inv-card-detail {
   border-top: 1px solid var(--rand-farbe);
   padding: 0.6rem 0.7rem;
-  background: rgba(255,255,255,0.025);
+  background: var(--ds-bg-card);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -509,7 +509,7 @@
   transition: all 0.15s;
   font-weight: 600;
 }
-.btn-buchung-sm:hover { background: var(--akzent-gold, #c9a84c); color: #fff; }
+.btn-buchung-sm:hover { background: var(--akzent-gold, #c9a84c); color: var(--ds-text); }
 
 /* ============================================
    BEWEGUNGSVERLAUF-TABELLE
@@ -550,7 +550,7 @@
 }
 
 .inventur-table tbody tr.inv-row:last-child { border-bottom: none; }
-.inventur-table tbody tr.inv-row:hover { background: rgba(255,255,255,0.03); }
+.inventur-table tbody tr.inv-row:hover { background: var(--ds-bg-card); }
 
 .inventur-table td {
   padding: 0.7rem 1rem;
@@ -649,7 +649,7 @@
 }
 
 .inv-current-stock {
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--rand-farbe);
   border-radius: 10px;
   padding: 0.7rem 1rem;
@@ -728,7 +728,7 @@
   padding: 0.5rem 0.8rem;
   border: 1px solid var(--rand-farbe);
   border-radius: 8px;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   color: var(--text-hauptfarbe);
   font-size: 0.95rem;
   width: 100%;
@@ -745,7 +745,7 @@
   font-size: 0.82rem;
   color: var(--text-sekundaer);
   padding: 0.3rem 0.6rem;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border-radius: 6px;
 }
 
@@ -823,7 +823,7 @@
   grid-template-columns: minmax(60px,1fr) 54px 72px 60px;
   gap: 0.5rem;
   padding: 0.4rem 0.75rem;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   border-bottom: 1px solid var(--rand-farbe);
   font-size: 0.66rem;
   text-transform: uppercase;
@@ -841,12 +841,12 @@
   gap: 0.5rem;
   padding: 0.32rem 0.75rem;
   align-items: center;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
   transition: background 0.1s;
 }
 
 .inv-varianten-eingabe-row:last-child { border-bottom: none; }
-.inv-varianten-eingabe-row:hover { background: rgba(255,255,255,0.03); }
+.inv-varianten-eingabe-row:hover { background: var(--ds-bg-card); }
 .inv-varianten-eingabe-row:focus-within {
   background: rgba(201,168,76,0.1);
   border-bottom-color: rgba(201,168,76,0.2);
@@ -871,7 +871,7 @@
   padding: 0.22rem 0.35rem;
   border: 1px solid var(--rand-farbe);
   border-radius: 5px;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   color: var(--text-hauptfarbe);
   font-size: 0.85rem;
   width: 100%;

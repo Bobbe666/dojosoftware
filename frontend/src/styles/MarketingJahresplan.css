@@ -27,7 +27,7 @@
 .mj-loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(255,255,255,0.1);
+  border: 3px solid var(--ds-border);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: mj-spin 0.8s linear infinite;
@@ -65,15 +65,15 @@
 }
 
 .mj-message--success {
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #10b981;
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
+  color: var(--ds-success);
 }
 
 .mj-message--error {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
+  color: var(--ds-danger);
 }
 
 /* --------------------------------------------------------------------------
@@ -113,7 +113,7 @@
 }
 
 .mj-nav-btn:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--ds-bg-card-hover);
   color: var(--primary);
   border-color: var(--primary);
 }
@@ -193,7 +193,7 @@
 
 .mj-month-card--current {
   border-color: var(--primary);
-  box-shadow: 0 0 0 1px var(--primary), 0 4px 16px rgba(212,175,55, 0.12);
+  box-shadow: 0 0 0 1px var(--primary), 0 4px 16px var(--ds-accent-10);
 }
 
 .mj-month-header {
@@ -202,7 +202,7 @@
   justify-content: space-between;
   padding: 0.6rem 0.75rem;
   border-bottom: 1px solid var(--border);
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
 }
 
 .mj-month-header h3 {
@@ -282,7 +282,7 @@
   font-size: 0.65rem;
   padding: 0.2rem 0.45rem;
   border-radius: 4px;
-  border: 1px dashed rgba(255,255,255,0.2);
+  border: 1px dashed var(--ds-border-strong);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
@@ -310,7 +310,7 @@
   gap: 0.4rem;
   padding: 0.35rem 0.4rem;
   border-radius: 6px;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border-left: 3px solid var(--typ-color, var(--primary));
   position: relative;
 }
@@ -322,7 +322,7 @@
   width: 24px;
   height: 24px;
   border-radius: 5px;
-  background: rgba(255,255,255,0.06);
+  background: var(--ds-bg-card-hover);
   color: var(--typ-color, var(--primary));
   flex-shrink: 0;
 }
@@ -374,7 +374,7 @@
   height: 24px;
   border-radius: 5px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   color: var(--text-muted);
   cursor: pointer;
   padding: 0;
@@ -383,15 +383,15 @@
 }
 
 .mj-icon-btn:hover {
-  background: rgba(255,255,255,0.12);
+  background: var(--ds-bg-elevated);
   color: var(--text-primary);
   border-color: rgba(255,255,255,0.3);
 }
 
 .mj-icon-btn--danger:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-10);
+  color: var(--ds-danger);
+  border-color: var(--ds-danger-25);
 }
 
 /* --------------------------------------------------------------------------
@@ -410,11 +410,11 @@
   width: fit-content;
 }
 
-.mj-status-badge--planned    { background: rgba(100,116,139,0.2); color: #94a3b8; }
+.mj-status-badge--planned    { background: rgba(100,116,139,0.2); color: var(--ds-text-muted); }
 .mj-status-badge--preparing  { background: rgba(139,92,246,0.2);  color: #a78bfa; }
-.mj-status-badge--active     { background: rgba(16,185,129,0.2);  color: #34d399; }
-.mj-status-badge--completed  { background: rgba(34,197,94,0.2);   color: #4ade80; }
-.mj-status-badge--cancelled  { background: rgba(239,68,68,0.2);   color: #f87171; }
+.mj-status-badge--active     { background: var(--ds-success-25);  color: #34d399; }
+.mj-status-badge--completed  { background: var(--ds-success-25);   color: var(--ds-success-soft); }
+.mj-status-badge--cancelled  { background: var(--ds-danger-25);   color: var(--ds-danger-soft); }
 
 /* --------------------------------------------------------------------------
    Legend
@@ -466,7 +466,7 @@
 }
 
 .mj-modal {
-  background: #1a1a2e !important;
+  background: var(--ds-bg-surface) !important;
   border: 1px solid #2a2a3a;
   border-radius: 12px;
   width: 100%;
@@ -479,15 +479,15 @@
 }
 
 .mj-modal-body {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
 }
 
 .mj-modal-header {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
 }
 
 .mj-modal-footer {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
 }
 
 .mj-modal-header {
@@ -523,13 +523,13 @@
 }
 
 .mj-close-btn:hover {
-  background: rgba(239,68,68,0.15);
-  color: #ef4444;
-  border-color: rgba(239,68,68,0.4);
+  background: var(--ds-danger-10);
+  color: var(--ds-danger);
+  border-color: var(--ds-danger-25);
 }
 
 .mj-modal-body {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   padding: 1.25rem;
   overflow-y: auto;
   display: flex;
@@ -539,7 +539,7 @@
 }
 
 .mj-modal-footer {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -581,7 +581,7 @@
   padding: 0.5rem 0.75rem;
   border-radius: 7px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   color: var(--text-primary);
   font-size: 0.875rem;
   font-family: inherit;
@@ -594,7 +594,7 @@
 .mj-select:focus,
 .mj-textarea:focus {
   border-color: var(--primary);
-  background: rgba(255,255,255,0.06);
+  background: var(--ds-bg-card-hover);
 }
 
 .mj-select {
@@ -626,7 +626,7 @@
 }
 
 .mj-btn-cancel:hover {
-  background: rgba(255,255,255,0.07);
+  background: var(--ds-bg-card-hover);
   color: var(--text-primary);
 }
 

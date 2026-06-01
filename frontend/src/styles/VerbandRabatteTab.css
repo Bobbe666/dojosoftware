@@ -38,15 +38,15 @@
 }
 
 .status-badge.active {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   color: var(--status-success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid var(--ds-success-25);
 }
 
 .status-badge.inactive {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   color: var(--status-error);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid var(--ds-danger-25);
 }
 
 /* Messages */
@@ -60,14 +60,14 @@
 }
 
 .rabatte-message.error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   color: var(--status-error);
 }
 
 .rabatte-message.success {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   color: var(--status-success);
 }
 
@@ -199,7 +199,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--ds-bg-elevated);
   transition: 0.3s;
   border-radius: 26px;
 }
@@ -316,11 +316,11 @@
   background: rgba(0, 0, 0, 0.3);
   border-radius: var(--comp-radius-lg);
   padding: var(--ui-header-padding-b);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
 }
 
 .preview-card.member {
-  border-color: rgba(16, 185, 129, 0.3);
+  border-color: var(--ds-success-25);
 }
 
 .preview-card.basic {
@@ -365,7 +365,7 @@
 }
 
 .discount-badge {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   color: var(--status-success);
   padding: 0.25rem 0.5rem;
   border-radius: var(--comp-radius-xs);
@@ -475,7 +475,7 @@
 .artikel-rabatte-table td {
   padding: 0.75rem;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .artikel-rabatte-table th {
@@ -591,7 +591,7 @@
 
 .status-standard {
   background: rgba(156, 163, 175, 0.2);
-  color: #9ca3af;
+  color: var(--ds-text-muted);
   padding: 0.25rem 0.5rem;
   border-radius: var(--comp-radius-xs);
   font-size: var(--ui-badge-size-sm);
@@ -613,19 +613,19 @@
 }
 
 .action-btn.save {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
 }
 
 .action-btn.save:hover {
-  background: rgba(16, 185, 129, 0.4);
+  background: var(--ds-success-25);
 }
 
 .action-btn.delete {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
 }
 
 .action-btn.delete:hover {
-  background: rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-25);
 }
 
 /* Bulk Modal */
@@ -736,7 +736,7 @@
 
 .cancel-btn {
   padding: 0.75rem 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm);
   background: transparent;
   color: var(--text-1);
@@ -846,7 +846,7 @@
 }
 
 [data-theme="light"] .subtab-btn {
-  color: #6c757d;
+  color: var(--ds-text-secondary);
 }
 
 [data-theme="light"] .subtab-btn:hover,

@@ -70,9 +70,9 @@
     display: flex !important;
     align-items: center !important;
     gap: 0.6rem !important;
-    background: rgba(255, 215, 0, 0.05) !important;
-    border: 1px solid rgba(255, 215, 0, 0.18) !important;
-    border-left: 3px solid rgba(255, 215, 0, 0.5) !important;
+    background: var(--ds-accent-05) !important;
+    border: 1px solid var(--ds-accent-20) !important;
+    border-left: 3px solid var(--ds-accent-50) !important;
     border-radius: 12px !important;
     padding: 0.6rem 0.85rem !important;
     margin-bottom: 0.85rem !important;
@@ -90,15 +90,15 @@
   .md-push-banner-text {
     flex: 1 !important;
     font-size: 0.78rem !important;
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: var(--ds-text-secondary) !important;
     font-weight: 500 !important;
     line-height: 1.35 !important;
   }
 
   .md-push-banner-btn {
-    background: rgba(255, 215, 0, 0.15) !important;
-    color: #ffd700 !important;
-    border: 1px solid rgba(255, 215, 0, 0.4) !important;
+    background: var(--ds-accent-15) !important;
+    color: var(--ds-accent) !important;
+    border: 1px solid var(--ds-accent-50) !important;
     border-radius: 20px !important;
     padding: 0.3rem 0.85rem !important;
     font-size: 0.75rem !important;
@@ -112,7 +112,7 @@
   }
 
   .md-push-banner-btn:active {
-    background: rgba(255, 215, 0, 0.28) !important;
+    background: var(--ds-accent-30) !important;
   }
 
   .md-push-banner-btn:disabled {
@@ -161,14 +161,14 @@
     gap: 14px !important;
     padding: 1rem 1.25rem !important;
     width: 100% !important;
-    background: linear-gradient(135deg, rgba(255,215,0,0.18) 0%, rgba(200,160,0,0.08) 100%) !important;
-    border: 1.5px solid rgba(255,215,0,0.45) !important;
+    background: linear-gradient(135deg, var(--ds-accent-20) 0%, rgba(200,160,0,0.08) 100%) !important;
+    border: 1.5px solid var(--ds-accent-50) !important;
     animation: md-pulse-ring 2.5s ease-out infinite !important;
   }
 
   .md-mobile-hero-btn--checkin:active {
     animation: none !important;
-    box-shadow: 0 2px 8px rgba(255,215,0,0.08) !important;
+    box-shadow: 0 2px 8px var(--ds-accent-10) !important;
   }
 
   .md-mobile-hero-btn--checkin .md-mobile-hero-btn-icon {
@@ -187,18 +187,18 @@
   .md-mobile-hero-btn--checkin .md-mobile-hero-btn-label {
     font-size: 1rem !important;
     font-weight: 700 !important;
-    color: #ffd700 !important;
+    color: var(--ds-accent) !important;
     letter-spacing: 0.01em !important;
   }
 
   .md-mobile-hero-btn--checkin .md-mobile-hero-btn-sub {
     font-size: 0.72rem !important;
-    color: rgba(255,215,0,0.55) !important;
+    color: var(--ds-accent-50) !important;
   }
 
   .md-mobile-hero-btn-chevron {
     font-size: 1.4rem !important;
-    color: rgba(255,215,0,0.5) !important;
+    color: var(--ds-accent-50) !important;
     font-weight: 300 !important;
     flex-shrink: 0 !important;
     line-height: 1 !important;
@@ -206,18 +206,18 @@
 
   /* Sekundäre Buttons (QR + Abwesenheit) */
   .md-mobile-hero-btn--primary {
-    background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.05) 100%) !important;
-    border: 1.5px solid rgba(255,215,0,0.3) !important;
+    background: linear-gradient(135deg, var(--ds-accent-10) 0%, var(--ds-accent-05) 100%) !important;
+    border: 1.5px solid var(--ds-accent-30) !important;
   }
 
   .md-mobile-hero-btn--absence {
-    background: rgba(239,68,68,0.07) !important;
-    border: 1.5px solid rgba(239,68,68,0.2) !important;
+    background: var(--ds-danger-10) !important;
+    border: 1.5px solid var(--ds-danger-25) !important;
   }
 
   .md-mobile-hero-btn--absence-active {
-    background: rgba(239,68,68,0.15) !important;
-    border: 1.5px solid rgba(239,68,68,0.45) !important;
+    background: var(--ds-danger-10) !important;
+    border: 1.5px solid var(--ds-danger-25) !important;
   }
 
   .md-mobile-hero-btn-icon {
@@ -228,17 +228,17 @@
   .md-mobile-hero-btn-label {
     font-size: 0.78rem !important;
     font-weight: 700 !important;
-    color: #fff !important;
+    color: var(--ds-text) !important;
     letter-spacing: 0.02em !important;
   }
 
   .md-mobile-hero-btn--primary .md-mobile-hero-btn-label {
-    color: #ffd700 !important;
+    color: var(--ds-accent) !important;
   }
 
   .md-mobile-hero-btn-sub {
     font-size: 0.62rem !important;
-    color: rgba(255,255,255,0.4) !important;
+    color: var(--ds-text-muted) !important;
     font-weight: 400 !important;
   }
 

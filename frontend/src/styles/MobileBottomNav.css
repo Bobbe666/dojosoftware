@@ -16,7 +16,7 @@
     right: 0;
     z-index: 1000;
     background: rgba(8, 8, 20, 0.96);
-    border-top: 1px solid rgba(255, 215, 0, 0.1);
+    border-top: 1px solid var(--ds-accent-10);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -32,7 +32,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--ds-text-faint);
     transition: color 0.2s ease;
     -webkit-tap-highlight-color: transparent;
     min-height: 56px;
@@ -43,7 +43,7 @@
   }
 
   .mobile-bottom-nav__tab--active {
-    color: #ffd700;
+    color: var(--ds-accent);
   }
 
   /* Pill-Container für Icon + Label */
@@ -61,11 +61,11 @@
   }
 
   .mobile-bottom-nav__tab--active .mobile-bottom-nav__pill {
-    background: rgba(255, 215, 0, 0.1);
-    border-color: rgba(255, 215, 0, 0.22);
+    background: var(--ds-accent-10);
+    border-color: var(--ds-accent-20);
     padding: 8px 14px;
     gap: 6px;
-    box-shadow: 0 0 16px rgba(255, 215, 0, 0.08);
+    box-shadow: 0 0 16px var(--ds-accent-10);
   }
 
   /* Label: animiertes Einblenden nur beim aktiven Tab */
@@ -87,6 +87,6 @@
 
   /* Aktives Icon: sanfter Glow */
   .mobile-bottom-nav__tab--active svg {
-    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.4));
+    filter: drop-shadow(0 0 5px var(--ds-accent-50));
   }
 }

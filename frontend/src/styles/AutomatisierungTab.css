@@ -22,7 +22,7 @@
 
 .at-subtitle {
   font-size: 0.82rem;
-  color: #888;
+  color: var(--ds-text-muted);
   margin: 0;
 }
 
@@ -31,7 +31,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.55rem 1rem;
-  background: var(--primary, #ffd700);
+  background: var(--primary, var(--ds-accent));
   color: #000;
   border: none;
   border-radius: 7px;
@@ -67,7 +67,7 @@
 /* Neuer Trigger Form */
 .at-new-form {
   background: #141420;
-  border: 1px solid var(--primary, #ffd700);
+  border: 1px solid var(--primary, var(--ds-accent));
   border-radius: 10px;
   padding: 1.25rem;
   margin-bottom: 1.5rem;
@@ -79,7 +79,7 @@
   gap: 0.4rem;
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   margin-bottom: 1rem;
 }
 
@@ -103,20 +103,20 @@
 .at-label {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #888;
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .at-select {
   padding: 0.5rem 0.7rem;
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   border: 1px solid #3a3a5a;
   border-radius: 6px;
   color: #eee;
   font-size: 0.85rem;
 }
-.at-select:focus { outline: none; border-color: var(--primary, #ffd700); }
+.at-select:focus { outline: none; border-color: var(--primary, var(--ds-accent)); }
 
 .at-new-form-actions {
   display: flex;
@@ -128,7 +128,7 @@
   padding: 0.5rem 1rem;
   background: none;
   border: 1px solid #444;
-  color: #aaa;
+  color: var(--ds-text-muted);
   border-radius: 6px;
   font-size: 0.85rem;
   cursor: pointer;
@@ -139,7 +139,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 1rem;
-  background: var(--primary, #ffd700);
+  background: var(--primary, var(--ds-accent));
   color: #000;
   border: none;
   border-radius: 6px;
@@ -152,14 +152,14 @@
 /* Loading & Empty */
 .at-loading {
   text-align: center;
-  color: #888;
+  color: var(--ds-text-muted);
   padding: 3rem;
   font-size: 0.9rem;
 }
 
 .at-empty {
   text-align: center;
-  color: #888;
+  color: var(--ds-text-muted);
   padding: 3rem 1.5rem;
 }
 
@@ -172,7 +172,7 @@
 .at-empty h3 {
   font-size: 1rem;
   font-weight: 700;
-  color: #aaa;
+  color: var(--ds-text-muted);
   margin: 0 0 0.5rem 0;
 }
 
@@ -229,12 +229,12 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: #888;
+  color: var(--ds-text-muted);
   flex-wrap: wrap;
 }
 
 .at-trigger-vorlage {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
 }
 
 .at-trigger-sep { color: #555; }
@@ -263,7 +263,7 @@
 
 .at-status-badge--inaktiv {
   background: rgba(150,150,150,0.1);
-  color: #888;
+  color: var(--ds-text-muted);
   border: 1px solid #444;
 }
 
@@ -282,7 +282,7 @@
 .at-btn-delete {
   background: none;
   border: 1px solid transparent;
-  color: #777;
+  color: var(--ds-text-secondary);
   cursor: pointer;
   padding: 0.35rem 0.5rem;
   border-radius: 5px;

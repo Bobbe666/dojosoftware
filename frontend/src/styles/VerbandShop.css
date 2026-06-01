@@ -56,7 +56,7 @@
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
   border: none;
   border-radius: var(--comp-radius-xl);
-  color: white;
+  color: var(--ds-text);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -75,8 +75,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #EF4444;
-  color: white;
+  background: var(--ds-danger);
+  color: var(--ds-text);
   font-size: 0.7rem;
   font-weight: 700;
   border-radius: var(--comp-radius-lg);
@@ -239,7 +239,7 @@
   gap: 4px;
   padding: 4px 10px;
   background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-  color: white;
+  color: var(--ds-text);
   font-size: 0.7rem;
   font-weight: 600;
   border-radius: var(--comp-radius-sm);
@@ -314,7 +314,7 @@
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
   border: none;
   border-radius: var(--comp-radius-lg);
-  color: white;
+  color: var(--ds-text);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -597,7 +597,7 @@
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
   border: none;
   border-radius: var(--comp-radius-lg);
-  color: white;
+  color: var(--ds-text);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -797,7 +797,7 @@
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
   border: none;
   border-radius: var(--comp-radius-lg);
-  color: white;
+  color: var(--ds-text);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -1006,10 +1006,10 @@
   gap: 0.5rem;
   width: 100%;
   padding: 1.25rem;
-  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+  background: linear-gradient(135deg, var(--ds-success) 0%, #16A34A 100%);
   border: none;
   border-radius: var(--comp-radius-xl);
-  color: white;
+  color: var(--ds-text);
   font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
@@ -1018,7 +1018,7 @@
 
 .btn-bestellen:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.4);
+  box-shadow: 0 8px 24px var(--ds-success-25);
 }
 
 .btn-bestellen:disabled {
@@ -1047,9 +1047,9 @@
   width: 80px;
   height: 80px;
   margin: 0 auto 1.5rem;
-  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+  background: linear-gradient(135deg, var(--ds-success) 0%, #16A34A 100%);
   border-radius: 50%;
-  color: white;
+  color: var(--ds-text);
 }
 
 .erfolg-modal h2 {
@@ -1092,7 +1092,7 @@
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
   border: none;
   border-radius: var(--comp-radius-lg);
-  color: white;
+  color: var(--ds-text);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -1133,7 +1133,7 @@
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
   border: none;
   border-radius: var(--comp-radius-md);
-  color: white;
+  color: var(--ds-text);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1247,7 +1247,7 @@
   top: 100%;
   left: 0;
   min-width: 180px;
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--comp-radius-md);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -1262,7 +1262,7 @@
   gap: 0.5rem;
   width: 100%;
   padding: 0.75rem 1rem;
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   border: none;
   color: #a0a0b0;
   font-size: 0.85rem;
@@ -1273,12 +1273,12 @@
 
 .dropdown-item:hover {
   background: #252540;
-  color: #ffffff;
+  color: var(--ds-text);
 }
 
 .dropdown-item.active {
   background: #2a2a4a;
-  color: var(--kat-color, #ffffff);
+  color: var(--kat-color, var(--ds-text));
   font-weight: 500;
 }
 
@@ -1313,7 +1313,7 @@
 
 .btn-admin-edit {
   background: rgba(59, 130, 246, 0.9);
-  color: white;
+  color: var(--ds-text);
 }
 
 .btn-admin-edit:hover {
@@ -1322,23 +1322,23 @@
 }
 
 .btn-admin-delete {
-  background: rgba(239, 68, 68, 0.9);
-  color: white;
+  background: var(--ds-danger-25);
+  color: var(--ds-text);
 }
 
 .btn-admin-delete:hover {
-  background: #EF4444;
+  background: var(--ds-danger);
   transform: scale(1.1);
 }
 
 .kategorie-btn.admin-btn {
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--ds-success) 0%, #059669 100%);
+  color: var(--ds-text);
   margin-left: auto;
 }
 
 .kategorie-btn.admin-btn:hover {
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 2px 8px var(--ds-success-25);
 }
 
 /* ============================================================================
@@ -1524,7 +1524,7 @@
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
   border: none;
   border-radius: var(--comp-radius-md);
-  color: white;
+  color: var(--ds-text);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;

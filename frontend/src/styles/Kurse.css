@@ -25,15 +25,15 @@
 }
 
 .ku-toast--success {
-  background: rgba(34, 197, 94, 0.18);
-  border: 1px solid rgba(34, 197, 94, 0.45);
-  color: #4ade80;
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
+  color: var(--ds-success-soft);
 }
 
 .ku-toast--error {
-  background: rgba(239, 68, 68, 0.18);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #f87171;
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
+  color: var(--ds-danger-soft);
 }
 
 /* ============================================================
@@ -57,7 +57,7 @@
   flex: 1;
   min-width: 0;
   font-size: 0.86rem;
-  color: rgba(255,255,255,0.85);
+  color: var(--ds-text);
 }
 
 .ku-warning-list {
@@ -98,8 +98,8 @@
 .ku-tab-nav-v2 {
   display: flex;
   gap: 0.2rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 0.2rem;
 }
@@ -112,7 +112,7 @@
   border-radius: 7px;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.55);
+  color: var(--ds-text-muted);
   font-size: 0.88rem;
   font-weight: 500;
   cursor: pointer;
@@ -120,10 +120,10 @@
   white-space: nowrap;
 }
 
-.ku-tab-v2:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+.ku-tab-v2:hover { background: var(--ds-bg-card-hover); color: var(--ds-text); }
 
 .ku-tab-v2--active {
-  background: rgba(212,175,55,0.15);
+  background: var(--ds-accent-15);
   color: #e8d580;
   font-weight: 600;
 }
@@ -136,8 +136,8 @@
   height: 18px;
   padding: 0 4px;
   border-radius: 9px;
-  background: rgba(212,175,55,0.3);
-  color: rgba(255,255,255,0.9);
+  background: var(--ds-accent-30);
+  color: var(--ds-text);
   font-size: 0.7rem;
   font-weight: 700;
 }
@@ -148,8 +148,8 @@
   gap: 0.35rem;
   padding: 0.5rem 1.1rem;
   border-radius: 8px;
-  border: 1px solid rgba(212,175,55,0.4);
-  background: rgba(212,175,55,0.12);
+  border: 1px solid var(--ds-accent-50);
+  background: var(--ds-accent-10);
   color: #e8d580;
   font-size: 0.87rem;
   font-weight: 600;
@@ -157,19 +157,19 @@
   transition: all 0.15s;
   white-space: nowrap;
 }
-.ku-btn-primary:hover { background: rgba(212,175,55,0.22); color: #f0e090; }
+.ku-btn-primary:hover { background: var(--ds-accent-20); color: #f0e090; }
 
 .ku-btn-secondary {
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.6);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-secondary);
   font-size: 0.87rem;
   cursor: pointer;
   transition: all 0.15s;
 }
-.ku-btn-secondary:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.ku-btn-secondary:hover { background: var(--ds-bg-elevated); color: var(--ds-text); }
 
 /* ============================================================
    SEKUNDÄRE FILTER-LEISTE
@@ -179,8 +179,8 @@
   align-items: center;
   gap: 1rem;
   padding: 0.5rem 0.75rem;
-  background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   margin-bottom: 0.85rem;
   flex-wrap: wrap;
@@ -197,49 +197,49 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
   white-space: nowrap;
 }
 
 .ku-filter-btn {
   padding: 0.25rem 0.65rem;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.6);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-secondary);
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.15s;
 }
-.ku-filter-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.ku-filter-btn:hover { background: var(--ds-bg-elevated); color: var(--ds-text); }
 .ku-filter-btn--active {
-  background: rgba(212,175,55,0.15);
-  border-color: rgba(212,175,55,0.4);
+  background: var(--ds-accent-15);
+  border-color: var(--ds-accent-50);
   color: #e8d580;
 }
 
 .ku-filter-select {
   padding: 0.22rem 0.6rem;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.75);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-secondary);
   font-size: 0.8rem;
   cursor: pointer;
 }
-.ku-filter-select option { background: #1a1a2e; }
+.ku-filter-select option { background: var(--ds-bg-surface); }
 
 .ku-filter-clear {
   padding: 0.22rem 0.6rem;
   border-radius: 6px;
-  border: 1px solid rgba(239,68,68,0.3);
-  background: rgba(239,68,68,0.08);
-  color: #f87171;
+  border: 1px solid var(--ds-danger-25);
+  background: var(--ds-danger-10);
+  color: var(--ds-danger-soft);
   font-size: 0.78rem;
   cursor: pointer;
   transition: background 0.15s;
 }
-.ku-filter-clear:hover { background: rgba(239,68,68,0.18); }
+.ku-filter-clear:hover { background: var(--ds-danger-10); }
 
 /* ============================================================
    WIZARD MODAL
@@ -252,8 +252,8 @@
   font-weight: 500;
   padding: 0.15rem 0.55rem;
   border-radius: 20px;
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.6);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text-secondary);
   vertical-align: middle;
 }
 
@@ -280,32 +280,32 @@
   justify-content: center;
   font-size: 0.8rem;
   font-weight: 700;
-  background: rgba(255,255,255,0.1);
-  border: 2px solid rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.4);
+  background: var(--ds-bg-elevated);
+  border: 2px solid var(--ds-border-strong);
+  color: var(--ds-text-muted);
   transition: all 0.2s;
 }
 
 .ku-wizard-step-dot--active > span:first-child {
-  background: rgba(212, 175, 55, 0.25);
-  border-color: #d4af37;
-  color: #fff;
+  background: var(--ds-accent-25);
+  border-color: var(--ds-accent);
+  color: var(--ds-text);
 }
 
 .ku-wizard-step-label {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.45);
+  color: var(--ds-text-muted);
   white-space: nowrap;
 }
 
 .ku-wizard-step-dot--active .ku-wizard-step-label {
-  color: rgba(255,255,255,0.8);
+  color: var(--ds-text-secondary);
 }
 
 .ku-wizard-step-line {
   flex: 1;
   height: 2px;
-  background: rgba(255,255,255,0.12);
+  background: var(--ds-bg-elevated);
   margin: 0 0.5rem;
   margin-bottom: 1rem;
 }
@@ -322,17 +322,17 @@
   flex-wrap: wrap;
   gap: 0.4rem;
   padding: 0.6rem 0.8rem;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
 }
 
 .ku-wizard-summary-pill {
   padding: 0.2rem 0.6rem;
   border-radius: 20px;
-  background: rgba(212,175,55,0.1);
-  border: 1px solid rgba(212,175,55,0.3);
-  color: rgba(255,255,255,0.85);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
+  color: var(--ds-text);
   font-size: 0.8rem;
 }
 
@@ -347,9 +347,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.6rem;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
 }
 
 .ku-sp-form--wizard {
@@ -360,7 +360,7 @@
 }
 
 .ku-sp-bis {
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   font-size: 0.85rem;
   flex-shrink: 0;
 }
@@ -371,7 +371,7 @@
   gap: 0.6rem;
   margin-top: 0.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid var(--ds-border);
 }
 
 /* ============================================================
@@ -390,20 +390,20 @@
   gap: 0.4rem;
   padding: 0.45rem 0.9rem;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.6);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card);
+  color: var(--ds-text-secondary);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.ku-sd-tab:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
+.ku-sd-tab:hover { background: var(--ds-bg-elevated); color: var(--ds-text); }
 
 .ku-sd-tab--active {
-  background: rgba(212,175,55,0.12);
-  border-color: rgba(212,175,55,0.4);
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-50);
   color: #e8d580;
 }
 
@@ -411,13 +411,13 @@
   font-size: 0.72rem;
   padding: 0.1rem 0.4rem;
   border-radius: 10px;
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.55);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text-muted);
 }
 
 .ku-sd-tab--active .ku-sd-tab-count {
-  background: rgba(212,175,55,0.25);
-  color: rgba(255,255,255,0.8);
+  background: var(--ds-accent-25);
+  color: var(--ds-text-secondary);
 }
 
 .ku-sd-toolbar {
@@ -443,13 +443,13 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 0.9rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   transition: background 0.15s;
 }
 
-.ku-sd-list-row:hover { background: rgba(255,255,255,0.07); }
+.ku-sd-list-row:hover { background: var(--ds-bg-card-hover); }
 
 .ku-sd-list-info {
   flex: 1;
@@ -462,12 +462,12 @@
 .ku-sd-list-name {
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.9);
+  color: var(--ds-text);
 }
 
 .ku-sd-list-sub {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.45);
+  color: var(--ds-text-muted);
 }
 
 .ku-sd-stile-pills {
@@ -566,7 +566,7 @@
 
 .filter-group label {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   margin-bottom: 0.5rem;
@@ -578,7 +578,7 @@
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid var(--primary-alpha-40);
   border-radius: var(--comp-radius-xl);
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1rem;
   font-weight: 600;
   min-width: 200px;
@@ -594,22 +594,22 @@
 }
 
 .filter-select option {
-  background: #1a1a2e;
-  color: #ffffff;
+  background: var(--ds-bg-surface);
+  color: var(--ds-text);
   border: none;
   padding: 8px 12px;
 }
 
 .form-select option {
-  background: #1a1a2e;
-  color: #ffffff;
+  background: var(--ds-bg-surface);
+  color: var(--ds-text);
   border: none;
   padding: 8px 12px;
 }
 
 .export-button-modern {
   background: linear-gradient(135deg, var(--farbe-akzent), var(--farbe-akzent-2));
-  color: white;
+  color: var(--ds-text);
   border: none;
   border-radius: var(--comp-radius-xl);
   padding: 0.75rem var(--ui-card-padding);
@@ -663,7 +663,7 @@ html body .kurse-container-modern .stat-card,
   align-items: center !important;
   justify-content: center !important;
   gap: 0.2rem !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: var(--ds-bg-elevated) !important;
   backdrop-filter: blur(20px) !important;
   border: 1px solid var(--primary-alpha-20) !important;
   transition: all 0.3s ease !important;
@@ -690,7 +690,7 @@ html body .kurse-container-modern .stat-card,
 .stat-number {
   font-size: 1.1rem !important;
   font-weight: bold !important;
-  color: #ffffff !important;
+  color: var(--ds-text) !important;
   margin: 0 !important;
   line-height: 1 !important;
   text-shadow: 0 0 4px rgba(255, 255, 255, 0.3) !important;
@@ -698,7 +698,7 @@ html body .kurse-container-modern .stat-card,
 
 .stat-label {
   font-size: 0.6rem !important;
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: var(--ds-text-secondary) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.2px !important;
   margin: 0 !important;
@@ -779,7 +779,7 @@ html body .kurse-container-modern .stat-card,
 .kurs-stil-badge {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--ds-text);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   min-width: 120px;
 }
@@ -798,7 +798,7 @@ html body .kurse-container-modern .stat-card,
   border: none;
   border-radius: var(--comp-radius-md);
   background: rgba(255, 255, 255, 0.2);
-  color: white;
+  color: var(--ds-text);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -858,7 +858,7 @@ html body .kurse-container-modern .stat-card,
 
 .kurs-field label {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.5px;
@@ -866,7 +866,7 @@ html body .kurse-container-modern .stat-card,
 
 .kurs-value {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--ds-text);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
@@ -877,7 +877,7 @@ html body .kurse-container-modern .stat-card,
 
 .stil-tag {
   background: var(--farbe-hauptfarbe);
-  color: white;
+  color: var(--ds-text);
   padding: 0.25rem 0.75rem;
   border-radius: var(--comp-radius-xl);
   font-size: 0.8rem;
@@ -899,7 +899,7 @@ html body .kurse-container-modern .stat-card,
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid var(--primary-alpha-50);
   border-radius: var(--comp-radius-md);
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1rem;
   font-weight: 600;
   min-width: 150px;
@@ -915,8 +915,8 @@ html body .kurse-container-modern .stat-card,
 }
 
 .edit-select option {
-  background: #1a1a2e;
-  color: #ffffff;
+  background: var(--ds-bg-surface);
+  color: var(--ds-text);
   border: none;
   padding: 8px 12px;
 }
@@ -925,7 +925,7 @@ html body .kurse-container-modern .stat-card,
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--comp-radius-md);
-  color: #ffffff;
+  color: var(--ds-text);
   font-weight: 700;
   font-size: 1.1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -948,7 +948,7 @@ html body .kurse-container-modern .stat-card,
   max-height: 200px;
   overflow-y: auto;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-md);
   backdrop-filter: blur(10px);
@@ -987,8 +987,8 @@ html body .kurse-container-modern .stat-card,
   padding: 0.3rem 0.5rem;
   border-radius: 5px;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
 }
 
 .trainer-checkbox-label:hover {
@@ -1007,7 +1007,7 @@ html body .kurse-container-modern .stat-card,
 }
 
 .trainer-checkbox-name {
-  color: #ffffff;
+  color: var(--ds-text);
   font-weight: 500;
   font-size: 0.85rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -1027,7 +1027,7 @@ html body .kurse-container-modern .stat-card,
 
 .add-new-btn {
   background: var(--farbe-hauptfarbe);
-  color: #ffffff;
+  color: var(--ds-text);
   border: none;
   border-radius: var(--comp-radius-md);
   padding: 0.75rem;
@@ -1056,7 +1056,7 @@ html body .kurse-container-modern .stat-card,
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid var(--primary-alpha-40);
   border-radius: var(--comp-radius-xl);
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -1071,7 +1071,7 @@ html body .kurse-container-modern .stat-card,
 }
 
 .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
 }
 
 .input-buttons {
@@ -1082,7 +1082,7 @@ html body .kurse-container-modern .stat-card,
 .add-btn-small,
 .cancel-btn-small {
   background: var(--farbe-hauptfarbe);
-  color: #ffffff;
+  color: var(--ds-text);
   border: none;
   border-radius: var(--comp-radius-sm);
   padding: 0.5rem 0.625rem;
@@ -1121,7 +1121,7 @@ html body .kurse-container-modern .stat-card,
 
 .add-trainer-btn {
   background: linear-gradient(135deg, var(--farbe-akzent), var(--farbe-akzent-2));
-  color: #ffffff;
+  color: var(--ds-text);
   border: none;
   border-radius: var(--comp-radius-xl);
   padding: 0.75rem var(--ui-card-padding);
@@ -1138,7 +1138,7 @@ html body .kurse-container-modern .stat-card,
 }
 
 .new-trainer-form {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border: 2px solid var(--primary-alpha-30);
   border-radius: 16px;
   padding: var(--ui-card-padding);
@@ -1147,7 +1147,7 @@ html body .kurse-container-modern .stat-card,
 }
 
 .new-trainer-form h4 {
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: var(--ui-section-title);
   font-weight: 700;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -1169,7 +1169,7 @@ html body .kurse-container-modern .stat-card,
 
 .confirm-trainer-btn {
   background: var(--farbe-hauptfarbe);
-  color: #ffffff;
+  color: var(--ds-text);
   border: none;
   border-radius: var(--comp-radius-xl);
   padding: 0.875rem 1.75rem;
@@ -1196,8 +1196,8 @@ html body .kurse-container-modern .stat-card,
 }
 
 .tab-button {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
   border: 2px solid var(--primary-alpha-20);
   border-radius: 16px;
   padding: 1rem 2rem;
@@ -1214,7 +1214,7 @@ html body .kurse-container-modern .stat-card,
 .tab-button:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: var(--primary-alpha-40);
-  color: #ffffff;
+  color: var(--ds-text);
   transform: translateY(-2px);
 }
 
@@ -1295,7 +1295,7 @@ html body .kurse-container-modern .stat-card,
 }
 
 .current-list h4 {
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1.2rem;
   font-weight: 700;
   margin: 0 0 1rem 0;
@@ -1304,7 +1304,7 @@ html body .kurse-container-modern .stat-card,
 }
 
 .new-item-form h4 {
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1.2rem;
   font-weight: 700;
   margin: 0 0 1rem 0;
@@ -1325,8 +1325,8 @@ html body .kurse-container-modern .stat-card,
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md);
   transition: all 0.3s ease;
   position: relative;
@@ -1338,7 +1338,7 @@ html body .kurse-container-modern .stat-card,
 }
 
 .list-item span {
-  color: #ffffff;
+  color: var(--ds-text);
   font-weight: 600;
   font-size: 0.9rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
@@ -1361,7 +1361,7 @@ html body .kurse-container-modern .stat-card,
   border: 2px solid var(--primary-alpha-50);
   border-radius: var(--comp-radius-xs);
   background: var(--primary-alpha-30);
-  color: #ffffff;
+  color: var(--ds-text);
   cursor: pointer !important;
   transition: all 0.3s ease;
   display: flex;
@@ -1399,8 +1399,8 @@ html body .kurse-container-modern .stat-card,
   height: 32px;
   border: none;
   border-radius: var(--comp-radius-md);
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -1438,7 +1438,7 @@ html body .kurse-container-modern .stat-card,
 }
 
 .info-box p {
-  color: #ffffff;
+  color: var(--ds-text);
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.5;
@@ -1446,7 +1446,7 @@ html body .kurse-container-modern .stat-card,
 }
 
 .info-box strong {
-  color: #ffffff;
+  color: var(--ds-text);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
@@ -1500,7 +1500,7 @@ html body .kurse-container-modern .stat-card,
 }
 
 .neuer-kurs-card .card-header h3 {
-  color: white !important;
+  color: var(--ds-text) !important;
   margin: 0;
   font-size: var(--ui-section-title);
   font-weight: 700;
@@ -1536,7 +1536,7 @@ html body .kurse-container-modern .stat-card,
 
 .form-group label {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1.1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.5px;
@@ -1548,7 +1548,7 @@ html body .kurse-container-modern .stat-card,
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid var(--primary-alpha-40);
   border-radius: var(--comp-radius-xl);
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -1563,7 +1563,7 @@ html body .kurse-container-modern .stat-card,
 
 .add-button-modern {
   background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
-  color: white;
+  color: var(--ds-text);
   border: none;
   border-radius: var(--comp-radius-xl);
   padding: 0.875rem 1.75rem;
@@ -1707,13 +1707,13 @@ html body .kurse-container-modern .stat-card,
 .info-box p,
 .info-box strong,
 .list-item span {
-  color: #ffffff !important;
+  color: var(--ds-text) !important;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* Platzhalter-Text */
 input::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: var(--ds-text-secondary) !important;
 }
 
 /* Legacy classes for backwards compatibility */
@@ -1836,7 +1836,7 @@ html .kurs-card h3 {
   font-size: 0.9rem;
   font-weight: 600;
   transition: all 0.2s;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border: 1px solid var(--primary-alpha-30);
 }
 
@@ -1864,7 +1864,7 @@ html .kurs-card h3 {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   backdrop-filter: blur(20px);
   border: 1px solid var(--primary-alpha-20);
 }
@@ -1962,7 +1962,7 @@ html .kurs-card h3 {
 .ku-stil-count {
   font-size: 0.9rem;
   color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-weight: 600;
@@ -2011,7 +2011,7 @@ html .kurs-card h3 {
 .ku-new-room-form {
   margin-top: 0.5rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
 }
@@ -2076,7 +2076,7 @@ html .kurs-card h3 {
 /* Stammdaten room form */
 .ku-room-stammdaten-form {
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
   margin-top: 0.5rem;
@@ -2123,13 +2123,13 @@ html .kurs-card h3 {
   flex-wrap: wrap;
   margin-bottom: 0.875rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+  border-bottom: 1px solid var(--ds-accent-10);
 }
 
 .kurse-container-modern .ku-header-title {
   font-size: 1.4rem !important;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text);
   letter-spacing: 0.02em;
   text-transform: none;
   margin: 0 !important;
@@ -2149,8 +2149,8 @@ html .kurs-card h3 {
   align-items: center;
   justify-content: center;
   padding: 8px 18px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   min-width: 64px;
   gap: 3px;
@@ -2159,14 +2159,14 @@ html .kurs-card h3 {
 .kurse-container-modern .ku-hstat-num {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--ds-text);
   line-height: 1;
   letter-spacing: -0.02em;
 }
 
 .kurse-container-modern .ku-hstat-label {
   font-size: 0.6rem;
-  color: rgba(255,255,255,0.32);
+  color: var(--ds-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 500;
@@ -2185,7 +2185,7 @@ html .kurs-card h3 {
   display: inline-block;
   width: 1px;
   height: 24px;
-  background: rgba(255,255,255,0.1);
+  background: var(--ds-bg-elevated);
   margin: 0 4px;
   flex-shrink: 0;
   align-self: center;
@@ -2200,9 +2200,9 @@ html .kurs-card h3 {
   padding: 0.35rem 1.6rem 0.35rem 0.8rem;
   font-size: 0.78rem;
   border-radius: 7px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.09);
-  color: rgba(255,255,255,0.55);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-muted);
   font-weight: 500;
   cursor: pointer;
   outline: none;
@@ -2219,13 +2219,13 @@ html .kurs-card h3 {
 
 .kurse-container-modern .ku-filter-select:focus,
 .kurse-container-modern .ku-filter-select:hover {
-  border-color: rgba(212,175,55,0.3);
-  color: rgba(255,255,255,0.8);
+  border-color: var(--ds-accent-30);
+  color: var(--ds-text-secondary);
 }
 
 .kurse-container-modern .ku-filter-select option {
-  background: #1a1a2e;
-  color: rgba(255,255,255,0.85);
+  background: var(--ds-bg-surface);
+  color: var(--ds-text);
 }
 
 /* 2. Tab system — segmented pill */
@@ -2233,8 +2233,8 @@ html .kurs-card h3 {
   display: flex;
   gap: 2px;
   margin-bottom: 0;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 9px;
   padding: 3px;
   width: fit-content;
@@ -2252,7 +2252,7 @@ html .kurs-card h3 {
   padding: 0 1rem;
   font-size: 0.82rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
   transition: background 0.15s, color 0.15s;
   text-shadow: none;
   letter-spacing: 0.01em;
@@ -2266,16 +2266,16 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .tab-button:hover {
-  color: rgba(255, 255, 255, 0.75);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--ds-text-secondary);
+  background: var(--ds-bg-card-hover);
   transform: none;
   border-color: transparent !important;
 }
 
 .kurse-container-modern .tab-button.active {
-  background: rgba(212, 175, 55, 0.15) !important;
-  color: #d4af37 !important;
-  border-color: rgba(212, 175, 55, 0.3) !important;
+  background: var(--ds-accent-15) !important;
+  color: var(--ds-accent) !important;
+  border-color: var(--ds-accent-30) !important;
   font-weight: 600;
   transform: none;
   box-shadow: none !important;
@@ -2297,9 +2297,9 @@ html .kurs-card h3 {
   font-size: 0.8rem;
   font-weight: 500;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.55);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-muted);
   cursor: pointer;
   transition: background 0.14s, border-color 0.14s, color 0.14s;
   white-space: nowrap;
@@ -2308,33 +2308,33 @@ html .kurs-card h3 {
   letter-spacing: 0.01em;
 }
 .kurse-container-modern .ku-ctrl:hover {
-  background: rgba(255,255,255,0.09);
-  border-color: rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.88);
+  background: var(--ds-bg-elevated);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
 }
 .kurse-container-modern .ku-ctrl--active,
 .kurse-container-modern .ku-ctrl.active {
-  background: rgba(212,175,55,0.14);
-  border-color: rgba(212,175,55,0.38);
-  color: #d4af37;
+  background: var(--ds-accent-15);
+  border-color: var(--ds-accent-30);
+  color: var(--ds-accent);
   font-weight: 600;
 }
 .kurse-container-modern .ku-ctrl--active:hover,
 .kurse-container-modern .ku-ctrl.active:hover {
-  background: rgba(212,175,55,0.22);
-  border-color: rgba(212,175,55,0.55);
+  background: var(--ds-accent-20);
+  border-color: var(--ds-accent-50);
   color: #e8c84a;
 }
 /* CTA — Neuer Kurs */
 .kurse-container-modern .ku-ctrl--gold {
-  background: rgba(212,175,55,0.14);
-  border-color: rgba(212,175,55,0.38);
-  color: #d4af37;
+  background: var(--ds-accent-15);
+  border-color: var(--ds-accent-30);
+  color: var(--ds-accent);
   font-weight: 600;
 }
 .kurse-container-modern .ku-ctrl--gold:hover {
-  background: rgba(212,175,55,0.24);
-  border-color: rgba(212,175,55,0.6);
+  background: var(--ds-accent-25);
+  border-color: var(--ds-accent-50);
   color: #f0d060;
 }
 /* Select-Variante — gleiche Höhe wie Buttons */
@@ -2350,8 +2350,8 @@ html .kurs-card h3 {
   max-width: 170px;
 }
 .kurse-container-modern .ku-ctrl-select option {
-  background: #1a1a2e;
-  color: rgba(255,255,255,0.85);
+  background: var(--ds-bg-surface);
+  color: var(--ds-text);
 }
 /* ─────────────────────────────────────────────────────────────────────────── */
 
@@ -2364,7 +2364,7 @@ html .kurs-card h3 {
 .kurse-container-modern .ku-sort-label {
   font-size: 0.72rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-right: 0.25rem;
@@ -2374,22 +2374,22 @@ html .kurs-card h3 {
   padding: 0.35rem 0.85rem;
   font-size: 0.78rem;
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  color: rgba(255, 255, 255, 0.5);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-muted);
   font-weight: 500;
   transition: all 0.15s ease;
 }
 
 .kurse-container-modern .ku-sort-btn:hover {
-  background: rgba(255, 255, 255, 0.09);
-  color: rgba(255, 255, 255, 0.85);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
+  border-color: var(--ds-border-strong);
 }
 
 .kurse-container-modern .ku-sort-btn.active {
-  background: rgba(212, 175, 55, 0.13);
-  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: var(--ds-accent-15);
+  border: 1px solid var(--ds-accent-30);
   color: #e2c96e;
   font-weight: 600;
 }
@@ -2398,7 +2398,7 @@ html .kurs-card h3 {
 .kurse-container-modern .filter-group label {
   font-size: 0.72rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   text-shadow: none;
@@ -2406,10 +2406,10 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .filter-select {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
   font-size: 0.875rem;
   font-weight: 400;
   min-width: 180px;
@@ -2418,16 +2418,16 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .filter-select:focus {
-  border-color: rgba(212, 175, 55, 0.4);
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.08);
-  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--ds-accent-50);
+  box-shadow: 0 0 0 2px var(--ds-accent-10);
+  background: var(--ds-bg-card-hover);
 }
 
 /* 5. Export button */
 .kurse-container-modern .export-button-modern {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.09);
-  color: rgba(255,255,255,0.5);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-muted);
   padding: 0.35rem 0.85rem;
   font-size: 0.78rem;
   font-weight: 500;
@@ -2439,9 +2439,9 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .export-button-modern:hover {
-  background: rgba(255,255,255,0.09);
-  border-color: rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.85);
+  background: var(--ds-bg-elevated);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
   transform: none;
   box-shadow: none;
 }
@@ -2454,8 +2454,8 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .ku-stat-card {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  background: var(--ds-bg-card) !important;
+  border: 1px solid var(--ds-border) !important;
   border-radius: 8px !important;
   min-height: 72px !important;
   max-height: none !important;
@@ -2465,8 +2465,8 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .ku-stat-card:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(212, 175, 55, 0.18) !important;
+  background: var(--ds-bg-card-hover) !important;
+  border-color: var(--ds-accent-20) !important;
   transform: none !important;
   box-shadow: none !important;
 }
@@ -2475,7 +2475,7 @@ html .kurs-card h3 {
 .kurse-container-modern .ku-stat-number-dark {
   font-size: 1.55rem !important;
   font-weight: 700 !important;
-  color: #ffffff !important;
+  color: var(--ds-text) !important;
   text-shadow: none !important;
   letter-spacing: -0.03em;
   line-height: 1 !important;
@@ -2484,7 +2484,7 @@ html .kurs-card h3 {
 .kurse-container-modern .ku-stat-label,
 .kurse-container-modern .ku-stat-label-muted {
   font-size: 0.6rem !important;
-  color: rgba(255, 255, 255, 0.3) !important;
+  color: var(--ds-text-faint) !important;
   text-transform: uppercase;
   letter-spacing: 0.07em !important;
   font-weight: 500;
@@ -2500,9 +2500,9 @@ html .kurs-card h3 {
 /* 7. Stil section header — gold left-border accent */
 .kurse-container-modern .stil-section .stil-header,
 .kurse-container-modern .stil-section h2.stil-header {
-  background: rgba(255, 255, 255, 0.02) !important;
-  border: 1px solid rgba(255, 255, 255, 0.07) !important;
-  border-left: 3px solid rgba(212, 175, 55, 0.55) !important;
+  background: var(--ds-bg-card) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-left: 3px solid var(--ds-accent-50) !important;
   border-radius: 8px !important;
   padding: 0.8rem 1.125rem !important;
   margin-bottom: 0.875rem !important;
@@ -2511,9 +2511,9 @@ html .kurs-card h3 {
 
 .kurse-container-modern .stil-section .stil-header:hover,
 .kurse-container-modern .stil-section h2.stil-header:hover {
-  background: rgba(212, 175, 55, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  border-left-color: #d4af37 !important;
+  background: var(--ds-accent-05) !important;
+  border-color: var(--ds-border) !important;
+  border-left-color: var(--ds-accent) !important;
 }
 
 .kurse-container-modern .ku-stil-title {
@@ -2524,8 +2524,8 @@ html .kurs-card h3 {
 
 .kurse-container-modern .ku-stil-count {
   font-size: 0.72rem !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: rgba(255, 255, 255, 0.38) !important;
+  background: var(--ds-bg-card-hover) !important;
+  color: var(--ds-text-faint) !important;
   padding: 0.15rem 0.55rem !important;
   border-radius: 20px !important;
   font-weight: 500 !important;
@@ -2533,37 +2533,37 @@ html .kurs-card h3 {
 
 /* 8. Kurs cards — no orange gradient header */
 .kurse-container-modern .kurs-card {
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ds-bg-card);
   transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease !important;
   box-shadow: none !important;
 }
 
 .kurse-container-modern .kurs-card:hover {
-  background: rgba(255, 255, 255, 0.055);
-  border-color: rgba(212, 175, 55, 0.22);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-accent-20);
   transform: translateY(-2px) !important;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18) !important;
 }
 
 .kurse-container-modern .kurs-card-header {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--ds-bg-card) !important;
+  border-bottom: 1px solid var(--ds-border);
   padding: 0.625rem 0.875rem;
 }
 
 .kurse-container-modern .kurs-stil-badge {
   font-size: 0.875rem !important;
   font-weight: 600 !important;
-  color: rgba(255, 255, 255, 0.88) !important;
+  color: var(--ds-text) !important;
   text-shadow: none !important;
   min-width: auto !important;
   letter-spacing: 0.01em;
 }
 
 .kurse-container-modern .kurs-card .action-btn {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ds-bg-card-hover);
   border-radius: 6px;
   width: 28px;
   height: 28px;
@@ -2571,17 +2571,17 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .kurs-card .action-btn:hover {
-  background: rgba(255, 255, 255, 0.13);
+  background: var(--ds-bg-elevated);
   transform: none;
 }
 
 .kurse-container-modern .kurs-card .delete-btn:hover {
-  background: rgba(239, 68, 68, 0.18);
+  background: var(--ds-danger-10);
   color: #fca5a5;
 }
 
 .kurse-container-modern .kurs-field label {
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
   font-size: 0.78rem;
   font-weight: 500;
   text-shadow: none;
@@ -2592,19 +2592,19 @@ html .kurs-card h3 {
 .kurse-container-modern .kurs-value {
   font-size: 0.875rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text);
   text-shadow: none;
 }
 
 /* 9. Neuer Kurs card */
 .kurse-container-modern .neuer-kurs-card .card-header {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--ds-bg-card) !important;
+  border-bottom: 1px solid var(--ds-border);
   padding: 0.875rem 1.25rem;
 }
 
 .kurse-container-modern .neuer-kurs-card .card-header h3 {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: var(--ds-text-secondary) !important;
   -webkit-text-fill-color: rgba(255, 255, 255, 0.7) !important;
   font-size: 0.9rem !important;
   font-weight: 600 !important;
@@ -2613,7 +2613,7 @@ html .kurs-card h3 {
 
 /* Standort badge — background via --standort-color CSS var */
 .kurs-standort-badge {
-  color: white;
+  color: var(--ds-text);
   background: var(--standort-color, #4F46E5);
   padding: 6px 12px;
   font-size: 0.75rem;
@@ -2640,7 +2640,7 @@ html .kurs-card h3 {
 .kurse-container-modern .ku-acc-stil-section {
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
   margin-bottom: 0.5rem;
 }
 
@@ -2649,15 +2649,15 @@ html .kurs-card h3 {
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: rgba(255,255,255,0.035);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border-bottom: 1px solid var(--ds-border);
   cursor: pointer;
   user-select: none;
   transition: background 0.15s;
 }
 
 .kurse-container-modern .ku-acc-stil-header:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--ds-bg-card-hover);
 }
 
 .kurse-container-modern .ku-acc-stil-icon { font-size: 0.85rem; opacity: 0.6; }
@@ -2665,7 +2665,7 @@ html .kurs-card h3 {
 .kurse-container-modern .ku-acc-stil-name {
   font-size: 0.82rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.75);
+  color: var(--ds-text-secondary);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   flex: 1;
@@ -2673,15 +2673,15 @@ html .kurs-card h3 {
 
 .kurse-container-modern .ku-acc-stil-count {
   font-size: 0.68rem;
-  color: rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.06);
+  color: var(--ds-text-faint);
+  background: var(--ds-bg-card-hover);
   padding: 1px 7px;
   border-radius: 10px;
 }
 
 .kurse-container-modern .ku-acc-chevron {
   font-size: 0.6rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   transition: transform 0.2s ease;
   display: inline-block;
 }
@@ -2708,22 +2708,22 @@ html .kurs-card h3 {
 
 /* Jedes Item: kompakte Karte */
 .kurse-container-modern .ku-acc-item {
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   overflow: hidden;
-  background: rgba(255,255,255,0.025);
+  background: var(--ds-bg-card);
   transition: border-color 0.15s, background 0.15s;
 }
 
 .kurse-container-modern .ku-acc-item:hover {
-  border-color: rgba(212,175,55,0.25);
+  border-color: var(--ds-accent-25);
 }
 
 /* Aufgeklappt → volle Breite */
 .kurse-container-modern .ku-acc-item--open {
   grid-column: 1 / -1;
-  background: rgba(212,175,55,0.04);
-  border-color: rgba(212,175,55,0.22);
+  background: var(--ds-accent-05);
+  border-color: var(--ds-accent-20);
 }
 
 /* Karten-Header (immer sichtbar) */
@@ -2737,11 +2737,11 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .ku-acc-header:hover {
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
 }
 
 .kurse-container-modern .ku-acc-item--open .ku-acc-header {
-  border-bottom: 1px solid rgba(212,175,55,0.14);
+  border-bottom: 1px solid var(--ds-accent-15);
 }
 
 /* Header-Inhalt: vertikal gestapelt */
@@ -2756,7 +2756,7 @@ html .kurs-card h3 {
 .kurse-container-modern .ku-acc-gruppenname {
   font-size: 0.85rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.88);
+  color: var(--ds-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2771,7 +2771,7 @@ html .kurs-card h3 {
 
 .kurse-container-modern .ku-acc-trainer-preview {
   font-size: 0.71rem;
-  color: rgba(212,175,55,0.7);
+  color: var(--ds-accent-50);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2803,14 +2803,14 @@ html .kurs-card h3 {
 .kurse-container-modern .ku-info-label {
   font-size: 0.58rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.28);
+  color: var(--ds-text-faint);
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
 .kurse-container-modern .ku-info-value {
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.78);
+  color: var(--ds-text-secondary);
 }
 
 .kurse-container-modern .ku-info-trainer {
@@ -2829,18 +2829,18 @@ html .kurs-card h3 {
   gap: 5px;
   padding: 6px 14px;
   border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card-hover);
   cursor: pointer;
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.7);
+  color: var(--ds-text-secondary);
   transition: all 0.13s ease;
 }
 
 .kurse-container-modern .ku-row-btn:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.2);
-  color: #fff;
+  background: var(--ds-bg-elevated);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
 }
 
 .kurse-container-modern .ku-row-btn--delete:hover {
@@ -2867,7 +2867,7 @@ html .kurs-card h3 {
 .kurse-container-modern .ku-edit-trainers > label {
   display: block;
   font-size: 0.62rem;
-  color: rgba(255,255,255,0.38);
+  color: var(--ds-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 5px;
@@ -2903,14 +2903,14 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .sd-section {
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--ds-border-subtle);
   border-radius: 10px;
   overflow: hidden;
-  background: rgba(255,255,255,0.015);
+  background: var(--ds-bg-card);
 }
 
 .kurse-container-modern .sd-section--open {
-  border-color: rgba(255,255,255,0.1);
+  border-color: var(--ds-border);
 }
 
 /* Items-Grid: etwas mehr Spalten für kleinere Karten */
@@ -2940,10 +2940,10 @@ html .kurs-card h3 {
 
 /* Card */
 .kurse-container-modern .sd-card {
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
   overflow: hidden;
-  background: rgba(255,255,255,0.02);
+  background: var(--ds-bg-card);
   display: flex;
   flex-direction: column;
 }
@@ -2954,8 +2954,8 @@ html .kurs-card h3 {
   align-items: center;
   gap: 10px;
   padding: 13px 16px;
-  background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.06));
-  border-bottom: 1px solid rgba(212,175,55,0.15);
+  background: linear-gradient(135deg, var(--ds-accent-15), var(--ds-accent-05));
+  border-bottom: 1px solid var(--ds-accent-15);
 }
 
 .kurse-container-modern .sd-card-icon { font-size: 1rem; }
@@ -2971,8 +2971,8 @@ html .kurs-card h3 {
 
 .kurse-container-modern .sd-card-count {
   font-size: 0.68rem;
-  color: rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.07);
+  color: var(--ds-text-faint);
+  background: var(--ds-bg-card-hover);
   padding: 2px 8px;
   border-radius: 10px;
 }
@@ -2985,7 +2985,7 @@ html .kurs-card h3 {
 .kurse-container-modern .sd-empty {
   padding: 14px 16px;
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.25);
+  color: var(--ds-text-faint);
   font-style: italic;
 }
 
@@ -2994,14 +2994,14 @@ html .kurs-card h3 {
   align-items: center;
   justify-content: space-between;
   padding: 9px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
   gap: 10px;
   transition: background 0.1s;
 }
 
 .kurse-container-modern .sd-list-item:last-child { border-bottom: none; }
 
-.kurse-container-modern .sd-list-item:hover { background: rgba(255,255,255,0.025); }
+.kurse-container-modern .sd-list-item:hover { background: var(--ds-bg-card); }
 
 .kurse-container-modern .sd-item-info {
   display: flex;
@@ -3013,7 +3013,7 @@ html .kurs-card h3 {
 
 .kurse-container-modern .sd-item-name {
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.82);
+  color: var(--ds-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3021,7 +3021,7 @@ html .kurs-card h3 {
 
 .kurse-container-modern .sd-item-sub {
   font-size: 0.68rem;
-  color: rgba(255,255,255,0.32);
+  color: var(--ds-text-faint);
 }
 
 .kurse-container-modern .sd-item-actions {
@@ -3034,8 +3034,8 @@ html .kurs-card h3 {
   width: 26px;
   height: 26px;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card);
   cursor: pointer;
   font-size: 0.68rem;
   display: flex;
@@ -3045,8 +3045,8 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .sd-item-btn:hover {
-  background: rgba(255,255,255,0.09);
-  border-color: rgba(255,255,255,0.18);
+  background: var(--ds-bg-elevated);
+  border-color: var(--ds-border-strong);
 }
 
 .kurse-container-modern .sd-item-btn--del:hover {
@@ -3057,14 +3057,14 @@ html .kurs-card h3 {
 /* Add section */
 .kurse-container-modern .sd-add-section {
   padding: 10px 16px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+  border-top: 1px solid var(--ds-border-subtle);
 }
 
 .kurse-container-modern .sd-add-trigger {
   font-size: 0.78rem;
-  color: rgba(212,175,55,0.7);
-  background: rgba(212,175,55,0.06);
-  border: 1px dashed rgba(212,175,55,0.25);
+  color: var(--ds-accent-50);
+  background: var(--ds-accent-05);
+  border: 1px dashed var(--ds-accent-25);
   border-radius: 7px;
   padding: 7px 14px;
   cursor: pointer;
@@ -3074,8 +3074,8 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .sd-add-trigger:hover {
-  background: rgba(212,175,55,0.1);
-  border-color: rgba(212,175,55,0.45);
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-50);
   color: #e8d580;
 }
 
@@ -3101,23 +3101,23 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .sd-input {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 7px;
   padding: 7px 11px;
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.82);
+  color: var(--ds-text-secondary);
   width: 100%;
   outline: none;
   transition: border-color 0.15s;
 }
 
 .kurse-container-modern .sd-input:focus {
-  border-color: rgba(212,175,55,0.45);
-  background: rgba(255,255,255,0.08);
+  border-color: var(--ds-accent-50);
+  background: var(--ds-bg-elevated);
 }
 
-.kurse-container-modern .sd-input::placeholder { color: rgba(255,255,255,0.25); }
+.kurse-container-modern .sd-input::placeholder { color: var(--ds-text-faint); }
 
 .kurse-container-modern .sd-form-actions {
   display: flex;
@@ -3138,25 +3138,25 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .sd-btn--save {
-  background: rgba(212,175,55,0.14);
-  border-color: rgba(212,175,55,0.3);
+  background: var(--ds-accent-15);
+  border-color: var(--ds-accent-30);
   color: #e8d580;
 }
 
 .kurse-container-modern .sd-btn--save:hover {
-  background: rgba(212,175,55,0.22);
-  border-color: rgba(212,175,55,0.5);
+  background: var(--ds-accent-20);
+  border-color: var(--ds-accent-50);
 }
 
 .kurse-container-modern .sd-btn--cancel {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.5);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border);
+  color: var(--ds-text-muted);
 }
 
 .kurse-container-modern .sd-btn--cancel:hover {
-  background: rgba(255,255,255,0.09);
-  color: rgba(255,255,255,0.75);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text-secondary);
 }
 
 /* ===================================================
@@ -3170,7 +3170,7 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .ku-kurslist-section {
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -3200,11 +3200,11 @@ html .kurs-card h3 {
 
 /* Kurs-Karte (kompakt) */
 .kurse-container-modern .ku-card {
-  border: 1px solid rgba(255,255,255,0.09);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 11px 13px;
   cursor: pointer;
-  background: rgba(255,255,255,0.025);
+  background: var(--ds-bg-card);
   transition: border-color 0.14s, background 0.14s;
   min-height: 70px;
   display: flex;
@@ -3213,20 +3213,20 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .ku-card:hover {
-  border-color: rgba(212,175,55,0.25);
-  background: rgba(255,255,255,0.045);
+  border-color: var(--ds-accent-25);
+  background: var(--ds-bg-card);
 }
 
 .kurse-container-modern .ku-card--selected {
-  border-color: rgba(212,175,55,0.5) !important;
-  background: rgba(212,175,55,0.07) !important;
-  box-shadow: 0 0 0 1px rgba(212,175,55,0.2);
+  border-color: var(--ds-accent-50) !important;
+  background: var(--ds-accent-05) !important;
+  box-shadow: 0 0 0 1px var(--ds-accent-20);
 }
 
 .kurse-container-modern .ku-card-name {
   font-size: 0.82rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.88);
+  color: var(--ds-text);
   line-height: 1.2;
 }
 
@@ -3246,7 +3246,7 @@ html .kurs-card h3 {
 
 .kurse-container-modern .ku-card-trainer {
   font-size: 0.68rem;
-  color: rgba(212,175,55,0.65);
+  color: var(--ds-accent-50);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3271,13 +3271,13 @@ html .kurs-card h3 {
 }
 .kurse-container-modern .ku-card-edit-btn:hover {
   opacity: 1 !important;
-  background: rgba(212,175,55,0.15);
+  background: var(--ds-accent-15);
 }
 
 /* Detail-Panel — unterhalb des Card-Grids */
 .kurse-container-modern .ku-detail-panel {
-  border-top: 1px solid rgba(212,175,55,0.15);
-  background: rgba(212,175,55,0.03);
+  border-top: 1px solid var(--ds-accent-15);
+  background: var(--ds-accent-05);
   padding: 16px 18px;
   animation: fadeInDown 0.15s ease-out;
 }
@@ -3345,7 +3345,7 @@ html .kurs-card h3 {
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(212,175,55,0.12);
+  border-bottom: 1px solid var(--ds-accent-10);
   flex-wrap: wrap;
 }
 
@@ -3365,9 +3365,9 @@ html .kurs-card h3 {
 .kurse-container-modern .ku-cockpit-tab {
   padding: 5px 12px;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.55);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card);
+  color: var(--ds-text-muted);
   font-size: 0.78rem;
   cursor: pointer;
   transition: all 0.13s;
@@ -3375,13 +3375,13 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .ku-cockpit-tab:hover {
-  background: rgba(255,255,255,0.09);
-  color: rgba(255,255,255,0.8);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text-secondary);
 }
 
 .kurse-container-modern .ku-cockpit-tab--active {
-  background: rgba(212,175,55,0.15);
-  border-color: rgba(212,175,55,0.35);
+  background: var(--ds-accent-15);
+  border-color: var(--ds-accent-30);
   color: #e8d580;
   font-weight: 600;
 }
@@ -3390,7 +3390,7 @@ html .kurs-card h3 {
   margin-left: auto;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   cursor: pointer;
   font-size: 0.85rem;
   padding: 4px 6px;
@@ -3400,8 +3400,8 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .ku-cockpit-close:hover {
-  color: rgba(255,255,255,0.7);
-  background: rgba(255,255,255,0.07);
+  color: var(--ds-text-secondary);
+  background: var(--ds-bg-card-hover);
 }
 
 .kurse-container-modern .ku-cockpit-body {
@@ -3413,7 +3413,7 @@ html .kurs-card h3 {
 
 .kurse-container-modern .ku-cockpit-loading,
 .kurse-container-modern .ku-cockpit-empty {
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
   font-size: 0.8rem;
   padding: 8px 0;
 }
@@ -3431,8 +3431,8 @@ html .kurs-card h3 {
   gap: 10px;
   padding: 7px 10px;
   border-radius: 7px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border-subtle);
 }
 
 .kurse-container-modern .ku-sp-tag {
@@ -3444,13 +3444,13 @@ html .kurs-card h3 {
 
 .kurse-container-modern .ku-sp-time {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.75);
+  color: var(--ds-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
 .kurse-container-modern .ku-sp-raum {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   margin-left: auto;
 }
 
@@ -3478,8 +3478,8 @@ html .kurs-card h3 {
   align-items: center;
   padding: 10px;
   border-radius: 8px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(212,175,55,0.1);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-accent-10);
 }
 
 .kurse-container-modern .ku-sp-input {
@@ -3499,24 +3499,24 @@ html .kurs-card h3 {
   align-self: flex-start;
   padding: 6px 14px;
   border-radius: 7px;
-  border: 1px dashed rgba(212,175,55,0.3);
-  background: rgba(212,175,55,0.05);
-  color: rgba(212,175,55,0.7);
+  border: 1px dashed var(--ds-accent-30);
+  background: var(--ds-accent-05);
+  color: var(--ds-accent-50);
   font-size: 0.78rem;
   cursor: pointer;
   transition: all 0.13s;
 }
 
 .kurse-container-modern .ku-cockpit-add-btn:hover {
-  border-color: rgba(212,175,55,0.5);
-  background: rgba(212,175,55,0.1);
+  border-color: var(--ds-accent-50);
+  background: var(--ds-accent-10);
   color: #e8d580;
 }
 
 /* Mitglieder-Tab */
 .kurse-container-modern .ku-cockpit-member-count {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   margin-bottom: 4px;
 }
 
@@ -3534,13 +3534,13 @@ html .kurs-card h3 {
   gap: 6px;
   padding: 5px 8px;
   border-radius: 6px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border-subtle);
 }
 
 .kurse-container-modern .ku-member-name {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.75);
+  color: var(--ds-text-secondary);
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -3550,7 +3550,7 @@ html .kurs-card h3 {
 
 .kurse-container-modern .ku-member-nr {
   font-size: 0.66rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   flex-shrink: 0;
 }
 
@@ -3581,8 +3581,8 @@ html .kurs-card h3 {
   align-items: center;
   gap: 5px;
   padding: 0.35rem 0.9rem;
-  background: rgba(212,175,55,0.13);
-  border: 1px solid rgba(212,175,55,0.35);
+  background: var(--ds-accent-15);
+  border: 1px solid var(--ds-accent-30);
   border-radius: 7px;
   color: #e2c96e;
   font-size: 0.78rem;
@@ -3594,8 +3594,8 @@ html .kurs-card h3 {
 }
 
 .kurse-container-modern .ku-new-kurs-btn:hover {
-  background: rgba(212,175,55,0.22);
-  border-color: rgba(212,175,55,0.6);
+  background: var(--ds-accent-20);
+  border-color: var(--ds-accent-50);
   color: #f0d878;
 }
 
@@ -3617,7 +3617,7 @@ html .kurs-card h3 {
 
 .ku-modal {
   background: #1a1a2a;
-  border: 1px solid rgba(212,175,55,0.22);
+  border: 1px solid var(--ds-accent-20);
   border-radius: 14px;
   width: 100%;
   max-width: 680px;
@@ -3637,8 +3637,8 @@ html .kurs-card h3 {
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-  background: linear-gradient(135deg, rgba(212,175,55,0.14), rgba(212,175,55,0.06));
+  border-bottom: 1px solid var(--ds-border);
+  background: linear-gradient(135deg, var(--ds-accent-15), var(--ds-accent-05));
 }
 
 .ku-modal-title {
@@ -3650,8 +3650,8 @@ html .kurs-card h3 {
 }
 
 .ku-modal-close {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 7px;
   width: 28px;
   height: 28px;
@@ -3659,7 +3659,7 @@ html .kurs-card h3 {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: rgba(255,255,255,0.55);
+  color: var(--ds-text-muted);
   font-size: 0.8rem;
   transition: all 0.12s;
 }
@@ -3685,8 +3685,8 @@ html .kurs-card h3 {
 .kurse-container-modern .sd-hint {
   padding: 8px 16px;
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.28);
-  border-top: 1px solid rgba(255,255,255,0.04);
+  color: var(--ds-text-faint);
+  border-top: 1px solid var(--ds-border-subtle);
   background: rgba(0,0,0,0.1);
 }
 
@@ -3703,8 +3703,8 @@ html .kurs-card h3 {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 6px;
   width: 28px;
   height: 28px;
@@ -3714,16 +3714,16 @@ html .kurs-card h3 {
   font-size: 0.8rem;
   cursor: pointer;
   transition: background 0.14s, border-color 0.14s;
-  color: rgba(255,255,255,0.55);
+  color: var(--ds-text-muted);
   opacity: 0;
 }
 .ku-card--trainer:hover .ku-card-edit-btn {
   opacity: 1;
 }
 .ku-card-edit-btn:hover {
-  background: rgba(212,175,55,0.18) !important;
-  border-color: rgba(212,175,55,0.4) !important;
-  color: #d4af37 !important;
+  background: var(--ds-accent-20) !important;
+  border-color: var(--ds-accent-50) !important;
+  color: var(--ds-accent) !important;
 }
 
 .ku-card-stile {
@@ -3735,9 +3735,9 @@ html .kurs-card h3 {
 .ku-stil-tag {
   font-size: 0.68rem;
   font-weight: 500;
-  color: #d4af37;
-  background: rgba(212,175,55,0.1);
-  border: 1px solid rgba(212,175,55,0.25);
+  color: var(--ds-accent);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-25);
   border-radius: 4px;
   padding: 1px 6px;
 }
@@ -3769,7 +3769,7 @@ html .kurs-card h3 {
 .ku-trainer-label {
   font-size: 0.7rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -3784,13 +3784,13 @@ html .kurs-card h3 {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .ku-trainer-stile-empty {
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   font-size: 0.8rem;
   padding: 12px;
 }
@@ -3802,26 +3802,26 @@ html .kurs-card h3 {
   padding: 10px 14px;
   cursor: pointer;
   transition: background 0.13s;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
   user-select: none;
 }
 .ku-trainer-stil-row:last-child {
   border-bottom: none;
 }
 .ku-trainer-stil-row:hover {
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
 }
 .ku-trainer-stil-row--checked {
-  background: rgba(212,175,55,0.08);
+  background: var(--ds-accent-10);
 }
 .ku-trainer-stil-row--checked:hover {
-  background: rgba(212,175,55,0.13);
+  background: var(--ds-accent-15);
 }
 
 .ku-trainer-stil-checkbox {
   width: 16px;
   height: 16px;
-  accent-color: #d4af37;
+  accent-color: var(--ds-accent);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -3830,16 +3830,16 @@ html .kurs-card h3 {
   flex: 1;
   font-size: 0.85rem;
   font-weight: 500;
-  color: rgba(255,255,255,0.75);
+  color: var(--ds-text-secondary);
 }
 .ku-trainer-stil-row--checked .ku-trainer-stil-name {
-  color: #d4af37;
+  color: var(--ds-accent);
   font-weight: 600;
 }
 
 .ku-trainer-stil-check {
   font-size: 0.8rem;
-  color: #d4af37;
+  color: var(--ds-accent);
   font-weight: 700;
 }
 
@@ -3848,6 +3848,6 @@ html .kurs-card h3 {
   justify-content: flex-end;
   gap: 8px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid var(--ds-border);
 }
 /* ─────────────────────────────────────────────────────────────────────────── */

@@ -83,7 +83,7 @@ export default function KiChatEinstellungen() {
     title: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' },
     label: { display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 4, marginTop: 12 },
     input: { width: '100%', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', padding: '0.5rem 0.75rem', fontSize: '0.9rem', boxSizing: 'border-box' },
-    btn: { background: 'var(--primary, #ef4444)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.55rem 1.5rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' },
+    btn: { background: 'var(--primary, #ef4444)', color: 'var(--ds-text)', border: 'none', borderRadius: 8, padding: '0.55rem 1.5rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' },
     codeBlock: { background: 'rgba(0,0,0,0.4)', borderRadius: 8, padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.78rem', color: '#86efac', wordBreak: 'break-all', lineHeight: 1.6, border: '1px solid rgba(255,255,255,0.08)', marginTop: 8 },
     badge: (color) => ({ display: 'inline-block', padding: '2px 10px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 700, background: color === 'green' ? 'rgba(74,222,128,0.15)' : 'rgba(239,68,68,0.15)', color: color === 'green' ? '#4ade80' : '#f87171', border: `1px solid ${color === 'green' ? 'rgba(74,222,128,0.3)' : 'rgba(239,68,68,0.3)'}` }),
   };
@@ -178,7 +178,7 @@ export default function KiChatEinstellungen() {
             >
               {copied ? '✓ Kopiert!' : '📋 Code kopieren'}
             </button>
-            <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.75rem' }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--ds-text-faint)', marginTop: '0.75rem' }}>
               Das Widget lädt automatisch — kein weiteres Setup nötig. Es liest eure Daten (Tarife, Stundenplan) direkt aus der Dojosoftware.
             </p>
           </div>

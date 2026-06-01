@@ -16,8 +16,8 @@ const PLATTFORMEN = [
 ];
 
 function TageBadge({ tage }) {
-  if (tage === 0) return <span style={{ background: '#38a169', color: '#fff', borderRadius: 12, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>🎂 Heute!</span>;
-  if (tage <= 3)  return <span style={{ background: '#d69e2e', color: '#fff', borderRadius: 12, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>in {tage} Tag{tage > 1 ? 'en' : ''}</span>;
+  if (tage === 0) return <span style={{ background: '#38a169', color: 'var(--ds-text)', borderRadius: 12, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>🎂 Heute!</span>;
+  if (tage <= 3)  return <span style={{ background: '#d69e2e', color: 'var(--ds-text)', borderRadius: 12, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>in {tage} Tag{tage > 1 ? 'en' : ''}</span>;
   return <span style={{ background: 'var(--bg-secondary, #1e1e2e)', color: 'var(--text-muted, #aaa)', borderRadius: 12, padding: '2px 9px', fontSize: 11 }}>in {tage} Tagen</span>;
 }
 
@@ -113,7 +113,7 @@ export default function MarketingGeburtstage() {
                     <button
                       onClick={() => generatePost(m)}
                       disabled={generating && activeId === m.mitglied_id}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: 'none', background: '#d4a017', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: 'none', background: '#d4a017', color: 'var(--ds-text)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
                     >
                       {generating && activeId === m.mitglied_id
                         ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Generiere…</>

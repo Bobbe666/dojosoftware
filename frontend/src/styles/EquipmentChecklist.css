@@ -37,7 +37,7 @@
 /* Progress Section */
 .equipment-checklist .progress-section {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  border: 1px solid var(--ds-accent-20);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-page-padding);
   margin-bottom: var(--ui-stats-margin-b);
@@ -205,8 +205,8 @@
 }
 
 .equipment-checklist .equipment-item.checked:hover {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.4);
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
 }
 
 .equipment-checklist .check-button {

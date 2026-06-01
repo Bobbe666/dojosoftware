@@ -2739,6 +2739,11 @@ try {
   app.use('/api/homepage', homepageRouter);
   logger.success('Route gemountet', { path: '/api/homepage' });
 
+  // ── Design/Theme pro Dojo (White-Label) ──────────────────────────────────
+  const dojoThemeRouter = require('./routes/dojo-theme');
+  app.use('/api/dojo-theme', dojoThemeRouter);
+  logger.success('Route gemountet', { path: '/api/dojo-theme' });
+
   // ── Subdomain-Routing für *.dojo-pages.de ────────────────────────────────
   // Nginx sendet alle *.dojo-pages.de Anfragen an diesen Backend-Port.
   // Aus dem Host-Header extrahieren wir den Slug (erster Teil vor dem ersten Punkt).

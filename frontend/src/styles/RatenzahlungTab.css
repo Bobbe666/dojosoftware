@@ -18,8 +18,8 @@
   font-size: .9rem;
   cursor: pointer;
 }
-.raten-msg--success { background: #1a3a2a; color: #4ade80; border: 1px solid #166534; }
-.raten-msg--error   { background: #3a1a1a; color: #f87171; border: 1px solid #991b1b; }
+.raten-msg--success { background: #1a3a2a; color: var(--ds-success-soft); border: 1px solid #166534; }
+.raten-msg--error   { background: #3a1a1a; color: var(--ds-danger-soft); border: 1px solid #991b1b; }
 
 /* Badges */
 .raten-badge {
@@ -29,8 +29,8 @@
   font-size: .8rem;
   font-weight: 600;
 }
-.raten-badge--aktiv   { background: #14532d; color: #4ade80; }
-.raten-badge--inaktiv { background: #374151; color: #9ca3af; }
+.raten-badge--aktiv   { background: #14532d; color: var(--ds-success-soft); }
+.raten-badge--inaktiv { background: #374151; color: var(--ds-text-muted); }
 
 /* Kein Plan */
 .raten-kein-plan {
@@ -40,7 +40,7 @@
   flex-wrap: wrap;
   gap: 1rem;
   padding: 1rem;
-  background: var(--bg-card, #1e293b);
+  background: var(--bg-card, var(--ds-bg-surface));
   border-radius: 10px;
   border: 1px solid var(--border, #334155);
 }
@@ -56,7 +56,7 @@
 
 /* Aktiver Plan */
 .raten-aktiv {
-  background: var(--bg-card, #1e293b);
+  background: var(--bg-card, var(--ds-bg-surface));
   border-radius: 12px;
   border: 1px solid #14532d;
   padding: 1.25rem;
@@ -92,13 +92,13 @@
 }
 .raten-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #16a34a, #4ade80);
+  background: linear-gradient(90deg, #16a34a, var(--ds-success-soft));
   border-radius: 5px;
   transition: width .4s ease;
 }
 .raten-progress-pct {
   font-size: .8rem;
-  color: #4ade80;
+  color: var(--ds-success-soft);
   text-align: right;
 }
 
@@ -129,7 +129,7 @@
 
 /* Formular */
 .raten-form {
-  background: var(--bg-card, #1e293b);
+  background: var(--bg-card, var(--ds-bg-surface));
   border-radius: 12px;
   border: 1px solid var(--border, #334155);
   padding: 1.25rem;
@@ -190,7 +190,7 @@
 .raten-modell-card:hover  { border-color: #3b82f6; }
 .raten-modell-card.selected { border-color: #3b82f6; background: #1e3a5f; }
 .raten-modell-label { font-weight: 600; font-size: .9rem; color: var(--text-primary, #f1f5f9); }
-.raten-modell-betrag { font-size: .85rem; color: #4ade80; font-weight: 600; }
+.raten-modell-betrag { font-size: .85rem; color: var(--ds-success-soft); font-weight: 600; }
 .raten-modell-desc { font-size: .78rem; color: var(--text-muted, #94a3b8); }
 
 /* Vorschau */
@@ -223,5 +223,5 @@
 }
 .btn-ghost       { border-color: #475569; background: transparent; color: #cbd5e1; }
 .btn-ghost:hover { background: #334155; }
-.btn-danger-ghost       { border-color: #7f1d1d; background: transparent; color: #f87171; }
+.btn-danger-ghost       { border-color: #7f1d1d; background: transparent; color: var(--ds-danger-soft); }
 .btn-danger-ghost:hover { background: #3a1a1a; }

@@ -74,7 +74,7 @@
 
 .info-text {
   font-size: 1.2vw;
-  color: #6c757d;
+  color: var(--ds-text-secondary);
   font-weight: 500;
 }
 
@@ -99,7 +99,7 @@
 
 .view-progress {
   font-size: 1.1rem;
-  color: #6c757d;
+  color: var(--ds-text-secondary);
   font-weight: 500;
 }
 
@@ -247,7 +247,7 @@
 
 .time-separator {
   font-size: 1.2rem;
-  color: #6c757d;
+  color: var(--ds-text-secondary);
   font-weight: 600;
 }
 
@@ -264,7 +264,7 @@
 
 .class-group {
   font-size: 1rem;
-  color: #6c757d;
+  color: var(--ds-text-secondary);
   margin-bottom: 0.5rem;
 }
 
@@ -360,7 +360,7 @@
 
 .next-class-time .time-separator {
   font-size: 2.5rem;
-  color: #6c757d;
+  color: var(--ds-text-secondary);
 }
 
 .next-class-details {
@@ -376,7 +376,7 @@
 
 .next-class-group {
   font-size: 1.2rem;
-  color: #6c757d;
+  color: var(--ds-text-secondary);
   margin-bottom: 0.8rem;
 }
 
@@ -393,7 +393,7 @@
 
 .countdown-label {
   font-size: 1.1rem;
-  color: #6c757d;
+  color: var(--ds-text-secondary);
   margin-bottom: 1rem;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -507,13 +507,13 @@
 .mini-group {
   font-size: 0.65rem;
   font-weight: 400;
-  color: #6c757d;
+  color: var(--ds-text-secondary);
   margin-bottom: 0.2rem;
 }
 
 .no-day-classes {
   text-align: center;
-  color: #6c757d;
+  color: var(--ds-text-secondary);
   font-style: italic;
   padding: 1rem;
 }
@@ -542,7 +542,7 @@
 }
 
 .no-classes p {
-  color: #6c757d;
+  color: var(--ds-text-secondary);
   font-size: 1.1rem;
   line-height: 1.6;
   margin: 0;

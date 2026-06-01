@@ -101,7 +101,7 @@ const GurtStilTab = ({
                         {ms.ist_hauptstil && <span title="Hauptstil" style={{ marginRight: '6px', fontSize: '16px' }}>⭐</span>}
                         {ms.stil_name}
                         {ms.ist_hauptstil && (
-                          <span style={{ marginLeft: '8px', fontSize: '11px', background: '#c8a84b', color: '#fff', borderRadius: '4px', padding: '2px 7px', fontWeight: 600, verticalAlign: 'middle' }}>
+                          <span style={{ marginLeft: '8px', fontSize: '11px', background: '#c8a84b', color: 'var(--ds-text)', borderRadius: '4px', padding: '2px 7px', fontWeight: 600, verticalAlign: 'middle' }}>
                             Hauptstil
                           </span>
                         )}
@@ -265,7 +265,7 @@ const GurtStilTab = ({
                       <div className="grt-card grt-card--full grt-card--mt">
                         <h3 className="grt-card-title">📋 Prüfungshistorie</h3>
                         {historie.length === 0 ? (
-                          <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic', margin: '0.5rem 0 0 0' }}>
+                          <p style={{ fontSize: '0.78rem', color: 'var(--ds-text-faint)', fontStyle: 'italic', margin: '0.5rem 0 0 0' }}>
                             Prüfungsprotokoll wird vorbereitet…
                           </p>
                         ) : (
@@ -297,7 +297,7 @@ const GurtStilTab = ({
                                       {p.empfehlungen && <p style={{ fontSize: '0.72rem', color: '#a5b4fc', margin: '0' }}><strong>Empfehlungen:</strong> {p.empfehlungen}</p>}
                                     </div>
                                   ) : (
-                                    <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.2)', margin: '0.25rem 0 0 0', fontStyle: 'italic' }}>
+                                    <p style={{ fontSize: '0.72rem', color: 'var(--ds-text-faint)', margin: '0.25rem 0 0 0', fontStyle: 'italic' }}>
                                       {p.prueferkommentar || 'Prüfungsprotokoll wird vorbereitet…'}
                                     </p>
                                   )}

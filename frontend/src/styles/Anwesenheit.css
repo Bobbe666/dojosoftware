@@ -6,7 +6,7 @@
   --anw-secondary: var(--secondary);
   --anw-success: var(--success);
   --anw-border: var(--border-accent);
-  --anw-border-strong: rgba(255,215,0,0.35);
+  --anw-border-strong: var(--ds-accent-30);
   --anw-card-bg: var(--surface-3);
   --anw-card-hover: var(--surface-hover);
   --anw-text: var(--text-primary);
@@ -93,9 +93,9 @@
 }
 
 .wochentag-buttons button {
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.6);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card);
+  color: var(--ds-text-secondary);
+  border: 1px solid var(--ds-border);
   padding: 0.3rem 0.7rem;
   border-radius: var(--comp-radius-md);
   font-weight: 500;
@@ -109,7 +109,7 @@
 .wochentag-buttons button:hover {
   background: var(--primary-alpha-08);
   border-color: var(--primary-alpha-30);
-  color: rgba(255,255,255,0.9);
+  color: var(--ds-text);
 }
 
 .wochentag-buttons button.active {
@@ -398,7 +398,7 @@
   display: block;
   margin: var(--ui-section-gap) auto 0;
   background: linear-gradient(135deg, var(--farbe-erfolg), var(--farbe-akzent));
-  color: white;
+  color: var(--ds-text);
   padding: 0.875rem 1.75rem;
   font-size: 1rem;
   font-weight: 700;
@@ -637,7 +637,7 @@
 
 .gurtfarbe {
   background: var(--farbe-erfolg);
-  color: white;
+  color: var(--ds-text);
   padding: 0.25rem 0.75rem;
   border-radius: var(--comp-radius-xl);
   font-size: 0.8rem;
@@ -1081,7 +1081,7 @@
 }
 
 .anwesenheit-popup {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   border: 1px solid #333;
   border-radius: 16px;
   padding: 1.5rem;
@@ -1148,7 +1148,7 @@
 }
 
 .popup-close:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-primary);
 }
 
@@ -1223,7 +1223,7 @@
   border-radius: var(--comp-radius-lg);
   border: 1px solid #444;
   background: #252540;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.95rem;
   box-sizing: border-box;
 }
@@ -1345,7 +1345,7 @@
 
 [data-theme="light"] .popup-bemerkung input::placeholder,
 [data-theme="tda-vib"] .popup-bemerkung input::placeholder {
-  color: #999;
+  color: var(--ds-text-muted);
 }
 
 /* Inline-style fixes */
@@ -1415,7 +1415,7 @@
 }
 
 .sonder-modal {
-  background: var(--surface-2, #1a1a2e);
+  background: var(--surface-2, var(--ds-bg-surface));
   border: 1px solid rgba(139, 92, 246, 0.35);
   border-radius: 16px;
   padding: 2rem;
@@ -1437,7 +1437,7 @@
 .sonder-modal-hint {
   margin: -0.75rem 0 0;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
 }
 
 .sonder-modal-field {
@@ -1449,7 +1449,7 @@
 .sonder-modal-field label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1457,9 +1457,9 @@
 .sonder-modal-field input,
 .sonder-modal-field select {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   padding: 0.55rem 0.8rem;
   font-size: 0.9rem;
   transition: border-color 0.2s;
@@ -1472,7 +1472,7 @@
 }
 
 .sonder-modal-field select option {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
 }
 
 .sonder-modal-actions {
@@ -1484,8 +1484,8 @@
 
 .sonder-modal-cancel {
   background: none;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--ds-border-strong);
+  color: var(--ds-text-secondary);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   cursor: pointer;
@@ -1494,13 +1494,13 @@
 }
 .sonder-modal-cancel:hover {
   border-color: rgba(255, 255, 255, 0.3);
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text);
 }
 
 .sonder-modal-save {
   background: rgba(139, 92, 246, 0.85);
   border: none;
-  color: #fff;
+  color: var(--ds-text);
   padding: 0.5rem 1.25rem;
   border-radius: 8px;
   cursor: pointer;
@@ -1520,10 +1520,10 @@
 /* Abwesenheiten Panel */
 .abw-panel {
   margin: 0 0 1.25rem 0;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 10px;
   overflow: hidden;
-  background: rgba(239, 68, 68, 0.04);
+  background: var(--ds-danger-10);
 }
 .abw-panel-header {
   display: flex;
@@ -1531,16 +1531,16 @@
   align-items: center;
   width: 100%;
   padding: 0.7rem 1rem;
-  background: rgba(239, 68, 68, 0.08);
+  background: var(--ds-danger-10);
   border: none;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #ef4444;
+  color: var(--ds-danger);
   text-align: left;
 }
 .abw-panel-header:hover {
-  background: rgba(239, 68, 68, 0.12);
+  background: var(--ds-danger-10);
 }
 .abw-panel-toggle {
   font-size: 0.75rem;
@@ -1561,7 +1561,7 @@
   padding: 0.45rem 1rem;
 }
 .abw-panel-item:not(:last-child) {
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 .abw-panel-emoji {
   font-size: 1.1rem;

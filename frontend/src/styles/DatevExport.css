@@ -35,8 +35,8 @@
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
@@ -48,7 +48,7 @@
 }
 
 .datev-export-section {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-20);
   border-radius: 12px;
   padding: 24px;
@@ -72,8 +72,8 @@
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 2px solid var(--ds-border);
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
@@ -93,7 +93,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #888;
+  color: var(--ds-text-muted);
 }
 
 .datev-export-type-icon--active {
@@ -108,7 +108,7 @@
 }
 
 .datev-export-type-info strong {
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .datev-export-type-card--active .datev-export-type-info strong {
@@ -155,8 +155,8 @@
 
 .datev-export-preset-button {
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 13px;

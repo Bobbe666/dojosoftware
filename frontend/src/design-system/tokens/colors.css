@@ -18,10 +18,10 @@
   --color-gold-800: #92400e;
   --color-gold-900: #78350f;
 
-  /* Gold Brand */
-  --color-gold: #ffd700;
-  --color-gold-light: #ffe44d;
-  --color-gold-dark: #ccac00;
+  /* Gold Brand — abgeleitet von den DS-Tokens (eine Quelle der Wahrheit) */
+  --color-gold: var(--ds-accent);
+  --color-gold-light: var(--ds-accent-bright);
+  --color-gold-dark: var(--ds-accent-dark);
 
   /* Orange Accent */
   --color-orange: #ff6b35;
@@ -35,8 +35,8 @@
   --color-success-100: #dcfce7;
   --color-success-200: #bbf7d0;
   --color-success-300: #86efac;
-  --color-success-400: #4ade80;
-  --color-success-500: #22c55e;
+  --color-success-400: var(--ds-success-soft);
+  --color-success-500: var(--ds-success);
   --color-success-600: #16a34a;
   --color-success-700: #15803d;
   --color-success-800: #166534;
@@ -59,8 +59,8 @@
   --color-error-100: #fee2e2;
   --color-error-200: #fecaca;
   --color-error-300: #fca5a5;
-  --color-error-400: #f87171;
-  --color-error-500: #ef4444;
+  --color-error-400: var(--ds-danger-soft);
+  --color-error-500: var(--ds-danger);
   --color-error-600: #dc2626;
   --color-error-700: #b91c1c;
   --color-error-800: #991b1b;
@@ -159,7 +159,7 @@
   --color-teal-dark: #3db8b0;
 
   /* Emerald (Alternative Success) */
-  --color-emerald-500: #10B981;
+  --color-emerald-500: var(--ds-success);
   --color-emerald-600: #059669;
   --color-emerald-700: #047857;
 
@@ -167,8 +167,8 @@
   --color-sepia-light: #7a5a45;
 
   /* Antique Gold (TDA-Vib Akzentfarben) */
-  --color-antique-gold: #c9a227;
-  --color-antique-gold-light: #d4af37;
+  --color-antique-gold: var(--ds-accent-dark);
+  --color-antique-gold-light: var(--ds-accent);
 
   /* Muted Gray (SuperAdmin UI) */
   --color-gray-muted: #a0a0b0;
@@ -217,7 +217,7 @@
   --color-error-600-alpha-10: rgba(220, 38, 38, 0.1);
   --color-success-400-alpha-10: rgba(74, 222, 128, 0.1);
   --color-success-400-alpha-30: rgba(74, 222, 128, 0.3);
-  --color-emerald-500-alpha-15: rgba(16, 185, 129, 0.15);
+  --color-emerald-500-alpha-15: var(--ds-success-10);
   --color-gray-500-alpha-15: rgba(107, 114, 128, 0.15);
 
   /* Midnight Overlay Variants */

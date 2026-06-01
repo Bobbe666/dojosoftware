@@ -73,25 +73,25 @@
 
 /* Success */
 .ds-btn--success {
-  background: rgba(34, 197, 94, 0.15);
+  background: var(--ds-success-10);
   color: var(--color-success-400);
   border-color: var(--color-success-500);
 }
 
 .ds-btn--success:hover:not(:disabled) {
-  background: rgba(34, 197, 94, 0.25);
+  background: var(--ds-success-25);
   box-shadow: var(--shadow-success);
 }
 
 /* Danger */
 .ds-btn--danger {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--ds-danger-10);
   color: var(--color-error-400);
   border-color: var(--color-error-500);
 }
 
 .ds-btn--danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.25);
+  background: var(--ds-danger-25);
   box-shadow: var(--shadow-error);
 }
 

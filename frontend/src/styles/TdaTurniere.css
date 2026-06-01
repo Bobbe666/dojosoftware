@@ -19,7 +19,7 @@
   padding: 0.75rem 1rem;
   background: var(--surface-2);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
 }
 
 .filter-buttons {
@@ -29,7 +29,7 @@
 
 .filter-btn {
   padding: 0.5rem 1rem;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md);
   background: transparent;
   color: var(--text-2);
@@ -46,7 +46,7 @@
 .filter-btn.active {
   background: var(--accent-gradient, linear-gradient(135deg, var(--primary-alpha-30), var(--primary-alpha-10)));
   border-color: var(--accent-color, var(--primary-alpha-40));
-  color: var(--accent-color, rgba(255, 215, 0, 0.9));
+  color: var(--accent-color, var(--ds-accent-50));
 }
 
 .btn-refresh {
@@ -55,7 +55,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md);
   background: transparent;
   color: var(--text-2);
@@ -97,8 +97,8 @@
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255,255,255,0.1);
-  border-top-color: var(--accent-color, rgba(255, 215, 0, 0.8));
+  border: 3px solid var(--ds-border);
+  border-top-color: var(--accent-color, var(--ds-accent-50));
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -145,7 +145,7 @@
 /* Turnier Card */
 .tda-turnier-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: 1.25rem;
   display: flex;
@@ -180,7 +180,7 @@
 
 .turnier-tage {
   font-size: var(--ui-card-label);
-  color: var(--accent-color, rgba(255, 215, 0, 0.8));
+  color: var(--accent-color, var(--ds-accent-50));
   font-weight: 600;
   white-space: nowrap;
 }
@@ -263,7 +263,7 @@
 .turnier-beschreibung {
   margin-top: 0.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 .turnier-beschreibung p {
@@ -281,7 +281,7 @@
 .turnier-card-footer {
   margin-top: auto;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--ds-border);
   display: flex;
   justify-content: center;
 }
@@ -301,7 +301,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   background: linear-gradient(135deg, #cc0000, #990000);
-  color: #ffffff;
+  color: var(--ds-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -335,7 +335,7 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem 0;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid var(--ds-border);
 }
 
 .turnier-kategorien-group {
@@ -371,7 +371,7 @@
 
 .kategorien-pill--weight {
   background: rgba(255, 193, 7, 0.12);
-  color: rgba(255, 215, 0, 0.85);
+  color: var(--ds-accent-50);
   border-color: rgba(255, 193, 7, 0.2);
 }
 
@@ -391,7 +391,7 @@
 .tda-modal {
   position: relative;
   background: var(--surface-2, #1a1510);
-  border: 1px solid rgba(212, 175, 55, 0.25);
+  border: 1px solid var(--ds-accent-25);
   border-radius: var(--comp-radius-xl, 16px);
   padding: 2rem;
   width: 100%;
@@ -423,7 +423,7 @@
 
 .tda-modal-turnier-name {
   font-size: 0.85rem;
-  color: rgba(212, 175, 55, 0.8);
+  color: var(--ds-accent-50);
   margin-bottom: 1.25rem;
   font-weight: 600;
 }
@@ -483,8 +483,8 @@
 .tda-modal-input {
   width: 100%;
   padding: 0.65rem 0.9rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   color: var(--text-1, #f0e6d3);
   font-size: 0.95rem;
@@ -494,13 +494,13 @@
 
 .tda-modal-input:focus {
   outline: none;
-  border-color: rgba(212, 175, 55, 0.5);
+  border-color: var(--ds-accent-50);
 }
 
 .tda-modal-link {
   background: none;
   border: none;
-  color: rgba(212, 175, 55, 0.7);
+  color: var(--ds-accent-50);
   font-size: 0.85rem;
   cursor: pointer;
   padding: 0.25rem 0;
@@ -508,7 +508,7 @@
   text-decoration: underline;
 }
 
-.tda-modal-link:hover { color: rgba(212, 175, 55, 1); }
+.tda-modal-link:hover { color: var(--ds-accent-50); }
 
 /* Info Box */
 .tda-info-box {

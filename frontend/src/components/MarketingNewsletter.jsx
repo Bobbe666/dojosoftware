@@ -158,7 +158,7 @@ export default function MarketingNewsletter() {
         {showPreview && content && (
           <div style={{ marginBottom: 14, border: '1px solid var(--border, #e2e8f0)', borderRadius: 10, overflow: 'hidden' }}>
             <div style={{ background: '#1a1a2e', padding: '12px 20px' }}>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>Vorschau: {betreff || '(kein Betreff)'}</div>
+              <div style={{ color: 'var(--ds-text)', fontWeight: 700, fontSize: 14 }}>Vorschau: {betreff || '(kein Betreff)'}</div>
             </div>
             <div style={{ padding: 20, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', color: '#333' }}>
               {content}
@@ -231,6 +231,6 @@ const inputStyle = {
   outline: 'none', fontFamily: 'inherit'
 };
 const pillStyle = { padding: '5px 12px', borderRadius: 16, fontSize: 13, border: '1px solid var(--border, #3a3a4a)', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted, #aaa)', transition: 'all 0.15s' };
-const pillActive = { background: '#d4a017', color: '#fff', borderColor: '#d4a017' };
-const btnPrimary = { display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, border: 'none', background: '#d4a017', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' };
-const btnKi = { display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 7, border: 'none', background: '#553c9a', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' };
+const pillActive = { background: '#d4a017', color: 'var(--ds-text)', borderColor: '#d4a017' };
+const btnPrimary = { display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, border: 'none', background: '#d4a017', color: 'var(--ds-text)', fontWeight: 700, fontSize: 14, cursor: 'pointer' };
+const btnKi = { display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 7, border: 'none', background: '#553c9a', color: 'var(--ds-text)', fontWeight: 600, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' };

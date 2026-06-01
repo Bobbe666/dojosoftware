@@ -1766,7 +1766,7 @@ html[data-theme="tda-vib"] .sepa-legal-info li {
 /* Status Badge */
 html[data-theme="tda-vib"] .status-badge.active {
   background: var(--tda-bamboo, var(--color-bamboo)) !important;
-  color: white !important;
+  color: var(--ds-text) !important;
 }
 
 /* =====================================================
@@ -1862,7 +1862,7 @@ html[data-theme="tda-vib"] .contract-actions button[class*="danger"],
 html[data-theme="tda-vib"] .contract-actions button[class*="delete"],
 html[data-theme="tda-vib"] .contract-actions button[class*="kuendigen"] {
   background: var(--tda-vermillion, var(--color-vermillion)) !important;
-  color: white !important;
+  color: var(--ds-text) !important;
 }
 
 /* Header Buttons (+ Neuer Vertrag) */

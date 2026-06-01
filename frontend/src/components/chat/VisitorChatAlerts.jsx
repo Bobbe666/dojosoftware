@@ -79,7 +79,7 @@ const ChatPopup = ({ popup, onDismiss, onOpenChat }) => {
           <div style={{ fontSize: '12px', color: '#fed7d7', fontWeight: 500 }}>
             🌐 Chatnachricht von {popup.site || 'Homepage'}
           </div>
-          <div style={{ fontSize: '14px', color: '#fff', fontWeight: 700, marginTop: '1px' }}>
+          <div style={{ fontSize: '14px', color: 'var(--ds-text)', fontWeight: 700, marginTop: '1px' }}>
             {popup.visitorName}
           </div>
         </div>
@@ -88,7 +88,7 @@ const ChatPopup = ({ popup, onDismiss, onOpenChat }) => {
           style={{
             background: 'rgba(255,255,255,0.2)',
             border: 'none',
-            color: '#fff',
+            color: 'var(--ds-text)',
             borderRadius: '50%',
             width: '24px',
             height: '24px',
@@ -170,7 +170,7 @@ const ChatPopup = ({ popup, onDismiss, onOpenChat }) => {
             border: 'none',
             borderRadius: '8px',
             padding: '7px 12px',
-            color: '#fff',
+            color: 'var(--ds-text)',
             cursor: reply.trim() ? 'pointer' : 'default',
             fontSize: '16px',
             flexShrink: 0

@@ -6,7 +6,7 @@
   height: 32px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-primary);
   cursor: pointer;
   font-size: 1.2rem;
@@ -54,7 +54,7 @@
 
 /* empty-state container */
 .me-empty-state {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-20);
   border-radius: 12px;
   padding: 3rem 2rem;
@@ -125,7 +125,7 @@
 
 /* modal box */
 .me-modal-box {
-  background: linear-gradient(135deg, #1e1e2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #1e1e2e 0%, var(--ds-bg-surface) 100%);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 16px;
   padding: 2rem;
@@ -202,7 +202,7 @@
 
 /* guest section separator */
 .me-guest-section {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
   padding-top: 1rem;
   margin-top: 0.5rem;
   margin-bottom: 1rem;
@@ -240,7 +240,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 /* decrement qty button (dim) */
@@ -249,7 +249,7 @@
   height: 32px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-primary);
   cursor: pointer;
   font-size: 1.2rem;
@@ -288,8 +288,8 @@
 
 /* error message box */
 .me-error-box {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   padding: 0.75rem;
   margin-bottom: 1rem;
@@ -302,7 +302,7 @@
   flex: 1;
   padding: 0.75rem;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
@@ -341,7 +341,7 @@
 }
 .me-btn-register--full {
   background: rgba(107, 114, 128, 0.2);
-  color: #9CA3AF;
+  color: var(--ds-text-muted);
   box-shadow: none;
 }
 .me-btn-register:disabled { cursor: not-allowed; }
@@ -351,7 +351,7 @@
   min-width: 24px;
   text-align: center;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
 }
 .me-counter-value--active { color: var(--primary); }
 
@@ -366,7 +366,7 @@
 
 /* event card: enrolled */
 .me-event-card--enrolled {
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid var(--ds-success-25);
 }
 
 /* event card: not enrolled */
@@ -423,8 +423,8 @@
 
 /* Meine Bestellung box */
 .me-my-order-box {
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   border-radius: 8px;
   padding: 0.75rem;
   margin-bottom: 1rem;
@@ -437,8 +437,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--ds-success-25);
+  border: 1px solid var(--ds-success-25);
   border-radius: 8px;
   padding: 0.75rem 1rem;
   color: var(--success);
@@ -447,8 +447,8 @@
 
 /* abmelden (unregister) button */
 .me-btn-abmelden {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-25);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
   color: var(--error);
@@ -469,7 +469,7 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 2px solid var(--border-color, rgba(255,255,255,0.1));
+  border-bottom: 2px solid var(--border-color, var(--ds-border));
   padding-bottom: 0;
 }
 
@@ -481,7 +481,7 @@
   margin-bottom: -2px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-secondary, rgba(255,255,255,0.5));
+  color: var(--text-secondary, var(--ds-text-muted));
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -496,7 +496,7 @@
 
 .me-tab-badge {
   background: var(--accent, #cd3131);
-  color: #fff;
+  color: var(--ds-text);
   border-radius: 10px;
   font-size: 0.7rem;
   padding: 0.1rem 0.45rem;
@@ -511,20 +511,20 @@
   border-radius: 6px;
 }
 .me-turnier-status--angemeldet {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10B981;
+  background: var(--ds-success-10);
+  color: var(--ds-success);
 }
 .me-turnier-status--bestaetigt {
   background: rgba(59, 130, 246, 0.15);
   color: #3B82F6;
 }
 .me-turnier-status--abgelehnt {
-  background: rgba(239, 68, 68, 0.15);
-  color: #EF4444;
+  background: var(--ds-danger-10);
+  color: var(--ds-danger);
 }
 
 .me-status-text--rejected {
-  color: #EF4444;
+  color: var(--ds-danger);
   font-size: 0.875rem;
   font-weight: 600;
 }

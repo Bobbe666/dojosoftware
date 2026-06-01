@@ -99,7 +99,7 @@ const PushNotificationPopup = ({ notifications, onClose, onConfirm }) => {
             {current.message}
           </div>
           {isPruefungZulassung && meta?.pruefungsdatum && !isConfirmed && (
-            <div style={{ marginTop: '4px', fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
+            <div style={{ marginTop: '4px', fontSize: '12px', color: 'var(--ds-text-muted)' }}>
               Pruefungsdatum: {formatDatum(meta.pruefungsdatum)}
             </div>
           )}

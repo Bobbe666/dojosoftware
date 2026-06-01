@@ -21,7 +21,7 @@
 .trainer-table td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .trainer-table thead {
@@ -62,7 +62,7 @@
 .form-grid select {
   margin-top: var(--ui-form-group-gap);
   padding: 0.4rem 0.6rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-xs);
   font-size: var(--ui-form-input);
   background: var(--surface-2);

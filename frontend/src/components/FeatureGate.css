@@ -44,7 +44,7 @@
 
 .feature-gate-message {
   font-size: 1.1rem;
-  color: #64748b;
+  color: var(--ds-text-secondary);
   margin-bottom: 2rem;
   line-height: 1.6;
 }
@@ -75,7 +75,7 @@
 }
 
 .info-label {
-  color: #64748b;
+  color: var(--ds-text-secondary);
   font-weight: 600;
   font-size: var(--ui-form-input);
 }
@@ -101,7 +101,7 @@
 .upgrade-btn {
   width: 100%;
   background: linear-gradient(135deg, #2563eb, #7c3aed);
-  color: white;
+  color: var(--ds-text);
   border: none;
   padding: 1rem 2rem;
   border-radius: 12px;
@@ -120,7 +120,7 @@
 .back-btn {
   width: 100%;
   background: transparent;
-  color: #64748b;
+  color: var(--ds-text-secondary);
   border: 2px solid #e5e7eb;
   padding: 0.875rem 2rem;
   border-radius: 12px;
@@ -172,7 +172,7 @@
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+  color: var(--ds-text);
   border-radius: 25px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -180,13 +180,13 @@
 }
 
 .trial-badge.expiring {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: linear-gradient(135deg, var(--ds-danger), #dc2626);
   animation: pulse-warning 1.5s infinite;
 }
 
 @keyframes pulse-warning {
-  0%, 100% { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
-  50% { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5); }
+  0%, 100% { box-shadow: 0 4px 12px var(--ds-danger-25); }
+  50% { box-shadow: 0 4px 20px var(--ds-danger-25); }
 }
 
 .trial-badge .trial-icon {
@@ -198,7 +198,7 @@
   padding: 0.25rem 0.75rem;
   background: rgba(255,255,255,0.2);
   border: 1px solid rgba(255,255,255,0.4);
-  color: white;
+  color: var(--ds-text);
   border-radius: 15px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -224,7 +224,7 @@
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  color: white;
+  color: var(--ds-text);
   border-radius: 25px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -247,7 +247,7 @@
 .trial-btn {
   width: 100%;
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+  color: var(--ds-text);
   border: none;
   padding: 1rem 2rem;
   border-radius: 12px;
@@ -265,7 +265,7 @@
 .addon-btn {
   width: 100%;
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  color: white;
+  color: var(--ds-text);
   border: none;
   padding: 0.875rem 2rem;
   border-radius: 12px;
@@ -284,7 +284,7 @@
 }
 
 .feature-gate-hint {
-  color: #6b7280;
+  color: var(--ds-text-secondary);
   font-size: var(--ui-form-input);
   font-style: italic;
   margin-bottom: 1.5rem;
@@ -324,7 +324,7 @@
   border-radius: 50%;
   border: none;
   background: #f3f4f6;
-  color: #6b7280;
+  color: var(--ds-text-secondary);
   font-size: 1.5rem;
   cursor: pointer;
   display: flex;
@@ -350,7 +350,7 @@
 }
 
 .modal-header p {
-  color: #64748b;
+  color: var(--ds-text-secondary);
 }
 
 .modal-options {
@@ -384,7 +384,7 @@
   left: 50%;
   transform: translateX(-50%);
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+  color: var(--ds-text);
   font-size: 0.7rem;
   font-weight: 700;
   padding: 0.25rem 0.75rem;
@@ -404,7 +404,7 @@
 }
 
 .option-card p {
-  color: #64748b;
+  color: var(--ds-text-secondary);
   font-size: 0.9rem;
   margin-bottom: 1rem;
 }
@@ -419,7 +419,7 @@
 .option-price span {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--ds-text-secondary);
 }
 
 .plan-list {
@@ -455,7 +455,7 @@
 .option-btn.primary {
   background: linear-gradient(135deg, #f59e0b, #d97706);
   border: none;
-  color: white;
+  color: var(--ds-text);
 }
 
 .option-btn.primary:hover {

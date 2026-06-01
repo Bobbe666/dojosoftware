@@ -135,8 +135,8 @@ const s = {
   // Prüfungsinhalte Sektion
   pruefSection: { background: 'var(--surface-2)', border: '1px solid var(--border-default)', borderRadius: '12px', padding: '1.1rem 1.1rem 0.8rem', flexShrink: 0 },
   pruefSectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' },
-  pruefSectionTitle: { fontWeight: 700, fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '0.4rem' },
-  pruefCount: { fontSize: '0.72rem', color: 'rgba(255,255,255,0.28)', background: 'rgba(255,255,255,0.06)', padding: '0.18rem 0.55rem', borderRadius: '999px', fontWeight: 500 },
+  pruefSectionTitle: { fontWeight: 700, fontSize: '0.88rem', color: 'var(--ds-text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' },
+  pruefCount: { fontSize: '0.72rem', color: 'var(--ds-text-faint)', background: 'rgba(255,255,255,0.06)', padding: '0.18rem 0.55rem', borderRadius: '999px', fontWeight: 500 },
   pruefGuertelBlock: { marginBottom: '0.5rem', borderRadius: '9px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' },
   pruefGuertelHeader: (color, open) => ({
     display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '0.6rem 0.9rem',
@@ -155,11 +155,11 @@ const s = {
     border: '1.5px solid rgba(255,255,255,0.15)',
     boxShadow: `0 0 6px ${color || '#888'}55`,
   }),
-  pruefGuertelName: { fontWeight: 700, fontSize: '0.88rem', flex: 1, color: 'rgba(255,255,255,0.88)' },
+  pruefGuertelName: { fontWeight: 700, fontSize: '0.88rem', flex: 1, color: 'var(--ds-text)' },
   pruefKatSection: { padding: '0 0 0.15rem' },
   pruefKatTitle: {
     display: 'flex', alignItems: 'center', gap: '0.35rem',
-    fontSize: '0.62rem', fontWeight: 700, color: 'rgba(255,255,255,0.28)',
+    fontSize: '0.62rem', fontWeight: 700, color: 'var(--ds-text-faint)',
     textTransform: 'uppercase', letterSpacing: '0.09em',
     padding: '0.55rem 0.9rem 0.3rem',
     borderBottom: '1px solid rgba(255,255,255,0.05)',
@@ -178,8 +178,8 @@ const s = {
     border: pflicht ? '1.5px solid rgba(255,215,0,0.3)' : '1.5px solid rgba(255,255,255,0.1)',
     color: pflicht ? '#FFD700' : 'rgba(255,255,255,0.18)',
   }),
-  pruefTitel: { fontSize: '0.84rem', fontWeight: 500, lineHeight: 1.45, color: 'rgba(255,255,255,0.82)' },
-  pruefDesc: { fontSize: '0.74rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.08rem', lineHeight: 1.35 },
+  pruefTitel: { fontSize: '0.84rem', fontWeight: 500, lineHeight: 1.45, color: 'var(--ds-text-secondary)' },
+  pruefDesc: { fontSize: '0.74rem', color: 'var(--ds-text-faint)', marginTop: '0.08rem', lineHeight: 1.35 },
   pruefDelBtn:  { border: 'none', color: '#fca5a5', cursor: 'pointer', fontSize: '0.78rem', padding: '0.22rem 0.3rem', borderRadius: '5px', background: 'rgba(239,68,68,0.1)', flexShrink: 0, transition: 'background 0.15s, color 0.15s', lineHeight: 1 },
   pruefEditBtn: { border: 'none', color: '#fde68a', cursor: 'pointer', fontSize: '0.78rem', padding: '0.22rem 0.3rem', borderRadius: '5px', background: 'rgba(255,215,0,0.1)', flexShrink: 0, transition: 'background 0.15s, color 0.15s', lineHeight: 1 },
 
@@ -302,9 +302,9 @@ function PruefSection({ pruefungsinhalte, onDelete, onEdit, onAdd }) {
               <span style={{
                 fontSize: '0.65rem', fontWeight: 600,
                 padding: '0.12rem 0.42rem', borderRadius: '999px',
-                background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)',
+                background: 'rgba(255,255,255,0.07)', color: 'var(--ds-text-muted)',
               }}>{totalItems}</span>
-              <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.28)', marginLeft: '0.1rem', userSelect: 'none' }}>
+              <span style={{ fontSize: '0.68rem', color: 'var(--ds-text-faint)', marginLeft: '0.1rem', userSelect: 'none' }}>
                 {isOpen ? '▾' : '▸'}
               </span>
               {onAdd && (
@@ -383,11 +383,11 @@ function PruefSection({ pruefungsinhalte, onDelete, onEdit, onAdd }) {
 
       {/* Legend */}
       <div style={{ display: 'flex', gap: '1rem', marginTop: '0.7rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.68rem', color: 'rgba(255,255,255,0.28)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.68rem', color: 'var(--ds-text-faint)' }}>
           <span style={{ width: 16, height: 16, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 700, background: 'rgba(255,215,0,0.11)', border: '1.5px solid rgba(255,215,0,0.3)', color: '#FFD700' }}>★</span>
           Pflichtinhalt
         </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.68rem', color: 'rgba(255,255,255,0.28)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.68rem', color: 'var(--ds-text-faint)' }}>
           <span style={{ width: 16, height: 16, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.04)', border: '1.5px solid rgba(255,255,255,0.1)' }} />
           Optional
         </span>

@@ -1,5 +1,5 @@
 /* --- Extracted inline styles (auto-generated) --- */
-.il-select-dark { background: #1f2937; color: white; }
+.il-select-dark { background: #1f2937; color: var(--ds-text); }
 .il-m-02 { margin: 0.2rem 0; }
 
 /* --- Layout & Structure --- */
@@ -52,17 +52,17 @@
   width: 100%;
   padding: 0.75rem 0.75rem 0.75rem 40px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   background: rgba(31, 41, 55, 0.6);
-  color: white;
+  color: var(--ds-text);
 }
 
 .il-filter-select {
   padding: 0.75rem;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   background: rgba(31, 41, 55, 0.6);
-  color: white;
+  color: var(--ds-text);
   min-width: 200px;
 }
 
@@ -113,7 +113,7 @@
   font-size: 0.7rem;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  color: white;
+  color: var(--ds-text);
   font-weight: 500;
   background: var(--status-color, var(--primary));
 }

@@ -82,13 +82,13 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   backdrop-filter: blur(20px) !important;
 }
 .ds-bg-card { background: var(--surface-2) !important; }
-.ds-bg-primary { background: var(--primary, #FFD700) !important; }
+.ds-bg-primary { background: var(--primary, var(--ds-accent)) !important; }
 .ds-bg-success { background: var(--status-success) !important; }
 .ds-bg-warning { background: var(--status-warning) !important; }
 .ds-bg-danger { background: var(--status-error) !important; }
 
 /* ===== BORDERS ===== */
-.ds-border { border: 1px solid rgba(255,255,255,0.1) !important; }
+.ds-border { border: 1px solid var(--ds-border) !important; }
 .ds-border-gold { border-color: var(--primary, var(--primary)) !important; }
 .ds-border-0 { border: none !important; }
 .ds-rounded-sm { border-radius: 4px !important; }
@@ -158,7 +158,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 }
 
 .ds-btn-primary {
-  background: linear-gradient(135deg, var(--primary, #FFD700), var(--primary-dark, #b8860b));
+  background: linear-gradient(135deg, var(--primary, var(--ds-accent)), var(--primary-dark, #b8860b));
   color: #1a1a2e;
   box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
@@ -171,7 +171,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-btn-secondary {
   background: var(--surface-2);
   color: var(--text-1);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
 }
 
 .ds-btn-secondary:hover {
@@ -181,7 +181,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 
 .ds-btn-danger {
   background: var(--status-error);
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .ds-btn-danger:hover {
@@ -227,7 +227,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-form-textarea {
   padding: 0.75rem 1rem;
   border-radius: var(--comp-radius-md);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   background: var(--surface-2);
   color: var(--text-1);
   font-size: 0.875rem;
@@ -249,7 +249,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 /* ===== SCOPED CARDS ===== */
 .ds-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   backdrop-filter: blur(20px);
@@ -268,7 +268,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   gap: 1rem;
   padding-bottom: 1rem;
   margin-bottom: 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .ds-card-title {
@@ -285,7 +285,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-card-footer {
   padding-top: 1rem;
   margin-top: 1rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 /* ===== SCOPED MODALS ===== */
@@ -304,7 +304,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-modal {
   background: var(--modal-bg-dark);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   max-width: 500px;
   width: 100%;
   max-height: 90vh;
@@ -316,7 +316,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .ds-modal-title {
@@ -335,7 +335,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   justify-content: flex-end;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 /* ===== SCOPED BADGES ===== */
@@ -371,7 +371,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 /* ===== SCOPED STAT CARDS ===== */
 .ds-stat-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   display: flex;

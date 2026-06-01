@@ -71,7 +71,7 @@
 /* Info State (7+ days) */
 .trial-banner.info {
   background: linear-gradient(135deg, #2563eb, #7c3aed);
-  color: white;
+  color: var(--ds-text);
 }
 
 .trial-banner.info .trial-upgrade-btn {
@@ -81,7 +81,7 @@
 /* Warning State (4-7 days) */
 .trial-banner.warning {
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+  color: var(--ds-text);
 }
 
 .trial-banner.warning .trial-upgrade-btn {
@@ -90,17 +90,17 @@
 
 /* Urgent State (1-3 days) */
 .trial-banner.urgent {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
+  background: linear-gradient(135deg, var(--ds-danger), #dc2626);
+  color: var(--ds-text);
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 0 rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0 0 var(--ds-danger-25);
   }
   50% {
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+    box-shadow: 0 0 20px var(--ds-danger-25);
   }
 }
 
@@ -124,7 +124,7 @@
 /* Expired State */
 .trial-banner.expired {
   background: linear-gradient(135deg, #991b1b, #7f1d1d);
-  color: white;
+  color: var(--ds-text);
   animation: pulse-glow-strong 1.5s ease-in-out infinite;
 }
 

@@ -52,17 +52,17 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
 }
 
 /* ── Inputs ──────────────────────────────────────────────── */
 .mst-field-group input,
 .mst-field-group-lg input {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.55rem 0.875rem;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.9rem;
   transition: border-color 0.15s ease;
 }
@@ -70,8 +70,8 @@
 .mst-field-group input:focus,
 .mst-field-group-lg input:focus {
   outline: none;
-  border-color: rgba(212, 175, 55, 0.5);
-  background: rgba(212, 175, 55, 0.04);
+  border-color: var(--ds-accent-50);
+  background: var(--ds-accent-05);
 }
 
 .mst-field-group input:disabled,
@@ -98,31 +98,31 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   font-size: 0.85rem;
   padding: 0.25rem;
   line-height: 1;
   transition: color 0.15s ease;
 }
 
-.password-toggle-btn:hover { color: rgba(255, 255, 255, 0.75); }
+.password-toggle-btn:hover { color: var(--ds-text-secondary); }
 
 /* ── Hinweis-Text ────────────────────────────────────────── */
 .input-hint {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   margin-top: 0.2rem;
 }
 
 .mitglied-detail-hint-warning {
-  color: #d4af37 !important;
+  color: var(--ds-accent) !important;
   font-style: italic;
 }
 
 /* ── Trennlinie zwischen Passwort- und Sicherheitsfrage-Teil ─ */
 .mst-divider {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--ds-border);
   margin: 1.5rem 0;
 }
 
@@ -149,26 +149,26 @@
 }
 
 .mst-btn-primary {
-  background: rgba(212, 175, 55, 0.15);
-  border-color: rgba(212, 175, 55, 0.4);
-  color: #d4af37;
+  background: var(--ds-accent-15);
+  border-color: var(--ds-accent-50);
+  color: var(--ds-accent);
 }
 
 .mst-btn-primary:hover:not(:disabled) {
-  background: rgba(212, 175, 55, 0.25);
-  border-color: rgba(212, 175, 55, 0.65);
+  background: var(--ds-accent-25);
+  border-color: var(--ds-accent-50);
 }
 
 .mst-btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.75);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-secondary);
 }
 
 .mst-btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #fff;
+  background: var(--ds-bg-elevated);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
 }
 
 .mst-btn:disabled {
@@ -188,8 +188,8 @@
 }
 
 .mst-message.error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   color: #fca5a5;
 }
 

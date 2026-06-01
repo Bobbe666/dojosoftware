@@ -13,8 +13,8 @@
 
 /* Error banner */
 .ed-error-banner {
-  background: rgba(239,68,68,0.1);
-  border: 1px solid rgba(239,68,68,0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 12px;
   padding: 1.5rem;
   color: var(--error);
@@ -30,8 +30,8 @@
 
 .ed-error-retry-btn {
   align-self: flex-start;
-  background: rgba(239,68,68,0.2);
-  border: 1px solid rgba(239,68,68,0.4);
+  background: var(--ds-danger-25);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   color: var(--error);
   padding: 0.4rem 0.9rem;
@@ -98,9 +98,9 @@
   text-align: center;
   padding: 2.5rem;
   color: var(--text-muted);
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
 }
 
 .ed-empty-p {
@@ -132,8 +132,8 @@
 
 /* Badge: overbooked */
 .ed-badge-overbooked {
-  background: rgba(239,68,68,0.2);
-  border: 1px solid rgba(239,68,68,0.4);
+  background: var(--ds-danger-25);
+  border: 1px solid var(--ds-danger-25);
   color: var(--error);
   font-size: 0.65rem;
   padding: 0.1rem 0.45rem;
@@ -190,7 +190,7 @@
 /* Progress bar track */
 .ed-progress-track {
   height: 3px;
-  background: rgba(255,255,255,0.08);
+  background: var(--ds-bg-elevated);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -219,7 +219,7 @@
 .ed-capacity-color-bar {
   width: 60px;
   height: 4px;
-  background: rgba(255,255,255,0.1);
+  background: var(--ds-bg-elevated);
   border-radius: 2px;
   margin-top: 0.3rem;
 }
@@ -309,8 +309,8 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   color: var(--text-secondary);
   padding: 0.5rem 0.9rem;
@@ -363,8 +363,8 @@
 
 /* Event card (base) */
 .edb-event-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
   padding: 1rem 1.2rem;
   display: grid;
@@ -399,15 +399,15 @@
 }
 
 .edb-icon-btn--default {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(255,255,255,0.12);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border);
   color: var(--text-secondary);
 }
 
 /* Legend container */
 .edb-legend-container {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 0.85rem 1.1rem;
   display: flex;
@@ -419,7 +419,7 @@
 
 /* Refresh button hover */
 .edb-refresh-btn:hover {
-  background: rgba(255,255,255,0.1);
+  background: var(--ds-bg-elevated);
 }
 
 /* KPI card — bg/border/color via CSS vars set on element */
@@ -482,10 +482,10 @@
 /* Days-until-event text colors */
 .edb-days-text--urgent  { color: var(--status-error); }
 .edb-days-text--warning { color: var(--status-warning); }
-.edb-days-text--normal  { color: rgba(255,255,255,0.45); }
+.edb-days-text--normal  { color: var(--ds-text-muted); }
 
 /* Participant count */
-.edb-participant-count       { color: #fff; }
+.edb-participant-count       { color: var(--ds-text); }
 .edb-participant-count--full { color: var(--status-error); }
 
 /* Event fill rate progress bar */
@@ -494,12 +494,12 @@
   border-radius: 2px;
   transition: width 0.4s ease;
 }
-.edb-fill--high   { background: #ef4444; }
+.edb-fill--high   { background: var(--ds-danger); }
 .edb-fill--medium { background: #f59e0b; }
-.edb-fill--low    { background: #22c55e; }
+.edb-fill--low    { background: var(--ds-success); }
 
 /* Event card hover */
 .edb-event-card:hover {
-  background: rgba(255,255,255,0.07);
-  border-color: rgba(255,255,255,0.14);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border-strong);
 }

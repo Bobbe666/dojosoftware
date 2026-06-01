@@ -8,7 +8,7 @@
   --kz-bg2: var(--bg-secondary, #16213e);
   --kz-text: var(--text-1, #e2e8f0);
   --kz-text2: var(--text-2, #94a3b8);
-  --kz-border: var(--border, rgba(255, 255, 255, 0.08));
+  --kz-border: var(--border, var(--ds-border));
   --kz-hover: rgba(248, 196, 30, 0.07);
   --kz-radius: 10px;
 }
@@ -292,7 +292,7 @@
   border-radius: 3px;
   font-size: 0.68rem;
   font-weight: 500;
-  color: #fff;
+  color: var(--ds-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -379,7 +379,7 @@
   padding: 2px 6px 0;
   font-size: 0.68rem;
   color: var(--kz-text2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .kz-day-cols {
@@ -400,12 +400,12 @@
 
 .kz-hour-row {
   height: 48px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
   border-right: none;
 }
 
 .kz-hour-row.half-hour {
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.03);
+  border-bottom: 1px dashed var(--ds-border-subtle);
 }
 
 .kz-event-block {
@@ -415,7 +415,7 @@
   border-radius: 4px;
   padding: 3px 5px;
   font-size: 0.7rem;
-  color: #fff;
+  color: var(--ds-text);
   overflow: hidden;
   cursor: pointer;
   z-index: 1;
@@ -449,7 +449,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: #ef4444;
+  background: var(--ds-danger);
   z-index: 3;
   pointer-events: none;
 }
@@ -461,7 +461,7 @@
   top: -4px;
   width: 10px;
   height: 10px;
-  background: #ef4444;
+  background: var(--ds-danger);
   border-radius: 50%;
 }
 
@@ -686,7 +686,7 @@
   border-radius: 9999px;
   font-size: 0.72rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--ds-text);
   margin-top: 0.75rem;
 }
 
@@ -759,8 +759,8 @@
 
 .kz-ical-delete {
   background: none;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  border: 1px solid var(--ds-danger-25);
+  color: var(--ds-danger);
   border-radius: 4px;
   cursor: pointer;
   padding: 0.2rem 0.5rem;
@@ -770,7 +770,7 @@
 }
 
 .kz-ical-delete:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--ds-danger-10);
 }
 
 .kz-ical-add-form {

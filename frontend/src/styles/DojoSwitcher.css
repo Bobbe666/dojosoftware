@@ -10,7 +10,7 @@
 
 .dojo-switcher-retry {
   background: none;
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  border: 1px solid var(--ds-accent-25);
   border-radius: 8px;
   color: var(--text-muted, #888);
   font-size: 0.75rem;
@@ -18,7 +18,7 @@
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
-.dojo-switcher-retry:hover { border-color: #ffd700; color: #ffd700; }
+.dojo-switcher-retry:hover { border-color: var(--ds-accent); color: var(--ds-accent); }
 
 .spinner-small {
   width: 20px;
@@ -33,7 +33,7 @@
 
 /* ── Trigger Button ── */
 .dojo-switcher-trigger {
-  background: var(--btn-ghost-bg, rgba(255,255,255,0.06));
+  background: var(--btn-ghost-bg, var(--ds-bg-card-hover));
   border: 1px solid var(--border-default);
   border-radius: var(--comp-radius-lg);
   padding: 9px 16px;
@@ -48,7 +48,7 @@
 }
 
 .dojo-switcher-trigger:hover {
-  background: var(--btn-ghost-bg-hover, rgba(255,255,255,0.1));
+  background: var(--btn-ghost-bg-hover, var(--ds-bg-elevated));
   border-color: var(--border-hover);
 }
 
@@ -103,7 +103,7 @@
   transform: translate(-50%, -50%) !important;
   /* Heller als modal-bg-dark — eher Slate-800 Charakter */
   background: #1e1c2e;
-  border: 1px solid rgba(255, 215, 0, 0.22);
+  border: 1px solid var(--ds-accent-20);
   border-radius: 20px;
   box-shadow:
     0 40px 100px rgba(0, 0, 0, 0.5),
@@ -130,9 +130,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 20px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--ds-border);
   flex-shrink: 0;
-  background: linear-gradient(180deg, rgba(255,215,0,0.04) 0%, transparent 100%);
+  background: linear-gradient(180deg, var(--ds-accent-05) 0%, transparent 100%);
 }
 
 .ds-modal-title {
@@ -141,7 +141,7 @@
   gap: 10px;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--ds-text);
   letter-spacing: -0.01em;
   margin-bottom: 6px;
 }
@@ -153,7 +153,7 @@
   align-items: center;
   gap: 6px;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
   padding-left: 2px;
 }
 
@@ -166,11 +166,11 @@
 }
 
 .ds-modal-close {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 6px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -179,8 +179,8 @@
 }
 
 .ds-modal-close:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
 }
 
 /* ── Search ── */
@@ -189,13 +189,13 @@
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--ds-border);
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ds-bg-card);
 }
 
 .dropdown-search .search-icon {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   flex-shrink: 0;
 }
 
@@ -204,12 +204,12 @@
   background: transparent;
   border: none;
   outline: none;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.9rem;
   padding: 0;
 }
 
-.dropdown-search input::placeholder { color: rgba(255, 255, 255, 0.3); }
+.dropdown-search input::placeholder { color: var(--ds-text-faint); }
 
 /* ── List ── */
 .dropdown-list {
@@ -220,7 +220,7 @@
 
 .dropdown-list::-webkit-scrollbar { width: 3px; }
 .dropdown-list::-webkit-scrollbar-track { background: transparent; }
-.dropdown-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.dropdown-list::-webkit-scrollbar-thumb { background: var(--ds-bg-elevated); border-radius: 2px; }
 
 /* ── Section Header ── */
 .dropdown-section-header {
@@ -232,7 +232,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
 }
 
 /* ── Admin 3-Spalten-Grid ── */
@@ -245,8 +245,8 @@
 
 /* Basis-Kachel */
 .ds-admin-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 14px;
   padding: 16px 8px 12px;
   cursor: pointer;
@@ -254,7 +254,7 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
   transition: all 0.18s ease;
   width: 100%;
   position: relative;
@@ -272,21 +272,21 @@
 
 .ds-admin-btn:hover {
   transform: translateY(-2px);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--ds-text);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .ds-admin-btn:hover::before { opacity: 1; }
 
 /* Farbvarianten */
-.ds-color-gold { --btn-color: #ffd700; --btn-rgb: 255,215,0; }
+.ds-color-gold { --btn-color: var(--ds-accent); --btn-rgb: 255,215,0; }
 .ds-color-purple { --btn-color: #a78bfa; --btn-rgb: 167,139,250; }
 .ds-color-blue { --btn-color: #60a5fa; --btn-rgb: 96,165,250; }
 .ds-color-green { --btn-color: #34d399; --btn-rgb: 52,211,153; }
 .ds-color-amber { --btn-color: #fbbf24; --btn-rgb: 251,191,36; }
-.ds-color-orange { --btn-color: #fb923c; --btn-rgb: 251,146,60; }
-.ds-color-red { --btn-color: #f87171; --btn-rgb: 248,113,113; }
+.ds-color-orange { --btn-color: var(--ds-warning); --btn-rgb: 251,146,60; }
+.ds-color-red { --btn-color: var(--ds-danger-soft); --btn-rgb: 248,113,113; }
 .ds-color-teal { --btn-color: #2dd4bf; --btn-rgb: 45,212,191; }
 .ds-color-pink { --btn-color: #ec4899; --btn-rgb: 236,72,153; }
 
@@ -310,11 +310,11 @@
 .ds-admin-btn.active {
   background: rgba(var(--btn-rgb, 255,215,0), 0.12);
   border-color: rgba(var(--btn-rgb, 255,215,0), 0.4);
-  color: var(--btn-color, #ffd700);
+  color: var(--btn-color, var(--ds-accent));
 }
 
 .ds-admin-btn.active .ds-btn-label {
-  color: var(--btn-color, #ffd700);
+  color: var(--btn-color, var(--ds-accent));
 }
 
 .ds-btn-icon {
@@ -345,10 +345,10 @@
   gap: 10px;
   width: 100%;
   padding: 12px 14px;
-  background: rgba(255, 215, 0, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  background: var(--ds-accent-05);
+  border: 1px solid var(--ds-accent-15);
   border-radius: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -358,25 +358,25 @@
 }
 
 .ds-alle-dojos-btn:hover {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.3);
-  color: #fff;
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-30);
+  color: var(--ds-text);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 4px 16px var(--ds-accent-10);
 }
 
 .ds-alle-dojos-btn.active {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.35);
-  color: #ffd700;
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-30);
+  color: var(--ds-accent);
 }
 
 .ds-alle-badge {
   margin-left: auto;
   font-size: 0.62rem;
-  background: rgba(255, 215, 0, 0.1);
-  color: rgba(255, 215, 0, 0.8);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  background: var(--ds-accent-10);
+  color: var(--ds-accent-50);
+  border: 1px solid var(--ds-accent-25);
   padding: 2px 8px;
   border-radius: 5px;
   font-weight: 700;
@@ -387,7 +387,7 @@
 /* ── Divider ── */
 .ds-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ds-bg-card-hover);
   margin: 4px 0 10px;
 }
 
@@ -398,8 +398,8 @@
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 3px;
-  background: var(--accent-color, #ffd700);
-  box-shadow: 0 0 6px var(--accent-color, rgba(255,215,0,0.5));
+  background: var(--accent-color, var(--ds-accent));
+  box-shadow: 0 0 6px var(--accent-color, var(--ds-accent-50));
 }
 
 /* ── Dojo List Item ── */
@@ -419,8 +419,8 @@
 }
 
 .dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border);
 }
 
 .dropdown-item.active {
@@ -445,7 +445,7 @@
 
 .item-name {
   flex: 1;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   font-size: 0.9rem;
   font-weight: 600;
   white-space: nowrap;
@@ -453,11 +453,11 @@
   text-overflow: ellipsis;
 }
 
-.dropdown-item.active .item-name { color: #fff; }
+.dropdown-item.active .item-name { color: var(--ds-text); }
 
 .item-info {
   font-size: 0.72rem;
-  color: var(--info-color, rgba(255, 255, 255, 0.45));
+  color: var(--info-color, var(--ds-text-muted));
   font-weight: 500;
 }
 
@@ -474,34 +474,34 @@
   flex-shrink: 0;
 }
 
-.item-badge.gold   { background: rgba(255,215,0,0.12);  color: #ffd700; border: 1px solid rgba(255,215,0,0.25); }
+.item-badge.gold   { background: var(--ds-accent-10);  color: var(--ds-accent); border: 1px solid var(--ds-accent-25); }
 .item-badge.blue   { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
-.item-badge.green  { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+.item-badge.green  { background: var(--ds-success-10); color: #34d399; border: 1px solid var(--ds-success-25); }
 .item-badge.orange { background: rgba(255,107,53,0.12); color: #ff7a4d; border: 1px solid rgba(255,107,53,0.25); }
 .item-badge.purple { background: rgba(139,92,246,0.12); color: #a78bfa; border: 1px solid rgba(139,92,246,0.25); }
-.item-badge.primary{ background: rgba(255,215,0,0.12);  color: #ffd700; border: 1px solid rgba(255,215,0,0.25); }
+.item-badge.primary{ background: var(--ds-accent-10);  color: var(--ds-accent); border: 1px solid var(--ds-accent-25); }
 
 /* ── Empty State ── */
 .dropdown-empty {
   padding: 24px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
   font-size: 0.85rem;
 }
 
 /* ── Footer ── */
 .dropdown-footer {
   padding: 10px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid var(--ds-border);
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ds-bg-card);
 }
 
 .footer-link {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   text-decoration: none;
   font-size: 0.75rem;
   font-weight: 600;
@@ -509,7 +509,7 @@
   letter-spacing: 0.01em;
 }
 
-.footer-link:hover { color: rgba(255, 255, 255, 0.7); }
+.footer-link:hover { color: var(--ds-text-secondary); }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {

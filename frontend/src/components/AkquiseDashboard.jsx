@@ -1759,7 +1759,7 @@ const AkquiseDashboard = () => {
             padding:'8px 12px', borderRadius:8, background:`${color}18`, border:`1px solid ${color}44` }}>
             <span style={{ color }}>{icon}</span>
             <span style={{ fontWeight:700, fontSize:13, color }}>{titel}</span>
-            <span style={{ marginLeft:'auto', background:color, color:'#fff', borderRadius:12, fontSize:11, fontWeight:700, padding:'1px 8px' }}>{items.length}</span>
+            <span style={{ marginLeft:'auto', background:color, color: 'var(--ds-text)', borderRadius:12, fontSize:11, fontWeight:700, padding:'1px 8px' }}>{items.length}</span>
           </div>
           {items.map(k => <WvRow key={k.id} k={k} />)}
         </div>

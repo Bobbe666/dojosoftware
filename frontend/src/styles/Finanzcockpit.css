@@ -316,7 +316,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 .finanzcockpit__kpi-card--positive .finanzcockpit__kpi-icon { color: #34d399; background: rgba(52, 211, 153, 0.12); }
-.finanzcockpit__kpi-card--negative .finanzcockpit__kpi-icon { color: var(--status-error); background: rgba(239, 68, 68, 0.12); }
+.finanzcockpit__kpi-card--negative .finanzcockpit__kpi-icon { color: var(--status-error); background: var(--ds-danger-10); }
 .finanzcockpit__kpi-card--warning  .finanzcockpit__kpi-icon { color: var(--status-warning); background: rgba(245, 158, 11, 0.12); }
 
 /* ============================================================
@@ -426,7 +426,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 .fc__chart-tabs button:hover { color: var(--text-1); background: var(--surface-4); }
-.fc__chart-tabs button.is-active { background: var(--primary-alpha-15); color: var(--text-accent, #ffd700); }
+.fc__chart-tabs button.is-active { background: var(--primary-alpha-15); color: var(--text-accent, var(--ds-accent)); }
 
 /* ============================================================
    INSIGHTS
@@ -615,8 +615,8 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   min-width: 1rem;
   height: 1rem;
   border-radius: 0.5rem;
-  background: #ef4444;
-  color: white;
+  background: var(--ds-danger);
+  color: var(--ds-text);
   font-size: var(--ui-badge-size-sm);
   font-weight: 700;
   display: inline-flex;
@@ -724,7 +724,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   height: 44px;
   border-radius: 50%;
   border: 3px solid var(--primary-alpha-15);
-  border-top-color: rgba(255, 215, 0, 0.8);
+  border-top-color: var(--ds-accent-50);
   animation: spin 0.9s linear infinite;
 }
 
@@ -811,7 +811,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 .fc__tooltip-breakdown {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
   padding-top: 8px;
   margin-top: 4px;
 }
@@ -829,7 +829,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .fc__tooltip-row-value {
@@ -861,7 +861,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   transition: background 0.15s;
 }
 .finanzcockpit__metric-row--clickable:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
 }
 .fc__metric-row-arrow {
   opacity: 0;
@@ -880,7 +880,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 .finanzcockpit__detail-card--clickable:hover {
   border-color: var(--primary);
-  background: rgba(255, 215, 0, 0.03);
+  background: var(--ds-accent-05);
 }
 .finanzcockpit__detail-arrow {
   margin-left: auto;
@@ -923,7 +923,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 .fc__progress-wrap {
   margin-top: 0.35rem;
   height: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -932,10 +932,10 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   border-radius: 2px;
   transition: width 0.7s ease;
 }
-.fc__progress-bar--positive { background: #10b981; }
+.fc__progress-bar--positive { background: var(--ds-success); }
 .fc__progress-bar--warning  { background: #f59e0b; }
-.fc__progress-bar--negative { background: #ef4444; }
-.fc__progress-bar--neutral  { background: var(--gradient-gold, linear-gradient(90deg, #FFD700, #f59e0b)); }
+.fc__progress-bar--negative { background: var(--ds-danger); }
+.fc__progress-bar--neutral  { background: var(--gradient-gold, linear-gradient(90deg, var(--ds-accent), #f59e0b)); }
 
 /* ── Zahlungsarten mit Progress Bars ─────────────── */
 .fc__payment-row {
@@ -943,7 +943,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.55rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 .fc__payment-row:last-child { border-bottom: none; }
 .fc__payment-row-header {
@@ -1023,9 +1023,9 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: rgba(255, 215, 0, 0.12);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  color: #FFD700;
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
+  color: var(--ds-accent);
   font-size: 0.62rem;
   font-weight: 700;
   display: flex;
@@ -1041,13 +1041,13 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 .fc__tarif-bar-wrap {
   height: 3px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ds-bg-card-hover);
   border-radius: 2px;
   overflow: hidden;
 }
 .fc__tarif-bar {
   height: 100%;
-  background: linear-gradient(90deg, #FFD700, #f59e0b);
+  background: linear-gradient(90deg, var(--ds-accent), #f59e0b);
   border-radius: 2px;
   transition: width 0.7s ease;
 }
@@ -1063,10 +1063,10 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 /* ── Insight-Ton-Farben ──────────────────────────── */
-.finanzcockpit__insight-icon--positive { color: #10b981; }
+.finanzcockpit__insight-icon--positive { color: var(--ds-success); }
 .finanzcockpit__insight-icon--warning  { color: #f59e0b; }
-.finanzcockpit__insight-icon--negative { color: #ef4444; }
-.finanzcockpit__insight-icon--neutral  { color: var(--primary, #FFD700); }
+.finanzcockpit__insight-icon--negative { color: var(--ds-danger); }
+.finanzcockpit__insight-icon--neutral  { color: var(--primary, var(--ds-accent)); }
 
 /* ============================================================
    DESIGN REFINEMENT — Kompakt & Modern

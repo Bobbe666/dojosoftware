@@ -2181,7 +2181,7 @@ const DojoLizenzverwaltung = () => {
                 </div>
                 <div className="st-kpi-sep" />
                 <div className="st-kpi-item">
-                  <span className={`st-kpi-val ${Number(stats.conversionRate) > 0 ? 'st-kpi-val--green' : ''}`} style={Number(stats.conversionRate) === 0 ? { color: 'rgba(255,255,255,0.3)' } : {}}>
+                  <span className={`st-kpi-val ${Number(stats.conversionRate) > 0 ? 'st-kpi-val--green' : ''}`} style={Number(stats.conversionRate) === 0 ? { color: 'var(--ds-text-faint)' } : {}}>
                     {stats.conversionRate}%
                   </span>
                   <span className="st-kpi-lbl">Conversion</span>
@@ -2285,8 +2285,8 @@ const DojoLizenzverwaltung = () => {
                 <span className="st-trial-val">{stats.paid}</span>
               </div>
               <div className="st-trial-row" style={{ marginTop: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.4rem' }}>
-                <span className="st-trial-label" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem' }}>Ø Trial-Dauer</span>
-                <span className="st-trial-val" style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)' }}>–</span>
+                <span className="st-trial-label" style={{ color: 'var(--ds-text-muted)', fontSize: '0.72rem' }}>Ø Trial-Dauer</span>
+                <span className="st-trial-val" style={{ fontSize: '0.82rem', color: 'var(--ds-text-muted)' }}>–</span>
               </div>
             </div>
 
@@ -2313,8 +2313,8 @@ const DojoLizenzverwaltung = () => {
                         <span className="st-cohort-val">{counts[i]}</span>
                       </div>
                     ))}
-                    <div style={{ marginTop: '0.5rem', fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>
-                      Ø pro Monat: <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>{avgPerMonth.toFixed(1)}</span>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.72rem', color: 'var(--ds-text-muted)' }}>
+                      Ø pro Monat: <span style={{ color: 'var(--ds-text-secondary)', fontWeight: 700 }}>{avgPerMonth.toFixed(1)}</span>
                     </div>
                   </>
                 );
@@ -2422,7 +2422,7 @@ const DojoLizenzverwaltung = () => {
                     <div className="st-subsection-title">Top Regionen</div>
                     {regions.map(([region, count]) => (
                       <div key={region} className="st-geo-row" style={{ fontSize: '0.72rem' }}>
-                        <span className="st-geo-flag" style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>•</span>
+                        <span className="st-geo-flag" style={{ fontSize: '0.7rem', color: 'var(--ds-text-faint)' }}>•</span>
                         <span className="st-geo-name">{region}</span>
                         <span className="st-geo-cnt">{count}</span>
                       </div>
@@ -2528,7 +2528,7 @@ const DojoLizenzverwaltung = () => {
                     {' '}(~{stats.monthsToGoal} Mo. bei Ø {stats.avgMonthlyGrowth?.toFixed(1)}/Mo.)
                   </>
                 ) : (
-                  <span style={{ color: 'rgba(255,255,255,0.3)' }}>Kein Wachstum – ETA nicht berechenbar</span>
+                  <span style={{ color: 'var(--ds-text-faint)' }}>Kein Wachstum – ETA nicht berechenbar</span>
                 )}
               </div>
             </div>
@@ -3665,7 +3665,7 @@ const DojoLizenzverwaltung = () => {
                                 <div key={plan} className={`pct-cell ${isCurrent ? 'pct-cell-current' : ''}`}>
                                   {ok
                                     ? <CheckCircle size={15} style={{ color:'#4ade80' }} />
-                                    : <XCircle size={15} style={{ color:'rgba(255,255,255,0.15)' }} />
+                                    : <XCircle size={15} style={{ color: 'var(--ds-text-faint)' }} />
                                   }
                                 </div>
                               );

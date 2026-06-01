@@ -2,7 +2,7 @@
 
 .ega-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 100%);
   color: var(--text-primary);
   font-family: system-ui, -apple-system, sans-serif;
   padding: 2rem 1rem;
@@ -11,9 +11,9 @@
 .ega-card {
   max-width: 520px;
   margin: 0 auto;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   padding: 2rem;
 }
 
@@ -60,8 +60,8 @@
   width: 100%;
   padding: 0.6rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border-strong);
+  background: var(--ds-bg-elevated);
   color: var(--text-primary);
   font-size: 0.95rem;
   box-sizing: border-box;
@@ -85,7 +85,7 @@
 .ega-order-box {
   margin-bottom: 1rem;
   padding: 1rem;
-  background: rgba(255, 215, 0, 0.07);
+  background: var(--ds-accent-05);
   border-radius: 10px;
   border: 1px solid var(--primary-alpha-15);
 }
@@ -115,8 +115,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border-strong);
+  background: var(--ds-bg-elevated);
   color: var(--text-primary);
   cursor: pointer;
 }
@@ -128,7 +128,7 @@
 }
 
 .ega-order-total {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
   padding-top: 0.5rem;
   margin-top: 0.5rem;
   display: flex;
@@ -138,7 +138,7 @@
 
 .ega-error-box {
   padding: 0.75rem;
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--ds-danger-10);
   border-radius: 8px;
   color: var(--error);
   margin-bottom: 1rem;

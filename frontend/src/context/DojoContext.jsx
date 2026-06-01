@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef, useMemo, useCallback } from 'react';
 import config from '../config/config.js';
+import { fetchDojoTheme, applyServerTheme } from '../utils/dsTheme';
 
 const DojoContext = createContext();
 
@@ -190,6 +191,17 @@ export const DojoProvider = ({ children }) => {
       setActiveDojo(dojoToSet);
     }
   }, [dojos, activeDojo]);
+
+  // Theme des aktiven Dojos vom Server laden + anwenden (gilt für alle Nutzer des Dojos)
+  useEffect(() => {
+    const id = (activeDojo && typeof activeDojo === 'object') ? activeDojo.id : null;
+    if (!id) return;
+    let cancelled = false;
+    fetchDojoTheme(id).then(theme => {
+      if (!cancelled && theme) applyServerTheme(theme);
+    });
+    return () => { cancelled = true; };
+  }, [activeDojo]);
 
   const switchDojo = useCallback((dojo) => {
     setActiveDojo(dojo);

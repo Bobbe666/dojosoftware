@@ -1,0 +1,161 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — die EINE Quelle der Wahrheit für alles Visuelle.
+   Hier (und NUR hier) stehen die echten Werte. Komponenten nutzen var(--ds-…).
+   Farbe/Schrift/Look ändern = hier eine Zeile ändern → wirkt überall.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── AKZENT (Gold) ──────────────────────────────────────────────────────── */
+  /* Vereinheitlicht die bisherigen zwei Golds (#ffd700 + #d4af37) zu EINEM. */
+  --ds-accent:            #d4af37;
+  --ds-accent-bright:     #e6c34a;
+  --ds-accent-dark:       #c9a227;
+  --ds-accent-contrast:   #0f0f1e;   /* Textfarbe auf Akzent-Buttons */
+  /* Tints leiten sich vom Akzent ab → Akzent ändern färbt auch alle Hintergründe um */
+  --ds-accent-05:         color-mix(in srgb, var(--ds-accent) 5%,  transparent);
+  --ds-accent-10:         color-mix(in srgb, var(--ds-accent) 10%, transparent);
+  --ds-accent-15:         color-mix(in srgb, var(--ds-accent) 15%, transparent);
+  --ds-accent-20:         color-mix(in srgb, var(--ds-accent) 20%, transparent);
+  --ds-accent-25:         color-mix(in srgb, var(--ds-accent) 25%, transparent);
+  --ds-accent-30:         color-mix(in srgb, var(--ds-accent) 30%, transparent);
+  --ds-accent-50:         color-mix(in srgb, var(--ds-accent) 50%, transparent);
+  --ds-border-accent-mix: color-mix(in srgb, var(--ds-accent) 28%, transparent);
+
+  /* ── HINTERGRÜNDE ───────────────────────────────────────────────────────── */
+  --ds-bg-body:           #0f0f1e;   /* Seitenhintergrund */
+  --ds-bg-surface:        #14141f;   /* leicht erhöhte Fläche */
+  --ds-bg-card:           rgba(255, 255, 255, 0.04);   /* Standard-Karte */
+  --ds-bg-card-hover:     rgba(255, 255, 255, 0.06);
+  --ds-bg-elevated:       rgba(255, 255, 255, 0.08);   /* hervorgehoben */
+  --ds-bg-input:          rgba(255, 255, 255, 0.05);
+  --ds-bg-overlay:        rgba(0, 0, 0, 0.6);          /* Modal-Backdrop */
+  /* dezenter Karten-Verlauf (für edlere Karten) */
+  --ds-gradient-card:     linear-gradient(160deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.012) 100%);
+
+  /* ── RAHMEN ─────────────────────────────────────────────────────────────── */
+  --ds-border:            rgba(255, 255, 255, 0.08);
+  --ds-border-strong:     rgba(255, 255, 255, 0.14);
+  --ds-border-subtle:     rgba(255, 255, 255, 0.05);
+  --ds-border-accent:     color-mix(in srgb, var(--ds-accent) 28%, transparent);
+
+  /* ── TEXT ───────────────────────────────────────────────────────────────── */
+  --ds-text:              rgba(255, 255, 255, 0.95);
+  --ds-text-secondary:    rgba(255, 255, 255, 0.72);
+  --ds-text-muted:        rgba(255, 255, 255, 0.50);
+  --ds-text-faint:        rgba(255, 255, 255, 0.35);
+
+  /* ── STATUS-FARBEN ──────────────────────────────────────────────────────── */
+  --ds-success:           #22c55e;
+  --ds-success-soft:      #4ade80;
+  --ds-success-10:        rgba(34, 197, 94, 0.12);
+  --ds-success-25:        rgba(34, 197, 94, 0.25);
+
+  --ds-danger:            #ef4444;
+  --ds-danger-soft:       #f87171;
+  --ds-danger-10:         rgba(239, 68, 68, 0.12);
+  --ds-danger-25:         rgba(239, 68, 68, 0.25);
+
+  --ds-warning:           #fb923c;
+  --ds-warning-soft:      #fbbf24;
+  --ds-warning-10:        rgba(251, 146, 60, 0.12);
+
+  --ds-info:              #60a5fa;
+  --ds-info-10:           rgba(96, 165, 250, 0.12);
+
+  --ds-dojo-red:          #8b1a1a;   /* Dunkelrot (Mitgliedsausweis-Stil) */
+
+  /* ── RADIEN ─────────────────────────────────────────────────────────────── */
+  --ds-radius-sm:         8px;
+  --ds-radius-md:         10px;
+  --ds-radius-lg:         14px;
+  --ds-radius-xl:         18px;
+  --ds-radius-pill:       999px;
+
+  /* ── SCHATTEN ───────────────────────────────────────────────────────────── */
+  --ds-shadow-sm:         0 2px 8px rgba(0, 0, 0, 0.18);
+  --ds-shadow-md:         0 6px 24px rgba(0, 0, 0, 0.32);
+  --ds-shadow-lg:         0 12px 40px rgba(0, 0, 0, 0.40);
+
+  /* ── TYPOGRAFIE ─────────────────────────────────────────────────────────── */
+  --ds-font:              'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ds-font-mono:         'SF Mono', 'Menlo', monospace;
+  --ds-fs-xs:             0.7rem;
+  --ds-fs-sm:             0.8rem;
+  --ds-fs-base:           0.9rem;
+  --ds-fs-md:             0.95rem;
+  --ds-fs-lg:             1.1rem;
+  --ds-fs-xl:             1.4rem;
+  --ds-fs-2xl:            1.6rem;
+  --ds-fw-normal:         400;
+  --ds-fw-medium:         500;
+  --ds-fw-semibold:       600;
+  --ds-fw-bold:           700;
+
+  /* ── ABSTÄNDE ───────────────────────────────────────────────────────────── */
+  --ds-space-1:           0.25rem;
+  --ds-space-2:           0.5rem;
+  --ds-space-3:           0.75rem;
+  --ds-space-4:           1rem;
+  --ds-space-5:           1.25rem;
+  --ds-space-6:           1.5rem;
+  --ds-space-8:           2rem;
+
+  /* ── ÜBERGÄNGE ──────────────────────────────────────────────────────────── */
+  --ds-transition:        0.18s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME-MODI — Basis-Hintergrund/Text. Setzt nur Flächen + Schrift um,
+   der Akzent/Branding liegt als eigene Ebene darüber (per Einstellungen).
+   Aktivierung über  <html data-ds-mode="light|washi">  (dark = Standard).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── HELL ─────────────────────────────────────────────────────────────────── */
+:root[data-ds-mode="light"] {
+  --ds-bg-body:           #f3f4f7;
+  --ds-bg-surface:        #ffffff;
+  --ds-bg-card:           #ffffff;
+  --ds-bg-card-hover:     #f7f8fb;
+  --ds-bg-elevated:       #eef0f4;
+  --ds-bg-input:          #ffffff;
+  --ds-bg-overlay:        rgba(15, 23, 42, 0.45);
+  --ds-gradient-card:     linear-gradient(160deg, #ffffff 0%, #fafbfc 100%);
+
+  --ds-border:            rgba(15, 23, 42, 0.10);
+  --ds-border-strong:     rgba(15, 23, 42, 0.18);
+  --ds-border-subtle:     rgba(15, 23, 42, 0.06);
+
+  --ds-text:              rgba(17, 24, 39, 0.95);
+  --ds-text-secondary:    rgba(17, 24, 39, 0.66);
+  --ds-text-muted:        rgba(17, 24, 39, 0.45);
+  --ds-text-faint:        rgba(17, 24, 39, 0.30);
+
+  --ds-shadow-sm:         0 1px 4px rgba(15, 23, 42, 0.06);
+  --ds-shadow-md:         0 4px 16px rgba(15, 23, 42, 0.08);
+  --ds-shadow-lg:         0 12px 36px rgba(15, 23, 42, 0.12);
+}
+
+/* ── WASHI (warmes Papier) ────────────────────────────────────────────────── */
+:root[data-ds-mode="washi"] {
+  --ds-bg-body:           #ece4d6;
+  --ds-bg-surface:        #f5efe2;
+  --ds-bg-card:           #f7f2e8;
+  --ds-bg-card-hover:     #fbf7ee;
+  --ds-bg-elevated:       #efe7d6;
+  --ds-bg-input:          #fbf7ee;
+  --ds-bg-overlay:        rgba(60, 47, 30, 0.40);
+  --ds-gradient-card:     linear-gradient(160deg, #f9f4ea 0%, #f3ecdd 100%);
+
+  --ds-border:            rgba(74, 59, 38, 0.14);
+  --ds-border-strong:     rgba(74, 59, 38, 0.24);
+  --ds-border-subtle:     rgba(74, 59, 38, 0.08);
+
+  --ds-text:              rgba(44, 36, 24, 0.96);
+  --ds-text-secondary:    rgba(44, 36, 24, 0.68);
+  --ds-text-muted:        rgba(44, 36, 24, 0.46);
+  --ds-text-faint:        rgba(44, 36, 24, 0.30);
+
+  --ds-shadow-sm:         0 1px 4px rgba(74, 59, 38, 0.10);
+  --ds-shadow-md:         0 4px 16px rgba(74, 59, 38, 0.12);
+  --ds-shadow-lg:         0 12px 36px rgba(74, 59, 38, 0.16);
+}

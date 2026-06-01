@@ -348,7 +348,7 @@ html[data-theme="tda-vib"] .mp-tab-btn.active {
   background: transparent !important;
 }
 html[data-theme="tda-vib"] .mp-tab-badge--warn {
-  background: rgba(239,68,68,0.10) !important;
+  background: var(--ds-danger-10) !important;
   color: #dc2626 !important;
 }
 
@@ -447,8 +447,8 @@ html[data-theme="tda-vib"] .me-total-box {
   color: #1a1512 !important;
 }
 html[data-theme="tda-vib"] .me-error-box {
-  background: rgba(239,68,68,0.08) !important;
-  border-color: rgba(239,68,68,0.25) !important;
+  background: var(--ds-danger-10) !important;
+  border-color: var(--ds-danger-25) !important;
   color: #dc2626 !important;
 }
 html[data-theme="tda-vib"] .me-tab-btn {
@@ -1014,11 +1014,11 @@ html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-graduierung {
   color: #bf3a3b !important;
 }
 html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.valid {
-  background: rgba(34,197,94,0.15) !important;
+  background: var(--ds-success-10) !important;
   color: #86efac !important;
 }
 html[data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.invalid {
-  background: rgba(239,68,68,0.15) !important;
+  background: var(--ds-danger-10) !important;
   color: #fca5a5 !important;
 }
 
@@ -1291,7 +1291,7 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .selected-course-item .c
 html[data-theme="tda-vib"] .modal-content.checkin-modal .selected-course-item .course-time {
   color: #7a6a5a !important;
 }
-/* Progress-Steps im Checkin: hardcodiertes #FFD700/FFA500 → Crimson */
+/* Progress-Steps im Checkin: hardcodiertes var(--ds-accent)/FFA500 → Crimson */
 html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-step.active {
   background: #2d2520 !important;
   color: #ffffff !important;
@@ -1316,8 +1316,8 @@ html[data-theme="tda-vib"] .modal-content.checkin-modal .progress-line.inactive 
 }
 /* Succes-Meldung: pink → grün */
 html[data-theme="tda-vib"] .modal-content.checkin-modal .message.success {
-  background: rgba(16,185,129,0.07) !important;
-  border-color: rgba(16,185,129,0.28) !important;
+  background: var(--ds-success-10) !important;
+  border-color: var(--ds-success-25) !important;
   color: #047857 !important;
   box-shadow: none !important;
 }
@@ -1475,11 +1475,11 @@ html[data-theme="tda-vib"] .referral-stat-card {
   box-shadow: 0 1px 4px rgba(26,21,18,0.07) !important;
 }
 html[data-theme="tda-vib"] .referral-message.success {
-  background: rgba(16,185,129,0.08) !important;
+  background: var(--ds-success-10) !important;
   color: #047857 !important;
 }
 html[data-theme="tda-vib"] .referral-message.error {
-  background: rgba(239,68,68,0.08) !important;
+  background: var(--ds-danger-10) !important;
   color: #dc2626 !important;
 }
 html[data-theme="tda-vib"] .praemien-card,
@@ -1534,9 +1534,9 @@ html[data-theme="tda-vib"] .process-step .step-number {
   border-color: rgba(26,21,18,0.22) !important;
 }
 html[data-theme="tda-vib"] .process-step.success .step-number {
-  background: rgba(16,185,129,0.10) !important;
+  background: var(--ds-success-10) !important;
   color: #047857 !important;
-  border-color: rgba(16,185,129,0.25) !important;
+  border-color: var(--ds-success-25) !important;
 }
 html[data-theme="tda-vib"] .referral-status-badge {
   color: #5a4d3e !important;
@@ -1784,7 +1784,7 @@ html[data-theme="tda-vib"] .mst-grad-connector {
   background: rgba(26,21,18,0.18) !important;
 }
 html[data-theme="tda-vib"] .mst-grad-connector--past {
-  background: rgba(16,185,129,0.45) !important;
+  background: var(--ds-success-25) !important;
 }
 html[data-theme="tda-vib"] .mst-exam-date-primary {
   color: #9a8a7a !important;
@@ -1957,8 +1957,8 @@ html[data-theme="tda-vib"] .abw-art-btn {
   color: #5a4d3e !important;
 }
 html[data-theme="tda-vib"] .abw-art-btn--active {
-  background: rgba(239,68,68,0.08) !important;
-  border-color: rgba(239,68,68,0.30) !important;
+  background: var(--ds-danger-10) !important;
+  border-color: var(--ds-danger-25) !important;
   color: #dc2626 !important;
 }
 html[data-theme="tda-vib"] .abw-art-btn:hover:not(.abw-art-btn--active) {
@@ -1968,8 +1968,8 @@ html[data-theme="tda-vib"] .abw-art-btn:hover:not(.abw-art-btn--active) {
 }
 /* Gespeichert-Meldung */
 html[data-theme="tda-vib"] .abw-saved-msg {
-  background: rgba(16,185,129,0.08) !important;
-  border-color: rgba(16,185,129,0.25) !important;
+  background: var(--ds-success-10) !important;
+  border-color: var(--ds-success-25) !important;
   color: #047857 !important;
 }
 /* Datum-Inputs: color-scheme dark → normal, Ränder sichtbar */
@@ -2553,13 +2553,13 @@ html[data-theme="tda-vib"] .ufp-datum-label {
 }
 /* Ja-Button: grüner Akzent — gut lesbar auf weiß */
 html[data-theme="tda-vib"] .ufp-btn-ja {
-  background: rgba(34,197,94,0.08) !important;
-  border-color: rgba(34,197,94,0.4) !important;
+  background: var(--ds-success-10) !important;
+  border-color: var(--ds-success-25) !important;
   color: #15803d !important;
 }
 html[data-theme="tda-vib"] .ufp-btn-ja:hover,
 html[data-theme="tda-vib"] .ufp-btn-ja.aktiv {
-  background: rgba(34,197,94,0.18) !important;
+  background: var(--ds-success-10) !important;
   border-color: #16a34a !important;
   color: #166534 !important;
 }

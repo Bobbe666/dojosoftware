@@ -2,14 +2,14 @@
 
 .register-page {
   min-height: 100vh;
-  background: var(--bg-primary, linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%));
-  color: var(--text-primary, #ffffff);
+  background: var(--bg-primary, linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%));
+  color: var(--text-primary, var(--ds-text));
   padding: 2rem 0;
 }
 
 /* ===== NAVIGATION ===== */
 .register-nav {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--primary-alpha-20);
   padding: 1rem 0;
@@ -76,7 +76,7 @@
 }
 
 .register-nav .nav-links a {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
@@ -91,7 +91,7 @@
 
 .register-nav .nav-login-btn {
   background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ds-text);
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: var(--comp-radius-xl);
@@ -152,7 +152,7 @@
 
 .register-header p {
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
 }
 
 /* ===== PLAN PILLS ===== */
@@ -165,7 +165,7 @@
 }
 
 .plan-pill {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   backdrop-filter: blur(10px);
   border: 2px solid var(--primary-alpha-20);
   padding: 0.75rem 1.5rem;
@@ -177,7 +177,7 @@
   align-items: center;
   gap: 0.5rem;
   text-transform: capitalize;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
   position: relative;
 }
 
@@ -217,7 +217,7 @@
 
 /* ===== FORM ===== */
 .register-form {
-  background: var(--bg-glass, rgba(255, 255, 255, 0.08));
+  background: var(--bg-glass, var(--ds-bg-elevated));
   backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 2.5rem;
@@ -280,7 +280,7 @@
 .form-group label {
   display: block;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ds-text);
   margin-bottom: 0.5rem;
 }
 
@@ -290,18 +290,18 @@
 .form-group input[type="password"] {
   width: 100%;
   padding: 0.875rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
   font-size: 1rem;
   transition: all 0.3s;
   font-family: inherit;
-  color: #ffffff;
+  color: var(--ds-text);
   backdrop-filter: blur(10px);
 }
 
 .form-group input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
 }
 
 .form-group input:focus {
@@ -334,13 +334,13 @@
 }
 
 .subdomain-suffix {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-left: none;
   padding: 0.875rem 1rem;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   font-weight: 500;
   white-space: nowrap;
   display: flex;
@@ -364,7 +364,7 @@
 }
 
 .subdomain-status.checking {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
 }
 
 .subdomain-status.available {
@@ -380,7 +380,7 @@
   display: block;
   margin-top: 0.5rem;
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
 }
 
 /* ===== ERROR TEXT ===== */
@@ -426,7 +426,7 @@
 }
 
 .checkbox-label span {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   line-height: 1.6;
 }
 
@@ -448,7 +448,7 @@
 .submit-btn {
   width: 100%;
   background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ds-text);
   border: none;
   padding: 1.25rem 2rem;
   border-radius: var(--comp-radius-xl);
@@ -504,14 +504,14 @@
   gap: 1.5rem;
   flex-wrap: wrap;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 .security-notes .note {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   font-size: 0.875rem;
   font-weight: 500;
 }
@@ -526,7 +526,7 @@
 .register-footer {
   text-align: center;
   margin-top: 2rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
 }
 
 .register-footer a {
@@ -544,7 +544,7 @@
 
 /* ===== SUCCESS CONTAINER ===== */
 .success-container {
-  background: var(--bg-glass, rgba(255, 255, 255, 0.08));
+  background: var(--bg-glass, var(--ds-bg-elevated));
   backdrop-filter: blur(20px);
   border-radius: var(--comp-radius-pill);
   padding: 3rem;
@@ -557,7 +557,7 @@
   text-align: center;
   margin-bottom: 3rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .success-container h1 {
@@ -572,7 +572,7 @@
 
 .success-message {
   font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   margin: 0;
 }
 
@@ -592,7 +592,7 @@
 }
 
 .info-box {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: 16px;
@@ -632,7 +632,7 @@
 }
 
 .info-box p {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   line-height: 1.7;
   margin-bottom: 0.75rem;
   font-size: 0.95rem;
@@ -651,7 +651,7 @@
 
 .subdomain-url {
   display: inline-block;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   padding: 0.75rem 1rem;
   border-radius: var(--comp-radius-md);
   font-weight: 700;
@@ -678,7 +678,7 @@
 
 /* ===== NEXT STEPS ===== */
 .next-steps {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: 16px;
@@ -716,7 +716,7 @@
   margin: 1.5rem auto;
   max-width: 500px;
   padding-left: 1.5rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   line-height: 1.8;
 }
 
@@ -730,7 +730,7 @@
 
 .next-steps .cta-btn {
   background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ds-text);
   border: none;
   padding: 1rem 2rem;
   border-radius: var(--comp-radius-xl);
@@ -773,18 +773,18 @@
   padding: 2rem;
   border-radius: var(--comp-radius-xl);
   border: 1px solid var(--primary-alpha-30);
-  color: white;
+  color: var(--ds-text);
 }
 
 .redirect-info p {
   margin-bottom: 1rem;
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
 }
 
 .redirect-info .cta-btn {
   background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ds-text);
   border: none;
   padding: 1rem 2rem;
   border-radius: var(--comp-radius-xl);
@@ -904,13 +904,13 @@
 
   .subdomain-input-group input {
     border-radius: var(--comp-radius-md);
-    border-right: 2px solid rgba(255, 255, 255, 0.2);
+    border-right: 2px solid var(--ds-border-strong);
     margin-bottom: 0.5rem;
   }
 
   .subdomain-suffix {
     border-radius: var(--comp-radius-md);
-    border-left: 2px solid rgba(255, 255, 255, 0.2);
+    border-left: 2px solid var(--ds-border-strong);
     text-align: center;
   }
 
@@ -1017,7 +1017,7 @@
 .promo-discount-box .discount-label {
   font-size: 0.7rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   letter-spacing: 0.1em;
 }
 
@@ -1029,7 +1029,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0 0 0.75rem 0;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .promo-details .highlight {
@@ -1047,7 +1047,7 @@
 }
 
 .promo-benefits li {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
 }
 
 .promo-benefits li strong {
@@ -1083,19 +1083,19 @@
 
 .counter-sep {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   margin: 0 0.1rem;
 }
 
 .counter-max {
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
 }
 
 .spots-left {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
 }
 
 .spots-left strong {

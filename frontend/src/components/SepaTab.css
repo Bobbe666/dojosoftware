@@ -173,7 +173,7 @@
 
 /* Success badge background */
 .st-badge-success {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   padding: 0.75rem;
   border-radius: 8px;
 }

@@ -13,7 +13,7 @@
 .te-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--border-default, rgba(255,255,255,0.1));
+  border: 3px solid var(--border-default, var(--ds-border));
   border-top: 3px solid var(--color-gold, var(--status-warning));
   border-radius: 50%;
   animation: te-spin 1s linear infinite;
@@ -171,7 +171,7 @@
 
 /* ── Set-to-tarifpreis button ── */
 .te-btn-bamboo {
-  background: var(--color-bamboo, #10b981);
+  background: var(--color-bamboo, var(--ds-success));
   border: none;
   color: var(--text-primary);
   padding: 0.5rem 1rem;
@@ -191,8 +191,8 @@
 
 /* ── Success alert banner ── */
 .te-alert-success {
-  background: var(--alert-success-bg, rgba(16, 185, 129, 0.15));
-  border: var(--alert-success-border, 1px solid rgba(16, 185, 129, 0.3));
+  background: var(--alert-success-bg, var(--ds-success-10));
+  border: var(--alert-success-border, 1px solid var(--ds-success-25));
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -204,8 +204,8 @@
 
 /* ── Error alert banner ── */
 .te-alert-error {
-  background: var(--alert-error-bg, rgba(239, 68, 68, 0.15));
-  border: var(--alert-error-border, 1px solid rgba(239, 68, 68, 0.3));
+  background: var(--alert-error-bg, var(--ds-danger-10));
+  border: var(--alert-error-border, 1px solid var(--ds-danger-25));
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -270,7 +270,7 @@
 
 /* ── Table header row ── */
 .te-thead-row {
-  background: var(--table-header-bg, rgba(255,255,255,0.05));
+  background: var(--table-header-bg, var(--ds-bg-card-hover));
 }
 
 /* ── Checkbox header cell ── */
@@ -423,7 +423,7 @@
 
 /* ── Single-row "Erhöhen" button ── */
 .te-btn-row-bamboo {
-  background: var(--color-bamboo, #10b981);
+  background: var(--color-bamboo, var(--ds-success));
   border: none;
   color: var(--text-primary);
   padding: 0.5rem 1rem;

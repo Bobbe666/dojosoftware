@@ -23,7 +23,7 @@
   background-color: var(--sc-bg, transparent);
 }
 .sc-pad-wrapper--signed { border: 2px solid var(--status-success); }
-.sc-pad-wrapper--disabled { background-color: rgba(255,255,255,0.05); }
+.sc-pad-wrapper--disabled { background-color: var(--ds-bg-card-hover); }
 
 .sc-placeholder {
   position: absolute;
@@ -68,7 +68,7 @@
 
 .sc-clear-btn {
   padding: 0.5rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -76,13 +76,13 @@
   font-size: 0.875rem;
   font-weight: 500;
   transition: all 0.2s ease;
-  background-color: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.8);
+  background-color: var(--ds-bg-elevated);
+  color: var(--ds-text-secondary);
   cursor: pointer;
 }
 .sc-clear-btn:disabled {
-  background-color: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.3);
+  background-color: var(--ds-bg-card-hover);
+  color: var(--ds-text-faint);
   cursor: not-allowed;
 }
 

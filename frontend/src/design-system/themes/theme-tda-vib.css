@@ -271,7 +271,7 @@ html[data-theme="tda-vib"] body {
 }
 
 /* ========== HEADINGS ========== */
-/* Überschreibt globales designsystem.css h1-h6 { color: #ffd700 !important }
+/* Überschreibt globales designsystem.css h1-h6 { color: var(--ds-accent) !important }
    — gelb auf hellem Hintergrund wäre unlesbar */
 
 html[data-theme="tda-vib"] h1,

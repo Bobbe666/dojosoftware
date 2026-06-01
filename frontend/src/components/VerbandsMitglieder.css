@@ -48,7 +48,7 @@
 
 .vm-modal-footer {
   padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
   display: flex;
   gap: 12px;
   justify-content: flex-end;

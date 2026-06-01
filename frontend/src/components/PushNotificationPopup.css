@@ -19,15 +19,15 @@
 }
 
 .pnp-card {
-  background: var(--bg-secondary, #1a1a2e);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--bg-secondary, var(--ds-bg-surface));
+  border: 1px solid var(--ds-accent-30);
   border-radius: 16px;
   width: 100%;
   max-width: 580px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--ds-accent-10);
   animation: pnp-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
 }
@@ -43,8 +43,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.85rem 1rem 0.75rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.12);
-  background: rgba(255, 215, 0, 0.05);
+  border-bottom: 1px solid var(--ds-accent-10);
+  background: var(--ds-accent-05);
 }
 
 .pnp-header-left {
@@ -54,30 +54,30 @@
 }
 
 .pnp-bell-icon {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
 }
 
 .pnp-header-title {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .pnp-counter {
   font-size: 0.72rem;
-  color: var(--text-muted, rgba(255,255,255,0.45));
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, var(--ds-text-muted));
+  background: var(--ds-bg-elevated);
   padding: 0.1rem 0.45rem;
   border-radius: 20px;
 }
 
 .pnp-close-btn {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
-  color: var(--text-secondary, rgba(255,255,255,0.6));
+  color: var(--text-secondary, var(--ds-text-secondary));
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -86,7 +86,7 @@
 }
 .pnp-close-btn:hover {
   background: rgba(255,255,255,0.14);
-  color: #fff;
+  color: var(--ds-text);
 }
 
 /* Body */
@@ -100,14 +100,14 @@
 .pnp-subject {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   margin-bottom: 0.55rem;
   line-height: 1.3;
 }
 
 .pnp-message {
   font-size: 0.88rem;
-  color: var(--text-secondary, rgba(255,255,255,0.75));
+  color: var(--text-secondary, var(--ds-text-secondary));
   line-height: 1.55;
   white-space: pre-wrap;
 }
@@ -115,7 +115,7 @@
 .pnp-time {
   margin-top: 0.65rem;
   font-size: 0.72rem;
-  color: var(--text-muted, rgba(255,255,255,0.4));
+  color: var(--text-muted, var(--ds-text-muted));
 }
 
 /* Footer */
@@ -124,7 +124,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.2rem 1rem;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid var(--ds-border);
   gap: 0.5rem;
 }
 
@@ -132,10 +132,10 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.4);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   border-radius: 8px;
-  color: #22c55e;
+  color: var(--ds-success);
   font-size: 0.82rem;
   font-weight: 600;
   padding: 0.45rem 0.85rem;
@@ -143,13 +143,13 @@
   transition: all 0.15s;
 }
 .pnp-confirm-btn:hover {
-  background: rgba(34, 197, 94, 0.25);
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  background: var(--ds-success-25);
+  box-shadow: 0 2px 8px var(--ds-success-25);
 }
 
 .pnp-confirmed-badge {
   font-size: 0.78rem;
-  color: #22c55e;
+  color: var(--ds-success);
   font-weight: 600;
 }
 
@@ -161,10 +161,10 @@
 }
 
 .pnp-nav-btn {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
-  color: var(--text-secondary, rgba(255,255,255,0.6));
+  color: var(--text-secondary, var(--ds-text-secondary));
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -183,7 +183,7 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  background: var(--primary, #ffd700);
+  background: var(--primary, var(--ds-accent));
   border: none;
   border-radius: 8px;
   color: #000;
@@ -195,5 +195,5 @@
 }
 .pnp-next-btn:hover {
   background: #ffdd33;
-  box-shadow: 0 2px 10px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 2px 10px var(--ds-accent-50);
 }

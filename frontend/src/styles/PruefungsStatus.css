@@ -21,7 +21,7 @@
 .ps2-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255,255,255,0.1);
+  border: 2px solid var(--ds-border);
   border-top-color: var(--primary, #c9a84c);
   border-radius: 50%;
   animation: ps2-spin 0.7s linear infinite;
@@ -30,10 +30,10 @@
 
 .ps2-error {
   padding: 16px;
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.25);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
-  color: #ef4444;
+  color: var(--ds-danger);
   font-size: 14px;
 }
 
@@ -57,7 +57,7 @@
   align-items: center;
   gap: 10px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--ds-border);
 }
 .ps2-stil-emoji {
   font-size: 18px;
@@ -84,7 +84,7 @@
   border-radius: 50%;
   margin-left: 4px;
   flex-shrink: 0;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid var(--ds-border-strong);
 }
 .ps2-stil-current-grad {
   font-size: 13px;
@@ -144,14 +144,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 5px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
   font-size: 13px;
 }
 .ps2-stat-row:last-child { border-bottom: none; }
-.ps2-stat-row-top { margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 8px; }
+.ps2-stat-row-top { margin-top: 8px; border-top: 1px solid var(--ds-border-subtle); padding-top: 8px; }
 .ps2-stat-label { color: var(--text-muted, #9ca3af); display: flex; align-items: center; gap: 5px; }
 .ps2-stat-value { font-weight: 600; color: var(--text, #e8eaed); }
-.ps2-stat-ok { color: #22c55e; }
+.ps2-stat-ok { color: var(--ds-success); }
 .ps2-stat-warn { color: #f59e0b; }
 
 /* Fortschrittsbalken */
@@ -164,7 +164,7 @@
 .ps2-progress-track {
   flex: 1;
   height: 6px;
-  background: rgba(255,255,255,0.08);
+  background: var(--ds-bg-elevated);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -212,9 +212,9 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #22c55e;
-  background: rgba(34,197,94,0.1);
-  border: 1px solid rgba(34,197,94,0.25);
+  color: var(--ds-success);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   padding: 6px 10px;
   border-radius: 6px;
 }
@@ -251,8 +251,8 @@
   align-items: center;
   gap: 5px;
   padding: 5px 10px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 6px;
   color: var(--text-muted, #9ca3af);
   font-size: 11px;
@@ -260,7 +260,7 @@
   transition: all 0.2s;
 }
 .ps2-btn-add:hover {
-  background: rgba(255,255,255,0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text, #e8eaed);
 }
 
@@ -282,14 +282,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border-subtle);
   border-radius: 8px;
   gap: 12px;
   transition: background 0.15s;
 }
 .ps2-urkunde-row:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
 }
 .ps2-urkunde-row--latest {
   background: rgba(201,168,76,0.06);
@@ -309,7 +309,7 @@
   height: 14px;
   border-radius: 50%;
   flex-shrink: 0;
-  border: 1px solid rgba(255,255,255,0.25);
+  border: 1px solid var(--ds-border-strong);
 }
 
 .ps2-urkunde-info {
@@ -384,8 +384,8 @@
   align-items: center;
   gap: 6px;
   padding: 7px 12px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 7px;
   color: var(--text-secondary, #d1d5db);
   font-size: 12px;
@@ -416,7 +416,7 @@
   align-items: center;
   gap: 12px;
   padding: 7px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
   font-size: 13px;
 }
 .ps2-hist-row:last-child { border-bottom: none; }
@@ -427,7 +427,7 @@
 .ps2-btn-delete {
   background: none;
   border: none;
-  color: rgba(239,68,68,0.6);
+  color: var(--ds-danger-25);
   cursor: pointer;
   padding: 3px;
   border-radius: 4px;
@@ -435,7 +435,7 @@
   align-items: center;
   transition: color 0.2s;
 }
-.ps2-btn-delete:hover { color: #ef4444; }
+.ps2-btn-delete:hover { color: var(--ds-danger); }
 
 /* Modals */
 .ps2-modal-overlay {
@@ -522,15 +522,15 @@
 
 .ps2-btn-cancel {
   padding: 8px 16px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 7px;
   color: var(--text-muted, #9ca3af);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
 }
-.ps2-btn-cancel:hover { background: rgba(255,255,255,0.1); color: var(--text, #e8eaed); }
+.ps2-btn-cancel:hover { background: var(--ds-bg-elevated); color: var(--text, #e8eaed); }
 
 .ps2-btn-save {
   padding: 8px 20px;
@@ -550,8 +550,8 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 8px 16px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 12px 14px;
 }
@@ -608,8 +608,8 @@
 
 .ps2-btn-confirm-modal {
   padding: 8px 20px;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.15);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 7px;
   color: var(--text-muted, #9ca3af);
   font-size: 13px;
@@ -618,9 +618,9 @@
   transition: all 0.2s;
 }
 .ps2-btn-confirm-modal--active {
-  background: rgba(34,197,94,0.15);
-  border-color: rgba(34,197,94,0.4);
-  color: #22c55e;
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
+  color: var(--ds-success);
   cursor: pointer;
 }
-.ps2-btn-confirm-modal--active:hover { background: rgba(34,197,94,0.25); }
+.ps2-btn-confirm-modal--active:hover { background: var(--ds-success-25); }

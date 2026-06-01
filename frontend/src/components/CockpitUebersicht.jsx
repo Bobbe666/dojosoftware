@@ -168,7 +168,7 @@ function ArtikelBestellungenPopup({ onClose, onAcknowledged, activeDojo }) {
                   <div style={{ fontSize: '.82rem', color: 'var(--text-muted,#94a3b8)' }}>{b.artikel_name} × {b.menge}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
                     <span style={{ fontWeight: 700, color: '#d4af37', fontSize: '.85rem' }}>{(b.preis_cent / 100).toFixed(2)} €</span>
-                    <span style={{ background: statusColor[b.status] || '#888', color: '#fff', borderRadius: 4, padding: '1px 8px', fontSize: '.72rem', fontWeight: 600 }}>{b.status}</span>
+                    <span style={{ background: statusColor[b.status] || '#888', color: 'var(--ds-text)', borderRadius: 4, padding: '1px 8px', fontSize: '.72rem', fontWeight: 600 }}>{b.status}</span>
                   </div>
                 </div>
               ))}

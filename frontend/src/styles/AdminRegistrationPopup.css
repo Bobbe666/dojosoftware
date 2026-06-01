@@ -99,7 +99,7 @@
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--primary);
 }
 
@@ -116,8 +116,8 @@
 
 .notification-badge .badge {
   display: inline-block;
-  background: rgba(34, 197, 94, 0.2);
-  border: 1px solid rgba(34, 197, 94, 0.4);
+  background: var(--ds-success-25);
+  border: 1px solid var(--ds-success-25);
   color: var(--status-success);
   padding: 0.5rem 1rem;
   border-radius: 20px;
@@ -225,7 +225,7 @@
 
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--primary-alpha-40) 0%, var(--primary-alpha-30) 100%);
-  border-color: rgba(255, 215, 0, 0.7);
+  border-color: var(--ds-accent-50);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
@@ -308,8 +308,8 @@
 }
 
 .erstcheck-status-banner.aktiv {
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   color: var(--status-success);
 }
 
@@ -342,7 +342,7 @@
 .erstcheck-section {
   margin-bottom: 1rem;
   background: var(--surface-2);
-  border: 1px solid var(--primary-alpha-15, rgba(255,215,0,0.15));
+  border: 1px solid var(--primary-alpha-15, var(--ds-accent-15));
   border-radius: var(--comp-radius-lg);
   overflow: hidden;
 }
@@ -400,8 +400,8 @@
   justify-content: center;
 }
 
-.erstcheck-icon.ok { color: var(--status-success, #22c55e); }
-.erstcheck-icon.missing { color: var(--status-error, #ef4444); }
+.erstcheck-icon.ok { color: var(--status-success, var(--ds-success)); }
+.erstcheck-icon.missing { color: var(--status-error, var(--ds-danger)); }
 .erstcheck-icon.warn { color: #eab308; }
 
 .erstcheck-html-fallback {
@@ -434,8 +434,8 @@
 }
 
 .btn-genehmigen {
-  background: var(--success, #22c55e);
-  color: #fff;
+  background: var(--success, var(--ds-success));
+  color: var(--ds-text);
   border: none;
   padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
   border-radius: var(--comp-radius-md);
@@ -448,8 +448,8 @@
 .btn-genehmigen:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-ablehnen {
-  background: var(--danger, #ef4444);
-  color: #fff;
+  background: var(--danger, var(--ds-danger));
+  color: var(--ds-text);
   border: none;
   padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
   border-radius: var(--comp-radius-md);
@@ -462,8 +462,8 @@
 .btn-ablehnen:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-ablehnen-confirm {
-  background: var(--danger, #ef4444);
-  color: #fff;
+  background: var(--danger, var(--ds-danger));
+  color: var(--ds-text);
   border: none;
   padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
   border-radius: var(--comp-radius-md);
@@ -477,7 +477,7 @@
 
 .btn-secondary {
   background: transparent;
-  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+  border: 1px solid var(--border-color, var(--ds-border-strong));
   color: var(--text-2);
   padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
   border-radius: var(--comp-radius-md);
@@ -486,7 +486,7 @@
   cursor: pointer;
   transition: background 0.2s;
 }
-.btn-secondary:hover { background: rgba(255,255,255,0.06); }
+.btn-secondary:hover { background: var(--ds-bg-card-hover); }
 
 .ruhepause-ablehnen-form {
   margin-top: 1rem;
@@ -497,8 +497,8 @@
 
 .ruhepause-kommentar {
   width: 100%;
-  background: var(--surface-2, rgba(255,255,255,0.06));
-  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+  background: var(--surface-2, var(--ds-bg-card-hover));
+  border: 1px solid var(--border-color, var(--ds-border-strong));
   border-radius: var(--comp-radius-md);
   color: var(--text-1);
   padding: 0.5rem 0.75rem;

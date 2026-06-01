@@ -95,7 +95,7 @@
 /* Beschreibung text */
 .fa-card-desc {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--ds-text-muted);
   margin: 0.4rem 0 0;
   line-height: 1.5;
 }

@@ -184,7 +184,7 @@
 .pricing-features li {
   color: var(--text-2);
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
   font-size: 0.9rem;
 }
 

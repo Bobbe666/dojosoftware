@@ -17,14 +17,14 @@
 }
 
 @keyframes md-success-flash {
-  0%   { background: rgba(34,197,94,0.25); border-color: rgba(34,197,94,0.6); }
-  100% { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.25); }
+  0%   { background: var(--ds-success-25); border-color: var(--ds-success-25); }
+  100% { background: var(--ds-success-10); border-color: var(--ds-success-25); }
 }
 
 @keyframes md-pulse-ring {
-  0%   { box-shadow: 0 4px 20px rgba(255,215,0,0.1), 0 0 0 0 rgba(255,215,0,0.3); }
-  70%  { box-shadow: 0 4px 20px rgba(255,215,0,0.1), 0 0 0 10px rgba(255,215,0,0); }
-  100% { box-shadow: 0 4px 20px rgba(255,215,0,0.1), 0 0 0 0 rgba(255,215,0,0); }
+  0%   { box-shadow: 0 4px 20px var(--ds-accent-10), 0 0 0 0 var(--ds-accent-30); }
+  70%  { box-shadow: 0 4px 20px var(--ds-accent-10), 0 0 0 10px var(--ds-accent-05); }
+  100% { box-shadow: 0 4px 20px var(--ds-accent-10), 0 0 0 0 var(--ds-accent-05); }
 }
 
 @keyframes md-slide-in {
@@ -42,7 +42,7 @@
 
 .md-anim-success {
   animation: md-success-flash 0.8s ease forwards;
-  border-color: rgba(34,197,94,0.5) !important;
+  border-color: var(--ds-success-25) !important;
 }
 
 
@@ -68,7 +68,7 @@
 
 .member-alert-link {
   background: var(--error);
-  color: #fff;
+  color: var(--ds-text);
   padding: 0.375rem 1rem;
   border-radius: 6px;
   font-size: 0.8125rem;
@@ -85,9 +85,9 @@
   margin-bottom: 1rem;
   text-align: center;
   padding: 1.25rem 1rem 1rem;
-  background: linear-gradient(180deg, rgba(255,215,0,0.04) 0%, transparent 100%);
+  background: linear-gradient(180deg, var(--ds-accent-05) 0%, transparent 100%);
   border-radius: 18px;
-  border: 1px solid rgba(255,215,0,0.07);
+  border: 1px solid var(--ds-accent-05);
 }
 
 .member-welcome-dojo {
@@ -144,8 +144,8 @@
 .md-today-strip {
   margin: 0 0 1rem;
   padding: 0.75rem 1rem;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 14px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -153,7 +153,7 @@
 
 .md-today-date {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin-bottom: 0.6rem;
@@ -183,14 +183,14 @@
 
 .md-today-chip-label {
   font-size: 0.65rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 500;
 }
 
 .md-today-chip--warn .md-today-chip-val {
-  color: #f87171;
+  color: var(--ds-danger-soft);
 }
 
 .md-today-chip--warn .md-today-chip-label {
@@ -198,13 +198,13 @@
 }
 
 .md-today-chip--exam .md-today-chip-label {
-  color: rgba(255,215,0,0.6);
+  color: var(--ds-accent-50);
 }
 
 .md-today-chip-divider {
   width: 1px;
   height: 28px;
-  background: rgba(255,255,255,0.08);
+  background: var(--ds-bg-elevated);
   flex-shrink: 0;
   margin: 0 4px;
 }
@@ -217,7 +217,7 @@
   margin: 0 0 0.75rem;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -229,13 +229,13 @@
   padding: 0.75rem 1rem;
   background: linear-gradient(135deg,
     color-mix(in srgb, var(--belt-color, #fff) 12%, transparent) 0%,
-    rgba(255,255,255,0.02) 100%
+    var(--ds-bg-card) 100%
   );
   position: relative;
 }
 
 .md-belt-row + .md-belt-row {
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid var(--ds-border-subtle);
 }
 
 .md-belt-stripe {
@@ -260,7 +260,7 @@
 
 .md-belt-stil {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: 2px;
@@ -272,8 +272,8 @@
   align-items: center;
   gap: 2px;
   padding: 6px 10px;
-  background: rgba(255,215,0,0.08);
-  border: 1px solid rgba(255,215,0,0.2);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-20);
   border-radius: 10px;
   flex-shrink: 0;
 }
@@ -286,7 +286,7 @@
 .md-belt-exam-date {
   font-size: 0.65rem;
   font-weight: 700;
-  color: rgba(255,215,0,0.7);
+  color: var(--ds-accent-50);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -303,8 +303,8 @@
 }
 
 .member-stat-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 14px;
   padding: 0.6rem 0.6rem;
   text-align: center;
@@ -378,8 +378,8 @@
   gap: 0.45rem;
   padding: 0.6rem 0.5rem;
   min-height: 0;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
   box-shadow: none;
   animation: none;
@@ -393,8 +393,8 @@
 }
 
 .cta-tile-quick:hover {
-  background: rgba(255, 215, 0, 0.09);
-  border-color: rgba(255, 215, 0, 0.28);
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-30);
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
 }
@@ -415,19 +415,19 @@
 
 /* Aktiv-Zustand (z.B. Abwesenheit offen) */
 .cta-tile-quick.cta-tile--active {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.35);
+  background: var(--ds-danger-10);
+  border-color: var(--ds-danger-25);
 }
 .cta-tile-quick.cta-tile--active svg {
-  color: #ef4444;
+  color: var(--ds-danger);
   opacity: 1;
 }
 
 .cta-tile-qr {
-  background: rgba(255, 215, 0, 0.07);
-  border-color: rgba(255, 215, 0, 0.2);
+  background: var(--ds-accent-05);
+  border-color: var(--ds-accent-20);
 }
-.cta-tile-qr svg { color: var(--primary, #FFD700); opacity: 1; }
+.cta-tile-qr svg { color: var(--primary, var(--ds-accent)); opacity: 1; }
 
 /* Notification badge im Quick Action Tile */
 .member-notif-badge {
@@ -435,7 +435,7 @@
   top: 0.5rem;
   right: 0.5rem;
   background: var(--error);
-  color: #fff;
+  color: var(--ds-text);
   padding: 0.1rem 0.4rem;
   border-radius: 10px;
   font-size: 0.7rem;
@@ -534,9 +534,9 @@
 }
 
 .member-event-badge.registered {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid var(--ds-success-25);
 }
 
 .member-event-badge.register {
@@ -704,7 +704,7 @@
   width: 18px;
   height: 4px;
   border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border: 1px solid rgba(255,255,255,0.3);
   flex-shrink: 0;
 }
@@ -753,7 +753,7 @@
    ============================================= */
 
 .md-referral-explanation {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--ds-text-secondary);
   font-size: 0.85rem;
   line-height: 1.65;
   background: rgba(0, 0, 0, 0.2);
@@ -831,8 +831,8 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px dashed rgba(255, 215, 0, 0.2);
+  background: var(--ds-bg-card);
+  border: 1px dashed var(--ds-accent-20);
   border-radius: 12px;
   padding: 1rem 1.2rem;
   margin-top: 1.5rem;
@@ -857,7 +857,7 @@
 /* Subtile Abschnitts-Beschriftung statt großem Heading */
 .md-info-section-title {
   margin-bottom: 0.75rem;
-  color: rgba(255,255,255,0.45);
+  color: var(--ds-text-muted);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -870,7 +870,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: rgba(255,255,255,0.07);
+  background: var(--ds-bg-card-hover);
 }
 
 .md-info-list {
@@ -891,8 +891,8 @@
 
 /* BuddyGruppen — gleiche Optik wie TrainingReminders */
 .buddy-gruppen-widget {
-  background: var(--bg-card, rgba(255,255,255,0.06));
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  background: var(--bg-card, var(--ds-bg-card-hover));
+  border: 1px solid var(--ds-accent-20);
   border-radius: 12px;
   padding: 0.85rem 1rem;
   display: flex;
@@ -903,20 +903,20 @@
 .buddy-gruppen-widget h3 {
   margin: 0;
   font-size: 0.85rem;
-  color: #FFD700;
+  color: var(--ds-accent);
   font-weight: 600;
 }
 
 .buddy-gruppen-widget p {
   margin: 0;
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.5);
+  color: var(--ds-text-muted);
 }
 
 /* Shared info card pattern */
 .md-info-card {
   background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
   padding: 0.85rem 1rem;
   display: flex;
@@ -924,13 +924,13 @@
   transition: border-color 0.2s;
 }
 .md-info-card:hover {
-  border-color: rgba(255,215,0,0.2);
+  border-color: var(--ds-accent-20);
 }
 
 /* Variant: column layout for card body */
 .md-info-card-col {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 16px;
   padding: 1rem 1rem;
   display: flex;
@@ -943,7 +943,7 @@
 
 /* Approved exams purple card variant */
 .md-info-card-purple {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: 12px;
   padding: 1rem;
@@ -967,7 +967,7 @@
   color: var(--success);
   font-size: 0.8rem;
   font-weight: 600;
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--ds-success-10);
   padding: 0.2rem 0.5rem;
   border-radius: 6px;
   display: inline-block;
@@ -1011,7 +1011,7 @@
 .md-progress-track {
   width: 100%;
   height: 4px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -1101,7 +1101,7 @@
   color: var(--success);
   font-size: 0.75rem;
   font-weight: 600;
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--ds-success-10);
   padding: 0.2rem 0.5rem;
   border-radius: 6px;
   display: inline-block;
@@ -1113,7 +1113,7 @@
   width: 100%;
   padding: 0.5rem;
   background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  color: white;
+  color: var(--ds-text);
   border: none;
   border-radius: 6px;
   font-size: 0.8rem;
@@ -1126,8 +1126,8 @@
   margin-top: 0.5rem;
   width: 100%;
   padding: 0.5rem;
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: var(--ds-success-25);
+  border: 1px solid var(--ds-success-25);
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: bold;
@@ -1146,7 +1146,7 @@
 .md-count-badge-purple {
   margin-left: 0.5rem;
   background: #8b5cf6;
-  color: white;
+  color: var(--ds-text);
   padding: 0.1rem 0.4rem;
   border-radius: 10px;
   font-size: 0.7rem;
@@ -1156,8 +1156,8 @@
 /* Count badge (red) */
 .md-count-badge-red {
   margin-left: 0.5rem;
-  background: #ef4444;
-  color: white;
+  background: var(--ds-danger);
+  color: var(--ds-text);
   padding: 0.1rem 0.4rem;
   border-radius: 10px;
   font-size: 0.7rem;
@@ -1228,22 +1228,22 @@
 .md-notif-confirm-btn {
   margin-top: 0.5rem;
   padding: 0.4rem 0.8rem;
-  background: linear-gradient(135deg, #22c55e, #10b981);
+  background: linear-gradient(135deg, var(--ds-success), var(--ds-success));
   border: none;
   border-radius: 6px;
-  color: white;
+  color: var(--ds-text);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 2px 8px var(--ds-success-25);
 }
 
 .md-notif-confirmed-badge {
   margin-top: 0.5rem;
   padding: 0.4rem 0.8rem;
-  background: rgba(34, 197, 94, 0.2);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: var(--ds-success-25);
+  border: 1px solid var(--ds-success-25);
   border-radius: 6px;
   color: var(--success);
   font-size: 0.75rem;
@@ -1261,7 +1261,7 @@
 .md-notif-readmore {
   background: none;
   border: none;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -1295,7 +1295,7 @@
 }
 
 .md-modal-box {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   border: 2px solid rgba(139, 92, 246, 0.4);
   border-radius: 16px;
   padding: 2rem;
@@ -1303,7 +1303,7 @@
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  color: white;
+  color: var(--ds-text);
 }
 
 .md-modal-header {
@@ -1396,21 +1396,21 @@
 }
 
 .md-modal-info-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 8px;
   padding: 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
 }
 
 .md-modal-info-value {
   font-size: 1rem;
   font-weight: 600;
-  color: white;
+  color: var(--ds-text);
 }
 
 .md-modal-info-value-sm {
   font-size: 0.95rem;
-  color: white;
+  color: var(--ds-text);
 }
 
 .md-modal-time-text {
@@ -1440,10 +1440,10 @@
 }
 
 .md-modal-frist-card {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--ds-danger-10);
   border-radius: 8px;
   padding: 0.8rem;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 1px solid var(--ds-danger-25);
 }
 
 .md-modal-frist-value {
@@ -1453,18 +1453,18 @@
 }
 
 .md-modal-belt-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 8px;
   padding: 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   margin-bottom: 1rem;
 }
 
 .md-modal-remarks-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 8px;
   padding: 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   margin-bottom: 1rem;
 }
 
@@ -1500,7 +1500,7 @@
    ============================================= */
 
 .md-modal-checkbox-wrap {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -1530,10 +1530,10 @@
 .md-modal-cancel-btn {
   flex: 1;
   padding: 0.8rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
-  color: white;
+  color: var(--ds-text);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -1552,15 +1552,15 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-15);
   border-radius: 10px;
   padding: 0.6rem 0.8rem;
   cursor: pointer;
 }
 .md-event-card--registered {
-  background: rgba(16,185,129,0.08);
-  border-color: rgba(16,185,129,0.25);
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
 }
 
 /* Referral copy button */
@@ -1580,8 +1580,8 @@
   flex-shrink: 0;
 }
 .md-referral-copy-btn--copied {
-  background: rgba(16,185,129,0.2);
-  border-color: rgba(16,185,129,0.5);
+  background: var(--ds-success-25);
+  border-color: var(--ds-success-25);
   color: var(--status-success);
 }
 
@@ -1640,8 +1640,8 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.4rem 0.7rem;
   flex-wrap: wrap;
@@ -1655,7 +1655,7 @@
 
 .md-stil-chip__exam {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.45);
+  color: var(--ds-text-muted);
   margin-left: 0.2rem;
 }
 
@@ -1674,8 +1674,8 @@
   border-radius: 8px;
   padding: 0.6rem;
 }
-.md-exam-result-card--pass { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); }
-.md-exam-result-card--fail { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3); }
+.md-exam-result-card--pass { background: var(--ds-success-10); border: 1px solid var(--ds-success-25); }
+.md-exam-result-card--fail { background: var(--ds-danger-10);  border: 1px solid var(--ds-danger-25); }
 
 /* Exam result stil name */
 .md-exam-result-stil {
@@ -1688,8 +1688,8 @@
 
 /* Notification item */
 .md-notif-item {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.6rem;
 }
@@ -1701,7 +1701,7 @@
 /* Notification title */
 .md-notif-title {
   font-weight: normal;
-  color: rgba(255,255,255,0.8);
+  color: var(--ds-text-secondary);
   font-size: 0.85rem;
   margin-bottom: 0.2rem;
 }
@@ -1717,7 +1717,7 @@
   background: linear-gradient(135deg, #8b5cf6, #6366f1);
   border: none;
   border-radius: 8px;
-  color: white;
+  color: var(--ds-text);
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
@@ -1725,7 +1725,7 @@
 }
 .md-exam-confirm-btn:disabled {
   background: rgba(139,92,246,0.3);
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   cursor: not-allowed;
 }
 
@@ -1734,15 +1734,15 @@
    ============================================= */
 .member-news-wrap {
   margin: 1.25rem 0;
-  background: var(--bg-card, rgba(255,255,255,0.05));
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--bg-card, var(--ds-bg-card-hover));
+  border: 1px solid var(--ds-border);
   border-radius: 14px;
   overflow: hidden;
 }
 
 .member-news-header {
   padding: 0.875rem 1.1rem 0.75rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .member-news-title {
@@ -1763,7 +1763,7 @@
   gap: 0.875rem;
   align-items: flex-start;
   padding: 0.875rem 1.1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 .member-news-card:last-child { border-bottom: none; }
 
@@ -1863,8 +1863,8 @@
 
 .member-news-modal-box {
   position: relative;
-  background: var(--bg-card, #1a1a2e);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--bg-card, var(--ds-bg-surface));
+  border: 1px solid var(--ds-border);
   border-radius: 16px;
   width: 100%;
   max-width: 640px;
@@ -1884,7 +1884,7 @@
   right: 14px;
   z-index: 10;
   background: rgba(0,0,0,0.55);
-  color: #fff;
+  color: var(--ds-text);
   border: none;
   border-radius: 50%;
   width: 36px;
@@ -1940,8 +1940,8 @@
 
 /* Vertragsstatus / Tarif-Anpassung Section */
 .md-anpassung-section {
-  background: var(--bg-card, rgba(255,255,255,0.05));
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--bg-card, var(--ds-bg-card-hover));
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
   padding: 1rem 1.2rem;
   margin: 1.25rem 0;
@@ -1958,7 +1958,7 @@
   margin-top: 10px;
   padding: 10px 16px;
   background: #000;
-  color: #fff;
+  color: var(--ds-text);
   border: none;
   border-radius: 10px;
   font-size: 0.9rem;
@@ -1974,7 +1974,7 @@
 .wallet-error-hint {
   text-align: center;
   font-size: 0.78rem;
-  color: var(--color-danger, #ef4444);
+  color: var(--color-danger, var(--ds-danger));
   margin: 4px 0 0;
 }
 
@@ -2146,10 +2146,10 @@ html[data-theme="tda-vib"] .dashboard-container [class*="-widget"] {
   --text-2: rgba(255,255,255,0.85);
   --text-3: rgba(255,255,255,0.65);
   --text-4: rgba(255,255,255,0.45);
-  color: rgba(255,255,255,0.95) !important;
+  color: var(--ds-text) !important;
 }
 [data-theme="tda-vib"] .mitglieds-ausweis .ausweis-name {
-  color: rgba(255,255,255,0.95) !important;
+  color: var(--ds-text) !important;
   -webkit-text-fill-color: rgba(255,255,255,0.95) !important;
   text-shadow: none !important;
 }
@@ -2165,22 +2165,22 @@ html[data-theme="tda-vib"] .dashboard-container [class*="-widget"] {
   background-clip: unset !important;
 }
 [data-theme="tda-vib"] .mitglieds-ausweis .ausweis-title p {
-  color: rgba(255,255,255,0.6) !important;
+  color: var(--ds-text-secondary) !important;
 }
 [data-theme="tda-vib"] .mitglieds-ausweis .ausweis-detail label {
-  color: rgba(255,255,255,0.5) !important;
+  color: var(--ds-text-muted) !important;
 }
 [data-theme="tda-vib"] .mitglieds-ausweis .ausweis-detail span {
-  color: rgba(255,255,255,0.92) !important;
+  color: var(--ds-text) !important;
 }
 [data-theme="tda-vib"] .mitglieds-ausweis .ausweis-footer {
-  color: rgba(255,255,255,0.55) !important;
+  color: var(--ds-text-muted) !important;
 }
 [data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.valid {
-  background: rgba(34,197,94,0.15) !important;
+  background: var(--ds-success-10) !important;
   color: #86efac !important;
 }
 [data-theme="tda-vib"] .mitglieds-ausweis .ausweis-status.invalid {
-  background: rgba(239,68,68,0.15) !important;
+  background: var(--ds-danger-10) !important;
   color: #fca5a5 !important;
 }

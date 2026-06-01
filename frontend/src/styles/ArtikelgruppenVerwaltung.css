@@ -198,7 +198,7 @@
   background: var(--hintergrund-fehler);
   color: var(--farbe-fehler);
   padding: var(--abstand-md) var(--abstand-lg);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid var(--ds-danger-25);
   border-radius: var(--radius-sm);
   margin-bottom: var(--abstand-lg);
   display: flex;
@@ -226,7 +226,7 @@
 }
 
 .error-message button:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
 }
 
 /* Controls section removed - now in header */
@@ -407,13 +407,13 @@
 }
 
 .artikelgruppen-verwaltung .delete-btn {
-  background: rgba(239, 68, 68, 0.1) !important;
-  border-color: rgba(239, 68, 68, 0.3) !important;
+  background: var(--ds-danger-10) !important;
+  border-color: var(--ds-danger-25) !important;
   color: var(--status-error) !important;
 }
 
 .artikelgruppen-verwaltung .delete-btn:hover {
-  background: #ef4444 !important;
+  background: var(--ds-danger) !important;
   border-color: var(--status-error) !important;
   color: var(--text-1) !important;
 }
@@ -577,7 +577,7 @@
 
 .modal-header {
   padding: 0.75rem 1rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -707,7 +707,7 @@
 
 .modal-footer {
   padding: 0.75rem 1rem !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
@@ -733,7 +733,7 @@
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
+  border: 4px solid var(--ds-border);
   border-top: 4px solid var(--farbe-hauptfarbe);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -1125,8 +1125,8 @@ body:not(.dark-mode):not(.dark) .detail-icon {
 
 [data-theme="dark"] .artikelgruppen-verwaltung .delete-btn,
 .dark-mode .artikelgruppen-verwaltung .delete-btn {
-  background: rgba(239, 68, 68, 0.2) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: var(--ds-danger-25) !important;
+  border-color: var(--ds-danger-25) !important;
   color: var(--status-error) !important;
 }
 

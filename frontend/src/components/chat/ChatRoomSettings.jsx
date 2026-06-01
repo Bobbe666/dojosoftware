@@ -387,7 +387,7 @@ const ChatRoomSettings = ({ room, token, onClose, onUpdated }) => {
                   </div>
                 )}
                 {addQuery.length >= 2 && !isSearching && addResults.length === 0 && (
-                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', padding: '0.5rem 0.2rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ds-text-faint)', padding: '0.5rem 0.2rem' }}>
                     Keine Treffer — alle gefundenen Personen sind bereits Mitglied.
                   </div>
                 )}

@@ -26,7 +26,6 @@ const AnhangBibliothek = lazy(() => import('./AnhangBibliothek'));
 // Alle Tabs in einer einzigen Zeile — immer sichtbar
 // vorlagen_* Tabs zeigen VorlagenVerwaltung mit der jeweiligen Ansicht
 const TABS = [
-  { id: 'uebersicht',            label: 'Übersicht',       icon: LayoutGrid },
   { id: 'vorlagen',              label: 'Vorlagen',         icon: Mail },
   { id: 'vorlagen_einstellungen',label: 'Einstellungen',    icon: Settings },
   { id: 'vorlagen_verlauf',      label: 'Verlauf',          icon: History },
@@ -54,7 +53,7 @@ const LazyFallback = () => (
 export default function DokumentenZentrale({ embedded = false }) {
   const navigate = useNavigate();
   const { activeDojo } = useDojoContext();
-  const [activeTab, setActiveTab] = useState('uebersicht');
+  const [activeTab, setActiveTab] = useState('vorlagen');
   // 'neu' ist ein einmaliger Trigger für "Neue Vorlage" — wird nach Auslösung zurückgesetzt
   const [vorlagenNeuTrigger, setVorlagenNeuTrigger] = useState(0);
   const [stats, setStats] = useState(null);
@@ -116,6 +115,10 @@ export default function DokumentenZentrale({ embedded = false }) {
             Alle Dokumente, Vorlagen & Verträge zentral verwalten
           </p>
         </div>
+        <button className="dz-header-action" onClick={handleNeueVorlage}>
+          <Plus size={18} />
+          Neue Vorlage
+        </button>
       </div>
       )}
 
@@ -134,74 +137,17 @@ export default function DokumentenZentrale({ embedded = false }) {
             </button>
           );
         })}
-        {/* "+ Neue Vorlage" als Action-Button am Ende — kein eigener Tab-State */}
-        <button
-          className="dz-tab dz-tab--action"
-          onClick={handleNeueVorlage}
-        >
-          <Plus size={16} />
-          <span>Neue Vorlage</span>
-        </button>
+        {/* Im embedded-Modus (kein Header) bleibt die Aktion in der Tab-Zeile */}
+        {embedded && (
+          <button className="dz-tab dz-tab--action" onClick={handleNeueVorlage}>
+            <Plus size={16} />
+            <span>Neue Vorlage</span>
+          </button>
+        )}
       </div>
 
       {/* Content */}
       <div className="dz-content">
-
-        {/* Übersicht */}
-        {activeTab === 'uebersicht' && (
-          <div className="dz-uebersicht">
-            <div className="dz-stats-grid">
-              {statCards.map((card, i) => {
-                const Icon = card.icon;
-                return (
-                  <div
-                    key={i}
-                    className="dz-stat-card"
-                    onClick={() => setActiveTab(card.tab)}
-                    style={{ '--accent': card.color }}
-                  >
-                    <div className="dz-stat-icon">
-                      <Icon size={24} />
-                    </div>
-                    <div className="dz-stat-info">
-                      <span className="dz-stat-value">
-                        {loadingStats ? '...' : card.value}
-                      </span>
-                      <span className="dz-stat-label">{card.label}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="dz-quick-nav">
-              <h3>Schnellzugriff</h3>
-              <div className="dz-quick-cards">
-                <div className="dz-quick-card" onClick={() => setActiveTab('vorlagen')}>
-                  <Mail size={28} />
-                  <div>
-                    <h4>E-Mail & Brief-Vorlagen</h4>
-                    <p>Erstellen, bearbeiten und versenden Sie professionelle Vorlagen</p>
-                  </div>
-                </div>
-                <div className="dz-quick-card" onClick={() => setActiveTab('vertraege')}>
-                  <Shield size={28} />
-                  <div>
-                    <h4>Verträge & Rechtliches</h4>
-                    <p>AGB, Datenschutz, Hausordnung und Vertragsvorlagen verwalten</p>
-                  </div>
-                </div>
-                <div className="dz-quick-card" onClick={() => setActiveTab('berichte')}>
-                  <BarChart3 size={28} />
-                  <div>
-                    <h4>Berichte & PDFs</h4>
-                    <p>Mitgliederlisten, Anwesenheitsberichte und weitere PDFs erstellen</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Vorlagen, Einstellungen, Verlauf — alle zeigen VorlagenVerwaltung */}
         {isVorlagenTab && (

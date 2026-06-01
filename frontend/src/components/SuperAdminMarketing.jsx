@@ -325,7 +325,7 @@ function NewsletterTab({ dojoId, orgName }) {
             <option value="professionell">🎯 Professionell</option>
             <option value="humorvoll">😄 Locker</option>
           </select>
-          <button onClick={generateKiText} disabled={genKi} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 7, border: 'none', background: '#553c9a', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <button onClick={generateKiText} disabled={genKi} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 7, border: 'none', background: '#553c9a', color: 'var(--ds-text)', fontWeight: 600, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
             {genKi ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={13} />}
             {genKi ? 'Generiere…' : 'Text erstellen'}
           </button>
@@ -344,7 +344,7 @@ function NewsletterTab({ dojoId, orgName }) {
 
       {showPrev && content && (
         <div style={{ marginBottom: 12, border: '1px solid var(--border, #e2e8f0)', borderRadius: 8, overflow: 'hidden' }}>
-          <div style={{ background: '#1a1a2e', padding: '10px 16px', color: '#fff', fontWeight: 700, fontSize: 13 }}>Vorschau: {betreff || '(kein Betreff)'}</div>
+          <div style={{ background: '#1a1a2e', padding: '10px 16px', color: 'var(--ds-text)', fontWeight: 700, fontSize: 13 }}>Vorschau: {betreff || '(kein Betreff)'}</div>
           <div style={{ padding: 16, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', color: '#333' }}>{content}</div>
         </div>
       )}
@@ -433,14 +433,14 @@ function GeburtstageTab({ dojoId }) {
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>{m.vorname} {m.nachname}</div>
                     <div style={{ fontSize: 12, color: '#888' }}>wird {m.alter_jahre + 1} · {new Date(m.geburtsdatum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long' })}
-                      {m.tage_bis === 0 ? <span style={{ marginLeft: 6, background: '#38a169', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>🎂 Heute!</span>
-                        : m.tage_bis <= 3 ? <span style={{ marginLeft: 6, background: '#d69e2e', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 11 }}>in {m.tage_bis} Tag{m.tage_bis > 1 ? 'en' : ''}</span>
+                      {m.tage_bis === 0 ? <span style={{ marginLeft: 6, background: '#38a169', color: 'var(--ds-text)', borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>🎂 Heute!</span>
+                        : m.tage_bis <= 3 ? <span style={{ marginLeft: 6, background: '#d69e2e', color: 'var(--ds-text)', borderRadius: 10, padding: '1px 7px', fontSize: 11 }}>in {m.tage_bis} Tag{m.tage_bis > 1 ? 'en' : ''}</span>
                         : <span style={{ marginLeft: 6, color: '#666', fontSize: 11 }}>in {m.tage_bis} Tagen</span>}
                     </div>
                   </div>
                 </div>
                 <button onClick={() => generatePost(m)} disabled={generating && activeId === m.mitglied_id}
-                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 7, border: 'none', background: '#d4a017', color: '#fff', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 7, border: 'none', background: '#d4a017', color: 'var(--ds-text)', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
                   {generating && activeId === m.mitglied_id ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Generiere…</> : <><Sparkles size={12} /> Post erstellen</>}
                 </button>
               </div>
@@ -549,6 +549,6 @@ const inp = {
   outline: 'none', fontFamily: 'inherit'
 };
 const pill = { padding: '3px 9px', borderRadius: 14, fontSize: 11, border: '1px solid var(--border, #3a3a4a)', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted, #aaa)', transition: 'all 0.15s' };
-const pillAct = { background: '#d4a017', color: '#fff', borderColor: '#d4a017' };
-const btnP = { display: 'flex', alignItems: 'center', gap: 5, padding: '7px 16px', borderRadius: 8, border: 'none', background: '#d4a017', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' };
+const pillAct = { background: '#d4a017', color: 'var(--ds-text)', borderColor: '#d4a017' };
+const btnP = { display: 'flex', alignItems: 'center', gap: 5, padding: '7px 16px', borderRadius: 8, border: 'none', background: '#d4a017', color: 'var(--ds-text)', fontWeight: 600, fontSize: 13, cursor: 'pointer' };
 const btnS = { display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border, #3a3a4a)', background: 'transparent', fontSize: 12, color: 'var(--text-primary, #eee)', cursor: 'pointer' };

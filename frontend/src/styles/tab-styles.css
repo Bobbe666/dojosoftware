@@ -6,7 +6,7 @@
 
 /* Akzentfarbe (kann vom Benutzer via DesignTab geändert werden) */
 :root {
-  --tab-accent: var(--primary, #ffd700);
+  --tab-accent: var(--primary, var(--ds-accent));
 }
 
 /* ─── Preset: Underline ─────────────────────────────────────── */
@@ -17,14 +17,14 @@ html[data-tab-style="underline"] .tab-button {
   border: none !important;
   border-bottom: 2px solid transparent !important;
   border-radius: 0 !important;
-  color: rgba(255,255,255,0.55) !important;
+  color: var(--ds-text-muted) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 html[data-tab-style="underline"] .tab-button:hover:not(.active) {
-  background: rgba(255,255,255,0.04) !important;
-  border-bottom-color: rgba(255,255,255,0.2) !important;
-  color: rgba(255,255,255,0.85) !important;
+  background: var(--ds-bg-card) !important;
+  border-bottom-color: var(--ds-border-strong) !important;
+  color: var(--ds-text) !important;
   box-shadow: none !important;
   transform: none !important;
 }
@@ -45,23 +45,23 @@ html[data-tab-style="underline"] .tab-navigation .tab-button {
 /* Track-Hintergrund, solide Füllung bei Aktiv */
 
 html[data-tab-style="pill-solid"] .tab-navigation {
-  background: rgba(255,255,255,0.04) !important;
+  background: var(--ds-bg-card) !important;
   padding: 4px !important;
   border-radius: 100px !important;
-  border: 1px solid rgba(255,255,255,0.07) !important;
+  border: 1px solid var(--ds-border) !important;
   gap: 2px !important;
 }
 html[data-tab-style="pill-solid"] .tab-button {
   background: transparent !important;
   border: none !important;
   border-radius: 100px !important;
-  color: rgba(255,255,255,0.55) !important;
+  color: var(--ds-text-muted) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 html[data-tab-style="pill-solid"] .tab-button:hover:not(.active) {
-  background: rgba(255,255,255,0.07) !important;
-  color: rgba(255,255,255,0.88) !important;
+  background: var(--ds-bg-card-hover) !important;
+  color: var(--ds-text) !important;
   box-shadow: none !important;
   transform: none !important;
   border-color: transparent !important;
@@ -78,10 +78,10 @@ html[data-tab-style="pill-solid"] .tab-button.active {
 /* Leicht getönter Track, sanfte Outline-Box bei Aktiv */
 
 html[data-tab-style="frosted"] .tab-navigation {
-  background: rgba(255,255,255,0.03) !important;
+  background: var(--ds-bg-card) !important;
   padding: 3px !important;
   border-radius: 10px !important;
-  border: 1px solid rgba(255,255,255,0.06) !important;
+  border: 1px solid var(--ds-border-subtle) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
   gap: 2px !important;
@@ -90,22 +90,22 @@ html[data-tab-style="frosted"] .tab-button {
   background: transparent !important;
   border: 1px solid transparent !important;
   border-radius: 7px !important;
-  color: rgba(255,255,255,0.55) !important;
+  color: var(--ds-text-muted) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 html[data-tab-style="frosted"] .tab-button:hover:not(.active) {
-  background: rgba(255,255,255,0.06) !important;
-  border-color: rgba(255,255,255,0.08) !important;
-  color: rgba(255,255,255,0.85) !important;
+  background: var(--ds-bg-card-hover) !important;
+  border-color: var(--ds-border) !important;
+  color: var(--ds-text) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 html[data-tab-style="frosted"] .tab-button.active {
-  background: rgba(255,215,0,0.10) !important;
-  border-color: rgba(255,215,0,0.25) !important;
+  background: var(--ds-accent-10) !important;
+  border-color: var(--ds-accent-25) !important;
   color: var(--tab-accent) !important;
-  box-shadow: 0 0 0 1px rgba(255,215,0,0.12) inset, 0 2px 8px rgba(255,215,0,0.08) !important;
+  box-shadow: 0 0 0 1px var(--ds-accent-10) inset, 0 2px 8px var(--ds-accent-10) !important;
   transform: none !important;
 }
 
@@ -114,21 +114,21 @@ html[data-tab-style="frosted"] .tab-button.active {
 
 html[data-tab-style="bordered"] .tab-button {
   background: transparent !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
+  border: 1px solid var(--ds-border) !important;
   border-radius: 7px !important;
-  color: rgba(255,255,255,0.55) !important;
+  color: var(--ds-text-muted) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 html[data-tab-style="bordered"] .tab-button:hover:not(.active) {
-  background: rgba(255,255,255,0.04) !important;
-  border-color: rgba(255,255,255,0.2) !important;
-  color: rgba(255,255,255,0.85) !important;
+  background: var(--ds-bg-card) !important;
+  border-color: var(--ds-border-strong) !important;
+  color: var(--ds-text) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 html[data-tab-style="bordered"] .tab-button.active {
-  background: rgba(255,215,0,0.08) !important;
+  background: var(--ds-accent-10) !important;
   border-color: var(--tab-accent) !important;
   color: var(--tab-accent) !important;
   box-shadow: none !important;
@@ -156,8 +156,8 @@ html[data-tab-style] .tab-button:hover {
 }
 
 .dtab-style-card {
-  background: rgba(255,255,255,0.025);
-  border: 2px solid rgba(255,255,255,0.08);
+  background: var(--ds-bg-card);
+  border: 2px solid var(--ds-border);
   border-radius: 12px;
   padding: 1.1rem 1rem 0.9rem;
   cursor: pointer;
@@ -165,12 +165,12 @@ html[data-tab-style] .tab-button:hover {
   user-select: none;
 }
 .dtab-style-card:hover {
-  border-color: rgba(255,255,255,0.2);
+  border-color: var(--ds-border-strong);
   transform: translateY(-1px);
 }
 .dtab-style-card.active {
-  border-color: var(--primary, #ffd700);
-  box-shadow: 0 0 0 1px rgba(255,215,0,0.15), 0 4px 16px rgba(255,215,0,0.08);
+  border-color: var(--primary, var(--ds-accent));
+  box-shadow: 0 0 0 1px var(--ds-accent-15), 0 4px 16px var(--ds-accent-10);
 }
 
 .dtab-preview-strip {
@@ -196,20 +196,20 @@ html[data-tab-style] .tab-button:hover {
 .dtab-style-label {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   margin-bottom: 0.2rem;
 }
 
 .dtab-style-desc {
   font-size: 0.75rem;
-  color: var(--text-secondary, rgba(255,255,255,0.5));
+  color: var(--text-secondary, var(--ds-text-muted));
   line-height: 1.4;
 }
 
 .dtab-active-check {
   float: right;
   font-size: 0.8rem;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   font-weight: 700;
 }
 
@@ -219,8 +219,8 @@ html[data-tab-style] .tab-button:hover {
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
@@ -229,7 +229,7 @@ html[data-tab-style] .tab-button:hover {
 .dtab-color-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-secondary, rgba(255,255,255,0.7));
+  color: var(--text-secondary, var(--ds-text-secondary));
   flex: 1;
   min-width: 120px;
 }
@@ -245,7 +245,7 @@ html[data-tab-style] .tab-button:hover {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.15);
+  border: 2px solid var(--ds-border-strong);
   cursor: pointer;
   padding: 0;
   background: none;
@@ -254,24 +254,24 @@ html[data-tab-style] .tab-button:hover {
 
 .dtab-color-hex {
   font-size: 0.8rem;
-  color: var(--text-secondary, rgba(255,255,255,0.6));
+  color: var(--text-secondary, var(--ds-text-secondary));
   font-family: monospace;
   min-width: 70px;
 }
 
 .dtab-color-reset {
   padding: 0.35rem 0.8rem;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 6px;
-  color: var(--text-secondary, rgba(255,255,255,0.6));
+  color: var(--text-secondary, var(--ds-text-secondary));
   font-size: 0.78rem;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 .dtab-color-reset:hover {
-  background: rgba(255,255,255,0.09);
-  color: var(--text-primary, #fff);
+  background: var(--ds-bg-elevated);
+  color: var(--text-primary, var(--ds-text));
 }
 
 /* Save button + success state */
@@ -286,23 +286,23 @@ html[data-tab-style] .tab-button:hover {
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1.4rem;
-  background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,107,53,0.12));
-  border: 1px solid rgba(255,215,0,0.3);
+  background: linear-gradient(135deg, var(--ds-accent-20), rgba(255,107,53,0.12));
+  border: 1px solid var(--ds-accent-30);
   border-radius: 8px;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s, box-shadow 0.15s;
 }
 .dtab-save-btn:hover {
-  background: linear-gradient(135deg, rgba(255,215,0,0.28), rgba(255,107,53,0.18));
-  box-shadow: 0 2px 16px rgba(255,215,0,0.15);
+  background: linear-gradient(135deg, var(--ds-accent-30), rgba(255,107,53,0.18));
+  box-shadow: 0 2px 16px var(--ds-accent-15);
 }
 
 .dtab-saved-msg {
   font-size: 0.84rem;
-  color: #10b981;
+  color: var(--ds-success);
   font-weight: 600;
   animation: fadeIn 0.3s ease;
 }
@@ -310,7 +310,7 @@ html[data-tab-style] .tab-button:hover {
 /* Live-Vorschau Hinweis */
 .dtab-live-hint {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   margin-bottom: 1.25rem;
   display: flex;
   align-items: center;

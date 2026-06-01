@@ -334,13 +334,6 @@ export default function VorlagenVerwaltung({ embedded = false, controlledAnsicht
                           {profilObj.name}
                         </div>
                       )}
-
-                      {/* Betreff-Vorschau */}
-                      {v.email_betreff && (
-                        <div className="vv-description">
-                          "{v.email_betreff.length > 60 ? v.email_betreff.slice(0, 60) + '…' : v.email_betreff}"
-                        </div>
-                      )}
                     </div>
 
                     {/* Aktionen */}
@@ -520,10 +513,12 @@ function ActionBtn({ icon, label, onClick, primary, danger, color }) {
     <button
       onClick={onClick}
       title={label}
-      className={`vv-action-btn vv-action-btn--${variant}`}
+      aria-label={label}
+      className={`vv-action-btn vv-action-btn--${variant}${primary ? ' vv-action-btn--with-label' : ''}`}
       style={hasCustomColor ? { '--c': color, '--c22': `${color}22` } : undefined}
     >
-      {icon} {label}
+      {icon}
+      {primary && <span>{label}</span>}
     </button>
   );
 }

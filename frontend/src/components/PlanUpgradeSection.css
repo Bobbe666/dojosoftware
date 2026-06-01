@@ -2,7 +2,7 @@
 
 .plan-upgrade-section {
   padding: 1.5rem;
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   border-radius: 12px;
 }
 
@@ -14,20 +14,20 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 1.25rem;
   margin: 0 0 0.5rem 0;
 }
 
 .section-header p {
-  color: #9ca3af;
+  color: var(--ds-text-muted);
   margin: 0;
   font-size: 0.9rem;
 }
 
 /* Current Plan Card */
 .current-plan-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 2px solid;
   border-color: var(--plan-color, var(--status-indigo));
   border-radius: 12px;
@@ -45,7 +45,7 @@
 .plan-badge {
   padding: 0.5rem 1rem;
   border-radius: 6px;
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 600;
   font-size: 0.9rem;
   background-color: var(--plan-color, var(--status-indigo));
@@ -59,7 +59,7 @@
 }
 
 .status-badge.active {
-  background: rgba(34, 197, 94, 0.2);
+  background: var(--ds-success-25);
   color: var(--status-success);
 }
 
@@ -78,7 +78,7 @@
 }
 
 .detail-item svg {
-  color: #9ca3af;
+  color: var(--ds-text-muted);
 }
 
 .detail-item.trial-warning {
@@ -95,8 +95,8 @@
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   border-radius: 8px;
   color: var(--status-success);
   margin-bottom: 1.5rem;
@@ -164,8 +164,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   color: var(--status-error);
   margin-bottom: 1.5rem;
@@ -185,14 +185,14 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #fff;
+  color: var(--ds-text);
   margin: 0;
 }
 
 /* Billing Toggle */
 .billing-toggle {
   display: flex;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 8px;
   padding: 4px;
 }
@@ -202,7 +202,7 @@
   padding: 0.5rem 1rem;
   background: transparent;
   border: none;
-  color: #9ca3af;
+  color: var(--ds-text-muted);
   font-size: 0.9rem;
   cursor: pointer;
   border-radius: 6px;
@@ -211,15 +211,15 @@
 
 .billing-toggle button.active {
   background: #3b82f6;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .billing-toggle .save-badge {
   position: absolute;
   top: -8px;
   right: -8px;
-  background: #22c55e;
-  color: #fff;
+  background: var(--ds-success);
+  color: var(--ds-text);
   font-size: 0.65rem;
   padding: 2px 4px;
   border-radius: 4px;
@@ -236,16 +236,16 @@
 
 .upgrade-plan-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border: 2px solid;
-  border-color: var(--plan-color, rgba(255, 255, 255, 0.1));
+  border-color: var(--plan-color, var(--ds-border));
   border-radius: 12px;
   padding: 1.5rem;
   transition: all 0.2s;
 }
 
 .upgrade-plan-card:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   transform: translateY(-2px);
 }
 
@@ -263,7 +263,7 @@
   gap: 0.25rem;
   padding: 0.35rem 0.75rem;
   background: #8b5cf6;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 20px;
@@ -283,7 +283,7 @@
 .plan-header__title {
   margin: 0 0 0.5rem 0;
   font-size: 1.25rem;
-  color: var(--plan-color, #fff);
+  color: var(--plan-color, var(--ds-text));
 }
 
 .price-display {
@@ -293,24 +293,24 @@
 .price-amount {
   font-size: 2rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .price-period {
-  color: #9ca3af;
+  color: var(--ds-text-muted);
   font-size: 0.9rem;
 }
 
 .price-billed {
   display: block;
-  color: #6b7280;
+  color: var(--ds-text-secondary);
   font-size: var(--ui-card-label);
   margin-top: 0.25rem;
 }
 
 .price-savings {
   display: inline-block;
-  background: rgba(34, 197, 94, 0.2);
+  background: var(--ds-success-25);
   color: var(--status-success);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
@@ -333,7 +333,7 @@
   padding: 0.5rem 0;
   color: #e5e7eb;
   font-size: 0.9rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .plan-features li:last-child {
@@ -398,7 +398,7 @@
   padding: 0.875rem 1.5rem;
   border: 2px solid;
   border-radius: 8px;
-  color: #fff;
+  color: var(--ds-text);
   font-size: var(--ui-form-input);
   font-weight: 600;
   cursor: pointer;
@@ -424,10 +424,10 @@
   justify-content: center;
   gap: 0.75rem;
   padding: 2rem;
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
   border-radius: 12px;
-  color: #d4af37;
+  color: var(--ds-accent);
   text-align: center;
 }
 
@@ -443,7 +443,7 @@
   padding: 1rem;
   background: rgba(59, 130, 246, 0.1);
   border-radius: 8px;
-  color: #9ca3af;
+  color: var(--ds-text-muted);
   font-size: 0.85rem;
 }
 
@@ -460,7 +460,7 @@
 .loading-state {
   text-align: center;
   padding: 3rem;
-  color: #9ca3af;
+  color: var(--ds-text-muted);
 }
 
 /* Responsive */

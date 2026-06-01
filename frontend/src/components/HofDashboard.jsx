@@ -8,12 +8,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import HofNominierungModal from './HofNominierungModal';
-import TodoPanel from './TodoPanel';
 
 const S = {
   wrap: { padding: '8px 0' },
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' },
-  title: { margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--warning, #d4af37)', display: 'flex', alignItems: 'center', gap: '8px' },
+  title: {
+    margin: 0, fontSize: '1.1rem', fontWeight: 700,
+    color: '#d4af37', WebkitTextFillColor: '#d4af37',
+    background: 'none', WebkitBackgroundClip: 'border-box', backgroundClip: 'border-box',
+    textShadow: 'none',
+    display: 'flex', alignItems: 'center', gap: '8px',
+  },
   btnNeu: {
     padding: '10px 20px', background: '#d4af37', border: 'none', borderRadius: '8px',
     color: '#0f0f1e', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
@@ -22,21 +27,21 @@ const S = {
   filterRow: { display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' },
   yearSelect: {
     background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', cursor: 'pointer',
+    borderRadius: '8px', padding: '8px 12px', color: 'var(--ds-text)', fontSize: '13px', cursor: 'pointer',
   },
   table: { width: '100%', borderCollapse: 'collapse' },
-  th: { textAlign: 'left', padding: '10px 12px', fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.08)' },
-  td: { padding: '12px', fontSize: '13px', color: 'rgba(255,255,255,0.85)', borderBottom: '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle' },
+  th: { textAlign: 'left', padding: '10px 12px', fontSize: '11px', fontWeight: 700, color: 'var(--ds-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.08)' },
+  td: { padding: '12px', fontSize: '13px', color: 'var(--ds-text)', borderBottom: '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle' },
   badge: (color) => ({
     display: 'inline-block', padding: '2px 8px', borderRadius: '100px',
     fontSize: '11px', fontWeight: 700, background: color + '22', color: color,
     border: `1px solid ${color}44`,
   }),
-  empty: { textAlign: 'center', padding: '48px 20px', color: 'rgba(255,255,255,0.3)', fontSize: '14px' },
+  empty: { textAlign: 'center', padding: '48px 20px', color: 'var(--ds-text-faint)', fontSize: '14px' },
   errorBox: { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '12px 16px', color: '#fca5a5', fontSize: '13px', marginBottom: '16px' },
   successToast: {
     position: 'fixed', bottom: '24px', right: '24px', zIndex: 99998,
-    background: '#16a34a', color: '#fff', padding: '12px 20px', borderRadius: '10px',
+    background: '#16a34a', color: 'var(--ds-text)', padding: '12px 20px', borderRadius: '10px',
     fontWeight: 600, fontSize: '14px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
   },
 };
@@ -103,7 +108,10 @@ export default function HofDashboard() {
     return (
       <div style={S.wrap}>
         <div style={S.header}>
-          <h2 style={S.title}>🏛️ Hall of Fame — Nominierungen</h2>
+          <h2 style={S.title}>
+          <span style={{ WebkitTextFillColor: 'initial' }}>🏛️</span>
+          Hall of Fame — Nominierungen
+        </h2>
         </div>
         <div style={S.empty}>
           <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🏟️</div>
@@ -117,7 +125,10 @@ export default function HofDashboard() {
     <div style={S.wrap}>
       {/* Header */}
       <div style={S.header}>
-        <h2 style={S.title}>🏛️ Hall of Fame — Nominierungen</h2>
+        <h2 style={S.title}>
+          <span style={{ WebkitTextFillColor: 'initial' }}>🏛️</span>
+          Hall of Fame — Nominierungen
+        </h2>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             style={{ ...S.btnNeu, background: syncing ? 'rgba(255,255,255,0.1)' : 'rgba(212,175,55,0.15)', color: syncing ? 'rgba(255,255,255,0.4)' : '#d4af37', border: '1px solid rgba(212,175,55,0.35)', cursor: syncing ? 'not-allowed' : 'pointer' }}
@@ -135,13 +146,13 @@ export default function HofDashboard() {
 
       {/* Filter */}
       <div style={S.filterRow}>
-        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Jahr:</span>
+        <span style={{ color: 'var(--ds-text-muted)', fontSize: '13px' }}>Jahr:</span>
         <select style={S.yearSelect} value={jahr} onChange={e => setJahr(e.target.value)}>
           <option value="">Alle Jahre</option>
           {jahre.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
         {!loading && (
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>
+          <span style={{ color: 'var(--ds-text-faint)', fontSize: '12px' }}>
             {nominierungen.length} Nominierung{nominierungen.length !== 1 ? 'en' : ''}
           </span>
         )}
@@ -183,7 +194,7 @@ export default function HofDashboard() {
                 <td style={S.td}>
                   <strong>{n.vorname} {n.nachname}</strong>
                 </td>
-                <td style={{ ...S.td, color: 'rgba(255,255,255,0.6)' }}>{n.kategorie || '—'}</td>
+                <td style={{ ...S.td, color: 'var(--ds-text-secondary)' }}>{n.kategorie || '—'}</td>
                 <td style={S.td}>{n.jahr}</td>
                 <td style={S.td}>
                   {n.zahler ? (
@@ -202,7 +213,7 @@ export default function HofDashboard() {
                     {n.genehmigt ? '🏆 Genehmigt' : 'Ausstehend'}
                   </span>
                 </td>
-                <td style={{ ...S.td, color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
+                <td style={{ ...S.td, color: 'var(--ds-text-muted)', fontSize: '12px' }}>
                   {n.nominiert_durch || '—'}
                 </td>
               </tr>
@@ -221,11 +232,6 @@ export default function HofDashboard() {
 
       {/* Toast */}
       {toast && <div style={S.successToast}>{toast}</div>}
-
-      {/* To-Do */}
-      <div style={{ marginTop: '2rem' }}>
-        <TodoPanel fixedKontext="hof" compact />
-      </div>
     </div>
   );
 }

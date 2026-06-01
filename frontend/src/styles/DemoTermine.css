@@ -25,7 +25,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #334155);
   border-radius: 6px;
   padding: 0.3rem 0.6rem;
@@ -118,7 +118,7 @@
   transition: background 0.15s, color 0.15s;
 }
 .dt-tab-pill:hover { background: rgba(99,102,241,0.1); color: var(--text-primary, #f1f5f9); }
-.dt-tab-pill.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+.dt-tab-pill.active { background: #6366f1; color: var(--ds-text); border-color: #6366f1; }
 
 /* Alert */
 .dt-alert {
@@ -127,8 +127,8 @@
   margin-bottom: 1rem;
   font-size: 0.9rem;
 }
-.dt-alert-success { background: #16a34a22; border: 1px solid #16a34a; color: #4ade80; }
-.dt-alert-error   { background: #dc262622; border: 1px solid #dc2626; color: #f87171; }
+.dt-alert-success { background: #16a34a22; border: 1px solid #16a34a; color: var(--ds-success-soft); }
+.dt-alert-error   { background: #dc262622; border: 1px solid #dc2626; color: var(--ds-danger-soft); }
 
 /* Tabs (Buchungen-Detail etc.) */
 .dt-tab {
@@ -148,8 +148,8 @@
 .dt-tab:hover { color: var(--text-primary, #f1f5f9); }
 .dt-tab.active { color: #6366f1; border-bottom-color: #6366f1; font-weight: 600; }
 .dt-badge {
-  background: #ef4444;
-  color: #fff;
+  background: var(--ds-danger);
+  color: var(--ds-text);
   font-size: 0.7rem;
   border-radius: 99px;
   padding: 1px 6px;
@@ -170,7 +170,7 @@
   padding: 0.5rem 1rem;
   border-radius: 7px;
   border: 1px solid var(--border-color, #334155);
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   color: var(--text-primary, #f1f5f9);
   cursor: pointer;
   font-size: 0.85rem;
@@ -179,16 +179,16 @@
 .dt-btn:hover { border-color: #6366f1; }
 .dt-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .dt-btn-sm   { padding: 0.3rem 0.65rem; font-size: 0.8rem; }
-.dt-btn-primary { background: #6366f1; border-color: #6366f1; color: #fff; }
+.dt-btn-primary { background: #6366f1; border-color: #6366f1; color: var(--ds-text); }
 .dt-btn-primary:hover { background: #4f46e5; }
-.dt-btn-success { background: #16a34a22; border-color: #16a34a; color: #4ade80; }
+.dt-btn-success { background: #16a34a22; border-color: #16a34a; color: var(--ds-success-soft); }
 .dt-btn-warn    { background: #f59e0b22; border-color: #f59e0b; color: #fbbf24; }
-.dt-btn-danger  { background: #dc262622; border-color: #dc2626; color: #f87171; }
+.dt-btn-danger  { background: #dc262622; border-color: #dc2626; color: var(--ds-danger-soft); }
 .dt-btn-active  { outline: 2px solid #fff2; }
 
 /* Form */
 .dt-form {
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #334155);
   border-radius: 12px;
   padding: 1.25rem;
@@ -225,8 +225,8 @@
   border: 1px solid var(--border-color, #334155);
   color: var(--text-secondary, #94a3b8);
 }
-.dt-conflict-ok   { border-color: #16a34a; color: #4ade80; background: #16a34a11; }
-.dt-conflict-warn { border-color: #dc2626; color: #f87171; background: #dc262611; }
+.dt-conflict-ok   { border-color: #16a34a; color: var(--ds-success-soft); background: #16a34a11; }
+.dt-conflict-warn { border-color: #dc2626; color: var(--ds-danger-soft); background: #dc262611; }
 
 /* Empty & Loading */
 .dt-empty { text-align: center; padding: 3rem 1rem; color: var(--text-secondary, #94a3b8); }
@@ -243,8 +243,8 @@
   font-weight: 600;
   white-space: nowrap;
 }
-.dt-pill-free   { background: #22c55e22; color: #4ade80; }
-.dt-pill-locked { background: #94a3b822; color: #94a3b8; }
+.dt-pill-free   { background: var(--ds-success)22; color: var(--ds-success-soft); }
+.dt-pill-locked { background: #94a3b822; color: var(--ds-text-muted); }
 .dt-pill-booked { background: #6366f122; color: #a5b4fc; }
 
 /* Slots List */
@@ -253,14 +253,14 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #334155);
   border-left: 3px solid transparent;
   border-radius: 8px;
   padding: 0.75rem 1rem;
   flex-wrap: wrap;
 }
-.dt-slot-free   { border-left-color: #22c55e; }
+.dt-slot-free   { border-left-color: var(--ds-success); }
 .dt-slot-locked { border-left-color: #64748b; opacity: 0.7; }
 .dt-slot-booked { border-left-color: #6366f1; }
 
@@ -290,7 +290,7 @@
   overflow-y: auto;
 }
 .dt-buchung-item {
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #334155);
   border-radius: 8px;
   padding: 0.75rem;
@@ -305,7 +305,7 @@
 
 /* Buchung Detail */
 .dt-buchung-detail {
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #334155);
   border-radius: 10px;
   padding: 1.25rem;
@@ -369,19 +369,19 @@
 
 .dt-btn-teams {
   background: #5B5EA6;
-  color: #fff;
+  color: var(--ds-text);
   border: none;
 }
 .dt-btn-teams:hover { background: #464775; }
 
 .dt-btn-danger-xs {
   background: transparent;
-  color: #ef4444;
-  border: 1px solid #ef4444;
+  color: var(--ds-danger);
+  border: 1px solid var(--ds-danger);
   font-size: 0.7rem;
   padding: 2px 6px;
 }
-.dt-btn-danger-xs:hover { background: #ef4444; color: #fff; }
+.dt-btn-danger-xs:hover { background: var(--ds-danger); color: var(--ds-text); }
 
 .dt-teams-setup {
   display: flex;
@@ -402,7 +402,7 @@
   flex: 1;
   padding: 0.3rem 0.6rem;
   font-size: 0.8rem;
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #334155);
   border-radius: 4px;
   color: var(--text-primary, #f1f5f9);
@@ -466,7 +466,7 @@
   top: -6px;
   right: -6px;
   background: #6366f1;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.65rem;
   font-weight: 700;
   border-radius: 99px;
@@ -515,14 +515,14 @@
 .dt-time-chip-remove {
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--ds-text-secondary);
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;
   padding: 0;
   transition: color 0.15s;
 }
-.dt-time-chip-remove:hover { color: #ef4444; }
+.dt-time-chip-remove:hover { color: var(--ds-danger); }
 
 /* Uhrzeit hinzufügen */
 .dt-time-add {
@@ -531,7 +531,7 @@
   gap: 0.4rem;
 }
 .dt-time-add input[type="time"] {
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #334155);
   border-radius: 7px;
   color: var(--text-primary, #f1f5f9);
@@ -596,7 +596,7 @@
 }
 .dt-quick-label {
   font-size: 0.72rem;
-  color: #64748b;
+  color: var(--ds-text-secondary);
   white-space: nowrap;
   margin-right: 0.1rem;
 }
@@ -604,8 +604,8 @@
   padding: 0.25rem 0.55rem;
   border-radius: 6px;
   border: 1px solid #334155;
-  background: var(--bg-secondary, #1e293b);
-  color: #94a3b8;
+  background: var(--bg-secondary, var(--ds-bg-surface));
+  color: var(--ds-text-muted);
   font-size: 0.8rem;
   font-family: monospace;
   cursor: pointer;
@@ -619,7 +619,7 @@
 .dt-quick-btn.active {
   background: #6366f1;
   border-color: #6366f1;
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 700;
 }
 .dt-quick-btn.exists {
@@ -630,7 +630,7 @@
 }
 .dt-quick-btn.exists:hover {
   border-color: #334155;
-  color: #94a3b8;
+  color: var(--ds-text-muted);
 }
 
 /* Aktive Chips-Zeile */
@@ -653,7 +653,7 @@
   flex-wrap: wrap;
 }
 .dt-time-manual input[type="time"] {
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid #334155;
   border-radius: 7px;
   color: var(--text-primary, #f1f5f9);
@@ -734,7 +734,7 @@
 .dt-zeitraum-tab:hover { color: var(--text-primary, #f1f5f9); }
 .dt-zeitraum-tab.active {
   background: #6366f1;
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 600;
 }
 
@@ -870,7 +870,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid #334155;
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
@@ -901,7 +901,7 @@
 .dt-view-btn:hover { background: rgba(99,102,241,0.1); color: var(--text-primary, #f1f5f9); }
 .dt-view-btn.active {
   background: #6366f1;
-  color: #fff;
+  color: var(--ds-text);
   border-color: #6366f1;
 }
 
@@ -932,7 +932,7 @@
   overflow: hidden;
 }
 .dt-cal-hdr {
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   text-align: center;
   font-size: 0.75rem;
   font-weight: 600;
@@ -954,7 +954,7 @@
 .dt-cal-other-month .dt-cal-day-num { color: var(--text-secondary, #94a3b8); opacity: 0.4; }
 .dt-cal-today .dt-cal-day-num {
   background: #6366f1;
-  color: #fff;
+  color: var(--ds-text);
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -990,16 +990,16 @@
   padding: 1px 5px;
   min-width: 18px;
 }
-.dt-cal-dot-free   { background: rgba(34,197,94,0.2);  color: #22c55e; }
+.dt-cal-dot-free   { background: var(--ds-success-25);  color: var(--ds-success); }
 .dt-cal-dot-booked { background: rgba(245,158,11,0.2); color: #f59e0b; }
 .dt-cal-dot-locked { background: none; font-size: 0.8rem; padding: 0; min-width: unset; }
 
 /* Gesperrter Tag in der Monatstabelle */
 .dt-cal-day-blocked {
-  background: rgba(239,68,68,0.06) !important;
+  background: var(--ds-danger-10) !important;
 }
 .dt-cal-day-blocked .dt-cal-day-num {
-  color: #ef4444;
+  color: var(--ds-danger);
 }
 
 /* "Tag sperren" Button in der Kalender-Zelle */
@@ -1014,20 +1014,20 @@
   border-radius: 4px;
   border: none;
   cursor: pointer;
-  background: rgba(239,68,68,0.2);
-  color: #ef4444;
+  background: var(--ds-danger-25);
+  color: var(--ds-danger);
   line-height: 1.4;
 }
 .dt-cal-block-btn--unblock {
-  background: rgba(34,197,94,0.2);
-  color: #22c55e;
+  background: var(--ds-success-25);
+  color: var(--ds-success);
 }
 .dt-cal-cell:hover .dt-cal-block-btn { display: block; }
 
 /* Tag-Detail im Kalender */
 .dt-cal-day-detail {
   margin-top: 0.75rem;
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #334155);
   border-radius: 10px;
   padding: 1rem;
@@ -1078,7 +1078,7 @@
 }
 
 .dt-tag-date-input {
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #334155);
   border-radius: 6px;
   color: var(--text-primary, #f1f5f9);
@@ -1102,15 +1102,15 @@
   border: 1px solid transparent;
 }
 .dt-tag-status-bar--blocked {
-  background: rgba(239,68,68,0.1);
-  border-color: rgba(239,68,68,0.3);
+  background: var(--ds-danger-10);
+  border-color: var(--ds-danger-25);
 }
 .dt-tag-status-bar--active {
-  background: rgba(34,197,94,0.08);
-  border-color: rgba(34,197,94,0.25);
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
 }
 .dt-tag-status-bar--empty {
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border-color: var(--border-color, #334155);
 }
 

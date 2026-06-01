@@ -19,7 +19,7 @@
 .mem-period-label {
   font-size: 0.72rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -37,7 +37,7 @@
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
   font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
@@ -46,8 +46,8 @@
 }
 
 .mem-period-btn:hover {
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--ds-text-secondary);
+  background: var(--ds-bg-card-hover);
 }
 
 .mem-period-btn.active {
@@ -64,7 +64,7 @@
 
 .mem-kpi {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-stat-card-padding);
   transition: border-color 0.2s;
@@ -77,7 +77,7 @@
 .mem-kpi-label {
   font-size: var(--ui-stat-label);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 0.45rem;
@@ -92,11 +92,11 @@
 }
 
 .mem-kpi-value--gold   { color: var(--primary); text-shadow: 0 0 16px var(--primary-alpha-30); }
-.mem-kpi-value--green  { color: var(--status-success); text-shadow: 0 0 12px rgba(16,185,129,0.25); }
+.mem-kpi-value--green  { color: var(--status-success); text-shadow: 0 0 12px var(--ds-success-25); }
 .mem-kpi-value--red    { color: var(--status-error); }
 .mem-kpi-sub {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   margin-top: 0.35rem;
 }
 
@@ -109,7 +109,7 @@
 
 .mem-chart {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
 }
@@ -119,14 +119,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1.1rem;
-  background: rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--ds-bg-card);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .mem-chart-title {
   font-size: var(--ui-card-label);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.7px;
 }
@@ -144,7 +144,7 @@
 
 .mem-forecast-hero {
   padding: 1rem 1.25rem 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .mem-forecast-current-val {
@@ -158,7 +158,7 @@
 
 .mem-forecast-current-label {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-top: 0.25rem;
@@ -167,12 +167,12 @@
 .mem-forecast-rows {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .mem-forecast-item {
   padding: 0.85rem 1rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid var(--ds-border-subtle);
   text-align: center;
 }
 
@@ -182,7 +182,7 @@
 
 .mem-forecast-horizon {
   font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 0.3rem;
@@ -200,12 +200,12 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.65rem 1.25rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ds-bg-card);
 }
 
 .mem-forecast-rate-label {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -226,7 +226,7 @@
 
 .mem-demo-chart {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
 }
@@ -237,7 +237,7 @@
   align-items: center;
   justify-content: center;
   height: 180px;
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--ds-text-faint);
   font-size: 0.8rem;
   font-style: italic;
 }

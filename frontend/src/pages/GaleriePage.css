@@ -2,8 +2,8 @@
 
 .galerie-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #fff;
+  background: linear-gradient(135deg, var(--ds-bg-surface) 0%, var(--ds-bg-surface) 100%);
+  color: var(--ds-text);
 }
 
 .galerie-page .container {
@@ -42,7 +42,7 @@
 }
 
 .galerie-nav a {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
   text-decoration: none;
   font-size: 0.95rem;
   transition: color 0.2s;
@@ -82,7 +82,7 @@
 
 .galerie-hero p {
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   margin: 0;
 }
 
@@ -99,9 +99,9 @@
 }
 
 .filter-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-20);
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
   padding: 0.6rem 1.25rem;
   border-radius: 25px;
   font-size: 0.9rem;
@@ -112,7 +112,7 @@
 .filter-btn:hover {
   background: var(--primary-alpha-10);
   border-color: var(--primary-alpha-40);
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .filter-btn.active {
@@ -134,7 +134,7 @@
 }
 
 .galerie-item {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--primary-alpha-10);
@@ -201,7 +201,7 @@
 
 .galerie-info p {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   margin: 0;
   line-height: 1.5;
 }
@@ -217,12 +217,12 @@
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 0.75rem;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .galerie-cta p {
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   margin: 0 0 1.5rem;
 }
 
@@ -252,7 +252,7 @@
 }
 
 .galerie-footer p {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
   margin: 0 0 1rem;
   font-size: 0.9rem;
 }
@@ -264,7 +264,7 @@
 }
 
 .footer-links a {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.2s;
@@ -317,7 +317,7 @@
   right: 0;
   background: none;
   border: none;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 2.5rem;
   cursor: pointer;
   opacity: 0.7;
@@ -343,7 +343,7 @@
 
 .lightbox-info p {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   margin: 0;
 }
 

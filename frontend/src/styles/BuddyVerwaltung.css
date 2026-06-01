@@ -221,9 +221,9 @@
 }
 
 .status-active {
-  background: rgba(34, 197, 94, 0.1);
+  background: var(--ds-success-10);
   color: var(--status-success);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid var(--ds-success-25);
 }
 
 .status-inactive {
@@ -233,14 +233,14 @@
 }
 
 .status-deleted {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--ds-danger-10);
   color: var(--status-error);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid var(--ds-danger-25);
 }
 
 .status-unknown {
   background: rgba(107, 114, 128, 0.1);
-  color: #6b7280;
+  color: var(--ds-text-secondary);
   border: 1px solid rgba(107, 114, 128, 0.3);
 }
 
@@ -267,32 +267,32 @@
 }
 
 .invitation-registered {
-  background: rgba(34, 197, 94, 0.1);
+  background: var(--ds-success-10);
   color: var(--status-success);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid var(--ds-success-25);
 }
 
 .invitation-active {
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--ds-success-10);
   color: var(--status-success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid var(--ds-success-25);
 }
 
 .invitation-declined {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--ds-danger-10);
   color: var(--status-error);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid var(--ds-danger-25);
 }
 
 .invitation-expired {
   background: rgba(107, 114, 128, 0.1);
-  color: #6b7280;
+  color: var(--ds-text-secondary);
   border: 1px solid rgba(107, 114, 128, 0.3);
 }
 
 .invitation-unknown {
   background: rgba(156, 163, 175, 0.1);
-  color: #9ca3af;
+  color: var(--ds-text-muted);
   border: 1px solid rgba(156, 163, 175, 0.3);
 }
 
@@ -582,7 +582,7 @@
 }
 
 .action-loading-overlay p {
-  color: white;
+  color: var(--ds-text);
   font-size: 1.1rem;
   margin-top: 1rem;
 }
@@ -771,13 +771,13 @@
 }
 
 .referral-message.success {
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--ds-success-10);
   border: 1px solid var(--status-success);
   color: var(--status-success);
 }
 
 .referral-message.error {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--ds-danger-10);
   border: 1px solid var(--status-error);
   color: var(--status-error);
 }
@@ -812,13 +812,13 @@
 }
 
 .status-indicator.active {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   color: var(--status-success);
 }
 
 .status-indicator.inactive {
   background: rgba(107, 114, 128, 0.2);
-  color: #9ca3af;
+  color: var(--ds-text-muted);
 }
 
 /* Tabs */
@@ -915,8 +915,8 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   border-radius: var(--comp-radius-xl);
   color: var(--status-success);
 }
@@ -1014,7 +1014,7 @@ body .referral-codes .section-header h3 {
 
 .referral-status-badge.status-pending {
   background: rgba(107, 114, 128, 0.2);
-  color: #9ca3af;
+  color: var(--ds-text-muted);
 }
 
 .referral-status-badge.status-info {
@@ -1023,7 +1023,7 @@ body .referral-codes .section-header h3 {
 }
 
 .referral-status-badge.status-success {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   color: #34d399;
 }
 
@@ -1033,8 +1033,8 @@ body .referral-codes .section-header h3 {
 }
 
 .referral-status-badge.status-cancelled {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
+  background: var(--ds-danger-25);
+  color: var(--ds-danger-soft);
 }
 
 /* Werbungen Table */
@@ -1219,7 +1219,7 @@ body .freunde-werben-freunde .btn,
 body .freunde-werben-freunde button {
   color: #1a1a2e !important;
   -webkit-text-fill-color: #1a1a2e !important;
-  background: linear-gradient(135deg, #ffd700, #ffed4a) !important;
+  background: linear-gradient(135deg, var(--ds-accent), #ffed4a) !important;
   border: none !important;
   font-weight: 600 !important;
 }
@@ -1249,8 +1249,8 @@ body .freunde-werben-freunde .btn-secondary {
 /* Danger Buttons */
 .freunde-werben-freunde .btn-danger,
 body .freunde-werben-freunde .btn-danger {
-  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
-  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--ds-danger), #dc2626) !important;
+  color: var(--ds-text) !important;
   -webkit-text-fill-color: #ffffff !important;
   border: none !important;
 }
@@ -1445,8 +1445,8 @@ body .bonus-system-info h4,
 }
 
 .bonus-item.highlight {
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--ds-success-25);
+  border: 1px solid var(--ds-success-25);
   color: var(--status-success);
   font-weight: 600;
 }
@@ -1521,7 +1521,7 @@ body .info-section h3,
 }
 
 .process-step.success {
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--ds-success-10);
   border-left-color: var(--status-success);
 }
 
@@ -1539,7 +1539,7 @@ body .info-section h3,
 }
 
 .process-step.success .step-number {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   color: var(--status-success);
 }
 
@@ -1638,8 +1638,8 @@ body .info-section h3,
 }
 
 .freie-aktion-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-left: 3px solid var(--primary);
   border-radius: var(--comp-radius-lg);
   padding: 1rem 1.1rem;
@@ -1647,7 +1647,7 @@ body .info-section h3,
 }
 
 .freie-aktion-card:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ds-bg-card-hover);
 }
 
 .freie-aktion-header {
@@ -1663,7 +1663,7 @@ body .info-section h3,
   flex-wrap: wrap;
   gap: 0.75rem;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
   margin-bottom: 0.1rem;
 }
 

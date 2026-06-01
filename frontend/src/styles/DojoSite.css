@@ -10,7 +10,7 @@
 /* Alle --ds-* Variablen auf .ds-root beschränken → kein globaler Namespace-Konflikt */
 .ds-root {
   --ds-primary: #DC143C;
-  --ds-gold: #c9a227;
+  --ds-gold: var(--ds-accent-dark);
   --ds-sumi: #1a1a1a;
   --ds-indigo: #264653;
   --ds-washi: #f5f0e6;
@@ -515,8 +515,8 @@
   border: 2px solid var(--ds-gold);
 }
 .ds-btn-gold:hover {
-  background: #d4af37;
-  border-color: #d4af37;
+  background: var(--ds-accent);
+  border-color: var(--ds-accent);
 }
 
 /* ─── Mission ─── */

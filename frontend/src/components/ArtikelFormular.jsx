@@ -3017,7 +3017,7 @@ const ArtikelFormular = ({ mode }) => {
     );
 
     const sectionStyle = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '1rem', marginBottom: '1rem' };
-    const labelStyle   = { display: 'block', fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' };
+    const labelStyle   = { display: 'block', fontSize: '0.72rem', color: 'var(--ds-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' };
     const inputStyle   = { width: '100%', padding: '0.45rem 0.65rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, color: 'var(--text-1)', fontSize: '0.88rem', boxSizing: 'border-box' };
     const grid2        = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' };
 
@@ -3028,7 +3028,7 @@ const ArtikelFormular = ({ mode }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', padding: '0.7rem 1rem', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.2)', borderRadius: 8 }}>
           <div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#d4af37' }}>📦 Bestell-Spezifikationen</div>
-            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.1rem' }}>Wird beim Erstellen einer Bestellung automatisch vorausgefüllt</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--ds-text-muted)', marginTop: '0.1rem' }}>Wird beim Erstellen einer Bestellung automatisch vorausgefüllt</div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             {bestellSpecsSaved && <span style={{ color: '#27ae60', fontSize: '0.8rem' }}>✓ Gespeichert</span>}
@@ -3042,7 +3042,7 @@ const ArtikelFormular = ({ mode }) => {
 
         {/* Lieferant & Produkt-ID */}
         <div style={sectionStyle}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Lieferant &amp; Identifikation</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ds-text-faint)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Lieferant &amp; Identifikation</div>
           <div style={grid2}>
             <div>
               <label style={labelStyle}>Lieferant</label>
@@ -3064,7 +3064,7 @@ const ArtikelFormular = ({ mode }) => {
               <input type="text" value={bs.farbe} onChange={e => bsSet('farbe', e.target.value)} style={inputStyle} />
             </div>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--ds-text-secondary)', cursor: 'pointer' }}>
             <input type="checkbox" checked={bs.wkf} onChange={e => bsSet('wkf', e.target.checked)} />
             WKF-zugelassen
           </label>
@@ -3072,7 +3072,7 @@ const ArtikelFormular = ({ mode }) => {
 
         {/* Material */}
         <div style={sectionStyle}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Material-Spezifikation</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ds-text-faint)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Material-Spezifikation</div>
           <div style={grid2}>
             <div>
               <label style={labelStyle}>Material</label>
@@ -3095,7 +3095,7 @@ const ArtikelFormular = ({ mode }) => {
 
         {/* Stickerei */}
         <div style={sectionStyle}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Stickerei &amp; Branding</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ds-text-faint)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Stickerei &amp; Branding</div>
           <label style={labelStyle}>Stickerei-Positionen</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.75rem' }}>
             {POSITIONEN.map(pos => {
@@ -3126,7 +3126,7 @@ const ArtikelFormular = ({ mode }) => {
 
         {/* Label */}
         <div style={sectionStyle}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Pflegekennzeichnung &amp; Label</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ds-text-faint)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Pflegekennzeichnung &amp; Label</div>
           <div style={grid2}>
             <div>
               <label style={labelStyle}>Material-Text (Label)</label>
@@ -3153,7 +3153,7 @@ const ArtikelFormular = ({ mode }) => {
 
         {/* Verpackung */}
         <div style={sectionStyle}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Verpackung</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ds-text-faint)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Verpackung</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
             <div>
               <label style={labelStyle}>Verpackungstyp</label>
@@ -3179,7 +3179,7 @@ const ArtikelFormular = ({ mode }) => {
 
         {/* Modell-Fotos */}
         <div style={sectionStyle}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Modell-Fotos &amp; Zeichnungen</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ds-text-faint)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.75rem' }}>Modell-Fotos &amp; Zeichnungen</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {(bs.foto_urls || []).map((foto, i) => (
               <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -3199,7 +3199,7 @@ const ArtikelFormular = ({ mode }) => {
               </div>
             ))}
             <button type="button" onClick={() => bsSet('foto_urls', [...(bs.foto_urls || []), { url: '', label: '' }])}
-              style={{ alignSelf: 'flex-start', padding: '0.35rem 0.8rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '0.82rem' }}>
+              style={{ alignSelf: 'flex-start', padding: '0.35rem 0.8rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, color: 'var(--ds-text-muted)', cursor: 'pointer', fontSize: '0.82rem' }}>
               + Foto hinzufügen
             </button>
           </div>

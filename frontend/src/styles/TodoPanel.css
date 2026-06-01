@@ -23,7 +23,7 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid var(--ds-border);
   margin-bottom: 0.25rem;
 }
 
@@ -33,8 +33,18 @@
   gap: 0.5rem;
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text)) !important;
+  -webkit-text-fill-color: var(--text-primary, #fff) !important;
+  background: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  text-shadow: none !important;
   margin: 0;
+}
+
+/* Emoji im Titel in Naturfarbe (nicht vom Text-Fill überlagert) */
+.todo-panel-title .todo-title-icon {
+  -webkit-text-fill-color: initial;
 }
 
 .todo-panel--compact .todo-panel-title {
@@ -42,9 +52,9 @@
 }
 
 .todo-count-badge {
-  background: rgba(255,215,0,0.15);
-  border: 1px solid rgba(255,215,0,0.3);
-  color: #ffd700;
+  background: var(--ds-accent-15);
+  border: 1px solid var(--ds-accent-30);
+  color: var(--ds-accent);
   border-radius: 20px;
   padding: 2px 10px;
   font-size: 0.78rem;
@@ -55,7 +65,7 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  background: #ffd700;
+  background: var(--ds-accent);
   color: #000;
   border: none;
   border-radius: 8px;
@@ -78,26 +88,26 @@
 }
 
 .todo-filter-select {
-  background: var(--input-bg, rgba(255,255,255,0.06));
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--input-bg, var(--ds-bg-card-hover));
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.35rem 0.65rem;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.82rem;
   font-family: inherit;
   cursor: pointer;
 }
 
-.todo-filter-select:focus { outline: none; border-color: rgba(255,215,0,0.4); }
+.todo-filter-select:focus { outline: none; border-color: var(--ds-accent-50); }
 
 /* ── Status Tabs ── */
 .todo-status-tabs {
   display: flex;
   gap: 0;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
 }
 
 .todo-status-tab {
@@ -114,8 +124,8 @@
 }
 
 .todo-status-tab.active {
-  background: rgba(255,215,0,0.15);
-  color: #ffd700;
+  background: var(--ds-accent-15);
+  color: var(--ds-accent);
 }
 
 /* ── Todo List ── */
@@ -130,9 +140,9 @@
   text-align: center;
   padding: 3.5rem 1rem;
   color: var(--text-secondary, #666);
-  background: rgba(255,255,255,0.02);
+  background: var(--ds-bg-card);
   border-radius: 12px;
-  border: 1px dashed rgba(255,255,255,0.1);
+  border: 1px dashed var(--ds-border);
   font-size: 0.9rem;
   grid-column: 1 / -1;
 }
@@ -144,7 +154,7 @@
   gap: 0.75rem;
   padding: 0.85rem 1rem;
   background: var(--surface-2, #1a1d2e);
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
   border-left: 3px solid transparent;
   border-radius: 12px;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -152,7 +162,7 @@
 }
 
 .todo-card:hover {
-  border-color: rgba(255,255,255,0.14);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 2px 12px rgba(0,0,0,0.2);
 }
 
@@ -160,10 +170,10 @@
   opacity: 0.5;
 }
 
-.todo-card--prio-dringend { border-left-color: #ef4444; }
+.todo-card--prio-dringend { border-left-color: var(--ds-danger); }
 .todo-card--prio-hoch     { border-left-color: #f97316; }
-.todo-card--prio-normal   { border-left-color: rgba(255,255,255,0.15); }
-.todo-card--prio-niedrig  { border-left-color: rgba(255,255,255,0.06); }
+.todo-card--prio-normal   { border-left-color: var(--ds-border-strong); }
+.todo-card--prio-niedrig  { border-left-color: var(--ds-border-subtle); }
 
 /* ── Status-Toggle Checkbox ── */
 .todo-check {
@@ -171,7 +181,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.2);
+  border: 2px solid var(--ds-border-strong);
   background: transparent;
   cursor: pointer;
   display: flex;
@@ -184,8 +194,8 @@
 }
 
 .todo-check:hover {
-  border-color: #ffd700;
-  color: rgba(255,215,0,0.5);
+  border-color: var(--ds-accent);
+  color: var(--ds-accent-50);
 }
 
 .todo-check--in-bearbeitung {
@@ -195,9 +205,9 @@
 }
 
 .todo-check--erledigt {
-  border-color: #22c55e;
-  background: rgba(34,197,94,0.15);
-  color: #22c55e;
+  border-color: var(--ds-success);
+  background: var(--ds-success-10);
+  color: var(--ds-success);
 }
 
 /* ── Card Body ── */
@@ -209,7 +219,7 @@
 .todo-card-titel {
   font-size: 0.92rem;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   margin: 0;
   line-height: 1.35;
 }
@@ -243,10 +253,10 @@
   letter-spacing: 0.04em;
 }
 
-.todo-badge--dringend { color: #ef4444; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
+.todo-badge--dringend { color: var(--ds-danger); border-color: var(--ds-danger-25); background: var(--ds-danger-10); }
 .todo-badge--hoch     { color: #f97316; border-color: rgba(249,115,22,0.3); background: rgba(249,115,22,0.08); }
-.todo-badge--normal   { color: #888; border-color: rgba(255,255,255,0.12); background: transparent; display: none; }
-.todo-badge--niedrig  { color: #555; border-color: rgba(255,255,255,0.08); background: transparent; display: none; }
+.todo-badge--normal   { color: var(--ds-text-muted); border-color: var(--ds-border); background: transparent; display: none; }
+.todo-badge--niedrig  { color: #555; border-color: var(--ds-border); background: transparent; display: none; }
 
 .todo-badge--kontext {
   color: #a5b4fc;
@@ -263,9 +273,9 @@
 }
 
 .todo-badge--due-overdue {
-  color: #ef4444;
-  border-color: rgba(239,68,68,0.3);
-  background: rgba(239,68,68,0.08);
+  color: var(--ds-danger);
+  border-color: var(--ds-danger-25);
+  background: var(--ds-danger-10);
 }
 
 .todo-badge--assignee {
@@ -287,7 +297,7 @@
 .todo-action-btn {
   background: transparent;
   border: none;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   cursor: pointer;
   padding: 0.25rem 0.4rem;
   border-radius: 6px;
@@ -296,8 +306,8 @@
   transition: all 0.15s;
 }
 
-.todo-action-btn:hover { color: #ffd700; background: rgba(255,215,0,0.08); }
-.todo-action-btn--del:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+.todo-action-btn:hover { color: var(--ds-accent); background: var(--ds-accent-10); }
+.todo-action-btn--del:hover { color: var(--ds-danger); background: var(--ds-danger-10); }
 
 /* ── Status-Cycle Tooltip ── */
 .todo-status-cycle {
@@ -320,7 +330,7 @@
 }
 
 .todo-status-pill--offen {
-  color: #94a3b8;
+  color: var(--ds-text-muted);
   border-color: rgba(148,163,184,0.25);
   background: transparent;
 }
@@ -332,9 +342,9 @@
 }
 
 .todo-status-pill--erledigt {
-  color: #22c55e;
-  border-color: rgba(34,197,94,0.35);
-  background: rgba(34,197,94,0.1);
+  color: var(--ds-success);
+  border-color: var(--ds-success-25);
+  background: var(--ds-success-10);
 }
 
 .todo-status-pill.active-status {
@@ -362,7 +372,7 @@
 
 .todo-modal {
   background: #1a1d2e;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--ds-border);
   border-radius: 16px 16px 0 0;
   padding: 1.5rem;
   width: 100%;
@@ -384,7 +394,7 @@
   font-size: 1.05rem;
   font-weight: 700;
   margin: 0;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
 }
 
 .todo-modal-grid {
@@ -408,11 +418,11 @@
 .todo-modal-input,
 .todo-modal-select,
 .todo-modal-textarea {
-  background: var(--input-bg, rgba(255,255,255,0.06));
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--input-bg, var(--ds-bg-card-hover));
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.5rem 0.65rem;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.88rem;
   font-family: inherit;
   width: 100%;
@@ -423,7 +433,7 @@
 .todo-modal-select:focus,
 .todo-modal-textarea:focus {
   outline: none;
-  border-color: rgba(255,215,0,0.4);
+  border-color: var(--ds-accent-50);
 }
 
 .todo-modal-textarea {
@@ -436,12 +446,12 @@
   gap: 0.5rem;
   justify-content: flex-end;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid var(--ds-border);
 }
 
 .todo-btn-cancel {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid var(--ds-border-strong);
   color: var(--text-secondary, #888);
   border-radius: 8px;
   padding: 0.5rem 1rem;
@@ -451,10 +461,10 @@
   transition: all 0.15s;
 }
 
-.todo-btn-cancel:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
+.todo-btn-cancel:hover { border-color: rgba(255,255,255,0.3); color: var(--ds-text); }
 
 .todo-btn-save {
-  background: #ffd700;
+  background: var(--ds-accent);
   color: #000;
   border: none;
   border-radius: 8px;
@@ -480,7 +490,7 @@
 .todo-card-nr {
   font-size: 0.68rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.25);
+  color: var(--ds-text-faint);
   font-family: monospace;
   flex-shrink: 0;
 }
@@ -513,7 +523,7 @@
 
 .tdm {
   background: #13151f;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--ds-border);
   border-radius: 18px;
   width: 100%;
   max-width: 900px;
@@ -530,7 +540,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem 0.75rem;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid var(--ds-border);
   flex-shrink: 0;
 }
 
@@ -544,7 +554,7 @@
 .tdm-ticket-nr {
   font-family: monospace;
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   font-weight: 700;
 }
 
@@ -554,9 +564,9 @@
   flex-wrap: wrap;
 }
 
-.tdm-sp--offen       { color: #94a3b8; border-color: rgba(148,163,184,0.3); background: transparent; }
+.tdm-sp--offen       { color: var(--ds-text-muted); border-color: rgba(148,163,184,0.3); background: transparent; }
 .tdm-sp--in_bearbeitung { color: #f97316; border-color: rgba(249,115,22,0.4); background: rgba(249,115,22,0.08); }
-.tdm-sp--erledigt    { color: #22c55e; border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.08); }
+.tdm-sp--erledigt    { color: var(--ds-success); border-color: var(--ds-success-25); background: var(--ds-success-10); }
 .tdm-sp--active { box-shadow: 0 0 0 1.5px currentColor; }
 
 .tdm-sp--offen,
@@ -574,9 +584,9 @@
 }
 
 .tdm-close-btn {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.5);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-muted);
   border-radius: 8px;
   width: 32px;
   height: 32px;
@@ -591,8 +601,8 @@
 }
 
 .tdm-close-btn:hover {
-  background: rgba(255,255,255,0.1);
-  color: #fff;
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
 }
 
 /* ── Two-column body ── */
@@ -617,7 +627,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  border-right: 1px solid rgba(255,255,255,0.07);
+  border-right: 1px solid var(--ds-border);
 }
 
 .tdm-right {
@@ -633,10 +643,10 @@
 .tdm-title-input {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--ds-text);
   background: transparent;
   border: none;
-  border-bottom: 2px solid rgba(255,255,255,0.08);
+  border-bottom: 2px solid var(--ds-border);
   border-radius: 0;
   padding: 0.3rem 0;
   width: 100%;
@@ -646,7 +656,7 @@
 }
 
 .tdm-title-input:focus {
-  border-bottom-color: rgba(255,215,0,0.5);
+  border-bottom-color: var(--ds-accent-50);
 }
 
 /* ── Fields grid ── */
@@ -667,7 +677,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
 }
 
 .tdm-field--wide {
@@ -676,17 +686,17 @@
 
 .tdm-meta-val {
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.55);
+  color: var(--ds-text-muted);
   padding: 0.35rem 0;
 }
 
 .tdm-select,
 .tdm-input {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 7px;
   padding: 0.4rem 0.6rem;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.84rem;
   font-family: inherit;
   cursor: pointer;
@@ -698,7 +708,7 @@
 .tdm-select:focus,
 .tdm-input:focus {
   outline: none;
-  border-color: rgba(255,215,0,0.4);
+  border-color: var(--ds-accent-50);
 }
 
 /* ── Description ── */
@@ -714,15 +724,15 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
 }
 
 .tdm-textarea {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.6rem 0.75rem;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.85rem;
   font-family: inherit;
   resize: vertical;
@@ -734,7 +744,7 @@
 
 .tdm-textarea:focus {
   outline: none;
-  border-color: rgba(255,215,0,0.35);
+  border-color: var(--ds-accent-30);
 }
 
 /* ── Action row ── */
@@ -743,7 +753,7 @@
   align-items: center;
   gap: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid var(--ds-border-subtle);
   flex-shrink: 0;
 }
 
@@ -752,7 +762,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.84rem;
-  color: #ef4444;
+  color: var(--ds-danger);
   flex-wrap: wrap;
 }
 
@@ -769,27 +779,27 @@
 }
 
 .tdm-btn--del {
-  color: rgba(255,255,255,0.35);
-  border-color: rgba(255,255,255,0.1);
+  color: var(--ds-text-faint);
+  border-color: var(--ds-border);
   background: transparent;
 }
-.tdm-btn--del:hover { color: #ef4444; border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); }
+.tdm-btn--del:hover { color: var(--ds-danger); border-color: var(--ds-danger-25); background: var(--ds-danger-10); }
 
-.tdm-btn--danger { color: #ef4444; border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); }
-.tdm-btn--danger:hover { background: rgba(239,68,68,0.18); }
+.tdm-btn--danger { color: var(--ds-danger); border-color: var(--ds-danger-25); background: var(--ds-danger-10); }
+.tdm-btn--danger:hover { background: var(--ds-danger-10); }
 
-.tdm-btn--ghost { color: #888; border-color: rgba(255,255,255,0.15); background: transparent; }
-.tdm-btn--ghost:hover { color: #fff; }
+.tdm-btn--ghost { color: var(--ds-text-muted); border-color: var(--ds-border-strong); background: transparent; }
+.tdm-btn--ghost:hover { color: var(--ds-text); }
 
 .tdm-btn--save {
-  color: rgba(255,255,255,0.35);
-  border-color: rgba(255,255,255,0.1);
+  color: var(--ds-text-faint);
+  border-color: var(--ds-border);
   background: transparent;
 }
 .tdm-btn--save-active {
   color: #000;
-  background: #ffd700;
-  border-color: #ffd700;
+  background: var(--ds-accent);
+  border-color: var(--ds-accent);
 }
 .tdm-btn--save-active:hover { opacity: 0.88; }
 .tdm-btn--save:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -798,7 +808,7 @@
 .tdm-comments-header {
   font-size: 0.85rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.7);
+  color: var(--ds-text-secondary);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -825,13 +835,13 @@
 .tdm-kom-loading,
 .tdm-kom-empty {
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   padding: 0.75rem 0;
 }
 
 .tdm-kom-item {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 0.6rem 0.75rem;
 }
@@ -846,30 +856,30 @@
 .tdm-kom-author {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--ds-accent);
 }
 
 .tdm-kom-date {
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   flex: 1;
 }
 
 .tdm-kom-del {
   background: transparent;
   border: none;
-  color: rgba(255,255,255,0.2);
+  color: var(--ds-text-faint);
   cursor: pointer;
   font-size: 0.9rem;
   padding: 0 0.2rem;
   line-height: 1;
   transition: color 0.15s;
 }
-.tdm-kom-del:hover { color: #ef4444; }
+.tdm-kom-del:hover { color: var(--ds-danger); }
 
 .tdm-kom-body {
   font-size: 0.83rem;
-  color: rgba(255,255,255,0.8);
+  color: var(--ds-text-secondary);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
@@ -882,7 +892,7 @@
   gap: 0.4rem;
   flex-shrink: 0;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid var(--ds-border);
 }
 
 .tdm-kom-textarea {
@@ -893,8 +903,8 @@
 
 .tdm-btn--send {
   color: #000;
-  background: #ffd700;
-  border-color: #ffd700;
+  background: var(--ds-accent);
+  border-color: var(--ds-accent);
   align-self: flex-end;
   padding: 0.35rem 1rem;
 }

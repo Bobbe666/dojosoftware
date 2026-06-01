@@ -16,7 +16,7 @@
 .ki-page-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   margin: 0;
 }
 
@@ -29,7 +29,7 @@
 
 /* ── Error banner ── */
 .ki-error-banner {
-  background: #ef444420;
+  background: var(--ds-danger)20;
   border: 1px solid var(--status-error)44;
   border-radius: 8px;
   padding: 0.75rem 1rem;
@@ -95,7 +95,7 @@
 .ki-dropzone-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   margin-bottom: 0.5rem;
 }
 
@@ -114,7 +114,7 @@
 
 /* ── PDF-Import Hinweis ── */
 .ki-pdf-notice {
-  background: rgba(212, 175, 55, 0.1);
+  background: var(--ds-accent-10);
   border-left: 3px solid #c8a827;
   color: var(--text-primary, #333);
   padding: 0.6rem 1rem;
@@ -125,7 +125,7 @@
 
 /* ── Preview info bar (Bank + Zusammenfassung) ── */
 .ki-info-bar {
-  background: var(--bg-secondary, #1a1a1a);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #333);
   border-radius: 12px;
   padding: 1rem 1.5rem;
@@ -221,7 +221,7 @@
 
 /* ── Rucklastschrift badge ── */
 .ki-badge-error {
-  background: #ef444415;
+  background: var(--ds-danger)15;
   border: 1px solid var(--status-error)40;
   border-radius: 8px;
   padding: 0.5rem 0.875rem;
@@ -260,7 +260,7 @@
 
 /* ── Rucklastschrift navigate button inside badge ── */
 .ki-badge-btn-error {
-  background: #ef4444;
+  background: var(--ds-danger);
   color: var(--text-primary);
   border: none;
   border-radius: 4px;
@@ -383,7 +383,7 @@
 
 /* ── Rucklastschrift pill inside table cell ── */
 .ki-pill-error {
-  background: #ef444420;
+  background: var(--ds-danger)20;
   border: 1px solid var(--status-error)50;
   color: var(--error);
   border-radius: 4px;
@@ -454,7 +454,7 @@
 
 /* ── Rucklastschrift typ-badge (non-selectable) ── */
 .ki-typ-badge-error {
-  background: #ef444415;
+  background: var(--ds-danger)15;
   border: 1px solid var(--status-error)40;
   border-radius: 6px;
   padding: 0.25rem 0.5rem;
@@ -488,7 +488,7 @@
 
 /* ── Done card ── */
 .ki-done-card {
-  background: #10b98120;
+  background: var(--ds-success)20;
   border: 1px solid var(--status-success)40;
   border-radius: 16px;
   padding: 2.5rem 2rem;
@@ -498,7 +498,7 @@
 .ki-done-icon {
   width: 64px;
   height: 64px;
-  background: #10b98130;
+  background: var(--ds-success)30;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -591,7 +591,7 @@
   padding: 3rem 2rem;
   text-align: center;
   cursor: pointer;
-  background: var(--bg-secondary, #1a1a1a);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   transition: all 0.2s;
 }
 .ki-dropzone--dragging {
@@ -635,7 +635,7 @@
 }
 .ki-filter-tab--active-error {
   background: var(--error);
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 700;
 }
 
@@ -646,7 +646,7 @@
   opacity: 0.45;
 }
 .ki-tbody-row--selected {
-  background: var(--bg-hover, rgba(255,215,0,0.03));
+  background: var(--bg-hover, var(--ds-accent-05));
   opacity: 1;
 }
 
@@ -659,12 +659,12 @@
   font-weight: 600;
 }
 .ki-typ-select--ausgabe {
-  background: #ef444415;
+  background: var(--ds-danger)15;
   border: 1px solid var(--status-error)40;
   color: var(--status-error);
 }
 .ki-typ-select--einnahme {
-  background: #10b98115;
+  background: var(--ds-success)15;
   border: 1px solid var(--status-success)40;
   color: var(--status-success);
 }

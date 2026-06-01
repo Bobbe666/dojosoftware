@@ -53,7 +53,7 @@
 
 /* Modal card */
 .pwa-modal {
-  background-color: #1a1a2e;
+  background-color: var(--ds-bg-surface);
   padding: 2rem;
   border-radius: 16px;
   width: 100%;
@@ -74,7 +74,7 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border: none;
   color: var(--text-primary);
   cursor: pointer;
@@ -154,7 +154,7 @@
 .pwa-tip-box {
   margin-top: 1.5rem;
   padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--ds-bg-card-hover);
   border-radius: 8px;
   text-align: center;
 }

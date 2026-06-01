@@ -560,6 +560,14 @@ function Dashboard() {
   // ✨ Einstellungen - System-Konfiguration ✨
   const einstellungenCards = [
     {
+      icon: '🎨',
+      title: 'Design & Themes',
+      description: 'Schrift, Akzentfarbe, Verlauf, Schatten & Glow — Portal nach Wunsch gestalten',
+      path: '/dashboard/einstellungen/design',
+      badge: 'NEU',
+      featured: true
+    },
+    {
       icon: '⚙️',
       title: 'Dojo-Einstellungen',
       description: 'Grunddaten, Kontakt, Finanzen, Verträge, Räume & Rechtliches',

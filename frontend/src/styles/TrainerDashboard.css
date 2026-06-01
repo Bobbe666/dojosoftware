@@ -2,7 +2,7 @@
 
 .trainer-dashboard {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, var(--ds-bg-surface) 0%, var(--ds-bg-surface) 100%);
   padding: 0;
 }
 
@@ -25,8 +25,8 @@
 }
 
 .trainer-dashboard-logout-btn {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-25);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
   color: var(--error);
@@ -39,7 +39,7 @@
 }
 
 .trainer-dashboard-logout-btn:hover {
-  background: rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-25);
 }
 
 .trainer-dashboard-nav {
@@ -55,7 +55,7 @@
   border: none;
   border-bottom: 2px solid transparent;
   padding: 1rem 2rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   cursor: pointer;
   font-weight: 600;
   font-size: 1rem;

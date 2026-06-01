@@ -104,7 +104,7 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
   align-items: center;
   margin-bottom: 1rem;
   padding: 0.7rem 1.4rem;
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
   backdrop-filter: blur(12px);
   border-radius: 12px;
   border: 1px solid var(--primary-alpha-20);
@@ -588,10 +588,10 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
 */
 /* ── Stil-Karte ─────────────────────────────────────────────────────────── */
 .stil-card {
-  background: var(--surface-1, rgba(255,255,255,0.04));
+  background: var(--surface-1, var(--ds-bg-card));
   border-radius: 12px;
   padding: 1rem 1.1rem;
-  border: 1px solid var(--border-default, rgba(255,255,255,0.09));
+  border: 1px solid var(--border-default, var(--ds-border));
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
   display: flex;
@@ -649,7 +649,7 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
 /* Beschreibung — 2 Zeilen max */
 .stil-beschreibung,
 .stil-card p {
-  color: var(--text-secondary, rgba(255,255,255,0.55));
+  color: var(--text-secondary, var(--ds-text-muted));
   font-size: 0.78rem;
   margin: 0 0 0.6rem;
   line-height: 1.4;
@@ -665,7 +665,7 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
   gap: 0.75rem;
   margin-top: 0.6rem;
   padding-top: 0.6rem;
-  border-top: 1px solid var(--border-default, rgba(255,255,255,0.08));
+  border-top: 1px solid var(--border-default, var(--ds-border));
   align-items: center;
 }
 
@@ -685,7 +685,7 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
 }
 
 .stil-stat-label {
-  color: var(--text-muted, rgba(255,255,255,0.35));
+  color: var(--text-muted, var(--ds-text-faint));
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -708,8 +708,8 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
 }
 
 .status-dot.active {
-  background: #22c55e;
-  box-shadow: 0 0 6px rgba(34,197,94,0.5);
+  background: var(--ds-success);
+  box-shadow: 0 0 6px var(--ds-success-25);
 }
 
 .status-dot.inactive {
@@ -774,10 +774,10 @@ Die 4 Tabs: Allgemein, Graduierungen, Prüfungsinhalte, Statistiken - Neue Glanz
   gap: 0.35rem;
   flex-wrap: wrap;
   margin-bottom: var(--ui-section-gap);
-  background: var(--surface-1, rgba(255,255,255,0.04));
+  background: var(--surface-1, var(--ds-bg-card));
   padding: 0.35rem;
   border-radius: var(--comp-radius-xl, 12px);
-  border: 1px solid var(--border-default, rgba(255,255,255,0.1));
+  border: 1px solid var(--border-default, var(--ds-border));
   backdrop-filter: blur(10px);
 }
 
@@ -2113,13 +2113,13 @@ Die 3 Statistik-Karten oben (Anzahl Stile, Graduierungen, Schüler) - Neue Hover
 
 /* Statistik-Karten oben in der Übersicht */
 .stil-verwaltung .stil-stats .stat-card {
-  background: var(--surface-1, rgba(255,255,255,0.04));
+  background: var(--surface-1, var(--ds-bg-card));
   border-radius: 10px;
   padding: 0.85rem 1.2rem;
   display: flex;
   align-items: center;
   gap: 1rem;
-  border: 1px solid var(--border-default, rgba(255,255,255,0.09));
+  border: 1px solid var(--border-default, var(--ds-border));
   transition: border-color 0.2s;
 }
 
@@ -2774,7 +2774,7 @@ TECHNISCHE DETAILS:
   gap: 0.4rem;
   padding-top: 0.65rem;
   margin-top: 0.65rem;
-  border-top: 1px solid var(--border-default, rgba(255,255,255,0.08));
+  border-top: 1px solid var(--border-default, var(--ds-border));
 }
 
 /* ============================================================================
@@ -3047,14 +3047,14 @@ Styling für den neuen Prüfungseinstellungen-Tab
   background: #151528;
   padding: 1.25rem 1.5rem;
   border-radius: var(--comp-radius-lg);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  border: 1px solid var(--ds-accent-25);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .wartezeiten-section:hover,
 .schwarzgurt-section:hover {
-  border-color: rgba(255, 215, 0, 0.4);
-  box-shadow: 0 0 16px rgba(255, 215, 0, 0.08);
+  border-color: var(--ds-accent-50);
+  box-shadow: 0 0 16px var(--ds-accent-10);
 }
 
 .wartezeiten-section h4,
@@ -3065,7 +3065,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--ds-accent-20);
   padding-bottom: 0.6rem;
 }
 
@@ -3303,7 +3303,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
   gap: 1rem;
   justify-content: flex-end;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
   margin-top: 1.5rem;
 }
 
@@ -3504,7 +3504,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 2px solid var(--ds-border);
   padding-bottom: 0.5rem;
   overflow-x: auto;
 }
@@ -3567,8 +3567,8 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .sv-number-input {
   width: 100%;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 1rem;
@@ -3578,8 +3578,8 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .sv-text-input {
   width: 100%;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 1rem;
@@ -3590,7 +3590,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .sv-color-picker {
   width: 50px;
   height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
   cursor: pointer;
 }
@@ -3598,8 +3598,8 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .sv-color-text-input {
   flex: 1;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
   color: var(--text-primary);
   font-size: 0.85rem;
@@ -3631,13 +3631,13 @@ Styling für den neuen Prüfungseinstellungen-Tab
   gap: 1rem;
   justify-content: flex-end;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 .sv-btn-cancel {
   padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-secondary);
   font-size: 1rem;
@@ -3656,8 +3656,8 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .sv-textarea {
   width: 100%;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 1rem;
@@ -3693,8 +3693,8 @@ Styling für den neuen Prüfungseinstellungen-Tab
 
 .sv-pruef-kat-card {
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
 }
 
@@ -3718,7 +3718,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
 
 .sv-pruef-inhalt-item {
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 0.95rem;
@@ -3735,7 +3735,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .sv-pruef-footer {
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
   text-align: center;
 }
 
@@ -3910,7 +3910,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
 
 .sv-stat-detail-row {
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 8px;
   border-left: 3px solid rgba(255, 255, 255, 0.3);
   display: flex;
@@ -3994,7 +3994,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
   align-items: center;
   gap: 15px;
   padding: 10px 15px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 8px;
   border-left: 4px solid var(--grad-farbe, var(--primary));
 }
@@ -4005,7 +4005,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.3);
   flex-shrink: 0;
-  background-color: var(--grad-farbe, #FFD700);
+  background-color: var(--grad-farbe, var(--ds-accent));
 }
 
 .sv-erfolgsquote {
@@ -4043,7 +4043,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
 
 .sv-monat-chip {
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 6px;
   text-align: center;
   min-width: 70px;
@@ -4061,7 +4061,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 8px;
   border-left: 4px solid var(--zu-farbe, var(--primary));
 }
@@ -4149,8 +4149,8 @@ Styling für den neuen Prüfungseinstellungen-Tab
 /* Kategorie tab buttons */
 .sv-kat-tab-btn {
   padding: 0.75rem 1.5rem; background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7); cursor: pointer; font-size: 0.95rem;
+  border: 1px solid var(--ds-border); border-radius: 8px;
+  color: var(--ds-text-secondary); cursor: pointer; font-size: 0.95rem;
   font-weight: 400; transition: all 0.2s ease; white-space: nowrap;
 }
 .sv-kat-tab-btn--active {
@@ -4160,20 +4160,20 @@ Styling für den neuen Prüfungseinstellungen-Tab
 
 /* Belt option cards */
 .sv-belt-option-card {
-  padding: 1rem 0.75rem; background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+  padding: 1rem 0.75rem; background: var(--ds-bg-card-hover);
+  border: 2px solid var(--ds-border); border-radius: 12px;
   cursor: pointer; transition: all 0.3s ease;
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; min-height: 110px; box-sizing: border-box;
 }
-.sv-belt-option-card--selected { background: var(--primary-alpha-15); border-color: #ffd700; }
-.sv-belt-option-name { font-size: 0.85rem; color: rgba(255, 255, 255, 0.85); margin-top: 0.5rem; text-align: center; line-height: 1.3; word-wrap: break-word; width: 100%; }
+.sv-belt-option-card--selected { background: var(--primary-alpha-15); border-color: var(--ds-accent); }
+.sv-belt-option-name { font-size: 0.85rem; color: var(--ds-text); margin-top: 0.5rem; text-align: center; line-height: 1.3; word-wrap: break-word; width: 100%; }
 .sv-belt-option-name--selected { color: var(--primary); }
 
 /* Custom name input validation */
 .sv-grad-name-input {
-  width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px;
+  width: 100%; padding: 0.75rem; background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong); border-radius: 8px;
   color: var(--text-primary); font-size: 1rem; box-sizing: border-box;
 }
 .sv-grad-name-input--error {
@@ -4182,9 +4182,9 @@ Styling für den neuen Prüfungseinstellungen-Tab
 }
 
 /* Sekundaer label */
-.sv-sekundaer-label { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); }
+.sv-sekundaer-label { background: var(--ds-bg-card-hover); border: 1px solid var(--ds-border-strong); }
 .sv-sekundaer-label--active { background: var(--primary-alpha-15); border-color: var(--primary-alpha-30); }
-.sv-sekundaer-text { font-size: 0.9rem; font-weight: 500; color: rgba(255, 255, 255, 0.7); }
+.sv-sekundaer-text { font-size: 0.9rem; font-weight: 500; color: var(--ds-text-secondary); }
 .sv-sekundaer-text--active { color: var(--primary); font-weight: 600; }
 
 /* Chevron rotation */
@@ -4201,20 +4201,20 @@ Styling für den neuen Prüfungseinstellungen-Tab
 /* Bulk-Gürtelzuweisung Panel */
 .sv-sm-bulk-panel {
   display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;
-  background: var(--bg-secondary, rgba(255,255,255,0.04));
+  background: var(--bg-secondary, var(--ds-bg-card));
   border: 1px solid var(--primary-alpha-30, rgba(212,160,23,0.3));
   border-radius: 8px; padding: 0.6rem 0.9rem; margin-bottom: 0.75rem;
 }
 .sv-sm-bulk-label {
   display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem;
-  color: var(--text-secondary, rgba(255,255,255,0.7)); cursor: pointer; white-space: nowrap;
+  color: var(--text-secondary, var(--ds-text-secondary)); cursor: pointer; white-space: nowrap;
 }
 .sv-sm-bulk-label input[type="checkbox"] { accent-color: var(--primary, #d4a017); cursor: pointer; }
 .sv-sm-bulk-select {
   flex: 1; min-width: 150px; max-width: 250px;
-  background: var(--bg-input, rgba(255,255,255,0.06));
-  border: 1px solid var(--border-color, rgba(255,255,255,0.2));
-  border-radius: 6px; color: var(--text-primary, #fff);
+  background: var(--bg-input, var(--ds-bg-card-hover));
+  border: 1px solid var(--border-color, var(--ds-border-strong));
+  border-radius: 6px; color: var(--text-primary, var(--ds-text));
   padding: 0.3rem 0.6rem; font-size: 0.83rem;
 }
 /* Ausgewählte Items im Bulk-Modus */
@@ -4234,10 +4234,10 @@ Styling für den neuen Prüfungseinstellungen-Tab
 }
 .sv-sm-search {
   width: 100%; margin-bottom: 0.75rem; padding: 0.5rem 0.85rem;
-  background: var(--surface-1, rgba(255,255,255,0.04));
-  border: 1px solid var(--border-default, rgba(255,255,255,0.12));
+  background: var(--surface-1, var(--ds-bg-card));
+  border: 1px solid var(--border-default, var(--ds-border));
   border-radius: 8px;
-  color: var(--text-primary, #fff); font-size: 0.85rem; box-sizing: border-box;
+  color: var(--text-primary, var(--ds-text)); font-size: 0.85rem; box-sizing: border-box;
   transition: border-color 0.2s;
 }
 .sv-sm-search:focus { outline: none; border-color: var(--primary); }
@@ -4256,22 +4256,22 @@ Styling für den neuen Prüfungseinstellungen-Tab
 }
 .sv-sm-item {
   display: flex; align-items: center; gap: 0.6rem;
-  background: var(--surface-1, rgba(255,255,255,0.04));
-  border: 1px solid var(--border-default, rgba(255,255,255,0.08));
+  background: var(--surface-1, var(--ds-bg-card));
+  border: 1px solid var(--border-default, var(--ds-border));
   border-radius: 8px;
   padding: 0.45rem 0.7rem; transition: background 0.15s, border-color 0.15s;
 }
 .sv-sm-item:hover {
-  background: var(--surface-2, rgba(255,255,255,0.07));
+  background: var(--surface-2, var(--ds-bg-card-hover));
   border-color: var(--border-accent, rgba(212,160,23,0.2));
 }
 .sv-sm-belt-dot {
   width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-  border: 1.5px solid rgba(255,255,255,0.25);
+  border: 1.5px solid var(--ds-border-strong);
 }
 .sv-sm-info { flex: 1; display: flex; flex-direction: column; gap: 0; min-width: 0; }
-.sv-sm-name { color: var(--text-primary, #fff); font-weight: 600; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sv-sm-grad { color: var(--text-muted, rgba(255,255,255,0.45)); font-size: 0.72rem; }
+.sv-sm-name { color: var(--text-primary, var(--ds-text)); font-weight: 600; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-sm-grad { color: var(--text-muted, var(--ds-text-muted)); font-size: 0.72rem; }
 .sv-sm-remove-btn {
   background: none; border: none; cursor: pointer; font-size: 0.78rem;
   color: rgba(255,80,80,0.45); padding: 0.2rem 0.4rem; border-radius: 5px;
@@ -4301,15 +4301,15 @@ Styling für den neuen Prüfungseinstellungen-Tab
   display: flex; flex-direction: column; gap: 0.2rem; margin: 0;
 }
 .sv-sm-modal-subtitle {
-  font-size: 0.82rem; color: var(--text-muted, rgba(255,255,255,0.45));
+  font-size: 0.82rem; color: var(--text-muted, var(--ds-text-muted));
   font-weight: 400;
 }
 .sv-sm-modal-search {
   width: 100%; padding: 0.7rem 1rem;
-  background: var(--surface-1, rgba(255,255,255,0.05));
-  border: 1px solid var(--border-default, rgba(255,255,255,0.12));
+  background: var(--surface-1, var(--ds-bg-card-hover));
+  border: 1px solid var(--border-default, var(--ds-border));
   border-radius: var(--comp-radius-lg, 10px);
-  color: var(--text-primary, #fff); font-size: 0.95rem; box-sizing: border-box;
+  color: var(--text-primary, var(--ds-text)); font-size: 0.95rem; box-sizing: border-box;
   transition: border-color 0.2s;
 }
 .sv-sm-modal-search:focus { outline: none; border-color: var(--primary); }
@@ -4319,8 +4319,8 @@ Styling für den neuen Prüfungseinstellungen-Tab
 }
 .sv-sm-modal-item {
   display: flex; align-items: center; gap: 0.8rem;
-  background: var(--surface-1, rgba(255,255,255,0.04));
-  border: 1px solid var(--border-default, rgba(255,255,255,0.08));
+  background: var(--surface-1, var(--ds-bg-card));
+  border: 1px solid var(--border-default, var(--ds-border));
   border-radius: var(--comp-radius-lg, 10px);
   padding: 0.65rem 0.9rem; cursor: pointer; text-align: left; width: 100%;
   transition: background 0.15s, border-color 0.15s;
@@ -4337,15 +4337,15 @@ Styling für den neuen Prüfungseinstellungen-Tab
   text-transform: uppercase;
 }
 .sv-sm-modal-info { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-.sv-sm-modal-name { color: var(--text-primary, #fff); font-weight: 600; font-size: 0.9rem; }
-.sv-sm-modal-email { color: var(--text-muted, rgba(255,255,255,0.4)); font-size: 0.78rem; }
+.sv-sm-modal-name { color: var(--text-primary, var(--ds-text)); font-weight: 600; font-size: 0.9rem; }
+.sv-sm-modal-email { color: var(--text-muted, var(--ds-text-muted)); font-size: 0.78rem; }
 .sv-sm-modal-add {
   font-size: 1.2rem; color: var(--primary); font-weight: 700; flex-shrink: 0;
   opacity: 0; transition: opacity 0.15s;
 }
 .sv-sm-modal-item:hover .sv-sm-modal-add { opacity: 1; }
 .sv-sm-modal-empty {
-  color: var(--text-muted, rgba(255,255,255,0.4)); font-size: 0.9rem;
+  color: var(--text-muted, var(--ds-text-muted)); font-size: 0.9rem;
   text-align: center; padding: 2rem 1rem;
 }
 
@@ -4358,14 +4358,14 @@ Styling für den neuen Prüfungseinstellungen-Tab
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-bottom: 1px solid var(--border-color, var(--ds-border));
   padding-bottom: 0;
 }
 .pi-subtab-btn {
   padding: 0.55rem 1.2rem;
   border: none;
   background: transparent;
-  color: var(--text-muted, rgba(255,255,255,0.5));
+  color: var(--text-muted, var(--ds-text-muted));
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -4374,7 +4374,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
   transition: color 0.2s, border-color 0.2s;
   border-radius: 4px 4px 0 0;
 }
-.pi-subtab-btn:hover { color: var(--text-primary, #fff); }
+.pi-subtab-btn:hover { color: var(--text-primary, var(--ds-text)); }
 .pi-subtab-btn--active {
   color: var(--primary, #d4a017);
   border-bottom-color: var(--primary, #d4a017);
@@ -4385,7 +4385,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .pi-kat-einstellungen { display: flex; flex-direction: column; gap: 1.5rem; }
 
 .sv-kat-error { margin-bottom: 0.5rem; }
-.sv-kat-loading { color: var(--text-muted, rgba(255,255,255,0.5)); padding: 1rem 0; font-size: 0.9rem; }
+.sv-kat-loading { color: var(--text-muted, var(--ds-text-muted)); padding: 1rem 0; font-size: 0.9rem; }
 
 .pi-kat-list { display: flex; flex-direction: column; gap: 0.4rem; }
 
@@ -4394,22 +4394,22 @@ Styling für den neuen Prüfungseinstellungen-Tab
   align-items: center;
   gap: 0.75rem;
   padding: 0.65rem 1rem;
-  background: var(--card-bg, rgba(255,255,255,0.04));
-  border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+  background: var(--card-bg, var(--ds-bg-card));
+  border: 1px solid var(--border-color, var(--ds-border));
   border-radius: 8px;
   transition: border-color 0.15s;
 }
 .pi-kat-item:hover { border-color: var(--primary-alpha-40, rgba(212,160,23,0.4)); }
 
 .pi-kat-icon { font-size: 1.3rem; min-width: 1.8rem; text-align: center; }
-.pi-kat-label { flex: 1; color: var(--text-primary, #fff); font-size: 0.92rem; font-weight: 500; }
+.pi-kat-label { flex: 1; color: var(--text-primary, var(--ds-text)); font-size: 0.92rem; font-weight: 500; }
 
 .pi-kat-actions { display: flex; gap: 0.3rem; align-items: center; margin-left: auto; }
 
 /* Drag Handle */
 .pi-kat-drag-handle {
   font-size: 1.1rem;
-  color: var(--text-muted, rgba(255,255,255,0.3));
+  color: var(--text-muted, var(--ds-text-faint));
   cursor: grab;
   padding: 0.2rem 0.35rem;
   border-radius: 4px;
@@ -4440,20 +4440,20 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .pi-kat-icon-input {
   width: 3.2rem;
   padding: 0.35rem 0.5rem;
-  background: var(--input-bg, rgba(255,255,255,0.07));
-  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+  background: var(--input-bg, var(--ds-bg-card-hover));
+  border: 1px solid var(--border-color, var(--ds-border-strong));
   border-radius: 6px;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   font-size: 1.1rem;
   text-align: center;
 }
 .pi-kat-label-input {
   flex: 1;
   padding: 0.35rem 0.65rem;
-  background: var(--input-bg, rgba(255,255,255,0.07));
-  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+  background: var(--input-bg, var(--ds-bg-card-hover));
+  border: 1px solid var(--border-color, var(--ds-border-strong));
   border-radius: 6px;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.9rem;
 }
 .pi-kat-label-input:focus, .pi-kat-icon-input:focus {
@@ -4464,12 +4464,12 @@ Styling für den neuen Prüfungseinstellungen-Tab
 /* Neue Kategorie hinzufügen */
 .pi-kat-add-form {
   padding: 1rem 1.25rem;
-  background: var(--card-bg, rgba(255,255,255,0.03));
-  border: 1px dashed var(--border-color, rgba(255,255,255,0.12));
+  background: var(--card-bg, var(--ds-bg-card));
+  border: 1px dashed var(--border-color, var(--ds-border));
   border-radius: 8px;
 }
 .pi-kat-add-form h4 {
-  color: var(--text-secondary, rgba(255,255,255,0.7));
+  color: var(--text-secondary, var(--ds-text-secondary));
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 0.75rem;
@@ -4480,7 +4480,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
 
 /* Leerer Hinweis-Text in Prüfungsinhalte */
 .sv-pruef-empty-hint {
-  color: var(--text-muted, rgba(255,255,255,0.35));
+  color: var(--text-muted, var(--ds-text-faint));
   font-style: italic;
   font-size: 0.85rem;
   list-style: none;
@@ -4496,7 +4496,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
 }
 .sv-pruef-beschreibung {
   font-size: 0.8rem;
-  color: var(--text-muted, rgba(255,255,255,0.5));
+  color: var(--text-muted, var(--ds-text-muted));
   font-style: italic;
   line-height: 1.3;
 }
@@ -4507,9 +4507,9 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .pi-kat-grad-btn {
   padding: 0.22rem 0.55rem;
   background: transparent;
-  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+  border: 1px solid var(--border-color, var(--ds-border-strong));
   border-radius: 4px;
-  color: var(--text-muted, rgba(255,255,255,0.5));
+  color: var(--text-muted, var(--ds-text-muted));
   cursor: pointer;
   font-size: 0.78rem;
   white-space: nowrap;
@@ -4525,13 +4525,13 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .pi-kat-grad-select {
   margin: 0.35rem 0.5rem 0.5rem 2.8rem;
   padding: 0.75rem 1rem;
-  background: var(--card-bg, rgba(255,255,255,0.04));
-  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  background: var(--card-bg, var(--ds-bg-card));
+  border: 1px solid var(--border-color, var(--ds-border));
   border-radius: 8px;
 }
 .pi-kat-grad-hint {
   font-size: 0.78rem;
-  color: var(--text-muted, rgba(255,255,255,0.4));
+  color: var(--text-muted, var(--ds-text-muted));
   margin-bottom: 0.55rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -4547,7 +4547,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
   align-items: center;
   gap: 0.4rem;
   font-size: 0.85rem;
-  color: var(--text-secondary, rgba(255,255,255,0.7));
+  color: var(--text-secondary, var(--ds-text-secondary));
   cursor: pointer;
 }
 .pi-kat-grad-item input[type="checkbox"] { accent-color: var(--primary, #d4a017); cursor: pointer; }
@@ -4555,9 +4555,9 @@ Styling für den neuen Prüfungseinstellungen-Tab
   font-size: 0.78rem;
   padding: 0.2rem 0.6rem;
   background: transparent;
-  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+  border: 1px solid var(--border-color, var(--ds-border-strong));
   border-radius: 4px;
-  color: var(--text-muted, rgba(255,255,255,0.4));
+  color: var(--text-muted, var(--ds-text-muted));
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -4573,8 +4573,8 @@ Styling für den neuen Prüfungseinstellungen-Tab
 }
 .sv-pruef-copy-trigger {
   background: transparent;
-  border: 1px dashed var(--border-color, rgba(255,255,255,0.2));
-  color: var(--text-muted, rgba(255,255,255,0.45));
+  border: 1px dashed var(--border-color, var(--ds-border-strong));
+  color: var(--text-muted, var(--ds-text-muted));
   border-radius: 6px;
   padding: 0.28rem 0.75rem;
   font-size: 0.8rem;
@@ -4590,23 +4590,23 @@ Styling für den neuen Prüfungseinstellungen-Tab
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: var(--bg-secondary, rgba(255,255,255,0.04));
-  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  background: var(--bg-secondary, var(--ds-bg-card));
+  border-bottom: 1px solid var(--border-color, var(--ds-border));
   flex-wrap: wrap;
 }
 .sv-pruef-copy-label {
   font-size: 0.85rem;
-  color: var(--text-muted, rgba(255,255,255,0.55));
+  color: var(--text-muted, var(--ds-text-muted));
   white-space: nowrap;
 }
 .sv-pruef-copy-select {
   flex: 1;
   min-width: 160px;
   max-width: 280px;
-  background: var(--bg-input, rgba(255,255,255,0.06));
-  border: 1px solid var(--border-color, rgba(255,255,255,0.2));
+  background: var(--bg-input, var(--ds-bg-card-hover));
+  border: 1px solid var(--border-color, var(--ds-border-strong));
   border-radius: 6px;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   padding: 0.3rem 0.6rem;
   font-size: 0.85rem;
 }
@@ -4625,8 +4625,8 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .sv-pruef-copy-confirm:disabled { opacity: 0.4; cursor: default; }
 .sv-pruef-copy-cancel {
   background: transparent;
-  border: 1px solid var(--border-color, rgba(255,255,255,0.2));
-  color: var(--text-muted, rgba(255,255,255,0.5));
+  border: 1px solid var(--border-color, var(--ds-border-strong));
+  color: var(--text-muted, var(--ds-text-muted));
   border-radius: 6px;
   padding: 0.3rem 0.6rem;
   font-size: 0.85rem;

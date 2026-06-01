@@ -15,7 +15,7 @@
 
 /* Dark gradient QR card */
 .mqr-card {
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  background: linear-gradient(135deg, var(--ds-bg-surface), var(--ds-bg-surface));
   padding: 2rem;
   border-radius: 16px;
   border: 3px solid var(--primary);

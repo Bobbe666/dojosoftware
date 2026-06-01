@@ -5,7 +5,7 @@
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, var(--modal-bg-dark) 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--modal-bg-dark) 50%, var(--ds-bg-surface) 100%);
   color: var(--text-1);
 }
 
@@ -86,7 +86,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   backdrop-filter: blur(10px);
   color: var(--text-1);
   border: 1px solid var(--primary-alpha-30);
@@ -109,7 +109,7 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   backdrop-filter: blur(10px);
   border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-md);
@@ -131,7 +131,7 @@
 }
 
 .btn-icon.btn-delete:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   border-color: var(--status-error);
   color: var(--status-error);
 }
@@ -150,7 +150,7 @@
 }
 
 .btn-close:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-1);
 }
 
@@ -166,17 +166,17 @@
 }
 
 .btn-toggle.active {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.2) 100%);
+  background: linear-gradient(135deg, var(--ds-success-25) 0%, rgba(5, 150, 105, 0.2) 100%);
   color: var(--status-success);
   border-color: var(--status-success);
 }
 
 .btn-toggle.active:hover {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.4) 0%, rgba(5, 150, 105, 0.3) 100%);
+  background: linear-gradient(135deg, var(--ds-success-25) 0%, rgba(5, 150, 105, 0.3) 100%);
 }
 
 .btn-toggle.inactive {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-2);
 }
 
@@ -244,7 +244,7 @@
 
 .standort-card.inactive {
   opacity: 0.6;
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--ds-border);
 }
 
 .standort-card.expanded {
@@ -309,7 +309,7 @@
 }
 
 .badge-haupt {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.2) 100%);
+  background: linear-gradient(135deg, var(--ds-success-25) 0%, rgba(5, 150, 105, 0.2) 100%);
   color: var(--status-success);
   border: 1px solid var(--status-success-border);
 }
@@ -339,7 +339,7 @@
 }
 
 .info-row .icon {
-  color: rgba(255, 215, 0, 0.7);
+  color: var(--ds-accent-50);
   flex-shrink: 0;
 }
 
@@ -596,7 +596,7 @@
 .form-group textarea,
 .form-group select {
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-md);
   font-size: 0.95rem;
@@ -661,7 +661,7 @@
 .color-value {
   font-family: 'Courier New', monospace;
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--ds-text-secondary);
   font-weight: 600;
 }
 
@@ -697,7 +697,7 @@
 
 .time-inputs input[type="time"] {
   padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-sm);
   font-size: 0.9rem;
@@ -735,8 +735,8 @@
 /* Error Message */
 .error-message {
   padding: 1rem;
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-25);
+  border: 1px solid var(--ds-danger-25);
   border-radius: var(--comp-radius-md);
   color: var(--status-error);
   font-size: 0.9rem;
@@ -800,7 +800,7 @@
 
 /* Inline style migrations */
 .stat-icon-green {
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--ds-success) 0%, #059669 100%);
 }
 
 .stat-icon-blue {

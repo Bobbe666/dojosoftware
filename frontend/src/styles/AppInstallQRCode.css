@@ -14,7 +14,7 @@
 }
 
 .aiqr-modal {
-  background-color: #1a1a2e;
+  background-color: var(--ds-bg-surface);
   padding: 2rem;
   border-radius: 16px;
   max-width: 500px;
@@ -27,7 +27,7 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border: none;
   color: var(--text-primary);
   cursor: pointer;
@@ -107,7 +107,7 @@
 }
 
 .aiqr-url-box {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--ds-bg-card-hover);
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1.5rem;
@@ -140,7 +140,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem;
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  background: linear-gradient(135deg, var(--ds-accent), var(--ds-accent-bright));
   color: var(--bg-primary);
   border: none;
   border-radius: 10px;
@@ -162,9 +162,9 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 10px;
   font-weight: 600;
   font-size: 0.95rem;

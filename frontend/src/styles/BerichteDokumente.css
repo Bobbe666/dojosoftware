@@ -61,7 +61,7 @@
 /* Section Labels */
 .quick-create-section h2,
 .document-filter h2 {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -82,7 +82,7 @@
 
 .quick-create-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-lg);
   padding: 0.75rem 1rem;
   cursor: pointer;
@@ -134,7 +134,7 @@
 }
 
 .qc-plus {
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--ds-text-faint);
   flex-shrink: 0;
   transition: color 0.2s;
 }
@@ -156,10 +156,10 @@
 
 .filter-btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: 999px;
   padding: 5px 14px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -175,8 +175,8 @@
 }
 
 .filter-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border-strong);
   color: var(--text-1);
 }
 
@@ -204,7 +204,7 @@
 
 .document-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-lg);
   padding: 0.875rem 1rem;
   transition: background 0.2s, border-color 0.2s;
@@ -215,7 +215,7 @@
 
 .document-card:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--ds-border);
 }
 
 .document-header {
@@ -257,7 +257,7 @@
   display: flex;
   gap: 0.4rem;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -280,7 +280,7 @@
   border: 1px solid transparent;
   border-radius: 6px;
   padding: 6px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -290,8 +290,8 @@
 
 .btn-action:hover {
   color: var(--text-1);
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border);
 }
 
 .btn-download:hover {
@@ -321,12 +321,12 @@
   justify-content: center;
   padding: 3rem 2rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
 }
 
 .empty-state svg,
 .loading-state svg {
-  color: rgba(255, 215, 0, 0.2);
+  color: var(--ds-accent-20);
   margin-bottom: 0.75rem;
 }
 
@@ -339,7 +339,7 @@
 
 .empty-state p {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
 }
 
 .spinner {
@@ -403,7 +403,7 @@
 
 .btn-secondary {
   background: var(--surface-3);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
   padding: 8px 18px;
   color: var(--text-2);
@@ -414,7 +414,7 @@
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-1);
 }
 
@@ -452,6 +452,6 @@
     width: 100%;
     justify-content: flex-end;
     padding-top: 0.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--ds-border-subtle);
   }
 }

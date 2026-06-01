@@ -51,7 +51,7 @@ const inputStyle = {
 };
 
 const btnPrimary = {
-  background: 'linear-gradient(135deg,#3b6ff0,#6366f1)', color: '#fff', border: 'none',
+  background: 'linear-gradient(135deg,#3b6ff0,#6366f1)', color: 'var(--ds-text)', border: 'none',
   borderRadius: 7, padding: '9px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 13
 };
 

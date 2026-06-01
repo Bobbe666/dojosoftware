@@ -15,7 +15,7 @@
 
 .fin-kpi {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-card-padding);
   transition: border-color 0.2s;
@@ -33,7 +33,7 @@
 .fin-kpi-label {
   font-size: var(--ui-stat-label);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 0.5rem;
@@ -55,14 +55,14 @@
 
 .fin-kpi-sub {
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   margin-top: 0.4rem;
 }
 
 .fin-kpi-sub--positive { color: var(--status-success); }
 .fin-kpi-sub--warning  { color: var(--status-warning); }
 
-.fin-kpi-value--green  { color: var(--status-success); text-shadow: 0 0 16px rgba(16,185,129,0.3); }
+.fin-kpi-value--green  { color: var(--status-success); text-shadow: 0 0 16px var(--ds-success-25); }
 .fin-kpi-value--blue   { color: #63b3ed; }
 
 /* ── Haupt-Layout: 2 Spalten ── */
@@ -80,7 +80,7 @@
 /* ── Card ── */
 .fin-card {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
 }
@@ -90,14 +90,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.85rem 1.25rem;
-  background: rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--ds-bg-card);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .fin-card-title {
   font-size: var(--ui-card-label);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -122,17 +122,17 @@
   align-items: center;
   gap: 1rem;
   padding: 0.65rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
   transition: background 0.15s;
 }
 
 .fin-tarif-row:last-child { border-bottom: none; }
 
-.fin-tarif-row:hover { background: rgba(255, 255, 255, 0.03); }
+.fin-tarif-row:hover { background: var(--ds-bg-card); }
 
 .fin-tarif-name {
   font-size: 0.83rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -144,14 +144,14 @@
 
 .fin-tarif-bar-bg {
   height: 5px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   border-radius: 3px;
   overflow: hidden;
 }
 
 .fin-tarif-bar-fill {
   height: 100%;
-  background: var(--gradient-gold, linear-gradient(90deg, #ffd700, #ffaa00));
+  background: var(--gradient-gold, linear-gradient(90deg, var(--ds-accent), #ffaa00));
   border-radius: 3px;
   transition: width 0.6s ease;
 }
@@ -170,7 +170,7 @@
 
 .fin-tarif-count {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   margin-top: 0.1rem;
 }
 
@@ -180,7 +180,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .fin-opt-kpi {
@@ -199,7 +199,7 @@
 
 .fin-opt-kpi-label {
   font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 0.25rem;
@@ -221,16 +221,16 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.55rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
   transition: background 0.15s;
 }
 
 .fin-opt-row:last-child { border-bottom: none; }
-.fin-opt-row:hover { background: rgba(255, 255, 255, 0.03); }
+.fin-opt-row:hover { background: var(--ds-bg-card); }
 
 .fin-opt-name {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   display: flex;
@@ -240,7 +240,7 @@
 
 .fin-opt-tarif {
   font-size: 0.67rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -248,13 +248,13 @@
 
 .fin-opt-current {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .fin-opt-soll {
-  color: rgba(255, 215, 0, 0.65);
+  color: var(--ds-accent-50);
   font-size: 0.75rem;
 }
 
@@ -297,7 +297,7 @@
 
 .fin-legend-name {
   flex: 1;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--ds-text-secondary);
   white-space: normal;
   line-height: 1.3;
   overflow: hidden;
@@ -306,7 +306,7 @@
 
 .fin-legend-pct {
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -314,7 +314,7 @@
 .fin-empty {
   padding: 2rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
   font-size: 0.85rem;
 }
 

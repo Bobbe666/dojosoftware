@@ -48,7 +48,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%);
   padding: var(--ui-page-padding);
   animation: fadeIn 0.6s ease-out;
 }
@@ -56,9 +56,9 @@
 .login-card {
   background: rgba(20, 20, 40, 0.92);
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(255,215,0,0.18);
+  border: 1px solid var(--ds-accent-20);
   border-radius: 24px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 2px 0 rgba(255,215,0,0.08) inset;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 2px 0 var(--ds-accent-10) inset;
   padding: 2rem;
   width: 100%;
   max-width: 420px;
@@ -69,8 +69,8 @@
 }
 
 .login-card:hover {
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255,215,0,0.06);
-  border-color: rgba(255,215,0,0.28);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px var(--ds-accent-05);
+  border-color: var(--ds-accent-30);
 }
 
 @keyframes cardFloat {
@@ -118,7 +118,7 @@
   left: -100%;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  background: linear-gradient(90deg, transparent, var(--ds-accent), transparent);
   animation: shimmer 3s infinite;
   z-index: 3;
 }
@@ -144,7 +144,7 @@
 .japanese-title {
   font-size: 0.78rem;
   font-weight: 400;
-  color: rgba(255, 215, 0, 0.75);
+  color: var(--ds-accent-50);
   margin-bottom: 1rem;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -159,7 +159,7 @@
   height: 110px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2.5px solid rgba(255,215,0,0.45);
+  border: 2.5px solid var(--ds-accent-50);
   animation: logoGlow 4s ease-in-out infinite;
   flex-shrink: 0;
   box-shadow: 0 8px 28px rgba(0,0,0,0.5);
@@ -179,7 +179,7 @@
   }
   50% { 
     transform: scale(1.05);
-    box-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
+    box-shadow: 0 0 60px var(--ds-accent-50);
   }
 }
 
@@ -242,7 +242,7 @@
   align-items: center;
   gap: 0.5rem;
   background: var(--primary-alpha-10);
-  color: rgba(255, 215, 0, 0.9);
+  color: var(--ds-accent-50);
   padding: 0.5rem 1rem;
   border-radius: var(--comp-radius-pill);
   font-size: 0.85rem;
@@ -322,8 +322,8 @@
 
 .form-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  background: var(--ds-bg-elevated);
+  border: 1.5px solid var(--ds-border-strong);
   border-radius: 14px;
   padding: 14px 16px 14px 46px;
   color: var(--text-1);
@@ -336,9 +336,9 @@
 
 .form-input:focus {
   outline: none;
-  border-color: rgba(255, 215, 0, 0.6);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
-  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--ds-accent-50);
+  box-shadow: 0 0 0 3px var(--ds-accent-10);
+  background: var(--ds-bg-elevated);
 }
 
 .form-input::placeholder {
@@ -409,7 +409,7 @@
 /* Login Type Toggle */
 .login-type-toggle {
   display: flex;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border-radius: var(--comp-radius-xl);
   padding: 4px;
   margin-bottom: 1rem;
@@ -499,31 +499,31 @@
 }
 
 .error-message {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   color: var(--status-error);
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+  box-shadow: 0 0 20px var(--ds-danger-25);
 }
 
 .success-message {
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.4);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   color: var(--status-success);
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 0 20px var(--ds-success-25);
 }
 
 .message.error {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--ds-danger-10);
   border: 1px solid var(--status-error);
   color: var(--status-error);
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 15px var(--ds-danger-25);
 }
 
 .message.success {
-  background: rgba(34, 197, 94, 0.1);
+  background: var(--ds-success-10);
   border: 1px solid var(--primary);
   color: var(--primary);
-  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+  box-shadow: 0 0 15px var(--ds-success-25);
 }
 
 .message.info {
@@ -537,7 +537,7 @@
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--ds-border);
   border-top: 2px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -591,7 +591,7 @@
   background: var(--surface-3);
   padding: 0.5rem 1rem;
   border-radius: var(--comp-radius-pill);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
 }
 
 .registration-button {
@@ -616,7 +616,7 @@
 .registration-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px var(--primary-alpha-40);
-  background: linear-gradient(135deg, #ffed4e, #ff7b55);
+  background: linear-gradient(135deg, var(--ds-accent-bright), #ff7b55);
 }
 
 .registration-button:disabled {
@@ -645,7 +645,7 @@
 .test-accounts-toggle {
   background: none;
   border: 1px solid var(--primary-alpha-30);
-  color: rgba(255, 215, 0, 0.8);
+  color: var(--ds-accent-50);
   cursor: pointer;
   font-size: 0.9rem;
   padding: 8px 16px;
@@ -692,7 +692,7 @@
 }
 
 .test-accounts-title {
-  color: rgba(255, 215, 0, 0.9);
+  color: var(--ds-accent-50);
   font-size: 1rem;
   margin: 0 0 1rem 0;
   text-align: center;
@@ -707,13 +707,13 @@
   background: var(--surface-3);
   border-radius: var(--comp-radius-lg);
   padding: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   transition: all 0.3s ease;
 }
 
 .account-card:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--ds-bg-elevated);
   border-color: var(--primary-alpha-30);
 }
 
@@ -722,7 +722,7 @@
 }
 
 .account-name {
-  color: rgba(255, 215, 0, 0.9);
+  color: var(--ds-accent-50);
   font-size: 0.9rem;
   display: block;
 }
@@ -758,7 +758,7 @@
 
 .account-fill-button {
   background: var(--primary-alpha-20);
-  color: rgba(255, 215, 0, 0.9);
+  color: var(--ds-accent-50);
   border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-sm);
   padding: 6px 12px;
@@ -798,7 +798,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .test-account:last-child {
@@ -867,12 +867,12 @@
 .login-footer {
   margin-top: 1.25rem;
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--ds-border);
   padding-top: 0.75rem;
 }
 
 .version-info {
-  color: var(--text-3, rgba(255,255,255,0.3));
+  color: var(--text-3, var(--ds-text-faint));
   font-size: 0.75rem;
   margin: 0 0 0.3rem 0;
 }
@@ -882,7 +882,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  color: var(--text-3, rgba(255,255,255,0.3));
+  color: var(--text-3, var(--ds-text-faint));
   font-size: 0.72rem;
 }
 
@@ -960,7 +960,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%);
   padding: 3rem;
 }
 

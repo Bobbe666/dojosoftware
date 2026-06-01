@@ -543,7 +543,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
       {activeSubTab === 'dojo' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>Dojo-Bestellungen (Karate-Gi)</h2>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ds-text)' }}>Dojo-Bestellungen (Karate-Gi)</h2>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               {dojos && dojos.length > 1 && (
                 <select
@@ -553,7 +553,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                     setFilterDojoId(id);
                     if (id) loadDojoBestellungen(id);
                   }}
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.85)', borderRadius: '6px', fontSize: '0.8rem', padding: '0.3rem 0.6rem', cursor: 'pointer' }}
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--ds-text)', borderRadius: '6px', fontSize: '0.8rem', padding: '0.3rem 0.6rem', cursor: 'pointer' }}
                 >
                   <option value="">— Dojo wählen —</option>
                   {dojos.map(d => (
@@ -561,7 +561,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                   ))}
                 </select>
               )}
-              <button onClick={() => loadDojoBestellungen()} style={{ padding: '0.3rem 0.8rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '0.78rem', cursor: 'pointer' }}>
+              <button onClick={() => loadDojoBestellungen()} style={{ padding: '0.3rem 0.8rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: 'var(--ds-text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}>
                 Aktualisieren
               </button>
             </div>
@@ -588,7 +588,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                   <div style={{ fontSize: '0.83rem', fontWeight: 700, color: 'rgba(212,175,55,0.9)', letterSpacing: '0.02em', marginBottom: '0.15rem' }}>
                     Dojo auswählen
                   </div>
-                  <div style={{ fontSize: '0.77rem', color: 'rgba(255,255,255,0.38)', lineHeight: 1.4 }}>
+                  <div style={{ fontSize: '0.77rem', color: 'var(--ds-text-faint)', lineHeight: 1.4 }}>
                     Wähle ein Dojo aus der Liste oben, um die zugehörigen GI-Bestellungen zu laden.
                   </div>
                 </div>
@@ -609,9 +609,9 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
             )
           )}
           {dojoLoading ? (
-            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', padding: '1rem 0' }}>Lädt…</div>
+            <div style={{ color: 'var(--ds-text-faint)', fontSize: '0.85rem', padding: '1rem 0' }}>Lädt…</div>
           ) : dojoBestellungen.length === 0 ? (
-            <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem', padding: '1rem 0' }}>
+            <div style={{ color: 'var(--ds-text-faint)', fontSize: '0.85rem', padding: '1rem 0' }}>
               Noch keine Dojo-Bestellungen. Bestellungen werden beim PDF-Generieren in der GI-Bestellvorlage gespeichert.
             </div>
           ) : (
@@ -635,15 +635,15 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                       <td className="order-number" style={{ fontFamily: 'monospace', color: 'rgba(212,175,55,0.8)' }}>
                         #{String(b.bestellung_id).padStart(4, '0')}
                       </td>
-                      <td style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>
+                      <td style={{ color: 'var(--ds-text-secondary)', fontSize: '0.8rem' }}>
                         {b.vorlage_id ? `Vorlage #${b.vorlage_id}` : '—'}
                       </td>
                       <td>{b.lieferant_name || b.lieferant_firmenname || '—'}</td>
-                      <td style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>{b.bestelldatum || '—'}</td>
-                      <td style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>{b.lieferdatum || '—'}</td>
+                      <td style={{ color: 'var(--ds-text-secondary)', fontSize: '0.8rem' }}>{b.bestelldatum || '—'}</td>
+                      <td style={{ color: 'var(--ds-text-secondary)', fontSize: '0.8rem' }}>{b.lieferdatum || '—'}</td>
                       <td>
                         <select
-                          style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', borderRadius: '4px', fontSize: '0.75rem', padding: '0.15rem 0.3rem' }}
+                          style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--ds-text-secondary)', borderRadius: '4px', fontSize: '0.75rem', padding: '0.15rem 0.3rem' }}
                           value={b.status}
                           onChange={async (e) => {
                             try {
@@ -656,7 +656,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                           {Object.entries(STATUS_LABELS_DOJO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                         </select>
                       </td>
-                      <td style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
+                      <td style={{ fontSize: '0.78rem', color: 'var(--ds-text-muted)' }}>
                         {b.erstellt_am ? new Date(b.erstellt_am).toLocaleDateString('de-DE') : '—'}
                       </td>
                       <td className="actions">

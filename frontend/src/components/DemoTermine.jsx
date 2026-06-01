@@ -1228,7 +1228,7 @@ export default function DemoTermine() {
                         <button
                           key={s}
                           className={`dt-btn dt-btn-sm ${selectedBuchung.status === s ? 'dt-btn-active' : ''}`}
-                          style={selectedBuchung.status === s ? { backgroundColor: STATUS_COLORS[s], color: '#fff', border: 'none' } : {}}
+                          style={selectedBuchung.status === s ? { backgroundColor: STATUS_COLORS[s], color: 'var(--ds-text)', border: 'none' } : {}}
                           onClick={() => updateBuchung(selectedBuchung.id, { status: s })}
                           disabled={buchungSaving}
                         >

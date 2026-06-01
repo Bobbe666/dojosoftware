@@ -3525,7 +3525,7 @@ const PruefungsVerwaltung = () => {
                   )}
                   <button
                     onClick={() => setSelectedKandidaten([])}
-                    style={{ padding: '6px 10px', background: 'none', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '12px' }}
+                    style={{ padding: '6px 10px', background: 'none', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: 'var(--ds-text-muted)', cursor: 'pointer', fontSize: '12px' }}
                   >
                     Auswahl aufheben
                   </button>
@@ -6476,7 +6476,7 @@ const PruefungsVerwaltung = () => {
                   </div>
                 </div>
                 <button onClick={closeModal}
-                  style={{background:'rgba(255,255,255,0.1)',border:'none',color:'#fff',borderRadius:'50%',width:'28px',height:'28px',cursor:'pointer',fontSize:'16px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  style={{background:'rgba(255,255,255,0.1)',border:'none',color: 'var(--ds-text)',borderRadius:'50%',width:'28px',height:'28px',cursor:'pointer',fontSize:'16px',display:'flex',alignItems:'center',justifyContent:'center'}}>
                   ×
                 </button>
               </div>
@@ -6519,7 +6519,7 @@ const PruefungsVerwaltung = () => {
                             )
                           }
                           {selected && (
-                            <div style={{position:'absolute',top:'3px',right:'3px',background:'#6366f1',borderRadius:'50%',width:'14px',height:'14px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'9px',color:'#fff'}}>✓</div>
+                            <div style={{position:'absolute',top:'3px',right:'3px',background:'#6366f1',borderRadius:'50%',width:'14px',height:'14px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'9px',color: 'var(--ds-text)'}}>✓</div>
                           )}
                         </div>
                         <span style={{fontSize:'10px',color: selected ? '#a5b4fc' : '#94a3b8',fontWeight: selected ? 600 : 400,textAlign:'center',lineHeight:1.2}}>
@@ -6579,7 +6579,7 @@ const PruefungsVerwaltung = () => {
                     druckeUrkunden(ausgewaehlt, druckAuswahlModal.termin, druckAuswahlModal.vorlage);
                     closeModal();
                   }}
-                  style={{padding:'8px 20px',background: druckAuswahlModal.selected.length === 0 ? 'rgba(99,102,241,0.3)' : '#6366f1',border:'none',borderRadius:'8px',color:'#fff',cursor: druckAuswahlModal.selected.length === 0 ? 'default' : 'pointer',fontSize:'13px',fontWeight:600,display:'flex',alignItems:'center',gap:'6px'}}>
+                  style={{padding:'8px 20px',background: druckAuswahlModal.selected.length === 0 ? 'rgba(99,102,241,0.3)' : '#6366f1',border:'none',borderRadius:'8px',color: 'var(--ds-text)',cursor: druckAuswahlModal.selected.length === 0 ? 'default' : 'pointer',fontSize:'13px',fontWeight:600,display:'flex',alignItems:'center',gap:'6px'}}>
                   <Printer size={14} />
                   {druckAuswahlModal.selected.length} Person{druckAuswahlModal.selected.length !== 1 ? 'en' : ''} drucken
                 </button>
@@ -6610,7 +6610,7 @@ const PruefungsVerwaltung = () => {
                     </button>
                   );
                 })()}
-                <button onClick={triggerDruck} style={{padding:'8px 20px',background:'#1a1a1a',color:'#fff',border:'none',borderRadius:'6px',cursor:'pointer',fontWeight:600,fontSize:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
+                <button onClick={triggerDruck} style={{padding:'8px 20px',background:'#1a1a1a',color: 'var(--ds-text)',border:'none',borderRadius:'6px',cursor:'pointer',fontWeight:600,fontSize:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
                   🖨️ Drucken
                 </button>
                 <button onClick={() => setShowDruckPreview(false)} style={{padding:'8px 14px',background:'#e0e0e0',color:'#333',border:'none',borderRadius:'6px',cursor:'pointer',fontWeight:500,fontSize:'14px'}}>
@@ -6825,7 +6825,7 @@ const PruefungsVerwaltung = () => {
                     setTrainingsKonfliktDialog(null);
                   }
                 }}
-                style={{padding:'9px 18px',border:'none',borderRadius:'6px',background:'#c8a84b',color:'#fff',cursor:'pointer',fontWeight:600}}
+                style={{padding:'9px 18px',border:'none',borderRadius:'6px',background:'#c8a84b',color: 'var(--ds-text)',cursor:'pointer',fontWeight:600}}
               >
                 Ja, Termin anlegen
               </button>
@@ -6841,7 +6841,7 @@ const PruefungsVerwaltung = () => {
           <div style={{ background: 'var(--card-bg, #1e2235)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 14, padding: '1.75rem 2rem', minWidth: 320, maxWidth: 400 }}
             onClick={e => e.stopPropagation()}>
             <h3 style={{ margin: '0 0 0.5rem', color: '#ffd700', fontSize: '1rem' }}>💶 Prüfungsgebühr abrechnen</h3>
-            <p style={{ margin: '0 0 1.25rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>
+            <p style={{ margin: '0 0 1.25rem', color: 'var(--ds-text-secondary)', fontSize: '0.875rem' }}>
               {gebuehrDialog.vorname} {gebuehrDialog.nachname} — {parseFloat(gebuehrDialog.pruefungsgebuehr).toFixed(2)} €
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -6866,7 +6866,7 @@ const PruefungsVerwaltung = () => {
             </div>
             <button
               onClick={() => setGebuehrDialog(null)}
-              style={{ marginTop: '0.75rem', width: '100%', padding: '0.5rem', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '0.8rem' }}
+              style={{ marginTop: '0.75rem', width: '100%', padding: '0.5rem', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'var(--ds-text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}
             >
               Abbrechen
             </button>
@@ -6911,7 +6911,7 @@ const PruefungsVerwaltung = () => {
               </button>
               <button
                 onClick={handleErinnerungBestaetigen}
-                style={{ padding: '9px 20px', borderRadius: 6, border: 'none', background: '#c8a84b', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '14px' }}
+                style={{ padding: '9px 20px', borderRadius: 6, border: 'none', background: '#c8a84b', color: 'var(--ds-text)', fontWeight: 700, cursor: 'pointer', fontSize: '14px' }}
               >
                 🔔 Jetzt erinnern
               </button>

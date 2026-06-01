@@ -50,8 +50,8 @@
   font-size: 12px;
   font-weight: 600;
 }
-.anm-kpi-delta.pos { color: #22c55e; }
-.anm-kpi-delta.neg { color: #ef4444; }
+.anm-kpi-delta.pos { color: var(--ds-success); }
+.anm-kpi-delta.neg { color: var(--ds-danger); }
 
 /* Main Grid */
 .anm-main-grid {
@@ -62,7 +62,7 @@
 
 .anm-card {
   background: var(--surface-2);
-  border: 1px solid var(--primary-alpha-15, rgba(255,215,0,0.15));
+  border: 1px solid var(--primary-alpha-15, var(--ds-accent-15));
   border-radius: var(--comp-radius-lg);
   padding: 1rem 1.2rem;
 }
@@ -171,7 +171,7 @@
 
 .anm-funnel-bar-wrap {
   height: 20px;
-  background: rgba(255,255,255,0.06);
+  background: var(--ds-bg-card-hover);
   border-radius: 4px;
   overflow: hidden;
 }

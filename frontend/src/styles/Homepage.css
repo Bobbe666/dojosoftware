@@ -9,7 +9,7 @@
 .homepage-header {
   background: var(--surface-3);
   backdrop-filter: blur(10px);
-  border-bottom: 2px solid rgba(255,255,255,0.1);
+  border-bottom: 2px solid var(--ds-border);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -182,7 +182,7 @@
   text-align: center;
   box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
-  border: 2px solid rgba(255,255,255,0.1);
+  border: 2px solid var(--ds-border);
 }
 
 .feature-card:hover {
@@ -307,7 +307,7 @@
 }
 
 .footer-bottom {
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--ds-border);
   padding-top: 1rem;
   text-align: center;
 }
@@ -390,7 +390,7 @@
 
   .feature-card {
     background: var(--modal-bg-dark);
-    border-color: rgba(255,255,255,0.1);
+    border-color: var(--ds-border);
   }
 
   .feature-card:hover {

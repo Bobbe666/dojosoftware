@@ -14,7 +14,7 @@
   align-items: center;
   margin-bottom: var(--ui-header-margin-b);
   padding-bottom: var(--ui-header-padding-b);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .auto-lastschrift-container .section-header h2 {
@@ -62,7 +62,7 @@
 
 .zeitplan-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md);
   padding: var(--ui-section-gap-sm);
   transition: box-shadow 0.2s ease;
@@ -125,7 +125,7 @@
   padding: 0.5rem;
   border-radius: var(--comp-radius-sm);
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   color: var(--text-2);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -193,7 +193,7 @@
 .ausfuehrungen-liste {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 .ausfuehrungen-liste h4 {
@@ -212,7 +212,7 @@
 .ausfuehrungen-liste .table td {
   padding: 0.5rem 0.75rem;
   text-align: left;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .ausfuehrungen-liste .table th {
@@ -306,7 +306,7 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--ui-page-padding-sm);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .modal-header h3 {
@@ -349,7 +349,7 @@
 .form-group textarea {
   width: 100%;
   padding: 0.625rem 0.75rem;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-sm);
   font-size: var(--ui-form-input);
   background: var(--surface-2);
@@ -404,7 +404,7 @@
   font-weight: normal;
   padding: 0.5rem 1rem;
   background: var(--surface-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md);
   transition: all 0.2s ease;
 }
@@ -453,7 +453,7 @@
   gap: var(--ui-header-gap);
   padding-top: var(--ui-form-gap);
   margin-top: var(--ui-form-gap);
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 /* Spinning Animation */

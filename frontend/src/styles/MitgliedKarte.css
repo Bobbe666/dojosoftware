@@ -18,7 +18,7 @@
 .mk-context-menu {
   position: fixed;
   z-index: 999999;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, var(--ds-bg-surface) 0%, var(--ds-bg-surface) 100%);
   border: 1px solid var(--primary-alpha-35);
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.6);

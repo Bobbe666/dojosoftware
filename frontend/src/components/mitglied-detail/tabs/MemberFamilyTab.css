@@ -9,8 +9,8 @@
 }
 
 .fam-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 1.2rem 1.4rem;
 }
@@ -20,7 +20,7 @@
   font-weight: 700 !important;
   letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
-  color: #FFD700 !important;
+  color: var(--ds-accent) !important;
   margin: 0 0 1rem 0 !important;
   display: flex;
   align-items: center;
@@ -45,9 +45,9 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.28);
-  color: #FFD700;
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
+  color: var(--ds-accent);
   border-radius: 4px;
   padding: 0.18rem 0.55rem;
 }
@@ -55,8 +55,8 @@
 /* ── Familie zuordnen Button ── */
 .fam-merge-btn {
   background: transparent;
-  border: 1px solid rgba(255,215,0,0.3);
-  color: rgba(255,215,0,0.75);
+  border: 1px solid var(--ds-accent-30);
+  color: var(--ds-accent-50);
   font-size: 0.72rem;
   font-weight: 600;
   padding: 0.25rem 0.65rem;
@@ -67,21 +67,21 @@
   font-family: inherit;
 }
 .fam-merge-btn:hover {
-  background: rgba(255,215,0,0.1);
-  color: #FFD700;
+  background: var(--ds-accent-10);
+  color: var(--ds-accent);
 }
 
 /* ── Zusammenführen-Panel ── */
 .fam-merge-panel {
-  background: rgba(255,215,0,0.04);
-  border: 1px solid rgba(255,215,0,0.2);
+  background: var(--ds-accent-05);
+  border: 1px solid var(--ds-accent-20);
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 1rem;
 }
 .fam-merge-hint {
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.6);
+  color: var(--ds-text-secondary);
   margin: 0 0 0.75rem;
   line-height: 1.5;
 }
@@ -92,28 +92,28 @@
 }
 .fam-merge-search {
   width: 100%;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,215,0,0.25);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-accent-25);
   border-radius: 4px;
   padding: 0.5rem 0.75rem;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.9rem;
   font-family: inherit;
   outline: none;
 }
 .fam-merge-search:focus {
-  border-color: rgba(255,215,0,0.5);
+  border-color: var(--ds-accent-50);
 }
 .fam-merge-search::placeholder {
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
 }
 .fam-merge-spinner {
   position: absolute;
   right: 0.75rem;
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255,215,0,0.2);
-  border-top-color: #FFD700;
+  border: 2px solid var(--ds-accent-20);
+  border-top-color: var(--ds-accent);
   border-radius: 50%;
   animation: fam-spin 0.6s linear infinite;
 }
@@ -121,7 +121,7 @@
 
 .fam-merge-results {
   margin-top: 0.5rem;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -132,43 +132,43 @@
   padding: 0.55rem 0.75rem;
   cursor: pointer;
   transition: background 0.12s;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 .fam-merge-result-row:last-child { border-bottom: none; }
-.fam-merge-result-row:hover { background: rgba(255,215,0,0.07); }
+.fam-merge-result-row:hover { background: var(--ds-accent-05); }
 .fam-merge-result-name {
   font-size: 0.88rem;
-  color: rgba(255,255,255,0.9);
+  color: var(--ds-text);
 }
 .fam-merge-result-fam {
   font-size: 0.72rem;
-  color: #FFD700;
-  background: rgba(255,215,0,0.1);
-  border: 1px solid rgba(255,215,0,0.2);
+  color: var(--ds-accent);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-20);
   padding: 2px 7px;
   border-radius: 3px;
 }
 .fam-merge-result-nofam {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
 }
 
 .fam-merge-confirm {
   margin-top: 0.75rem;
-  background: rgba(255,215,0,0.06);
-  border: 1px solid rgba(255,215,0,0.25);
+  background: var(--ds-accent-05);
+  border: 1px solid var(--ds-accent-25);
   border-radius: 5px;
   padding: 0.75rem;
 }
 .fam-merge-confirm-text {
   font-size: 0.85rem;
-  color: rgba(255,255,255,0.8);
+  color: var(--ds-text-secondary);
   line-height: 1.55;
   margin-bottom: 0.65rem;
 }
 .fam-merge-error {
   font-size: 0.8rem;
-  color: #f87171;
+  color: var(--ds-danger-soft);
   margin-bottom: 0.5rem;
 }
 .fam-merge-confirm-btns {
@@ -178,19 +178,19 @@
 }
 .fam-merge-confirm-cancel {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.5);
+  border: 1px solid var(--ds-border-strong);
+  color: var(--ds-text-muted);
   font-size: 0.78rem;
   padding: 0.3rem 0.75rem;
   border-radius: 4px;
   cursor: pointer;
   font-family: inherit;
 }
-.fam-merge-confirm-cancel:hover { color: rgba(255,255,255,0.8); }
+.fam-merge-confirm-cancel:hover { color: var(--ds-text-secondary); }
 .fam-merge-confirm-ok {
-  background: rgba(255,215,0,0.15);
-  border: 1px solid rgba(255,215,0,0.4);
-  color: #FFD700;
+  background: var(--ds-accent-15);
+  border: 1px solid var(--ds-accent-50);
+  color: var(--ds-accent);
   font-size: 0.78rem;
   font-weight: 700;
   padding: 0.3rem 0.85rem;
@@ -199,7 +199,7 @@
   font-family: inherit;
   transition: background 0.15s;
 }
-.fam-merge-confirm-ok:hover:not(:disabled) { background: rgba(255,215,0,0.25); }
+.fam-merge-confirm-ok:hover:not(:disabled) { background: var(--ds-accent-25); }
 .fam-merge-confirm-ok:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Family member list ── */
@@ -219,20 +219,20 @@
 }
 
 .fam-member-row--current {
-  background: rgba(255, 215, 0, 0.06);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--ds-accent-05);
+  border: 1px solid var(--ds-accent-20);
   cursor: default;
 }
 
 .fam-member-row--other {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   cursor: pointer;
 }
 
 .fam-member-row--other:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border-strong);
 }
 
 .fam-avatar {
@@ -251,7 +251,7 @@
 }
 
 .fam-avatar--adult {
-  background: rgba(255, 215, 0, 0.12);
+  background: var(--ds-accent-10);
 }
 
 .fam-member-info {
@@ -262,7 +262,7 @@
 .fam-member-name {
   font-size: 0.87rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--ds-text);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -274,9 +274,9 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  background: rgba(255, 215, 0, 0.12);
-  border: 1px solid rgba(255, 215, 0, 0.28);
-  color: #FFD700;
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
+  color: var(--ds-accent);
   border-radius: 4px;
   padding: 0.08rem 0.4rem;
 }
@@ -288,11 +288,11 @@
   align-items: center;
   margin-top: 0.2rem;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--ds-text-muted);
 }
 
 .fam-meta-tarif {
-  color: rgba(255, 215, 0, 0.55);
+  color: var(--ds-accent-50);
 }
 
 .fam-meta-rabatt {
@@ -321,7 +321,7 @@
 }
 
 .fam-arrow {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
   font-size: 1.1rem;
   flex-shrink: 0;
 }
@@ -329,7 +329,7 @@
 .fam-loading,
 .fam-empty {
   font-size: 0.83rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
   font-style: italic;
   padding: 0.5rem 0;
 }
@@ -353,25 +353,25 @@
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
 }
 
 .fam-kv-value {
   font-size: 0.86rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text);
 }
 
 .fam-kv-empty {
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--ds-text-faint);
   font-style: italic;
 }
 
 /* ── Inputs ── */
 .fam-input {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   font-size: 0.83rem;
   padding: 0.42rem 0.7rem;
   width: 100%;
@@ -381,7 +381,7 @@
 }
 
 .fam-input:focus {
-  border-color: rgba(255, 215, 0, 0.45);
+  border-color: var(--ds-accent-50);
 }
 
 .fam-input--sm {
@@ -401,8 +401,8 @@
 }
 
 .fam-vtr-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.85rem 1rem;
 }
@@ -416,7 +416,7 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #FFD700;
+  color: var(--ds-accent);
 }
 
 .fam-vtr-kv-grid {
@@ -427,7 +427,7 @@
 }
 
 .fam-tel-link {
-  color: #FFD700;
+  color: var(--ds-accent);
   text-decoration: none;
 }
 
@@ -443,8 +443,8 @@
 }
 
 .fam-vtr-form {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.9rem 1rem;
 }
@@ -454,7 +454,7 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(255, 215, 0, 0.7);
+  color: var(--ds-accent-50);
   margin-bottom: 0.75rem;
 }
 
@@ -475,13 +475,13 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
 }
 
 /* ── Info note ── */
 .fam-info-note {
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--ds-text-faint);
   margin: 0.75rem 0 0;
   line-height: 1.5;
 }

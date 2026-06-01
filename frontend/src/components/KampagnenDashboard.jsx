@@ -154,7 +154,7 @@ const SendenPanel = ({ anzahl, betreff, html, onSenden, loading, ergebnis, fehle
               Abbrechen
             </button>
             <button onClick={() => { setKonfirm(false); onSenden(); }} disabled={loading}
-              style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: '#ef4444', color: 'var(--ds-text)', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
               {loading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }}/>Wird gesendet…</> : <><Send size={14}/>Jetzt senden</>}
             </button>
           </div>
@@ -494,7 +494,7 @@ const KampagnenDashboard = () => {
 
                 <button onClick={handleImport} disabled={importLoading}
                   style={{ marginTop: 14, width: '100%', padding: '12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                    background: '#22c55e', color: '#fff', fontSize: 15, fontWeight: 700,
+                    background: '#22c55e', color: 'var(--ds-text)', fontSize: 15, fontWeight: 700,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   {importLoading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }}/> : <CheckCircle size={16}/>}
                   {importGesamt} Kontakte importieren

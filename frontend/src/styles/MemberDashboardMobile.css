@@ -14,7 +14,7 @@
   display: flex;
   flex-direction: column;
   background: var(--bg-primary, #0a0a0f);
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   font-family: inherit;
   overflow: hidden;
 }
@@ -31,7 +31,7 @@
   padding: 0.6rem 1rem;
   padding-top: max(0.6rem, env(safe-area-inset-top, 0.6rem));
   background: var(--bg-card, #13131a);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
   z-index: 10;
   gap: 0.5rem;
 }
@@ -56,7 +56,7 @@
   font-weight: 600;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   opacity: 0.85;
   white-space: nowrap;
   overflow: hidden;
@@ -72,7 +72,7 @@
 
 .mapp-notif-btn {
   position: relative;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ds-bg-card-hover);
   border: none;
   border-radius: 50%;
   width: 36px;
@@ -80,7 +80,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -92,7 +92,7 @@
   top: 2px;
   right: 2px;
   background: var(--error, #ff4444);
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.6rem;
   font-weight: 700;
   border-radius: 99px;
@@ -135,7 +135,7 @@
 
 .mapp-hero-kanji {
   font-size: 1.1rem;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   opacity: 0.5;
   letter-spacing: 8px;
   margin-bottom: 0.2rem;
@@ -146,7 +146,7 @@
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 3px;
-  background: linear-gradient(135deg, var(--primary, #ffd700) 0%, #ffaa00 50%, var(--primary, #ffd700) 100%);
+  background: linear-gradient(135deg, var(--primary, var(--ds-accent)) 0%, #ffaa00 50%, var(--primary, var(--ds-accent)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -166,8 +166,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 99px;
   padding: 0.2rem 0.6rem;
   font-size: 0.72rem;
@@ -209,7 +209,7 @@
 
 .mapp-alert-btn {
   background: var(--error, #ff4444);
-  color: #fff;
+  color: var(--ds-text);
   border: none;
   border-radius: 8px;
   padding: 0.4rem 0.75rem;
@@ -230,19 +230,19 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.6rem 1rem;
-  background: linear-gradient(90deg, rgba(255,215,0,0.12), rgba(255,170,0,0.08));
-  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+  background: linear-gradient(90deg, var(--ds-accent-10), rgba(255,170,0,0.08));
+  border-bottom: 1px solid var(--ds-accent-30);
   flex-shrink: 0;
 }
 
 .mapp-update-text {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
 }
 
 .mapp-update-btn {
-  background: var(--primary, #ffd700);
+  background: var(--primary, var(--ds-accent));
   color: #000;
   border: none;
   border-radius: 8px;
@@ -279,8 +279,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  background: linear-gradient(135deg, var(--ds-bg-surface) 0%, var(--ds-bg-surface) 50%, #0f3460 100%);
+  border: 1px solid var(--ds-accent-25);
   border-radius: 10px;
   padding: 0.45rem 0.65rem;
   margin-bottom: 0.75rem;
@@ -297,7 +297,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 2rem;
-  color: rgba(255, 215, 0, 0.05);
+  color: var(--ds-accent-05);
   font-weight: 900;
   pointer-events: none;
   line-height: 1;
@@ -311,7 +311,7 @@
   left: 0;
   right: 0;
   height: 1.5px;
-  background: linear-gradient(90deg, transparent, var(--primary, #ffd700), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary, var(--ds-accent)), transparent);
 }
 
 .mapp-ausweis-left {
@@ -338,7 +338,7 @@
 .mapp-ausweis-dojo {
   font-size: 0.5rem;
   letter-spacing: 1.5px;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   opacity: 0.7;
   text-transform: uppercase;
   margin-bottom: 0.05rem;
@@ -347,7 +347,7 @@
 .mapp-ausweis-name {
   font-size: 0.78rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--ds-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -357,7 +357,7 @@
 
 .mapp-ausweis-meta {
   font-size: 0.55rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
   display: flex;
   gap: 0.25rem;
   flex-wrap: wrap;
@@ -370,7 +370,7 @@
   gap: 0.25rem;
   font-size: 0.58rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--ds-text-secondary);
 }
 
 .mapp-ausweis-belt-stripe {
@@ -394,16 +394,16 @@
   height: 37px;
   border-radius: 4px;
   object-fit: cover;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--ds-accent-30);
 }
 
 .mapp-ausweis-foto--placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
 }
 
 .mapp-ausweis-qr {
@@ -425,7 +425,7 @@
 
 .mapp-stat {
   background: var(--bg-card, #13131a);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   border-radius: 14px;
   padding: 0.9rem 0.5rem;
   display: flex;
@@ -454,7 +454,7 @@
 .mapp-stat-value {
   font-size: 1.5rem;
   font-weight: 900;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   line-height: 1;
   max-width: 100%;
   overflow: hidden;
@@ -477,7 +477,7 @@
   gap: 0.3rem;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   justify-content: center;
 }
 
@@ -506,34 +506,34 @@
   justify-content: center;
   gap: 0.4rem;
   background: var(--bg-card, #13131a);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  border: 1px solid var(--ds-accent-25);
   border-radius: 14px;
   padding: 1rem 0.75rem;
   min-height: 80px;
   cursor: pointer;
   transition: all 0.15s;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
 }
 
 .mapp-qa-btn:active {
   transform: scale(0.96);
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--ds-accent-10);
 }
 
 .mapp-qa-btn--primary {
-  background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(255,170,0,0.08) 100%);
-  border-color: rgba(255, 215, 0, 0.4);
+  background: linear-gradient(135deg, var(--ds-accent-15) 0%, rgba(255,170,0,0.08) 100%);
+  border-color: var(--ds-accent-50);
 }
 
 .mapp-qa-icon {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
 }
 
 .mapp-qa-label {
   font-size: 0.78rem;
   font-weight: 600;
   text-align: center;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
 }
 
 /* ----------------------------------------------------------------
@@ -542,7 +542,7 @@
 
 .mapp-section {
   background: var(--bg-card, #13131a);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   border-radius: 14px;
   margin-bottom: 0.85rem;
   overflow: hidden;
@@ -553,7 +553,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem 0.6rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .mapp-section-title {
@@ -569,7 +569,7 @@
 
 .mapp-section-link {
   font-size: 0.72rem;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -593,24 +593,24 @@
   transition: background 0.15s;
 }
 
-.mapp-event:active { background: rgba(255, 255, 255, 0.04); }
-.mapp-event + .mapp-event { border-top: 1px solid rgba(255, 255, 255, 0.04); }
+.mapp-event:active { background: var(--ds-bg-card); }
+.mapp-event + .mapp-event { border-top: 1px solid var(--ds-border-subtle); }
 
 .mapp-event-date {
   display: flex;
   flex-direction: column;
   align-items: center;
   min-width: 38px;
-  background: rgba(255, 215, 0, 0.08);
+  background: var(--ds-accent-10);
   border-radius: 8px;
   padding: 0.3rem 0.4rem;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--ds-accent-20);
 }
 
 .mapp-event-day {
   font-size: 1rem;
   font-weight: 900;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   line-height: 1;
 }
 
@@ -627,7 +627,7 @@
 .mapp-event-name {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -654,9 +654,9 @@
 }
 
 .mapp-event-badge--open {
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  color: var(--primary, #ffd700);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
+  color: var(--primary, var(--ds-accent));
 }
 
 /* ----------------------------------------------------------------
@@ -672,8 +672,8 @@
   transition: background 0.15s;
 }
 
-.mapp-news:active { background: rgba(255, 255, 255, 0.04); }
-.mapp-news + .mapp-news { border-top: 1px solid rgba(255, 255, 255, 0.04); }
+.mapp-news:active { background: var(--ds-bg-card); }
+.mapp-news + .mapp-news { border-top: 1px solid var(--ds-border-subtle); }
 
 .mapp-news-img {
   width: 52px;
@@ -687,7 +687,7 @@
   width: 52px;
   height: 52px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -706,7 +706,7 @@
 .mapp-news-title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -728,7 +728,7 @@
 
 .mapp-referral {
   background: var(--bg-card, #13131a);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   border-radius: 14px;
   padding: 1rem;
   margin-bottom: 0.85rem;
@@ -746,7 +746,7 @@
 .mapp-referral-title {
   font-size: 0.88rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
 }
 
 .mapp-referral-sub {
@@ -758,8 +758,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 215, 0, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-20);
   border-radius: 10px;
   padding: 0.6rem 0.75rem;
   margin-bottom: 0.75rem;
@@ -768,7 +768,7 @@
 .mapp-referral-praemie-amount {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
 }
 
 .mapp-referral-praemie-sub {
@@ -780,8 +780,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 0.5rem 0.75rem;
 }
@@ -791,17 +791,17 @@
   font-size: 1.1rem;
   font-weight: 900;
   letter-spacing: 3px;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
 }
 
 .mapp-referral-copy {
-  background: rgba(255, 215, 0, 0.12);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
   border-radius: 8px;
   padding: 0.35rem 0.65rem;
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -819,7 +819,7 @@
 
 .mapp-vertrag {
   background: var(--bg-card, #13131a);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   border-radius: 14px;
   padding: 0.85rem 1rem;
   margin-bottom: 0.85rem;
@@ -842,7 +842,7 @@
 
 .mapp-vertrag-btn {
   font-size: 0.72rem;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   background: none;
   border: none;
   cursor: pointer;
@@ -905,13 +905,13 @@
 }
 
 .mapp-modal-close-btn {
-  background: rgba(255,255,255,0.08);
+  background: var(--ds-bg-elevated);
   border: none;
   border-radius: 50%;
   width: 32px;
   height: 32px;
   font-size: 0.85rem;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -927,7 +927,7 @@
 .mapp-modal-title {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   margin-bottom: 0.75rem;
 }
 
@@ -991,8 +991,8 @@
   flex-direction: column;
   align-items: center;
   gap: 0.35rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
   padding: 0.75rem 0.4rem;
   cursor: pointer;
@@ -1001,17 +1001,17 @@
 
 .mapp-drawer-item:active {
   transform: scale(0.95);
-  background: rgba(255,215,0,0.08);
+  background: var(--ds-accent-10);
 }
 
 .mapp-drawer-item-icon {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
 }
 
 .mapp-drawer-item-label {
   font-size: 0.65rem;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   text-align: center;
   line-height: 1.2;
 }
@@ -1044,7 +1044,7 @@
   display: flex;
   align-items: stretch;
   background: var(--bg-card, #13131a);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--ds-border);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: 100;
 }
@@ -1065,12 +1065,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.mapp-tab:active { background: rgba(255, 255, 255, 0.04); }
+.mapp-tab:active { background: var(--ds-bg-card); }
 
-.mapp-tab.active { color: var(--primary, #ffd700); }
+.mapp-tab.active { color: var(--primary, var(--ds-accent)); }
 
 .mapp-tab.active .mapp-tab-icon-wrap {
-  background: rgba(255, 215, 0, 0.12);
+  background: var(--ds-accent-10);
   border-radius: 10px;
 }
 
@@ -1132,8 +1132,8 @@
 .mapp-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(255,215,0,0.15);
-  border-top-color: var(--primary, #ffd700);
+  border: 3px solid var(--ds-accent-15);
+  border-top-color: var(--primary, var(--ds-accent));
   border-radius: 50%;
   animation: mapp-spin 0.8s linear infinite;
 }

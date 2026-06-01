@@ -3,11 +3,11 @@
    ============================================================================ */
 
 .ziele-entwicklung {
-  background: linear-gradient(145deg, #1a1a2e 0%, #16162a 100%);
+  background: linear-gradient(145deg, var(--ds-bg-surface) 0%, #16162a 100%);
   border-radius: 16px;
   padding: var(--ui-section-gap);
   margin-bottom: var(--ui-section-gap);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ds-border-subtle);
 }
 
 .ziele-entwicklung.loading {
@@ -35,14 +35,14 @@
   justify-content: space-between;
   margin-bottom: var(--ui-header-margin-b);
   padding-bottom: var(--ui-header-padding-b);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .ziele-title {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .ziele-title > div {
@@ -79,8 +79,8 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-sm);
   color: #a0a0b0;
   font-size: 0.8rem;
@@ -91,7 +91,7 @@
 .nav-link-btn:hover {
   background: rgba(99, 102, 241, 0.15);
   border-color: rgba(99, 102, 241, 0.3);
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .nav-link-btn svg:last-child {
@@ -115,9 +115,9 @@
 }
 
 .ziele-actions .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
+  color: var(--ds-text);
 }
 
 .ziele-actions .btn-secondary:hover {
@@ -127,7 +127,7 @@
 .ziele-actions .btn-primary {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border: none;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .ziele-actions .btn-primary:hover {
@@ -153,14 +153,14 @@
 }
 
 .ziele-message.error {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #f87171;
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
+  color: var(--ds-danger-soft);
 }
 
 .ziele-message.success {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   color: #34d399;
 }
 
@@ -177,8 +177,8 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--ui-page-padding-sm) var(--ui-header-padding-b);
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .section-header.clickable {
@@ -187,14 +187,14 @@
 }
 
 .section-header.clickable:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
 }
 
 .section-title {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 500;
 }
 
@@ -218,7 +218,7 @@
 .ziele-table td {
   padding: 0.75rem;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .ziele-table th {
@@ -248,11 +248,11 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .ist-col {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: var(--ds-bg-card) !important;
   min-width: 100px;
 }
 
@@ -274,10 +274,10 @@
   width: 100%;
   max-width: 100px;
   padding: 0.4rem 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm);
-  color: #fff;
+  color: var(--ds-text);
   text-align: center;
   font-size: 0.875rem;
 }
@@ -308,12 +308,12 @@
 }
 
 .mini-badge.up {
-  background: rgba(16, 185, 129, 0.15);
+  background: var(--ds-success-10);
   color: var(--status-success);
 }
 
 .mini-badge.down {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--ds-danger-10);
   color: var(--status-error);
 }
 
@@ -327,7 +327,7 @@
   position: relative;
   width: 100%;
   height: 24px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
 }
@@ -343,7 +343,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.75rem;
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -363,7 +363,7 @@
 .eingabe-gruppe.full-width {
   grid-column: 1 / -1;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .eingabe-gruppe label {
@@ -386,10 +386,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
-  color: #fff;
+  color: var(--ds-text);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -402,10 +402,10 @@
 .number-input input {
   flex: 1;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
-  color: #fff;
+  color: var(--ds-text);
   text-align: center;
   font-size: 1rem;
   font-weight: 500;
@@ -431,13 +431,13 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: var(--comp-radius-md);
 }
 
 .gruppe-name {
   flex: 1;
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 500;
   min-width: 120px;
 }
@@ -482,10 +482,10 @@
 .input-field input {
   width: 70px;
   padding: 0.4rem 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm);
-  color: #fff;
+  color: var(--ds-text);
   text-align: right;
   font-size: 0.875rem;
 }
@@ -530,7 +530,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: var(--comp-radius-sm);
   font-size: 0.875rem;
 }
@@ -550,7 +550,7 @@
 }
 
 .detail-wert {
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 500;
   min-width: 140px;
   text-align: right;
@@ -578,8 +578,8 @@
 }
 
 .summe-card.jaehrlich {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(52, 211, 153, 0.15) 100%);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, var(--ds-success-10) 0%, rgba(52, 211, 153, 0.15) 100%);
+  border: 1px solid var(--ds-success-25);
 }
 
 .summe-label {
@@ -590,7 +590,7 @@
 }
 
 .summe-wert {
-  color: #fff;
+  color: var(--ds-text);
   font-size: 1.25rem;
   font-weight: 600;
 }
@@ -612,16 +612,16 @@
 }
 
 .vergleich-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: 1rem;
   transition: all 0.2s;
 }
 
 .vergleich-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border);
 }
 
 .vergleich-header {
@@ -678,7 +678,7 @@
 .wert-block .wert-zahl {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .wert-block.ist .wert-zahl {
@@ -704,7 +704,7 @@
 .progress-bar-bg {
   width: 100%;
   height: 6px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -717,11 +717,11 @@
 }
 
 .progress-bar-fill.up {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: linear-gradient(90deg, var(--ds-success), #34d399);
 }
 
 .progress-bar-fill.down {
-  background: linear-gradient(90deg, #ef4444, #f87171);
+  background: linear-gradient(90deg, var(--ds-danger), var(--ds-danger-soft));
 }
 
 .progress-bar-fill.neutral {
@@ -768,7 +768,7 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--ds-border);
 }
 
 .trend-indicator {
@@ -799,7 +799,7 @@
 }
 
 .prozent-badge.good {
-  background: rgba(16, 185, 129, 0.15);
+  background: var(--ds-success-10);
   color: var(--status-success);
 }
 
@@ -809,7 +809,7 @@
 }
 
 .prozent-badge.bad {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--ds-danger-10);
   color: var(--status-error);
 }
 
@@ -830,7 +830,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: var(--comp-radius-md);
   min-width: 90px;
 }
@@ -853,10 +853,10 @@
 .jahr-input-gruppe input {
   width: 70px;
   padding: 0.4rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm);
-  color: #fff;
+  color: var(--ds-text);
   text-align: center;
   font-size: 0.875rem;
 }
@@ -888,7 +888,7 @@
 .prognose-tabelle td {
   padding: 0.75rem 1rem;
   text-align: right;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .prognose-tabelle th {
@@ -897,7 +897,7 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ds-bg-card);
 }
 
 .prognose-tabelle th:first-child,
@@ -906,7 +906,7 @@
 }
 
 .prognose-tabelle tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
 }
 
 .prognose-tabelle tbody tr.current-year {
@@ -914,7 +914,7 @@
 }
 
 .prognose-tabelle td {
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .prognose-tabelle td.jahr {
@@ -1090,10 +1090,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border-radius: var(--comp-radius-lg);
   padding: var(--ui-header-gap) var(--ui-header-padding-b);
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
 }
 
 .umsatz-info-item {
@@ -1106,14 +1106,14 @@
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   font-weight: 600;
 }
 
 .umsatz-info-wert {
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
+  color: var(--ds-text);
 }
 
 .umsatz-info-wert.highlight {
@@ -1139,8 +1139,8 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(255,255,255,0.45);
-  border-bottom: 2px solid rgba(255,255,255,0.08);
+  color: var(--ds-text-muted);
+  border-bottom: 2px solid var(--ds-border);
   white-space: nowrap;
 }
 
@@ -1157,7 +1157,7 @@
   padding: 0.6rem 0.85rem;
   text-align: right;
   vertical-align: middle;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .umsatz-tabelle .row-label-col,
@@ -1175,24 +1175,24 @@
   align-items: center;
   gap: 0.4rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
+  color: var(--ds-text);
 }
 
 .row-hint {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
   margin-top: 2px;
   padding-left: 1.4rem;
 }
 
 .ist-wert {
   font-weight: 700;
-  color: rgba(255,255,255,0.7);
+  color: var(--ds-text-secondary);
 }
 
 .ist-wert.dim {
   font-weight: 500;
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
 }
 
 .ist-wert.highlight-green {
@@ -1218,7 +1218,7 @@
 .umsatz-input {
   width: 80px;
   padding: 0.3rem 0.45rem;
-  background: rgba(255,255,255,0.07);
+  background: var(--ds-bg-card-hover);
   border: 1px solid rgba(245,158,11,0.35);
   border-radius: var(--comp-radius-sm);
   color: var(--status-warning);
@@ -1236,7 +1236,7 @@
 
 .input-unit {
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
 }
 
 .input-kilo {
@@ -1258,16 +1258,16 @@
 }
 
 .berechnet-leer {
-  color: rgba(255,255,255,0.2);
+  color: var(--ds-text-faint);
 }
 
 /* IST-Zeile */
 .row-ist td {
-  background: rgba(34,197,94,0.03);
+  background: var(--ds-success-10);
 }
 
 .ist-ref {
-  color: rgba(34,197,94,0.7);
+  color: var(--ds-success-25);
   font-weight: 600;
 }
 
@@ -1293,7 +1293,7 @@
 
 .diff-label {
   font-size: 0.67rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
 }
 
 /* Erreichbarer Umsatz */
@@ -1324,7 +1324,7 @@
 .erreichbar-bar-bg {
   width: 52px;
   height: 4px;
-  background: rgba(255,255,255,0.08);
+  background: var(--ds-bg-elevated);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -1348,11 +1348,11 @@
   align-items: flex-start;
   gap: 0.4rem;
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   padding: 0.6rem 0.75rem;
-  background: rgba(255,255,255,0.02);
+  background: var(--ds-bg-card);
   border-radius: var(--comp-radius-md);
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid var(--ds-border-subtle);
 }
 
 .umsatz-hinweis svg {
@@ -1408,9 +1408,9 @@
 }
 
 /* Erreichbar bar fill modifiers (width stays inline) */
-.ze-erreichbar-fill--full { background: #22c55e; }
+.ze-erreichbar-fill--full { background: var(--ds-success); }
 .ze-erreichbar-fill--mid  { background: #f59e0b; }
-.ze-erreichbar-fill--low  { background: #ef4444; }
+.ze-erreichbar-fill--low  { background: var(--ds-danger); }
 
 /* Erreichbar percent modifiers */
 .ze-erreichbar-pct--full { color: var(--status-success); }

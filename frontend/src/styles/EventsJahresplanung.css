@@ -26,7 +26,7 @@
 
 .ejp-jahr-btn {
   background: var(--primary-alpha-10);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   color: var(--text-1);
   border-radius: var(--comp-radius-md, 8px);
   width: 32px;
@@ -39,7 +39,7 @@
   transition: background 0.15s;
 }
 .ejp-jahr-btn:hover:not(:disabled) {
-  background: var(--primary-alpha-20, rgba(212,175,55,0.2));
+  background: var(--primary-alpha-20, var(--ds-accent-20));
 }
 .ejp-jahr-btn:disabled {
   opacity: 0.3;
@@ -57,7 +57,7 @@
 /* ── View Toggle ─────────────────────────────────────────────── */
 .ejp-view-toggle {
   display: flex;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md, 8px);
   overflow: hidden;
 }
@@ -65,7 +65,7 @@
 .ejp-view-btn {
   background: transparent;
   border: none;
-  color: var(--text-2, rgba(255,255,255,0.5));
+  color: var(--text-2, var(--ds-text-muted));
   padding: 0.4rem 0.9rem;
   font-size: 0.8rem;
   font-weight: 600;
@@ -98,16 +98,16 @@
   align-items: center;
   gap: 5px;
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--ds-border);
   border-radius: 20px;
   padding: 4px 10px 4px 8px;
   cursor: pointer;
   transition: background 0.13s, border-color 0.13s;
-  color: var(--text-2, rgba(255,255,255,0.5));
+  color: var(--text-2, var(--ds-text-muted));
   font-size: 0.75rem;
 }
 .ejp-stat-chip:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   color: var(--text-1);
 }
 .ejp-stat-chip--aktiv {
@@ -142,7 +142,7 @@
 
 .ejp-monat-btn {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   border-radius: 6px;
   color: var(--text-1);
   width: 28px;
@@ -170,7 +170,7 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -181,13 +181,13 @@
   padding: 0.5rem 0;
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--text-2, rgba(255,255,255,0.45));
+  color: var(--text-2, var(--ds-text-muted));
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .ejp-cal-cell {
-  background: rgba(255,255,255,0.02);
+  background: var(--ds-bg-card);
   min-height: 88px;
   padding: 0.35rem 0.4rem 0.4rem;
   position: relative;
@@ -201,7 +201,7 @@
   cursor: pointer;
 }
 .ejp-cal-cell--clickable:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
 }
 
 .ejp-cal-cell--empty {
@@ -225,7 +225,7 @@
 .ejp-day-number {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-2, rgba(255,255,255,0.45));
+  color: var(--text-2, var(--ds-text-muted));
   text-align: right;
   margin-bottom: 2px;
   line-height: 22px;
@@ -245,7 +245,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
-  color: #fff;
+  color: var(--ds-text);
   max-width: 100%;
   transition: opacity 0.12s;
 }
@@ -262,8 +262,8 @@
 }
 
 .ejp-event-pill--more {
-  background: rgba(255,255,255,0.08) !important;
-  color: var(--text-2, rgba(255,255,255,0.5));
+  background: var(--ds-bg-elevated) !important;
+  color: var(--text-2, var(--ds-text-muted));
   cursor: default;
 }
 .ejp-event-pill--more:hover {
@@ -280,7 +280,7 @@
 .ejp-month-section {
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--ds-border-subtle);
 }
 
 .ejp-month-header {
@@ -288,13 +288,13 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 0.9rem;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   cursor: pointer;
   user-select: none;
   transition: background 0.12s;
 }
 .ejp-month-header:hover {
-  background: rgba(255,255,255,0.07);
+  background: var(--ds-bg-card-hover);
 }
 
 .ejp-month-header--aktuell {
@@ -302,7 +302,7 @@
   background: var(--primary-alpha-10);
 }
 .ejp-month-header--aktuell:hover {
-  background: rgba(212,175,55,0.12);
+  background: var(--ds-accent-10);
 }
 
 .ejp-month-header--vergangen {
@@ -311,7 +311,7 @@
 
 .ejp-month-toggle-icon {
   font-size: 0.65rem;
-  color: var(--text-2, rgba(255,255,255,0.4));
+  color: var(--text-2, var(--ds-text-muted));
   flex-shrink: 0;
 }
 
@@ -323,14 +323,14 @@
 
 .ejp-month-count {
   font-size: 0.75rem;
-  color: var(--text-2, rgba(255,255,255,0.4));
+  color: var(--text-2, var(--ds-text-muted));
   white-space: nowrap;
 }
 
 .ejp-month-add-btn {
   background: transparent;
-  border: 1px dashed rgba(255,255,255,0.15);
-  color: var(--text-2, rgba(255,255,255,0.4));
+  border: 1px dashed var(--ds-border-strong);
+  color: var(--text-2, var(--ds-text-muted));
   border-radius: 5px;
   padding: 2px 8px;
   font-size: 0.72rem;
@@ -354,11 +354,11 @@
   gap: 0.7rem;
   padding: 0.55rem 0.9rem;
   cursor: pointer;
-  border-top: 1px solid rgba(255,255,255,0.04);
+  border-top: 1px solid var(--ds-border-subtle);
   transition: background 0.12s;
 }
 .ejp-event-row:hover {
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
 }
 
 .ejp-event-dot {
@@ -370,7 +370,7 @@
 
 .ejp-event-date-cell {
   font-size: 0.75rem;
-  color: var(--text-2, rgba(255,255,255,0.45));
+  color: var(--text-2, var(--ds-text-muted));
   white-space: nowrap;
   min-width: 68px;
 }
@@ -390,12 +390,12 @@
   border-radius: 4px;
   padding: 1px 6px;
   white-space: nowrap;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .ejp-tn-count {
   font-size: 0.72rem;
-  color: var(--text-2, rgba(255,255,255,0.4));
+  color: var(--text-2, var(--ds-text-muted));
   white-space: nowrap;
   min-width: 50px;
   text-align: right;
@@ -409,10 +409,10 @@
   white-space: nowrap;
   border: 1px solid transparent;
 }
-.ejp-status-badge--geplant    { color: rgba(255,255,255,0.5); border-color: rgba(255,255,255,0.15); }
-.ejp-status-badge--offen      { color: #10b981; border-color: rgba(16,185,129,0.3); }
-.ejp-status-badge--ausgebucht { color: #ef4444; border-color: rgba(239,68,68,0.3); }
-.ejp-status-badge--abgeschlossen { color: rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.1); }
+.ejp-status-badge--geplant    { color: var(--ds-text-muted); border-color: var(--ds-border-strong); }
+.ejp-status-badge--offen      { color: var(--ds-success); border-color: var(--ds-success-25); }
+.ejp-status-badge--ausgebucht { color: var(--ds-danger); border-color: var(--ds-danger-25); }
+.ejp-status-badge--abgeschlossen { color: var(--ds-text-faint); border-color: var(--ds-border); }
 .ejp-status-badge--abgesagt   { color: #f59e0b; border-color: rgba(245,158,11,0.3); }
 
 /* ══════════════════════════════════════════════════════════════
@@ -449,11 +449,11 @@
   cursor: pointer;
   margin-left: 6px;
 }
-.ejp-tg-today-btn:hover { background: var(--primary-alpha-20, rgba(212,175,55,0.2)); }
+.ejp-tg-today-btn:hover { background: var(--primary-alpha-20, var(--ds-accent-20)); }
 
 /* Äußerer Rahmen */
 .ejp-tg-outer {
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -462,13 +462,13 @@
 .ejp-tg-header-row {
   display: flex;
   background: rgba(0,0,0,0.25);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .ejp-tg-corner {
   width: 46px;
   flex-shrink: 0;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid var(--ds-border-subtle);
 }
 
 .ejp-tg-col-header {
@@ -477,7 +477,7 @@
   flex-direction: column;
   align-items: center;
   padding: 5px 2px;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid var(--ds-border-subtle);
   cursor: pointer;
   transition: background 0.12s;
   gap: 2px;
@@ -489,7 +489,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--text-2, rgba(255,255,255,0.4));
+  color: var(--text-2, var(--ds-text-muted));
   letter-spacing: 0.04em;
 }
 
@@ -532,14 +532,14 @@
   width: 46px;
   flex-shrink: 0;
   position: relative;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid var(--ds-border-subtle);
 }
 
 .ejp-tg-hour-label {
   position: absolute;
   right: 6px;
   font-size: 0.6rem;
-  color: var(--text-2, rgba(255,255,255,0.35));
+  color: var(--text-2, var(--ds-text-faint));
   transform: translateY(-50%);
   white-space: nowrap;
 }
@@ -548,10 +548,10 @@
 .ejp-tg-day-col {
   flex: 1;
   position: relative;
-  border-right: 1px solid rgba(255,255,255,0.04);
-  background: rgba(255,255,255,0.01);
+  border-right: 1px solid var(--ds-border-subtle);
+  background: var(--ds-bg-card);
 }
-.ejp-tg-day-col--heute { background: rgba(212,175,55,0.03); }
+.ejp-tg-day-col--heute { background: var(--ds-accent-05); }
 
 /* Stunden-Linien */
 .ejp-tg-hour-line {
@@ -559,7 +559,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
 }
 
 /* Jetzt-Linie */
@@ -568,7 +568,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: #ef4444;
+  background: var(--ds-danger);
   z-index: 10;
 }
 .ejp-tg-now-line::before {
@@ -579,7 +579,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #ef4444;
+  background: var(--ds-danger);
 }
 
 /* Kurs-Blöcke */
@@ -612,7 +612,7 @@
 .ejp-tg-block-title {
   font-size: 0.68rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--ds-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -621,7 +621,7 @@
 
 .ejp-tg-block-meta {
   font-size: 0.6rem;
-  color: rgba(255,255,255,0.75);
+  color: var(--ds-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -630,7 +630,7 @@
 /* Ganztags-Bereich */
 .ejp-tg-allday-row {
   display: flex;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid var(--ds-border);
   padding: 4px 0;
   background: rgba(0,0,0,0.15);
   min-height: 28px;
@@ -642,7 +642,7 @@
   justify-content: flex-end;
   padding-right: 6px;
   font-size: 0.6rem;
-  color: var(--text-2, rgba(255,255,255,0.35));
+  color: var(--text-2, var(--ds-text-faint));
 }
 
 .ejp-tg-allday-col {
@@ -651,7 +651,7 @@
   flex-wrap: wrap;
   gap: 2px;
   padding: 2px;
-  border-right: 1px solid rgba(255,255,255,0.04);
+  border-right: 1px solid var(--ds-border-subtle);
 }
 
 .ejp-tg-allday-event {
@@ -659,7 +659,7 @@
   font-weight: 600;
   border-radius: 3px;
   padding: 1px 5px;
-  color: #fff;
+  color: var(--ds-text);
   cursor: pointer;
   white-space: nowrap;
   max-width: 100%;
@@ -682,8 +682,8 @@
 }
 
 .ejp-mini-month {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -697,7 +697,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-1);
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   cursor: pointer;
   transition: background 0.12s;
   text-align: center;
@@ -721,7 +721,7 @@
 .ejp-mini-weekday {
   font-size: 0.55rem;
   text-align: center;
-  color: var(--text-2, rgba(255,255,255,0.35));
+  color: var(--text-2, var(--ds-text-faint));
   padding: 2px 0;
   font-weight: 700;
   text-transform: uppercase;
@@ -748,7 +748,7 @@
   cursor: pointer;
 }
 .ejp-mini-cell--has-events:hover {
-  background: rgba(255,255,255,0.07);
+  background: var(--ds-bg-card-hover);
 }
 
 .ejp-mini-cell--today .ejp-mini-day-nr {
@@ -766,7 +766,7 @@
 
 .ejp-mini-day-nr {
   font-size: 0.6rem;
-  color: var(--text-2, rgba(255,255,255,0.45));
+  color: var(--text-2, var(--ds-text-muted));
   line-height: 1;
 }
 
@@ -797,7 +797,7 @@
 
 .ejp-popup {
   background: var(--modal-bg-dark, #1a1c2e);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
   padding: 1.25rem 1.5rem;
   min-width: 260px;
@@ -835,7 +835,7 @@
   right: 0.75rem;
   background: transparent;
   border: none;
-  color: var(--text-2, rgba(255,255,255,0.4));
+  color: var(--text-2, var(--ds-text-muted));
   cursor: pointer;
   font-size: 0.9rem;
   line-height: 1;
@@ -854,7 +854,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.78rem;
-  color: var(--text-2, rgba(255,255,255,0.5));
+  color: var(--text-2, var(--ds-text-muted));
 }
 .ejp-popup-row strong {
   color: var(--text-1);
@@ -866,6 +866,6 @@
 .ejp-empty {
   text-align: center;
   padding: 3rem 1rem;
-  color: var(--text-2, rgba(255,255,255,0.4));
+  color: var(--text-2, var(--ds-text-muted));
   font-size: 0.88rem;
 }

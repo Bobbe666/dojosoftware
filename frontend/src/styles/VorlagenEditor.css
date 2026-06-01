@@ -119,10 +119,10 @@
 
 .ve-warn-bar {
   padding: 0.6rem 1.5rem;
-  background: rgba(255, 215, 0, 0.05);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.12);
+  background: var(--ds-accent-05);
+  border-bottom: 1px solid var(--ds-accent-10);
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
 }
 
 .ve-error-bar {
@@ -297,7 +297,7 @@
   justify-content: space-between;
   color: var(--text-1, #e2e8f0);
   background: var(--surface-2, #1e1e2e);
-  border-bottom: 2px solid var(--pc, rgba(255, 215, 0, 0.3));
+  border-bottom: 2px solid var(--pc, var(--ds-accent-30));
 }
 
 /* Label style */
@@ -305,7 +305,7 @@
   display: block;
   font-size: 0.72rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   margin-bottom: 0.4rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -419,11 +419,11 @@
   gap: 0.4rem;
   padding: 0.55rem 1.5rem;
   border: none;
-  color: #fff;
+  color: var(--ds-text);
   border-radius: 7px;
   font-size: 0.9rem;
   font-weight: 600;
-  background: var(--pc, #c9a227);
+  background: var(--pc, var(--ds-accent-dark));
   cursor: pointer;
 }
 .ve-save-btn:disabled {
@@ -457,8 +457,8 @@
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 .ve-a4-toggle-btn--active {
-  border-color: var(--pc, #c9a227);
-  color: var(--pc, #c9a227);
+  border-color: var(--pc, var(--ds-accent-dark));
+  color: var(--pc, var(--ds-accent-dark));
   background: var(--pc33, rgba(201,162,39,0.15));
 }
 
@@ -518,7 +518,7 @@
 
 .ve-a4-empf-zeile {
   font-size: 8pt;
-  color: #888;
+  color: var(--ds-text-muted);
   font-family: monospace;
   letter-spacing: 0.02em;
 }
@@ -654,7 +654,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 16px;
-  background: #1a1a1a;
+  background: var(--ds-bg-surface);
   border-bottom: 1px solid #444;
   color: #ccc;
   font-size: 13px;
@@ -664,7 +664,7 @@
 
 .ve-preview-modal-close {
   background: #8B0000;
-  color: #fff;
+  color: var(--ds-text);
   border: none;
   border-radius: 4px;
   padding: 5px 14px;
@@ -686,7 +686,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #aaa;
+  color: var(--ds-text-muted);
   font-size: 14px;
 }
 
@@ -731,7 +731,7 @@
 }
 
 .ve-member-search-icon {
-  color: #999;
+  color: var(--ds-text-muted);
   flex-shrink: 0;
 }
 
@@ -745,14 +745,14 @@
 }
 
 .ve-member-search-input::placeholder {
-  color: #777;
+  color: var(--ds-text-secondary);
 }
 
 .ve-member-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   color: #000;
   border-radius: 6px;
   padding: 4px 8px;
@@ -803,7 +803,7 @@
 }
 
 .ve-member-result-btn:hover {
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   color: #000;
 }
 
@@ -821,15 +821,15 @@
   padding: 0.45rem 0.9rem;
   background: none;
   border: 1px solid #444;
-  color: #aaa;
+  color: var(--ds-text-muted);
   border-radius: 6px;
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 .ve-versions-btn:hover {
-  border-color: var(--pc, #c9a227);
-  color: var(--pc, #c9a227);
+  border-color: var(--pc, var(--ds-accent-dark));
+  color: var(--pc, var(--ds-accent-dark));
 }
 
 /* ── Versionen-Modal ────────────────────────────────────────────────────── */
@@ -859,7 +859,7 @@
 
 .ve-versions-empty {
   text-align: center;
-  color: #888;
+  color: var(--ds-text-muted);
   padding: 2rem 1rem;
   font-size: 0.88rem;
 }
@@ -875,7 +875,7 @@
   padding: 0.5rem 0.75rem;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #888;
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   border-bottom: 1px solid #2a2a4a;
@@ -894,7 +894,7 @@
 
 .ve-version-badge {
   background: rgba(201,162,39,0.12);
-  color: var(--pc, #c9a227);
+  color: var(--pc, var(--ds-accent-dark));
   border: 1px solid rgba(201,162,39,0.3);
   border-radius: 4px;
   padding: 0.15rem 0.45rem;
@@ -903,7 +903,7 @@
 }
 
 .ve-versions-betreff {
-  color: #888;
+  color: var(--ds-text-muted);
   font-style: italic;
   max-width: 200px;
   overflow: hidden;
@@ -918,7 +918,7 @@
   padding: 0.3rem 0.65rem;
   background: none;
   border: 1px solid #444;
-  color: #aaa;
+  color: var(--ds-text-muted);
   border-radius: 5px;
   font-size: 0.8rem;
   cursor: pointer;
@@ -926,8 +926,8 @@
   transition: all 0.15s;
 }
 .ve-versions-restore-btn:hover {
-  border-color: var(--pc, #c9a227);
-  color: var(--pc, #c9a227);
+  border-color: var(--pc, var(--ds-accent-dark));
+  color: var(--pc, var(--ds-accent-dark));
   background: rgba(201,162,39,0.06);
 }
 .ve-versions-restore-btn:disabled {

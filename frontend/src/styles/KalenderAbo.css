@@ -29,7 +29,7 @@
 
 /* Card */
 .ka-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-20);
   border-radius: 12px;
   padding: 20px;
@@ -78,7 +78,7 @@
 .ka-url-input {
   flex: 1;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 12px;
   color: var(--text-primary);
@@ -112,8 +112,8 @@
   display: flex;
   align-items: center;
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 14px;
@@ -173,7 +173,7 @@
 .ka-instruction-icon {
   width: 40px;
   height: 40px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border-radius: 8px;
   display: flex;
   align-items: center;

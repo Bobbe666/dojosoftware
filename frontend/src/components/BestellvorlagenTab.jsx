@@ -460,7 +460,7 @@ export default function BestellvorlagenTab() {
               <label className="bvt-label">Breite (cm)</label>
               <input className="bvt-input" type="number" min="1" max="20"
                 value={spez.breite || ''} onChange={fSpez('breite')} placeholder="5 (Standard)" />
-              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.25rem', display: 'block' }}>Standard: 5 cm</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--ds-text-faint)', marginTop: '0.25rem', display: 'block' }}>Standard: 5 cm</span>
             </div>
           </div>
         </div>
@@ -534,7 +534,7 @@ export default function BestellvorlagenTab() {
               <label className="bvt-label">Maße</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
                 <div>
-                  <span style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '0.2rem' }}>Durchmesser (cm)</span>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--ds-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Durchmesser (cm)</span>
                   <input className="bvt-input" type="number" min="0.5" step="0.5"
                     value={spez.durchmesser ?? 8}
                     onChange={e => {
@@ -544,7 +544,7 @@ export default function BestellvorlagenTab() {
                     placeholder="8" />
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '0.2rem' }}>Umfang (cm)</span>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--ds-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Umfang (cm)</span>
                   <input className="bvt-input" type="number" min="0.5" step="0.1"
                     value={spez.umfang ?? (spez.durchmesser ? (Math.PI * spez.durchmesser).toFixed(1) : (Math.PI * 8).toFixed(1))}
                     onChange={fSpez('umfang')}
@@ -569,51 +569,51 @@ export default function BestellvorlagenTab() {
       if (isGi) return (
         <div className="bvt-section" style={{ marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>Mengenbestellung</span>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.6rem', border: `1px solid ${form.katKids ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '20px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ds-text-faint)' }}>Mengenbestellung</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.6rem', border: `1px solid ${form.katKids ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '20px', fontSize: '0.8rem', color: 'var(--ds-text-secondary)', cursor: 'pointer' }}>
               <input type="checkbox" checked={form.katKids} onChange={fb('katKids')} style={{ accentColor: 'rgba(212,175,55,0.9)' }} />
               Kinder / Kids
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.6rem', border: `1px solid ${form.katAdult ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '20px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.6rem', border: `1px solid ${form.katAdult ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '20px', fontSize: '0.8rem', color: 'var(--ds-text-secondary)', cursor: 'pointer' }}>
               <input type="checkbox" checked={form.katAdult} onChange={fb('katAdult')} style={{ accentColor: 'rgba(212,175,55,0.9)' }} />
               Erwachsene
             </label>
-            <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>
-              Gesamt: <strong style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.95rem' }}>{grandTot()} Stück</strong>
+            <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--ds-text-muted)' }}>
+              Gesamt: <strong style={{ color: 'var(--ds-text-secondary)', fontSize: '0.95rem' }}>{grandTot()} Stück</strong>
             </span>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
               <thead>
                 <tr>
-                  <th style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', padding: '0.35rem 0.6rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)', minWidth: 80 }}>Kategorie</th>
-                  {sizes.map(s => <th key={s} style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', padding: '0.35rem 0.3rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)' }}>{s}</th>)}
-                  <th style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', padding: '0.35rem 0.3rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)', minWidth: 36 }}>Σ</th>
+                  <th style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--ds-text-muted)', padding: '0.35rem 0.6rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)', minWidth: 80 }}>Kategorie</th>
+                  {sizes.map(s => <th key={s} style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--ds-text-muted)', padding: '0.35rem 0.3rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)' }}>{s}</th>)}
+                  <th style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--ds-text-muted)', padding: '0.35rem 0.3rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)', minWidth: 36 }}>Σ</th>
                 </tr>
               </thead>
               <tbody>
                 {form.katKids && (
                   <tr>
-                    <td style={{ background: 'rgba(255,255,255,0.03)', fontWeight: 600, fontSize: '0.8rem', padding: '0.4rem 0.6rem', color: 'rgba(255,255,255,0.65)', border: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }}>Kinder</td>
+                    <td style={{ background: 'rgba(255,255,255,0.03)', fontWeight: 600, fontSize: '0.8rem', padding: '0.4rem 0.6rem', color: 'var(--ds-text-secondary)', border: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }}>Kinder</td>
                     {sizes.map(s => (
                       <td key={s} style={{ border: '1px solid rgba(255,255,255,0.06)', padding: 0 }}>
                         <input type="number" min="0" value={form.mengenKids[s]} onChange={e => setMenge('mengenKids', s, e.target.value)}
-                          style={{ width: '100%', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.85)', textAlign: 'center', fontSize: '0.9rem', padding: '0.4rem 0', outline: 'none', MozAppearance: 'textfield', minWidth: 36 }} />
+                          style={{ width: '100%', border: 'none', background: 'transparent', color: 'var(--ds-text)', textAlign: 'center', fontSize: '0.9rem', padding: '0.4rem 0', outline: 'none', MozAppearance: 'textfield', minWidth: 36 }} />
                       </td>
                     ))}
-                    <td style={{ fontWeight: 700, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.7)', padding: '0.4rem', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>{totalFor('mengenKids')}</td>
+                    <td style={{ fontWeight: 700, background: 'rgba(255,255,255,0.04)', color: 'var(--ds-text-secondary)', padding: '0.4rem', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>{totalFor('mengenKids')}</td>
                   </tr>
                 )}
                 {form.katAdult && (
                   <tr>
-                    <td style={{ background: 'rgba(255,255,255,0.03)', fontWeight: 600, fontSize: '0.8rem', padding: '0.4rem 0.6rem', color: 'rgba(255,255,255,0.65)', border: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }}>Erwachsene</td>
+                    <td style={{ background: 'rgba(255,255,255,0.03)', fontWeight: 600, fontSize: '0.8rem', padding: '0.4rem 0.6rem', color: 'var(--ds-text-secondary)', border: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }}>Erwachsene</td>
                     {sizes.map(s => (
                       <td key={s} style={{ border: '1px solid rgba(255,255,255,0.06)', padding: 0 }}>
                         <input type="number" min="0" value={form.mengenAdult[s]} onChange={e => setMenge('mengenAdult', s, e.target.value)}
-                          style={{ width: '100%', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.85)', textAlign: 'center', fontSize: '0.9rem', padding: '0.4rem 0', outline: 'none', MozAppearance: 'textfield', minWidth: 36 }} />
+                          style={{ width: '100%', border: 'none', background: 'transparent', color: 'var(--ds-text)', textAlign: 'center', fontSize: '0.9rem', padding: '0.4rem 0', outline: 'none', MozAppearance: 'textfield', minWidth: 36 }} />
                       </td>
                     ))}
-                    <td style={{ fontWeight: 700, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.7)', padding: '0.4rem', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>{totalFor('mengenAdult')}</td>
+                    <td style={{ fontWeight: 700, background: 'rgba(255,255,255,0.04)', color: 'var(--ds-text-secondary)', padding: '0.4rem', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>{totalFor('mengenAdult')}</td>
                   </tr>
                 )}
               </tbody>
@@ -625,7 +625,7 @@ export default function BestellvorlagenTab() {
       if (isPatches) return (
         <div className="bvt-section" style={{ marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>Bestellmenge</span>
+            <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ds-text-faint)' }}>Bestellmenge</span>
           </div>
           <div className="bvt-field" style={{ maxWidth: 220 }}>
             <label className="bvt-label">Gesamtmenge (Stück)</label>
@@ -638,9 +638,9 @@ export default function BestellvorlagenTab() {
       if (typSizes) return (
         <div className="bvt-section" style={{ marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>Mengenbestellung</span>
-            <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>
-              Gesamt: <strong style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.95rem' }}>{totalGeneric()} Stück</strong>
+            <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ds-text-faint)' }}>Mengenbestellung</span>
+            <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--ds-text-muted)' }}>
+              Gesamt: <strong style={{ color: 'var(--ds-text-secondary)', fontSize: '0.95rem' }}>{totalGeneric()} Stück</strong>
             </span>
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -648,9 +648,9 @@ export default function BestellvorlagenTab() {
               <thead>
                 <tr>
                   {typSizes.map(s => (
-                    <th key={s} style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', padding: '0.35rem 0.75rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)', minWidth: 60 }}>{s}</th>
+                    <th key={s} style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--ds-text-muted)', padding: '0.35rem 0.75rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)', minWidth: 60 }}>{s}</th>
                   ))}
-                  <th style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', padding: '0.35rem 0.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)', minWidth: 40 }}>Σ</th>
+                  <th style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--ds-text-muted)', padding: '0.35rem 0.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.07)', minWidth: 40 }}>Σ</th>
                 </tr>
               </thead>
               <tbody>
@@ -660,10 +660,10 @@ export default function BestellvorlagenTab() {
                       <input type="number" min="0"
                         value={(spez.mengen || {})[s] || ''}
                         onChange={e => setMengeGeneric(s, e.target.value)}
-                        style={{ width: '100%', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.85)', textAlign: 'center', fontSize: '0.9rem', padding: '0.5rem 0', outline: 'none', MozAppearance: 'textfield', minWidth: 60 }} />
+                        style={{ width: '100%', border: 'none', background: 'transparent', color: 'var(--ds-text)', textAlign: 'center', fontSize: '0.9rem', padding: '0.5rem 0', outline: 'none', MozAppearance: 'textfield', minWidth: 60 }} />
                     </td>
                   ))}
-                  <td style={{ fontWeight: 700, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.7)', padding: '0.5rem', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>{totalGeneric()}</td>
+                  <td style={{ fontWeight: 700, background: 'rgba(255,255,255,0.04)', color: 'var(--ds-text-secondary)', padding: '0.5rem', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>{totalGeneric()}</td>
                 </tr>
               </tbody>
             </table>
@@ -810,7 +810,7 @@ export default function BestellvorlagenTab() {
                     return (
                       <div key={pos} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, padding: '0.4rem 0.6rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: posFiles.length ? '0.35rem' : 0 }}>
-                          <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', flex: 1 }}>{pos}</span>
+                          <span style={{ fontSize: '0.78rem', color: 'var(--ds-text-muted)', flex: 1 }}>{pos}</span>
                           <button onClick={() => triggerPosUpload(pos)} disabled={uploadingFile === pos}
                             style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 4, padding: '0.12rem 0.45rem', cursor: 'pointer', color: '#c8a44a', fontSize: '0.73rem', whiteSpace: 'nowrap' }}>
                             {uploadingFile === pos ? '⏳' : '+ Datei'}
@@ -821,7 +821,7 @@ export default function BestellvorlagenTab() {
                             {posFiles.map(d => {
                               const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name);
                               return (
-                                <div key={d.datei_id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '0.1rem 0.3rem 0.1rem 0.2rem', fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)' }}>
+                                <div key={d.datei_id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '0.1rem 0.3rem 0.1rem 0.2rem', fontSize: '0.72rem', color: 'var(--ds-text-muted)' }}>
                                   {isImg
                                     ? <img src={d.pfad} alt="" style={{ width: 18, height: 18, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />
                                     : <span style={{ flexShrink: 0 }}>📎</span>}
@@ -854,7 +854,7 @@ export default function BestellvorlagenTab() {
                 {mode === 'edit' && dateien.filter(d => d.tag === 'Logo-Text / Schriftzug').map(d => {
                   const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name);
                   return (
-                    <div key={d.datei_id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '0.1rem 0.3rem 0.1rem 0.2rem', fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)' }}>
+                    <div key={d.datei_id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '0.1rem 0.3rem 0.1rem 0.2rem', fontSize: '0.72rem', color: 'var(--ds-text-muted)' }}>
                       {isImg ? <img src={d.pfad} alt="" style={{ width: 18, height: 18, objectFit: 'cover', borderRadius: 2 }} /> : <span>📎</span>}
                       <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.original_name}</span>
                       <button onClick={() => deleteDatei(d.datei_id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: '0.8rem', padding: 0 }}>×</button>
@@ -923,7 +923,7 @@ export default function BestellvorlagenTab() {
                   )}
                 </>
               ) : (
-                <div className="bvt-upload-hint" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>
+                <div className="bvt-upload-hint" style={{ color: 'var(--ds-text-faint)', fontSize: '0.75rem' }}>
                   Vorlage erst speichern, dann Dateien hochladen.
                 </div>
               )}

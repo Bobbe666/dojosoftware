@@ -65,7 +65,7 @@ const styles = {
     gap: '0.5rem',
     padding: '0.6rem 1.25rem',
     background: 'linear-gradient(135deg, #0052cc, #0065ff)',
-    color: '#fff',
+    color: 'var(--ds-text)',
     border: 'none',
     borderRadius: 8,
     fontWeight: 600,

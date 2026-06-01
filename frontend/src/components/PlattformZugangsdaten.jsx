@@ -41,12 +41,12 @@ function CopyBtn({ value }) {
 
 function MaskedField({ value, label }) {
   const [show, setShow] = useState(false);
-  if (!value) return <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.8rem' }}>—</span>;
+  if (!value) return <span style={{ color: 'var(--ds-text-faint)', fontSize: '0.8rem' }}>—</span>;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: show ? 'monospace' : 'inherit', fontSize: '0.82rem', color: 'rgba(255,255,255,0.8)' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: show ? 'monospace' : 'inherit', fontSize: '0.82rem', color: 'var(--ds-text-secondary)' }}>
       {show ? value : '••••••••••'}
       <button onClick={() => setShow(s => !s)} title={show ? 'Verbergen' : 'Anzeigen'}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: 'rgba(255,255,255,0.4)', lineHeight: 1 }}>
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: 'var(--ds-text-muted)', lineHeight: 1 }}>
         {show ? <EyeOff size={13} /> : <Eye size={13} />}
       </button>
       <CopyBtn value={value} />
@@ -61,7 +61,7 @@ function EntryCard({ entry, onEdit, onDelete }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{entry.name}</span>
+            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--ds-text)' }}>{entry.name}</span>
             {entry.url && (
               <a href={entry.url} target="_blank" rel="noreferrer" title={entry.url}
                 style={{ color: col.accent, lineHeight: 1 }}>
@@ -70,12 +70,12 @@ function EntryCard({ entry, onEdit, onDelete }) {
             )}
           </div>
           {entry.url && (
-            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', marginTop: 2, wordBreak: 'break-all' }}>{entry.url}</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--ds-text-faint)', marginTop: 2, wordBreak: 'break-all' }}>{entry.url}</div>
           )}
         </div>
         <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
           <button onClick={() => onEdit(entry)} title="Bearbeiten"
-            style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 6, padding: '4px 7px', cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}>
+            style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 6, padding: '4px 7px', cursor: 'pointer', color: 'var(--ds-text-muted)' }}>
             <Edit2 size={13} />
           </button>
           <button onClick={() => onDelete(entry)} title="Löschen"
@@ -87,8 +87,8 @@ function EntryCard({ entry, onEdit, onDelete }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '2px 8px', fontSize: '0.8rem', alignItems: 'center' }}>
         {entry.benutzername && (
           <>
-            <span style={{ color: 'rgba(255,255,255,0.4)' }}>Benutzer</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'rgba(255,255,255,0.8)', fontFamily: 'monospace', fontSize: '0.8rem' }}>
+            <span style={{ color: 'var(--ds-text-muted)' }}>Benutzer</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--ds-text-secondary)', fontFamily: 'monospace', fontSize: '0.8rem' }}>
               {entry.benutzername}
               <CopyBtn value={entry.benutzername} />
             </span>
@@ -96,14 +96,14 @@ function EntryCard({ entry, onEdit, onDelete }) {
         )}
         {entry.passwort && (
           <>
-            <span style={{ color: 'rgba(255,255,255,0.4)' }}>Passwort</span>
+            <span style={{ color: 'var(--ds-text-muted)' }}>Passwort</span>
             <MaskedField value={entry.passwort} />
           </>
         )}
         {entry.notizen && (
           <>
-            <span style={{ color: 'rgba(255,255,255,0.4)', alignSelf: 'flex-start', paddingTop: 2 }}>Notizen</span>
-            <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem', lineHeight: 1.4 }}>{entry.notizen}</span>
+            <span style={{ color: 'var(--ds-text-muted)', alignSelf: 'flex-start', paddingTop: 2 }}>Notizen</span>
+            <span style={{ color: 'var(--ds-text-muted)', fontSize: '0.75rem', lineHeight: 1.4 }}>{entry.notizen}</span>
           </>
         )}
       </div>
@@ -127,20 +127,20 @@ function EditModal({ entry, onSave, onClose }) {
 
   const inp = {
     background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 7, padding: '0.5rem 0.75rem', color: '#fff', fontSize: '0.85rem',
+    borderRadius: 7, padding: '0.5rem 0.75rem', color: 'var(--ds-text)', fontSize: '0.85rem',
     width: '100%', outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box',
   };
-  const lbl = { fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: 4, display: 'block' };
+  const lbl = { fontSize: '0.75rem', color: 'var(--ds-text-muted)', marginBottom: 4, display: 'block' };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{ background: '#12121e', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '1.5rem', width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#fff', fontWeight: 700 }}>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--ds-text)', fontWeight: 700 }}>
             {entry?.id ? 'Zugangsdaten bearbeiten' : 'Neuer Eintrag'}
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: 4 }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ds-text-muted)', padding: 4 }}>
             <X size={18} />
           </button>
         </div>
@@ -185,7 +185,7 @@ function EditModal({ entry, onSave, onClose }) {
                 style={{ ...inp, paddingRight: '2.5rem', fontFamily: showPw ? 'monospace' : 'inherit' }}
               />
               <button onClick={() => setShowPw(s => !s)}
-                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: 2 }}>
+                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ds-text-muted)', padding: 2 }}>
                 {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
@@ -202,11 +202,11 @@ function EditModal({ entry, onSave, onClose }) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.25rem' }}>
-          <button onClick={onClose} style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: 'var(--ds-text-secondary)', fontSize: '0.85rem', cursor: 'pointer' }}>
             Abbrechen
           </button>
           <button onClick={handleSave} disabled={saving || !form.name.trim()}
-            style={{ padding: '0.5rem 1.25rem', background: saving ? 'rgba(99,102,241,0.4)' : '#6366f1', border: 'none', borderRadius: 8, color: '#fff', fontSize: '0.85rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            style={{ padding: '0.5rem 1.25rem', background: saving ? 'rgba(99,102,241,0.4)' : '#6366f1', border: 'none', borderRadius: 8, color: 'var(--ds-text)', fontSize: '0.85rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Save size={14} />
             {saving ? 'Speichert...' : 'Speichern'}
           </button>
@@ -300,17 +300,17 @@ export default function PlattformZugangsdaten() {
   const totalEntries = data.length;
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif', color: '#fff' }}>
+    <div style={{ fontFamily: 'Inter, sans-serif', color: 'var(--ds-text)' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>🔐 Zugangsdaten-Zentrale</h2>
-          <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
+          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--ds-text)' }}>🔐 Zugangsdaten-Zentrale</h2>
+          <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--ds-text-muted)' }}>
             {totalEntries} Einträge · Passwörter AES-256 verschlüsselt · Nur Super-Admin
           </p>
         </div>
         <button onClick={() => setEditEntry(EMPTY_FORM)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.55rem 1.1rem', background: '#6366f1', border: 'none', borderRadius: 9, color: '#fff', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.55rem 1.1rem', background: '#6366f1', border: 'none', borderRadius: 9, color: 'var(--ds-text)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
           <Plus size={15} /> Neuer Eintrag
         </button>
       </div>
@@ -320,7 +320,7 @@ export default function PlattformZugangsdaten() {
         <input
           value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Suchen..."
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, padding: '0.45rem 0.75rem', color: '#fff', fontSize: '0.83rem', outline: 'none', width: 180 }}
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, padding: '0.45rem 0.75rem', color: 'var(--ds-text)', fontSize: '0.83rem', outline: 'none', width: 180 }}
         />
         <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
           {[{ id: 'alle', label: 'Alle', icon: '📋' }, ...KATEGORIEN].map(k => (
@@ -339,7 +339,7 @@ export default function PlattformZugangsdaten() {
 
       {/* Inhalt */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.4)' }}>
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ds-text-muted)' }}>
           <div style={{ width: 36, height: 36, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin .8s linear infinite', margin: '0 auto 1rem' }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           Lade Zugangsdaten...
@@ -349,10 +349,10 @@ export default function PlattformZugangsdaten() {
           ⚠️ {error}
         </div>
       ) : grouped.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.3)' }}>
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ds-text-faint)' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔐</div>
           {data.length === 0
-            ? <>Noch keine Zugangsdaten gespeichert.<br /><button onClick={() => setEditEntry(EMPTY_FORM)} style={{ marginTop: '0.75rem', padding: '0.5rem 1.25rem', background: '#6366f1', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>Ersten Eintrag erstellen</button></>
+            ? <>Noch keine Zugangsdaten gespeichert.<br /><button onClick={() => setEditEntry(EMPTY_FORM)} style={{ marginTop: '0.75rem', padding: '0.5rem 1.25rem', background: '#6366f1', border: 'none', borderRadius: 8, color: 'var(--ds-text)', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>Ersten Eintrag erstellen</button></>
             : 'Keine Einträge gefunden.'}
         </div>
       ) : (
@@ -373,8 +373,8 @@ export default function PlattformZugangsdaten() {
                 >
                   <span style={{ fontSize: '1rem' }}>{group.icon}</span>
                   <span style={{ fontSize: '0.85rem', fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>{group.label}</span>
-                  <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.06)', padding: '1px 7px', borderRadius: 10, marginRight: '0.5rem' }}>{group.entries.length}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem', transition: 'transform .2s', display: 'inline-block', transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>▼</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--ds-text-faint)', background: 'rgba(255,255,255,0.06)', padding: '1px 7px', borderRadius: 10, marginRight: '0.5rem' }}>{group.entries.length}</span>
+                  <span style={{ color: 'var(--ds-text-faint)', fontSize: '0.75rem', transition: 'transform .2s', display: 'inline-block', transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>▼</span>
                 </button>
                 {/* Einträge */}
                 {!isCollapsed && (
@@ -401,16 +401,16 @@ export default function PlattformZugangsdaten() {
           onClick={e => e.target === e.currentTarget && setDeleteConfirm(null)}>
           <div style={{ background: '#12121e', border: '1px solid rgba(248,113,113,0.4)', borderRadius: 14, padding: '1.5rem', maxWidth: 380, width: '100%' }}>
             <h3 style={{ margin: '0 0 0.5rem', color: '#f87171', fontSize: '1rem' }}>Eintrag löschen</h3>
-            <p style={{ margin: '0 0 1.25rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>
-              <strong style={{ color: '#fff' }}>„{deleteConfirm.name}"</strong> wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden.
+            <p style={{ margin: '0 0 1.25rem', color: 'var(--ds-text-secondary)', fontSize: '0.875rem' }}>
+              <strong style={{ color: 'var(--ds-text)' }}>„{deleteConfirm.name}"</strong> wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
               <button onClick={() => setDeleteConfirm(null)}
-                style={{ padding: '0.45rem 0.875rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', cursor: 'pointer' }}>
+                style={{ padding: '0.45rem 0.875rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: 'var(--ds-text-secondary)', fontSize: '0.85rem', cursor: 'pointer' }}>
                 Abbrechen
               </button>
               <button onClick={() => handleDelete(deleteConfirm)}
-                style={{ padding: '0.45rem 0.875rem', background: '#dc2626', border: 'none', borderRadius: 8, color: '#fff', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '0.45rem 0.875rem', background: '#dc2626', border: 'none', borderRadius: 8, color: 'var(--ds-text)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
                 Löschen
               </button>
             </div>

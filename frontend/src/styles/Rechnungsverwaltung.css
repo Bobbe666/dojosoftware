@@ -116,7 +116,7 @@
 
 .control-bar .view-tabs .tab:hover {
   background: var(--surface-3);
-  color: rgba(255,255,255,0.9);
+  color: var(--ds-text);
 }
 
 .control-bar .view-tabs .tab.active {
@@ -155,7 +155,7 @@
   font-size: 0.85rem;
 }
 
-.search-bar-inline input::placeholder { color: rgba(255,255,255,0.4); }
+.search-bar-inline input::placeholder { color: var(--ds-text-muted); }
 
 /* ===== TABLE ===== */
 .rechnungen-table-container {
@@ -184,7 +184,7 @@
 }
 
 .rechnungen-table tbody tr {
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
   transition: background 0.2s ease;
 }
 
@@ -228,9 +228,9 @@
 }
 
 .vermerk-chip.vermerk-lastschrift {
-  background: rgba(16, 185, 129, 0.15);
+  background: var(--ds-success-10);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid var(--ds-success-25);
 }
 
 /* Vermerke-Sektion im Modal */
@@ -266,8 +266,8 @@
 
 .vermerk-item.vermerk-email    { background: rgba(59,130,246,0.1); color: #60a5fa; }
 .vermerk-item.vermerk-druck    { background: rgba(139,92,246,0.1); color: #a78bfa; }
-.vermerk-item.vermerk-lastschrift { background: rgba(16,185,129,0.1); color: #34d399; }
-.vermerk-item.vermerk-empty    { background: rgba(255,255,255,0.04); color: var(--text-3); font-style: italic; }
+.vermerk-item.vermerk-lastschrift { background: var(--ds-success-10); color: #34d399; }
+.vermerk-item.vermerk-empty    { background: var(--ds-bg-card); color: var(--text-3); font-style: italic; }
 
 .vermerk-count {
   margin-left: 4px;
@@ -324,7 +324,7 @@
 .badge-warning  { background: var(--status-warning-bg); color: var(--status-warning); border: 1px solid var(--status-warning-border); }
 .badge-danger   { background: var(--status-error-bg); color: var(--status-error); border: 1px solid var(--status-error-border); }
 .badge-info     { background: var(--status-indigo-bg); color: var(--status-indigo); border: 1px solid var(--status-indigo-border); }
-.badge-neutral  { background: var(--surface-3); color: var(--text-2); border: 1px solid rgba(255,255,255,0.2); }
+.badge-neutral  { background: var(--surface-3); color: var(--text-2); border: 1px solid var(--ds-border-strong); }
 
 /* ===== EMPTY STATE ===== */
 .empty-state { text-align: center; padding: 3rem 2rem; }

@@ -2,7 +2,7 @@
 
 .ptb-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%);
   padding: 2rem 1rem;
   font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -10,7 +10,7 @@
 .ptb-card {
   max-width: 600px;
   margin: 0 auto;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   backdrop-filter: blur(20px);
   border-radius: 16px;
   border: 1px solid var(--primary-alpha-20);
@@ -74,7 +74,7 @@
 .ptb-input {
   width: 100%;
   padding: 0.875rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-20);
   border-radius: 8px;
   color: var(--text-primary);
@@ -92,7 +92,7 @@
 .ptb-select {
   width: 100%;
   padding: 0.875rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-20);
   border-radius: 8px;
   color: var(--text-primary);
@@ -104,7 +104,7 @@
 .ptb-textarea {
   width: 100%;
   padding: 0.875rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-20);
   border-radius: 8px;
   color: var(--text-primary);
@@ -124,8 +124,8 @@
   display: flex;
   align-items: center;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -195,7 +195,7 @@
 .ptb-button {
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(135deg, #ffd700, #ffed4a);
+  background: linear-gradient(135deg, var(--ds-accent), #ffed4a);
   color: var(--bg-secondary);
   border: none;
   border-radius: 8px;
@@ -215,8 +215,8 @@
 }
 
 .ptb-error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -234,7 +234,7 @@
 .ptb-success-icon {
   width: 80px;
   height: 80px;
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   border-radius: 50%;
   display: flex;
   align-items: center;

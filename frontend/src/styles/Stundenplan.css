@@ -13,10 +13,10 @@
 
 .sp-filter-select {
   padding: 0.4rem 0.75rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
-  color: rgba(255,255,255,0.8);
+  color: var(--ds-text-secondary);
   font-size: 0.83rem;
   cursor: pointer;
   transition: border-color 0.15s;
@@ -28,21 +28,21 @@
   outline: none;
 }
 
-.sp-filter-select option { background: #1a1a2e; }
+.sp-filter-select option { background: var(--ds-bg-surface); }
 
 .sp-filter-clear {
   padding: 0.4rem 0.8rem;
   border-radius: 8px;
-  border: 1px solid rgba(239,68,68,0.35);
-  background: rgba(239,68,68,0.1);
-  color: #f87171;
+  border: 1px solid var(--ds-danger-25);
+  background: var(--ds-danger-10);
+  color: var(--ds-danger-soft);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.sp-filter-clear:hover { background: rgba(239,68,68,0.2); }
+.sp-filter-clear:hover { background: var(--ds-danger-25); }
 
 /* Container — eingebettet in kurse-container-modern, kein eigenes min-height/padding */
 .stundenplan-container-modern {
@@ -59,7 +59,7 @@
 .stundenplan-header h2 {
   font-size: 1rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.55);
+  color: var(--ds-text-muted);
   margin: 0;
   letter-spacing: 0.02em;
 }
@@ -124,8 +124,8 @@
 .accordion-tabs::-webkit-scrollbar { display: none; }
 
 .accordion-tab {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   height: 34px;
   padding: 0 0.85rem;
@@ -136,21 +136,21 @@
   gap: 0.4rem;
   font-size: 0.8rem;
   font-weight: 500;
-  color: rgba(255,255,255,0.5);
+  color: var(--ds-text-muted);
   white-space: nowrap;
   flex-shrink: 0;
   box-sizing: border-box;
 }
 
 .accordion-tab:hover {
-  background: rgba(255,255,255,0.09);
-  border-color: rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.88);
+  background: var(--ds-bg-elevated);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
 }
 
 .accordion-tab.active {
-  background: rgba(212,175,55,0.88);
-  border-color: rgba(212,175,55,0.9);
+  background: var(--ds-accent-50);
+  border-color: var(--ds-accent-50);
   color: #1a1000;
   font-weight: 700;
 }
@@ -193,7 +193,7 @@
 .modal-content {
   background: var(--surface-3);
   backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 20px;
   padding: 0;
   max-width: 600px;
@@ -209,7 +209,7 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--ui-section-gap-sm) var(--ui-card-padding);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--ds-border-strong);
 }
 
 .modal-header h3 {
@@ -225,7 +225,7 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
   transition: all 0.3s ease;
 }
 
@@ -254,7 +254,7 @@
 }
 
 .course-preview p {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   margin: 0;
 }
 
@@ -277,7 +277,7 @@
 }
 
 .form-group label {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   font-weight: 600;
   font-size: 0.9rem;
   text-transform: uppercase;
@@ -313,7 +313,7 @@
   justify-content: flex-end;
   gap: var(--ui-page-padding-sm);
   padding: var(--ui-section-gap-sm) var(--ui-card-padding);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid var(--ds-border-strong);
 }
 
 .btn-primary,
@@ -340,7 +340,7 @@
 
 .btn-secondary {
   background: var(--surface-3);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
@@ -350,8 +350,8 @@
 }
 
 .accordion-content {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 20px;
   padding: var(--ui-card-padding);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -368,7 +368,7 @@
   align-items: center;
   margin-bottom: var(--ui-section-gap);
   padding-bottom: var(--ui-page-padding-sm);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--ds-border-strong);
 }
 
 .expanded-header h3 {
@@ -381,7 +381,7 @@
 
 .day-stats {
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -389,7 +389,7 @@
 
 .has-conflicts {
   background: var(--error);
-  color: white;
+  color: var(--ds-text);
   padding: 0.2rem 0.5rem;
   border-radius: 5px;
   font-size: 0.8rem;
@@ -398,7 +398,7 @@
 .no-classes-expanded {
   text-align: center;
   padding: 4rem 2rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
 }
 
 .no-classes-icon {
@@ -409,7 +409,7 @@
 
 .no-classes-expanded h4 {
   font-size: 1.5rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   margin-bottom: 1rem;
 }
 
@@ -438,7 +438,7 @@
 }
 
 .time-slot-expanded:hover {
-  background: var(--primary-alpha-05, rgba(212,175,55,0.05));
+  background: var(--primary-alpha-05, var(--ds-accent-05));
   border-color: var(--primary-alpha-35);
 }
 
@@ -534,27 +534,27 @@
 .delete-btn-big:hover {
   background: var(--error);
   border-color: var(--error);
-  color: white;
+  color: var(--ds-text);
   transform: translateY(-2px);
 }
 
 .save-btn-big:hover {
   background: var(--success);
   border-color: var(--success);
-  color: white;
+  color: var(--ds-text);
   transform: translateY(-2px);
 }
 
 .cancel-btn-big:hover {
   background: var(--text-muted);
   border-color: var(--text-muted);
-  color: white;
+  color: var(--ds-text);
   transform: translateY(-2px);
 }
 
 .overlap-indicator-big {
   background: var(--error);
-  color: white;
+  color: var(--ds-text);
   padding: 0.4rem 0.8rem;
   border-radius: var(--comp-radius-md);
   font-size: 0.9rem;
@@ -643,25 +643,25 @@
 
 .edit-btn:hover {
   background: var(--primary);
-  color: white;
+  color: var(--ds-text);
   border-color: var(--primary);
 }
 
 .delete-btn:hover {
   background: var(--error);
-  color: white;
+  color: var(--ds-text);
   border-color: var(--error);
 }
 
 .save-btn:hover {
   background: var(--success);
-  color: white;
+  color: var(--ds-text);
   border-color: var(--success);
 }
 
 .cancel-btn:hover {
   background: var(--text-muted);
-  color: white;
+  color: var(--ds-text);
   border-color: var(--text-muted);
 }
 
@@ -670,7 +670,7 @@
   top: 0.5rem;
   right: 0.5rem;
   background: var(--error);
-  color: white;
+  color: var(--ds-text);
   padding: 0.2rem 0.5rem;
   border-radius: 5px;
   font-size: 0.7rem;
@@ -744,9 +744,9 @@
   font-size: 0.8rem !important;
   font-weight: 600 !important;
   border-radius: 8px !important;
-  border: 1px solid rgba(212,175,55,0.38) !important;
-  background: rgba(212,175,55,0.14) !important;
-  color: #d4af37 !important;
+  border: 1px solid var(--ds-accent-30) !important;
+  background: var(--ds-accent-15) !important;
+  color: var(--ds-accent) !important;
   cursor: pointer !important;
   transition: background 0.14s, border-color 0.14s, color 0.14s !important;
   white-space: nowrap !important;
@@ -760,8 +760,8 @@
 }
 .sp-add-btn:hover,
 .add-button-modern.sp-add-btn:hover {
-  background: rgba(212,175,55,0.24) !important;
-  border-color: rgba(212,175,55,0.6) !important;
+  background: var(--ds-accent-25) !important;
+  border-color: var(--ds-accent-50) !important;
   color: #f0d060 !important;
   transform: none !important;
   box-shadow: none !important;
@@ -778,9 +778,9 @@
   font-size: 0.8rem;
   font-weight: 500;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.55);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-muted);
   cursor: pointer;
   transition: background 0.14s, border-color 0.14s, color 0.14s;
   white-space: nowrap;
@@ -789,9 +789,9 @@
 }
 
 .export-button-modern:hover {
-  background: rgba(255,255,255,0.09);
-  border-color: rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.88);
+  background: var(--ds-bg-elevated);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
   transform: none;
 }
 
@@ -806,10 +806,10 @@
 }
 
 .stundenplan-container-modern .stat-card {
-  background: rgba(255,255,255,0.04) !important;
+  background: var(--ds-bg-card) !important;
   backdrop-filter: blur(8px) !important;
   border-radius: 8px !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
+  border: 1px solid var(--ds-border) !important;
   box-shadow: none !important;
   padding: 0.55rem 0.4rem !important;
   text-align: center !important;
@@ -823,8 +823,8 @@
 }
 
 .stundenplan-container-modern .stat-card:hover {
-  background: rgba(212,175,55,0.07) !important;
-  border-color: rgba(212,175,55,0.22) !important;
+  background: var(--ds-accent-05) !important;
+  border-color: var(--ds-accent-20) !important;
   transform: none !important;
   box-shadow: none !important;
 }
@@ -854,7 +854,7 @@
 
 .stundenplan-container-modern .stat-label {
   font-size: 0.7rem;
-  color: #6b7280;
+  color: var(--ds-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.3px;
   margin-top: 0.1rem;
@@ -912,7 +912,7 @@
   border: none;
   border-radius: var(--comp-radius-md);
   background: rgba(255, 255, 255, 0.2);
-  color: white;
+  color: var(--ds-text);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -943,7 +943,7 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
   min-height: 50px;
 }
 
@@ -987,7 +987,7 @@
 
 .stil-tag {
   background: var(--success);
-  color: white;
+  color: var(--ds-text);
   padding: 0.25rem 0.75rem;
   border-radius: var(--comp-radius-xl);
   font-size: 0.7rem; /* KLEINER - Stil wie "Enso Karate" */
@@ -1042,7 +1042,7 @@
 
 /* Neuer Stundenplan-Eintrag Form */
 .neuer-stundenplan-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   backdrop-filter: blur(15px);
   border: 1px solid var(--primary-alpha-15);
   border-radius: var(--comp-radius-xl);
@@ -1088,7 +1088,7 @@
 
 .stundenplan-container-modern .form-group label {
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--ds-text) !important;
   font-size: 0.85rem;
   text-shadow: none !important;
   letter-spacing: 0.2px;
@@ -1116,7 +1116,7 @@
 }
 
 .stundenplan-container-modern .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
 }
 
 .stundenplan-container-modern .form-select option {
@@ -1137,9 +1137,9 @@
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: 8px;
-  border: 1px solid rgba(212,175,55,0.38);
-  background: rgba(212,175,55,0.14);
-  color: #d4af37;
+  border: 1px solid var(--ds-accent-30);
+  background: var(--ds-accent-15);
+  color: var(--ds-accent);
   cursor: pointer;
   transition: background 0.14s, border-color 0.14s, color 0.14s;
   white-space: nowrap;
@@ -1149,8 +1149,8 @@
 }
 
 .add-button-modern:hover {
-  background: rgba(212,175,55,0.24);
-  border-color: rgba(212,175,55,0.6);
+  background: var(--ds-accent-25);
+  border-color: var(--ds-accent-50);
   color: #f0d060;
   transform: none;
   box-shadow: none;
@@ -1377,7 +1377,7 @@
 }
 
 .mini-class-card:hover {
-  background: var(--primary-alpha-08, rgba(212,175,55,0.08));
+  background: var(--primary-alpha-08, var(--ds-accent-10));
   border-color: var(--primary-alpha-35);
 }
 
@@ -1487,7 +1487,7 @@
 
 /* Standort badge – mini (inside mini-class-card) */
 .sp-standort-badge {
-  color: white;
+  color: var(--ds-text);
   background: var(--standort-color, #4F46E5);
   padding: 3px 8px;
   font-size: 0.65rem;
@@ -1506,7 +1506,7 @@
 
 /* Standort badge – large (inside course-details-expanded) */
 .sp-standort-badge-lg {
-  color: white;
+  color: var(--ds-text);
   background: var(--standort-color, #4F46E5);
   padding: 4px 10px;
   font-size: 0.75rem;
@@ -1597,7 +1597,7 @@
 
 .ku-modal {
   background: #1a1c2e;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: 14px;
   width: 100%;
   max-width: 540px;
@@ -1611,20 +1611,20 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.025);
+  border-bottom: 1px solid var(--ds-border);
+  background: var(--ds-bg-card);
 }
 
 .ku-modal-title {
   font-size: 1rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.88);
+  color: var(--ds-text);
 }
 
 .ku-modal-close {
   background: transparent;
   border: none;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   font-size: 1rem;
   cursor: pointer;
   padding: 4px 8px;
@@ -1632,6 +1632,6 @@
   transition: all 0.15s;
 }
 .ku-modal-close:hover {
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.75);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-secondary);
 }

@@ -64,7 +64,7 @@
 
 .equipment-management .equipment-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  border: 1px solid var(--ds-accent-20);
   border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   transition: all 0.3s ease;
@@ -155,8 +155,8 @@
 }
 
 .equipment-management .course-tag {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm);
   padding: 0.2rem 0.5rem;
   font-size: 0.7rem;
@@ -170,8 +170,8 @@
 }
 
 .equipment-management .action-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm);
   padding: 0.5rem;
   color: var(--text-2);
@@ -275,7 +275,7 @@
 .equipment-management .form-group select,
 .equipment-management .form-group textarea {
   width: 100%;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-md);
   padding: 0.8rem;
@@ -348,9 +348,9 @@
 }
 
 .equipment-management .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-2);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
 }
 
 .equipment-management .btn-secondary:hover {

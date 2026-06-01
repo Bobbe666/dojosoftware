@@ -2,16 +2,16 @@
 
 /* Zahlungsart card border (dynamic selection highlight) */
 .vmw-zahlungsart-label {
-  border: 2px solid var(--vmw-card-border, rgba(255,255,255,0.1));
+  border: 2px solid var(--vmw-card-border, var(--ds-border));
 }
 
 /* Progress step (base + active state) */
 .vmw-progress-step {
-  background: rgba(255,255,255,0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-muted);
 }
 .vmw-progress-step--active {
-  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  background: linear-gradient(135deg, var(--ds-accent), #ff8c00);
   color: #000;
 }
 

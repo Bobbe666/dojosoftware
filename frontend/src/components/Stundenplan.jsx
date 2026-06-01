@@ -1185,7 +1185,7 @@ const CapacityBar = ({ data, compact = false }) => {
 
   if (compact) {
     return (
-      <div style={{ marginTop: '4px', fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)' }}>
+      <div style={{ marginTop: '4px', fontSize: '0.72rem', color: 'var(--ds-text-muted)' }}>
         👥 {teilnehmer}{max_teilnehmer ? `/${max_teilnehmer}` : ''}
         {pct !== null && (
           <div style={{ height: '3px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: '2px' }}>

@@ -318,10 +318,10 @@ const pillStyle = {
   padding: '4px 10px', borderRadius: 16, fontSize: 12, border: '1px solid var(--border, #3a3a4a)',
   background: 'transparent', cursor: 'pointer', color: 'var(--text-muted, #aaa)', transition: 'all 0.15s'
 };
-const pillActive = { background: '#d4a017', color: '#fff', borderColor: '#d4a017' };
+const pillActive = { background: '#d4a017', color: 'var(--ds-text)', borderColor: '#d4a017' };
 const btnPrimary = {
   display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 8, border: 'none',
-  background: '#d4a017', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer'
+  background: '#d4a017', color: 'var(--ds-text)', fontWeight: 600, fontSize: 14, cursor: 'pointer'
 };
 const btnSecondary = {
   display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 8,

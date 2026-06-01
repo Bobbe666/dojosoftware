@@ -40,9 +40,9 @@
   width: 100%;
   padding: 0.75rem 0.75rem 0.75rem 40px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   background: rgba(31, 41, 55, 0.6);
-  color: white;
+  color: var(--ds-text);
 }
 
 .el-count-badge {

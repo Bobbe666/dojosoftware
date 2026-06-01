@@ -104,7 +104,7 @@ export default function TimerExternDisplay() {
       {state && !isBereit && !isFertig && (
         <div style={{
           fontSize: 'clamp(1.2rem, 3vw, 2rem)',
-          color: 'rgba(255,255,255,0.5)',
+          color: 'var(--ds-text-muted)',
           marginBottom: '2rem',
           letterSpacing: '0.1em',
           fontWeight: 500,
@@ -165,7 +165,7 @@ export default function TimerExternDisplay() {
         <div style={{
           marginTop: '3rem',
           fontSize: 'clamp(1rem, 2.5vw, 1.8rem)',
-          color: 'rgba(255,255,255,0.25)',
+          color: 'var(--ds-text-faint)',
           letterSpacing: '0.15em',
         }}>
           Warte auf Timer-Start…
@@ -180,12 +180,12 @@ export default function TimerExternDisplay() {
           left: 0, right: 0,
           textAlign: 'center',
           fontSize: 'clamp(1rem, 2.5vw, 1.8rem)',
-          color: 'rgba(255,255,255,0.3)',
+          color: 'var(--ds-text-faint)',
           letterSpacing: '0.08em',
           fontWeight: 500,
         }}>
           Nächstes:&nbsp;
-          <span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>
+          <span style={{ color: 'var(--ds-text-muted)', fontWeight: 700 }}>
             {state.next.label}
             {state.next.dauer != null && ` · ${formatSek(state.next.dauer)}`}
           </span>
@@ -204,7 +204,7 @@ export default function TimerExternDisplay() {
             padding: '0.4rem 1rem', borderRadius: '6px',
             border: '1px solid rgba(255,255,255,0.2)',
             background: 'rgba(255,255,255,0.07)',
-            color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem',
+            color: 'var(--ds-text-muted)', fontSize: '0.9rem',
             cursor: 'pointer', fontWeight: 600,
           }}>
           ⛶ Vollbild
@@ -228,7 +228,7 @@ function Clock() {
   return (
     <div style={{
       position: 'fixed', bottom: '1.5rem', right: '2rem',
-      fontSize: '1.5rem', color: 'rgba(255,255,255,0.2)',
+      fontSize: '1.5rem', color: 'var(--ds-text-faint)',
       fontWeight: 600, letterSpacing: '0.1em',
     }}>
       {time}

@@ -5,7 +5,7 @@
 .tet-wrapper {
   display: flex;
   flex-direction: column;
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   min-height: 100%;
 }
 
@@ -76,7 +76,7 @@
   border-radius: 6px;
   border: none;
   background: #2563eb;
-  color: #fff;
+  color: var(--ds-text);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
@@ -302,7 +302,7 @@
   gap: 8px;
 }
 .tet-platzhalter-item:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
 }
 
 .tet-platzhalter-key {
@@ -436,7 +436,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 16px;
-  background: #1a1a1a;
+  background: var(--ds-bg-surface);
   border-bottom: 1px solid #444;
   color: #ccc;
   font-size: 13px;
@@ -446,7 +446,7 @@
 
 .tet-preview-modal-close {
   background: #8B0000;
-  color: #fff;
+  color: var(--ds-text);
   border: none;
   border-radius: 4px;
   padding: 5px 14px;
@@ -468,6 +468,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #aaa;
+  color: var(--ds-text-muted);
   font-size: 14px;
 }

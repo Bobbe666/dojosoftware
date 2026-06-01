@@ -117,7 +117,7 @@
 }
 
 .storno-amount {
-  color: #ef4444;
+  color: var(--ds-danger);
   font-size: 1rem;
 }
 
@@ -160,7 +160,7 @@
 }
 
 .storno-modal-amount {
-  color: #ef4444;
+  color: var(--ds-danger);
   font-size: 1.1rem;
 }
 

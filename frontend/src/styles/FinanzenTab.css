@@ -72,9 +72,9 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-secondary, rgba(255,255,255,0.5));
-  background: rgba(255,255,255,0.02);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-secondary, var(--ds-text-muted));
+  background: var(--ds-bg-card);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .ft-table tbody tr {
@@ -82,7 +82,7 @@
 }
 
 .ft-table tbody tr:hover {
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
 }
 
 /* Small muted text */
@@ -235,9 +235,9 @@
   gap: 0.75rem;
   margin-bottom: 1.25rem;
   padding: 0.6rem 1rem;
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -384,11 +384,11 @@
   gap: 0.2rem;
   padding: 0.25rem;
   margin-bottom: 1.5rem;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 100px;
-  border: 1px solid rgba(255,255,255,0.09);
+  border: 1px solid var(--ds-border);
   width: fit-content;
   max-width: 100%;
   flex-wrap: wrap;
@@ -403,7 +403,7 @@
 
 /* icon wrapper – green tint */
 .fzt-icon-green {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   padding: 0.75rem;
   border-radius: 8px;
 }
@@ -446,8 +446,8 @@
 .fzt-all-good-box {
   text-align: center;
   padding: 3rem;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   border-radius: 12px;
 }
 
@@ -508,8 +508,8 @@
 /* ── Category Cards ──────────────────────────────────────────────────────── */
 
 .fzt-cat-card {
-  background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
   padding: 1.25rem;
   cursor: pointer;
@@ -534,7 +534,7 @@
 }
 
 .fzt-cat-card:hover {
-  border-color: var(--cat-color, rgba(255,255,255,0.2));
+  border-color: var(--cat-color, var(--ds-border-strong));
   box-shadow: 0 8px 28px var(--cat-bgcolor, rgba(255,255,255,0.05));
   transform: translateY(-2px);
 }
@@ -560,14 +560,14 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   line-height: 1.3;
 }
 
 .fzt-cat-subtitle {
   margin: 0.15rem 0 0;
   font-size: 0.78rem;
-  color: var(--text-secondary, rgba(255,255,255,0.5));
+  color: var(--text-secondary, var(--ds-text-muted));
   line-height: 1.3;
 }
 
@@ -587,7 +587,7 @@
 
 .fzt-cat-metric-label {
   font-size: 0.72rem;
-  color: var(--text-secondary, rgba(255,255,255,0.45));
+  color: var(--text-secondary, var(--ds-text-muted));
   margin-bottom: 0.2rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -597,7 +597,7 @@
 .fzt-cat-amount {
   font-size: 1.35rem;
   font-weight: 700;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   line-height: 1;
 }
 
@@ -607,10 +607,10 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.85rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 6px;
-  color: var(--text-secondary, rgba(255,255,255,0.6));
+  color: var(--text-secondary, var(--ds-text-secondary));
   font-size: 0.82rem;
   cursor: pointer;
   margin-bottom: 1rem;
@@ -618,8 +618,8 @@
 }
 
 .fzt-btn-back:hover {
-  background: rgba(255,255,255,0.07);
-  color: var(--text-primary, #fff);
+  background: var(--ds-bg-card-hover);
+  color: var(--text-primary, var(--ds-text));
 }
 
 /* export button (blue outline) */
@@ -654,7 +654,7 @@
   gap: 0.45rem;
   padding: 0.5rem 1.1rem;
   background: transparent;
-  color: var(--text-2, rgba(255,255,255,0.5));
+  color: var(--text-2, var(--ds-text-muted));
   border: none;
   border-radius: 100px;
   font-size: 0.82rem;
@@ -665,13 +665,13 @@
   letter-spacing: 0.01em;
 }
 .fzt-subtab-btn:hover {
-  background: rgba(255,255,255,0.07);
-  color: var(--text-1, #fff);
+  background: var(--ds-bg-card-hover);
+  color: var(--text-1, var(--ds-text));
 }
 .fzt-subtab-btn--active {
-  background: linear-gradient(135deg, rgba(255,215,0,0.18), rgba(255,107,53,0.1));
-  color: var(--primary, #ffd700);
-  box-shadow: 0 0 0 1px rgba(255,215,0,0.22) inset;
+  background: linear-gradient(135deg, var(--ds-accent-20), rgba(255,107,53,0.1));
+  color: var(--primary, var(--ds-accent));
+  box-shadow: 0 0 0 1px var(--ds-accent-20) inset;
   font-weight: 600;
 }
 
@@ -697,7 +697,7 @@
 .fzt-cat-icon-box {
   padding: 0.55rem;
   border-radius: 8px;
-  background: var(--cat-bgcolor, rgba(255,255,255,0.08));
+  background: var(--cat-bgcolor, var(--ds-bg-elevated));
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -708,7 +708,7 @@
 .fzt-cat-count {
   font-size: 1.8rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   line-height: 1;
 }
 
@@ -719,8 +719,8 @@
   justify-content: center;
   gap: 0.45rem;
   padding: 0.6rem 1rem;
-  background: var(--cat-bgcolor, rgba(255,255,255,0.05));
-  border: 1px solid var(--cat-color, rgba(255,255,255,0.15));
+  background: var(--cat-bgcolor, var(--ds-bg-card-hover));
+  border: 1px solid var(--cat-color, var(--ds-border-strong));
   border-radius: 7px;
   color: var(--cat-color, var(--text-primary));
   font-size: 0.84rem;
@@ -764,18 +764,18 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.45rem 0.9rem;
-  background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,107,53,0.08));
-  border: 1px solid rgba(255,215,0,0.25);
+  background: linear-gradient(135deg, var(--ds-accent-15), rgba(255,107,53,0.08));
+  border: 1px solid var(--ds-accent-25);
   border-radius: 6px;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--ds-accent));
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, box-shadow 0.15s;
 }
 .fzt-action-btn:hover {
-  background: linear-gradient(135deg, rgba(255,215,0,0.22), rgba(255,107,53,0.12));
-  box-shadow: 0 2px 12px rgba(255,215,0,0.15);
+  background: linear-gradient(135deg, var(--ds-accent-20), rgba(255,107,53,0.12));
+  box-shadow: 0 2px 12px var(--ds-accent-15);
 }
 .fzt-action-btn:disabled {
   opacity: 0.4;
@@ -789,12 +789,12 @@
   border-radius: 8px;
 }
 .fzt-result-box--success {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
 }
 .fzt-result-box--error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
 }
 
 /* Category badge (gesamt view) */
@@ -803,7 +803,7 @@
   border-radius: 4px;
   font-size: 0.75rem;
 }
-.fzt-category-badge--dojo    { background: rgba(16, 185, 129, 0.2); color: var(--status-success); }
+.fzt-category-badge--dojo    { background: var(--ds-success-25); color: var(--status-success); }
 .fzt-category-badge--software { background: rgba(59, 130, 246, 0.2); color: var(--status-indigo); }
 .fzt-category-badge--verband  { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
 
@@ -813,14 +813,14 @@
   border-radius: 4px;
   font-size: 0.75rem;
 }
-.fzt-mandate-badge--ok    { background: rgba(16, 185, 129, 0.2); color: var(--status-success); }
-.fzt-mandate-badge--error { background: rgba(239, 68, 68, 0.2);  color: var(--status-error); }
+.fzt-mandate-badge--ok    { background: var(--ds-success-25); color: var(--status-success); }
+.fzt-mandate-badge--error { background: var(--ds-danger-25);  color: var(--status-error); }
 
 /* ── Actions Panel (CategoryDetailView) ─────────────────────────────── */
 
 .fzt-actions-panel {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 1.1rem 1.25rem;
   margin-bottom: 1.5rem;
@@ -834,7 +834,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: var(--text-secondary, rgba(255,255,255,0.45));
+  color: var(--text-secondary, var(--ds-text-muted));
   margin-bottom: 1rem;
 }
 

@@ -94,8 +94,8 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: var(--comp-radius-xl);
   color: var(--status-error);
   margin-bottom: 1.5rem;
@@ -135,7 +135,7 @@
 
 .verband-tab.active {
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-  color: white;
+  color: var(--ds-text);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
@@ -198,7 +198,7 @@
 }
 
 .verband-stat-card.success .stat-icon {
-  background: rgba(34, 197, 94, 0.15);
+  background: var(--ds-success-10);
   color: var(--status-success);
 }
 
@@ -423,13 +423,13 @@
 .event-date .date-day {
   font-size: 1.25rem;
   font-weight: 700;
-  color: white;
+  color: var(--ds-text);
 }
 
 .event-date .date-month {
   font-size: 0.65rem;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
 }
 
 .event-info {
@@ -562,7 +562,7 @@
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
   border: none;
   border-radius: var(--comp-radius-lg);
-  color: white;
+  color: var(--ds-text);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -610,19 +610,19 @@
 .event-card-date .date-day {
   font-size: 2rem;
   font-weight: 700;
-  color: white;
+  color: var(--ds-text);
   line-height: 1;
 }
 
 .event-card-date .date-month {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
   text-transform: uppercase;
 }
 
 .event-card-date .date-year {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
 }
 
 .event-card-content {
@@ -761,8 +761,8 @@
 }
 
 .sub-tabs-horizontal .sub-tab-btn.active {
-  background: linear-gradient(135deg, #c9a227 0%, #b8941f 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--ds-accent-dark) 0%, #b8941f 100%);
+  color: var(--ds-text);
   box-shadow: 0 2px 8px rgba(201, 162, 39, 0.3);
 }
 

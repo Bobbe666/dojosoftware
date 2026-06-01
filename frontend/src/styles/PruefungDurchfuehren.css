@@ -65,7 +65,7 @@
 }
 .pd-tb-btn:last-child { border-right: none; }
 .pd-tb-btn:hover { background: var(--surface-3); color: var(--text-primary); }
-.pd-tb-btn--active { background: var(--primary-alpha-20, rgba(212,175,55,0.18)) !important; color: var(--primary) !important; font-weight: 600; }
+.pd-tb-btn--active { background: var(--primary-alpha-20, var(--ds-accent-20)) !important; color: var(--primary) !important; font-weight: 600; }
 
 /* Datum Input + Clear */
 .pd-tb-date-wrap { display: flex; align-items: center; gap: 0.3rem; }
@@ -89,7 +89,7 @@
   display: flex; align-items: center; justify-content: center;
   transition: all 0.15s;
 }
-.pd-tb-clear:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); color: #ef4444; }
+.pd-tb-clear:hover { background: var(--ds-danger-10); border-color: var(--ds-danger-25); color: var(--ds-danger); }
 
 /* Stil Select */
 .pd-tb-select {
@@ -193,13 +193,13 @@
 .pd-settings-save {
   padding: 0.35rem 1rem;
   border-radius: 6px;
-  border: 1px solid rgba(34,197,94,0.45);
-  background: rgba(34,197,94,0.12);
-  color: #4ade80;
+  border: 1px solid var(--ds-success-25);
+  background: var(--ds-success-10);
+  color: var(--ds-success-soft);
   font-size: 0.82rem; font-weight: 600;
   cursor: pointer; transition: all 0.15s;
 }
-.pd-settings-save:hover { background: rgba(34,197,94,0.22); }
+.pd-settings-save:hover { background: var(--ds-success-25); }
 
 .pd-settings-reset {
   padding: 0.35rem 1rem;
@@ -214,7 +214,7 @@
 
 /* Legacy-Klassen (noch genutzt in anderen Bereichen) */
 .pd-filter-box {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   padding: 1.5rem;
   border-radius: 12px;
   margin-bottom: 2rem;
@@ -223,9 +223,9 @@
 .pd-filter-row { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
 .pd-label-primary { font-weight: 600; color: var(--primary); font-size: 1rem; white-space: nowrap; }
 .pd-label-secondary { font-size: 0.9rem; color: var(--text-secondary); white-space: nowrap; }
-.pd-filter-input { padding: 0.5rem; border-radius: 6px; border: 1px solid var(--primary-alpha-30); background: rgba(255,255,255,0.05); color: white; font-size: 0.9rem; }
-.pd-stil-select { padding: 0.5rem 0.8rem; border-radius: 8px; border: 1px solid var(--primary-alpha-30); background: rgba(255,255,255,0.05); color: white; font-size: 0.9rem; cursor: pointer; min-width: 180px; height: 38px; }
-.pd-option-dark { background: #1a1a2e; }
+.pd-filter-input { padding: 0.5rem; border-radius: 6px; border: 1px solid var(--primary-alpha-30); background: var(--ds-bg-card-hover); color: var(--ds-text); font-size: 0.9rem; }
+.pd-stil-select { padding: 0.5rem 0.8rem; border-radius: 8px; border: 1px solid var(--primary-alpha-30); background: var(--ds-bg-card-hover); color: var(--ds-text); font-size: 0.9rem; cursor: pointer; min-width: 180px; height: 38px; }
+.pd-option-dark { background: var(--ds-bg-surface); }
 
 /* Loading / empty state */
 .pd-loading-center {
@@ -293,7 +293,7 @@
 h4.pd-pruefling-name {
   margin: 0;
   font-size: 0.88rem !important;
-  color: rgba(255,255,255,0.9) !important;
+  color: var(--ds-text) !important;
   text-shadow: none !important;
   text-transform: none !important;
   letter-spacing: normal !important;
@@ -304,7 +304,7 @@ h4.pd-pruefling-name {
 .pd-pruefling-sub {
   margin: 0.2rem 0 0 0;
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.38);
+  color: var(--ds-text-faint);
 }
 
 /* Status + points row */
@@ -395,10 +395,10 @@ h4.pd-pruefling-name {
   font-size: 0.8rem;
   padding: 0.4rem;
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 6px;
-  color: white;
+  color: var(--ds-text);
 }
 
 /* Prueferkommentar section */
@@ -419,7 +419,7 @@ h4.pd-pruefling-name {
 .pd-inhalte-box {
   margin-top: 1.5rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 8px;
 }
 
@@ -489,7 +489,7 @@ h4.pd-pruefling-name {
 .pd-pkt-input {
   width: 70px;
   padding: 0.4rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 4px;
   color: var(--text-primary);
@@ -501,8 +501,8 @@ h4.pd-pruefling-name {
 .pd-pkt-select {
   width: 70px;
   padding: 0.35rem 0.3rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
   color: var(--text-primary);
   font-size: 0.85rem;
@@ -563,10 +563,10 @@ h4.pd-pruefling-name {
   width: 100%;
   font-size: 0.95rem;
   padding: 0.7rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 6px;
-  color: white;
+  color: var(--ds-text);
   resize: vertical;
 }
 
@@ -575,10 +575,10 @@ h4.pd-pruefling-name {
   font-size: 0.8rem;
   padding: 0.4rem;
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 6px;
-  color: white;
+  color: var(--ds-text);
 }
 
 /* Kategorie h5 heading */
@@ -595,26 +595,26 @@ h4.pd-pruefling-name {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(255,215,0,0.12);
-  border: 1px solid rgba(255,215,0,0.25);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-25);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.78rem;
   font-weight: 600;
-  color: rgba(255,215,0,0.8);
+  color: var(--ds-accent-50);
   flex-shrink: 0;
 }
 
 /* Punktzahl badge */
 .pd-pkt-badge {
   padding: 0.18rem 0.55rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 6px;
   font-weight: 500;
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.55);
+  color: var(--ds-text-muted);
   white-space: nowrap;
 }
 
@@ -642,7 +642,7 @@ h4.pd-pruefling-name {
   border-radius: 4px;
   border: 1px solid var(--primary-alpha-30);
   min-width: 80px;
-  background: var(--gurt-bg, rgba(255,255,255,0.1));
+  background: var(--gurt-bg, var(--ds-bg-elevated));
 }
 
 /* Gurt label text */
@@ -670,8 +670,8 @@ h4.pd-pruefling-name {
   transition: all 0.3s ease;
 }
 .pd-datum-card--today  { background: rgba(59,130,246,0.1);    border: 2px solid rgba(59,130,246,0.5); }
-.pd-datum-card--past   { background: rgba(255,255,255,0.03);  border: 1px solid rgba(156,163,175,0.2); }
-.pd-datum-card--future { background: rgba(255,255,255,0.05);  border: 1px solid var(--primary-alpha-30); }
+.pd-datum-card--past   { background: var(--ds-bg-card);  border: 1px solid rgba(156,163,175,0.2); }
+.pd-datum-card--future { background: var(--ds-bg-card-hover);  border: 1px solid var(--primary-alpha-30); }
 
 /* Datum header – three states */
 .pd-datum-header {
@@ -693,7 +693,7 @@ h4.pd-pruefling-name {
 
 .pd-datum-card--past   .pd-datum-icon,
 .pd-datum-card--past   .pd-datum-title,
-.pd-datum-card--past   .pd-datum-chevron { color: #9ca3af; }
+.pd-datum-card--past   .pd-datum-chevron { color: var(--ds-text-muted); }
 
 .pd-datum-card--future .pd-datum-icon,
 .pd-datum-card--future .pd-datum-title,
@@ -711,7 +711,7 @@ h3.pd-datum-title {
 }
 /* For today: override color back */
 .pd-datum-card--today h3.pd-datum-title  { color: var(--status-indigo) !important; }
-.pd-datum-card--past h3.pd-datum-title   { color: #9ca3af !important; }
+.pd-datum-card--past h3.pd-datum-title   { color: var(--ds-text-muted) !important; }
 .pd-datum-card--future h3.pd-datum-title { color: var(--primary) !important; }
 
 .pd-datum-chevron {
@@ -724,14 +724,14 @@ h3.pd-datum-title {
 /* Pruefling card */
 .pd-pruefling-card {
   margin-top: 0;
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   overflow: hidden;
   transition: border-color 0.2s;
 }
 .pd-pruefling-card:hover {
-  border-color: rgba(255,255,255,0.14);
+  border-color: var(--ds-border-strong);
 }
 .pd-pruefling-card--editing {
   background: var(--primary-alpha-08);
@@ -744,15 +744,15 @@ h3.pd-datum-title {
    ============================================================ */
 .pd-timer-card {
   margin-bottom: 1.25rem;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border: 1px solid var(--primary-alpha-20);
   border-radius: 10px;
   overflow: hidden;
   transition: border-color 0.3s ease;
 }
 .pd-timer-card--active {
-  border-color: var(--primary-color, #d4af37);
-  box-shadow: 0 0 0 1px rgba(212,175,55,0.2);
+  border-color: var(--primary-color, var(--ds-accent));
+  box-shadow: 0 0 0 1px var(--ds-accent-20);
 }
 
 .pd-timer-header {
@@ -764,7 +764,7 @@ h3.pd-datum-title {
   user-select: none;
   gap: 0.75rem;
 }
-.pd-timer-header:hover { background: rgba(255,255,255,0.04); }
+.pd-timer-header:hover { background: var(--ds-bg-card); }
 
 .pd-timer-header-left {
   display: flex;
@@ -778,13 +778,13 @@ h3.pd-datum-title {
 .pd-timer-live-badge {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #ef4444;
+  color: var(--ds-danger);
   animation: timerPulse 1.2s ease-in-out infinite;
 }
 .pd-timer-done-badge {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #22c55e;
+  color: var(--ds-success);
 }
 @keyframes timerPulse {
   0%, 100% { opacity: 1; }
@@ -797,7 +797,7 @@ h3.pd-datum-title {
   font-size: 0.875rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--primary-color, #d4af37);
+  color: var(--primary-color, var(--ds-accent));
 }
 
 .pd-timer-chevron {
@@ -837,7 +837,7 @@ h3.pd-datum-title {
 .pd-timer-input {
   width: 5rem;
   padding: 0.4rem 0.5rem;
-  background: rgba(255,255,255,0.06);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 6px;
   color: var(--text-primary);
@@ -853,7 +853,7 @@ h3.pd-datum-title {
 .pd-timer-input-sm {
   width: 3.5rem;
   padding: 0.4rem 0.4rem;
-  background: rgba(255,255,255,0.06);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 6px;
   color: var(--text-primary);
@@ -877,11 +877,11 @@ h3.pd-datum-title {
   border-radius: 8px;
   padding: 1rem 1.25rem;
   text-align: center;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
 }
-.pd-timer-display--runde { border-color: rgba(212,175,55,0.35); }
+.pd-timer-display--runde { border-color: var(--ds-accent-30); }
 .pd-timer-display--pause { border-color: rgba(245,158,11,0.35); }
-.pd-timer-display--fertig { border-color: rgba(34,197,94,0.35); }
+.pd-timer-display--fertig { border-color: var(--ds-success-25); }
 
 .pd-timer-phase-label {
   font-size: 0.8rem;
@@ -891,9 +891,9 @@ h3.pd-datum-title {
   color: var(--text-secondary);
   margin-bottom: 0.5rem;
 }
-.pd-timer-display--runde .pd-timer-phase-label { color: var(--primary-color, #d4af37); }
+.pd-timer-display--runde .pd-timer-phase-label { color: var(--primary-color, var(--ds-accent)); }
 .pd-timer-display--pause .pd-timer-phase-label { color: #f59e0b; }
-.pd-timer-display--fertig .pd-timer-phase-label { color: #22c55e; font-size: 1rem; }
+.pd-timer-display--fertig .pd-timer-phase-label { color: var(--ds-success); font-size: 1rem; }
 
 .pd-timer-countdown {
   font-size: 3rem;
@@ -908,7 +908,7 @@ h3.pd-datum-title {
 
 .pd-timer-bar-wrap {
   height: 6px;
-  background: rgba(255,255,255,0.1);
+  background: var(--ds-bg-elevated);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -944,18 +944,18 @@ h3.pd-datum-title {
   padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
   font-weight: 600;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 6px;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
-.pd-timer-tab:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+.pd-timer-tab:hover { background: var(--ds-bg-elevated); color: var(--text-primary); }
 .pd-timer-tab--aktiv {
-  background: rgba(212,175,55,0.12);
-  border-color: rgba(212,175,55,0.45);
-  color: var(--primary-color, #d4af37);
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-50);
+  color: var(--primary-color, var(--ds-accent));
 }
 
 /* Einfach-Layout */
@@ -974,10 +974,10 @@ h3.pd-datum-title {
 /* Per-block start button */
 .pd-timer-block-start-btn {
   flex-shrink: 0;
-  background: rgba(212,175,55,0.12);
-  border: 1px solid rgba(212,175,55,0.4);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-50);
   border-radius: 5px;
-  color: var(--primary-color, #d4af37);
+  color: var(--primary-color, var(--ds-accent));
   font-size: 0.75rem;
   width: 1.7rem;
   height: 1.7rem;
@@ -989,7 +989,7 @@ h3.pd-datum-title {
   margin-top: 0.2rem;
   transition: background 0.15s ease;
 }
-.pd-timer-block-start-btn:hover { background: rgba(212,175,55,0.25); }
+.pd-timer-block-start-btn:hover { background: var(--ds-accent-25); }
 
 /* Multi-block layout */
 .pd-timer-main-layout {
@@ -1014,7 +1014,7 @@ h3.pd-datum-title {
 /* Bereit-Hint */
 .pd-timer-bereit-hint {
   background: rgba(0,0,0,0.15);
-  border: 1px dashed rgba(255,255,255,0.12);
+  border: 1px dashed var(--ds-border);
   border-radius: 8px;
   padding: 1rem;
   text-align: center;
@@ -1060,26 +1060,26 @@ h3.pd-datum-title {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.55rem 0.65rem;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 .pd-timer-block-item--aktiv {
-  border-color: rgba(212,175,55,0.55);
-  background: rgba(212,175,55,0.07);
+  border-color: var(--ds-accent-50);
+  background: var(--ds-accent-05);
 }
 .pd-timer-block-item--erledigt {
-  border-color: rgba(34,197,94,0.35);
-  background: rgba(34,197,94,0.05);
+  border-color: var(--ds-success-25);
+  background: var(--ds-success-10);
   opacity: 0.8;
 }
 
 /* Green checkmark */
 .pd-timer-block-check {
   font-size: 1rem;
-  color: #22c55e;
+  color: var(--ds-success);
   font-weight: 700;
   flex-shrink: 0;
   margin-top: 0.25rem;
@@ -1096,7 +1096,7 @@ h3.pd-datum-title {
 }
 .pd-timer-block-name-input {
   width: 100%;
-  background: rgba(255,255,255,0.06);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-20);
   border-radius: 5px;
   color: var(--text-primary);
@@ -1125,16 +1125,16 @@ h3.pd-datum-title {
 /* Phase label block name */
 .pd-timer-block-name-label {
   font-weight: 700;
-  color: var(--primary-color, #d4af37);
+  color: var(--primary-color, var(--ds-accent));
 }
 
 /* Delete button */
 .pd-timer-block-delete {
   flex-shrink: 0;
   background: transparent;
-  border: 1px solid rgba(239,68,68,0.3);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 4px;
-  color: #ef4444;
+  color: var(--ds-danger);
   font-size: 1.1rem;
   line-height: 1;
   width: 1.5rem;
@@ -1147,7 +1147,7 @@ h3.pd-datum-title {
   transition: background 0.15s ease;
   margin-top: 0.2rem;
 }
-.pd-timer-block-delete:hover { background: rgba(239,68,68,0.15); }
+.pd-timer-block-delete:hover { background: var(--ds-danger-10); }
 
 /* Responsive */
 @media (max-width: 680px) {

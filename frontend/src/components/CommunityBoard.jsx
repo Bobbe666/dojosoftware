@@ -526,7 +526,7 @@ export default function CommunityBoard({ dojoId, currentMitgliedId, isAdmin, onO
       {/* Header */}
       <div className="cb-header">
         <div>
-          <h2 className="cb-title">🏘️ Community</h2>
+          <h2 className="cb-title"><span className="cb-title-icon">🏘️</span> Community</h2>
           <p className="cb-subtitle">Schwarzes Brett · Marktplatz · Trainingspartner · Events</p>
         </div>
         <div className="cb-header-actions">

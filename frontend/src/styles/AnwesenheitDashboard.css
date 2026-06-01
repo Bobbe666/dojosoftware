@@ -28,7 +28,7 @@
   transition: all 0.2s ease;
   min-height: 60px;
   color: var(--text-1);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--ds-border-subtle);
 }
 
 .kalender-tag:hover {
@@ -62,7 +62,7 @@
 }
 .kalender-tag.keine-angabe {
   background-color: var(--surface-1);
-  border-left: 5px solid rgba(255, 255, 255, 0.15);
+  border-left: 5px solid var(--ds-border-strong);
 }
 
 /* Wochenüberschrift */

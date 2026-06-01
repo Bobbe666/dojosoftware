@@ -173,7 +173,7 @@
 /* TDA badge */
 .eu-tda-badge {
   background-color: var(--primary);
-  color: white;
+  color: var(--ds-text);
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.7rem;
@@ -282,8 +282,8 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   color: var(--text-secondary);
   padding: 0.5rem 0.9rem;

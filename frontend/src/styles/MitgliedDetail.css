@@ -17,10 +17,12 @@
 /* === 🧱 Hauptcontainer – StilVerwaltung Theme === */
 .mitglied-detail-container {
   width: 100%;
-  min-height: 100vh;
+  min-height: auto;
   margin: 0;
-  padding: 0;
-  background: var(--color-black) !important;
+  padding: 0 1.25rem 1rem;
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
+  border-radius: 16px;
   color: var(--farbe-text);
   box-sizing: border-box;
 }
@@ -29,8 +31,8 @@
 .mitglied-layout {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  background: var(--color-black);
+  min-height: auto;
+  background: transparent;
   border: none;
   box-shadow: none;
 }
@@ -39,13 +41,10 @@
 .mitglied-tabs-header {
   display: flex;
   flex-direction: column;
-  background: var(--surface-2, #12122a);
-  border-bottom: 1px solid var(--primary-alpha-20);
-  position: sticky;
-  top: 0;
-  /* Negativer Margin kompensiert das 2rem-Padding des dashboard-content,
-     damit der Header edge-to-edge klebt ohne overflow */
-  margin: 0 calc(-1 * var(--ui-page-padding));
+  background: transparent;
+  border-bottom: 1px solid var(--ds-border);
+  position: static;
+  margin: 0;
   z-index: 10;
 }
 
@@ -55,8 +54,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.65rem var(--ui-page-padding);
-  border-bottom: 1px solid var(--primary-alpha-10);
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .mdt-header-actions {
@@ -136,14 +135,14 @@
 
 .mdt-dojo {
   font-size: 0.7rem;
-  color: var(--primary-alpha-60, rgba(212,175,55,0.6));
+  color: var(--primary-alpha-60, var(--ds-accent-50));
 }
 
 .mdt-tabs {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0.25rem;
-  padding: 0 calc(var(--ui-page-padding) - 0.25rem);
+  padding: 0.4rem 0 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -156,11 +155,11 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.5rem 0.875rem;
+  padding: 0.55rem 0.95rem 0.7rem;
   background: transparent;
   border: none;
-  border-radius: 8px;
-  color: rgba(255,255,255,0.5);
+  border-radius: 8px 8px 0 0;
+  color: var(--ds-text-muted);
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -172,24 +171,24 @@
 .mdt-tab-btn::after {
   content: '';
   position: absolute;
-  bottom: -0.75rem;
+  bottom: 0;
   left: 0.5rem;
   right: 0.5rem;
   height: 2px;
-  background: var(--primary, #d4af37);
+  background: var(--primary, var(--ds-accent));
   border-radius: 2px 2px 0 0;
   opacity: 0;
   transition: opacity 0.15s ease;
 }
 
 .mdt-tab-btn:hover {
-  background: var(--primary-alpha-10, rgba(212,175,55,0.1));
-  color: rgba(255,255,255,0.85);
+  background: var(--primary-alpha-10, var(--ds-accent-10));
+  color: var(--ds-text);
 }
 
 .mdt-tab-btn.active {
-  color: var(--primary, #d4af37);
-  background: var(--primary-alpha-10, rgba(212,175,55,0.1));
+  color: var(--primary, var(--ds-accent));
+  background: var(--primary-alpha-10, var(--ds-accent-10));
 }
 
 .mdt-tab-btn.active::after {
@@ -293,8 +292,8 @@
 
 .mitglied-content {
   flex: 1;
-  padding: 1.5rem;
-  background: var(--color-black);
+  padding: 1.5rem 0.25rem;
+  background: transparent;
   overflow-x: hidden;
   width: 100%;
 }
@@ -407,10 +406,10 @@
 }
 
 .tab-vertical-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
 }
 
 .tab-vertical-btn:active {
@@ -420,8 +419,8 @@
 
 .tab-vertical-btn.active {
   /* Aktiver Tab hat Hover-Design */
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.95);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
   font-weight: 700;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
@@ -539,10 +538,10 @@
 
 /* === 🎯 Hauptinhalt-Container === */
 .mitglied-content .grid-container {
-  background: var(--color-black);
-  border: 1px solid var(--primary-alpha-20);
-  border-radius: 16px;
-  padding: var(--ui-page-padding);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   margin-bottom: var(--ui-section-gap-sm);
   position: relative;
   overflow: visible;
@@ -550,6 +549,24 @@
   transform: translateZ(0);
   z-index: 1;
   pointer-events: auto;
+  /* 2 Cards nebeneinander, responsive 1 Spalte */
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1.25rem !important;
+  align-items: start !important;
+}
+
+@media (max-width: 900px) {
+  .mitglied-content .grid-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Mitgliedsausweis + Vollbreiten-Elemente über beide Spalten */
+.mitglied-content .grid-container > .mitgliedsausweis-container,
+.mitglied-content .grid-container > .mds-ausweis-wrap,
+.mitglied-content .grid-container > .kontostand-card {
+  grid-column: 1 / -1;
 }
 
 .mitglied-content .grid-container::before {
@@ -564,23 +581,61 @@
   display: none;
 }
 
-/* === 📋 Field-Group Anpassungen === */
+/* === 📋 Field-Group Anpassungen — moderne, flache Karten === */
+/* ── FINALES DESIGN: Struktur von #4, Gold-Theme statt Rot ────
+   Dunkle Karten, dezenter Goldakzent in der Kopfzeile, kein
+   Akzent-Strich, sauberes Feld-Raster. */
 .mitglied-content .field-group {
-  background: var(--bg-card-hover);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--primary-alpha-20);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px var(--color-black-alpha-30);
-  padding: var(--ui-card-padding);
+  background: linear-gradient(160deg, var(--ds-bg-card) 0%, var(--ds-bg-card) 45%, var(--ds-bg-card) 100%);
+  border: 1px solid var(--ds-border);
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.32);
+  padding: 0;
   position: relative;
-  overflow: visible;
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
+  overflow: hidden;
   isolation: isolate;
-  contain: layout style;
   z-index: 1;
   pointer-events: auto;
+  /* Felder als 2-Spalten-Raster (Stacked-Micro-Label) */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  align-content: start;
+}
+
+.mitglied-content .field-group::after { content: none; }
+.mitglied-content .field-group:hover { border-color: var(--ds-accent-25); }
+
+/* Sektions-Kopfzeile: dezenter Goldakzent, KEIN Strich links */
+.mitglied-content .field-group > h3 {
+  margin: 0 !important;
+  padding: 0.85rem 1.25rem !important;
+  background: linear-gradient(90deg, var(--ds-accent-10), var(--ds-accent-05));
+  border-bottom: 1px solid var(--ds-accent-30) !important;
+  border-radius: 14px 14px 0 0;
+  color: var(--ds-text) !important;
+}
+.mitglied-content .field-group > h3::before {
+  content: none !important;
+}
+
+/* Feld-Zellen mit dezenten Trennlinien */
+.mitglied-content .field-group > div:not(.stat-item):not(.stats-grid):not(.finance-stats):not(.attendance-stats):not(.field-row):not(.foto-upload-section):not(.foto-container):not(.kontostand-details):not(.mds-kontostand-grid):not(.mds-kontostand-box) {
+  padding: 0.85rem 1.25rem !important;
+  border-bottom: 1px solid var(--ds-border-subtle) !important;
+  border-right: 1px solid var(--ds-border-subtle);
+}
+.mitglied-content .field-group > div:not(.stat-item):not(.stats-grid):not(.finance-stats):not(.attendance-stats):not(.field-row):not(.foto-upload-section):not(.foto-container):not(.kontostand-details):not(.mds-kontostand-grid):not(.mds-kontostand-box):nth-child(2n) {
+  border-right: none;
+}
+
+/* Überschrift + Vollbreiten-Sektionen spannen über beide Spalten */
+.mitglied-content .field-group > h3,
+.mitglied-content .field-group > .foto-upload-section,
+.mitglied-content .field-group > .field-row,
+.mitglied-content .field-group > .mds-kontostand-grid,
+.mitglied-content .field-group > .kontostand-details {
+  grid-column: 1 / -1;
 }
 
 /* === 📸 Foto-Styles - nur rund machen === */
@@ -983,7 +1038,7 @@
 
 .status-badge.active {
   background: var(--farbe-erfolg, var(--color-success-500));
-  color: white;
+  color: var(--ds-text);
   padding: 0.25rem 0.75rem;
   border-radius: var(--comp-radius-pill);
   font-size: 0.75rem;
@@ -1548,7 +1603,7 @@
 
 .allergie-add-btn {
   background: var(--farbe-erfolg, var(--color-success-500));
-  color: white;
+  color: var(--ds-text);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: var(--comp-radius-xs);
@@ -1667,7 +1722,7 @@
   background: var(--primary-gradient);
   color: var(--color-black);
   font-weight: 600;
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--ds-border-strong);
 }
 
 .style-management-container .add-style-compact {
@@ -1705,7 +1760,7 @@
 }
 
 .add-style-compact .style-select:focus {
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 0 0 2px var(--primary-alpha-20);
   outline: none;
 }
@@ -1978,22 +2033,37 @@ h1, h2, h3, h4, h5, h6,
   visibility: visible !important;
 }
 
-/* === 🎨 Überschrift innerhalb der Cards - Golden === */
+/* === Überschrift innerhalb der Cards — klar erkennbar, mit Akzent === */
 .field-group h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  color: var(--ds-text);
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  background-clip: unset;
   margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--primary-alpha-20);
-  text-shadow: 0 0 10px var(--primary-alpha-30);
+  padding: 0 0 0.7rem 0.7rem;
+  border-bottom: 1px solid var(--ds-border);
+  text-shadow: none;
   position: relative;
   z-index: 2;
   opacity: 1 !important;
   visibility: visible !important;
+}
+
+/* Akzent-Strich links vor der Überschrift */
+.field-group h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 3px;
+  height: 0.95rem;
+  border-radius: 2px;
+  background: var(--primary, var(--ds-accent));
 }
 
 /* === 📋 Spezifische Card: Kontostand === */
@@ -2003,14 +2073,14 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* === 🖋️ Field-Group Daten-Rows === */
-.field-group > div:not(.stat-item):not(.stats-grid):not(.finance-stats):not(.attendance-stats):not(.field-row):not(.foto-upload-section):not(.foto-container) {
-  display: grid;
-  grid-template-columns: minmax(110px, 140px) 1fr;
-  gap: 0.75rem;
-  align-items: start;
-  margin-bottom: 0.75rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--primary-alpha-10);
+.field-group > div:not(.stat-item):not(.stats-grid):not(.finance-stats):not(.attendance-stats):not(.field-row):not(.foto-upload-section):not(.foto-container):not(.kontostand-details):not(.mds-kontostand-grid):not(.mds-kontostand-box) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: stretch;
+  margin-bottom: 0;
+  padding: 0.55rem 0;
+  border-bottom: none;
   opacity: 1 !important;
   visibility: visible !important;
 }
@@ -2020,13 +2090,16 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* Labels in field-group */
-.field-group > div:not(.stat-item):not(.stats-grid):not(.finance-stats):not(.attendance-stats):not(.field-row):not(.foto-upload-section):not(.foto-container) label {
+.field-group > div:not(.stat-item):not(.stats-grid):not(.finance-stats):not(.attendance-stats):not(.field-row):not(.foto-upload-section):not(.foto-container):not(.kontostand-details):not(.mds-kontostand-grid):not(.mds-kontostand-box) label {
   font-weight: 600;
-  color: var(--text-secondary) !important;
+  color: var(--ds-accent-50) !important;
   text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
-  padding-top: 0.25rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.7px;
+  padding-top: 0;
+  line-height: 1.3;
+  white-space: normal;
+  overflow: visible;
   opacity: 1 !important;
   visibility: visible !important;
 }
@@ -2046,10 +2119,13 @@ h1, h2, h3, h4, h5, h6,
   filter: none !important;
   word-break: break-word;
   overflow-wrap: break-word;
-  line-height: 1.5;
+  font-size: 0.95rem !important;
+  font-weight: 500;
+  color: var(--ds-text) !important;
+  line-height: 1.35;
   opacity: 1 !important;
   visibility: visible !important;
-  display: inline !important;
+  display: block !important;
 }
 
 /* === 🆕 Neue Field-Row & Field-Column Styles === */
@@ -2744,7 +2820,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .contract-card.aktiv {
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--ds-border-strong);
   background: linear-gradient(135deg, var(--color-emerald-500-alpha-15) 0%, var(--surface-hover) 100%);
 }
 
@@ -2754,7 +2830,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .contract-card.ruhepause {
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--ds-border-strong);
   background: linear-gradient(135deg, var(--alert-info-bg) 0%, var(--surface-hover) 100%);
 }
 
@@ -3489,7 +3565,7 @@ h1, h2, h3, h4, h5, h6,
 
 .style-group-badge.active {
   background: linear-gradient(135deg, var(--color-success-400), var(--color-mint));
-  color: white;
+  color: var(--ds-text);
   box-shadow: 0 4px 12px var(--status-success-border);
 }
 
@@ -3651,7 +3727,7 @@ h1, h2, h3, h4, h5, h6,
 
 .remove-style-btn {
   background: linear-gradient(135deg, var(--color-error-500), var(--color-error-600));
-  color: white;
+  color: var(--ds-text);
   border: none;
   padding: 0.5rem;
   border-radius: 50%;
@@ -3682,7 +3758,7 @@ h1, h2, h3, h4, h5, h6,
 
 .status-badge.active {
   background: linear-gradient(135deg, var(--color-success-400), var(--color-mint));
-  color: white;
+  color: var(--ds-text);
 }
 
 .status-badge.inactive {
@@ -3694,7 +3770,7 @@ h1, h2, h3, h4, h5, h6,
 /* Select Style Button */
 .select-style-btn {
   background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
-  color: white;
+  color: var(--ds-text);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: var(--radius);
@@ -3952,12 +4028,12 @@ h1, h2, h3, h4, h5, h6,
 
 .ruhepause-duration-selection select {
   padding: 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
   font-size: 1rem;
   font-weight: 700;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   color: var(--text-primary);
   cursor: pointer;
   box-shadow: none;
@@ -4256,8 +4332,8 @@ h1, h2, h3, h4, h5, h6,
   gap: 4px;
   margin-bottom: 0.75rem;
   padding: 4px;
-  background: rgba(255,255,255,0.04) !important;
-  border: 1px solid rgba(255,255,255,0.07) !important;
+  background: var(--ds-bg-card) !important;
+  border: 1px solid var(--ds-border) !important;
   border-radius: 8px;
   width: fit-content;
 }
@@ -4276,17 +4352,17 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .sub-tabs-sidebar-style .tab-vertical-btn:hover {
-  background: rgba(255,255,255,0.06) !important;
+  background: var(--ds-bg-card-hover) !important;
   border: none !important;
-  color: rgba(255,255,255,0.9) !important;
+  color: var(--ds-text) !important;
   transform: none !important;
   box-shadow: none !important;
 }
 
 .sub-tabs-sidebar-style .tab-vertical-btn.active {
-  background: rgba(255,255,255,0.1) !important;
+  background: var(--ds-bg-elevated) !important;
   border: none !important;
-  color: rgba(255,255,255,0.95) !important;
+  color: var(--ds-text) !important;
   font-weight: 600 !important;
   box-shadow: none !important;
 }
@@ -4307,7 +4383,7 @@ h1, h2, h3, h4, h5, h6,
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: rgba(255,255,255,0.45);
+  color: var(--ds-text-muted);
   padding: 6px 12px;
   text-align: left;
   border-radius: 0;
@@ -4327,7 +4403,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .stil-tabs-row .tab-vertical-btn:hover {
-  color: rgba(255,255,255,0.75);
+  color: var(--ds-text-secondary);
   background: transparent;
 }
 
@@ -4340,7 +4416,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .stil-tabs-row .tab-vertical-btn.active {
-  color: rgba(255,255,255,0.9);
+  color: var(--ds-text);
   font-weight: 600;
   border-bottom: 2px solid rgba(255,255,255,0.5);
   background: transparent;
@@ -4353,9 +4429,9 @@ h1, h2, h3, h4, h5, h6,
   gap: 4px;
   margin-bottom: var(--ui-card-padding);
   padding: 4px;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
   width: fit-content;
 }
 
@@ -4380,7 +4456,7 @@ h1, h2, h3, h4, h5, h6,
 .sub-tabs-sidebar-style .tab-vertical-btn::before { display: none; }
 
 .sub-tabs-sidebar-style .tab-vertical-btn:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--ds-bg-card-hover);
   color: var(--text-1, #e8eaed);
   transform: none;
 }
@@ -4396,7 +4472,7 @@ h1, h2, h3, h4, h5, h6,
 .sub-tabs-sidebar-style .tab-vertical-btn .tab-label { position: relative; z-index: 1; }
 
 .sub-tabs-sidebar-style .tab-vertical-btn.active {
-  background: rgba(255,255,255,0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-1, #e8eaed);
   font-weight: 600;
   box-shadow: none;
@@ -5061,7 +5137,7 @@ h1, h2, h3, h4, h5, h6,
 /* ── Level-1 Sub-Tabs: Segment-Tabs mit Unterstrich-Indikator ── */
 .mds-tabs--l1 {
   gap: 0;
-  border-bottom: 2px solid rgba(255,255,255,0.07);
+  border-bottom: 2px solid var(--ds-border);
   margin-bottom: 1.75rem;
   padding-bottom: 0;
   flex-wrap: nowrap;
@@ -5076,7 +5152,7 @@ h1, h2, h3, h4, h5, h6,
   border-bottom: 3px solid transparent;
   border-radius: 0;
   margin-bottom: -2px;
-  color: rgba(255,255,255,0.45);
+  color: var(--ds-text-muted);
   padding: 0.6rem 1.25rem;
   font-size: 0.9rem;
   font-weight: 600;
@@ -5092,15 +5168,15 @@ h1, h2, h3, h4, h5, h6,
 
 .mds-tabs--l1 .finance-sub-tab-btn:hover {
   background: transparent;
-  color: rgba(255,255,255,0.75);
+  color: var(--ds-text-secondary);
   transform: none;
-  border-bottom-color: rgba(212,175,55,0.35);
+  border-bottom-color: var(--ds-accent-30);
 }
 
 .mds-tabs--l1 .finance-sub-tab-btn.active {
   background: transparent;
-  color: #d4af37;
-  border-bottom: 3px solid #d4af37;
+  color: var(--ds-accent);
+  border-bottom: 3px solid var(--ds-accent);
   font-weight: 700;
   box-shadow: none;
 }
@@ -5111,16 +5187,16 @@ h1, h2, h3, h4, h5, h6,
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   padding: 0.5rem 0.75rem;
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--ds-border-subtle);
 }
 
 /* Fallback: unmarkierte rows behalten altes Verhalten */
 .finance-sub-tab-btn {
   background: transparent;
-  border: 1px solid rgba(212,175,55,0.18);
-  color: rgba(255,255,255,0.5);
+  border: 1px solid var(--ds-accent-20);
+  color: var(--ds-text-muted);
   padding: 5px 11px;
   border-radius: 20px;
   cursor: pointer;
@@ -5147,9 +5223,9 @@ h1, h2, h3, h4, h5, h6,
 .finance-sub-tab-btn:hover::before { left: 100%; }
 
 .finance-sub-tab-btn:hover {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(212,175,55,0.35);
-  color: rgba(255,255,255,0.85);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-accent-30);
+  color: var(--ds-text);
   transform: none;
 }
 
@@ -5158,11 +5234,11 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .finance-sub-tab-btn.active {
-  background: rgba(212,175,55,0.15);
-  color: #d4af37;
+  background: var(--ds-accent-15);
+  color: var(--ds-accent);
   font-weight: 700;
-  border: 1px solid rgba(212,175,55,0.45);
-  box-shadow: 0 1px 6px rgba(212,175,55,0.12);
+  border: 1px solid var(--ds-accent-50);
+  box-shadow: 0 1px 6px var(--ds-accent-10);
 }
 
 .finance-management-container {
@@ -5196,7 +5272,7 @@ h1, h2, h3, h4, h5, h6,
 
 .status-badge.active {
   background: linear-gradient(135deg, var(--color-success-500), var(--color-success-600));
-  color: white;
+  color: var(--ds-text);
 }
 
 .mandate-details {
@@ -5574,7 +5650,7 @@ h1, h2, h3, h4, h5, h6,
 
 .status-badge.aktiv {
   background: var(--farbe-erfolg, var(--color-success-500));
-  color: white;
+  color: var(--ds-text);
   padding: 0.5rem 1rem;
   border-radius: var(--comp-radius-pill);
   font-size: 0.8rem;
@@ -5592,7 +5668,7 @@ h1, h2, h3, h4, h5, h6,
 
 .status-badge.gekuendigt {
   background: linear-gradient(90deg, var(--color-error-600), var(--color-gray-500));
-  color: white;
+  color: var(--ds-text);
   padding: 0.5rem 1rem;
   border-radius: var(--comp-radius-pill);
   font-size: 0.8rem;
@@ -5757,7 +5833,7 @@ h1, h2, h3, h4, h5, h6,
 
 .graduation-select:focus {
   outline: none;
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 0 0 2px var(--primary-alpha-20);
 }
 
@@ -5845,7 +5921,7 @@ h1, h2, h3, h4, h5, h6,
 .ready-indicator {
   padding: 0.75rem;
   background: linear-gradient(135deg, var(--color-success-500), var(--color-success-600));
-  color: white;
+  color: var(--ds-text);
   border-radius: var(--radius);
   text-align: center;
   font-weight: 700;
@@ -5893,7 +5969,7 @@ h1, h2, h3, h4, h5, h6,
 
 .date-input:focus {
   outline: none;
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 0 0 2px var(--primary-alpha-20);
 }
 
@@ -5912,7 +5988,7 @@ h1, h2, h3, h4, h5, h6,
 
 .notes-textarea:focus {
   outline: none;
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 0 0 2px var(--primary-alpha-20);
 }
 
@@ -7205,7 +7281,7 @@ label.foto-upload-btn,
   /* Background & Border */
   background: var(--bg-secondary) !important;
   background-color: var(--bg-secondary) !important;
-  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  border: 2px solid var(--ds-border-strong) !important;
 
   /* Display & Visibility */
   display: inline-flex !important;
@@ -7284,7 +7360,7 @@ select:hover {
 
 select:focus {
   background-color: var(--color-sumi) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  border-color: var(--ds-border-strong) !important;
   box-shadow: 0 0 0 2px var(--primary-alpha-20) !important;
   outline: none !important;
 }
@@ -7570,15 +7646,39 @@ option:checked {
 .ausweis-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1.25rem;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
   justify-content: center;
 }
 
+/* Kompakter Download-Button — halbe Größe, kein Glow */
+.mds-ausweis-wrap .ausweis-download-btn,
 .ausweis-download-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  padding: 0.3rem 0.75rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  border-radius: 7px !important;
+  background: var(--ds-bg-card-hover) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  color: var(--text-secondary, #bbb) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  transition: background 0.15s ease, border-color 0.15s ease !important;
+}
+.mds-ausweis-wrap .ausweis-download-btn:hover,
+.ausweis-download-btn:hover {
+  background: var(--ds-bg-elevated) !important;
+  border-color: var(--ds-border-strong) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.ausweis-download-btn::before,
+.ausweis-download-btn::after {
+  display: none !important;
 }
 
 .btn-wallet {
@@ -7895,6 +7995,119 @@ option:checked {
 }
 
 .mds2-dark-input {
-  background: #1a1a1a;
+  background: var(--ds-bg-surface);
   color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EINHEITLICHE CARD-OPTIK FÜR ALLE TABS
+   (Gesundheit, Entwicklung, Mitgliedschaft, Dokumente,
+    Gurt & Stil, Nachrichten) — gleiche Hülle wie Allgemein-Tab
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Gemeinsame Karten-Hülle ── */
+.mitglied-content .grt-card,
+.mitglied-content .dok-card,
+.mitglied-content .bnk-card,
+.mitglied-content .mst-card,
+.mitglied-content .mst-info-card,
+.mitglied-content .fam-card,
+.mitglied-content .fam-vtr-card,
+.mitglied-content .fam-merge-panel,
+.mitglied-content .mmt-container,
+.mitglied-content .mmt-archiv-box,
+.mitglied-content .stil-card-col,
+.mitglied-content .mds-news-card,
+.mitglied-content .mds-notification-card,
+.mitglied-content .anw-monthly-card,
+.mitglied-content .anw-list-card,
+.mitglied-content .vtr-wrapper,
+.mitglied-content .finance-management-container {
+  background: linear-gradient(160deg, var(--ds-bg-card) 0%, var(--ds-bg-card) 45%, var(--ds-bg-card) 100%) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.32) !important;
+  backdrop-filter: none !important;
+}
+
+.mitglied-content .grt-card:hover,
+.mitglied-content .dok-card:hover,
+.mitglied-content .bnk-card:hover,
+.mitglied-content .mst-card:hover,
+.mitglied-content .fam-card:hover {
+  border-color: var(--ds-accent-25) !important;
+}
+
+/* ── KPI-Statistik-Kacheln (kleiner, kompakt) ── */
+.mitglied-content .finance-kpi-card,
+.mitglied-content .anw-stat-card,
+.mitglied-content .anw-quote-card {
+  background: var(--ds-bg-card) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+/* ── Einheitliche Sektions-Überschriften mit Goldakzent ── */
+.mitglied-content .grt-card-title,
+.mitglied-content .dok-section-title,
+.mitglied-content .bnk-card-title,
+.mitglied-content .mst-section-title,
+.mitglied-content .fam-section-title,
+.mitglied-content .mmt-section-title,
+.mitglied-content .mds-news-title,
+.mitglied-content .mds-nachrichten-title,
+.mitglied-content .mds2-section-heading {
+  color: var(--ds-text) !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  background: none !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.95) !important;
+  text-shadow: none !important;
+  padding-bottom: 0.6rem !important;
+  margin: 0 0 0.9rem 0 !important;
+  border-bottom: 1px solid var(--ds-accent-30) !important;
+}
+
+/* ── Sub-Tab-Leisten (Vertrag/Beiträge/Bank …) einheitlich ── */
+.mitglied-content .finance-sub-tabs,
+.mitglied-content .mds-finance-sub-tabs-row {
+  gap: 0.4rem !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 1rem !important;
+}
+
+/* ── NACHRICHTEN: Verschachtelung auflösen ──────────────────────
+   Section-Wrapper sind nur Abstand (KEINE Karten). Nur die
+   Item-Karten (News/Notification) sind sichtbare Karten. */
+.mitglied-content .mds-nachrichten-content {
+  padding: 0 !important;
+}
+.mitglied-content .mds-news-section,
+.mitglied-content .mds-nachrichten-section {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 0 0.75rem 0 !important;
+}
+.mitglied-content .mds-news-section {
+  margin-bottom: 2rem !important;
+}
+/* Item-Karten: neutraler Rahmen statt Gold, kompakter */
+.mitglied-content .mds-news-card,
+.mitglied-content .mds-notification-card {
+  padding: 1rem 1.15rem !important;
+  backdrop-filter: none !important;
+}
+.mitglied-content .mds-news-card:hover,
+.mitglied-content .mds-notification-card:hover {
+  border-color: var(--ds-accent-25) !important;
+}
+/* Abstand der Notification-Liste zur Überschrift */
+.mitglied-content .mds-notifications-list {
+  margin-top: 0.25rem;
 }

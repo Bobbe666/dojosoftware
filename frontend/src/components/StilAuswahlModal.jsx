@@ -256,12 +256,12 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
                 </h2>
 
                 {paketLoading && (
-                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.45)', marginTop: '1.5rem' }}>Paket wird geladen…</p>
+                  <p style={{ textAlign: 'center', color: 'var(--ds-text-muted)', marginTop: '1.5rem' }}>Paket wird geladen…</p>
                 )}
 
                 {!paketLoading && !starterpaket && (
                   <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>
+                    <p style={{ color: 'var(--ds-text-muted)', fontSize: '0.9rem' }}>
                       Für diesen Stil ist noch kein Starterpaket hinterlegt.<br />
                       Wende dich an unser Team.
                     </p>
@@ -280,7 +280,7 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
                     )}
 
                     {starterpaket.beschreibung && (
-                      <p style={{ fontSize: '0.87rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1rem', lineHeight: 1.5 }}>
+                      <p style={{ fontSize: '0.87rem', color: 'var(--ds-text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
                         {starterpaket.beschreibung}
                       </p>
                     )}
@@ -309,7 +309,7 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
                               </div>
                               <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 {pos.rabatt_prozent > 0 && original_cent > 0 && (
-                                  <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', textDecoration: 'line-through' }}>
+                                  <div style={{ fontSize: '0.78rem', color: 'var(--ds-text-muted)', textDecoration: 'line-through' }}>
                                     {(original_cent * pos.menge / 100).toFixed(2)} €
                                   </div>
                                 )}
@@ -323,7 +323,7 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
                             {opts && (
                               <div style={{ paddingLeft: '0.25rem' }}>
                                 {opts.hat_preiskategorien && isKid !== null && (
-                                  <div style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.45)', marginBottom: '0.3rem' }}>
+                                  <div style={{ fontSize: '0.76rem', color: 'var(--ds-text-muted)', marginBottom: '0.3rem' }}>
                                     {isKid ? '👧 Kinder-Größe' : '🧑 Erwachsenen-Größe'}
                                   </div>
                                 )}
@@ -356,7 +356,7 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
                       </div>
                     </div>
 
-                    <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', margin: '0.75rem 0 0', textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--ds-text-muted)', margin: '0.75rem 0 0', textAlign: 'center' }}>
                       Der Betrag wird per SEPA-Lastschrift eingezogen.
                     </p>
 

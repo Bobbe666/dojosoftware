@@ -33,7 +33,7 @@ const CHART_TOOLTIP_STYLE = {
   border: '1px solid rgba(255,215,0,0.2)',
   borderRadius: '8px',
   fontSize: '0.82rem',
-  color: '#fff',
+  color: 'var(--ds-text)',
 };
 
 export default function DashboardUebersicht() {

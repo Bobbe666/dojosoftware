@@ -43,7 +43,7 @@
 .filter-toggle:hover,
 .filter-toggle.active {
   background: var(--primary-color, #3b82f6);
-  color: white;
+  color: var(--ds-text);
   border-color: var(--primary-color, var(--status-indigo));
 }
 
@@ -97,7 +97,7 @@
 
 /* Filter Panel */
 .filter-panel {
-  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  background: var(--bg-card, var(--ds-bg-card-hover));
   border: 1px solid var(--border-color, #e5e7eb);
   border-radius: var(--comp-radius-xl);
   padding: 20px;
@@ -141,7 +141,7 @@
   padding: 8px 12px;
   border: 1px solid var(--border-color, #e5e7eb);
   border-radius: var(--comp-radius-sm);
-  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  background: var(--bg-card, var(--ds-bg-card-hover));
 }
 
 .search-input input {
@@ -166,7 +166,7 @@
 
 /* Table */
 .audit-table-container {
-  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  background: var(--bg-card, var(--ds-bg-card-hover));
   border: 1px solid var(--border-color, #e5e7eb);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
@@ -241,7 +241,7 @@
   font-size: 0.75rem;
   font-weight: 500;
   background-color: var(--badge-bg, #6b7280);
-  color: white;
+  color: var(--ds-text);
 }
 
 .user-cell {
@@ -326,7 +326,7 @@
 }
 
 .modal-content {
-  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  background: var(--bg-card, var(--ds-bg-card-hover));
   border-radius: var(--comp-radius-xl);
   max-width: 700px;
   width: 100%;
@@ -596,11 +596,11 @@
 }
 
 .delete-row-btn:hover {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--ds-danger-10);
 }
 
 .row-selected {
-  background: rgba(239, 68, 68, 0.08) !important;
+  background: var(--ds-danger-10) !important;
 }
 
 .delete-selection-btn {
@@ -608,8 +608,8 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: var(--comp-radius-md);
   color: var(--status-error);
   font-size: 0.85rem;
@@ -619,7 +619,7 @@
 }
 
 .delete-selection-btn:hover {
-  background: rgba(239, 68, 68, 0.25);
+  background: var(--ds-danger-25);
 }
 
 .bereinigen-btn {
@@ -627,8 +627,8 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: var(--comp-radius-md);
   color: var(--status-error);
   font-size: 0.85rem;
@@ -638,7 +638,7 @@
 }
 
 .bereinigen-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
 }
 
 /* Bereinigen Modal */
@@ -647,8 +647,8 @@
 }
 
 .bereinigen-warning {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: var(--comp-radius-md);
   padding: 12px 16px;
   color: var(--status-error);
@@ -668,18 +668,18 @@
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md);
   cursor: pointer;
   font-size: 0.9rem;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   transition: background 0.2s;
 }
 
 .bereinigen-option.selected {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-10);
+  border-color: var(--ds-danger-25);
 }
 
 .bereinigen-option input[type="radio"] {
@@ -689,10 +689,10 @@
 .bereinigen-date {
   margin-left: 36px;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm);
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.9rem;
 }
 
@@ -710,10 +710,10 @@
 .confirm-input {
   width: 100%;
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-danger-25);
   border-radius: var(--comp-radius-md);
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   font-size: 1rem;
   letter-spacing: 2px;
   box-sizing: border-box;
@@ -727,10 +727,10 @@
 
 .cancel-btn {
   padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   cursor: pointer;
   font-size: 0.9rem;
 }
@@ -743,7 +743,7 @@
   background: var(--status-error);
   border: none;
   border-radius: var(--comp-radius-md);
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 700;
   font-size: 0.9rem;
   cursor: pointer;
@@ -751,7 +751,7 @@
 }
 
 .delete-confirm-btn:disabled {
-  background: rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-25);
   cursor: not-allowed;
 }
 
@@ -783,16 +783,16 @@
 .modus-btn {
   padding: 8px 16px;
   border-radius: var(--comp-radius-md);
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.06);
-  color: var(--text-primary, #fff);
+  border: 1px solid var(--ds-border-strong);
+  background: var(--ds-bg-card-hover);
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.modus-btn:hover { background: rgba(255,255,255,0.12); }
+.modus-btn:hover { background: var(--ds-bg-elevated); }
 
 .modus-btn.active {
   background: rgba(59,130,246,0.2);
@@ -801,8 +801,8 @@
 }
 
 .modus-btn.danger.active {
-  background: rgba(239,68,68,0.2);
-  border-color: rgba(239,68,68,0.5);
+  background: var(--ds-danger-25);
+  border-color: var(--ds-danger-25);
   color: var(--status-error);
 }
 
@@ -828,10 +828,10 @@
 .bf-group input,
 .bf-group select {
   padding: 8px 10px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.15);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm);
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.85rem;
 }
 
@@ -851,8 +851,8 @@
 
 .shortcut-btn {
   padding: 3px 8px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xs);
   color: var(--text-secondary, #aaa);
   font-size: 0.75rem;
@@ -878,16 +878,16 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.15);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.vorschau-btn:hover { background: rgba(255,255,255,0.12); }
+.vorschau-btn:hover { background: var(--ds-bg-elevated); }
 .vorschau-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .vorschau-result {
@@ -902,8 +902,8 @@
 }
 
 .bereinigen-error {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: var(--comp-radius-md);
   padding: 10px 14px;
   color: var(--status-error);

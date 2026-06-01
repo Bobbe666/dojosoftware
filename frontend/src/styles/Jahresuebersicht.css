@@ -223,7 +223,7 @@
 
 /* KPI card box */
 .ju-kpi-card {
-  background: var(--bg-secondary, #1a1a1a);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 1px solid var(--border-color, #333);
   border-radius: 12px;
   padding: 1.25rem 1.5rem;
@@ -312,7 +312,7 @@
 
 /* Error box */
 .ju-error-box {
-  background: #ef444420;
+  background: var(--ds-danger)20;
   border: 1px solid var(--status-error)40;
   border-radius: 8px;
   padding: 1rem;
@@ -431,7 +431,7 @@
 /* Bar fill (width set inline, rest in CSS) */
 .ju-bar-fill {
   height: 100%;
-  background: #ef4444;
+  background: var(--ds-danger);
   border-radius: 3px;
   transition: width 0.4s ease;
 }

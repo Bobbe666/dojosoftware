@@ -10,9 +10,9 @@
   padding: 1rem;
   text-align: center;
   color: var(--text-muted);
-  background: rgba(255,255,255,0.03);
+  background: var(--ds-bg-card);
   border-radius: 8px;
-  border: 1px dashed rgba(255,255,255,0.1);
+  border: 1px dashed var(--ds-border);
 }
 
 /* Compact view */
@@ -25,20 +25,20 @@
   justify-content: center;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--badge-farbe, #ffd700) 25%, transparent), color-mix(in srgb, var(--badge-farbe, #ffd700) 13%, transparent));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--badge-farbe, var(--ds-accent)) 25%, transparent), color-mix(in srgb, var(--badge-farbe, var(--ds-accent)) 13%, transparent));
   border: 2px solid var(--badge-farbe, var(--primary));
 }
 
 .badge-display__compact-icon:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--badge-farbe, #ffd700) 38%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--badge-farbe, var(--ds-accent)) 38%, transparent);
 }
 
 .badge-display__compact-more {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.1);
+  background: var(--ds-bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,7 +48,7 @@
 
 /* Full view */
 .badge-display__container {
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 12px;
   padding: 1rem;
   border: 1px solid var(--primary-alpha-20);
@@ -78,13 +78,13 @@
   gap: 0.5rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: default;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--badge-farbe, #ffd700) 8%, transparent), transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--badge-farbe, var(--ds-accent)) 8%, transparent), transparent);
   border: 1px solid color-mix(in srgb, var(--badge-farbe, var(--primary)) 25%, transparent);
 }
 
 .badge-display__card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--badge-farbe, #ffd700) 19%, transparent);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--badge-farbe, var(--ds-accent)) 19%, transparent);
 }
 
 .badge-display__card-icon {
@@ -94,9 +94,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--badge-farbe, #ffd700) 25%, transparent), color-mix(in srgb, var(--badge-farbe, #ffd700) 13%, transparent));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--badge-farbe, var(--ds-accent)) 25%, transparent), color-mix(in srgb, var(--badge-farbe, var(--ds-accent)) 13%, transparent));
   border: 2px solid var(--badge-farbe, var(--primary));
-  box-shadow: 0 0 16px color-mix(in srgb, var(--badge-farbe, #ffd700) 25%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--badge-farbe, var(--ds-accent)) 25%, transparent);
 }
 
 .badge-display__card-name {

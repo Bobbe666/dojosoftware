@@ -1,0 +1,266 @@
+/* Theme-Einstellungen — nutzt ausschließlich DS-Tokens */
+
+.te-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--ds-space-6);
+  font-family: var(--ds-font);
+  color: var(--ds-text);
+}
+
+.te-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  margin-bottom: var(--ds-space-6);
+}
+.te-header-info { flex: 1; }
+
+.te-savestate {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--ds-fs-xs); font-weight: var(--ds-fw-semibold);
+  padding: 4px 10px; border-radius: var(--ds-radius-pill);
+  white-space: nowrap;
+}
+.te-savestate--idle   { display: none; }
+.te-savestate--saving { background: var(--ds-info-10);    color: var(--ds-info); }
+.te-savestate--saved  { background: var(--ds-success-10); color: var(--ds-success-soft); }
+.te-savestate--local  { background: var(--ds-warning-10); color: var(--ds-warning-soft); }
+.te-title {
+  margin: 0;
+  font-size: var(--ds-fs-2xl);
+  font-weight: var(--ds-fw-bold);
+  color: var(--ds-text);
+}
+.te-subtitle {
+  margin: 4px 0 0;
+  font-size: var(--ds-fs-sm);
+  color: var(--ds-text-muted);
+}
+
+.te-card { display: flex; flex-direction: column; gap: var(--ds-space-4); }
+
+/* Eltern-Clipping aufheben — sonst greift position:sticky nicht
+   (.content-card setzt overflow:hidden; nur für DIESE Seite neutralisieren) */
+.content-card:has(.te-container) { overflow: visible !important; }
+.dashboard-main:has(.te-container) { overflow: visible !important; }
+
+/* Sticky Live-Vorschau */
+.te-preview-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4);
+  margin-bottom: var(--ds-space-5);
+  border-radius: var(--ds-radius-lg);
+  border: 1px solid var(--ds-border-accent);
+  background: var(--ds-bg-surface);
+  box-shadow: var(--ds-shadow-md);
+  backdrop-filter: blur(8px);
+}
+.te-preview-badges { display: flex; flex-wrap: wrap; gap: var(--ds-space-2); align-items: center; }
+.te-preview-inner { padding: var(--ds-space-3) var(--ds-space-4); }
+
+/* Einklappbare Sections */
+.te-section { gap: 0; padding: 0; overflow: hidden; }
+.te-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%;
+  padding: var(--ds-space-4) var(--ds-space-5);
+  background: none; border: none; cursor: pointer;
+  color: var(--ds-text);
+  font-family: var(--ds-font);
+}
+.te-section-title { font-size: var(--ds-fs-md); font-weight: var(--ds-fw-bold); }
+.te-chev { transition: transform var(--ds-transition); color: var(--ds-text-muted); flex-shrink: 0; }
+.te-section.is-open .te-chev { transform: rotate(180deg); }
+.te-section-body {
+  display: flex; flex-direction: column; gap: var(--ds-space-4);
+  padding: 0 var(--ds-space-5) var(--ds-space-5);
+}
+.te-section + .te-section { margin-top: var(--ds-space-3); }
+
+/* Toggle-Zeile */
+.te-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--ds-fs-sm);
+  color: var(--ds-text-secondary);
+  cursor: pointer;
+}
+
+/* Schalter (Checkbox als Switch) */
+.te-switch {
+  appearance: none;
+  width: 42px;
+  height: 24px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--ds-transition);
+  flex-shrink: 0;
+}
+.te-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--ds-text-muted);
+  transition: transform var(--ds-transition), background var(--ds-transition);
+}
+.te-switch:checked {
+  background: var(--ds-accent-25);
+  border-color: var(--ds-border-accent);
+}
+.te-switch:checked::after {
+  transform: translateX(18px);
+  background: var(--ds-accent);
+}
+
+/* Farb-Presets */
+.te-presets { display: flex; gap: var(--ds-space-2); flex-wrap: wrap; }
+.te-presets.te-disabled { opacity: 0.4; pointer-events: none; }
+.te-swatch {
+  width: 34px; height: 34px;
+  border-radius: var(--ds-radius-md);
+  background: var(--sw, var(--ds-accent));
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--ds-transition), border-color var(--ds-transition);
+}
+.te-swatch:hover { transform: scale(1.08); }
+.te-swatch.is-active { border-color: var(--ds-text); }
+.te-swatch--custom {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ds-bg-elevated);
+  border: 1px dashed var(--ds-border-strong);
+  overflow: hidden;
+  position: relative;
+}
+.te-swatch--custom input[type="color"] {
+  position: absolute; inset: -4px;
+  width: calc(100% + 8px); height: calc(100% + 8px);
+  border: none; padding: 0; cursor: pointer; background: none;
+}
+
+/* Sperrbildschirm (Nicht-Enterprise) */
+.te-locked {
+  max-width: 520px;
+  margin: 8vh auto 0;
+  align-items: center;
+  text-align: center;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-8) var(--ds-space-6);
+}
+.te-locked-icon {
+  width: 80px; height: 80px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--ds-accent-10);
+  color: var(--ds-accent);
+}
+.te-locked .te-subtitle { font-size: var(--ds-fs-md); line-height: 1.5; }
+
+/* Themen-Galerie */
+.te-presets-card { margin-bottom: var(--ds-space-5); }
+.te-hint { font-weight: var(--ds-fw-normal); font-size: var(--ds-fs-xs); color: var(--ds-text-muted); }
+.te-theme-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--ds-space-3);
+}
+.te-theme-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: var(--ds-space-4) var(--ds-space-3);
+  border-radius: var(--ds-radius-lg);
+  border: 1px solid var(--ds-border);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--tile) 16%, transparent), transparent 70%),
+    var(--ds-bg-card);
+  color: var(--ds-text);
+  cursor: pointer;
+  transition: transform var(--ds-transition), border-color var(--ds-transition);
+}
+.te-theme-tile:hover { transform: translateY(-2px); border-color: var(--ds-border-strong); }
+.te-theme-tile.is-active {
+  border-color: var(--tile);
+  box-shadow: 0 0 0 1px var(--tile) inset;
+}
+.te-theme-emoji { font-size: 1.6rem; line-height: 1; }
+.te-theme-name { font-size: var(--ds-fs-sm); font-weight: var(--ds-fw-semibold); }
+
+.te-note { margin: 0; font-size: var(--ds-fs-xs); color: var(--ds-text-muted); }
+.te-segment--lg .te-segment-btn { padding: var(--ds-space-3); font-size: var(--ds-fs-sm); }
+
+/* Mini-Toggle „eigene" im Feldkopf */
+.te-field-head { display: flex; align-items: center; justify-content: space-between; }
+.te-mini-toggle {
+  display: flex; align-items: center; gap: 5px;
+  font-size: var(--ds-fs-xs); color: var(--ds-text-muted); cursor: pointer;
+  text-transform: none; letter-spacing: 0;
+}
+.te-mini-toggle input { accent-color: var(--ds-accent); cursor: pointer; }
+.te-color-field.te-disabled { opacity: 0.5; }
+
+/* Felder */
+.te-field { display: flex; flex-direction: column; gap: var(--ds-space-2); }
+.te-label {
+  font-size: var(--ds-fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-muted);
+  font-weight: var(--ds-fw-semibold);
+}
+
+.te-color-field { display: flex; align-items: center; gap: var(--ds-space-3); }
+.te-color-field input[type="color"] {
+  width: 42px; height: 34px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: none; cursor: pointer; padding: 2px;
+}
+.te-color-hex {
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-fs-sm);
+  color: var(--ds-text-secondary);
+}
+
+/* Segment-Buttons (Schatten) */
+.te-segment {
+  display: flex;
+  gap: 2px;
+  background: var(--ds-bg-card);
+  border-radius: var(--ds-radius-md);
+  padding: 3px;
+}
+.te-segment-btn {
+  flex: 1;
+  padding: var(--ds-space-2);
+  border: none;
+  border-radius: var(--ds-radius-sm);
+  background: transparent;
+  color: var(--ds-text-muted);
+  font-size: var(--ds-fs-xs);
+  font-weight: var(--ds-fw-semibold);
+  cursor: pointer;
+  transition: background var(--ds-transition), color var(--ds-transition);
+}
+.te-segment-btn.is-active {
+  background: var(--ds-accent-20);
+  color: var(--ds-accent);
+}
+
+/* Vorschau */
+.te-preview-card { grid-column: 1 / -1; }
+.te-preview { display: flex; flex-wrap: wrap; gap: var(--ds-space-3); align-items: center; }
+.te-preview-row { display: flex; gap: var(--ds-space-3); }
+.te-preview-inner { flex: 1; min-width: 260px; }
+.te-preview-tabs { width: 100%; }

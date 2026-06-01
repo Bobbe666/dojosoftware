@@ -15,7 +15,7 @@
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: rgba(255, 215, 0, 0.7);
+  color: var(--ds-accent-50);
   margin: 0 0 0.85rem;
 }
 
@@ -34,8 +34,8 @@
 }
 
 .du-kpi-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 1rem 1.2rem;
   display: flex;
@@ -49,24 +49,24 @@
 }
 
 .du-kpi-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border-strong);
 }
 
 .du-kpi-card--gold {
-  border-color: rgba(255, 215, 0, 0.18);
-  background: rgba(255, 215, 0, 0.04);
+  border-color: var(--ds-accent-20);
+  background: var(--ds-accent-05);
 }
 
 .du-kpi-card--gold:hover {
-  background: rgba(255, 215, 0, 0.07);
-  border-color: rgba(255, 215, 0, 0.3);
+  background: var(--ds-accent-05);
+  border-color: var(--ds-accent-30);
 }
 
 .du-kpi-card--active {
-  border-color: rgba(255, 215, 0, 0.45) !important;
-  background: rgba(255, 215, 0, 0.08) !important;
-  box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.2);
+  border-color: var(--ds-accent-50) !important;
+  background: var(--ds-accent-10) !important;
+  box-shadow: 0 0 0 1px var(--ds-accent-20);
 }
 
 .du-kpi-icon {
@@ -78,28 +78,28 @@
 .du-kpi-value {
   font-size: 1.8rem;
   font-weight: 800;
-  color: #FFD700;
+  color: var(--ds-accent);
   line-height: 1;
 }
 
 .du-kpi-label {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
   font-weight: 500;
   letter-spacing: 0.03em;
 }
 
 .du-kpi-hint {
   font-size: 0.63rem;
-  color: rgba(255, 215, 0, 0.38);
+  color: var(--ds-accent-30);
   margin-top: 0.25rem;
   letter-spacing: 0.02em;
 }
 
 /* ── Detail Panel ── */
 .du-detail-panel {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-accent-20);
   border-radius: 10px;
   padding: 1rem 1.2rem;
   animation: du-slide-in 0.18s ease;
@@ -120,13 +120,13 @@
 .du-detail-title {
   font-size: 0.82rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--ds-text-secondary);
 }
 
 .du-detail-close {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-muted);
   width: 24px;
   height: 24px;
   border-radius: 4px;
@@ -140,7 +140,7 @@
 }
 
 .du-detail-close:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
   border-color: rgba(255, 255, 255, 0.3);
 }
 
@@ -156,8 +156,8 @@
 }
 
 .du-chart-card {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 1rem 1.1rem 0.75rem;
 }
@@ -165,7 +165,7 @@
 .du-chart-card-title {
   font-size: 0.78rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   margin-bottom: 0.1rem;
 }
 
@@ -179,8 +179,8 @@
 
 .du-zeitraum-btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-muted);
   font-size: 0.68rem;
   font-weight: 600;
   padding: 0.2rem 0.6rem;
@@ -192,14 +192,14 @@
 }
 
 .du-zeitraum-btn:hover {
-  color: rgba(255, 255, 255, 0.75);
-  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--ds-text-secondary);
+  border-color: var(--ds-border-strong);
 }
 
 .du-zeitraum-btn--active {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.35);
-  color: #FFD700;
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-30);
+  color: var(--ds-accent);
 }
 
 /* ── Chart ── */
@@ -209,7 +209,7 @@
 
 .du-chart-subtitle {
   font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
   margin: 0 0 0.6rem;
 }
 
@@ -228,19 +228,19 @@
   gap: 0.75rem;
   padding: 0.5rem 0.7rem;
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border-subtle);
   cursor: pointer;
   transition: background 0.12s;
 }
 
 .du-detail-row:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
 }
 
 .du-detail-time {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   white-space: nowrap;
   margin-left: auto;
 }
@@ -296,9 +296,9 @@
 .du-alert-chip:hover { opacity: 0.82; }
 
 .du-alert-chip--yellow {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.25);
-  color: #FFD700;
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-25);
+  color: var(--ds-accent);
 }
 
 .du-alert-chip--orange {
@@ -310,7 +310,7 @@
 .du-alert-chip--red {
   background: rgba(248, 113, 113, 0.12);
   border-color: rgba(248, 113, 113, 0.3);
-  color: #f87171;
+  color: var(--ds-danger-soft);
 }
 
 .du-alert-chip--green {
@@ -320,9 +320,9 @@
 }
 
 .du-alert-chip--muted {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.4);
+  background: var(--ds-bg-card);
+  border-color: var(--ds-border);
+  color: var(--ds-text-muted);
   cursor: default;
 }
 
@@ -339,30 +339,30 @@
   gap: 0.85rem;
   padding: 0.6rem 0.9rem;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border-subtle);
   cursor: pointer;
   transition: background 0.13s, border-color 0.13s;
   text-decoration: none;
 }
 
 .du-member-row:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--ds-bg-card-hover);
+  border-color: var(--ds-border);
 }
 
 .du-member-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-20);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #FFD700;
+  color: var(--ds-accent);
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -382,7 +382,7 @@
 .du-member-name {
   font-size: 0.86rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--ds-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -397,14 +397,14 @@
 
 .du-member-date {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--ds-text-faint);
 }
 
 .du-member-tarif {
   font-size: 0.68rem;
-  color: rgba(255, 215, 0, 0.6);
-  background: rgba(255, 215, 0, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  color: var(--ds-accent-50);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-20);
   border-radius: 3px;
   padding: 0.05rem 0.35rem;
   white-space: nowrap;
@@ -414,21 +414,21 @@
 }
 
 .du-member-arrow {
-  color: rgba(255, 255, 255, 0.22);
+  color: var(--ds-text-faint);
   font-size: 0.9rem;
   flex-shrink: 0;
 }
 
 .du-empty {
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
   font-style: italic;
   padding: 0.5rem 0;
 }
 
 .du-loading {
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--ds-text-faint);
   font-style: italic;
   padding: 0.5rem 0;
 }

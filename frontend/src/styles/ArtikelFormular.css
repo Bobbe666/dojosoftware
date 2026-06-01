@@ -9,7 +9,7 @@
 .af3-basis-input {
   padding: 0.75rem 1rem;
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 1rem;
@@ -32,7 +32,7 @@
 .af3-select {
   padding: 0.75rem 1rem;
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 1rem;
@@ -110,7 +110,7 @@
 /* -------------------------------------------------- */
 .af3-error-banner {
   padding: 1rem;
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--ds-danger-10);
   border: 1px solid var(--status-error);
   border-radius: 8px;
   color: var(--error);
@@ -182,7 +182,7 @@
   gap: 0.75rem;
   padding: 1rem 1.25rem;
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -234,7 +234,7 @@
   height: 46px;
   cursor: pointer;
   border-radius: 8px;
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
 }
 
 /* -------------------------------------------------- */
@@ -346,7 +346,7 @@
   gap: 0.5rem;
   padding: 0.25rem 0.75rem;
   background: var(--glass-bg);
-  border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 1px solid var(--border-secondary, var(--ds-border));
   border-radius: 20px;
   font-size: 0.85rem;
 }
@@ -383,7 +383,7 @@
   height: 42px;
   cursor: pointer;
   border-radius: 8px;
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
 }
 
 /* -------------------------------------------------- */
@@ -470,7 +470,7 @@
   display: flex;
   gap: 0.35rem;
   margin-bottom: 1rem;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ds-bg-card-hover);
   padding: 0.25rem;
   border-radius: 8px;
 }
@@ -622,7 +622,7 @@
 
 /* Kalkulationsparameter box */
 .af3-kalk-params-box {
-  background: rgba(255, 215, 0, 0.06);
+  background: var(--ds-accent-05);
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
@@ -670,8 +670,8 @@
 /* Zuordnung hint (if no variants) */
 .af3-no-variant-hint {
   padding: 0.75rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   font-size: 0.85rem;
   color: var(--error);
@@ -758,7 +758,7 @@
 .af3-einzelpreis-box {
   margin-bottom: 1rem;
   padding: 1rem;
-  background: rgba(255, 215, 0, 0.06);
+  background: var(--ds-accent-05);
   border: 2px solid var(--primary-alpha-30);
   border-radius: 8px;
 }
@@ -820,8 +820,8 @@
 /* No-prices hint */
 .af3-no-prices-hint {
   padding: 1rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   text-align: center;
   color: var(--error);
@@ -924,7 +924,7 @@
   grid-template-columns: 1fr 80px 70px 80px;
   gap: 0.5rem;
   padding: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
   font-size: 0.8rem;
 }
 
@@ -962,7 +962,7 @@
   font-size: 0.75rem;
   padding: 0.15rem 0.3rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ds-bg-card-hover);
   border-radius: 4px;
   color: var(--color-success-400);
 }
@@ -1015,7 +1015,7 @@
   font-size: 0.75rem;
   padding: 0.15rem 0.3rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ds-bg-card-hover);
   border-radius: 4px;
   color: var(--color-info-400);
 }
@@ -1095,7 +1095,7 @@
   margin-bottom: 1rem;
   padding: 1rem;
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 8px;
 }
 
@@ -1124,7 +1124,7 @@
 /* Bestandstabelle container */
 .af3-lager-table-container {
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 12px;
   overflow: hidden;
 }
@@ -1136,7 +1136,7 @@
   gap: 1rem;
   padding: 1rem 1.5rem;
   background: var(--glass-bg-hover);
-  border-bottom: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-bottom: 2px solid var(--border-secondary, var(--ds-border));
   font-weight: 600;
   color: var(--primary);
   font-size: 0.9rem;
@@ -1249,8 +1249,8 @@
 /* Rabatt-Tab                                          */
 /* -------------------------------------------------- */
 .af3-rabatt-info-box {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
-  border: 2px solid rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, var(--ds-success-10) 0%, var(--ds-success-10) 100%);
+  border: 2px solid var(--ds-success-25);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -1289,7 +1289,7 @@
 .af3-rabatt-wert-input {
   padding: 0.75rem 1rem;
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 1.1rem;
@@ -1307,8 +1307,8 @@
 .af3-rabatt-vorschau-box {
   margin-top: 1rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
-  border: 2px solid rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, var(--ds-success-10) 0%, var(--ds-success-10) 100%);
+  border: 2px solid var(--ds-success-25);
   border-radius: 12px;
 }
 
@@ -1331,7 +1331,7 @@
 }
 
 .af3-rabatt-ersparnis-badge {
-  background: rgba(34, 197, 94, 0.2);
+  background: var(--ds-success-25);
   color: var(--success);
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -1345,7 +1345,7 @@
 
 .af3-rabatt-speichern-btn {
   padding: 0.75rem 2rem;
-  background: #22c55e;
+  background: var(--ds-success);
   color: #000;
   border: none;
   border-radius: 8px;
@@ -1370,7 +1370,7 @@
 }
 
 .af3-modal-panel {
-  background: var(--bg-secondary, #1a1a2e);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 2px solid var(--primary);
   border-radius: 16px;
   padding: 2rem;
@@ -1400,7 +1400,7 @@
 .af3-modal-input {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
   color: var(--text-primary);
@@ -1465,7 +1465,7 @@
 
 .af3-inline-confirm-btn {
   padding: 0.2rem 0.4rem;
-  background: #4ade80;
+  background: var(--ds-success-soft);
   color: #000;
   border: none;
   border-radius: 4px;
@@ -1580,9 +1580,9 @@
   height: 28px;
   padding: 0.2rem 0.4rem;
   font-size: 0.85rem;
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: var(--text-primary, #fff) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: var(--ds-bg-elevated) !important;
+  color: var(--text-primary, var(--ds-text)) !important;
+  border: 1px solid var(--ds-border-strong) !important;
   border-radius: 4px;
 }
 [data-theme="tda-vib"] .af3-kalk-field-input {
@@ -1639,7 +1639,7 @@
   max-height: 100%;
   padding: 0.85rem;
   background: var(--glass-bg, var(--glass-bg-hover));
-  border: 2px solid var(--border-accent, var(--border-secondary, rgba(255, 255, 255, 0.1)));
+  border: 2px solid var(--border-accent, var(--border-secondary, var(--ds-border)));
   border-radius: 8px;
 }
 
@@ -1738,7 +1738,7 @@
 /* Error banner */
 .af3-error-banner {
   padding: 1rem;
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--ds-danger-10);
   border: 1px solid var(--status-error);
   border-radius: 8px;
   color: var(--error);
@@ -1760,7 +1760,7 @@
 }
 
 .af3-modal-panel {
-  background: var(--bg-secondary, #1a1a2e);
+  background: var(--bg-secondary, var(--ds-bg-surface));
   border: 2px solid var(--primary);
   border-radius: 16px;
   padding: 2rem;
@@ -1803,8 +1803,8 @@
 
 /* Rabatt tab */
 .af3-rabatt-info-box {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
-  border: 2px solid rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, var(--ds-success-10) 0%, var(--ds-success-10) 100%);
+  border: 2px solid var(--ds-success-25);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -1843,8 +1843,8 @@
 .af3-rabatt-vorschau-box {
   margin-top: 1rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
-  border: 2px solid rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, var(--ds-success-10) 0%, var(--ds-success-10) 100%);
+  border: 2px solid var(--ds-success-25);
   border-radius: 12px;
 }
 
@@ -1923,7 +1923,7 @@
   height: 42px;
   cursor: pointer;
   border-radius: 8px;
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
 }
 
 /* Material grid */
@@ -1965,7 +1965,7 @@
   margin-bottom: 1rem;
   padding: 1rem;
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 8px;
 }
 
@@ -1978,7 +1978,7 @@
 /* Lager table */
 .af3-lager-table-container {
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 12px;
   overflow: hidden;
 }
@@ -1989,7 +1989,7 @@
   gap: 1rem;
   padding: 1rem 1.5rem;
   background: var(--glass-bg-hover);
-  border-bottom: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-bottom: 2px solid var(--border-secondary, var(--ds-border));
   font-weight: 600;
   color: var(--primary);
   font-size: 0.9rem;
@@ -2093,7 +2093,7 @@
 
 /* Kalk params */
 .af3-kalk-params-box {
-  background: rgba(255, 215, 0, 0.06);
+  background: var(--ds-accent-05);
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
@@ -2156,8 +2156,8 @@
 /* No variant hint */
 .af3-no-variant-hint {
   padding: 0.75rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   font-size: 0.85rem;
   color: var(--error);
@@ -2191,7 +2191,7 @@
 .af3-einzelpreis-box {
   margin-bottom: 1rem;
   padding: 1rem;
-  background: rgba(255, 215, 0, 0.06);
+  background: var(--ds-accent-05);
   border: 2px solid var(--primary-alpha-30);
   border-radius: 8px;
 }
@@ -2239,8 +2239,8 @@
 /* No prices hint */
 .af3-no-prices-hint {
   padding: 1rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 8px;
   text-align: center;
   color: var(--error);
@@ -2270,7 +2270,7 @@
   font-size: 0.75rem;
   padding: 0.15rem 0.3rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ds-bg-card-hover);
   border-radius: 4px;
   color: var(--color-success-400);
 }
@@ -2311,7 +2311,7 @@
   font-size: 0.75rem;
   padding: 0.15rem 0.3rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ds-bg-card-hover);
   border-radius: 4px;
   color: var(--color-info-400);
 }
@@ -2362,7 +2362,7 @@
   height: 46px;
   cursor: pointer;
   border-radius: 8px;
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
 }
 
 .af3-color-input-medium {
@@ -2370,7 +2370,7 @@
   height: 42px;
   cursor: pointer;
   border-radius: 8px;
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
 }
 
 .af3-varianten-header-box {
@@ -2392,7 +2392,7 @@
   margin-bottom: 1rem;
   padding: 1rem;
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 8px;
 }
 .af3-global-mindest-label { color: var(--primary); font-weight: 600; white-space: nowrap; }
@@ -2410,7 +2410,7 @@
 
 .af3-bestand-table-container {
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 12px;
   overflow: hidden;
 }
@@ -2421,7 +2421,7 @@
   gap: 1rem;
   padding: 1rem 1.5rem;
   background: var(--glass-bg-hover);
-  border-bottom: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-bottom: 2px solid var(--border-secondary, var(--ds-border));
   font-weight: 600;
   color: var(--primary);
   font-size: 0.9rem;
@@ -2454,8 +2454,8 @@
 .af3-einstellungen-col { display: flex; flex-direction: column; gap: 1rem; max-width: 500px; }
 
 .af3-rabatt-intro-box {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
-  border: 2px solid rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, var(--ds-success-10) 0%, var(--ds-success-10) 100%);
+  border: 2px solid var(--ds-success-25);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -2465,13 +2465,13 @@
 .af3-rabatt-loading { text-align: center; padding: 2rem; color: var(--text-muted); }
 .af3-rabatt-maxwidth { max-width: 600px; }
 .af3-rabatt-typ-row { display: flex; gap: 1rem; }
-.af3-rabatt-wert-input { padding: 0.75rem 1rem; background: var(--glass-bg); border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); border-radius: 8px; color: var(--text-primary); font-size: 1.1rem; width: 200px; }
+.af3-rabatt-wert-input { padding: 0.75rem 1rem; background: var(--glass-bg); border: 2px solid var(--border-secondary, var(--ds-border)); border-radius: 8px; color: var(--text-primary); font-size: 1.1rem; width: 200px; }
 .af3-gilt-fuer-label { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; cursor: pointer; }
-.af3-rabatt-vorschau-box { margin-top: 1rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%); border: 2px solid rgba(34, 197, 94, 0.3); border-radius: 12px; }
+.af3-rabatt-vorschau-box { margin-top: 1rem; padding: 1.5rem; background: linear-gradient(135deg, var(--ds-success-10) 0%, var(--ds-success-10) 100%); border: 2px solid var(--ds-success-25); border-radius: 12px; }
 .af3-rabatt-vorschau-h4 { margin: 0 0 1rem 0; color: var(--success); font-size: 1rem; }
 .af3-rabatt-altpreis { text-decoration: line-through; color: var(--text-muted); font-size: 1.1rem; }
 .af3-rabatt-neupreis { color: var(--success); font-weight: 700; font-size: 1.3rem; }
-.af3-rabatt-ersparnis { background: rgba(34, 197, 94, 0.2); color: var(--success); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600; }
+.af3-rabatt-ersparnis { background: var(--ds-success-25); color: var(--success); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600; }
 .af3-rabatt-speichern-row { margin-top: 1rem; }
 .af3-rabatt-check { width: 22px; height: 22px; accent-color: var(--status-success); }
 .af3-rabatt-save-btn { padding: 0.75rem 2rem; background: var(--status-success); color: #000; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; }
@@ -2489,7 +2489,7 @@
 .af3-material-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
 .af3-laufzeit-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .af3-custom-farbe-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-.af3-farbe-tag { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: var(--glass-bg); border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); border-radius: 20px; font-size: 0.85rem; }
+.af3-farbe-tag { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: var(--glass-bg); border: 1px solid var(--border-secondary, var(--ds-border)); border-radius: 20px; font-size: 0.85rem; }
 .af3-farbe-dot-sm { width: 14px; height: 14px; border-radius: 50%; }
 .af3-tag-primary { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: var(--primary); color: var(--bg-primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
 .af3-tag-remove-btn { background: rgba(255,255,255,0.3); border: none; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; color: var(--text-primary); font-size: 0.7rem; display: flex; align-items: center; justify-content: center; }
@@ -2503,9 +2503,9 @@
 
 .af3-groesse-editing-span { display: flex; align-items: center; gap: 0.25rem; }
 .af3-groesse-edit-input { width: 80px; padding: 0.2rem 0.4rem; border-radius: 6px; border: 1px solid var(--primary); background: var(--primary-alpha-10); color: var(--text-primary); font-size: 0.85rem; }
-.af3-groesse-confirm-btn { padding: 0.2rem 0.4rem; background: #4ade80; color: #000; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 700; }
+.af3-groesse-confirm-btn { padding: 0.2rem 0.4rem; background: var(--ds-success-soft); color: #000; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 700; }
 .af3-groesse-cancel-btn { padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.15); color: var(--text-primary); border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
-.af3-groesse-tag-custom { display: flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; background: var(--primary-alpha-15); border: 1px solid var(--gold, #ffd700); color: var(--primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+.af3-groesse-tag-custom { display: flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; background: var(--primary-alpha-15); border: 1px solid var(--gold, var(--ds-accent)); color: var(--primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
 .af3-groesse-tag-standard { display: flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; background: var(--primary); color: var(--bg-primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
 .af3-groesse-edit-btn { background: none; border: none; cursor: pointer; padding: 0 2px; color: var(--primary); font-size: 0.75rem; line-height: 1; }
 .af3-groesse-delete-btn { background: none; border: none; cursor: pointer; padding: 0 2px; color: rgba(255,100,100,0.9); font-size: 0.85rem; font-weight: 700; line-height: 1; }
@@ -2516,16 +2516,16 @@
 .af3-page-subtitle { font-size: 1.1rem; color: var(--text-secondary); }
 .af3-header-actions { display: flex; gap: 1rem; }
 .af3-btn-back { padding: 0.75rem 1.5rem; background: var(--glass-bg); color: var(--text-primary); border: 1px solid var(--border-primary, var(--primary-alpha-20)); border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; }
-.af3-error-banner { padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--status-error); border-radius: 8px; color: var(--error); margin-bottom: 1rem; }
+.af3-error-banner { padding: 1rem; background: var(--ds-danger-10); border: 1px solid var(--status-error); border-radius: 8px; color: var(--error); margin-bottom: 1rem; }
 .af3-tab-nav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; padding: 0.25rem; background: var(--glass-bg); border-radius: 12px; border: 1px solid var(--border-primary, var(--primary-alpha-20)); flex-wrap: wrap; }
 .af3-tab-content-wrapper { background: var(--glass-bg); border: 2px solid var(--border-primary, var(--primary-alpha-20)); border-radius: 12px; padding: 2rem; min-height: 600px; }
 
 .af3-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-.af3-modal-panel { background: var(--bg-secondary, #1a1a2e); border: 2px solid var(--primary); border-radius: 16px; padding: 2rem; min-width: 400px; max-width: 500px; }
+.af3-modal-panel { background: var(--bg-secondary, var(--ds-bg-surface)); border: 2px solid var(--primary); border-radius: 16px; padding: 2rem; min-width: 400px; max-width: 500px; }
 .af3-modal-h3 { color: var(--primary); margin-bottom: 1.5rem; font-size: 1.25rem; }
 .af3-modal-hint { margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem; }
 .af3-modal-label { display: block; margin-bottom: 0.5rem; color: var(--primary); font-weight: 600; }
-.af3-modal-input { width: 100%; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--primary-alpha-30); border-radius: 8px; color: var(--text-primary); font-size: 1rem; box-sizing: border-box; }
+.af3-modal-input { width: 100%; padding: 0.75rem 1rem; background: var(--ds-bg-card-hover); border: 1px solid var(--primary-alpha-30); border-radius: 8px; color: var(--text-primary); font-size: 1rem; box-sizing: border-box; }
 .af3-modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
 .af3-modal-btn-cancel { padding: 0.75rem 1.5rem; background: transparent; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; color: var(--text-primary); cursor: pointer; font-size: 0.95rem; }
 
@@ -2533,7 +2533,7 @@
 .af3-lager-bestand-input {
   padding: 0.5rem 0.75rem;
   background: var(--glass-bg);
-  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border: 2px solid var(--border-secondary, var(--ds-border));
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 0.95rem;
@@ -2609,7 +2609,7 @@
   white-space: nowrap;
   background: transparent;
   color: var(--text-secondary);
-  border: 1px solid var(--border-secondary, rgba(255,255,255,0.1));
+  border: 1px solid var(--border-secondary, var(--ds-border));
 }
 
 /* Lager-tracking checkbox has a narrower max-width */
@@ -2621,7 +2621,7 @@
 
 /* Neue Gruppe button */
 .af3-btn-neue-gruppe {
-  padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3);
+  padding: 0.5rem 0.75rem; background: var(--ds-bg-elevated); color: var(--ds-text-faint);
   border: none; border-radius: 6px; cursor: not-allowed;
   font-weight: 600; font-size: 1rem; white-space: nowrap;
 }
@@ -2629,7 +2629,7 @@
 
 /* Preis tab buttons */
 .af3-preis-tab-btn { background: transparent; color: var(--text-secondary); }
-.af3-preis-tab-btn--active { background: var(--primary); color: #ffffff; }
+.af3-preis-tab-btn--active { background: var(--primary); color: var(--ds-text); }
 
 /* Kalkulation section */
 .af3-kalk-section--uebersicht { background: rgba(4, 120, 87, 0.05); border: 2px solid rgba(4, 120, 87, 0.3); }
@@ -2639,13 +2639,13 @@
 /* Varianten overview table row */
 .af3-varianten-table-row--kids { background: rgba(74,222,128,0.08); }
 .af3-varianten-table-row--erw { background: rgba(99,179,237,0.08); }
-.af3-varianten-table-row--other { background: rgba(255,215,0,0.06); }
-.af3-gewinn-span--kids { color: #4ade80; }
+.af3-varianten-table-row--other { background: var(--ds-accent-05); }
+.af3-gewinn-span--kids { color: var(--ds-success-soft); }
 .af3-gewinn-span--erw { color: #63b3ed; }
 .af3-gewinn-span--other { color: var(--primary); }
 
 /* Gewinn row colors */
-.af3-gewinn--positive { color: #4ade80; }
+.af3-gewinn--positive { color: var(--ds-success-soft); }
 .af3-gewinn--positive-blue { color: #63b3ed; }
 .af3-gewinn--primary { color: var(--primary); }
 .af3-gewinn--negative { color: var(--status-error); }
@@ -2658,11 +2658,11 @@
 
 /* Lager input rows */
 .af3-lager-input--bordered { border-bottom: 1px solid #e9ecef; }
-.af3-lager-input--leer { background: rgba(239, 68, 68, 0.05); }
+.af3-lager-input--leer { background: var(--ds-danger-10); }
 .af3-lager-input--kritisch { background: rgba(234, 179, 8, 0.1); }
 
 /* White color dot border */
-.af3-color-dot--white { border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); }
+.af3-color-dot--white { border: 1px solid var(--border-secondary, var(--ds-border)); }
 
 /* Lager status badge */
 .af3-lager-status {
@@ -2674,12 +2674,12 @@
 .af3-lager-status--ok { background: #ecfdf5; color: var(--primary); border: 1px solid #6ee7b7; }
 
 /* Rabatt aktivieren */
-.af3-varianten-aktivieren { background: var(--glass-bg); border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); }
-.af3-varianten-aktivieren--active { background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.5); }
+.af3-varianten-aktivieren { background: var(--glass-bg); border: 2px solid var(--border-secondary, var(--ds-border)); }
+.af3-varianten-aktivieren--active { background: var(--ds-success-10); border-color: var(--ds-success-25); }
 
 /* Rabatt typ labels */
-.af3-rabatt-typ-label { background: var(--glass-bg); border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); }
-.af3-rabatt-typ-label--active { background: rgba(34, 197, 94, 0.15); border-color: var(--status-success); }
+.af3-rabatt-typ-label { background: var(--glass-bg); border: 2px solid var(--border-secondary, var(--ds-border)); }
+.af3-rabatt-typ-label--active { background: var(--ds-success-10); border-color: var(--status-success); }
 
 /* Loading/disabled buttons via :disabled */
 .af3-rabatt-speichern-btn:disabled { cursor: not-allowed; opacity: 0.5; }
@@ -2688,21 +2688,21 @@
 
 /* Generic toggle button (size/material) */
 .af3-toggle-btn {
-  padding: 0.5rem 1rem; border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
-  border-radius: 8px; background: rgba(255, 255, 255, 0.08); color: var(--text-primary);
+  padding: 0.5rem 1rem; border: 2px solid var(--border-secondary, var(--ds-border));
+  border-radius: 8px; background: var(--ds-bg-elevated); color: var(--text-primary);
   cursor: pointer; font-weight: 600; transition: all 0.2s ease;
 }
 .af3-toggle-btn--sm { padding: 0.5rem 0.75rem; font-size: 0.9rem; }
-.af3-toggle-btn--selected { border-color: var(--primary); background: var(--primary); color: #ffffff; }
+.af3-toggle-btn--selected { border-color: var(--primary); background: var(--primary); color: var(--ds-text); }
 
 /* Farbe button */
-.af3-varianten-btn-base { background: rgba(255, 255, 255, 0.08); border-color: var(--border-secondary, rgba(255, 255, 255, 0.1)); }
+.af3-varianten-btn-base { background: var(--ds-bg-elevated); border-color: var(--border-secondary, var(--ds-border)); }
 .af3-varianten-btn-base--selected { border-color: var(--primary); background: var(--primary-alpha-20); }
 
 /* Laufzeit button */
 .af3-laufzeit-select-btn {
-  background: rgba(255, 255, 255, 0.05); color: var(--text-primary);
-  border-color: var(--border-secondary, rgba(255, 255, 255, 0.1)); box-shadow: none;
+  background: var(--ds-bg-card-hover); color: var(--text-primary);
+  border-color: var(--border-secondary, var(--ds-border)); box-shadow: none;
 }
 .af3-laufzeit-select-btn--selected {
   background: var(--primary); color: #000;
@@ -2712,12 +2712,12 @@
 /* Laufzeit rabatt badge */
 .af3-laufzeit-rabatt-badge {
   font-size: 0.75rem; font-weight: 700; color: var(--status-success);
-  background: rgba(16, 185, 129, 0.15); padding: 0.15rem 0.5rem; border-radius: 4px;
+  background: var(--ds-success-10); padding: 0.15rem 0.5rem; border-radius: 4px;
 }
 .af3-laufzeit-rabatt-badge--selected { color: #16A34A; background: rgba(0,0,0,0.1); }
 
 /* Tab nav active state (replaces inline styles) */
-.af3-tab-nav-btn { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); }
+.af3-tab-nav-btn { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-secondary, var(--ds-border)); }
 .af3-tab-nav-btn.active { background: var(--primary); color: var(--bg-primary); border-color: var(--primary); }
 
 /* Schnelleingabe VK Brutto */
@@ -2735,7 +2735,7 @@
 }
 .af3-schnell-saved {
   font-size: 11px; font-weight: 400; color: var(--text-secondary);
-  background: rgba(255,255,255,0.06); border-radius: 4px; padding: 2px 6px;
+  background: var(--ds-bg-card-hover); border-radius: 4px; padding: 2px 6px;
 }
 .af3-schnell-row {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -2743,14 +2743,14 @@
 .af3-schnell-input {
   width: 110px; padding: 6px 10px; border-radius: 6px;
   border: 1px solid rgba(99,179,237,0.4);
-  background: var(--bg-input, rgba(255,255,255,0.06));
+  background: var(--bg-input, var(--ds-bg-card-hover));
   color: var(--text-primary); font-size: 14px; font-weight: 600;
 }
 .af3-schnell-input:focus { outline: none; border-color: #63b3ed; }
 .af3-schnell-unit { font-size: 13px; color: var(--text-secondary); }
 .af3-schnell-netto {
   font-size: 12px; color: var(--text-secondary);
-  background: rgba(255,255,255,0.05); border-radius: 4px; padding: 3px 8px;
+  background: var(--ds-bg-card-hover); border-radius: 4px; padding: 3px 8px;
 }
 .af3-schnell-btn {
   padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer;

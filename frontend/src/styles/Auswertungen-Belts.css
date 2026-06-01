@@ -63,7 +63,7 @@
 
 .blt-kpi {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-stat-card-padding);
   transition: border-color 0.2s;
@@ -76,7 +76,7 @@
 .blt-kpi-label {
   font-size: var(--ui-stat-label);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 0.45rem;
@@ -93,14 +93,14 @@
 
 .blt-kpi-sub {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   margin-top: 0.35rem;
 }
 
 /* ── Stil Section ── */
 .blt-stil-section {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
   transition: border-color 0.2s;
@@ -111,15 +111,15 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.85rem 1.25rem;
-  background: rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--ds-bg-card);
+  border-bottom: 1px solid var(--ds-border-subtle);
   cursor: pointer;
   user-select: none;
   transition: background 0.15s;
 }
 
 .blt-stil-header:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ds-bg-card-hover);
 }
 
 .blt-stil-header h3 {
@@ -139,13 +139,13 @@
 
 .blt-stil-stats {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
 .blt-stil-chevron {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   transition: transform 0.22s ease;
   display: inline-block;
   line-height: 1;
@@ -167,13 +167,13 @@
 .blt-guertel-card {
   background: var(--surface-2);
   border-radius: var(--comp-radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--ds-border);
   overflow: hidden;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .blt-guertel-card:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
@@ -182,7 +182,7 @@
   align-items: center;
   gap: 0.875rem;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .blt-color-badge {
@@ -191,7 +191,7 @@
   border-radius: 50%;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  border: 2px solid var(--ds-border-strong);
   background: var(--badge-bg, #6b7280);
 }
 
@@ -212,7 +212,7 @@
 
 .blt-guertel-category {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--ds-text-muted);
   text-transform: capitalize;
 }
 
@@ -220,7 +220,7 @@
   display: inline-block;
   margin-left: 0.4rem;
   padding: 0.15rem 0.45rem;
-  background: linear-gradient(135deg, #ffd700, #f59e0b);
+  background: linear-gradient(135deg, var(--ds-accent), #f59e0b);
   color: #1a1200;
   font-size: 0.65rem;
   font-weight: 800;
@@ -247,10 +247,10 @@
   grid-template-columns: 1fr auto auto;
   gap: 0.75rem;
   padding: 0.4rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   font-size: 0.65rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ds-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.7px;
 }
@@ -260,7 +260,7 @@
   grid-template-columns: 1fr auto auto;
   gap: 0.75rem;
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
   transition: background 0.12s;
 }
 
@@ -269,12 +269,12 @@
 }
 
 .blt-member-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
 }
 
 .blt-member-name {
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -283,7 +283,7 @@
 .blt-attendance {
   font-size: 0.78rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--ds-text-muted);
   text-align: center;
   font-variant-numeric: tabular-nums;
   min-width: 32px;
@@ -297,7 +297,7 @@
 .blt-no-members {
   padding: 1rem 1.25rem;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--ds-text-faint);
   font-style: italic;
   text-align: center;
 }

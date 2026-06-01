@@ -578,7 +578,7 @@ const MitgliederFilter = () => {
             {/* Kompakte Übersichtsleiste */}
             <div className="mf-overview-bar">
               {[
-                { label: 'Gesamt', value: stats.gesamt || mitglieder.length, color: 'rgba(255,255,255,0.65)' },
+                { label: 'Gesamt', value: stats.gesamt || mitglieder.length, color: 'var(--ds-text-secondary)' },
                 { label: 'Abweichend', value: stats.zuWenig + stats.zuViel, color: stats.zuWenig + stats.zuViel > 0 ? 'var(--status-warning)' : 'rgba(255,255,255,0.8)', sub: netto !== 0 ? `${netto > 0 ? '+' : ''}${formatCurrency(netto)}` : null },
                 { label: 'Archivierter Tarif', value: stats.archivierterTarif, color: stats.archivierterTarif > 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.8)' },
                 { label: 'Kein Tarif', value: stats.keinTarif, color: stats.keinTarif > 0 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.8)' },
@@ -1318,7 +1318,7 @@ ${grundText ? `\n${grundText}\n` : ''}
                       return (
                         <div className="mf-stats-grid">
                           {[
-                            { label: 'Aktuell/Monat', value: fmt(sumAlt), color: 'rgba(255,255,255,0.45)' },
+                            { label: 'Aktuell/Monat', value: fmt(sumAlt), color: 'var(--ds-text-muted)' },
                             { label: 'Neu/Monat', value: fmt(sumNeu), color: 'var(--status-success)' },
                             { label: 'Mehreinnahmen', value: `+${fmt(sumDiff)}`, color: '#86efac' },
                           ].map(({ label, value, color }) => (

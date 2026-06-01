@@ -32,21 +32,21 @@ const S = {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
   },
   title: { margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#d4af37' },
-  subtitle: { margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.5)' },
+  subtitle: { margin: '4px 0 0', fontSize: '13px', color: 'var(--ds-text-muted)' },
   body: { padding: '20px 24px', overflowY: 'auto', flex: 1 },
   footer: {
     padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)',
     display: 'flex', gap: '10px', justifyContent: 'flex-end', flexShrink: 0,
   },
-  label: { display: 'block', fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' },
+  label: { display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ds-text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' },
   input: {
     width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px',
+    borderRadius: '8px', padding: '10px 12px', color: 'var(--ds-text)', fontSize: '14px',
     outline: 'none', boxSizing: 'border-box',
   },
   select: {
     width: '100%', background: '#0f0f1e', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px',
+    borderRadius: '8px', padding: '10px 12px', color: 'var(--ds-text)', fontSize: '14px',
     outline: 'none', boxSizing: 'border-box', cursor: 'pointer',
   },
   formGroup: { marginBottom: '16px' },
@@ -71,7 +71,7 @@ const S = {
   btnCancel: {
     padding: '10px 20px', background: 'rgba(255,255,255,0.06)',
     border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px',
-    color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '14px',
+    color: 'var(--ds-text-secondary)', cursor: 'pointer', fontSize: '14px',
   },
   btnSubmit: (loading) => ({
     padding: '10px 24px',
@@ -90,7 +90,7 @@ const S = {
     textAlign: 'center',
   },
   sectionHead: {
-    fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)',
+    fontSize: '11px', fontWeight: 700, color: 'var(--ds-text-faint)',
     textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 0 4px',
   },
 };
@@ -274,7 +274,7 @@ export default function HofNominierungModal({ onClose, mitglied = null, onSucces
             <h2 style={S.title}>🏛️ Hall of Fame — Nominierung</h2>
             <p style={S.subtitle}>Nominiere eine Person für die TDA Hall of Fame</p>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '4px' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--ds-text-muted)', cursor: 'pointer', padding: '4px' }}>
             <X size={20} />
           </button>
         </div>
@@ -282,7 +282,7 @@ export default function HofNominierungModal({ onClose, mitglied = null, onSucces
         {/* Body */}
         <div style={S.body}>
           {loadingData ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.4)' }}>Lade HOF-Daten…</div>
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--ds-text-muted)' }}>Lade HOF-Daten…</div>
           ) : success ? (
             <div style={S.successBox}>
               <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🏆</div>
@@ -313,7 +313,7 @@ export default function HofNominierungModal({ onClose, mitglied = null, onSucces
                 <div style={{ ...S.formGroup, position: 'relative' }}>
                   <label style={S.label}>Mitglied suchen *</label>
                   <div style={{ position: 'relative' }}>
-                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ds-text-faint)' }} />
                     <input
                       style={{ ...S.input, paddingLeft: '32px' }}
                       value={mitgliedSuche}
@@ -322,7 +322,7 @@ export default function HofNominierungModal({ onClose, mitglied = null, onSucces
                       onFocus={() => mitgliederListe.length > 0 && setShowSuggestions(true)}
                     />
                     {mitgliedSucheLoading && (
-                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>…</span>
+                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ds-text-faint)', fontSize: '12px' }}>…</span>
                     )}
                   </div>
                   {showSuggestions && mitgliederListe.length > 0 && (
@@ -335,8 +335,8 @@ export default function HofNominierungModal({ onClose, mitglied = null, onSucces
                           onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         >
-                          <strong style={{ color: '#fff' }}>{m.vorname} {m.nachname}</strong>
-                          <span style={{ color: 'rgba(255,255,255,0.4)', marginLeft: '8px', fontSize: '12px' }}>
+                          <strong style={{ color: 'var(--ds-text)' }}>{m.vorname} {m.nachname}</strong>
+                          <span style={{ color: 'var(--ds-text-muted)', marginLeft: '8px', fontSize: '12px' }}>
                             {m.gurtfarbe && `· ${m.gurtfarbe}`} {m.geburtsdatum && `· geb. ${new Date(m.geburtsdatum).toLocaleDateString('de-DE')}`}
                           </span>
                         </div>

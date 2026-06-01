@@ -15,7 +15,7 @@
 }
 
 .first-login-modal {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, var(--ds-bg-surface) 0%, var(--ds-bg-surface) 100%);
   border-radius: 16px;
   border: 1px solid rgba(59, 130, 246, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
@@ -43,14 +43,14 @@
 }
 
 .first-login-header h2 {
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0 0 0.25rem 0;
 }
 
 .first-login-header p {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   font-size: 0.9rem;
   margin: 0;
 }
@@ -63,7 +63,7 @@
   justify-content: center;
   padding: 3rem;
   gap: var(--ui-form-gap);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
 }
 
 .first-login-loading .spinner {
@@ -92,7 +92,7 @@
   padding: 1rem;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -100,7 +100,7 @@
 }
 
 .first-login-tabs .tab:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   background: rgba(59, 130, 246, 0.05);
 }
 
@@ -138,7 +138,7 @@
   border: 1px solid rgba(59, 130, 246, 0.15);
   border-radius: 8px;
   padding: 1.5rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text);
   font-size: 0.9rem;
   line-height: 1.7;
   max-height: 250px;
@@ -170,7 +170,7 @@
 }
 
 .checkbox-label span {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   font-size: 0.9rem;
 }
 
@@ -180,8 +180,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: rgba(239, 68, 68, 0.1);
-  border-top: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border-top: 1px solid var(--ds-danger-25);
   color: var(--status-error);
   font-size: 0.85rem;
 }
@@ -202,7 +202,7 @@
   display: flex;
   gap: var(--ui-form-gap);
   font-size: var(--ui-card-label);
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
 }
 
 .acceptance-summary span.done {
@@ -210,8 +210,8 @@
 }
 
 .accept-all-label {
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
@@ -224,10 +224,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--ds-success) 0%, #059669 100%);
   border: none;
   border-radius: 8px;
-  color: white;
+  color: var(--ds-text);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -236,13 +236,13 @@
 
 .btn-confirm:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px var(--ds-success-25);
 }
 
 .btn-confirm:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
 }
 
 .btn-confirm .spinner {

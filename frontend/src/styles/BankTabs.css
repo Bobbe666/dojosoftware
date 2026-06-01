@@ -274,7 +274,7 @@
   letter-spacing: 0.3px;
   background: transparent;
   border-color: var(--primary-alpha-20);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
 }
 
 .checkbox-button.active {
@@ -286,7 +286,7 @@
 .checkbox-button:hover {
   background: var(--surface-3) !important;
   border-color: var(--primary-alpha-10) !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--ds-text) !important;
 }
 
 .checkbox-button.active:hover {
@@ -576,7 +576,7 @@
 
 /* Delete bank button */
 .bank-delete-btn {
-  background: rgba(239, 68, 68, 0.1) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: var(--ds-danger-10) !important;
+  border-color: var(--ds-danger-25) !important;
   color: var(--error) !important;
 }

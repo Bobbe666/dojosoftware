@@ -107,7 +107,7 @@
 }
 
 .pv2-dark-input {
-  background-color: #1a1a1a;
+  background-color: var(--ds-bg-surface);
   color: var(--text-primary);
 }
 
@@ -347,7 +347,7 @@
   padding: 0.25rem;
   background: var(--surface-1);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
 }
 
 /* Tab button — einheitlicher Stil wie style-sub-tab-btn */
@@ -392,7 +392,7 @@
 h2.pv3-section-title {
   margin: 0;
   font-size: 0.68rem !important;
-  color: rgba(255,255,255,0.3) !important;
+  color: var(--ds-text-faint) !important;
   text-shadow: none !important;
   text-transform: uppercase !important;
   letter-spacing: 0.07em !important;
@@ -401,14 +401,14 @@ h2.pv3-section-title {
 
 .pv3-section-count {
   margin-left: 0.35rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   font-weight: 500;
 }
 
 .pv3-section-subtitle {
   margin: 0.35rem 0 0 0;
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
 }
 
 /* "Neuer Termin" button */
@@ -441,15 +441,15 @@ h2.pv3-section-title {
 .pv3-empty-state {
   text-align: center;
   padding: 3rem;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--ds-bg-card);
   border-radius: 0.5rem;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border: 1px dashed var(--ds-border);
 }
 
 .pv3-empty-state-dashed-gold {
   text-align: center;
   padding: 3rem;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--ds-bg-card);
   border-radius: 0.5rem;
   border: 2px dashed var(--primary-alpha-20);
 }
@@ -509,8 +509,8 @@ h2.pv3-section-title {
 
 /* Termin card */
 .pv3-termin-card {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 0.75rem;
   padding: 1rem 1.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -527,8 +527,8 @@ h2.pv3-section-title {
 }
 
 .pv3-termin-card--past {
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 0.75rem;
   padding: 1rem 1.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -570,7 +570,7 @@ h2.pv3-section-title {
   display: flex;
   gap: 0.5rem;
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.55);
+  color: var(--ds-text-muted);
   flex-wrap: wrap;
   align-items: center;
   margin-top: 0.2rem;
@@ -578,7 +578,7 @@ h2.pv3-section-title {
 
 /* Dot separator in meta row */
 .pv3-meta-dot {
-  color: rgba(255,255,255,0.15);
+  color: var(--ds-text-faint);
   font-size: 0.7rem;
   line-height: 1;
 }
@@ -588,7 +588,7 @@ h3.pv3-termin-heading-warning {
   margin: 0;
   font-size: 0.95rem !important;
   font-weight: 600 !important;
-  color: rgba(255,215,0,0.75) !important;
+  color: var(--ds-accent-50) !important;
   text-shadow: none !important;
   text-transform: none !important;
   letter-spacing: normal !important;
@@ -620,7 +620,7 @@ h3.pv3-termin-heading-today {
 .pv3-badge-past {
   padding: 0.1rem 0.55rem;
   background: rgba(107,114,128,0.1);
-  color: #9ca3af;
+  color: var(--ds-text-muted);
   border: 1px solid rgba(107,114,128,0.18);
   border-radius: 4px;
   font-size: 0.65rem;
@@ -650,7 +650,7 @@ h3.pv3-termin-heading-today {
   bottom: calc(100% + 8px);
   right: 0;
   width: 240px;
-  background: #1e293b;
+  background: var(--ds-bg-surface);
   color: #e2e8f0;
   font-size: 0.73rem;
   line-height: 1.5;
@@ -671,7 +671,7 @@ h3.pv3-termin-heading-today {
 .pv3-badge-stil {
   padding: 0.1rem 0.45rem;
   background: rgba(234,179,8,0.1);
-  color: rgba(255,215,0,0.8);
+  color: var(--ds-accent-50);
   border: 1px solid rgba(234,179,8,0.18);
   border-radius: 4px;
   font-weight: 500;
@@ -708,7 +708,7 @@ h3.pv3-termin-heading-today {
   align-items: center;
   gap: 0.35rem;
   padding-top: 0.65rem;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid var(--ds-border-subtle);
   width: 100%;
 }
 .pv3-ab-spacer { flex: 1; }
@@ -722,9 +722,9 @@ h3.pv3-termin-heading-today {
   font-size: 0.75rem;
   font-weight: 500;
   border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.55);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-muted);
   cursor: pointer;
   white-space: nowrap;
   letter-spacing: 0.01em;
@@ -732,7 +732,7 @@ h3.pv3-termin-heading-today {
               border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .pv3-ab-btn svg { opacity: 0.65; transition: opacity 0.15s ease; }
-.pv3-ab-btn:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.82); }
+.pv3-ab-btn:hover { background: var(--ds-bg-elevated); color: var(--ds-text-secondary); }
 .pv3-ab-btn:hover svg { opacity: 0.9; }
 
 .pv3-ab-btn--primary {
@@ -750,16 +750,16 @@ h3.pv3-termin-heading-today {
 }
 
 .pv3-ab-btn--green {
-  background: rgba(34,197,94,0.08);
-  border-color: rgba(34,197,94,0.18);
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-10);
   color: #6ee7a0;
 }
 .pv3-ab-btn--green svg { opacity: 0.75; }
 .pv3-ab-btn--green:hover {
-  background: rgba(34,197,94,0.16);
-  border-color: rgba(34,197,94,0.3);
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
   color: #bbf7d0;
-  box-shadow: 0 2px 12px rgba(34,197,94,0.1);
+  box-shadow: 0 2px 12px var(--ds-success-10);
 }
 
 .pv3-ab-btn--print {
@@ -783,25 +783,25 @@ h3.pv3-termin-heading-today {
   align-items: center;
   justify-content: center;
   border-radius: 9px;
-  border: 1px solid rgba(255,255,255,0.07);
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.32);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card);
+  color: var(--ds-text-faint);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.14s ease, color 0.14s ease,
               border-color 0.14s ease, box-shadow 0.14s ease;
 }
 .pv3-ab-icon:hover {
-  background: rgba(255,255,255,0.09);
-  color: rgba(255,255,255,0.72);
-  border-color: rgba(255,255,255,0.12);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text-secondary);
+  border-color: var(--ds-border);
 }
-.pv3-ab-icon--red { color: rgba(252,165,165,0.45); border-color: rgba(239,68,68,0.14); }
+.pv3-ab-icon--red { color: rgba(252,165,165,0.45); border-color: var(--ds-danger-10); }
 .pv3-ab-icon--red:hover {
-  background: rgba(239,68,68,0.12);
-  border-color: rgba(239,68,68,0.26);
+  background: var(--ds-danger-10);
+  border-color: var(--ds-danger-25);
   color: #fca5a5;
-  box-shadow: 0 0 10px rgba(239,68,68,0.1);
+  box-shadow: 0 0 10px var(--ds-danger-10);
 }
 .pv3-ab-icon--disabled {
   opacity: 0.2;
@@ -893,7 +893,7 @@ h3.pv3-termin-heading-today {
 .pv3-grad-select {
   padding: 0.375rem 0.5rem;
   font-size: 0.875rem;
-  background-color: #1a1a1a;
+  background-color: var(--ds-bg-surface);
   color: var(--text-primary);
   border: 1px solid rgba(234, 179, 8, 0.3);
   border-radius: 0.375rem;
@@ -907,9 +907,9 @@ h3.pv3-termin-heading-today {
 .pv3-grad-select-green {
   padding: 0.375rem 0.5rem;
   font-size: 0.875rem;
-  background-color: #1a1a1a;
+  background-color: var(--ds-bg-surface);
   color: var(--text-primary);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid var(--ds-success-25);
   border-radius: 0.375rem;
   cursor: pointer;
   font-weight: 600;
@@ -921,7 +921,7 @@ h3.pv3-termin-heading-today {
 .pv3-progress-wrap {
   width: 100%;
   height: 6px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--ds-bg-elevated);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -976,7 +976,7 @@ h3.pv3-termin-heading-today {
   align-items: center;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--ds-bg-card);
   border-radius: 0.5rem;
   border: 1px solid var(--primary-alpha-20);
 }
@@ -1015,7 +1015,7 @@ h3.pv3-termin-heading-today {
   gap: 0.25rem;
   background: var(--surface-1);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   padding: 0.2rem;
 }
 
@@ -1048,7 +1048,7 @@ h3.pv3-termin-heading-today {
 .pv3-dark-select {
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
-  background-color: #1a1a1a;
+  background-color: var(--ds-bg-surface);
   color: var(--text-primary);
   border: 1px solid rgba(234, 179, 8, 0.3);
   border-radius: 0.375rem;
@@ -1071,7 +1071,7 @@ h3.pv3-termin-heading-today {
   flex: 1;
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
-  background-color: #1a1a1a;
+  background-color: var(--ds-bg-surface);
   color: var(--text-primary);
   border: 1px solid rgba(234, 179, 8, 0.3);
   border-radius: 0.375rem;
@@ -1138,7 +1138,7 @@ h3.pv3-termin-heading-today {
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.6rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 500;
@@ -1167,7 +1167,7 @@ h3.pv3-termin-heading-today {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid rgba(34, 197, 94, 0.5);
+  border: 2px solid var(--ds-success-25);
   flex-shrink: 0;
   background-color: var(--dot-color, #6b7280);
 }
@@ -1237,7 +1237,7 @@ h3.pv3-termin-heading-today {
 .pv3-legende-bar {
   margin-top: 1.5rem;
   padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--ds-bg-card);
   border-radius: 0.5rem;
   border: 1px solid var(--primary-alpha-15);
 }
@@ -1253,7 +1253,7 @@ h3.pv3-termin-heading-today {
 .pv3-legende-line-green {
   width: 20px;
   height: 4px;
-  background-color: rgba(34, 197, 94, 0.5);
+  background-color: var(--ds-success-25);
   border-radius: 2px;
 }
 
@@ -1284,7 +1284,7 @@ h3.pv3-termin-heading-today {
 /* Heading: override global gold/uppercase */
 h2.pv3-zug-h2 {
   font-size: 0.68rem !important;
-  color: rgba(255,255,255,0.3) !important;
+  color: var(--ds-text-faint) !important;
   text-shadow: none !important;
   text-transform: uppercase !important;
   letter-spacing: 0.07em !important;
@@ -1296,8 +1296,8 @@ h2.pv3-zug-h2 {
 .pv3-zug-filter-group {
   display: flex;
   gap: 0.2rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 3px;
 }
@@ -1308,31 +1308,31 @@ h2.pv3-zug-h2 {
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.14s ease, color 0.14s ease;
 }
 .pv3-zug-filter-btn:hover {
-  color: rgba(255,255,255,0.72);
-  background: rgba(255,255,255,0.06);
+  color: var(--ds-text-secondary);
+  background: var(--ds-bg-card-hover);
 }
 .pv3-zug-filter-btn.active {
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.88);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
 }
 
 /* Tabellen-Header */
 .pv3-zug-th,
 .pv3-zug-th-sort {
   font-size: 0.65rem !important;
-  color: rgba(255,255,255,0.28) !important;
+  color: var(--ds-text-faint) !important;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 500;
 }
 .pv3-zug-th-sort { cursor: pointer; }
-.pv3-zug-th-sort:hover { color: rgba(255,255,255,0.55) !important; }
+.pv3-zug-th-sort:hover { color: var(--ds-text-muted) !important; }
 
 /* Aktions-Buttons */
 .pv3-zug-btn-primary {
@@ -1365,8 +1365,8 @@ h2.pv3-zug-h2 {
   font-size: 0.74rem;
   font-weight: 500;
   border-radius: 7px;
-  border: 1px solid rgba(239,68,68,0.16);
-  background: rgba(239,68,68,0.07);
+  border: 1px solid var(--ds-danger-10);
+  background: var(--ds-danger-10);
   color: #fca5a5;
   cursor: pointer;
   white-space: nowrap;
@@ -1374,10 +1374,10 @@ h2.pv3-zug-h2 {
               color 0.15s ease, box-shadow 0.15s ease;
 }
 .pv3-zug-btn-danger:hover {
-  background: rgba(239,68,68,0.15);
-  border-color: rgba(239,68,68,0.28);
+  background: var(--ds-danger-10);
+  border-color: var(--ds-danger-25);
   color: #fecaca;
-  box-shadow: 0 2px 10px rgba(239,68,68,0.1);
+  box-shadow: 0 2px 10px var(--ds-danger-10);
 }
 
 /* ── Abgeschlossen Tab: zusätzliche Klassen ── */
@@ -1391,9 +1391,9 @@ h2.pv3-zug-h2 {
   font-size: 0.68rem;
   font-weight: 600;
   border-radius: 5px;
-  background: rgba(34,197,94,0.1);
+  background: var(--ds-success-10);
   color: #6ee7a0;
-  border: 1px solid rgba(34,197,94,0.22);
+  border: 1px solid var(--ds-success-25);
   letter-spacing: 0.03em;
 }
 .pv3-abg-badge-success::before { content: '✓'; opacity: 0.8; }
@@ -1405,9 +1405,9 @@ h2.pv3-zug-h2 {
   font-size: 0.68rem;
   font-weight: 600;
   border-radius: 5px;
-  background: rgba(239,68,68,0.08);
+  background: var(--ds-danger-10);
   color: #fca5a5;
-  border: 1px solid rgba(239,68,68,0.18);
+  border: 1px solid var(--ds-danger-10);
   letter-spacing: 0.03em;
 }
 .pv3-abg-badge-danger::before { content: '✗'; opacity: 0.7; }
@@ -1421,40 +1421,40 @@ h2.pv3-zug-h2 {
   font-size: 0.74rem;
   font-weight: 500;
   border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.09);
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.5);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-muted);
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
 }
 .pv3-zug-btn-neutral:hover {
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.82);
-  border-color: rgba(255,255,255,0.15);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text-secondary);
+  border-color: var(--ds-border-strong);
 }
 
 /* Gebühren-Auto-Toggle Button */
 .pv3-gebuehr-toggle { font-size: 0.7rem; }
 .pv3-gebuehr-toggle--on {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.4);
-  color: #22c55e;
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
+  color: var(--ds-success);
 }
 .pv3-gebuehr-toggle--on:hover {
-  background: rgba(34, 197, 94, 0.2);
+  background: var(--ds-success-25);
 }
 .pv3-gebuehr-toggle--off {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: rgba(239, 68, 68, 0.7);
+  background: var(--ds-danger-10);
+  border-color: var(--ds-danger-25);
+  color: var(--ds-danger-25);
 }
 .pv3-gebuehr-toggle:disabled {
   opacity: 0.7;
   cursor: default;
-  background: rgba(34, 197, 94, 0.08);
-  border-color: rgba(34, 197, 94, 0.3);
-  color: #4ade80;
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
+  color: var(--ds-success-soft);
 }
 
 /* Gebühr Auto-Verrechnen Checkbox Zeile im Termin-Modal */
@@ -1485,25 +1485,25 @@ h2.pv3-zug-h2 {
   margin-top: 0.4rem;
 }
 .pv3-zahlungsart-info--rechnung {
-  background: rgba(212, 175, 55, 0.07);
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--ds-accent-05);
+  border: 1px solid var(--ds-accent-25);
+  color: var(--ds-text-secondary);
 }
 .pv3-zahlungsart-info--lastschrift {
   background: rgba(99, 179, 237, 0.07);
   border: 1px solid rgba(99, 179, 237, 0.22);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
 }
 .pv3-zahlungsart-info-icon { flex-shrink: 0; font-size: 0.95rem; }
-.pv3-zahlungsart-info strong { color: rgba(255, 255, 255, 0.9); font-weight: 600; }
+.pv3-zahlungsart-info strong { color: var(--ds-text); font-weight: 600; }
 
 /* Inline Grad-Selects in der Zugelassen-Zeile */
 .pv3-inline-grad-select {
   padding: 2px 4px;
   font-size: 0.71rem;
-  background: rgba(255,255,255,0.05);
+  background: var(--ds-bg-card-hover);
   color: var(--text-primary, #e8eaed);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--ds-border);
   border-radius: 4px;
   outline: none;
   max-width: 120px;
@@ -1511,7 +1511,7 @@ h2.pv3-zug-h2 {
   transition: border-color 0.15s;
 }
 .pv3-inline-grad-select:hover {
-  border-color: rgba(255,255,255,0.25);
+  border-color: var(--ds-border-strong);
 }
 .pv3-inline-grad-select:focus {
   border-color: rgba(99,140,255,0.55);
@@ -1535,27 +1535,27 @@ h2.pv3-zug-h2 {
   font-size: 0.74rem;
   font-weight: 500;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.45);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-bg-card);
+  color: var(--ds-text-muted);
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .pv3-status-btn--kommt {
-  background: rgba(34,197,94,0.15);
-  border-color: rgba(34,197,94,0.45);
-  color: #22c55e;
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
+  color: var(--ds-success);
   font-weight: 700;
 }
-.pv3-status-btn--kommt:hover { background: rgba(34,197,94,0.25); }
+.pv3-status-btn--kommt:hover { background: var(--ds-success-25); }
 .pv3-status-btn--nein {
-  background: rgba(239,68,68,0.15);
-  border-color: rgba(239,68,68,0.45);
-  color: #ef4444;
+  background: var(--ds-danger-10);
+  border-color: var(--ds-danger-25);
+  color: var(--ds-danger);
   font-weight: 700;
 }
-.pv3-status-btn--nein:hover { background: rgba(239,68,68,0.25); }
+.pv3-status-btn--nein:hover { background: var(--ds-danger-25); }
 .pv3-status-btn--best {
   background: rgba(99,102,241,0.15);
   border-color: rgba(99,102,241,0.45);
@@ -1885,17 +1885,17 @@ h2.pv3-zug-h2 {
 
 /* Batch quick buttons */
 .pv3-btn-batch-success {
-  background-color: rgba(34, 197, 94, 0.3);
+  background-color: var(--ds-success-25);
   color: var(--success);
-  border: 1px solid rgba(34, 197, 94, 0.5);
+  border: 1px solid var(--ds-success-25);
   padding: 0.25rem 0.75rem;
   font-size: 0.8125rem;
 }
 
 .pv3-btn-batch-error {
-  background-color: rgba(239, 68, 68, 0.3);
+  background-color: var(--ds-danger-25);
   color: var(--error);
-  border: 1px solid rgba(239, 68, 68, 0.5);
+  border: 1px solid var(--ds-danger-25);
   padding: 0.25rem 0.75rem;
   font-size: 0.8125rem;
 }
@@ -1938,7 +1938,7 @@ h2.pv3-zug-h2 {
 .pv3-batch-summary {
   margin-top: 1.5rem;
   padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--ds-bg-card-hover);
   border-radius: 0.5rem;
   display: flex;
   justify-content: space-between;
@@ -2011,7 +2011,7 @@ h2.pv3-zug-h2 {
 
 /* Dark modal box */
 .pv3-modal-dark {
-  background: #1a1a1a;
+  background: var(--ds-bg-surface);
   border-radius: 0 0 12px 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   border: 1px solid #333;
@@ -2024,7 +2024,7 @@ h2.pv3-zug-h2 {
 
 /* Edit modal box */
 .pv3-modal-dark-edit {
-  background: #1a1a1a;
+  background: var(--ds-bg-surface);
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   border: 1px solid #333;
@@ -2135,7 +2135,7 @@ h2.pv3-zug-h2 {
 }
 
 .pv3-step-label--inactive {
-  color: #999;
+  color: var(--ds-text-muted);
   font-weight: 400;
 }
 
@@ -2412,7 +2412,7 @@ h2.pv3-zug-h2 {
 .pv3-progress-wrap {
   width: 100%;
   height: 6px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--ds-bg-elevated);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -2483,8 +2483,8 @@ h2.pv3-zug-h2 {
 }
 
 .pv3-verg-card {
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 0.75rem;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -2536,7 +2536,7 @@ h2.pv3-zug-h2 {
   align-items: center;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--ds-bg-card);
   border-radius: 0.5rem;
   border: 1px solid var(--primary-alpha-20);
 }
@@ -2573,14 +2573,14 @@ h2.pv3-zug-h2 {
   gap: 0.25rem;
   background: var(--surface-1);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   padding: 0.2rem;
 }
 
 .pv3-filter-select {
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
-  background-color: #1a1a1a;
+  background-color: var(--ds-bg-surface);
   color: var(--text-primary);
   border: 1px solid rgba(234, 179, 8, 0.3);
   border-radius: 0.375rem;
@@ -2601,7 +2601,7 @@ h2.pv3-zug-h2 {
   flex: 1;
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
-  background-color: #1a1a1a;
+  background-color: var(--ds-bg-surface);
   color: var(--text-primary);
   border: 1px solid rgba(234, 179, 8, 0.3);
   border-radius: 0.375rem;
@@ -2640,7 +2640,7 @@ h2.pv3-zug-h2 {
 .pv3-empty-dashed {
   text-align: center;
   padding: 3rem;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--ds-bg-card);
   border-radius: 0.5rem;
   border: 2px dashed var(--primary-alpha-20);
 }
@@ -2752,7 +2752,7 @@ h2.pv3-zug-h2 {
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.6rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 500;
@@ -2796,7 +2796,7 @@ h2.pv3-zug-h2 {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid rgba(34, 197, 94, 0.5);
+  border: 2px solid var(--ds-success-25);
   flex-shrink: 0;
   background-color: var(--dot-color, #6b7280);
 }
@@ -2805,9 +2805,9 @@ h2.pv3-zug-h2 {
 .pv3-grad-select-green {
   padding: 0.375rem 0.5rem;
   font-size: 0.875rem;
-  background-color: #1a1a1a;
+  background-color: var(--ds-bg-surface);
   color: var(--text-primary);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid var(--ds-success-25);
   border-radius: 0.375rem;
   cursor: pointer;
   font-weight: 600;
@@ -3043,7 +3043,7 @@ h2.pv3-zug-h2 {
 /* Main stats heading (small muted label) */
 .pv3-stat-section .pv3-stat-h2 {
   font-size: 0.68rem !important;
-  color: rgba(255,255,255,0.3) !important;
+  color: var(--ds-text-faint) !important;
   text-shadow: none !important;
   text-transform: uppercase !important;
   letter-spacing: 0.07em !important;
@@ -3054,7 +3054,7 @@ h2.pv3-zug-h2 {
 /* Section sub-headings (Nach Stil, Prüfungen nach Graduierung, etc.) */
 h3.pv3-section-h3 {
   font-size: 0.68rem !important;
-  color: rgba(255,255,255,0.3) !important;
+  color: var(--ds-text-faint) !important;
   text-shadow: none !important;
   text-transform: uppercase !important;
   letter-spacing: 0.07em !important;
@@ -3079,7 +3079,7 @@ h3.pv3-section-h3 {
 /* Stat card labels (h3.pv-meta-sm inside stat cards) */
 .pv3-stat-section .stat-card h3 {
   font-size: 0.62rem !important;
-  color: rgba(255,255,255,0.38) !important;
+  color: var(--ds-text-faint) !important;
   text-shadow: none !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
@@ -3091,7 +3091,7 @@ h4.pv3-gurt-card-name,
 h4.pv3-grad-card-name {
   font-size: 0.85rem !important;
   font-weight: 500 !important;
-  color: rgba(255,255,255,0.82) !important;
+  color: var(--ds-text-secondary) !important;
   text-shadow: none !important;
   text-transform: none !important;
   letter-spacing: normal !important;
@@ -3100,7 +3100,7 @@ h4.pv3-grad-card-name {
 /* Insight card headings */
 .pv3-stat-section .pv2-warning-label {
   font-size: 0.68rem !important;
-  color: rgba(255,255,255,0.35) !important;
+  color: var(--ds-text-faint) !important;
   text-shadow: none !important;
   text-transform: uppercase !important;
   letter-spacing: 0.07em !important;
@@ -3111,7 +3111,7 @@ h4.pv3-grad-card-name {
 /* Progress bars — dark mode fix (was light #e5e7eb) */
 .pv3-bar-wrap-gray,
 .pv3-bar-wrap-gray-sm {
-  background-color: rgba(255,255,255,0.1);
+  background-color: var(--ds-bg-elevated);
 }
 
 /* Tone down stat numbers */
@@ -3262,17 +3262,17 @@ h4.pv3-grad-card-name {
 }
 
 .pv3-batch-btn-green {
-  background-color: rgba(34, 197, 94, 0.3);
+  background-color: var(--ds-success-25);
   color: var(--success);
-  border: 1px solid rgba(34, 197, 94, 0.5);
+  border: 1px solid var(--ds-success-25);
   padding: 0.25rem 0.75rem;
   font-size: 0.8125rem;
 }
 
 .pv3-batch-btn-red {
-  background-color: rgba(239, 68, 68, 0.3);
+  background-color: var(--ds-danger-25);
   color: var(--error);
-  border: 1px solid rgba(239, 68, 68, 0.5);
+  border: 1px solid var(--ds-danger-25);
   padding: 0.25rem 0.75rem;
   font-size: 0.8125rem;
 }
@@ -3319,7 +3319,7 @@ h4.pv3-grad-card-name {
 .pv3-batch-summary {
   margin-top: 1.5rem;
   padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--ds-bg-card-hover);
   border-radius: 0.5rem;
   display: flex;
   justify-content: space-between;
@@ -3364,7 +3364,7 @@ h4.pv3-grad-card-name {
 }
 
 .pv3-modal-dark {
-  background: #1a1a1a;
+  background: var(--ds-bg-surface);
   border-radius: 0 0 12px 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   border: 1px solid #333;
@@ -3498,7 +3498,7 @@ h4.pv3-grad-card-name {
 }
 
 .pv3-edit-modal-box {
-  background: #1a1a1a;
+  background: var(--ds-bg-surface);
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   border: 1px solid #333;
@@ -3770,7 +3770,7 @@ h4.pv3-grad-card-name {
 
 /* Progress bar fill (shared) — height + transition static; width stays inline */
 .pv3-bar-fill { height: 100%; transition: width 0.3s ease; }
-.pv3-bar-fill--good { background: linear-gradient(90deg, #10b981, #34d399); }
+.pv3-bar-fill--good { background: linear-gradient(90deg, var(--ds-success), #34d399); }
 .pv3-bar-fill--warn { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
 
 /* External status badge */
@@ -3781,8 +3781,8 @@ h4.pv3-grad-card-name {
 
 /* Kandidaten table rows */
 .pv3-kandidat-row--berechtigt {
-  background-color: rgba(34, 197, 94, 0.05);
-  border-left: 3px solid rgba(34, 197, 94, 0.5);
+  background-color: var(--ds-success-10);
+  border-left: 3px solid var(--ds-success-25);
   transition: all 0.2s ease;
 }
 .pv3-kandidat-row--zugelassen {
@@ -3805,11 +3805,11 @@ h4.pv3-grad-card-name {
 .pv3-ergebnis-strong--failed { color: #991b1b; }
 
 /* Batch results table */
-.pv3-batch-row--bestanden { background-color: rgba(34, 197, 94, 0.1); }
-.pv3-batch-row--failed { background-color: rgba(239, 68, 68, 0.1); }
+.pv3-batch-row--bestanden { background-color: var(--ds-success-10); }
+.pv3-batch-row--failed { background-color: var(--ds-danger-10); }
 .pv3-batch-gurt-sm--failed { opacity: 0.5; }
-.pv3-batch-grad-text--bestanden { font-size: 0.8125rem; color: rgba(255, 255, 255, 0.9); }
-.pv3-batch-grad-text--failed { font-size: 0.8125rem; color: rgba(255, 255, 255, 0.5); text-decoration: line-through; }
+.pv3-batch-grad-text--bestanden { font-size: 0.8125rem; color: var(--ds-text); }
+.pv3-batch-grad-text--failed { font-size: 0.8125rem; color: var(--ds-text-muted); text-decoration: line-through; }
 .pv3-batch-ergebnis-text { font-weight: 600; font-size: 0.8125rem; }
 
 /* Step indicators */
@@ -3823,7 +3823,7 @@ h4.pv3-grad-card-name {
   background: #EAB308; color: #000; cursor: pointer;
   font-size: 0.9rem; font-weight: 600;
 }
-.pv3-modal-btn-weiter:disabled { background: #555; color: #888; cursor: not-allowed; }
+.pv3-modal-btn-weiter:disabled { background: #555; color: var(--ds-text-muted); cursor: not-allowed; }
 .pv3-modal-btn-save { display: flex; align-items: center; transition: all 0.2s; }
 .pv3-modal-btn-save:hover:not(:disabled) { background: #F59E0B; }
 
@@ -3876,25 +3876,25 @@ h4.pv3-grad-card-name {
 }
 .pv3-bm-schnell-label { color: var(--text-secondary); font-size: 0.875rem; margin-right: 0.25rem; }
 .pv3-bm-btn-pass {
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.4);
-  color: #22c55e;
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
+  color: var(--ds-success);
   display: flex; align-items: center; gap: 0.3rem;
   padding: 0.35rem 0.85rem; border-radius: var(--comp-radius-md);
   font-size: 0.82rem; font-weight: 600; cursor: pointer;
   transition: background 0.15s;
 }
-.pv3-bm-btn-pass:hover { background: rgba(34, 197, 94, 0.25); }
+.pv3-bm-btn-pass:hover { background: var(--ds-success-25); }
 .pv3-bm-btn-fail {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #ef4444;
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
+  color: var(--ds-danger);
   display: flex; align-items: center; gap: 0.3rem;
   padding: 0.35rem 0.85rem; border-radius: var(--comp-radius-md);
   font-size: 0.82rem; font-weight: 600; cursor: pointer;
   transition: background 0.15s;
 }
-.pv3-bm-btn-fail:hover { background: rgba(239, 68, 68, 0.25); }
+.pv3-bm-btn-fail:hover { background: var(--ds-danger-25); }
 
 /* Teilnehmer-Karten */
 .pv3-bm-list { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.25rem; }
@@ -3906,8 +3906,8 @@ h4.pv3-grad-card-name {
   overflow: hidden;
   transition: border-color 0.15s;
 }
-.pv3-bm-card--pass { border-left: 3px solid rgba(34, 197, 94, 0.6); }
-.pv3-bm-card--fail { border-left: 3px solid rgba(239, 68, 68, 0.6); }
+.pv3-bm-card--pass { border-left: 3px solid var(--ds-success-25); }
+.pv3-bm-card--fail { border-left: 3px solid var(--ds-danger-25); }
 .pv3-bm-card--offen { border-left: 3px solid rgba(148, 163, 184, 0.4); }
 
 /* 3-State Toggle für Gesamtergebnis */
@@ -3917,14 +3917,14 @@ h4.pv3-grad-card-name {
   border-radius: var(--comp-radius-sm);
   font-size: 0.78rem; font-weight: 500;
   border: 1px solid var(--border-default);
-  background: var(--surface-3, rgba(255,255,255,0.05));
+  background: var(--surface-3, var(--ds-bg-card-hover));
   color: var(--text-muted);
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
 .pv3-bm-3state-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
 .pv3-bm-3state--offen.active { background: rgba(148,163,184,0.15); border-color: rgba(148,163,184,0.5); color: var(--text-primary); font-weight: 600; }
-.pv3-bm-3state--pass.active  { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.5); color: #22c55e; font-weight: 600; }
-.pv3-bm-3state--fail.active  { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); color: #ef4444; font-weight: 600; }
+.pv3-bm-3state--pass.active  { background: var(--ds-success-10); border-color: var(--ds-success-25); color: var(--ds-success); font-weight: 600; }
+.pv3-bm-3state--fail.active  { background: var(--ds-danger-10); border-color: var(--ds-danger-25); color: var(--ds-danger); font-weight: 600; }
 
 /* Item-State-Button (3-State für Prüfungsinhalte) */
 .pv3-bm-inhalt-left { display: flex; align-items: center; gap: 0.45rem; flex: 1; min-width: 0; }
@@ -3938,13 +3938,13 @@ h4.pv3-grad-card-name {
 }
 .pv3-bm-item-state:hover { border-color: var(--primary); }
 .pv3-bm-item-state--offen { color: var(--text-muted); }
-.pv3-bm-item-state--pass  { background: rgba(34,197,94,0.2); border-color: rgba(34,197,94,0.5); color: #22c55e; }
-.pv3-bm-item-state--fail  { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.4); color: #ef4444; }
+.pv3-bm-item-state--pass  { background: var(--ds-success-25); border-color: var(--ds-success-25); color: var(--ds-success); }
+.pv3-bm-item-state--fail  { background: var(--ds-danger-10); border-color: var(--ds-danger-25); color: var(--ds-danger); }
 
 /* Punkte-Dropdown */
 .pv3-bm-pkt-select {
   width: 60px;
-  background: var(--surface-3, rgba(255,255,255,0.06));
+  background: var(--surface-3, var(--ds-bg-card-hover));
   border: 1px solid var(--border-default);
   border-radius: var(--comp-radius-sm);
   color: var(--text-primary); padding: 0.1rem 0.15rem;
@@ -3952,18 +3952,18 @@ h4.pv3-grad-card-name {
   transition: border-color 0.15s;
 }
 .pv3-bm-pkt-select:focus { outline: none; border-color: var(--primary); }
-.pv3-bm-inhalt--pass .pv3-bm-pkt-select { color: #22c55e; border-color: rgba(34,197,94,0.35); }
-.pv3-bm-inhalt--fail .pv3-bm-pkt-select { color: #ef4444; border-color: rgba(239,68,68,0.35); }
+.pv3-bm-inhalt--pass .pv3-bm-pkt-select { color: var(--ds-success); border-color: var(--ds-success-25); }
+.pv3-bm-inhalt--fail .pv3-bm-pkt-select { color: var(--ds-danger); border-color: var(--ds-danger-25); }
 
 /* Kategorie Alle-bestanden Button */
 .pv3-bm-kat-all-pass {
   font-size: 0.72rem; padding: 0.15rem 0.5rem;
   border-radius: var(--comp-radius-sm);
-  border: 1px solid rgba(34,197,94,0.35);
-  background: rgba(34,197,94,0.08); color: #22c55e;
+  border: 1px solid var(--ds-success-25);
+  background: var(--ds-success-10); color: var(--ds-success);
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
-.pv3-bm-kat-all-pass:hover { background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.6); }
+.pv3-bm-kat-all-pass:hover { background: var(--ds-success-10); border-color: var(--ds-success-25); }
 
 /* Sticky Save-Button */
 .pv3-bm-sticky-actions {
@@ -4008,15 +4008,15 @@ h4.pv3-grad-card-name {
   cursor: pointer; font-size: 0.82rem; font-weight: 600;
   user-select: none; white-space: nowrap;
 }
-.pv3-bm-toggle--pass { background: rgba(34,197,94,0.15); color: #22c55e; }
-.pv3-bm-toggle--fail { background: rgba(239,68,68,0.15); color: #ef4444; }
+.pv3-bm-toggle--pass { background: var(--ds-success-10); color: var(--ds-success); }
+.pv3-bm-toggle--fail { background: var(--ds-danger-10); color: var(--ds-danger); }
 .pv3-bm-chk { -webkit-appearance: checkbox !important; appearance: checkbox !important; width: 14px; height: 14px; flex-shrink: 0; }
 
 .pv3-bm-inputs-col {
   display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 200px;
 }
 .pv3-bm-input {
-  background: var(--surface-3, rgba(255,255,255,0.06));
+  background: var(--surface-3, var(--ds-bg-card-hover));
   border: 1px solid var(--border-default);
   border-radius: var(--comp-radius-md);
   color: var(--text-primary);
@@ -4027,8 +4027,8 @@ h4.pv3-grad-card-name {
 .pv3-bm-input:focus { outline: none; border-color: var(--primary); }
 
 .pv3-bm-expand-btn {
-  background: var(--primary-alpha-15, rgba(255,215,0,0.12));
-  border: 1px solid var(--primary-alpha-30, rgba(255,215,0,0.25));
+  background: var(--primary-alpha-15, var(--ds-accent-10));
+  border: 1px solid var(--primary-alpha-30, var(--ds-accent-25));
   color: var(--primary);
   border-radius: var(--comp-radius-md);
   padding: 0.3rem 0.7rem;
@@ -4036,7 +4036,7 @@ h4.pv3-grad-card-name {
   white-space: nowrap;
   transition: background 0.15s;
 }
-.pv3-bm-expand-btn:hover { background: var(--primary-alpha-25, rgba(255,215,0,0.2)); }
+.pv3-bm-expand-btn:hover { background: var(--primary-alpha-25, var(--ds-accent-20)); }
 
 /* Prüfungsinhalte (expandiert) */
 .pv3-bm-inhalte {
@@ -4067,9 +4067,9 @@ h4.pv3-grad-card-name {
   transition: background 0.1s;
 }
 .pv3-bm-inhalt--pass { color: var(--text-primary); }
-.pv3-bm-inhalt--pass:hover { background: rgba(34,197,94,0.06); }
+.pv3-bm-inhalt--pass:hover { background: var(--ds-success-10); }
 .pv3-bm-inhalt--fail { color: var(--text-muted); }
-.pv3-bm-inhalt--fail:hover { background: rgba(239,68,68,0.06); }
+.pv3-bm-inhalt--fail:hover { background: var(--ds-danger-10); }
 .pv3-bm-inhalt--fail .pv3-bm-inhalt-text { text-decoration: line-through; }
 
 .pv3-bm-inhalt-check {
@@ -4088,7 +4088,7 @@ h4.pv3-grad-card-name {
 }
 .pv3-bm-pkt-input {
   width: 48px;
-  background: var(--surface-3, rgba(255,255,255,0.06));
+  background: var(--surface-3, var(--ds-bg-card-hover));
   border: 1px solid var(--border-default);
   border-radius: var(--comp-radius-sm);
   color: var(--text-primary);
@@ -4110,12 +4110,12 @@ h4.pv3-grad-card-name {
 }
 .pv3-bm-pkt-max:hover, .pv3-bm-pkt-max:focus {
   outline: none;
-  border-color: var(--border-hover, rgba(255,255,255,0.2));
-  background: var(--surface-3, rgba(255,255,255,0.05));
+  border-color: var(--border-hover, var(--ds-border-strong));
+  background: var(--surface-3, var(--ds-bg-card-hover));
 }
 /* Punkte-Farbe je nach Status */
-.pv3-bm-inhalt--pass .pv3-bm-pkt-input:not(:placeholder-shown) { color: #22c55e; border-color: rgba(34,197,94,0.35); }
-.pv3-bm-inhalt--fail .pv3-bm-pkt-input:not(:placeholder-shown) { color: #ef4444; border-color: rgba(239,68,68,0.35); }
+.pv3-bm-inhalt--pass .pv3-bm-pkt-input:not(:placeholder-shown) { color: var(--ds-success); border-color: var(--ds-success-25); }
+.pv3-bm-inhalt--fail .pv3-bm-pkt-input:not(:placeholder-shown) { color: var(--ds-danger); border-color: var(--ds-danger-25); }
 
 /* Zusammenfassung */
 .pv3-bm-summary {
@@ -4128,8 +4128,8 @@ h4.pv3-grad-card-name {
   flex-wrap: wrap; gap: 0.5rem;
 }
 .pv3-bm-summary-stats { display: flex; align-items: center; gap: 0.5rem; }
-.pv3-bm-stat-pass { font-size: 1.5rem; font-weight: 700; color: #22c55e; }
-.pv3-bm-stat-fail { font-size: 1.5rem; font-weight: 700; color: #ef4444; }
+.pv3-bm-stat-pass { font-size: 1.5rem; font-weight: 700; color: var(--ds-success); }
+.pv3-bm-stat-fail { font-size: 1.5rem; font-weight: 700; color: var(--ds-danger); }
 .pv3-bm-stat-label { color: var(--text-secondary); font-size: 0.875rem; }
 .pv3-bm-stat-sep { color: var(--text-muted); }
 .pv3-bm-stat-quote { color: var(--text-secondary); font-size: 0.875rem; }
@@ -4167,7 +4167,7 @@ h4.pv3-grad-card-name {
   font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   margin-bottom: 0.25rem;
   font-weight: 500;
 }
@@ -4179,12 +4179,12 @@ h4.pv3-grad-card-name {
 }
 .pvs-kpi-sub {
   font-size: 0.68rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
   margin-top: 0.1rem;
 }
 .pvs-kpi-bar-wrap {
   height: 3px;
-  background: rgba(255,255,255,0.07);
+  background: var(--ds-bg-card-hover);
   border-radius: 2px;
   margin: 0.35rem 0 0.15rem;
   overflow: hidden;
@@ -4192,14 +4192,14 @@ h4.pv3-grad-card-name {
 .pvs-kpi-bar-fill { height: 100%; border-radius: 2px; transition: width 0.7s ease; }
 
 .pvs-kpi-purple    { color: #a78bfa; }
-.pvs-kpi-green     { color: #4ade80; }
-.pvs-kpi-red       { color: #f87171; }
+.pvs-kpi-green     { color: var(--ds-success-soft); }
+.pvs-kpi-red       { color: var(--ds-danger-soft); }
 .pvs-kpi-yellow    { color: #fbbf24; }
 .pvs-kpi-cyan      { color: #22d3ee; }
-.pvs-kpi-green-text{ color: #4ade80; }
-.pvs-kpi-red-text  { color: #f87171; }
-.pvs-kpi-bar-green { background: #4ade80; }
-.pvs-kpi-bar-red   { background: #f87171; }
+.pvs-kpi-green-text{ color: var(--ds-success-soft); }
+.pvs-kpi-red-text  { color: var(--ds-danger-soft); }
+.pvs-kpi-bar-green { background: var(--ds-success-soft); }
+.pvs-kpi-bar-red   { background: var(--ds-danger-soft); }
 
 /* ── Zweispalten-Layout ───────────────────────────────────── */
 .pvs-two-col {
@@ -4211,7 +4211,7 @@ h4.pv3-grad-card-name {
 @media (max-width: 800px) { .pvs-two-col { grid-template-columns: 1fr; } }
 .pvs-mt-1 { margin-top: 1rem; }
 .pvs-mt-2 { margin-top: 1.5rem; }
-.pvs-sep  { height: 1px; background: rgba(255,255,255,0.06); margin: 1.5rem 0; }
+.pvs-sep  { height: 1px; background: var(--ds-bg-card-hover); margin: 1.5rem 0; }
 
 /* ── Nach Stil: vertikale Rows ────────────────────────────── */
 .pvs-stil-list { display: flex; flex-direction: column; gap: 1rem; }
@@ -4221,43 +4221,43 @@ h4.pv3-grad-card-name {
   justify-content: space-between;
   align-items: baseline;
 }
-.pvs-stil-name { font-weight: 600; font-size: 0.88rem; color: rgba(255,255,255,0.82); }
+.pvs-stil-name { font-weight: 600; font-size: 0.88rem; color: var(--ds-text-secondary); }
 .pvs-stil-pct  { font-size: 0.85rem; font-weight: 700; }
 .pvs-stil-sub  {
   display: flex;
   gap: 0.75rem;
   font-size: 0.67rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   margin-top: 0.05rem;
 }
 .pvs-bar-track {
   height: 6px;
-  background: rgba(255,255,255,0.08);
+  background: var(--ds-bg-elevated);
   border-radius: 3px;
   overflow: hidden;
 }
 .pvs-bar-track--full { width: 100%; }
-.pvs-bar-fill-green { height: 100%; background: #4ade80; border-radius: 3px; transition: width 0.6s ease; }
+.pvs-bar-fill-green { height: 100%; background: var(--ds-success-soft); border-radius: 3px; transition: width 0.6s ease; }
 .pvs-bar-fill-gold  { height: 100%; background: #fbbf24; border-radius: 3px; }
-.pvs-bar-fill-red   { height: 100%; background: #f87171; border-radius: 3px; }
+.pvs-bar-fill-red   { height: 100%; background: var(--ds-danger-soft); border-radius: 3px; }
 .pvs-bar-label { font-size: 0.8rem; font-weight: 700; min-width: 38px; text-align: right; }
-.pvs-text-green { color: #4ade80; }
-.pvs-text-red   { color: #f87171; }
+.pvs-text-green { color: var(--ds-success-soft); }
+.pvs-text-red   { color: var(--ds-danger-soft); }
 .pvs-text-gold  { color: #fbbf24; }
-.pvs-text-muted { color: rgba(255,255,255,0.35); font-size: 0.73rem; }
+.pvs-text-muted { color: var(--ds-text-faint); font-size: 0.73rem; }
 
 /* ── Nach Graduierung ─────────────────────────────────────── */
 .pvs-grad-list { display: flex; flex-direction: column; gap: 0.65rem; }
 .pvs-grad-row  { display: grid; grid-template-columns: 13px 1fr 72px 44px; gap: 0.5rem; align-items: center; }
-.pvs-grad-dot  { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid rgba(255,255,255,0.18); }
-.pvs-grad-name { font-size: 0.8rem; font-weight: 500; color: rgba(255,255,255,0.78); }
+.pvs-grad-dot  { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid var(--ds-border-strong); }
+.pvs-grad-name { font-size: 0.8rem; font-weight: 500; color: var(--ds-text-secondary); }
 .pvs-grad-stats{ display: flex; gap: 0.35rem; align-items: center; font-size: 0.76rem; justify-content: flex-end; }
-.pvs-grad-count{ font-weight: 700; color: rgba(255,215,0,0.75); }
+.pvs-grad-count{ font-weight: 700; color: var(--ds-accent-50); }
 
 /* ── Technik-Sektion ──────────────────────────────────────── */
 .pvs-technik-section {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 1.1rem 1.2rem;
   margin-bottom: 1.25rem;
@@ -4265,7 +4265,7 @@ h4.pv3-grad-card-name {
 .pvs-technik-basis {
   font-size: 0.72rem;
   font-weight: 400;
-  color: rgba(255,255,255,0.28);
+  color: var(--ds-text-faint);
   margin-left: 0.5rem;
 }
 
@@ -4285,7 +4285,7 @@ h4.pv3-grad-card-name {
 .pvs-kat-label {
   font-size: 0.65rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -4297,7 +4297,7 @@ h4.pv3-grad-card-name {
 }
 .pvs-kat-bar-track {
   height: 5px;
-  background: rgba(255,255,255,0.08);
+  background: var(--ds-bg-elevated);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -4315,28 +4315,28 @@ h4.pv3-grad-card-name {
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0 0 0.4rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--ds-border);
   margin-bottom: 0.55rem;
 }
 .pvs-rank-header--gold { color: #fbbf24; }
-.pvs-rank-header--red  { color: #f87171; }
+.pvs-rank-header--red  { color: var(--ds-danger-soft); }
 .pvs-rank-list { display: flex; flex-direction: column; gap: 0.45rem; }
 .pvs-rank-row  { display: grid; grid-template-columns: 20px 1fr 70px 58px; gap: 0.4rem; align-items: center; }
 .pvs-rank-pos  { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; flex-shrink: 0; }
 .pvs-rank-pos--gold { background: rgba(251,191,36,0.13); color: #fbbf24; }
-.pvs-rank-pos--red  { background: rgba(248,113,113,0.13); color: #f87171; }
+.pvs-rank-pos--red  { background: rgba(248,113,113,0.13); color: var(--ds-danger-soft); }
 .pvs-rank-info  { min-width: 0; }
 .pvs-rank-name  { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pvs-rank-cat   { font-size: 0.65rem; color: rgba(255,255,255,0.3); }
+.pvs-rank-cat   { font-size: 0.65rem; color: var(--ds-text-faint); }
 .pvs-rank-bar-wrap { min-width: 0; }
 .pvs-rank-score { font-size: 0.76rem; font-weight: 700; text-align: right; white-space: nowrap; }
 
 /* Monatsverlauf (Balkendiagramm) */
 .pvs-month-grid { display: flex; gap: 0.5rem; align-items: flex-end; height: 120px; margin-bottom: 0.5rem; }
 .pvs-month-col  { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; height: 100%; justify-content: flex-end; }
-.pvs-month-col--empty .pvs-month-bar { background: rgba(255,255,255,0.04); }
+.pvs-month-col--empty .pvs-month-bar { background: var(--ds-bg-card); }
 .pvs-month-bar-wrap { flex: 1; display: flex; align-items: flex-end; width: 100%; }
-.pvs-month-bar  { width: 100%; background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%); border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.4s ease; }
+.pvs-month-bar  { width: 100%; background: linear-gradient(180deg, var(--ds-success-soft) 0%, #16a34a 100%); border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.4s ease; }
 .pvs-month-count { font-size: 0.7rem; font-weight: 700; color: var(--text-primary); }
 .pvs-month-label { font-size: 0.62rem; color: var(--text-muted); white-space: nowrap; }
 
@@ -4351,7 +4351,7 @@ h4.pv3-grad-card-name {
 .pvs-schwach-name { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pvs-schwach-kat  { font-size: 0.65rem; color: var(--text-muted); text-transform: capitalize; }
 .pvs-schwach-bar-wrap { min-width: 0; }
-.pvs-schwach-score { font-size: 0.78rem; font-weight: 700; color: #f87171; text-align: right; }
+.pvs-schwach-score { font-size: 0.78rem; font-weight: 700; color: var(--ds-danger-soft); text-align: right; }
 
 /* Graduierungs-Schwierigkeit */
 .pvs-grad-diff-list { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem; }
@@ -4387,8 +4387,8 @@ h4.pv3-grad-card-name {
 .pvs-gurt-view-toggle {
   display: flex;
   gap: 0.2rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 3px;
 }
@@ -4399,21 +4399,21 @@ h4.pv3-grad-card-name {
   font-weight: 500;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.38);
+  color: var(--ds-text-faint);
   cursor: pointer;
   transition: background 0.18s, color 0.18s;
 }
 .pvs-gurt-view-btn.active {
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.88);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
 }
-.pvs-gurt-view-btn:hover:not(.active) { color: rgba(255,255,255,0.6); }
+.pvs-gurt-view-btn:hover:not(.active) { color: var(--ds-text-secondary); }
 
 /* Nach Stil */
 .pvs-gurt-stil-groups   { display: flex; flex-direction: column; gap: 0.9rem; }
 .pvs-gurt-stil-group    {
-  background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 0.8rem 0.95rem;
 }
@@ -4423,10 +4423,10 @@ h4.pv3-grad-card-name {
   align-items: center;
   margin-bottom: 0.6rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
-.pvs-gurt-stil-name  { font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.75); }
-.pvs-gurt-stil-total { font-size: 0.68rem; color: rgba(255,255,255,0.3); }
+.pvs-gurt-stil-name  { font-size: 0.78rem; font-weight: 700; color: var(--ds-text-secondary); }
+.pvs-gurt-stil-total { font-size: 0.68rem; color: var(--ds-text-faint); }
 .pvs-gurt-belt-rows  { display: flex; flex-direction: column; gap: 0.42rem; }
 .pvs-gurt-belt-row   {
   display: grid;
@@ -4438,11 +4438,11 @@ h4.pv3-grad-card-name {
   width: 28px;
   height: 10px;
   border-radius: 5px;
-  border: 1.5px solid rgba(255,255,255,0.14);
+  border: 1.5px solid var(--ds-border-strong);
   flex-shrink: 0;
 }
-.pvs-gurt-belt-name  { font-size: 0.76rem; font-weight: 500; color: rgba(255,255,255,0.68); }
-.pvs-gurt-belt-count { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.7); text-align: right; }
+.pvs-gurt-belt-name  { font-size: 0.76rem; font-weight: 500; color: var(--ds-text-secondary); }
+.pvs-gurt-belt-count { font-size: 0.8rem; font-weight: 700; color: var(--ds-text-secondary); text-align: right; }
 
 /* Nach Gurtfarbe */
 .pvs-gurt-farbe-grid {
@@ -4451,8 +4451,8 @@ h4.pv3-grad-card-name {
   gap: 0.65rem;
 }
 .pvs-gurt-farbe-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
   padding: 0.8rem 0.9rem;
   display: flex;
@@ -4464,12 +4464,12 @@ h4.pv3-grad-card-name {
   width: 30px;
   height: 11px;
   border-radius: 5px;
-  border: 1.5px solid rgba(255,255,255,0.13);
+  border: 1.5px solid var(--ds-border-strong);
   flex-shrink: 0;
 }
-.pvs-gurt-farbe-name  { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.72); }
-.pvs-gurt-farbe-count { font-size: 1.6rem; font-weight: 800; line-height: 1; color: rgba(255,255,255,0.85); }
-.pvs-gurt-farbe-stile { font-size: 0.62rem; color: rgba(255,255,255,0.28); margin-top: 0.05rem; }
+.pvs-gurt-farbe-name  { font-size: 0.76rem; font-weight: 600; color: var(--ds-text-secondary); }
+.pvs-gurt-farbe-count { font-size: 1.6rem; font-weight: 800; line-height: 1; color: var(--ds-text); }
+.pvs-gurt-farbe-stile { font-size: 0.62rem; color: var(--ds-text-faint); margin-top: 0.05rem; }
 
 /* =============================================
    FREIE TECHNIKEN (Prüfungsverwaltung)
@@ -4498,7 +4498,7 @@ h4.pv3-grad-card-name {
   transition: opacity 0.15s, color 0.15s;
   margin-left: 0.1rem;
 }
-.pv3-bm-frei-remove:hover { opacity: 1; color: #ef4444; }
+.pv3-bm-frei-remove:hover { opacity: 1; color: var(--ds-danger); }
 
 .pv3-bm-frei-input-row {
   display: flex;
@@ -4509,7 +4509,7 @@ h4.pv3-grad-card-name {
 }
 .pv3-bm-frei-input {
   flex: 1;
-  background: var(--surface-3, rgba(255,255,255,0.06));
+  background: var(--surface-3, var(--ds-bg-card-hover));
   border: 1px solid var(--primary);
   border-radius: var(--comp-radius-sm, 4px);
   color: var(--text-primary);
@@ -4521,7 +4521,7 @@ h4.pv3-grad-card-name {
   background: var(--primary);
   border: none;
   border-radius: var(--comp-radius-sm, 4px);
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.82rem;
   padding: 0.22rem 0.55rem;
   cursor: pointer;
@@ -4530,7 +4530,7 @@ h4.pv3-grad-card-name {
 .pv3-bm-frei-confirm:hover { opacity: 0.85; }
 .pv3-bm-frei-cancel {
   background: none;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm, 4px);
   color: var(--text-muted);
   font-size: 0.75rem;
@@ -4539,7 +4539,7 @@ h4.pv3-grad-card-name {
 }
 .pv3-bm-frei-plus {
   background: none;
-  border: 1px dashed rgba(255,255,255,0.18);
+  border: 1px dashed var(--ds-border-strong);
   border-radius: var(--comp-radius-sm, 4px);
   color: var(--text-muted);
   font-size: 0.73rem;
@@ -4567,7 +4567,7 @@ h4.pv3-grad-card-name {
 .pv3-group-section {
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
 }
 
 .pv3-group-header {
@@ -4589,13 +4589,13 @@ h4.pv3-grad-card-name {
   border-bottom: 1px solid rgba(99,140,255,0.18);
 }
 .pv3-group-header.past {
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: var(--ds-bg-card);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .pv3-group-chevron {
   font-size: 0.6rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   transition: transform 0.2s ease;
   display: inline-block;
   flex-shrink: 0;
@@ -4617,11 +4617,11 @@ h4.pv3-grad-card-name {
   letter-spacing: 0.01em;
 }
 .pv3-group-date-label.future { color: rgba(160,185,255,0.9); }
-.pv3-group-date-label.past   { color: rgba(255,255,255,0.38); }
+.pv3-group-date-label.past   { color: var(--ds-text-faint); }
 
 .pv3-group-count {
   font-size: 0.68rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -4637,11 +4637,11 @@ h4.pv3-grad-card-name {
   align-items: center;
   gap: 0.5rem;
   padding: 0.38rem 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
   transition: background 0.12s;
 }
 .pv3-candidate-row:last-child { border-bottom: none; }
-.pv3-candidate-row:hover { background: rgba(255,255,255,0.03); }
+.pv3-candidate-row:hover { background: var(--ds-bg-card); }
 
 .pv3-cand-name {
   font-size: 0.82rem;
@@ -4682,12 +4682,12 @@ h4.pv3-grad-card-name {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: rgba(16,185,129,0.12);
-  border: 1px solid rgba(16,185,129,0.28);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   border-radius: 5px;
   padding: 2px 7px;
   font-size: 0.7rem;
-  color: #10B981;
+  color: var(--ds-success);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -4696,8 +4696,8 @@ h4.pv3-grad-card-name {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 5px;
   padding: 2px 7px;
   font-size: 0.7rem;
@@ -4723,14 +4723,14 @@ h4.pv3-grad-card-name {
   white-space: nowrap;
 }
 .pv3-abg-summary-badge.bestanden {
-  background: rgba(16,185,129,0.12);
-  border: 1px solid rgba(16,185,129,0.25);
-  color: #10B981;
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
+  color: var(--ds-success);
 }
 .pv3-abg-summary-badge.nicht-bestanden {
-  background: rgba(239,68,68,0.1);
-  border: 1px solid rgba(239,68,68,0.22);
-  color: #ef4444;
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
+  color: var(--ds-danger);
 }
 
 .pv3-candidate-row.abg {
@@ -4741,12 +4741,12 @@ h4.pv3-grad-card-name {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: rgba(239,68,68,0.1);
-  border: 1px solid rgba(239,68,68,0.22);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 5px;
   padding: 2px 7px;
   font-size: 0.7rem;
-  color: #ef4444;
+  color: var(--ds-danger);
   font-weight: 600;
   white-space: nowrap;
 }

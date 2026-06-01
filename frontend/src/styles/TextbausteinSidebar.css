@@ -68,7 +68,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   color: #000;
   border: none;
   border-radius: 6px;
@@ -95,7 +95,7 @@
 .tb-form-title {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--primary, #c9a227);
+  color: var(--primary, var(--ds-accent-dark));
 }
 
 .tb-form-input {
@@ -143,9 +143,9 @@
 }
 
 .tb-tool-btn--active {
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   color: #000;
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
 }
 
 .tb-tool-sep {
@@ -161,7 +161,7 @@
 
 .tb-system-hint {
   font-size: 0.8rem;
-  color: var(--primary, #c9a227);
+  color: var(--primary, var(--ds-accent-dark));
   background: var(--primary-alpha-10, rgba(201,162,39,0.1));
   border: 1px solid var(--primary-alpha-25, rgba(201,162,39,0.25));
   border-radius: 5px;
@@ -170,7 +170,7 @@
 
 .tb-form-error {
   font-size: 0.86rem;
-  color: #f87171;
+  color: var(--ds-danger-soft);
 }
 
 .tb-form-actions {
@@ -195,9 +195,9 @@
 .tb-btn--ghost:hover { color: var(--text-primary, #eee); }
 
 .tb-btn--primary {
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   color: #000;
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
   font-weight: 700;
 }
 
@@ -238,7 +238,7 @@
 }
 
 .tb-item--editing {
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
   background: var(--surface-2, #2a2a3a);
 }
 
@@ -286,7 +286,7 @@
 }
 
 .tb-icon-btn--danger:hover {
-  color: #f87171;
+  color: var(--ds-danger-soft);
   background: rgba(248,113,113,0.1);
   border-color: rgba(248,113,113,0.3);
 }
@@ -296,7 +296,7 @@
   display: inline-block;
   font-size: 0.75rem;
   background: var(--primary-alpha-10, rgba(201,162,39,0.1));
-  color: var(--primary, #c9a227);
+  color: var(--primary, var(--ds-accent-dark));
   border: 1px solid var(--primary-alpha-25, rgba(201,162,39,0.25));
   border-radius: 4px;
   padding: 2px 7px;
@@ -325,9 +325,9 @@
 }
 
 .tb-insert-btn:hover {
-  background: var(--primary, #c9a227);
+  background: var(--primary, var(--ds-accent-dark));
   color: #000;
-  border-color: var(--primary, #c9a227);
+  border-color: var(--primary, var(--ds-accent-dark));
   font-weight: 700;
 }
 
@@ -335,7 +335,7 @@
 .tb-system-badge {
   display: inline-block;
   font-size: 0.72rem;
-  background: rgba(255,255,255,0.07);
+  background: var(--ds-bg-card-hover);
   color: var(--text-secondary, #888);
   border: 1px solid var(--border, #444);
   border-radius: 4px;

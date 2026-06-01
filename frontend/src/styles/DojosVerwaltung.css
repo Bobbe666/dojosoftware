@@ -42,13 +42,13 @@
 }
 
 .dojos-verwaltung .message.success {
-  background: rgba(34, 197, 94, 0.1);
+  background: var(--ds-success-10);
   border-color: var(--status-success);
   color: var(--status-success);
 }
 
 .dojos-verwaltung .message.error {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--ds-danger-10);
   border-color: var(--status-error);
   color: var(--status-error);
 }
@@ -169,12 +169,12 @@
 }
 
 .badge-primary {
-  background: var(--gradient-gold, linear-gradient(135deg, #ffd700, #ffed4a));
+  background: var(--gradient-gold, linear-gradient(135deg, var(--ds-accent), #ffed4a));
   color: var(--modal-bg-dark);
 }
 
 .badge-success {
-  background: rgba(34, 197, 94, 0.2);
+  background: var(--ds-success-25);
   border: 1px solid var(--status-success);
   color: var(--status-success);
 }
@@ -186,7 +186,7 @@
 }
 
 .badge-danger {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   border: 1px solid var(--status-error);
   color: var(--status-error);
 }
@@ -205,7 +205,7 @@
   display: flex;
   gap: 0.75rem;
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
   font-size: 0.9rem;
   color: var(--text-2);
 }
@@ -223,13 +223,13 @@
   gap: 0.5rem;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 .btn-action {
   flex: 1;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
   padding: 10px 16px;
   color: var(--text-2);
@@ -254,14 +254,14 @@
 }
 
 .btn-delete:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   border-color: var(--status-error);
   color: var(--status-error);
 }
 
 /* Buttons */
 .dojos-verwaltung .btn-primary {
-  background: var(--primary, #ffd700);
+  background: var(--primary, var(--ds-accent));
   color: #111;
   border: none;
   padding: 0.5rem 1.1rem;
@@ -285,8 +285,8 @@
 }
 
 .dojos-verwaltung .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-lg);
   padding: 12px 24px;
   color: var(--text-1);
@@ -317,7 +317,7 @@
 }
 
 .modal-content {
-  background: linear-gradient(135deg, var(--modal-bg-dark) 0%, #16213e 100%);
+  background: linear-gradient(135deg, var(--modal-bg-dark) 0%, var(--ds-bg-surface) 100%);
   border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-xl);
   padding: 0;
@@ -348,8 +348,8 @@
 }
 
 .btn-close {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
   padding: 8px;
   color: var(--text-1);
@@ -361,7 +361,7 @@
 }
 
 .btn-close:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   border-color: var(--status-error);
   color: var(--status-error);
 }
@@ -423,7 +423,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--primary, #ffd700), var(--secondary, #ffed4a));
+  background: linear-gradient(90deg, var(--primary, var(--ds-accent)), var(--secondary, #ffed4a));
 }
 
 .modal-form {
@@ -551,7 +551,7 @@
 .color-suggestions {
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 .color-buttons {
@@ -563,9 +563,9 @@
 .color-button {
   width: 50px;
   height: 50px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
-  background-color: var(--swatch-color, #ffd700);
+  background-color: var(--swatch-color, var(--ds-accent));
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;

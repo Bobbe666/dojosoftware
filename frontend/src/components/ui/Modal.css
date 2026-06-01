@@ -106,7 +106,7 @@
 .ds-modal__close:hover {
   background: var(--color-error-500);
   border-color: var(--color-error-500);
-  color: white;
+  color: var(--ds-text);
   transform: rotate(90deg);
 }
 

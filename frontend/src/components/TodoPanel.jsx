@@ -363,7 +363,7 @@ export default function TodoPanel({ compact = false, fixedKontext = null }) {
       {/* Header */}
       <div className="todo-panel-header">
         <h2 className="todo-panel-title">
-          ✅ To-Do
+          <span className="todo-title-icon">✅</span> To-Do
           {openCount > 0 && (
             <span className="todo-count-badge">
               {openCount} offen{inProgCount > 0 ? ` · ${inProgCount} aktiv` : ''}

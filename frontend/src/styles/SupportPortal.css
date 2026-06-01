@@ -16,7 +16,7 @@
   width: 100%;
   max-width: 400px;
   background: var(--surface-2, #1a1d24);
-  border: 1px solid var(--border-default, rgba(255,255,255,0.08));
+  border: 1px solid var(--border-default, var(--ds-border));
   border-radius: 16px;
   padding: 2.5rem 2rem;
 }
@@ -34,13 +34,13 @@
 .sp-login-title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   margin: 0 0 0.35rem;
 }
 
 .sp-login-subtitle {
   font-size: 0.85rem;
-  color: var(--text-secondary, rgba(255,255,255,0.5));
+  color: var(--text-secondary, var(--ds-text-muted));
   margin: 0;
 }
 
@@ -51,9 +51,9 @@
 }
 
 .sp-login-error {
-  background: rgba(239,68,68,0.12);
-  border: 1px solid rgba(239,68,68,0.3);
-  color: #ef4444;
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
+  color: var(--ds-danger);
   border-radius: 8px;
   padding: 0.65rem 1rem;
   font-size: 0.85rem;
@@ -68,17 +68,17 @@
 .sp-login-field label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-secondary, rgba(255,255,255,0.6));
+  color: var(--text-secondary, var(--ds-text-secondary));
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .sp-login-field input {
   background: var(--surface-1, #12151c);
-  border: 1px solid var(--border-default, rgba(255,255,255,0.1));
+  border: 1px solid var(--border-default, var(--ds-border));
   border-radius: 8px;
   padding: 0.7rem 1rem;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.95rem;
   transition: border-color 0.15s;
 }
@@ -89,13 +89,13 @@
 }
 
 .sp-login-field input::placeholder {
-  color: rgba(255,255,255,0.25);
+  color: var(--ds-text-faint);
 }
 
 .sp-login-btn {
   margin-top: 0.5rem;
   background: var(--primary, #6366f1);
-  color: #fff;
+  color: var(--ds-text);
   border: none;
   border-radius: 8px;
   padding: 0.8rem;
@@ -130,7 +130,7 @@
   padding: 0 1.5rem;
   height: 56px;
   background: var(--surface-2, #1a1d24);
-  border-bottom: 1px solid var(--border-default, rgba(255,255,255,0.08));
+  border-bottom: 1px solid var(--border-default, var(--ds-border));
   position: sticky;
   top: 0;
   z-index: 100;
@@ -151,7 +151,7 @@
 .sp-header-title {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary, var(--ds-text));
   white-space: nowrap;
 }
 
@@ -169,7 +169,7 @@
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: var(--text-secondary, rgba(255,255,255,0.5));
+  color: var(--text-secondary, var(--ds-text-muted));
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -177,8 +177,8 @@
 }
 
 .sp-header-tab:hover {
-  background: rgba(255,255,255,0.05);
-  color: var(--text-primary, #fff);
+  background: var(--ds-bg-card-hover);
+  color: var(--text-primary, var(--ds-text));
 }
 
 .sp-header-tab.active {
@@ -197,7 +197,7 @@
 
 .sp-header-username {
   font-size: 0.82rem;
-  color: var(--text-secondary, rgba(255,255,255,0.6));
+  color: var(--text-secondary, var(--ds-text-secondary));
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -217,22 +217,22 @@
 }
 
 .sp-badge--admin {
-  background: rgba(239,68,68,0.15);
-  color: #ef4444;
-  border: 1px solid rgba(239,68,68,0.25);
+  background: var(--ds-danger-10);
+  color: var(--ds-danger);
+  border: 1px solid var(--ds-danger-25);
 }
 
 .sp-badge--dojo {
-  background: rgba(16,185,129,0.15);
-  color: #10b981;
-  border: 1px solid rgba(16,185,129,0.25);
+  background: var(--ds-success-10);
+  color: var(--ds-success);
+  border: 1px solid var(--ds-success-25);
 }
 
 .sp-logout-btn {
   background: none;
-  border: 1px solid var(--border-default, rgba(255,255,255,0.1));
+  border: 1px solid var(--border-default, var(--ds-border));
   border-radius: 6px;
-  color: var(--text-secondary, rgba(255,255,255,0.5));
+  color: var(--text-secondary, var(--ds-text-muted));
   padding: 0.3rem 0.45rem;
   cursor: pointer;
   display: flex;
@@ -241,8 +241,8 @@
 }
 
 .sp-logout-btn:hover {
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--ds-danger);
+  color: var(--ds-danger);
 }
 
 /* ── Main Content ───────────────────────────────────────────────────────── */

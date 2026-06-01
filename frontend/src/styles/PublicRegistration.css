@@ -198,7 +198,7 @@
 .tariff-card.selected {
   border-color: var(--primary-color);
   background: #e8f4e8 !important;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 0 0 3px var(--ds-success-25);
 }
 
 .tariff-card h4 {
@@ -278,7 +278,7 @@
 }
 
 .checkbox-label a:hover {
-  color: #ffed4e;
+  color: var(--ds-accent-bright);
   text-shadow: 0 0 8px var(--primary-alpha-50);
 }
 
@@ -362,7 +362,7 @@
 
 .btn-primary {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  color: white;
+  color: var(--ds-text);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -503,7 +503,7 @@
 
 .btn-remove {
   background: #ff4444;
-  color: white;
+  color: var(--ds-text);
   border: none;
   border-radius: 50%;
   width: 30px;
@@ -899,7 +899,7 @@
 
 .modal-overlay .modal-content.registration-modal input::placeholder,
 .modal-overlay .modal-content.registration-modal textarea::placeholder {
-  color: #888888 !important;
+  color: var(--ds-text-muted) !important;
   -webkit-text-fill-color: #888888 !important;
 }
 
@@ -942,7 +942,7 @@
 .pr-promo-valid-info {
   margin-top: 0.5rem;
   padding: 0.75rem;
-  background-color: rgba(16, 185, 129, 0.1);
+  background-color: var(--ds-success-10);
   border: 1px solid var(--status-success);
   border-radius: 6px;
   color: var(--success);
@@ -958,7 +958,7 @@
 .pr-promo-invalid-info {
   margin-top: 0.5rem;
   padding: 0.5rem;
-  background-color: rgba(239, 68, 68, 0.1);
+  background-color: var(--ds-danger-10);
   border: 1px solid var(--status-error);
   border-radius: 6px;
   color: var(--error);
@@ -1018,7 +1018,7 @@
   border-radius: 4px;
   font-size: 0.75rem;
   margin-bottom: 0.5rem;
-  color: white;
+  color: var(--ds-text);
 }
 
 .pr-member-badge--primary {
@@ -1113,7 +1113,7 @@
 .registrant-type-card {
   flex: 1;
   min-width: 220px;
-  background: var(--card-bg, #1a1a1a);
+  background: var(--card-bg, var(--ds-bg-surface));
   border: 2px solid var(--border-color, #333);
   border-radius: 12px;
   padding: 2rem 1.5rem;
@@ -1127,13 +1127,13 @@
 }
 
 .registrant-type-card:hover {
-  border-color: var(--primary-color, #ffd700);
+  border-color: var(--primary-color, var(--ds-accent));
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 6px 20px var(--ds-accent-15);
 }
 
 .registrant-type-card:focus {
-  outline: 2px solid var(--primary-color, #ffd700);
+  outline: 2px solid var(--primary-color, var(--ds-accent));
   outline-offset: 2px;
 }
 
@@ -1144,7 +1144,7 @@
 
 .registrant-type-card h4 {
   margin: 0;
-  color: var(--text-color, #fff);
+  color: var(--text-color, var(--ds-text));
   font-size: 1.1rem;
   font-weight: 700;
 }
@@ -1158,7 +1158,7 @@
 
 .type-card-select-btn {
   margin-top: 0.5rem;
-  color: var(--primary-color, #ffd700);
+  color: var(--primary-color, var(--ds-accent));
   font-weight: 600;
   font-size: 0.9rem;
 }
@@ -1171,13 +1171,13 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
   border-radius: 8px;
   padding: 0.6rem 1rem;
   margin-bottom: 1.2rem;
   font-size: 0.9rem;
-  color: var(--primary-color, #ffd700);
+  color: var(--primary-color, var(--ds-accent));
   font-weight: 500;
 }
 

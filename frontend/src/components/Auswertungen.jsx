@@ -1283,7 +1283,7 @@ function Auswertungen() {
         })()}
 
         {activeTab === 'members' && (() => {
-          const ttStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12, color: '#fff' };
+          const ttStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12, color: 'var(--ds-text)' };
           const axisStyle = { tick: { fill: 'rgba(255,255,255,0.45)', fontSize: 11 }, axisLine: { stroke: 'rgba(255,255,255,0.08)' }, tickLine: false };
           const gridStyle = { stroke: 'rgba(255,255,255,0.06)', strokeDasharray: '0' };
           const periodLabel = timePeriod === 'monthly' ? 'Monatlich' : timePeriod === 'quarterly' ? 'Quartal' : timePeriod === 'biannually' ? 'Halbjahr' : 'Jährlich';

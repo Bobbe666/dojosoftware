@@ -147,7 +147,7 @@ header.mh-portal.dashboard-header .dashboard-header-right {
   top: -5px !important;
   right: -5px !important;
   background: #2d2520 !important;
-  color: #fff !important;
+  color: var(--ds-text) !important;
   font-size: 0.6rem !important;
   font-weight: 700 !important;
   min-width: 16px !important;
@@ -197,7 +197,7 @@ header.mh-portal.dashboard-header .dashboard-header-right {
 }
 .family-switcher-header-btn--active {
   background: #2d2520 !important;
-  color: #fff !important;
+  color: var(--ds-text) !important;
   cursor: default !important;
 }
 .family-switcher-header-btn:disabled {

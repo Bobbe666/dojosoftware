@@ -68,7 +68,7 @@ const MemberSecurityTab = ({ CustomSelect, onError }) => {
   };
 
   const SelectComponent = CustomSelect || (({ value, onChange, options }) => (
-    <select value={value} onChange={onChange} style={{ width: '100%', padding: '0.55rem 0.875rem', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: '0.9rem' }}>
+    <select value={value} onChange={onChange} style={{ width: '100%', padding: '0.55rem 0.875rem', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--ds-text)', fontSize: '0.9rem' }}>
       {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
     </select>
   ));

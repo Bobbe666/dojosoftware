@@ -4,7 +4,7 @@
 
 .notification-system {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--ds-bg-surface) 50%, var(--ds-bg-surface) 100%);
   color: var(--text-1);
   padding: var(--ui-page-padding);
   animation: fadeIn 0.6s ease-out;
@@ -70,7 +70,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--ds-bg-elevated), transparent);
   transition: left 0.5s;
 }
 
@@ -207,7 +207,7 @@
   padding: 16px;
   background: rgba(20, 20, 30, 0.5);
   border-radius: var(--comp-radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
 }
@@ -723,7 +723,7 @@ input:checked + .toggle-slider:before {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--ds-bg-elevated), transparent);
   transition: left 0.5s;
 }
 
@@ -778,17 +778,17 @@ input:checked + .toggle-slider:before {
 }
 
 .alert-error {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--ds-danger-10);
   color: var(--status-error);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
+  border: 1px solid var(--ds-danger-25);
+  box-shadow: 0 4px 16px var(--ds-danger-25);
 }
 
 .alert-success {
-  background: rgba(34, 197, 94, 0.15);
+  background: var(--ds-success-10);
   color: var(--status-success);
-  border: 1px solid rgba(34, 197, 94, 0.4);
-  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.2);
+  border: 1px solid var(--ds-success-25);
+  box-shadow: 0 4px 16px var(--ds-success-25);
 }
 
 /* Custom Kurs-Select Dropdown */
@@ -856,7 +856,7 @@ input:checked + .toggle-slider:before {
   color: var(--text-1);
   font-size: 14px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
   transition: background 0.15s;
 }
 
@@ -927,7 +927,7 @@ input:checked + .toggle-slider:before {
 .pagination button:disabled {
   background: var(--surface-3);
   color: var(--text-4);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--ds-border);
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -1391,7 +1391,7 @@ input:checked + .toggle-slider:before {
   margin-left: 0.5rem;
   padding: 3px 8px;
   background-color: #1976d2;
-  color: white;
+  color: var(--ds-text);
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -1453,9 +1453,9 @@ input:checked + .toggle-slider:before {
 
 /* Delete single button */
 .ns-btn-delete {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   color: var(--error);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  border: 1px solid var(--ds-danger-25);
   padding: 0.4rem 0.6rem;
   border-radius: 8px;
   cursor: pointer;
@@ -1468,8 +1468,8 @@ input:checked + .toggle-slider:before {
 }
 
 .ns-btn-delete:hover {
-  background: rgba(239, 68, 68, 0.3);
-  border-color: rgba(239, 68, 68, 0.6);
+  background: var(--ds-danger-25);
+  border-color: var(--ds-danger-25);
 }
 
 /* Delete bulk button */
@@ -1732,12 +1732,12 @@ input:checked + .toggle-slider:before {
 
 /* Stat card: push/success border (green) */
 .ns-stat-card-green {
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid var(--ds-success-25);
 }
 
 /* Stat card: error border (red) */
 .ns-stat-card-red {
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid var(--ds-danger-25);
 }
 
 /* Stat card: h3 text color - email (blue) */
@@ -1779,7 +1779,7 @@ input:checked + .toggle-slider:before {
 /* Notification item override (compact version) */
 .ns-notification-item-compact {
   background: rgba(20, 20, 30, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.8rem;
   display: flex;
@@ -1841,8 +1841,8 @@ input:checked + .toggle-slider:before {
 /* Verify SMTP button */
 .ns-btn-verify {
   padding: 0.7rem 1.5rem;
-  background: rgba(34, 197, 94, 0.2);
-  border: 1px solid rgba(34, 197, 94, 0.4);
+  background: var(--ds-success-25);
+  border: 1px solid var(--ds-success-25);
   border-radius: 8px;
   color: var(--success);
   font-size: 0.9rem;
@@ -1851,7 +1851,7 @@ input:checked + .toggle-slider:before {
 }
 
 .ns-btn-verify:hover:not(:disabled) {
-  background: rgba(34, 197, 94, 0.3);
+  background: var(--ds-success-25);
 }
 
 /* Test email button */
@@ -1915,7 +1915,7 @@ input:checked + .toggle-slider:before {
   margin-left: 0.5rem;
   padding: 3px 8px;
   background-color: #1976d2;
-  color: white;
+  color: var(--ds-text);
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -1984,9 +1984,9 @@ input:checked + .toggle-slider:before {
 
 /* History: delete single button */
 .ns-btn-delete-single {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   color: var(--error);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  border: 1px solid var(--ds-danger-25);
   padding: 0.4rem 0.6rem;
   border-radius: 8px;
   cursor: pointer;
@@ -1999,8 +1999,8 @@ input:checked + .toggle-slider:before {
 }
 
 .ns-btn-delete-single:hover {
-  background: rgba(239, 68, 68, 0.3);
-  border-color: rgba(239, 68, 68, 0.6);
+  background: var(--ds-danger-25);
+  border-color: var(--ds-danger-25);
 }
 
 /* History: bulk delete button */
@@ -2224,7 +2224,7 @@ input:checked + .toggle-slider:before {
   height: 40px;
   border-radius: 4px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #FFD700 0%, #FF6B35 50%, #3B82F6 100%);
+  background: linear-gradient(135deg, var(--ds-accent) 0%, #FF6B35 50%, #3B82F6 100%);
 }
 .ns-dojo-filter-accent--dojo {
   background: var(--ns-accent-color);
@@ -2238,11 +2238,11 @@ input:checked + .toggle-slider:before {
   font-weight: 600;
 }
 .ns-status-badge--sent {
-  background: rgba(34, 197, 94, 0.2);
+  background: var(--ds-success-25);
   color: var(--status-success);
 }
 .ns-status-badge--failed {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   color: var(--status-error);
 }
 
@@ -2258,8 +2258,8 @@ input:checked + .toggle-slider:before {
 .ns-btn-recipients {
   width: 100%;
   padding: 0.6rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   color: #e0e0e0;
   font-size: 0.9rem;
@@ -2288,14 +2288,14 @@ input:checked + .toggle-slider:before {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.8rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 6px;
   transition: all 0.2s ease;
 }
 .ns-recipient-expanded-row--read {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.3);
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
 }
 
 /* Recipient read/unread status label */
@@ -2351,7 +2351,7 @@ input:checked + .toggle-slider:before {
   transition: all 0.2s ease;
 }
 .ns-btn-page:disabled {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   color: #606070;
   cursor: not-allowed;
 }

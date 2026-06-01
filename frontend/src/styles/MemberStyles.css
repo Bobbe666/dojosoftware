@@ -332,7 +332,7 @@
 /* Training Hours Tracker */
 .member-styles .training-tracker-section {
   background: var(--surface-3);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  border: 1px solid var(--ds-accent-20);
   border-radius: var(--comp-radius-xl);
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -528,7 +528,7 @@
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 3px;
-  background: linear-gradient(135deg, #ffd700, #ffaa00, #ffd700);
+  background: linear-gradient(135deg, var(--ds-accent), #ffaa00, var(--ds-accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -546,7 +546,7 @@
 .mst-empty-card {
   text-align: center;
   padding: 4rem 2rem;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border: 1px solid var(--primary-alpha-15);
   border-radius: 16px;
 }
@@ -560,7 +560,7 @@
 
 /* Stil card */
 .mst-stil-card {
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   border: 1px solid var(--primary-alpha-15);
   border-radius: 20px;
   overflow: hidden;
@@ -568,7 +568,7 @@
 
 /* Stil card header */
 .mst-stil-header {
-  background: rgba(255,215,0,0.07);
+  background: var(--ds-accent-05);
   border-bottom: 1px solid var(--primary-alpha-15);
   padding: 1.2rem 1.5rem;
   display: flex;
@@ -592,8 +592,8 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(16,185,129,0.15);
-  border: 1px solid rgba(16,185,129,0.4);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   border-radius: 20px;
   padding: 0.3rem 0.8rem;
   font-size: 0.75rem;
@@ -689,7 +689,7 @@
 /* Progress track */
 .mst-progress-track {
   height: 8px;
-  background: rgba(255,255,255,0.08);
+  background: var(--ds-bg-elevated);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -847,14 +847,14 @@
   border-radius: 14px;
   padding: 1.2rem;
   text-align: center;
-  border: 1px solid var(--bc44, rgba(255,215,0,0.27));
+  border: 1px solid var(--bc44, var(--ds-accent-25));
 }
 
 /* Belt display bar (colored strip) */
 .mst-belt-bar {
   width: 56px;
   height: 14px;
-  background: var(--bc, #ffd700);
+  background: var(--bc, var(--ds-accent));
   border-radius: 4px;
   margin: 0 auto 0.8rem;
   box-shadow: 0 0 14px var(--bc66, var(--primary-alpha-40));
@@ -877,14 +877,14 @@
 /* Progress fill bar (width stays inline) */
 .mst-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ffd700, #ffaa00);
+  background: linear-gradient(90deg, var(--ds-accent), #ffaa00);
   border-radius: 4px;
   transition: width 0.8s ease;
   box-shadow: 0 0 8px var(--primary-alpha-40);
 }
 .mst-progress-fill--ready {
-  background: linear-gradient(90deg, #10b981, #059669);
-  box-shadow: 0 0 8px rgba(16,185,129,0.5);
+  background: linear-gradient(90deg, var(--ds-success), #059669);
+  box-shadow: 0 0 8px var(--ds-success-25);
 }
 
 /* Grad path item */
@@ -914,7 +914,7 @@
   box-shadow: none;
 }
 .mst-grad-belt-bar--current {
-  box-shadow: 0 0 8px var(--gc88, rgba(255,215,0,0.53));
+  box-shadow: 0 0 8px var(--gc88, var(--ds-accent-50));
 }
 .mst-grad-belt-bar--future {
   opacity: 0.45;
@@ -929,8 +929,8 @@
   line-height: 1.25;
 }
 .mst-grad-name--current { color: var(--primary); font-weight: 700; }
-.mst-grad-name--past    { color: rgba(255,255,255,0.75); }
-.mst-grad-name--future  { color: rgba(255,255,255,0.45); }
+.mst-grad-name--past    { color: var(--ds-text-secondary); }
+.mst-grad-name--future  { color: var(--ds-text-muted); }
 
 /* Grad path connector line */
 .mst-grad-connector {
@@ -943,13 +943,13 @@
   flex-shrink: 0;
 }
 .mst-grad-connector--past {
-  background: rgba(16,185,129,0.5);
+  background: var(--ds-success-25);
 }
 
 /* Next exam date */
 .mst-exam-date-primary {
   font-size: 0.85rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   font-weight: 600;
 }
 .mst-exam-date-primary--set {

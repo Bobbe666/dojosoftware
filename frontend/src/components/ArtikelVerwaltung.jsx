@@ -1650,15 +1650,15 @@ const ArtikelVerwaltung = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#d4af37' }}>⚡ Schnellerfassung</h3>
-                <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>Pflichtfelder — Rest im nächsten Schritt</p>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: 'var(--ds-text-muted)' }}>Pflichtfelder — Rest im nächsten Schritt</p>
               </div>
-              <button onClick={() => setShowQuickModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setShowQuickModal(false)} style={{ background: 'none', border: 'none', color: 'var(--ds-text-muted)', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               {/* Artikelgruppe */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Artikelgruppe *</label>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--ds-text-muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Artikelgruppe *</label>
                 <select
                   value={quickForm.kategorie_id}
                   onChange={e => setQuickForm(prev => ({ ...prev, kategorie_id: e.target.value }))}
@@ -1678,7 +1678,7 @@ const ArtikelVerwaltung = () => {
 
               {/* Artikelname */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Artikelname *</label>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--ds-text-muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Artikelname *</label>
                 <input
                   type="text"
                   value={quickForm.name}
@@ -1692,7 +1692,7 @@ const ArtikelVerwaltung = () => {
               {/* VK-Preis */}
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>VK-Preis Brutto (€) *</label>
+                  <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--ds-text-muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>VK-Preis Brutto (€) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1704,7 +1704,7 @@ const ArtikelVerwaltung = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MwSt</label>
+                  <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--ds-text-muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MwSt</label>
                   <select
                     value={quickForm.mwst}
                     onChange={e => setQuickForm(prev => ({ ...prev, mwst: parseFloat(e.target.value) }))}
@@ -1717,14 +1717,14 @@ const ArtikelVerwaltung = () => {
                 </div>
               </div>
               {quickForm.bruttopreis > 0 && (
-                <div style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.35)', marginTop: '-0.5rem' }}>
+                <div style={{ fontSize: '0.76rem', color: 'var(--ds-text-faint)', marginTop: '-0.5rem' }}>
                   Netto: {(parseFloat(quickForm.bruttopreis) / (1 + quickForm.mwst / 100)).toFixed(2)} €
                 </div>
               )}
 
               {/* Größen */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Größen (optional)</label>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--ds-text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Größen (optional)</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                   {QUICK_GROESSEN.map(g => (
                     <button
@@ -1760,7 +1760,7 @@ const ArtikelVerwaltung = () => {
               )}
 
               <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
-                <button onClick={() => setShowQuickModal(false)} style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '0.88rem' }}>
+                <button onClick={() => setShowQuickModal(false)} style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, color: 'var(--ds-text-muted)', cursor: 'pointer', fontSize: '0.88rem' }}>
                   Abbrechen
                 </button>
                 <button onClick={handleQuickSave} disabled={quickSaving} style={{ padding: '0.5rem 1.2rem', background: 'rgba(212,175,55,0.2)', border: '1px solid rgba(212,175,55,0.5)', borderRadius: 7, color: '#d4af37', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 700 }}>

@@ -1,7 +1,7 @@
 /* Mitternachtsblau Designsystem - Heute Vormittag */
 :root {
   /* Hauptfarben */
-  --farbe-hauptfarbe: #ffd700;
+  --farbe-hauptfarbe: var(--ds-accent);
   --farbe-akzent: #ff6b35;
   --farbe-akzent-2: #f7931e;
   --farbe-weiss: #ffffff;
@@ -13,7 +13,7 @@
   
   /* Zusätzliche Farben */
   --farbe-secondary: #b8860b;
-  --rahmen-farbe: rgba(255, 215, 0, 0.2);
+  --rahmen-farbe: var(--ds-accent-20);
   
   /* Hintergrundfarben - Mitternachtsblau */
   --hintergrund-primary: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
@@ -23,12 +23,12 @@
   
   /* Glassmorphism */
   --backdrop-filter: blur(20px);
-  --border-glas: 1px solid rgba(255, 215, 0, 0.2);
+  --border-glas: 1px solid var(--ds-accent-20);
   --schatten-glas: 0 8px 32px rgba(0, 0, 0, 0.3);
   
   /* Status Farben */
-  --farbe-success: #ffd700;
-  --farbe-erfolg: #ffd700;
+  --farbe-success: var(--ds-accent);
+  --farbe-erfolg: var(--ds-accent);
   --farbe-warning: #ff9800;
   --farbe-error: #f44336;
   --farbe-info: #2196f3;
@@ -44,28 +44,28 @@
   color: var(--farbe-text-dunkel);
   border: none;
   padding: 12px 24px;
-  border-radius: var(--comp-radius-xl);
+  border-radius: var(--ds-btn-radius, var(--comp-radius-xl));
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px var(--ds-accent-30);
   transition: all 0.3s ease;
 }
 
 .btn:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 8px 25px var(--ds-accent-50);
 }
 
 .btn-secondary:not(.logout-button):not(.dashboard-button) {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-elevated);
   backdrop-filter: blur(20px);
   color: var(--farbe-text);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--ds-accent-20);
 }
 
 .btn-secondary:not(.logout-button):not(.dashboard-button):hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 215, 0, 0.4);
+  background: var(--ds-bg-elevated);
+  border-color: var(--ds-accent-50);
 }
 
 /* Basis Reset */
@@ -91,7 +91,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   color: var(--primary) !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
-               0 0 4px rgba(255, 215, 0, 0.6) !important;
+               0 0 4px var(--ds-accent-50) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
   font-weight: 600 !important;

@@ -40,7 +40,7 @@ function IbanDiagnostic({ iban }) {
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: d.errors.length ? '0.4rem' : 0 }}>
         <span style={{ color: /^[A-Z]{2}$/.test(cc) && IBAN_LENGTHS[cc] ? '#4caf82' : '#e05c5c' }} title="Ländercode">{cc}</span>
         <span style={{ color: /^\d{2}$/.test(d.checkDigits) ? '#4caf82' : '#e05c5c' }} title="Prüfziffern">{d.checkDigits}</span>
-        <span style={{ color: 'rgba(255,255,255,0.55)' }} title="BBAN">{d.bban}</span>
+        <span style={{ color: 'var(--ds-text-muted)' }} title="BBAN">{d.bban}</span>
         <span style={{ marginLeft: 'auto', color: statusColor, fontWeight: 600 }}>
           {d.ok ? '✓' : '✗'} {actual} Zch{expected ? ` / ${expected} erw.` : ''}
         </span>
@@ -86,9 +86,9 @@ function IbanRechner({ onUebernehmen }) {
       <div style={{ fontSize: '0.78rem', color: 'rgba(212,175,55,0.9)', marginBottom: '0.5rem', fontWeight: 600 }}>🔢 IBAN aus BLZ + Kontonummer berechnen</div>
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <input placeholder="BLZ (8 Stellen)" value={blz} onChange={e => setBlz(e.target.value.replace(/\D/g, '').slice(0, 8))}
-          style={{ flex: '1', minWidth: '110px', fontFamily: 'monospace', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '0.4rem 0.6rem', color: '#fff' }} />
+          style={{ flex: '1', minWidth: '110px', fontFamily: 'monospace', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '0.4rem 0.6rem', color: 'var(--ds-text)' }} />
         <input placeholder="Kontonummer" value={kto} onChange={e => setKto(e.target.value.replace(/\D/g, '').slice(0, 10))}
-          style={{ flex: '1', minWidth: '110px', fontFamily: 'monospace', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '0.4rem 0.6rem', color: '#fff' }} />
+          style={{ flex: '1', minWidth: '110px', fontFamily: 'monospace', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '0.4rem 0.6rem', color: 'var(--ds-text)' }} />
         <button type="button" onClick={berechnen} disabled={loading || blz.length !== 8 || !kto}
           style={{ background: 'rgba(212,175,55,0.2)', border: '1px solid rgba(212,175,55,0.5)', borderRadius: '6px', color: '#d4af37', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
           {loading ? '…' : 'Berechnen'}
@@ -99,7 +99,7 @@ function IbanRechner({ onUebernehmen }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <span style={{ fontFamily: 'monospace', color: '#4caf82', fontWeight: 700, fontSize: '0.9rem', letterSpacing: '0.05em' }}>{result.iban}</span>
             {result.bic && result.bankname !== 'Unbekannte Bank' && (
-              <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>{result.bankname} · {result.bic}</span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--ds-text-muted)' }}>{result.bankname} · {result.bic}</span>
             )}
             <button type="button" onClick={() => { onUebernehmen(result); setOpen(false); }}
               style={{ marginLeft: 'auto', background: 'rgba(76,175,130,0.2)', border: '1px solid rgba(76,175,130,0.5)', borderRadius: '6px', color: '#4caf82', padding: '0.3rem 0.7rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
@@ -116,7 +116,7 @@ function IbanRechner({ onUebernehmen }) {
       {result && !result.ok && (
         <div style={{ marginTop: '0.4rem', color: '#e05c5c', fontSize: '0.78rem' }}>⚠ {result.error}</div>
       )}
-      <button type="button" onClick={() => setOpen(false)} style={{ marginTop: '0.4rem', fontSize: '0.72rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: 0 }}>Schließen</button>
+      <button type="button" onClick={() => setOpen(false)} style={{ marginTop: '0.4rem', fontSize: '0.72rem', background: 'none', border: 'none', color: 'var(--ds-text-faint)', cursor: 'pointer', padding: 0 }}>Schließen</button>
     </div>
   );
 }
@@ -222,12 +222,12 @@ function MitgliedEinkäufeTab({ mitgliedId, activeDojo }) {
   const s = {
     wrap: { borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', marginBottom: 10 },
     row: { display: 'grid', gridTemplateColumns: '1fr 90px 100px 28px', alignItems: 'center', gap: 12, padding: '12px 16px', cursor: 'pointer', userSelect: 'none', minWidth: 0 },
-    badge: { fontSize: 11, padding: '2px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap', textAlign: 'center' },
+    badge: { fontSize: 11, padding: '2px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: 'var(--ds-text-secondary)', whiteSpace: 'nowrap', textAlign: 'center' },
     amount: { fontWeight: 700, color: '#ffd700', fontSize: 15, textAlign: 'right', whiteSpace: 'nowrap' },
-    arrow: { color: 'rgba(255,255,255,0.4)', fontSize: 12, textAlign: 'right' },
+    arrow: { color: 'var(--ds-text-muted)', fontSize: 12, textAlign: 'right' },
     expanded: { borderTop: '1px solid rgba(255,255,255,0.07)', padding: '12px 16px', background: 'rgba(0,0,0,0.2)' },
     posRow: { display: 'grid', gridTemplateColumns: '1fr 36px 80px 80px', gap: 8, padding: '6px 0', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: 13, alignItems: 'center' },
-    posHeader: { display: 'grid', gridTemplateColumns: '1fr 36px 80px 80px', gap: 8, padding: '4px 0 6px', fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 500 },
+    posHeader: { display: 'grid', gridTemplateColumns: '1fr 36px 80px 80px', gap: 8, padding: '4px 0 6px', fontSize: 11, color: 'var(--ds-text-muted)', fontWeight: 500 },
   };
   return (
     <div style={{ padding: '4px 0' }}>
@@ -241,8 +241,8 @@ function MitgliedEinkäufeTab({ mitgliedId, activeDojo }) {
             <div key={v.verkauf_id} style={s.wrap}>
               <div style={s.row} onClick={() => toggleExpand(v.verkauf_id)}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Bon #{v.bon_nummer || v.verkauf_id}</div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ds-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Bon #{v.bon_nummer || v.verkauf_id}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ds-text-muted)', marginTop: 2 }}>
                     {fmt(v.verkauf_datum || v.verkauf_timestamp)}
                     {v.zahlungsstatus && <span style={{ marginLeft: 8, color: statusColor[v.zahlungsstatus] || 'rgba(255,255,255,0.4)' }}>{v.zahlungsstatus === 'offen' ? '● Offen' : v.zahlungsstatus === 'in_einzug' ? '● In Einzug' : '✓ ' + v.zahlungsstatus}</span>}
                   </div>
@@ -253,20 +253,20 @@ function MitgliedEinkäufeTab({ mitgliedId, activeDojo }) {
               </div>
               {isOpen && (
                 <div style={s.expanded}>
-                  {positionen[v.verkauf_id] === undefined ? <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Lade…</div>
-                    : positionen[v.verkauf_id].length === 0 ? <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Keine Positionen.</div>
+                  {positionen[v.verkauf_id] === undefined ? <div style={{ fontSize: 13, color: 'var(--ds-text-muted)' }}>Lade…</div>
+                    : positionen[v.verkauf_id].length === 0 ? <div style={{ fontSize: 13, color: 'var(--ds-text-muted)' }}>Keine Positionen.</div>
                     : <>
                       <div style={s.posHeader}><span>Artikel</span><span style={{ textAlign: 'center' }}>Menge</span><span style={{ textAlign: 'right' }}>Einzelpreis</span><span style={{ textAlign: 'right' }}>Gesamt</span></div>
                       {positionen[v.verkauf_id].map((pos, i) => (
                         <div key={i} style={s.posRow}>
-                          <span style={{ color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pos.artikel_name || pos.name}{pos.rabatt_prozent > 0 && <span style={{ color: '#4ade80', marginLeft: 6, fontSize: 11 }}>-{pos.rabatt_prozent}%</span>}</span>
-                          <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>{pos.menge}×</span>
-                          <span style={{ textAlign: 'right', color: 'rgba(255,255,255,0.5)' }}>{(pos.einzelpreis_cent / 100).toFixed(2)} €</span>
+                          <span style={{ color: 'var(--ds-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pos.artikel_name || pos.name}{pos.rabatt_prozent > 0 && <span style={{ color: '#4ade80', marginLeft: 6, fontSize: 11 }}>-{pos.rabatt_prozent}%</span>}</span>
+                          <span style={{ textAlign: 'center', color: 'var(--ds-text-muted)' }}>{pos.menge}×</span>
+                          <span style={{ textAlign: 'right', color: 'var(--ds-text-muted)' }}>{(pos.einzelpreis_cent / 100).toFixed(2)} €</span>
                           <span style={{ textAlign: 'right', color: '#ffd700', fontWeight: 600 }}>{(pos.brutto_cent / 100).toFixed(2)} €</span>
                         </div>
                       ))}
                       <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 6, paddingTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Gesamt</span>
+                        <span style={{ fontSize: 13, color: 'var(--ds-text-muted)' }}>Gesamt</span>
                         <span style={{ fontSize: 15, fontWeight: 700, color: '#ffd700' }}>{fmtEur(betrag)}</span>
                       </div>
                     </>}
@@ -308,15 +308,15 @@ function MitgliedGutscheineTab({ mitgliedId, activeDojo }) {
                 <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, color: '#f97316', letterSpacing: 2 }}>{g.code}</span>
                 <span style={{ fontSize: 13, color: g.eingeloest ? 'rgba(255,255,255,0.4)' : abgelaufen ? '#f87171' : '#4ade80', fontWeight: 600 }}>{g.eingeloest ? 'Eingelöst' : abgelaufen ? 'Abgelaufen' : 'Aktiv'}</span>
               </div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>{g.titel}</div>
+              <div style={{ fontSize: 13, color: 'var(--ds-text-secondary)', marginBottom: 8 }}>{g.titel}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
-                <span style={{ color: 'rgba(255,255,255,0.5)' }}>Restwert</span>
+                <span style={{ color: 'var(--ds-text-muted)' }}>Restwert</span>
                 <span style={{ fontWeight: 700, color: '#4ade80' }}>{(restbetrag_cent / 100).toFixed(2)} € / {(wert_cent / 100).toFixed(2)} €</span>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 999, height: 6, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${prozent}%`, background: g.eingeloest ? 'rgba(255,255,255,0.2)' : '#4ade80', borderRadius: 999 }} />
               </div>
-              {g.gueltig_bis && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>Gültig bis {fmtDate(g.gueltig_bis)}</div>}
+              {g.gueltig_bis && <div style={{ fontSize: 11, color: 'var(--ds-text-muted)', marginTop: 6 }}>Gültig bis {fmtDate(g.gueltig_bis)}</div>}
             </div>
           );
         })}
@@ -1400,8 +1400,8 @@ const MitgliedschaftTab = ({
               const _sections = [
                 { key:'aktuell', label:'Aktuelle Abbuchung',    icon:'⚡', entries:_sAktuell, color:'#d4af37' },
                 { key:'letzte',  label:'Letzte 3 Abbuchungen',  icon:'✓',  entries:_sLetzte,  color:'#4caf82' },
-                { key:'zukunft', label:'Geplante Beiträge',     icon:'🔮', entries:_sZukunft, color:'rgba(255,255,255,0.6)' },
-                { key:'aelter',  label:'Ältere Beiträge',       icon:'📚', entries:_sAelter,  color:'rgba(255,255,255,0.35)' },
+                { key:'zukunft', label:'Geplante Beiträge',     icon:'🔮', entries:_sZukunft, color: 'var(--ds-text-secondary)' },
+                { key:'aelter',  label:'Ältere Beiträge',       icon:'📚', entries:_sAelter,  color: 'var(--ds-text-faint)' },
               ].filter(s => s.entries.length > 0);
 
               // collapsed by default: open only if collapsedPeriods[key] === true
@@ -1425,10 +1425,10 @@ const MitgliedschaftTab = ({
                       fontSize: '0.82rem'
                     }}>
                       <span style={{ fontWeight: 700, color: '#eab308' }}>📋 Aktiver Ratenplan</span>
-                      <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+                      <span style={{ color: 'var(--ds-text-secondary)' }}>
                         +{parseFloat(aktiverRatenplan.monatlicher_aufschlag).toFixed(2)} €/Monat
                       </span>
-                      <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      <span style={{ color: 'var(--ds-text-muted)' }}>
                         {(parseFloat(aktiverRatenplan.ausstehender_betrag) - parseFloat(aktiverRatenplan.bereits_abgezahlt)).toFixed(2)} € noch offen
                         {' / '}
                         {parseFloat(aktiverRatenplan.ausstehender_betrag).toFixed(2)} € gesamt
@@ -3066,79 +3066,6 @@ const MitgliedschaftTab = ({
                     Schließen
                   </button>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Archivierungs-Modal */}
-        {showArchiveModal && (
-          <div
-            onClick={() => setShowArchiveModal(false)}
-            className="mds-archive-overlay"
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="mds-archive-modal-box"
-            >
-              <h2 className="mds-archive-title">
-                🗑️ Mitglied archivieren
-              </h2>
-
-              <div className="mds2-mb-15-primary">
-                <p>
-                  Möchten Sie <strong className="mds-primary-accent">{mitglied.vorname} {mitglied.nachname}</strong> wirklich archivieren?
-                </p>
-                <p className="mds-archive-secondary-text">
-                  Das Mitglied wird aus der aktiven Liste entfernt und mit allen Daten ins Archiv verschoben.
-                  Diese Aktion kann nicht rückgängig gemacht werden.
-                </p>
-              </div>
-
-              <div className="mds-archive-reason-row">
-                <label className="mds-archive-reason-label">
-                  Grund (optional):
-                </label>
-                <textarea
-                  value={archiveReason}
-                  onChange={(e) => setArchiveReason(e.target.value)}
-                  placeholder="z.B. Austritt, Umzug, Kündigung..."
-                  rows={3}
-                  className="mds-archive-textarea"
-                />
-              </div>
-
-              <div className="mds2-flex-end-row">
-                <button
-                  onClick={() => {
-                    setShowArchiveModal(false);
-                    setArchiveReason('');
-                  }}
-                  className="mds-archive-cancel-btn"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  }}
-                >
-                  Abbrechen
-                </button>
-
-                <button
-                  onClick={handleArchiveMitglied}
-                  className="mds-archive-confirm-btn"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(231, 76, 60, 0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(231, 76, 60, 0.3)';
-                  }}
-                >
-                  🗑️ Jetzt archivieren
-                </button>
               </div>
             </div>
           </div>

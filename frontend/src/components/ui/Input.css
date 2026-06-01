@@ -224,7 +224,7 @@
 .ds-input-wrapper--error .ds-input:focus,
 .ds-textarea--error:focus,
 .ds-select--error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 0 3px var(--ds-danger-25);
 }
 
 /* ========== HELPER / ERROR TEXT ========== */

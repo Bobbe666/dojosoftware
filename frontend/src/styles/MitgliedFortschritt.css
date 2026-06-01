@@ -30,9 +30,9 @@
   gap: 0.45rem;
   padding: 0.5rem 0.9rem;
   background: transparent;
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  border: 1px solid var(--ds-accent-20);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--ds-text-muted);
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.82rem;
@@ -41,33 +41,33 @@
 }
 
 .tab-btn:hover {
-  background: rgba(255, 215, 0, 0.08);
-  border-color: rgba(255, 215, 0, 0.35);
-  color: #FFD700;
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-30);
+  color: var(--ds-accent);
 }
 
 .tab-btn.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 255, 255, 0.05));
-  border-color: rgba(255, 215, 0, 0.45);
-  color: #FFD700;
+  background: linear-gradient(135deg, var(--ds-accent-15), var(--ds-bg-card-hover));
+  border-color: var(--ds-accent-50);
+  color: var(--ds-accent);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.12);
+  box-shadow: 0 2px 8px var(--ds-accent-10);
 }
 
 .tab-badge {
-  background: rgba(255, 215, 0, 0.12);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-20);
   padding: 0.1rem 0.45rem;
   border-radius: 20px;
   font-size: 0.72rem;
   font-weight: 700;
-  color: rgba(255, 215, 0, 0.8);
+  color: var(--ds-accent-50);
 }
 
 .tab-btn.active .tab-badge {
-  background: rgba(255, 215, 0, 0.2);
-  border-color: rgba(255, 215, 0, 0.4);
-  color: #FFD700;
+  background: var(--ds-accent-20);
+  border-color: var(--ds-accent-50);
+  color: var(--ds-accent);
 }
 
 .add-btn {
@@ -75,10 +75,10 @@
   align-items: center;
   gap: 0.45rem;
   padding: 0.5rem 1rem;
-  background: rgba(255, 215, 0, 0.12);
-  border: 1px solid rgba(255, 215, 0, 0.35);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-30);
   border-radius: 8px;
-  color: #FFD700;
+  color: var(--ds-accent);
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -87,9 +87,9 @@
 }
 
 .add-btn:hover {
-  background: rgba(255, 215, 0, 0.22);
-  border-color: rgba(255, 215, 0, 0.6);
-  box-shadow: 0 2px 10px rgba(255, 215, 0, 0.2);
+  background: var(--ds-accent-20);
+  border-color: var(--ds-accent-50);
+  box-shadow: 0 2px 10px var(--ds-accent-20);
 }
 
 /* Content Area */
@@ -141,8 +141,8 @@
 
 .icon-btn {
   padding: 0.25rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border);
   border-radius: 4px;
   color: var(--text-2);
   cursor: pointer;
@@ -150,7 +150,7 @@
 }
 
 .icon-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   border-color: var(--status-error);
   color: var(--status-error);
 }
@@ -179,7 +179,7 @@
 .progress-bar {
   flex: 1;
   height: 10px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border-radius: 5px;
   overflow: hidden;
 }
@@ -225,7 +225,7 @@
 }
 
 .badge-priority {
-  background: #10B981;
+  background: var(--ds-success);
 }
 
 .badge-diff {
@@ -236,7 +236,7 @@
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   outline: none;
   cursor: pointer;
 }
@@ -278,8 +278,8 @@
 }
 
 .ziel-card.ziel-erreicht {
-  border-color: rgba(16, 185, 129, 0.5);
-  background: rgba(16, 185, 129, 0.05);
+  border-color: var(--ds-success-25);
+  background: var(--ds-success-10);
 }
 
 .ziel-header {
@@ -310,13 +310,13 @@
 }
 
 .status-erreicht {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   color: var(--status-success);
   border: 1px solid var(--status-success);
 }
 
 .status-verfehlt {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   color: var(--status-error);
   border: 1px solid var(--status-error);
 }
@@ -413,19 +413,19 @@
 }
 
 .btn-complete {
-  background: linear-gradient(135deg, #10B981, #059669);
+  background: linear-gradient(135deg, var(--ds-success), #059669);
   color: var(--text-1);
 }
 
 .btn-complete:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px var(--ds-success-25);
 }
 
 .btn-undo {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-2);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
 }
 
 .btn-undo:hover {
@@ -555,7 +555,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
   width: 24px !important;
   height: 24px !important;
   padding: 0 !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--ds-bg-elevated) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: var(--comp-radius-xs) !important;
   color: var(--text-1) !important;
@@ -570,7 +570,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
 }
 
 .mitglied-fortschritt .close-btn:hover {
-  background: rgba(239, 68, 68, 0.3) !important;
+  background: var(--ds-danger-25) !important;
   border-color: var(--status-error) !important;
   color: var(--status-error) !important;
 }
@@ -698,12 +698,12 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
 }
 
 .mitglied-fortschritt .btn-primary:hover {
-  background: #ffed4e !important;
+  background: var(--ds-accent-bright) !important;
   transform: translateY(-1px) !important;
 }
 
 .mitglied-fortschritt .btn-secondary {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--ds-bg-elevated) !important;
   color: var(--text-1) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
@@ -934,14 +934,14 @@ html body .mitglied-fortschritt .modal-content {
 .modal-content .form-group input:invalid,
 .modal-content .form-group select:invalid,
 .modal-content .form-group textarea:invalid {
-  border-color: rgba(239, 68, 68, 0.5) !important;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+  border-color: var(--ds-danger-25) !important;
+  box-shadow: 0 0 0 2px var(--ds-danger-25) !important;
 }
 
 .modal-content .form-group input:valid,
 .modal-content .form-group select:valid,
 .modal-content .form-group textarea:valid {
-  border-color: rgba(16, 185, 129, 0.5) !important;
+  border-color: var(--ds-success-25) !important;
 }
 
 /* =====================================================================================
@@ -999,7 +999,7 @@ html body .mitglied-fortschritt .modal-content {
 
 /* Option elements dark background */
 .mfo-option-dark {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   color: var(--text-primary);
 }
 
@@ -1124,7 +1124,7 @@ html body .mitglied-fortschritt .modal-content {
 
 /* History card */
 .mfo-history-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-20);
   border-radius: 8px;
   padding: 12px;
@@ -1164,7 +1164,7 @@ html body .mitglied-fortschritt .modal-content {
 
 /* Badge tag: secondary */
 .mfo-badge-tag {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 11px;
@@ -1173,7 +1173,7 @@ html body .mitglied-fortschritt .modal-content {
 
 /* Badge tag: success date */
 .mfo-badge-tag--date {
-  background: rgba(34, 197, 94, 0.2);
+  background: var(--ds-success-25);
   color: var(--success);
   padding: 4px 8px;
   border-radius: 12px;
@@ -1246,7 +1246,7 @@ html body .mitglied-fortschritt .modal-content {
   width: 24px;
   height: 24px;
   padding: 0;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
   color: var(--text-primary);
@@ -1276,7 +1276,7 @@ html body .mitglied-fortschritt .modal-content {
   font-weight: 600;
   cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: var(--text-primary);
   transition: all 0.2s;
   box-sizing: border-box;
@@ -1343,24 +1343,24 @@ html body .mitglied-fortschritt .modal-content {
 /* Progress fill — per-status colors */
 .mfo-progress-fill--nicht_gestartet { background: #6B7280; }
 .mfo-progress-fill--in_arbeit       { background: #3B82F6; }
-.mfo-progress-fill--gemeistert      { background: #10B981; }
+.mfo-progress-fill--gemeistert      { background: var(--ds-success); }
 .mfo-progress-fill--auf_eis         { background: #F59E0B; }
 
 /* Badge status — per-status background */
 .mfo-badge-status--nicht_gestartet { background: #6B7280; }
 .mfo-badge-status--in_arbeit       { background: #3B82F6; }
-.mfo-badge-status--gemeistert      { background: #10B981; }
+.mfo-badge-status--gemeistert      { background: var(--ds-success); }
 .mfo-badge-status--auf_eis         { background: #F59E0B; }
 
 /* Badge priority — per-priority background */
-.mfo-badge-priority--niedrig  { background: #10B981; }
+.mfo-badge-priority--niedrig  { background: var(--ds-success); }
 .mfo-badge-priority--mittel   { background: #3B82F6; }
 .mfo-badge-priority--hoch     { background: #F59E0B; }
-.mfo-badge-priority--kritisch { background: #EF4444; }
+.mfo-badge-priority--kritisch { background: var(--ds-danger); }
 
 /* Badge card */
 .mfo-badge-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 2px solid var(--badge-farbe, var(--primary));
   border-radius: 12px;
   padding: 20px;
@@ -1370,7 +1370,7 @@ html body .mitglied-fortschritt .modal-content {
 }
 .mfo-badge-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px var(--badge-farbe-40, #ffd70040);
+  box-shadow: 0 8px 24px var(--badge-farbe-40, var(--ds-accent)40);
 }
 
 /* Badge icon circle */
@@ -1378,14 +1378,14 @@ html body .mitglied-fortschritt .modal-content {
   width: 64px;
   height: 64px;
   margin: 0 auto 12px;
-  background: linear-gradient(135deg, var(--badge-farbe-40, #ffd70040), var(--badge-farbe-20, #ffd70020));
+  background: linear-gradient(135deg, var(--badge-farbe-40, var(--ds-accent)40), var(--badge-farbe-20, var(--ds-accent)20));
   border: 2px solid var(--badge-farbe, var(--primary));
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 32px;
-  box-shadow: 0 4px 12px var(--badge-farbe-30, #ffd70030);
+  box-shadow: 0 4px 12px var(--badge-farbe-30, var(--ds-accent)30);
 }
 
 /* Badge name heading */
@@ -1399,10 +1399,10 @@ html body .mitglied-fortschritt .modal-content {
 /* Hover states for interactive buttons */
 .mfo-btn-history:hover {
   background: var(--primary-alpha-30);
-  border-color: rgba(255, 215, 0, 0.7);
+  border-color: var(--ds-accent-50);
 }
 .mfo-modal-close:hover {
-  background: rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-25);
   border-color: var(--status-error);
   color: var(--status-error);
 }
@@ -1411,6 +1411,6 @@ html body .mitglied-fortschritt .modal-content {
   border-color: rgba(255, 255, 255, 0.5);
 }
 .mfo-btn-submit:hover {
-  background: #ffed4e;
+  background: var(--ds-accent-bright);
   transform: translateY(-1px);
 }

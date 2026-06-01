@@ -32,7 +32,7 @@
 }
 
 .iab-modal {
-  background-color: #1a1a2e;
+  background-color: var(--ds-bg-surface);
   padding: 2rem;
   border-radius: 12px;
   max-width: 500px;
@@ -121,7 +121,7 @@
 
 .iab-confirm-btn {
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  background: linear-gradient(135deg, var(--ds-accent), var(--ds-accent-bright));
   color: var(--bg-primary);
   border: none;
   border-radius: 8px;

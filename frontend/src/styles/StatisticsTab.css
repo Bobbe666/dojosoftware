@@ -180,9 +180,9 @@
 .mst-status-badge--pending   { background: var(--status-warning)15; border-left: 4px solid var(--status-warning); }
 .mst-status-badge--default   { background: #64748B15; border-left: 4px solid #64748B; }
 
-.mst-status-dot--active    { background: #10B981; }
+.mst-status-dot--active    { background: var(--ds-success); }
 .mst-status-dot--trial     { background: #3B82F6; }
-.mst-status-dot--expired   { background: #EF4444; }
+.mst-status-dot--expired   { background: var(--ds-danger); }
 .mst-status-dot--cancelled { background: #64748B; }
 .mst-status-dot--pending   { background: #F59E0B; }
 .mst-status-dot--default   { background: #64748B; }
@@ -190,22 +190,22 @@
 .mst-status-count--active    { color: var(--status-success); }
 .mst-status-count--trial     { color: var(--status-indigo); }
 .mst-status-count--expired   { color: var(--status-error); }
-.mst-status-count--cancelled { color: #64748B; }
+.mst-status-count--cancelled { color: var(--ds-text-secondary); }
 .mst-status-count--pending   { color: var(--status-warning); }
-.mst-status-count--default   { color: #64748B; }
+.mst-status-count--default   { color: var(--ds-text-secondary); }
 
 /* Rank badge: top 3 podium colors */
 .mst-rank-badge--gold {
-  background: linear-gradient(135deg, #D4AF37, #B8860B);
-  color: #fff;
+  background: linear-gradient(135deg, var(--ds-accent), #B8860B);
+  color: var(--ds-text);
 }
 .mst-rank-badge--silver {
   background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
-  color: #fff;
+  color: var(--ds-text);
 }
 .mst-rank-badge--bronze {
   background: linear-gradient(135deg, #CD7F32, #8B4513);
-  color: #fff;
+  color: var(--ds-text);
 }
 .mst-rank-badge--default {
   background: var(--bg-secondary);
@@ -234,9 +234,9 @@
 .mst-member-status-card--primary { background: var(--status-indigo)15; border: 1px solid var(--status-indigo)30; }
 
 .mst-member-status-icon--success { color: var(--status-success); }
-.mst-member-status-icon--slate   { color: #64748B; }
+.mst-member-status-icon--slate   { color: var(--ds-text-secondary); }
 .mst-member-status-icon--primary { color: var(--status-indigo); }
 
 .mst-member-status-num--success { color: var(--status-success); }
-.mst-member-status-num--slate   { color: #64748B; }
+.mst-member-status-num--slate   { color: var(--ds-text-secondary); }
 .mst-member-status-num--primary { color: var(--status-indigo); }

@@ -66,7 +66,7 @@
   border: 1px solid var(--primary-alpha-25) !important;
   border-radius: var(--comp-radius-sm) !important;
   font-size: var(--ui-card-label) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
+  color: var(--ds-text) !important;
   background: rgba(0, 0, 0, 0.3) !important;
 }
 
@@ -79,8 +79,8 @@
 }
 
 .rechnung-erstellen-container .form-section select option {
-  background: #1a1a2e !important;
-  color: rgba(255, 255, 255, 0.95) !important;
+  background: var(--ds-bg-surface) !important;
+  color: var(--ds-text) !important;
 }
 
 .rechnung-erstellen-container .form-grid {
@@ -99,7 +99,7 @@
 .rechnung-erstellen-container .form-grid label {
   display: block !important;
   margin-bottom: 0 !important;
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: var(--ds-text-secondary) !important;
   font-size: 0.7rem !important;
   font-weight: 500 !important;
   line-height: 1.2 !important;
@@ -116,8 +116,8 @@
 /* Button styles */
 .rechnung-erstellen-container .btn-add {
   padding: 0.4rem 0.75rem !important;
-  background: linear-gradient(135deg, #10b981, #059669) !important;
-  color: white !important;
+  background: linear-gradient(135deg, var(--ds-success), #059669) !important;
+  color: var(--ds-text) !important;
   border: none !important;
   border-radius: var(--comp-radius-sm) !important;
   font-size: 0.8rem !important;
@@ -135,7 +135,7 @@
 .rechnung-erstellen-container .btn-save {
   width: 100% !important;
   padding: 0.7rem !important;
-  background: linear-gradient(135deg, #ffd700, #f59e0b) !important;
+  background: linear-gradient(135deg, var(--ds-accent), #f59e0b) !important;
   color: #1a1a2e !important;
   border: none !important;
   border-radius: var(--comp-radius-md) !important;
@@ -170,7 +170,7 @@
 }
 
 .rechnung-erstellen-container .position-item {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--ds-bg-card-hover) !important;
   border: 1px solid var(--primary-alpha-15) !important;
   border-radius: var(--comp-radius-sm) !important;
   padding: 0.5rem 0.75rem !important;
@@ -179,7 +179,7 @@
 
 .rechnung-erstellen-container .position-item-text {
   font-size: 0.8rem !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--ds-text) !important;
 }
 
 /* Position input */
@@ -224,7 +224,7 @@
   align-items: center;
   justify-content: center;
   padding: 4rem;
-  color: #888;
+  color: var(--ds-text-muted);
 }
 
 .verband-rechnung-loading .spin {
@@ -255,7 +255,7 @@
 .verband-rechnung-erstellen .header-left h2 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--ds-text);
   margin: 0;
 }
 
@@ -274,14 +274,14 @@
 }
 
 .verband-rechnung-erstellen .alert-error {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   color: var(--status-error);
 }
 
 .verband-rechnung-erstellen .alert-success {
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   color: var(--status-success);
 }
 
@@ -331,18 +331,18 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md);
-  color: #aaa;
+  color: var(--ds-text-muted);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .verband-rechnung-erstellen .empfaenger-tabs button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
 }
 
 .verband-rechnung-erstellen .empfaenger-tabs button.active {
@@ -357,7 +357,7 @@
   align-items: center;
   gap: 0.75rem;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-md);
   padding: 0.5rem 0.75rem;
   margin-bottom: 1rem;
@@ -371,7 +371,7 @@
   flex: 1;
   background: none;
   border: none;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.9rem;
   outline: none;
 }
@@ -394,7 +394,7 @@
 }
 
 .verband-rechnung-erstellen .empfaenger-info strong {
-  color: #fff;
+  color: var(--ds-text);
   font-size: 1rem;
 }
 
@@ -405,14 +405,14 @@
 
 .verband-rechnung-erstellen .empfaenger-info .email,
 .verband-rechnung-erstellen .empfaenger-info .adresse {
-  color: #888;
+  color: var(--ds-text-muted);
   font-size: 0.85rem;
 }
 
 .verband-rechnung-erstellen .selected-empfaenger button {
   background: none;
   border: none;
-  color: #888;
+  color: var(--ds-text-muted);
   cursor: pointer;
 }
 
@@ -434,8 +434,8 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border-subtle);
   border-radius: var(--comp-radius-md);
   cursor: pointer;
   transition: all 0.2s;
@@ -463,12 +463,12 @@
 }
 
 .verband-rechnung-erstellen .emp-details strong {
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.9rem;
 }
 
 .verband-rechnung-erstellen .emp-details span {
-  color: #888;
+  color: var(--ds-text-muted);
   font-size: 0.8rem;
 }
 
@@ -498,7 +498,7 @@
 
 .verband-rechnung-erstellen .form-row label {
   font-size: var(--ui-form-label);
-  color: #888;
+  color: var(--ds-text-muted);
   font-weight: 500;
 }
 
@@ -506,10 +506,10 @@
 .verband-rechnung-erstellen select,
 .verband-rechnung-erstellen textarea {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-sm);
   padding: var(--ui-btn-pad-y) 0.75rem;
-  color: #fff;
+  color: var(--ds-text);
   font-size: var(--ui-form-input);
   outline: none;
   transition: border-color 0.2s;
@@ -536,12 +536,12 @@
 .verband-rechnung-erstellen .positionen-table th {
   text-align: left;
   padding: 0.5rem;
-  color: #888;
+  color: var(--ds-text-muted);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .verband-rechnung-erstellen .positionen-table td {
@@ -557,7 +557,7 @@
 
 .verband-rechnung-erstellen .positionen-table .text-right {
   text-align: right;
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 500;
 }
 
@@ -567,21 +567,21 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-sm);
-  color: #888;
+  color: var(--ds-text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .verband-rechnung-erstellen .btn-icon:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
 }
 
 .verband-rechnung-erstellen .btn-icon.danger:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   border-color: var(--status-error);
   color: var(--status-error);
 }
@@ -608,12 +608,12 @@
   display: flex;
   justify-content: space-between;
   padding: 0.4rem 0;
-  color: #aaa;
+  color: var(--ds-text-muted);
   font-size: 0.9rem;
 }
 
 .verband-rechnung-erstellen .summe-row.total {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
   margin-top: 0.5rem;
   padding-top: 0.75rem;
   color: var(--primary);
@@ -636,12 +636,12 @@
 }
 
 .verband-rechnung-erstellen .btn-primary {
-  background: linear-gradient(135deg, #c9a227, #a68519);
+  background: linear-gradient(135deg, var(--ds-accent-dark), #a68519);
   color: #000;
 }
 
 .verband-rechnung-erstellen .btn-primary:hover {
-  background: linear-gradient(135deg, #dbb62c, #c9a227);
+  background: linear-gradient(135deg, #dbb62c, var(--ds-accent-dark));
 }
 
 .verband-rechnung-erstellen .btn-primary:disabled {
@@ -665,7 +665,7 @@
   justify-content: flex-end;
   gap: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 /* Rechnungen Liste */
@@ -690,17 +690,17 @@
 .verband-rechnung-erstellen .rechnungen-liste th {
   text-align: left;
   padding: 0.75rem;
-  color: #888;
+  color: var(--ds-text-muted);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .verband-rechnung-erstellen .rechnungen-liste td {
   padding: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
   color: #ddd;
   font-size: 0.9rem;
 }
@@ -720,7 +720,7 @@
 }
 
 .modal-content {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   border: 1px solid rgba(201, 162, 39, 0.3);
   border-radius: var(--comp-radius-xl);
   max-width: 90vw;
@@ -740,23 +740,23 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--ui-page-padding-sm) var(--ui-header-padding-b);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .modal-header h3 {
-  color: #fff;
+  color: var(--ds-text);
   margin: 0;
 }
 
 .modal-header button {
   background: none;
   border: none;
-  color: #888;
+  color: var(--ds-text-muted);
   cursor: pointer;
 }
 
 .modal-header button:hover {
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .modal-body {
@@ -776,7 +776,7 @@
   justify-content: flex-end;
   gap: 0.75rem;
   padding: var(--ui-page-padding-sm) var(--ui-header-padding-b);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 /* =============================================
@@ -856,17 +856,17 @@
   justify-content: center;
   gap: 0.35rem;
   padding: 0.5rem 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-sm);
-  color: #888;
+  color: var(--ds-text-muted);
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .compact-empfaenger-tabs button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   color: #ccc;
 }
 
@@ -887,7 +887,7 @@
   align-items: center;
   gap: 0.5rem;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-sm);
   padding: 0.4rem 0.6rem;
   margin-bottom: 0.6rem;
@@ -903,7 +903,7 @@
   flex: 1;
   background: none;
   border: none;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.85rem;
   outline: none;
 }
@@ -926,19 +926,19 @@
 }
 
 .compact-selected-empfaenger .empfaenger-info strong {
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.9rem;
 }
 
 .compact-selected-empfaenger .empfaenger-info span {
-  color: #888;
+  color: var(--ds-text-muted);
   font-size: 0.75rem;
 }
 
 .compact-selected-empfaenger button {
   background: none;
   border: none;
-  color: #888;
+  color: var(--ds-text-muted);
   cursor: pointer;
   padding: 0.25rem;
 }
@@ -961,8 +961,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.6rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border-subtle);
   border-radius: var(--comp-radius-sm);
   cursor: pointer;
   transition: all 0.2s;
@@ -996,7 +996,7 @@
 }
 
 .compact-empfaenger-item .emp-details strong {
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;
@@ -1027,7 +1027,7 @@
 
 .compact-form-row label {
   font-size: 0.7rem;
-  color: #888;
+  color: var(--ds-text-muted);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -1037,10 +1037,10 @@
 .compact-form-row select,
 .compact-form-row textarea {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: 5px;
   padding: 0.45rem 0.6rem;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.85rem;
   outline: none;
   transition: border-color 0.2s;
@@ -1062,12 +1062,12 @@
 .compact-positionen-table th {
   text-align: left;
   padding: 0.4rem 0.5rem;
-  color: #888;
+  color: var(--ds-text-muted);
   font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .compact-positionen-table td {
@@ -1084,7 +1084,7 @@
 
 .compact-positionen-table .text-right {
   text-align: right;
-  color: #fff;
+  color: var(--ds-text);
   font-weight: 500;
   font-size: 0.85rem;
 }
@@ -1132,12 +1132,12 @@
   display: flex;
   justify-content: space-between;
   padding: 0.3rem 0;
-  color: #aaa;
+  color: var(--ds-text-muted);
   font-size: 0.8rem;
 }
 
 .compact-summen .summe-row.total {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
   margin-top: 0.35rem;
   padding-top: 0.5rem;
   color: var(--primary);
@@ -1205,7 +1205,7 @@
 .preview-badge {
   font-size: 0.65rem;
   padding: 0.2rem 0.5rem;
-  background: rgba(34, 197, 94, 0.2);
+  background: var(--ds-success-25);
   color: var(--status-success);
   border-radius: var(--comp-radius-xs);
   font-weight: 500;
@@ -1274,7 +1274,7 @@
 
 .preview-recipient-label {
   font-size: 0.6rem;
-  color: #888;
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 0.25rem;
@@ -1303,7 +1303,7 @@
 
 .preview-meta-item label {
   font-size: 0.6rem;
-  color: #888;
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   display: block;
   margin-bottom: 0.15rem;
@@ -1357,7 +1357,7 @@
 }
 
 .preview-table .empty-row {
-  color: #bbb;
+  color: var(--ds-text-muted);
   font-style: italic;
   text-align: center;
 }
@@ -1408,7 +1408,7 @@
   border-top: 1px solid #ddd;
   text-align: center;
   font-size: 0.6rem;
-  color: #999;
+  color: var(--ds-text-muted);
 }
 
 /* Preview Actions (button container) */
@@ -1442,7 +1442,7 @@
 }
 
 .preview-info span {
-  color: #888;
+  color: var(--ds-text-muted);
 }
 
 .preview-info strong {
@@ -1486,7 +1486,7 @@
 /* Preview Table empty state */
 .preview-table td.empty {
   text-align: center;
-  color: #bbb;
+  color: var(--ds-text-muted);
   font-style: italic;
   padding: 1rem;
 }
@@ -1531,17 +1531,17 @@
 
 .pos-input label {
   font-size: 0.65rem;
-  color: #888;
+  color: var(--ds-text-muted);
   text-transform: uppercase;
 }
 
 .pos-input input,
 .pos-input select {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xs);
   padding: 0.4rem 0.5rem;
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.8rem;
 }
 
@@ -1560,16 +1560,16 @@
 
 .btn-remove {
   background: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid var(--ds-danger-25);
   border-radius: var(--comp-radius-xs);
-  color: #888;
+  color: var(--ds-text-muted);
   cursor: pointer;
   padding: 0.35rem;
   transition: all 0.2s;
 }
 
 .btn-remove:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--ds-danger-25);
   border-color: var(--status-error);
   color: var(--status-error);
 }
@@ -1589,7 +1589,7 @@
 
 .positionen-header h4 {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--ds-text-muted);
   font-weight: 500;
 }
 
@@ -1600,7 +1600,7 @@
   align-items: flex-end;
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 .summen-display {
@@ -1614,7 +1614,7 @@
   display: flex;
   gap: 1rem;
   font-size: 0.8rem;
-  color: #888;
+  color: var(--ds-text-muted);
 }
 
 .summen-display .sum-row.total {
@@ -1653,12 +1653,12 @@
 
 .selected-empfaenger.compact strong {
   font-size: 0.9rem;
-  color: #fff;
+  color: var(--ds-text);
 }
 
 .selected-empfaenger.compact small {
   font-size: 0.75rem;
-  color: #888;
+  color: var(--ds-text-muted);
 }
 
 .empfaenger-liste.compact {
@@ -1677,7 +1677,7 @@
 }
 
 .empfaenger-item.compact strong {
-  color: #fff;
+  color: var(--ds-text);
   font-size: 0.85rem;
 }
 
@@ -1735,7 +1735,7 @@
 
 .form-field label {
   font-size: 0.7rem;
-  color: #888;
+  color: var(--ds-text-muted);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -1787,7 +1787,7 @@ input.readonly {
   flex-direction: column;
   gap: 0.4rem;
   padding: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .position-row:last-child {
@@ -1837,7 +1837,7 @@ input.readonly {
 }
 
 .position-details .currency {
-  color: #888;
+  color: var(--ds-text-muted);
   font-size: 0.85rem;
 }
 
@@ -1867,7 +1867,7 @@ input.readonly {
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: #999;
+  color: var(--ds-text-muted);
   text-align: center;
 }
 
@@ -2036,7 +2036,7 @@ input.readonly {
 /* Toggle button (erstellen / ansehen) */
 .vre-toggle-btn {
   padding: 0.6rem 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
   color: var(--primary);
@@ -2048,7 +2048,7 @@ input.readonly {
   gap: 0.5rem;
 }
 .vre-toggle-btn--active {
-  background: linear-gradient(135deg, #c9a227, #a68519);
+  background: linear-gradient(135deg, var(--ds-accent-dark), #a68519);
   border: none;
   color: #000;
   font-weight: 600;
@@ -2071,10 +2071,10 @@ input.readonly {
 .vre-tab-btn {
   padding: 0.3rem 0.5rem;
   font-size: 0.7rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
   border-radius: 4px;
-  color: #aaa;
+  color: var(--ds-text-muted);
   cursor: pointer;
 }
 .vre-tab-btn--active {
@@ -2146,7 +2146,7 @@ input.readonly {
 }
 
 .vre-tbody-row {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
 }
 
 .vre-td-mono {
@@ -2211,8 +2211,8 @@ input.readonly {
 
 .vre-btn-bezahlt {
   padding: 0.4rem;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: var(--ds-success-10);
+  border: 1px solid var(--ds-success-25);
   border-radius: 6px;
   color: var(--success);
   cursor: pointer;
@@ -2235,8 +2235,8 @@ input.readonly {
 
 /* Error banners */
 .vre-error-banner {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   color: var(--error);
   padding: 0.75rem 1rem;
   border-radius: 8px;
@@ -2245,8 +2245,8 @@ input.readonly {
 }
 
 .vre-error-banner-sm {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--ds-danger-10);
+  border: 1px solid var(--ds-danger-25);
   color: var(--error);
   padding: 0.5rem;
   border-radius: 6px;
@@ -2288,9 +2288,9 @@ input.readonly {
 .vre-position-item-inner {
   padding: 0.35rem 0.5rem;
   margin-bottom: 0.25rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
 }
 
 .vre-pos-header {
@@ -2307,8 +2307,8 @@ input.readonly {
 }
 
 .vre-btn-remove-pos {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-25);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 3px;
   color: var(--error);
   width: 16px;
@@ -2333,8 +2333,8 @@ input.readonly {
   width: 32px;
   padding: 1px 2px;
   font-size: 0.65rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 2px;
   color: var(--text-primary);
   text-align: center;
@@ -2396,7 +2396,7 @@ input.readonly {
 
 /* Skonto readonly input */
 .vre-input-readonly {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--ds-bg-card);
   cursor: not-allowed;
 }
 
@@ -2408,7 +2408,7 @@ input.readonly {
   transform: translate(-50%, -50%);
   z-index: 9999;
   padding: 1rem;
-  background: rgba(255, 215, 0, 0.98);
+  background: var(--ds-accent-50);
   border: 2px solid var(--primary);
   border-radius: 8px;
   color: #000;
@@ -2481,7 +2481,7 @@ input.readonly {
 }
 
 .vre-modal-content {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   border: 1px solid rgba(201, 162, 39, 0.3);
   border-radius: 12px;
   width: 900px;
@@ -2496,7 +2496,7 @@ input.readonly {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .vre-modal-title {
@@ -2528,7 +2528,7 @@ input.readonly {
   justify-content: flex-end;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ds-border);
 }
 
 .vre-btn-modal-close {
@@ -2542,7 +2542,7 @@ input.readonly {
 
 .vre-btn-modal-download {
   padding: 0.6rem 1rem;
-  background: linear-gradient(135deg, #c9a227, #a68519);
+  background: linear-gradient(135deg, var(--ds-accent-dark), #a68519);
   color: #000;
   border: none;
   border-radius: 6px;

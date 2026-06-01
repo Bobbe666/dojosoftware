@@ -37,7 +37,7 @@
 
 .course-rating-admin .stat-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  border: 1px solid var(--ds-accent-20);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-stat-card-padding);
   display: flex;
@@ -148,7 +148,7 @@
 
 .course-rating-admin .rating-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  border: 1px solid var(--ds-accent-20);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-stat-card-padding);
   transition: all 0.3s ease;
@@ -185,7 +185,7 @@
   gap: 0.2rem;
 }
 .course-rating-admin .rating-stars .filled { color: var(--primary); fill: var(--primary); }
-.course-rating-admin .rating-stars .empty { color: rgba(255,255,255,0.3); fill: none; }
+.course-rating-admin .rating-stars .empty { color: var(--ds-text-faint); fill: none; }
 
 .course-rating-admin .rating-details {
   margin-bottom: 1rem;
@@ -252,7 +252,7 @@
 
 .course-rating-admin .course-stat-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  border: 1px solid var(--ds-accent-20);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-stat-card-padding);
   transition: all 0.3s ease;

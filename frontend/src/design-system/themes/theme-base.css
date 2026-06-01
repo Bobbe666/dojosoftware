@@ -15,18 +15,18 @@
   --secondary-hover: var(--color-orange-400);
 
   /* ===== PRIMARY ALPHA VALUES ===== */
-  --primary-alpha-05: rgba(255, 215, 0, 0.05);
-  --primary-alpha-08: rgba(255, 215, 0, 0.08);
-  --primary-alpha-10: rgba(255, 215, 0, 0.1);
-  --primary-alpha-12: rgba(255, 215, 0, 0.12);
-  --primary-alpha-15: rgba(255, 215, 0, 0.15);
-  --primary-alpha-20: rgba(255, 215, 0, 0.2);
-  --primary-alpha-25: rgba(255, 215, 0, 0.25);
-  --primary-alpha-30: rgba(255, 215, 0, 0.3);
-  --primary-alpha-35: rgba(255, 215, 0, 0.35);
-  --primary-alpha-40: rgba(255, 215, 0, 0.4);
-  --primary-alpha-50: rgba(255, 215, 0, 0.5);
-  --primary-alpha-60: rgba(255, 215, 0, 0.6);
+  --primary-alpha-05: var(--ds-accent-05);
+  --primary-alpha-08: var(--ds-accent-10);
+  --primary-alpha-10: var(--ds-accent-10);
+  --primary-alpha-12: var(--ds-accent-10);
+  --primary-alpha-15: var(--ds-accent-15);
+  --primary-alpha-20: var(--ds-accent-20);
+  --primary-alpha-25: var(--ds-accent-25);
+  --primary-alpha-30: var(--ds-accent-30);
+  --primary-alpha-35: var(--ds-accent-30);
+  --primary-alpha-40: var(--ds-accent-50);
+  --primary-alpha-50: var(--ds-accent-50);
+  --primary-alpha-60: var(--ds-accent-50);
 
   /* ===== SECONDARY ALPHA VALUES ===== */
   --secondary-alpha-10: rgba(255, 107, 53, 0.1);
@@ -37,9 +37,9 @@
   --color-orange-500: #ff6b35;
   --color-orange-500-alpha-25: rgba(255, 107, 53, 0.25);
   --color-orange-500-alpha-50: rgba(255, 107, 53, 0.5);
-  --color-error-500: #ef4444;
-  --color-error-500-alpha-10: rgba(239, 68, 68, 0.1);
-  --color-error-500-alpha-20: rgba(239, 68, 68, 0.2);
+  --color-error-500: var(--ds-danger);
+  --color-error-500-alpha-10: var(--ds-danger-10);
+  --color-error-500-alpha-20: var(--ds-danger-25);
 
   /* ===== SEMANTIC STATUS ===== */
   --success: var(--color-success-500);
@@ -74,8 +74,8 @@
   --border-default: rgba(255, 255, 255, 0.1);
   --border-hover: rgba(255, 255, 255, 0.2);
   --border-focus: var(--color-gold);
-  --border-accent: rgba(255, 215, 0, 0.2);
-  --border-accent-hover: rgba(255, 215, 0, 0.4);
+  --border-accent: var(--ds-accent-20);
+  --border-accent-hover: var(--ds-accent-50);
 
   /* ===== COMPONENT BACKGROUNDS ===== */
   --bg-card: rgba(255, 255, 255, 0.05);
@@ -84,7 +84,7 @@
   --bg-input: rgba(255, 255, 255, 0.05);
   --bg-input-focus: rgba(255, 255, 255, 0.08);
   --bg-button: transparent;
-  --bg-button-hover: rgba(255, 215, 0, 0.1);
+  --bg-button-hover: var(--ds-accent-10);
   --bg-modal: rgba(22, 33, 62, 0.95);
   --bg-dropdown: var(--color-midnight-800);
   --bg-tooltip: var(--color-midnight-700);
@@ -100,8 +100,8 @@
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-gold: 0 4px 15px rgba(255, 215, 0, 0.3);
-  --shadow-gold-lg: 0 8px 30px rgba(255, 215, 0, 0.4);
+  --shadow-gold: 0 4px 15px var(--ds-accent-30);
+  --shadow-gold-lg: 0 8px 30px var(--ds-accent-50);
 
   /* ===== GLOWS — deaktiviert ===== */
   --glow-gold: none;
@@ -110,10 +110,10 @@
   --glow-orange: none;
 
   /* ===== GRADIENTS ===== */
-  --gradient-gold: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  --gradient-gold: linear-gradient(135deg, var(--ds-accent), #ff6b35, #f7931e);
 
   /* ===== TEXT SHADOWS ===== */
-  --text-shadow-glow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(255, 215, 0, 0.6);
+  --text-shadow-glow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 4px var(--ds-accent-50);
 
   /* ===== TRANSITIONS ===== */
   --transition-fast: 0.15s ease;
@@ -123,13 +123,13 @@
   --glass-bg: rgba(255, 255, 255, 0.08);
   --glass-bg-hover: rgba(255, 255, 255, 0.12);
   --glass-bg-strong: rgba(0, 0, 0, 0.8);
-  --glass-border: 1px solid rgba(255, 215, 0, 0.2);
+  --glass-border: 1px solid var(--ds-accent-20);
   --glass-blur: blur(20px);
 
   /* ===== SCROLLBAR ===== */
   --scrollbar-track: rgba(255, 255, 255, 0.05);
-  --scrollbar-thumb: rgba(255, 215, 0, 0.3);
-  --scrollbar-thumb-hover: rgba(255, 215, 0, 0.5);
+  --scrollbar-thumb: var(--ds-accent-30);
+  --scrollbar-thumb-hover: var(--ds-accent-50);
 
   /* ===== FOCUS RING ===== */
   --focus-ring: 0 0 0 2px var(--bg-body), 0 0 0 4px var(--primary);
@@ -161,20 +161,20 @@
   /* ===== STATUS — ALPHA-VARIANTEN (präzise für konsistente Darstellung) ===== */
 
   /* Success / Grün */
-  --status-success: #4ade80;
+  --status-success: var(--ds-success-soft);
   --status-success-bg: rgba(74, 222, 128, 0.06);
   --status-success-bg-hover: rgba(74, 222, 128, 0.12);
   --status-success-border: rgba(74, 222, 128, 0.3);
 
   /* Warning / Orange */
   --status-warning: #fbbf24;
-  --status-warning-text: #fb923c;
+  --status-warning-text: var(--ds-warning);
   --status-warning-bg: rgba(251, 191, 36, 0.06);
   --status-warning-bg-hover: rgba(251, 146, 60, 0.12);
   --status-warning-border: rgba(251, 146, 60, 0.3);
 
   /* Error / Rot */
-  --status-error: #f87171;
+  --status-error: var(--ds-danger-soft);
   --status-error-bg: rgba(248, 113, 113, 0.06);
   --status-error-bg-hover: rgba(248, 113, 113, 0.12);
   --status-error-border: rgba(248, 113, 113, 0.3);
@@ -226,9 +226,9 @@
 
 /* Version Badge - Gold */
 .version-badge {
-  background: rgba(255, 215, 0, 0.15) !important;
-  color: #ffd700 !important;
-  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  background: var(--ds-accent-15) !important;
+  color: var(--ds-accent) !important;
+  border: 1px solid var(--ds-accent-30) !important;
 }
 
 /* ========== GLOBAL RESETS & BASE STYLES ========== */

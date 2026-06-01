@@ -8,7 +8,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 */
 
 /* CSS-Variablen für einheitliche Farben - using theme variables */
-/* --btn-gold: rgba(255,215,0,0.1) equivalent with higher opacity */
+/* --btn-gold: var(--ds-accent-10) equivalent with higher opacity */
 /* --btn-gold-hover: higher opacity gold */
 /* --btn-gold-bright: var(--primary) */
 /* --btn-bg-hover: var(--surface-3) */
@@ -18,12 +18,12 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 /* BASE BUTTON STYLE - Tab Design */
 .btn {
   background: transparent;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--ds-accent-20);
   padding: 12px 20px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 600;
-  border-radius: var(--comp-radius-md);
+  border-radius: var(--ds-btn-radius, var(--comp-radius-md));
   text-align: center;
   font-size: 0.9rem;
   color: var(--text-2);
@@ -46,7 +46,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--ds-accent-10), transparent);
   transition: left 0.5s;
 }
 
@@ -57,7 +57,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 /* Hover State */
 .btn:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.4);
+  border-color: var(--ds-accent-50);
   color: var(--text-1);
   transform: translateY(-1px);
 }
@@ -68,12 +68,12 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
   background: var(--gradient-gold);
   color: #000;
   border: 1px solid var(--primary);
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px var(--ds-accent-30);
 }
 
 .btn:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 0 3px var(--ds-accent-30);
 }
 
 .btn:disabled {
@@ -87,13 +87,13 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 /* Primary - Tab Design wie Sidebar */
 .btn-primary {
   background: transparent;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--ds-accent-20);
   color: var(--text-2);
 }
 
 .btn-primary:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.4);
+  border-color: var(--ds-accent-50);
   color: var(--text-1);
   transform: translateY(-1px);
 }
@@ -103,26 +103,26 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
   background: var(--gradient-gold);
   color: #000;
   border-color: var(--primary);
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px var(--ds-accent-30);
 }
 
 /* Secondary - Transparent Default */
 .btn-secondary:not(.logout-button):not(.dashboard-button) {
   background: transparent;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--ds-accent-20);
   color: var(--text-2);
 }
 
 .btn-secondary:not(.logout-button):not(.dashboard-button):hover {
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.4);
+  border-color: var(--ds-accent-50);
   color: var(--text-1);
 }
 
 /* Success - Green Tint */
 .btn-success {
   background: transparent;
-  border: 1px solid rgba(34, 197, 94, 0.4);
+  border: 1px solid var(--ds-success-25);
   color: var(--status-success);
 }
 
@@ -134,10 +134,10 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 
 .btn-success.active,
 .btn-success:active {
-  background: linear-gradient(135deg, #22c55e, #10b981);
-  color: white;
-  border-color: #22c55e;
-  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, var(--ds-success), var(--ds-success));
+  color: var(--ds-text);
+  border-color: var(--ds-success);
+  box-shadow: 0 4px 15px var(--ds-success-25);
 }
 
 /* Warning - Orange Tint */
@@ -156,7 +156,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-warning.active,
 .btn-warning:active {
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+  color: var(--ds-text);
   border-color: #f59e0b;
   box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
 }
@@ -164,7 +164,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 /* Danger - Red Tint */
 .btn-danger {
   background: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  border: 1px solid var(--ds-danger-25);
   color: var(--status-error);
 }
 
@@ -176,10 +176,10 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 
 .btn-danger.active,
 .btn-danger:active {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-  border-color: #ef4444;
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, var(--ds-danger), #dc2626);
+  color: var(--ds-text);
+  border-color: var(--ds-danger);
+  box-shadow: 0 4px 15px var(--ds-danger-25);
 }
 
 /* Info - Blue Tint */
@@ -198,7 +198,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-info.active,
 .btn-info:active {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: white;
+  color: var(--ds-text);
   border-color: #3b82f6;
   box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
@@ -224,7 +224,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-neutral {
   background: transparent;
   border: 1px solid rgba(156, 163, 175, 0.4);
-  color: #9ca3af;
+  color: var(--ds-text-muted);
 }
 
 .btn-neutral:hover {
@@ -259,12 +259,12 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 
 .btn-ghost {
   background: transparent;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--ds-border-strong);
   color: var(--text-2);
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-color: rgba(255, 255, 255, 0.4);
   color: var(--text-1);
 }
@@ -309,13 +309,13 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 }
 
 .btn-group .btn:last-child {
-  border-right: 1px solid rgba(255, 215, 0, 0.2);
+  border-right: 1px solid var(--ds-accent-20);
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
 }
 
 .btn-group .btn:hover {
-  border-right: 1px solid rgba(255, 215, 0, 0.4);
+  border-right: 1px solid var(--ds-accent-50);
 }
 
 /* ===== LOADING BUTTON ===== */
@@ -397,10 +397,10 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 }
 
 .btn-toggle.btn-toggle-success.active {
-  background: #22c55e;
-  color: #ffffff;
+  background: var(--ds-success);
+  color: var(--ds-text);
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 4px 15px var(--ds-success-25);
 }
 
 /* Toggle Button Danger Variant (Red) - MUSS VOR :hover kommen */
@@ -416,15 +416,15 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 }
 
 .btn-toggle.btn-toggle-danger.active {
-  background: #ef4444;
-  color: #ffffff;
+  background: var(--ds-danger);
+  color: var(--ds-text);
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 15px var(--ds-danger-25);
 }
 
 /* Generischer Hover nur für Buttons OHNE spezifische Variante */
 .btn-toggle:not(.btn-toggle-success):not(.btn-toggle-danger):hover {
-  background: rgba(255,215,0,0.1);
+  background: var(--ds-accent-10);
   color: var(--primary);
   transform: none;
 }
@@ -433,7 +433,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-toggle:not(.btn-toggle-success):not(.btn-toggle-danger).active,
 .btn-toggle:not(.btn-toggle-success):not(.btn-toggle-danger):active {
   background: var(--secondary);
-  color: #ffffff;
+  color: var(--ds-text);
   font-weight: 600;
   border: none;
   box-shadow: none;
@@ -491,7 +491,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 
 .badge-neutral {
   background: rgba(156, 163, 175, 0.1);
-  color: #9ca3af;
+  color: var(--ds-text-muted);
   border-color: rgba(156, 163, 175, 0.3);
 }
 
@@ -515,7 +515,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
   }
 
   .btn-group .btn {
-    border-right: 1px solid rgba(255, 215, 0, 0.2);
+    border-right: 1px solid var(--ds-accent-20);
     border-bottom: none;
   }
 
@@ -524,7 +524,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
   }
 
   .btn-group .btn:last-child {
-    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    border-bottom: 1px solid var(--ds-accent-20);
     border-radius: 0 0 8px 8px;
   }
 

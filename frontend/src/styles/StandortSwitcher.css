@@ -36,7 +36,7 @@
   background: var(--standort-color, #4F46E5);
 }
 .standort-color-indicator--all {
-  background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+  background: linear-gradient(135deg, var(--ds-success) 0%, #3B82F6 100%);
 }
 
 .standort-switcher-content {
@@ -49,7 +49,7 @@
 
 .standort-switcher-label {
   font-size: var(--ui-badge-size-sm);
-  color: #64748b;
+  color: var(--ds-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
@@ -71,8 +71,8 @@
 .standort-badge {
   display: inline-block;
   padding: 2px 6px;
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--ds-success) 0%, #059669 100%);
+  color: var(--ds-text);
   border-radius: var(--comp-radius-xs);
   font-size: var(--ui-badge-size-sm);
   font-weight: 700;
@@ -83,7 +83,7 @@
 
 .chevron {
   transition: transform 0.2s ease;
-  color: #64748b;
+  color: var(--ds-text-secondary);
   flex-shrink: 0;
 }
 
@@ -167,7 +167,7 @@
   background: var(--standort-color, #4F46E5);
 }
 .standort-option-indicator--all {
-  background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+  background: linear-gradient(135deg, var(--ds-success) 0%, #3B82F6 100%);
 }
 
 .standort-option-content {
@@ -192,8 +192,8 @@
 .standort-badge-small {
   display: inline-block;
   padding: 2px 5px;
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--ds-success) 0%, #059669 100%);
+  color: var(--ds-text);
   border-radius: 3px;
   font-size: var(--ui-badge-size-sm);
   font-weight: 700;
@@ -204,7 +204,7 @@
 
 .standort-option-stats {
   font-size: var(--ui-badge-size);
-  color: #64748b;
+  color: var(--ds-text-secondary);
 }
 
 .check-icon {
@@ -236,7 +236,7 @@
 [data-theme="dark"] .standort-switcher-trigger,
 .dark .standort-switcher-trigger {
   background: var(--surface-2);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--ds-border);
 }
 
 [data-theme="dark"] .standort-switcher-label,
@@ -252,14 +252,14 @@
 [data-theme="dark"] .standort-switcher-dropdown,
 .dark .standort-switcher-dropdown {
   background: var(--modal-bg-dark);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--ds-border);
 }
 
 [data-theme="dark"] .dropdown-header,
 .dark .dropdown-header {
   background: var(--surface-1);
   color: var(--text-2);
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--ds-border);
 }
 
 [data-theme="dark"] .standort-option,

@@ -1170,7 +1170,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               </span>
             )}
           </div>
-          <div style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,0.3)', marginBottom: '0.65rem' }}>
+          <div style={{ fontSize: '0.73rem', color: 'var(--ds-text-faint)', marginBottom: '0.65rem' }}>
             Alle Angaben in cm · 1=Rückenlänge · 2=Rückenbreite · 3=Spannweite · 4=Ärmellänge · 5=Schulterbreite · 6=Revers · A=Hosenlänge · B=Bundbreite(½) · C=Saumbreite(½) · D=Innenbeinlänge
           </div>
           <div className="gv-mass-layout">
@@ -1428,13 +1428,13 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                 </div>
               )}
               {dateien.length === 0 && !uploadingFile && (
-                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.25rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ds-text-faint)', marginTop: '0.25rem' }}>
                   Noch keine Dateien hinterlegt. Dateien werden im PDF eingebettet.
                 </div>
               )}
             </>
           ) : (
-            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--ds-text-faint)' }}>
               Dateien können nur über eine gespeicherte Vorlage hochgeladen werden.
             </div>
           )}
@@ -1595,7 +1595,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
                   <button
                     type="button"
                     onClick={() => setForm(p => ({ ...p, care_label_image: '' }))}
-                    style={{ background: 'none', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '4px', color: 'rgba(255,255,255,0.6)', padding: '3px 10px', cursor: 'pointer', fontSize: '0.78rem' }}
+                    style={{ background: 'none', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '4px', color: 'var(--ds-text-secondary)', padding: '3px 10px', cursor: 'pointer', fontSize: '0.78rem' }}
                   >Entfernen</button>
                 </div>
               )}
@@ -1641,7 +1641,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
               <button className="gv-lt-modal-close" onClick={() => setDojoAuswahlModal(false)}>×</button>
             </div>
             <div className="gv-lt-modal-body" style={{ padding: '1.25rem' }}>
-              <p style={{ fontSize: '0.83rem', color: 'rgba(255,255,255,0.55)', marginBottom: '0.75rem' }}>
+              <p style={{ fontSize: '0.83rem', color: 'var(--ds-text-muted)', marginBottom: '0.75rem' }}>
                 Bitte wähle das Dojo, unter dem diese Bestellung gespeichert werden soll.
               </p>
               <select

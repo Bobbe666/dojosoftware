@@ -112,7 +112,7 @@
 
 /* Inline action button: activate (success) */
 .st-btn-activate {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   color: var(--success);
   border: none;
   padding: 0.25rem 0.5rem;
@@ -123,7 +123,7 @@
 
 /* Download XML button */
 .st-btn-download {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--ds-success-25);
   color: var(--success);
   border: none;
   padding: 0.4rem 0.75rem;

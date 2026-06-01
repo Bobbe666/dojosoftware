@@ -5,10 +5,10 @@
 
 /* ── Compact card wrapper ────────────────────────────────── */
 .fb-compact-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 16px;
   padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
 }
 
 /* ── Compact header row ──────────────────────────────────── */
@@ -49,7 +49,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 8px;
 }
 
@@ -62,9 +62,9 @@
   border-radius: 8px;
   cursor: pointer;
   min-width: 50px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.7);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-secondary);
 }
 .fb-vote-btn-compact--voted {
   background: var(--primary-alpha-20);
@@ -99,7 +99,7 @@
 .fb-status-badge-sm--geprueft { background: rgba(59, 130, 246, 0.15); color: var(--info); }
 .fb-status-badge-sm--geplant  { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
 .fb-status-badge-sm--in_arbeit { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
-.fb-status-badge-sm--umgesetzt { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.fb-status-badge-sm--umgesetzt { background: var(--ds-success-10); color: var(--success); }
 .fb-status-badge-sm--abgelehnt { background: rgba(107, 114, 128, 0.15); color: var(--text-muted); }
 
 /* ── Modal overlay ───────────────────────────────────────── */
@@ -118,7 +118,7 @@
 
 /* ── Modal box ───────────────────────────────────────────── */
 .fb-modal-box {
-  background: #1a1a2e;
+  background: var(--ds-bg-surface);
   border-radius: 16px;
   padding: 2rem;
   width: 90%;
@@ -145,8 +145,8 @@
 .fb-form-input {
   width: 100%;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-primary);
 }
@@ -155,8 +155,8 @@
 .fb-form-textarea {
   width: 100%;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-primary);
   resize: vertical;
@@ -166,8 +166,8 @@
 .fb-btn-cancel {
   flex: 1;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-primary);
   cursor: pointer;
@@ -257,11 +257,11 @@
 
 /* ── Single stat card ────────────────────────────────────── */
 .fb-stat-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 12px;
   padding: 1rem;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
 }
 
 /* ── Stat value (color from CSS var on parent fb-stat-card) ─ */
@@ -278,15 +278,15 @@
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 12px;
 }
 
 /* ── Filter select ───────────────────────────────────────── */
 .fb-filter-select {
   padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 8px;
   color: var(--text-primary);
 }
@@ -302,7 +302,7 @@
 .fb-empty-card {
   text-align: center;
   padding: 3rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 12px;
   color: var(--text-muted);
 }
@@ -319,9 +319,9 @@
   display: flex;
   gap: 1rem;
   padding: 1.25rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
 }
 
 /* ── Vote button full (+ voted modifier) ─────────────────── */
@@ -335,9 +335,9 @@
   cursor: pointer;
   min-width: 70px;
   transition: all 0.2s;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.7);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-secondary);
 }
 .fb-vote-btn--voted {
   background: var(--primary-alpha-20);
@@ -382,13 +382,13 @@
 .fb-status-badge--geprueft { background: rgba(59, 130, 246, 0.15); color: var(--info); }
 .fb-status-badge--geplant  { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
 .fb-status-badge--in_arbeit { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
-.fb-status-badge--umgesetzt { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.fb-status-badge--umgesetzt { background: var(--ds-success-10); color: var(--success); }
 .fb-status-badge--abgelehnt { background: rgba(107, 114, 128, 0.15); color: var(--text-muted); }
 
 /* ── Category badge ──────────────────────────────────────── */
 .fb-category-badge {
   padding: 0.2rem 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   border-radius: 4px;
   font-size: 0.75rem;
   color: var(--text-secondary);
@@ -451,8 +451,8 @@
 .fb-admin-input {
   width: 100%;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
   color: var(--text-primary);
 }
@@ -461,8 +461,8 @@
 .fb-admin-textarea {
   width: 100%;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
   color: var(--text-primary);
   resize: vertical;
@@ -488,8 +488,8 @@
 /* ── Small cancel button (admin edit) ────────────────────── */
 .fb-btn-cancel-sm {
   padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
   color: var(--text-primary);
   cursor: pointer;
@@ -529,8 +529,8 @@
 /* ── Delete button ───────────────────────────────────────── */
 .fb-btn-delete {
   padding: 0.4rem 0.75rem;
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--ds-danger-25);
+  border: 1px solid var(--ds-danger-25);
   border-radius: 6px;
   color: var(--error);
   cursor: pointer;

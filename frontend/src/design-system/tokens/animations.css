@@ -185,10 +185,10 @@
 
 @keyframes pulseGold {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4);
+    box-shadow: 0 0 0 0 var(--ds-accent-50);
   }
   50% {
-    box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0);
+    box-shadow: 0 0 20px 10px var(--ds-accent-05);
   }
 }
 
@@ -214,10 +214,10 @@
 /* Glow */
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 5px var(--ds-accent-50);
   }
   50% {
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.4);
+    box-shadow: 0 0 20px var(--ds-accent-50), 0 0 30px var(--ds-accent-50);
   }
 }
 

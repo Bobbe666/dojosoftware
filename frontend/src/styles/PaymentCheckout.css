@@ -120,7 +120,7 @@
 /* Invoice Summary */
 .payment-invoice-summary {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-page-padding-sm);
   margin-bottom: var(--ui-section-gap-sm);
@@ -131,7 +131,7 @@
   font-size: var(--ui-section-title);
   margin: 0 0 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .invoice-info {
@@ -157,7 +157,7 @@
   color: var(--text-3);
   font-size: var(--ui-card-body);
   padding: 0.5rem 0;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  border-bottom: 1px dashed var(--ds-border);
 }
 
 .invoice-total {
@@ -178,7 +178,7 @@
 /* Payment Methods */
 .payment-methods {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-page-padding-sm);
   margin-bottom: var(--ui-section-gap-sm);
@@ -204,7 +204,7 @@
   gap: var(--ui-btn-gap);
   padding: 1rem;
   background: var(--surface-1);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   color: var(--text-2);
   cursor: pointer;
@@ -215,7 +215,7 @@
 
 .method-tab:hover {
   background: var(--surface-2);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--ds-border-strong);
 }
 
 .method-tab.active {
@@ -287,7 +287,7 @@
   gap: var(--ui-btn-gap);
   padding: 0.875rem 1.5rem;
   background: var(--surface-3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
   color: var(--text-1);
   font-weight: 500;
@@ -306,7 +306,7 @@
   gap: var(--ui-btn-gap);
   padding: 0.75rem 1.25rem;
   background: var(--surface-3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
   color: var(--text-1);
   cursor: pointer;
@@ -320,7 +320,7 @@
 .btn-retry {
   padding: 0.75rem 1.25rem;
   background: var(--surface-3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-md);
   color: var(--text-1);
   cursor: pointer;

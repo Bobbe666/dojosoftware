@@ -11,8 +11,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.75rem;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 10px;
 }
 .ic-header-left {
@@ -63,7 +63,7 @@
   font-weight: 500;
   border: 1px solid;
 }
-.ic-pill--ok { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3); color: #10b981; }
+.ic-pill--ok { background: var(--ds-success-10); border-color: var(--ds-success-25); color: var(--ds-success); }
 .ic-pill--warn { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.35); color: #f59e0b; }
 
 /* Loading */
@@ -84,7 +84,7 @@
   color: var(--text-2, #ccc);
   margin: 0;
   padding-bottom: 0.4rem;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid var(--ds-border);
 }
 .ic-empty { font-size: 0.83rem; color: var(--text-3, #888); margin: 0; }
 
@@ -101,53 +101,53 @@
   padding: 0.55rem 0.75rem;
   border-radius: 9px;
   border: 1px solid;
-  background: rgba(255,255,255,0.02);
+  background: var(--ds-bg-card);
 }
-.ic-service-card--ok { border-color: rgba(16,185,129,0.2); }
-.ic-service-card--err { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.04); }
+.ic-service-card--ok { border-color: var(--ds-success-25); }
+.ic-service-card--err { border-color: var(--ds-danger-25); background: var(--ds-danger-10); }
 .ic-service-icon { font-size: 1.2rem; flex-shrink: 0; }
 .ic-service-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .ic-service-name { font-size: 0.83rem; font-weight: 600; color: var(--text-1, #f0f0f0); }
 .ic-service-meta { font-size: 0.73rem; color: var(--text-3, #888); display: flex; align-items: center; gap: 0.3rem; }
-.ic-ok-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block; }
-.ic-err-dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; display: inline-block; }
+.ic-ok-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ds-success); display: inline-block; }
+.ic-err-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ds-danger); display: inline-block; }
 .ic-status-icon { flex-shrink: 0; }
-.ic-status-icon--ok { color: #10b981; }
-.ic-status-icon--err { color: #ef4444; }
+.ic-status-icon--ok { color: var(--ds-success); }
+.ic-status-icon--err { color: var(--ds-danger); }
 
 /* Tables */
-.ic-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid rgba(255,255,255,0.07); }
+.ic-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--ds-border); }
 .ic-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.81rem;
 }
-.ic-table thead { background: rgba(255,255,255,0.04); }
+.ic-table thead { background: var(--ds-bg-card); }
 .ic-table th {
   padding: 0.45rem 0.75rem;
   text-align: left;
   font-weight: 600;
   color: var(--text-2, #ccc);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--ds-border);
   white-space: nowrap;
 }
 .ic-table td {
   padding: 0.4rem 0.75rem;
   color: var(--text-1, #f0f0f0);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--ds-border-subtle);
   vertical-align: middle;
 }
 .ic-table tr:last-child td { border-bottom: none; }
-.ic-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.ic-table tbody tr:hover { background: var(--ds-bg-card); }
 .ic-tr--warn td { background: rgba(245,158,11,0.04); }
 
 .ic-td-name { font-weight: 500; white-space: nowrap; }
 .ic-td-mono { font-family: monospace; font-size: 0.78rem; color: var(--text-3,#888); }
 .ic-td-domains { font-size: 0.77rem; color: var(--text-2, #bbb); max-width: 260px; }
 .ic-td-days { text-align: center; }
-.ic-days--ok { color: #10b981; font-weight: 600; }
+.ic-days--ok { color: var(--ds-success); font-weight: 600; }
 .ic-days--warn { color: #f59e0b; font-weight: 600; }
-.ic-days--crit { color: #ef4444; font-weight: 700; }
+.ic-days--crit { color: var(--ds-danger); font-weight: 700; }
 .ic-warn-text { color: #f59e0b; font-weight: 600; }
 
 /* Badges */
@@ -157,13 +157,13 @@
   border-radius: 5px;
   font-size: 0.74rem;
   font-weight: 600;
-  background: rgba(255,255,255,0.06);
+  background: var(--ds-bg-card-hover);
   color: var(--text-2,#bbb);
 }
-.ic-badge--ok { background: rgba(16,185,129,0.12); color: #10b981; }
+.ic-badge--ok { background: var(--ds-success-10); color: var(--ds-success); }
 .ic-badge--warn { background: rgba(245,158,11,0.12); color: #f59e0b; }
-.ic-badge--crit { background: rgba(239,68,68,0.12); color: #ef4444; }
-.ic-badge--neutral { background: rgba(255,255,255,0.06); color: var(--text-3,#888); }
+.ic-badge--crit { background: var(--ds-danger-10); color: var(--ds-danger); }
+.ic-badge--neutral { background: var(--ds-bg-card-hover); color: var(--text-3,#888); }
 .ic-renew-badge { font-size: 0.73rem; color: var(--text-3,#888); }
 
 /* npm Audit */
@@ -173,7 +173,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding-bottom: 0.4rem;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid var(--ds-border);
 }
 .ic-vuln-list {
   display: flex;
@@ -213,16 +213,16 @@
 }
 .ic-fix-btn--dry:hover:not(:disabled) { background: rgba(124,106,247,0.2); }
 .ic-fix-btn--apply {
-  background: rgba(16,185,129,0.1);
-  border-color: rgba(16,185,129,0.3);
-  color: #10b981;
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
+  color: var(--ds-success);
 }
-.ic-fix-btn--apply:hover:not(:disabled) { background: rgba(16,185,129,0.2); }
+.ic-fix-btn--apply:hover:not(:disabled) { background: var(--ds-success-25); }
 
 /* Fix output */
 .ic-fix-output {
   margin-top: 0.75rem;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -231,7 +231,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.4rem 0.75rem;
-  background: rgba(255,255,255,0.04);
+  background: var(--ds-bg-card);
   font-size: 0.83rem;
 }
 .ic-fix-close {

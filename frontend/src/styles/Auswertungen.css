@@ -46,7 +46,7 @@
   gap: 0.5rem;
   padding: 0.6rem 1.1rem;
   background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ds-text);
   border: none;
   border-radius: var(--comp-radius-lg);
   cursor: pointer;
@@ -68,7 +68,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  background: linear-gradient(90deg, transparent, var(--ds-bg-elevated), transparent);
   transition: left 0.5s;
 }
 
@@ -116,7 +116,7 @@
   gap: 0;
   margin-bottom: 1.5rem;
   padding: 0.3rem 0.3rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--ds-border);
   background: transparent;
 }
 
@@ -126,7 +126,7 @@
   border: none;
   border-bottom: 2px solid transparent;
   border-radius: 8px 8px 0 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
   font-size: 0.82rem;
   font-weight: 500;
   margin-bottom: -1px;
@@ -142,8 +142,8 @@
 }
 
 .sad-auswertungen-embed .tab-button:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--ds-bg-card);
+  color: var(--ds-text-secondary);
   transform: none;
   box-shadow: none;
 }
@@ -154,9 +154,9 @@
 }
 
 .sad-auswertungen-embed .tab-button.active {
-  background: linear-gradient(to bottom, rgba(255, 215, 0, 0.07), transparent);
-  color: var(--primary, #ffd700);
-  border-bottom-color: var(--primary, #ffd700);
+  background: linear-gradient(to bottom, var(--ds-accent-05), transparent);
+  color: var(--primary, var(--ds-accent));
+  border-bottom-color: var(--primary, var(--ds-accent));
   font-weight: 600;
   box-shadow: none;
 }
@@ -168,7 +168,7 @@
   left: 20%;
   right: 20%;
   height: 2px;
-  background: var(--primary, #ffd700);
+  background: var(--primary, var(--ds-accent));
   filter: blur(4px);
   opacity: 0.5;
   pointer-events: none;
@@ -186,7 +186,7 @@
 
 .sad-auswertungen-embed .tab-button.active .tab-icon {
   opacity: 1;
-  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.45));
+  filter: drop-shadow(0 0 5px var(--ds-accent-50));
 }
 
 /* KPI Grid */
@@ -434,7 +434,7 @@
 
 .performance-icon {
   background: var(--primary-gradient);
-  color: white;
+  color: var(--ds-text);
   padding: 16px;
   border-radius: var(--comp-radius-xl);
   display: flex;
@@ -1103,7 +1103,7 @@
 .period-button.active {
   background: var(--primary-color);
   border-color: var(--primary-color);
-  color: white;
+  color: var(--ds-text);
 }
 
 .period-icon {
@@ -1278,7 +1278,7 @@
 
 .potential-icon {
   background: var(--primary-gradient);
-  color: white;
+  color: var(--ds-text);
   padding: 12px;
   border-radius: var(--comp-radius-lg);
   font-size: 1.5rem;
@@ -1370,7 +1370,7 @@
 .mitglied-card {
   background: var(--surface-1);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   transition: border-color 0.2s;
   position: relative;
   overflow: hidden;
@@ -1493,7 +1493,7 @@
 
 .btn-update-tarif:hover {
   background: var(--warning-color);
-  color: white;
+  color: var(--ds-text);
 }
 
 .btn-view-details {
@@ -1567,7 +1567,7 @@
 }
 
 .kpi-compact.success {
-  border-color: rgba(34, 197, 94, 0.3);
+  border-color: var(--ds-success-25);
 }
 
 .kpi-compact.warning {
@@ -1592,13 +1592,13 @@
 
 .kpi-compact-label {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ds-text-secondary);
   font-weight: 500;
 }
 
 .kpi-compact-sub {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
 }
 
 /* ========== KOMPAKTE CHARTS GRID ========== */
@@ -1624,7 +1624,7 @@
 .chart-card-compact h4 {
   margin: 0 0 12px 0;
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -1662,7 +1662,7 @@
 }
 
 .birthday-info strong {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   font-size: 0.9rem;
 }
 
@@ -1674,7 +1674,7 @@
 
 .no-data {
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
   font-size: 0.85rem;
   padding: 20px;
 }
@@ -1694,7 +1694,7 @@
 
 .peak-time {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
   font-weight: 500;
 }
 
@@ -1723,7 +1723,7 @@
   transform: translateY(-50%);
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   z-index: 1;
 }
 
@@ -1769,7 +1769,7 @@
 .growth-header h3 {
   margin: 0;
   font-size: 1.4rem;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ds-text);
   font-weight: 600;
 }
 
@@ -1784,7 +1784,7 @@
 .period-tab {
   background: transparent;
   border: 1px solid transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
   padding: 8px 16px;
   border-radius: var(--comp-radius-sm);
   cursor: pointer;
@@ -1794,8 +1794,8 @@
 }
 
 .period-tab:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-secondary);
 }
 
 .period-tab.active {
@@ -1831,13 +1831,13 @@
 }
 
 .growth-stat-card.positive {
-  border-color: rgba(34, 197, 94, 0.4);
-  background: rgba(34, 197, 94, 0.05);
+  border-color: var(--ds-success-25);
+  background: var(--ds-success-10);
 }
 
 .growth-stat-card.negative {
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.05);
+  border-color: var(--ds-danger-25);
+  background: var(--ds-danger-10);
 }
 
 .growth-stat-card.info {
@@ -1854,13 +1854,13 @@
 
 .stat-label {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
   font-weight: 500;
 }
 
 .stat-sub {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
   margin-top: 2px;
 }
 
@@ -1897,7 +1897,7 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ds-bg-card);
   border-radius: var(--comp-radius-md);
   overflow: hidden;
 }
@@ -1917,8 +1917,8 @@
 
 .data-table-compact td {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid var(--ds-border-subtle);
+  color: var(--ds-text);
   font-size: 0.9rem;
 }
 
@@ -1964,7 +1964,7 @@
   padding: 12px;
   text-align: center;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
   background: var(--surface-3);
   border-radius: var(--comp-radius-md);
   border: 1px solid var(--primary-alpha-10);
@@ -1991,7 +1991,7 @@
 }
 
 .belts-overview-header h2 {
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ds-text);
   font-size: 1.05rem;
   margin: 0;
   font-weight: 600;
@@ -2013,7 +2013,7 @@
 }
 
 .summary-stat .stat-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -2041,9 +2041,9 @@
 .stil-section {
   margin-bottom: 3rem;
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ds-bg-card);
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
 }
 
 .stil-header {
@@ -2069,7 +2069,7 @@
 }
 
 .stil-header h3 {
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1.5rem;
   margin: 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -2082,13 +2082,13 @@
 }
 
 .stil-stats {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
   font-size: 0.9rem;
 }
 
 .stil-collapse-chevron {
   font-size: 1.2rem;
-  color: rgba(255,255,255,0.5);
+  color: var(--ds-text-muted);
   transition: transform 0.25s ease;
   display: inline-block;
 }
@@ -2104,9 +2104,9 @@
 }
 
 .guertel-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   padding: 1.5rem;
   transition: all 0.3s ease;
 }
@@ -2123,7 +2123,7 @@
   gap: 1rem;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .guertel-color-badge {
@@ -2132,7 +2132,7 @@
   border-radius: 50%;
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--ds-border-strong);
   background: var(--badge-bg, #6b7280);
 }
 
@@ -2142,14 +2142,14 @@
 }
 
 .guertel-info h4 {
-  color: #ffffff;
+  color: var(--ds-text);
   font-size: 1.1rem;
   margin: 0 0 0.25rem 0;
   font-weight: 600;
 }
 
 .guertel-category {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ds-text-secondary);
   font-size: 0.85rem;
   text-transform: capitalize;
 }
@@ -2186,7 +2186,7 @@
   margin-bottom: 0.5rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ds-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   overflow: hidden;
@@ -2201,13 +2201,13 @@
 .members-header__group {
   display: flex;
   flex-direction: column;
-  border-left: 1px solid rgba(255,255,255,0.1);
+  border-left: 1px solid var(--ds-border);
 }
 
 .members-header__group-title {
   padding: 0.4rem 0.75rem;
   text-align: center;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .members-header__sub {
@@ -2221,7 +2221,7 @@
 }
 
 .members-header__sub span:first-child {
-  border-right: 1px solid rgba(255,255,255,0.1);
+  border-right: 1px solid var(--ds-border);
 }
 
 .member-row {
@@ -2229,12 +2229,12 @@
   grid-template-columns: 2fr 1fr 1fr;
   gap: 1rem;
   padding: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
   transition: background 0.2s ease;
 }
 
 .member-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ds-bg-card);
 }
 
 .member-row:last-child {
@@ -2242,7 +2242,7 @@
 }
 
 .member-name {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ds-text);
   font-size: 0.9rem;
 }
 
@@ -2256,7 +2256,7 @@
 .no-members {
   padding: 1.5rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ds-text-muted);
   font-style: italic;
 }
 
@@ -2294,13 +2294,13 @@
 
 /* Overview KPI bar fill colors */
 .ov-kpi-bar-fill--gold  { width: 100%; background: var(--primary-alpha-40); }
-.ov-kpi-bar-fill--green { background: #10b981; }
-.ov-kpi-bar-fill--red   { background: #ef4444; }
+.ov-kpi-bar-fill--green { background: var(--ds-success); }
+.ov-kpi-bar-fill--red   { background: var(--ds-danger); }
 .ov-kpi-bar-fill--blue  { background: #63b3ed; }
 
 /* Performance KPI bar fill colors */
-.perf-kpi-bar-fill--green   { background: #10b981; }
-.perf-kpi-bar-fill--red     { background: #ef4444; }
+.perf-kpi-bar-fill--green   { background: var(--ds-success); }
+.perf-kpi-bar-fill--red     { background: var(--ds-danger); }
 .perf-kpi-bar-fill--primary { background: #3b82f6; }
 
 /* Finance color dot + bar fill (CSS var --dot-color) */

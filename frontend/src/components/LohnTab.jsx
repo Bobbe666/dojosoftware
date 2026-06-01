@@ -250,7 +250,7 @@ const AbrechnungenTab = ({ token }) => {
                         <button
                           onClick={() => speichern(mid)}
                           disabled={speichernLoading[mid]}
-                          style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 7, padding: '8px 18px', fontWeight: 700, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
+                          style={{ background: '#10b981', color: 'var(--ds-text)', border: 'none', borderRadius: 7, padding: '8px 18px', fontWeight: 700, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
                         >
                           <Save size={14} />
                           {speichernLoading[mid] ? 'Speichere...' : 'Speichern'}

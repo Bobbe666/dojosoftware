@@ -29,7 +29,7 @@ h2 {
 /* Einzelne Mitgliederkarten */
 .mitglieder-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   padding: var(--ui-card-padding);
@@ -143,7 +143,7 @@ h2 {
   border-radius: var(--comp-radius-md);
   cursor: pointer;
   font-size: var(--ui-btn-font);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ds-border);
   transition: background-color 0.3s;
 }
 
@@ -199,8 +199,8 @@ h2 {
   justify-content: flex-start;
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
@@ -228,7 +228,7 @@ h2 {
 
 /* ml-check-mark: tick inside the checkbox */
 .ml-check-mark {
-  color: white;
+  color: var(--ds-text);
   font-size: 0.9rem;
   font-weight: bold;
 }
@@ -252,21 +252,21 @@ h2 {
   height: 38px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--ds-border);
   flex-shrink: 0;
 }
 
 /* ml-avatar--initials: neutral dark circle with gold initials */
 .ml-avatar--initials {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--ds-accent-10);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.72rem;
   font-weight: 700;
-  color: rgba(255, 215, 0, 0.85);
+  color: var(--ds-accent-50);
   letter-spacing: 0.04em;
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--ds-accent-15);
 }
 
 /* ml-member-name: name heading inside card — override global ALL CAPS gold */
@@ -279,7 +279,7 @@ h2 {
   text-overflow: unset;
   line-height: 1.3;
   text-transform: none !important;
-  color: var(--text-1, #fff) !important;
+  color: var(--text-1, var(--ds-text)) !important;
   -webkit-text-fill-color: var(--text-1, #fff) !important;
   background: none !important;
   -webkit-background-clip: unset !important;
@@ -360,7 +360,7 @@ h2 {
   font-size: 1.5rem;
   font-weight: 700;
   text-align: left;
-  color: var(--text-1, #fff);
+  color: var(--text-1, var(--ds-text));
   text-transform: none;
   letter-spacing: -0.01em;
   display: flex;
@@ -403,11 +403,11 @@ h2 {
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 6px;
   font-size: 0.8rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-elevated);
   backdrop-filter: blur(12px);
   transition: all 0.3s ease;
   outline: none;
-  color: white;
+  color: var(--ds-text);
   box-sizing: border-box;
   height: 34px;
 }
@@ -463,7 +463,7 @@ h2 {
 /* ml-dropdown-divider: separator line in dropdown */
 .ml-dropdown-divider {
   height: 1px;
-  background: rgba(255,255,255,0.08);
+  background: var(--ds-bg-elevated);
   margin: 0.25rem 0;
 }
 
@@ -630,7 +630,7 @@ h2 {
   padding: 0.4rem 0.8rem;
   font-size: 0.8rem;
   background: rgba(128, 128, 128, 0.3);
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ds-text-muted);
   border: none;
   border-radius: 6px;
   cursor: not-allowed;
@@ -642,14 +642,14 @@ h2 {
 }
 
 .ml-bulk-archive-btn:not(:disabled) {
-  background: linear-gradient(135deg, #EF4444, #DC2626);
-  color: white;
+  background: linear-gradient(135deg, var(--ds-danger), #DC2626);
+  color: var(--ds-text);
   cursor: pointer;
 }
 
 .ml-bulk-archive-btn:not(:disabled):hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 12px var(--ds-danger-25);
 }
 
 /* ── Karten: Gurt + Stile + Alter ───────────────────────────────────────── */
@@ -671,14 +671,14 @@ h2 {
 /* ml-card-alter: Altersanzeige in Karte */
 .ml-card-alter {
   font-size: 0.68rem;
-  color: var(--text-3, rgba(255,255,255,0.4));
+  color: var(--text-3, var(--ds-text-muted));
   margin-top: 0.25rem;
 }
 
 /* ml-info-stile-none: Kein Stil Text */
 .ml-info-stile-none {
   font-size: 0.68rem;
-  color: var(--text-3, rgba(255,255,255,0.35));
+  color: var(--text-3, var(--ds-text-faint));
   font-style: italic;
 }
 
@@ -691,16 +691,16 @@ h2 {
   padding: 0.12rem 0.5rem;
   font-size: 0.72rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--text-2, rgba(255,255,255,0.65));
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ds-bg-card-hover);
+  color: var(--text-2, var(--ds-text-secondary));
+  border: 1px solid var(--ds-border);
   white-space: nowrap;
 }
 
 .ml-stile-pill--more {
-  background: rgba(255, 215, 0, 0.08);
-  color: rgba(255, 215, 0, 0.7);
-  border-color: rgba(255, 215, 0, 0.15);
+  background: var(--ds-accent-10);
+  color: var(--ds-accent-50);
+  border-color: var(--ds-accent-15);
 }
 
 /* ── Gurt: Dot + Text (dezent, kein buntes Badge) ───────────────────────── */
@@ -710,12 +710,12 @@ h2 {
   align-items: center;
   gap: 0.3rem;
   font-size: 0.76rem;
-  color: var(--text-2, rgba(255,255,255,0.62));
+  color: var(--text-2, var(--ds-text-secondary));
   white-space: nowrap;
 }
 
 .ml-gurt-text--none {
-  color: var(--text-3, rgba(255,255,255,0.3));
+  color: var(--text-3, var(--ds-text-faint));
 }
 
 .ml-gurt-dot {
@@ -740,16 +740,16 @@ h2 {
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--text-2, rgba(255,255,255,0.6));
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border);
+  color: var(--text-2, var(--ds-text-secondary));
   flex-shrink: 0;
 }
 
 .ml-view-toggle-btn:hover {
-  background: rgba(255, 215, 0, 0.12);
-  border-color: rgba(255, 215, 0, 0.25);
-  color: var(--primary, #ffd700);
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-25);
+  color: var(--primary, var(--ds-accent));
 }
 
 /* ── Listen-Ansicht Container ───────────────────────────────────────────── */
@@ -762,7 +762,7 @@ h2 {
   margin-bottom: 0.5rem;
   border-radius: 6px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--ds-border-subtle);
 }
 
 /* ── Listen-Zeile ───────────────────────────────────────────────────────── */
@@ -774,8 +774,8 @@ h2 {
   padding: 0.3rem 0.65rem;
   cursor: pointer;
   transition: background 0.1s ease;
-  background: rgba(255, 255, 255, 0.025);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card);
+  border-bottom: 1px solid var(--ds-border-subtle);
   border-left: 2px solid transparent;
   position: relative;
 }
@@ -785,8 +785,8 @@ h2 {
 }
 
 .ml-list-row:hover {
-  background: rgba(255, 215, 0, 0.05);
-  border-left-color: rgba(255, 215, 0, 0.35);
+  background: var(--ds-accent-05);
+  border-left-color: var(--ds-accent-30);
 }
 
 .ml-list-row--selected {
@@ -807,7 +807,7 @@ h2 {
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--ds-border);
 }
 
 /* Initialen-Kreis in Listenzeile — neutral, kein Regenbogen */
@@ -815,14 +815,14 @@ h2 {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  background: var(--ds-accent-10);
+  border: 1px solid var(--ds-accent-15);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.65rem;
   font-weight: 700;
-  color: rgba(255, 215, 0, 0.85);
+  color: var(--ds-accent-50);
   letter-spacing: 0.04em;
   flex-shrink: 0;
 }
@@ -840,7 +840,7 @@ h2 {
 .ml-list-name {
   font-size: 0.92rem;
   font-weight: 600;
-  color: var(--text-1, rgba(255,255,255,0.92));
+  color: var(--text-1, var(--ds-text));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -853,7 +853,7 @@ h2 {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.74rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--ds-text-muted);
   line-height: 1.2;
   overflow: hidden;
 }
@@ -865,7 +865,7 @@ h2 {
 }
 
 .ml-list-email {
-  color: rgba(255, 255, 255, 0.45) !important;
+  color: var(--ds-text-muted) !important;
   max-width: 160px;
 }
 
@@ -890,7 +890,7 @@ h2 {
 .ml-list-arrow {
   flex-shrink: 0;
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--ds-text-faint);
   transition: color 0.1s ease, transform 0.1s ease;
   line-height: 1;
   width: 14px;
@@ -898,7 +898,7 @@ h2 {
 }
 
 .ml-list-row:hover .ml-list-arrow {
-  color: rgba(255, 215, 0, 0.55);
+  color: var(--ds-accent-50);
   transform: translateX(2px);
 }
 
@@ -990,21 +990,21 @@ h2 {
 /* Mehr-Filter Toggle-Button */
 .ml-mehr-filter-btn {
   padding: 0.4rem 0.75rem;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
-  background: rgba(255,255,255,0.05);
-  color: var(--text-primary, rgba(255,255,255,0.85));
+  background: var(--ds-bg-card-hover);
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
 }
 .ml-mehr-filter-btn:hover {
-  background: rgba(255,255,255,0.12);
+  background: var(--ds-bg-elevated);
   border-color: rgba(255,255,255,0.4);
 }
 .ml-mehr-filter-btn.active {
-  background: rgba(255,255,255,0.12);
+  background: var(--ds-bg-elevated);
   border-color: rgba(255,255,255,0.4);
 }
 .ml-mehr-filter-btn--has-active {
@@ -1024,40 +1024,40 @@ h2 {
 .ml-status-chip {
   padding: 0.3rem 0.8rem;
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.6);
+  border: 1px solid var(--ds-border-strong);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-secondary);
   font-size: 0.78rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 .ml-status-chip:hover {
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.9);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text);
 }
 .ml-status-chip--aktiv {
-  background: rgba(34,197,94,0.15);
-  border-color: rgba(34,197,94,0.4);
-  color: #4ade80;
+  background: var(--ds-success-10);
+  border-color: var(--ds-success-25);
+  color: var(--ds-success-soft);
   font-weight: 600;
 }
 .ml-status-chip--inaktiv {
-  background: rgba(239,68,68,0.12);
-  border-color: rgba(239,68,68,0.35);
-  color: #f87171;
+  background: var(--ds-danger-10);
+  border-color: var(--ds-danger-25);
+  color: var(--ds-danger-soft);
   font-weight: 600;
 }
 .ml-status-chip--alle {
   background: rgba(148,163,184,0.12);
   border-color: rgba(148,163,184,0.35);
-  color: rgba(255,255,255,0.9);
+  color: var(--ds-text);
   font-weight: 600;
 }
 
 /* Gespeicherte Listen */
 .ml-saved-lists-label {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   margin-left: 0.4rem;
   white-space: nowrap;
 }
@@ -1068,16 +1068,16 @@ h2 {
   gap: 0.35rem;
   padding: 0.3rem 0.7rem;
   border-radius: 20px;
-  border: 1px solid rgba(212,175,55,0.3);
-  background: rgba(212,175,55,0.08);
-  color: rgba(212,175,55,0.85);
+  border: 1px solid var(--ds-accent-30);
+  background: var(--ds-accent-10);
+  color: var(--ds-accent-50);
   font-size: 0.78rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 .ml-saved-list-chip:hover {
-  background: rgba(212,175,55,0.15);
-  border-color: rgba(212,175,55,0.5);
+  background: var(--ds-accent-15);
+  border-color: var(--ds-accent-50);
 }
 .ml-saved-list-delete {
   display: inline-flex;
@@ -1088,34 +1088,34 @@ h2 {
   border-radius: 50%;
   font-size: 0.85rem;
   line-height: 1;
-  color: rgba(212,175,55,0.6);
+  color: var(--ds-accent-50);
   cursor: pointer;
   transition: all 0.15s;
 }
 .ml-saved-list-delete:hover {
-  background: rgba(239,68,68,0.2);
-  color: #f87171;
+  background: var(--ds-danger-25);
+  color: var(--ds-danger-soft);
 }
 
 .ml-save-list-btn {
   padding: 0.3rem 0.65rem;
   border-radius: 20px;
-  border: 1px dashed rgba(255,255,255,0.2);
+  border: 1px dashed var(--ds-border-strong);
   background: transparent;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 .ml-save-list-btn:hover {
   border-color: rgba(255,255,255,0.4);
-  color: rgba(255,255,255,0.7);
+  color: var(--ds-text-secondary);
 }
 
 /* Erweiterte Filter Panel */
 .ml-mehr-filter-panel {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: 8px;
   padding: 0.75rem 1rem;
   margin-top: 0.25rem;
@@ -1132,7 +1132,7 @@ h2 {
 }
 .ml-filter-label {
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.45);
+  color: var(--ds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -1149,7 +1149,7 @@ h2 {
 }
 .ml-modal-box {
   background: #1a1d2e;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--ds-border);
   border-radius: 12px;
   box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05);
   padding: 1.5rem;
@@ -1161,28 +1161,28 @@ h2 {
 .ml-modal-title {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--text-primary, rgba(255,255,255,0.9));
+  color: var(--text-primary, var(--ds-text));
   margin: 0;
 }
 .ml-modal-desc {
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.5);
+  color: var(--ds-text-muted);
   margin: 0;
 }
 .ml-modal-input {
   width: 100%;
   padding: 0.6rem 0.85rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.15);
+  background: var(--ds-bg-card-hover);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
-  color: var(--text-primary, rgba(255,255,255,0.9));
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.9rem;
   outline: none;
   box-sizing: border-box;
 }
 .ml-modal-input:focus {
   border-color: rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.09);
+  background: var(--ds-bg-elevated);
 }
 .ml-modal-actions {
   display: flex;
@@ -1191,10 +1191,10 @@ h2 {
 }
 .ml-modal-save-btn {
   padding: 0.5rem 1.1rem;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: var(--ds-bg-elevated);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
-  color: rgba(255,255,255,0.9);
+  color: var(--ds-text);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.15s;
@@ -1209,55 +1209,55 @@ h2 {
 .ml-modal-cancel-btn {
   padding: 0.5rem 1.1rem;
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--ds-border);
   border-radius: 6px;
-  color: rgba(255,255,255,0.5);
+  color: var(--ds-text-muted);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 .ml-modal-cancel-btn:hover {
-  border-color: rgba(255,255,255,0.25);
-  color: rgba(255,255,255,0.7);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-secondary);
 }
 
 .ml-saved-list-chip--active {
-  background: rgba(212,175,55,0.22);
-  border-color: rgba(212,175,55,0.6);
-  color: rgba(212,175,55,1);
+  background: var(--ds-accent-20);
+  border-color: var(--ds-accent-50);
+  color: var(--ds-accent-50);
   font-weight: 600;
 }
 
 /* Listen-Button in Toolbar */
 .ml-listen-btn {
   padding: 0.4rem 0.75rem;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: 6px;
-  background: rgba(255,255,255,0.05);
-  color: var(--text-primary, rgba(255,255,255,0.85));
+  background: var(--ds-bg-card-hover);
+  color: var(--text-primary, var(--ds-text));
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
 }
 .ml-listen-btn:hover {
-  background: rgba(255,255,255,0.12);
+  background: var(--ds-bg-elevated);
   border-color: rgba(255,255,255,0.4);
 }
 .ml-listen-btn--active {
-  border-color: rgba(212,175,55,0.5);
-  background: rgba(212,175,55,0.1);
-  color: rgba(212,175,55,0.9);
+  border-color: var(--ds-accent-50);
+  background: var(--ds-accent-10);
+  color: var(--ds-accent-50);
 }
 
 /* Aktive Liste Indikator in Status-Row */
 .ml-active-list-indicator {
   font-size: 0.75rem;
-  color: rgba(212,175,55,0.8);
+  color: var(--ds-accent-50);
   padding: 0.2rem 0.6rem;
-  border: 1px solid rgba(212,175,55,0.3);
+  border: 1px solid var(--ds-accent-30);
   border-radius: 20px;
-  background: rgba(212,175,55,0.08);
+  background: var(--ds-accent-10);
 }
 
 /* Gespeicherte Listen Modal */
@@ -1267,7 +1267,7 @@ h2 {
   display: flex !important;
   flex-direction: column !important;
   background: #1a1d2e !important;
-  border: 1px solid rgba(255,255,255,0.12) !important;
+  border: 1px solid var(--ds-border) !important;
   border-radius: 14px !important;
   box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05) !important;
 }
@@ -1276,7 +1276,7 @@ h2 {
   align-items: center;
   justify-content: space-between;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--ds-border);
 }
 .ml-modal-close-btn {
   width: 28px;
@@ -1285,8 +1285,8 @@ h2 {
   align-items: center;
   justify-content: center;
   border: none;
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.6);
+  background: var(--ds-bg-card-hover);
+  color: var(--ds-text-secondary);
   font-size: 1.1rem;
   border-radius: 6px;
   cursor: pointer;
@@ -1294,7 +1294,7 @@ h2 {
 }
 .ml-modal-close-btn:hover {
   background: rgba(255,255,255,0.14);
-  color: rgba(255,255,255,0.9);
+  color: var(--ds-text);
 }
 
 /* Leerer Zustand */
@@ -1305,12 +1305,12 @@ h2 {
   justify-content: center;
   padding: 2rem 1rem;
   gap: 0.4rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--ds-text-muted);
   text-align: center;
 }
 .ml-listen-empty-icon { font-size: 2rem; }
 .ml-listen-empty p { margin: 0; font-size: 0.88rem; }
-.ml-listen-empty-hint { font-size: 0.78rem !important; color: rgba(255,255,255,0.3) !important; }
+.ml-listen-empty-hint { font-size: 0.78rem !important; color: var(--ds-text-faint) !important; }
 
 /* Listen-Einträge */
 .ml-listen-list {
@@ -1330,21 +1330,21 @@ h2 {
   gap: 0.75rem;
   padding: 0.65rem 0.85rem;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-bg-card);
   cursor: pointer;
   transition: all 0.15s;
 }
 .ml-listen-item:hover {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.14);
+  background: var(--ds-bg-elevated);
+  border-color: var(--ds-border-strong);
 }
 .ml-listen-item--active {
-  background: rgba(212,175,55,0.1);
-  border-color: rgba(212,175,55,0.35);
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-30);
 }
 .ml-listen-item--active:hover {
-  background: rgba(212,175,55,0.15);
+  background: var(--ds-accent-15);
 }
 .ml-listen-item-main {
   display: flex;
@@ -1356,13 +1356,13 @@ h2 {
 .ml-listen-item-name {
   font-size: 0.9rem;
   font-weight: 500;
-  color: rgba(255,255,255,0.88);
+  color: var(--ds-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ml-listen-item-check {
-  color: rgba(212,175,55,0.9);
+  color: var(--ds-accent-50);
 }
 .ml-listen-item-tags {
   display: flex;
@@ -1373,8 +1373,8 @@ h2 {
   font-size: 0.7rem;
   padding: 0.1rem 0.45rem;
   border-radius: 10px;
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.5);
+  background: var(--ds-bg-elevated);
+  color: var(--ds-text-muted);
 }
 .ml-listen-delete-btn {
   flex-shrink: 0;
@@ -1385,37 +1385,37 @@ h2 {
   justify-content: center;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.3);
+  color: var(--ds-text-faint);
   font-size: 0.85rem;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
 }
 .ml-listen-delete-btn:hover {
-  background: rgba(239,68,68,0.15);
-  color: #f87171;
+  background: var(--ds-danger-10);
+  color: var(--ds-danger-soft);
 }
 
 /* Footer */
 .ml-listen-modal-footer {
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid var(--ds-border);
   margin-top: 0.25rem;
 }
 .ml-listen-new-btn {
   width: 100%;
   padding: 0.55rem 1rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px dashed rgba(255,255,255,0.18);
+  background: var(--ds-bg-card-hover);
+  border: 1px dashed var(--ds-border-strong);
   border-radius: 8px;
-  color: rgba(255,255,255,0.6);
+  color: var(--ds-text-secondary);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.15s;
   text-align: center;
 }
 .ml-listen-new-btn:hover {
-  background: rgba(255,255,255,0.1);
+  background: var(--ds-bg-elevated);
   border-color: rgba(255,255,255,0.3);
-  color: rgba(255,255,255,0.85);
+  color: var(--ds-text);
 }

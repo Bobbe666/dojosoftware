@@ -21,12 +21,12 @@
   gap: var(--ui-header-gap);
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid var(--ds-border);
   animation: fadeInUp 0.35s ease-out;
 }
 
 .beitraege-header-icon {
-  background: rgba(255,215,0,0.08);
+  background: var(--ds-accent-10);
   color: var(--primary);
   width: 40px;
   height: 40px;
@@ -35,13 +35,13 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid rgba(255,215,0,0.15);
+  border: 1px solid var(--ds-accent-15);
 }
 
 .beitraege-header h1 {
   font-size: 1.3rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  background: linear-gradient(135deg, var(--ds-accent), #ffaa00);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -51,7 +51,7 @@
 
 .beitraege-header p {
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.45);
+  color: var(--ds-text-muted);
   margin: 0;
 }
 
@@ -73,7 +73,7 @@
 
 .beitraege-container .stat-card {
   background: rgba(30, 41, 59, 0.75);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--ds-border);
   border-left: none;
   border-radius: 12px;
   padding: 1rem 1.1rem;
@@ -91,19 +91,19 @@
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: var(--stat-shimmer, rgba(255,215,0,0.5));
+  background: var(--stat-shimmer, var(--ds-accent-50));
   border-radius: 12px 12px 0 0;
 }
 
 .beitraege-container .stat-card:hover {
-  border-color: rgba(255,255,255,0.14);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 4px 16px rgba(0,0,0,0.25);
 }
 
 .beitraege-container .stat-card.positive {
-  --stat-shimmer: #FFD700;
-  --stat-icon-bg: rgba(255,215,0,0.08);
-  --stat-icon-color: #FFD700;
+  --stat-shimmer: var(--ds-accent);
+  --stat-icon-bg: var(--ds-accent-10);
+  --stat-icon-color: var(--ds-accent);
 }
 .beitraege-container .stat-card.warning {
   --stat-shimmer: #f59e0b;
@@ -122,8 +122,8 @@
 }
 
 .beitraege-container .stat-icon {
-  background: var(--stat-icon-bg, rgba(255,255,255,0.05));
-  color: var(--stat-icon-color, rgba(255,255,255,0.4));
+  background: var(--stat-icon-bg, var(--ds-bg-card-hover));
+  color: var(--stat-icon-color, var(--ds-text-muted));
   width: 40px;
   height: 40px;
   min-width: 40px;
@@ -147,7 +147,7 @@
 .beitraege-container .stat-info h3 {
   font-size: 0.67rem !important;
   font-weight: 600 !important;
-  color: rgba(255,255,255,0.45) !important;
+  color: var(--ds-text-muted) !important;
   margin: 0 0 0.25rem !important;
   text-transform: uppercase !important;
   letter-spacing: 0.07em !important;
@@ -163,7 +163,7 @@
 
 .beitraege-container .stat-card .stat-trend {
   font-size: 0.72rem !important;
-  color: rgba(255,255,255,0.38) !important;
+  color: var(--ds-text-faint) !important;
   margin: 0 !important;
 }
 
@@ -187,7 +187,7 @@
 .beitraege-container .standard-card,
 .beitraege-container .management-card {
   background: rgba(30, 41, 59, 0.7) !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
+  border: 1px solid var(--ds-border) !important;
   border-radius: 12px !important;
   padding: 1rem !important;
   display: flex !important;
@@ -211,7 +211,7 @@
 
 .beitraege-container .standard-card:hover,
 .beitraege-container .management-card:hover {
-  border-color: rgba(255,215,0,0.25) !important;
+  border-color: var(--ds-accent-25) !important;
   box-shadow: 0 4px 18px rgba(0,0,0,0.25) !important;
   transform: translateY(-2px) !important;
   background: rgba(30, 41, 59, 0.9) !important;
@@ -219,8 +219,8 @@
 
 /* Card icon: top-left badge */
 .beitraege-container .card-icon {
-  background: rgba(255,255,255,0.06) !important;
-  color: rgba(255,255,255,0.4) !important;
+  background: var(--ds-bg-card-hover) !important;
+  color: var(--ds-text-muted) !important;
   width: 34px !important;
   height: 34px !important;
   border-radius: 8px !important;
@@ -238,8 +238,8 @@
 
 .beitraege-container .standard-card:hover .card-icon,
 .beitraege-container .management-card:hover .card-icon {
-  background: rgba(255,215,0,0.1) !important;
-  color: #FFD700 !important;
+  background: var(--ds-accent-10) !important;
+  color: var(--ds-accent) !important;
 }
 
 /* Card title: white, NOT gold/uppercase */
@@ -253,7 +253,7 @@
 }
 
 .beitraege-container .card-content p {
-  color: rgba(255,255,255,0.42) !important;
+  color: var(--ds-text-muted) !important;
   font-size: 0.8rem !important;
   line-height: 1.5 !important;
   margin: 0 0 0.85rem !important;
@@ -273,28 +273,28 @@
 
 /* ─── Buttons ─────────────────────────────────────────── */
 .beitraege-container .btn.btn-primary {
-  background: rgba(255,215,0,0.08) !important;
-  border: 1px solid rgba(255,215,0,0.28) !important;
-  color: #FFD700 !important;
+  background: var(--ds-accent-10) !important;
+  border: 1px solid var(--ds-accent-30) !important;
+  color: var(--ds-accent) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 .beitraege-container .btn.btn-primary:hover {
-  background: rgba(255,215,0,0.15) !important;
-  border-color: rgba(255,215,0,0.5) !important;
+  background: var(--ds-accent-15) !important;
+  border-color: var(--ds-accent-50) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 .beitraege-container .btn.btn-secondary {
-  background: rgba(255,255,255,0.05) !important;
-  color: rgba(255,255,255,0.65) !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
+  background: var(--ds-bg-card-hover) !important;
+  color: var(--ds-text-secondary) !important;
+  border: 1px solid var(--ds-border) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 .beitraege-container .btn.btn-secondary:hover {
-  background: rgba(255,255,255,0.09) !important;
-  border-color: rgba(255,255,255,0.18) !important;
+  background: var(--ds-bg-elevated) !important;
+  border-color: var(--ds-border-strong) !important;
   color: #f1f5f9 !important;
   box-shadow: none !important;
   transform: none !important;
@@ -344,7 +344,7 @@
   background: var(--surface-2);
   padding: 0.85rem 1rem;
   border-radius: var(--comp-radius-md);
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
 }
 
 .bericht-stat-box .label {
@@ -361,7 +361,7 @@
 }
 
 .bericht-stat-box .sub {
-  color: rgba(255,255,255,0.35);
+  color: var(--ds-text-faint);
   font-size: var(--ui-badge-size-sm);
   margin-top: 0.25rem;
 }
@@ -369,7 +369,7 @@
 .bericht-list {
   background: var(--surface-1);
   border-radius: var(--comp-radius-md);
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--ds-border);
   max-height: 200px;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -378,7 +378,7 @@
 
 .bericht-list-item {
   padding: 0.6rem 0.9rem;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--ds-border-subtle);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -418,13 +418,13 @@
   align-items: center;
   gap: 1rem;
   padding: 3rem 2rem;
-  color: rgba(255,255,255,0.45);
+  color: var(--ds-text-muted);
 }
 .loading-spinner {
   width: 28px;
   height: 28px;
-  border: 2px solid rgba(255,255,255,0.1);
-  border-top-color: #FFD700;
+  border: 2px solid var(--ds-border);
+  border-top-color: var(--ds-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -461,7 +461,7 @@
 [data-theme="tda-vib"] .beitraege-container .stat-card .stat-trend {
   color: rgba(26,26,26,0.45) !important;
 }
-[data-theme="tda-vib"] .beitraege-container .stat-card.positive { --stat-shimmer: #c9a227; }
+[data-theme="tda-vib"] .beitraege-container .stat-card.positive { --stat-shimmer: var(--ds-accent-dark); }
 [data-theme="tda-vib"] .beitraege-container .stat-card.warning  { --stat-shimmer: #b45309; --stat-icon-bg: rgba(180,83,9,0.08); --stat-icon-color: #b45309; }
 [data-theme="tda-vib"] .beitraege-container .stat-card.success  { --stat-shimmer: #16a34a; --stat-icon-bg: rgba(22,163,74,0.08); --stat-icon-color: #16a34a; }
 

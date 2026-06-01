@@ -12,9 +12,9 @@
   align-items: center;
   gap: var(--ui-form-gap);
   padding: 0.5rem 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ds-bg-card-hover);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .management-header .btn {
@@ -114,7 +114,7 @@
 }
 
 .management-header .sub-tabs-sidebar-style .tab-vertical-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--ds-bg-elevated) !important;
   border-color: var(--primary-alpha-40) !important;
   color: var(--text-1) !important;
   transform: translateY(-1px) !important;

@@ -1,0 +1,25 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   EIGENE SCHRIFTEN — lokale Dateien aus /public/fonts/.
+   Dateien fehlen? → Browser nutzt automatisch die Fallback-Schrift im Stack.
+   Ablage-Namen: /public/fonts/Karate.(woff2|woff|ttf), Bonzai.(woff2|woff|ttf)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'Karate';
+  src: url('/fonts/Karate.woff2') format('woff2'),
+       url('/fonts/Karate.woff')  format('woff'),
+       url('/fonts/Karate.ttf')   format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bonzai';
+  src: url('/fonts/Bonzai.woff2') format('woff2'),
+       url('/fonts/Bonzai.woff')  format('woff'),
+       url('/fonts/Bonzai.ttf')   format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

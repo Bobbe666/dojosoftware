@@ -1,7 +1,7 @@
 /* Training Reminders */
 .training-reminders {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.18);
+  border: 1px solid var(--ds-accent-20);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-page-padding-sm);
   margin-bottom: var(--ui-page-padding-sm);
@@ -124,7 +124,7 @@
 .training-reminders .reminder-card.active {
   border-color: var(--status-error);
   background: var(--status-error-bg);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 10px var(--ds-danger-25);
 }
 
 .training-reminders .reminder-icon {
@@ -170,7 +170,7 @@
 
 .training-reminders .dismiss-button {
   background: var(--surface-3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ds-border-strong);
   border-radius: var(--comp-radius-sm);
   padding: 0.3rem;
   color: var(--text-2);
@@ -344,7 +344,7 @@
 .tr-course-name {
   font-weight: bold;
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ds-text);
 }
 
 .tr-course-details {
