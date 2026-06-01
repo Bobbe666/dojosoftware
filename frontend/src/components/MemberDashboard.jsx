@@ -345,6 +345,56 @@ const MemberDashboard = () => {
   const [memberNews, setMemberNews] = useState([]);
   const [offeneNews, setOffeneNews] = useState(null);
 
+  // Theme-Erkennung für Washi Light (tda-vib)
+  const isWashi = document.documentElement.getAttribute('data-theme') === 'tda-vib';
+  const c = isWashi ? {
+    cardBg:      '#ffffff',
+    cardBorder:  '#d0d0d0',
+    cardBgAlt:   '#f7f7f7',
+    text:        '#1a1512',
+    textMuted:   '#5a4d3e',
+    textSubtle:  '#7a6a5a',
+    jaColor:     '#15803d',
+    neinColor:   '#dc2626',
+    jaBg:        'rgba(34,197,94,0.08)',
+    jaBorder:    'rgba(34,197,94,0.35)',
+    neinBg:      'rgba(220,38,38,0.07)',
+    neinBorder:  'rgba(220,38,38,0.30)',
+    jaActive:    'rgba(34,197,94,0.18)',
+    neinActive:  'rgba(220,38,38,0.15)',
+    inputBg:     '#f7f7f7',
+    inputBorder: '#d0d0d0',
+    inputColor:  '#1a1512',
+    btnBg:       '#c0392b',
+    successBg:   'rgba(34,197,94,0.06)',
+    successBdr:  'rgba(34,197,94,0.25)',
+    successText: '#166534',
+    progressBg:  '#e8e8e8',
+  } : {
+    cardBg:      'rgba(99,102,241,0.1)',
+    cardBorder:  'rgba(99,102,241,0.35)',
+    cardBgAlt:   'rgba(255,255,255,0.03)',
+    text:        '#e2e8f0',
+    textMuted:   'rgba(255,255,255,0.55)',
+    textSubtle:  'rgba(255,255,255,0.4)',
+    jaColor:     '#86efac',
+    neinColor:   '#fca5a5',
+    jaBg:        'rgba(34,197,94,0.1)',
+    jaBorder:    'rgba(34,197,94,0.3)',
+    neinBg:      'rgba(239,68,68,0.1)',
+    neinBorder:  'rgba(239,68,68,0.3)',
+    jaActive:    'rgba(34,197,94,0.2)',
+    neinActive:  'rgba(239,68,68,0.2)',
+    inputBg:     'rgba(255,255,255,0.05)',
+    inputBorder: 'rgba(255,255,255,0.12)',
+    inputColor:  '#e2e8f0',
+    btnBg:       'linear-gradient(135deg,#6366f1,#4f46e5)',
+    successBg:   'rgba(34,197,94,0.08)',
+    successBdr:  'rgba(34,197,94,0.35)',
+    successText: '#86efac',
+    progressBg:  'rgba(255,255,255,0.07)',
+  };
+
   // Meine Umfragen (beantwortete + offene)
   const [meineUmfragen, setMeineUmfragen] = useState([]);
   const [pendingUmfragen, setPendingUmfragen] = useState([]);
@@ -1497,7 +1547,7 @@ const MemberDashboard = () => {
                 width: '100%', padding: '14px',
                 background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
                 border: 'none', borderRadius: 10, cursor: 'pointer',
-                color: '#fff', fontWeight: 700, fontSize: '1rem',
+                color: 'var(--ds-text)', fontWeight: 700, fontSize: '1rem',
               }}
             >
               Jetzt loslegen →
@@ -1863,7 +1913,7 @@ const MemberDashboard = () => {
               </span>
             </div>
             <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: u.beschreibung ? 4 : 10 }}>{u.titel}</div>
-            {u.beschreibung && !isSuccess && <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', marginBottom: 10 }}>{u.beschreibung}</div>}
+            {u.beschreibung && !isSuccess && <div style={{ fontSize: '0.82rem', color: 'var(--ds-text-muted)', marginBottom: 10 }}>{u.beschreibung}</div>}
 
             {/* Ergebnisanzeige nach Absenden */}
             {isSuccess && res && (
@@ -1874,13 +1924,13 @@ const MemberDashboard = () => {
                   </div>
                 )}
                 {res.myKommentar && !res.myAnswer && (
-                  <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', marginBottom: 8, fontStyle: 'italic' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--ds-text-secondary)', marginBottom: 8, fontStyle: 'italic' }}>
                     „{res.myKommentar}"
                   </div>
                 )}
                 {res.total > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--ds-text-muted)', marginBottom: 2 }}>
                       Aktuelles Ergebnis ({res.total} Stimmen)
                     </div>
                     {(res.jaCount > 0 || res.neinCount > 0) && [
@@ -1891,7 +1941,7 @@ const MemberDashboard = () => {
                       return (
                         <div key={label}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: 3 }}>
-                            <span style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</span>
+                            <span style={{ color: 'var(--ds-text-secondary)' }}>{label}</span>
                             <span style={{ color, fontWeight: 700 }}>{pct}% ({count})</span>
                           </div>
                           <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
@@ -1935,7 +1985,7 @@ const MemberDashboard = () => {
                 <button onClick={() => submitUmfrageAntwort(u.id)}
                   disabled={!kannAbsenden || umfrageSending === u.id}
                   style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 8,
-                    color: '#fff', fontWeight: 600, padding: '0.55rem 1.4rem',
+                    color: 'var(--ds-text)', fontWeight: 600, padding: '0.55rem 1.4rem',
                     cursor: kannAbsenden ? 'pointer' : 'not-allowed',
                     opacity: kannAbsenden ? 1 : 0.4, fontSize: '0.875rem' }}>
                   {umfrageSending === u.id ? 'Wird gesendet…' : 'Absenden'}
@@ -2285,7 +2335,7 @@ const MemberDashboard = () => {
                           } catch {}
                         }}
                         title="Stil entfernen"
-                        style={{ position: 'absolute', top: '50%', right: '0.4rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: '0.9rem', lineHeight: 1, padding: '2px' }}
+                        style={{ position: 'absolute', top: '50%', right: '0.4rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--ds-text-faint)', cursor: 'pointer', fontSize: '0.9rem', lineHeight: 1, padding: '2px' }}
                       >✕</button>
                     </div>
                   );
@@ -2300,7 +2350,7 @@ const MemberDashboard = () => {
             <div className="md-info-card" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🥋</div>
               <div style={{ fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-primary)' }}>Noch kein Kampfkunststil gewählt</div>
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--ds-text-muted)', marginBottom: '1rem' }}>
                 Wähle deinen Stil um loszulegen
               </div>
               <button
@@ -2573,7 +2623,7 @@ const MemberDashboard = () => {
                 } catch (err) { setRuhepauseError(err.message); }
                 finally { setRuhepauseLoading(false); }
               }}
-              style={{ width: '100%', padding: '0.6rem', borderRadius: 8, background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', border: 'none', color: '#fff', fontWeight: 600, cursor: ruhepauseLoading ? 'not-allowed' : 'pointer', opacity: ruhepauseLoading ? 0.7 : 1 }}
+              style={{ width: '100%', padding: '0.6rem', borderRadius: 8, background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', border: 'none', color: 'var(--ds-text)', fontWeight: 600, cursor: ruhepauseLoading ? 'not-allowed' : 'pointer', opacity: ruhepauseLoading ? 0.7 : 1 }}
             >
               {ruhepauseLoading ? '⏳ Senden…' : '⏸ Ruhepause beantragen'}
             </button>
@@ -2641,7 +2691,7 @@ const MemberDashboard = () => {
                 } catch (e) { setKuendigungError(e.message); }
                 finally { setKuendigungLoading(false); }
               }}
-              style={{ background: kuendigungBestaetigt ? 'rgba(239,68,68,0.8)' : 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1.25rem', fontWeight: 600, cursor: kuendigungBestaetigt ? 'pointer' : 'not-allowed', fontSize: '0.85rem', opacity: kuendigungBestaetigt ? 1 : 0.5 }}
+              style={{ background: kuendigungBestaetigt ? 'rgba(239,68,68,0.8)' : 'rgba(255,255,255,0.1)', color: 'var(--ds-text)', border: 'none', borderRadius: 8, padding: '0.5rem 1.25rem', fontWeight: 600, cursor: kuendigungBestaetigt ? 'pointer' : 'not-allowed', fontSize: '0.85rem', opacity: kuendigungBestaetigt ? 1 : 0.5 }}
             >
               {kuendigungLoading ? '⏳ Senden…' : '✕ Kündigung beantragen'}
             </button>
@@ -2709,7 +2759,7 @@ const MemberDashboard = () => {
                 } catch (err) { setAnpassungError(err.message); }
                 finally { setAnpassungLoading(false); }
               }}
-              style={{ width: '100%', padding: '0.6rem', borderRadius: 8, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark, #b8860b))', border: 'none', color: '#fff', fontWeight: 600, cursor: anpassungLoading ? 'not-allowed' : 'pointer' }}
+              style={{ width: '100%', padding: '0.6rem', borderRadius: 8, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark, #b8860b))', border: 'none', color: 'var(--ds-text)', fontWeight: 600, cursor: anpassungLoading ? 'not-allowed' : 'pointer' }}
             >
               {anpassungLoading ? '⏳ Senden...' : '📩 Antrag stellen'}
             </button>
@@ -2900,7 +2950,7 @@ const MemberDashboard = () => {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
                             <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary, #e2e8f0)' }}>{a.name}</span>
-                            <span style={{ background: typColor, color: '#fff', borderRadius: 4, padding: '1px 7px', fontSize: '0.68rem', fontWeight: 600 }}>{typLabel}</span>
+                            <span style={{ background: typColor, color: 'var(--ds-text)', borderRadius: 4, padding: '1px 7px', fontSize: '0.68rem', fontWeight: 600 }}>{typLabel}</span>
                           </div>
                           {a.beschreibung && <p style={{ fontSize: '0.78rem', color: 'var(--text-muted, #94a3b8)', margin: '0 0 6px' }}>{a.beschreibung}</p>}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
@@ -3157,18 +3207,18 @@ const MemberDashboard = () => {
                     const kannAbsenden = hatJaNein ? a.antwort !== null : (a.kommentar || '').trim().length > 0;
                     return (
                       <div key={u.id} style={{
-                        background: isSuccess ? 'rgba(34,197,94,0.08)' : 'rgba(99,102,241,0.1)',
-                        border: `1px solid ${isSuccess ? 'rgba(34,197,94,0.35)' : 'rgba(99,102,241,0.35)'}`,
+                        background: isSuccess ? c.successBg : c.cardBg,
+                        border: `1px solid ${isSuccess ? c.successBdr : c.cardBorder}`,
                         borderRadius: 8, padding: '0.85rem 1rem',
                         transition: 'background 0.4s, border-color 0.4s',
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                           <span>{isSuccess ? '✅' : '📋'}</span>
-                          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: isSuccess ? '#86efac' : undefined }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: isSuccess ? c.successText : c.text }}>
                             {u.titel}
                           </span>
                         </div>
-                        {u.beschreibung && !isSuccess && <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', marginBottom: 10 }}>{u.beschreibung}</div>}
+                        {u.beschreibung && !isSuccess && <div style={{ fontSize: '0.82rem', color: c.textMuted, marginBottom: 10 }}>{u.beschreibung}</div>}
 
                         {/* Ergebnis nach Absenden */}
                         {isSuccess && res && (
@@ -3179,11 +3229,11 @@ const MemberDashboard = () => {
                               </div>
                             )}
                             {res.myKommentar && !res.myAnswer && (
-                              <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6, fontStyle: 'italic' }}>„{res.myKommentar}"</div>
+                              <div style={{ fontSize: '0.82rem', color: 'var(--ds-text-secondary)', marginBottom: 6, fontStyle: 'italic' }}>„{res.myKommentar}"</div>
                             )}
                             {res.total > 0 && (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>Ergebnis ({res.total} Stimmen)</div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--ds-text-muted)' }}>Ergebnis ({res.total} Stimmen)</div>
                                 {(res.jaCount > 0 || res.neinCount > 0) && [
                                   { label: 'Ja', count: res.jaCount, color: '#22c55e', bg: 'rgba(34,197,94,0.25)' },
                                   { label: 'Nein', count: res.neinCount, color: '#ef4444', bg: 'rgba(239,68,68,0.2)' },
@@ -3192,7 +3242,7 @@ const MemberDashboard = () => {
                                   return (
                                     <div key={label}>
                                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: 2 }}>
-                                        <span style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</span>
+                                        <span style={{ color: 'var(--ds-text-secondary)' }}>{label}</span>
                                         <span style={{ color, fontWeight: 700 }}>{pct}% ({count})</span>
                                       </div>
                                       <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.07)' }}>
@@ -3216,7 +3266,7 @@ const MemberDashboard = () => {
                               <div style={{ display: 'flex', gap: 8, marginBottom: hatKommentar ? 8 : 10 }}>
                                 {['ja','nein'].map(val => (
                                   <button key={val} onClick={() => setUmfrageAntworten(prev => ({ ...prev, [u.id]: { ...prev[u.id], antwort: prev[u.id]?.antwort === val ? null : val } }))}
-                                    style={{ flex: 1, padding: '0.5rem', borderRadius: 7, border: `2px solid ${a.antwort === val ? (val === 'ja' ? '#22c55e' : '#ef4444') : 'rgba(255,255,255,0.15)'}`, background: a.antwort === val ? (val === 'ja' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') : 'rgba(255,255,255,0.05)', color: a.antwort === val ? (val === 'ja' ? '#86efac' : '#fca5a5') : 'rgba(255,255,255,0.6)', fontWeight: 600, cursor: 'pointer' }}>
+                                    style={{ flex: 1, padding: '0.5rem', borderRadius: 7, border: `2px solid ${a.antwort === val ? (val === 'ja' ? '#16a34a' : '#dc2626') : c.cardBorder}`, background: a.antwort === val ? (val === 'ja' ? c.jaActive : c.neinActive) : c.cardBgAlt, color: a.antwort === val ? (val === 'ja' ? c.jaColor : c.neinColor) : c.textMuted, fontWeight: 600, cursor: 'pointer' }}>
                                     {val === 'ja' ? '✓ Ja' : '✗ Nein'}
                                   </button>
                                 ))}
@@ -3224,10 +3274,10 @@ const MemberDashboard = () => {
                             )}
                             {hatKommentar && (
                               <textarea rows={2} placeholder="Kommentar (optional)…" value={a.kommentar || ''} onChange={e => setUmfrageAntworten(prev => ({ ...prev, [u.id]: { ...prev[u.id], kommentar: e.target.value } }))}
-                                style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, padding: '0.5rem 0.7rem', color: '#e2e8f0', fontSize: '0.85rem', resize: 'vertical', marginBottom: 10, boxSizing: 'border-box' }} />
+                                style={{ width: '100%', background: c.inputBg, border: `1px solid ${c.inputBorder}`, borderRadius: 6, padding: '0.5rem 0.7rem', color: c.inputColor, fontSize: '0.85rem', resize: 'vertical', marginBottom: 10, boxSizing: 'border-box' }} />
                             )}
                             <button onClick={() => submitUmfrageAntwort(u.id)} disabled={!kannAbsenden || umfrageSending === u.id}
-                              style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 7, color: '#fff', fontWeight: 600, padding: '0.5rem 1.25rem', cursor: kannAbsenden ? 'pointer' : 'not-allowed', opacity: kannAbsenden ? 1 : 0.4, fontSize: '0.85rem' }}>
+                              style={{ background: c.btnBg, border: 'none', borderRadius: 7, color: '#fff', fontWeight: 600, padding: '0.5rem 1.25rem', cursor: kannAbsenden ? 'pointer' : 'not-allowed', opacity: kannAbsenden ? 1 : 0.4, fontSize: '0.85rem' }}>
                               {umfrageSending === u.id ? 'Wird gesendet…' : 'Absenden'}
                             </button>
                           </>
@@ -3242,9 +3292,9 @@ const MemberDashboard = () => {
                     const datumData = u.datum_ergebnis;
                     const maxKommt = datumData ? Math.max(...datumData.map(d => d.kann_kommen)) : 0;
                     return (
-                      <div key={u.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '0.75rem 1rem' }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 4, color: '#cbd5e1' }}>{u.titel}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', marginBottom: datumData ? 8 : 0 }}>
+                      <div key={u.id} style={{ background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 8, padding: '0.75rem 1rem' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 4, color: c.text }}>{u.titel}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--ds-text-muted)', marginBottom: datumData ? 8 : 0 }}>
                           ✓ Beantwortet · {u.antworten_gesamt || 0} Teilnehmer
                           {(u.typ === 'ja_nein' || u.typ === 'beides') && (u.antworten_ja > 0 || u.antworten_nein > 0) && ` · ✓ ${u.antworten_ja} Ja · ✗ ${u.antworten_nein} Nein`}
                         </div>
