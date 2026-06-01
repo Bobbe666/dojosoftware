@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
-import { X, CheckCircle, Clock } from 'lucide-react';
+import { X, Calendar, CheckCircle, Clock } from 'lucide-react';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import '../styles/themes.css';
@@ -13,22 +13,22 @@ const MemberCheckin = ({ onClose }) => {
   const { getDojoFilterParam } = useDojoContext();
   const overlayRef = useRef(null);
 
-  const [memberData, setMemberData]                     = useState(null);
-  const [coursesToday, setCoursesToday]                 = useState([]);
-  const [selectedCourses, setSelectedCourses]           = useState([]);
-  const [loading, setLoading]                           = useState(false);
-  const [error, setError]                               = useState('');
-  const [success, setSuccess]                           = useState('');
-  const [step, setStep]                                 = useState(1);
-  const [checkedInCourses, setCheckedInCourses]         = useState([]);
+  const [memberData, setMemberData]                           = useState(null);
+  const [coursesToday, setCoursesToday]                       = useState([]);
+  const [selectedCourses, setSelectedCourses]                 = useState([]);
+  const [loading, setLoading]                                 = useState(false);
+  const [error, setError]                                     = useState('');
+  const [success, setSuccess]                                 = useState('');
+  const [step, setStep]                                       = useState(1);
+  const [checkedInCourses, setCheckedInCourses]               = useState([]);
   const [trainerCheckedInCourses, setTrainerCheckedInCourses] = useState([]);
 
   const API_BASE = config.apiBaseUrl;
 
-  // ── iOS Body-Scroll komplett einfrieren ─────────────────────────────────────
+  // ── iOS Body-Scroll einfrieren (position:fixed ist der einzig zuverlässige Weg) ──
   useEffect(() => {
     const scrollY = window.scrollY;
-    const body = document.body;
+    const body    = document.body;
     body.style.position = 'fixed';
     body.style.top      = `-${scrollY}px`;
     body.style.left     = '0';
@@ -44,12 +44,12 @@ const MemberCheckin = ({ onClose }) => {
     };
   }, []);
 
-  // ── touchmove auf Overlay blockieren, im Scroll-Bereich erlauben ────────────
+  // ── touchmove auf Overlay blockieren — nur [data-scrollable] darf scrollen ──
   useEffect(() => {
     const el = overlayRef.current;
     if (!el) return;
     const stop = (e) => {
-      if (e.target.closest('[data-scrollable]')) return; // Modal-Body darf scrollen
+      if (e.target.closest('[data-scrollable]')) return;
       e.preventDefault();
     };
     el.addEventListener('touchmove', stop, { passive: false });
@@ -64,19 +64,19 @@ const MemberCheckin = ({ onClose }) => {
       const mitgliedId = user?.mitglied_id;
       if (!mitgliedId) throw new Error('Keine Mitglieds-ID gefunden');
 
-      const memberResponse = await fetchWithAuth(`${API_BASE}/mitglieder/${mitgliedId}`);
-      if (!memberResponse.ok) throw new Error(`Mitgliedsdaten nicht gefunden`);
-      setMemberData(await memberResponse.json());
+      const memberRes = await fetchWithAuth(`${API_BASE}/mitglieder/${mitgliedId}`);
+      if (!memberRes.ok) throw new Error(`Mitgliedsdaten nicht gefunden: ${memberRes.statusText}`);
+      setMemberData(await memberRes.json());
 
-      const coursesResponse = await fetchWithAuth(`${API_BASE}/checkin/courses-today`);
-      if (coursesResponse.ok) {
-        const result = await coursesResponse.json();
+      const coursesRes = await fetchWithAuth(`${API_BASE}/checkin/courses-today`);
+      if (coursesRes.ok) {
+        const result = await coursesRes.json();
         if (result.success) setCoursesToday(result.courses || []);
       }
 
-      const checkinsResponse = await fetchWithAuth(`${API_BASE}/checkin/today-member/${mitgliedId}`);
-      if (checkinsResponse.ok) {
-        const r = await checkinsResponse.json();
+      const checkinsRes = await fetchWithAuth(`${API_BASE}/checkin/today-member/${mitgliedId}`);
+      if (checkinsRes.ok) {
+        const r = await checkinsRes.json();
         if (r.success) {
           setCheckedInCourses(r.stundenplan_ids || []);
           setTrainerCheckedInCourses(
@@ -87,7 +87,7 @@ const MemberCheckin = ({ onClose }) => {
         }
       }
     } catch (err) {
-      setError('Fehler beim Laden: ' + err.message);
+      setError('Fehler beim Laden der Daten: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -96,13 +96,15 @@ const MemberCheckin = ({ onClose }) => {
   const toggleCourse = (course) => {
     setSelectedCourses(prev => {
       const sel = prev.some(c => c.stundenplan_id === course.stundenplan_id);
-      return sel ? prev.filter(c => c.stundenplan_id !== course.stundenplan_id) : [...prev, course];
+      return sel
+        ? prev.filter(c => c.stundenplan_id !== course.stundenplan_id)
+        : [...prev, course];
     });
   };
 
   const executeCheckin = async () => {
     if (!memberData || selectedCourses.length === 0) {
-      setError('Bitte mindestens einen Kurs auswählen');
+      setError('Bitte wählen Sie mindestens einen Kurs aus');
       return;
     }
     setLoading(true);
@@ -112,7 +114,7 @@ const MemberCheckin = ({ onClose }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          mitglied_id: memberData.mitglied_id,
+          mitglied_id:    memberData.mitglied_id,
           stundenplan_ids: selectedCourses.map(c => c.stundenplan_id),
           checkin_method: 'touch',
         }),
@@ -124,17 +126,20 @@ const MemberCheckin = ({ onClose }) => {
         throw new Error(msg || `HTTP ${response.status}`);
       }
       const result = await response.json();
-      let msg = result.message || `Check-in erfolgreich!`;
+      let successMsg = result.message || `Check-in erfolgreich für ${memberData.vorname} ${memberData.nachname}!`;
       try {
-        const b = await fetchWithAuth(`${API_BASE}/mitglieder/${memberData.mitglied_id}/birthday-check`);
+        const b  = await fetchWithAuth(`${API_BASE}/mitglieder/${memberData.mitglied_id}/birthday-check`);
         const bd = await b.json();
         if (bd.hasBirthday)
-          msg += `\n\n🎂 Herzlichen Glückwunsch zum ${bd.mitglied.alter}. Geburtstag, ${memberData.vorname}!`;
+          successMsg = `🎉 ${successMsg}\n\n🎂 Herzlichen Glückwunsch zum ${bd.mitglied.alter}. Geburtstag, ${memberData.vorname}!`;
       } catch (_) {}
-      setSuccess(`✅ ${msg}`);
-      setTimeout(() => { if (window.location.pathname.includes('/member')) window.location.reload(); onClose(); }, 3000);
+      setSuccess(`✅ ${successMsg}`);
+      setTimeout(() => {
+        if (window.location.pathname.includes('/member')) window.location.reload();
+        onClose();
+      }, 3000);
     } catch (err) {
-      setError('Fehler: ' + err.message);
+      setError('Check-in Fehler: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -148,201 +153,158 @@ const MemberCheckin = ({ onClose }) => {
     return now < start || (now >= start && now <= end);
   };
 
-  const fmt = (t) => t?.substring(0, 5) ?? '';
+  const formatTime = (t) => t?.substring(0, 5) ?? '';
 
-  // ── Styles ──────────────────────────────────────────────────────────────────
-  const S = {
-    overlay: {
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.78)',
-      backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-      zIndex: 9999,
-      overflow: 'hidden',
-      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-      padding: '3vh 0.75rem 0',
-    },
-    modal: {
-      maxWidth: '440px', width: '100%',
-      height: '94vh',
-      overflow: 'hidden',
-      display: 'flex', flexDirection: 'column',
-      borderRadius: '16px',
-      position: 'relative',
-      background: 'var(--bg-gradient)',
-      border: '1.5px solid var(--primary-alpha-30)',
-      boxShadow: '0 24px 64px rgba(0,0,0,0.55)',
-    },
-    header: {
-      flexShrink: 0,
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0.75rem 0.9rem 0.6rem',
-      borderBottom: '1px solid rgba(255,255,255,0.08)',
-      background: 'rgba(255,255,255,0.04)',
-      backdropFilter: 'blur(10px)',
-    },
-    body: {
-      flex: 1,
-      minHeight: 0,
-      overflowY: 'auto',
-      WebkitOverflowScrolling: 'touch',
-      touchAction: 'pan-y',
-      overscrollBehavior: 'contain',
-      padding: '0.75rem',
-    },
-    sectionTitle: {
-      fontSize: '0.72rem',
-      fontWeight: 700,
-      letterSpacing: '0.08em',
-      textTransform: 'uppercase',
-      color: 'var(--text-secondary)',
-      marginBottom: '0.5rem',
-    },
-    courseItem: (selected, available) => ({
-      display: 'flex', alignItems: 'center', gap: '0.7rem',
-      padding: '0.7rem 0.85rem',
-      background: selected ? 'rgba(255,215,0,0.09)' : 'rgba(255,255,255,0.035)',
-      border: `1px solid ${selected ? 'rgba(255,215,0,0.35)' : 'rgba(255,255,255,0.08)'}`,
-      borderLeft: `3px solid ${selected ? '#ffd700' : 'transparent'}`,
-      borderRadius: '10px',
-      marginBottom: '0.35rem',
-      cursor: available ? 'pointer' : 'default',
-      opacity: available ? 1 : 0.5,
-      transition: 'all 0.15s',
-    }),
-    checkbox: (selected) => ({
-      width: '18px', height: '18px', flexShrink: 0,
-      border: `2px solid ${selected ? '#ffd700' : 'rgba(255,255,255,0.25)'}`,
-      borderRadius: '5px',
-      background: selected ? '#ffd700' : 'transparent',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#1a1a1a',
-    }),
-    courseName: {
-      fontSize: '0.9rem', fontWeight: 700,
-      color: 'var(--text-primary)',
-      lineHeight: 1.2, marginBottom: '0.15rem',
-    },
-    courseGroup: {
-      fontSize: '0.72rem', fontWeight: 500,
-      color: 'rgba(255,255,255,0.45)',
-      marginBottom: '0.1rem',
-    },
-    courseTime: {
-      fontSize: '0.7rem', fontWeight: 600,
-      color: 'rgba(255,215,0,0.6)',
-      display: 'flex', alignItems: 'center', gap: '3px',
-    },
-    closeBtn: {
-      background: 'rgba(255,255,255,0.08)',
-      border: '1px solid rgba(255,255,255,0.15)',
-      borderRadius: '8px', color: 'var(--text-primary)',
-      cursor: 'pointer', padding: '0.35rem',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0,
-    },
-    actionRow: {
-      display: 'flex', gap: '0.5rem',
-      justifyContent: 'flex-end',
-      marginTop: '0.75rem',
-      paddingTop: '0.5rem',
-      borderTop: '1px solid rgba(255,255,255,0.07)',
-    },
+  // stil = "Enzo Karate" / "Kickboxen"  →  Hauptname (groß)
+  // kurs_name (gruppenname) = "Kinder 4-6 Jahre"  →  Untertitel (klein)
+  const getCourseTitle    = (c) => c.stil && c.stil !== 'Unbekannt' ? c.stil : (c.kurs_name || c.gruppenname || '—');
+  const getCourseSubtitle = (c) => {
+    if (!c.stil || c.stil === 'Unbekannt') return null;
+    const sub = c.kurs_name || c.gruppenname;
+    return sub && sub !== c.stil ? sub : null;
   };
 
-  const headerTitle = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flex: 1, minWidth: 0 }}>
-      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary)', letterSpacing: '0.02em' }}>
-        Check-in
-      </span>
-      {memberData && (
-        <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {memberData.vorname} {memberData.nachname}
-        </span>
-      )}
-    </div>
-  );
+  // Overlay + Modal als Inline-Style — kein CSS kann diese überschreiben
+  const overlayStyle = {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.75)',
+    backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+    zIndex: 9999,
+    overflow: 'hidden',
+    display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+    paddingTop: '5vh', paddingLeft: '1rem', paddingRight: '1rem',
+  };
+  const modalStyle = {
+    maxWidth: '450px', width: '100%',
+    height: '90vh',
+    overflow: 'hidden',
+    display: 'flex', flexDirection: 'column',
+    borderRadius: '1rem',
+  };
+  const bodyStyle = {
+    flex: 1, minHeight: 0,
+    overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',
+    overscrollBehavior: 'contain',
+    padding: '0.75rem',
+  };
+
+  if (!memberData) {
+    return (
+      <div ref={overlayRef} className="modal-overlay member-checkin-modal" style={overlayStyle} onClick={onClose}>
+        <div className="modal-content checkin-modal" style={modalStyle} onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header" style={{ flexShrink: 0 }}>
+            <h2>Check-in</h2>
+            <button onClick={onClose} className="close-button"><X size={24} /></button>
+          </div>
+          <div className="modal-body" style={bodyStyle} data-scrollable="true">
+            {loading
+              ? <div className="loading">Lade Daten...</div>
+              : <div className="error-message">{error}</div>
+            }
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div ref={overlayRef} style={S.overlay} onClick={onClose}>
-      <div style={S.modal} onClick={(e) => e.stopPropagation()}>
+    <div ref={overlayRef} className="modal-overlay member-checkin-modal" style={overlayStyle} onClick={onClose}>
+      <div className="modal-content checkin-modal" style={modalStyle} onClick={(e) => e.stopPropagation()}>
 
-        {/* Header mit X */}
-        <div style={S.header}>
-          {headerTitle}
-          <button style={S.closeBtn} onClick={onClose}><X size={18} /></button>
+        {/* Header */}
+        <div className="modal-header" style={{ flexShrink: 0 }}>
+          <h2>Check-in für {memberData.vorname} {memberData.nachname}</h2>
+          <button onClick={onClose} className="close-button"><X size={24} /></button>
         </div>
 
-        {/* Scrollbarer Body */}
-        <div style={S.body} data-scrollable="true">
-
-          {error   && <div className="message error"   style={{ marginBottom: '0.5rem' }}>{error}</div>}
-          {success && <div className="message success" style={{ marginBottom: '0.5rem' }}>{success}</div>}
+        {/* Scrollbarer Body — data-scrollable erlaubt touch-scroll */}
+        <div className="modal-body" style={bodyStyle} data-scrollable="true">
+          {error   && <div className="message error">{error}</div>}
+          {success && <div className="message success">{success}</div>}
 
           {/* ── Schritt 1: Kursauswahl ── */}
-          {step === 1 && !success && (
-            <>
-              <div style={S.sectionTitle}>Heute verfügbare Kurse</div>
+          {step === 1 && (
+            <div className="course-selection-step">
+              <div className="step-header">
+                <div className="step-icon"><Calendar size={24} /></div>
+                <div>
+                  <h3>Kurse für heute auswählen</h3>
+                  <p style={{ fontSize: '0.72rem', margin: 0, opacity: 0.7 }}>Wähle die Kurse aus, für die du dich anmelden möchtest</p>
+                </div>
+              </div>
 
               {loading ? (
-                <div className="loading">Lade Kurse…</div>
+                <div className="loading">Lade Kurse...</div>
               ) : coursesToday.length === 0 ? (
                 <div className="no-courses">
                   <div className="no-courses-icon">📅</div>
                   <h4>Keine Kurse heute</h4>
+                  <p>Für heute sind keine Kurse geplant.</p>
                 </div>
               ) : coursesToday.filter(c => !checkedInCourses.includes(c.stundenplan_id)).length === 0 ? (
                 <div className="no-courses">
                   <div className="no-courses-icon">✅</div>
                   <h4>Bereits für alle Kurse eingecheckt</h4>
+                  <p>Du bist bereits für alle heutigen Kurse eingecheckt.</p>
                 </div>
               ) : (
-                <div>
+                <div className="courses-list">
                   {coursesToday.map((course) => {
                     if (checkedInCourses.includes(course.stundenplan_id)) return null;
 
-                    // Vom Trainer eingecheckt
+                    const title    = getCourseTitle(course);
+                    const subtitle = getCourseSubtitle(course);
+
+                    // Trainer eingecheckt
                     if (trainerCheckedInCourses.includes(course.stundenplan_id)) {
                       return (
-                        <div key={course.stundenplan_id} style={{ ...S.courseItem(false, false), opacity: 0.7 }}>
-                          <div style={{ width: 18, height: 18, flexShrink: 0, color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={S.courseName}>{course.kurs_name || course.gruppenname}</div>
-                            {course.gruppenname && course.gruppenname !== course.kurs_name && (
-                              <div style={S.courseGroup}>{course.gruppenname}</div>
-                            )}
-                            <div style={S.courseTime}><Clock size={11} />{fmt(course.uhrzeit_start)} – {fmt(course.uhrzeit_ende)}</div>
+                        <div key={course.stundenplan_id} className="course-item unavailable" style={{ opacity: 0.75 }}>
+                          <div className="course-checkbox" style={{ color: '#16a34a', fontSize: '18px' }}>✓</div>
+                          <div className="course-info">
+                            <div className="course-name">{title}</div>
+                            {subtitle && <div className="course-trainer" style={{ fontSize: '0.72rem', opacity: 0.7 }}>{subtitle}</div>}
+                            <div className="course-time"><Clock size={14} />{formatTime(course.uhrzeit_start)} – {formatTime(course.uhrzeit_ende)}</div>
                           </div>
-                          <div style={{ fontSize: '0.65rem', color: '#16a34a', fontWeight: 600, whiteSpace: 'nowrap' }}>Trainer ✓</div>
+                          <div style={{ fontSize: '0.65rem', color: '#16a34a', fontWeight: 600, whiteSpace: 'nowrap' }}>✅ Trainer</div>
                         </div>
                       );
                     }
 
                     const available = isCourseAvailable(course);
                     const selected  = selectedCourses.some(c => c.stundenplan_id === course.stundenplan_id);
+
                     return (
                       <div
                         key={course.stundenplan_id}
-                        style={S.courseItem(selected, available)}
+                        className={`course-item ${selected ? 'selected' : ''} ${!available ? 'unavailable' : ''}`}
                         onClick={() => available && toggleCourse(course)}
                       >
-                        <div style={S.checkbox(selected)}>
-                          {selected && <CheckCircle size={12} />}
+                        <div className="course-checkbox">
+                          {selected && <CheckCircle size={20} />}
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={S.courseName}>{course.kurs_name || course.gruppenname}</div>
-                          {course.gruppenname && course.gruppenname !== course.kurs_name && (
-                            <div style={S.courseGroup}>{course.gruppenname}</div>
+                        <div className="course-info">
+                          {/* Hauptname groß: stil (z.B. "Enzo Karate") */}
+                          <div className="course-name">{title}</div>
+                          {/* Gruppe klein darunter (z.B. "Kinder 4-6 Jahre") */}
+                          {subtitle && (
+                            <div className="course-trainer" style={{ fontSize: '0.72rem', opacity: 0.75, marginBottom: '0.1rem' }}>
+                              {subtitle}
+                            </div>
                           )}
-                          <div style={S.courseTime}>
-                            <Clock size={11} />
-                            {fmt(course.uhrzeit_start)} – {fmt(course.uhrzeit_ende)}
-                            {course.trainer && <span style={{ marginLeft: 6, opacity: 0.6 }}>· {course.trainer}</span>}
+                          <div className="course-time">
+                            <Clock size={14} />
+                            {formatTime(course.uhrzeit_start)} – {formatTime(course.uhrzeit_ende)}
+                            {course.trainer && course.trainer !== 'Kein Trainer' && (
+                              <span style={{ marginLeft: '0.4rem', opacity: 0.6 }}>· {course.trainer}</span>
+                            )}
                           </div>
                         </div>
                         {!available && (
-                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                          <div className="course-status">
                             {new Date(`${new Date().toISOString().split('T')[0]}T${course.uhrzeit_start}`) > new Date() ? 'Bald' : 'Beendet'}
-                          </span>
+                          </div>
                         )}
                       </div>
                     );
@@ -350,56 +312,53 @@ const MemberCheckin = ({ onClose }) => {
                 </div>
               )}
 
-              <div style={S.actionRow}>
-                <button onClick={onClose} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.5rem 0.9rem' }}>
-                  Abbrechen
-                </button>
-                <button
-                  onClick={() => setStep(2)}
-                  disabled={selectedCourses.length === 0}
-                  className="btn btn-primary"
-                  style={{ fontSize: '0.8rem', padding: '0.5rem 0.9rem' }}
-                >
-                  Weiter ({selectedCourses.length}) →
+              <div className="action-buttons">
+                <button onClick={onClose} className="btn btn-secondary">Abbrechen</button>
+                <button onClick={() => setStep(2)} disabled={selectedCourses.length === 0} className="btn btn-primary">
+                  Weiter →
                 </button>
               </div>
-            </>
+            </div>
           )}
 
           {/* ── Schritt 2: Bestätigung ── */}
-          {step === 2 && !success && (
-            <>
-              <div style={S.sectionTitle}>Check-in bestätigen</div>
-              <div style={{ marginBottom: '0.75rem' }}>
-                {selectedCourses.map((course) => (
-                  <div key={course.stundenplan_id} style={{ ...S.courseItem(true, true), cursor: 'default' }}>
-                    <CheckCircle size={16} style={{ color: '#ffd700', flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={S.courseName}>{course.kurs_name || course.gruppenname}</div>
-                      {course.gruppenname && course.gruppenname !== course.kurs_name && (
-                        <div style={S.courseGroup}>{course.gruppenname}</div>
-                      )}
-                      <div style={S.courseTime}><Clock size={11} />{fmt(course.uhrzeit_start)} – {fmt(course.uhrzeit_ende)}</div>
-                    </div>
-                  </div>
-                ))}
+          {step === 2 && (
+            <div className="confirmation-step">
+              <div className="step-header">
+                <div className="step-icon"><CheckCircle size={24} /></div>
+                <div>
+                  <h3>Check-in bestätigen</h3>
+                  <p style={{ fontSize: '0.72rem', margin: 0, opacity: 0.7 }}>Möchtest du dich für die folgenden Kurse anmelden?</p>
+                </div>
               </div>
-              <div style={S.actionRow}>
-                <button onClick={() => setStep(1)} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.5rem 0.9rem' }}>
-                  ← Zurück
-                </button>
-                <button
-                  onClick={executeCheckin}
-                  disabled={loading}
-                  className="btn btn-success"
-                  style={{ fontSize: '0.85rem', padding: '0.55rem 1.1rem', fontWeight: 700 }}
-                >
-                  {loading ? 'Wird eingecheckt…' : '✓ Jetzt einchecken'}
-                </button>
-              </div>
-            </>
-          )}
 
+              <div className="selected-courses">
+                {selectedCourses.map((course) => {
+                  const title    = getCourseTitle(course);
+                  const subtitle = getCourseSubtitle(course);
+                  return (
+                    <div key={course.stundenplan_id} className="selected-course-item">
+                      <div>
+                        <div className="course-name">{title}</div>
+                        {subtitle && <div style={{ fontSize: '0.72rem', opacity: 0.7 }}>{subtitle}</div>}
+                      </div>
+                      <div className="course-time">
+                        <Clock size={14} />
+                        {formatTime(course.uhrzeit_start)} – {formatTime(course.uhrzeit_ende)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="action-buttons">
+                <button onClick={() => setStep(1)} className="btn btn-secondary">← Zurück</button>
+                <button onClick={executeCheckin} disabled={loading} className="btn btn-success btn-large">
+                  {loading ? 'Lädt...' : 'Jetzt anmelden!'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
