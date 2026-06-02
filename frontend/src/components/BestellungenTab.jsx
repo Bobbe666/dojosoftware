@@ -30,6 +30,7 @@ const BestellungenTab = () => {
   const [dojoLoading, setDojoLoading] = useState(false);
   const [giOverlay, setGiOverlay] = useState(null); // { vorlage, editingId, formdata }
   const [filterDojoId, setFilterDojoId] = useState(null); // null = aus activeDojo
+  const [neuLoading, setNeuLoading] = useState(false);
 
   const [lowStockItems, setLowStockItems] = useState([]);
   const [bestellungen, setBestellungen] = useState([]);
@@ -148,6 +149,32 @@ const BestellungenTab = () => {
     }
     finally { setDojoLoading(false); }
   }, [activeDojo?.id, filterDojoId]);
+
+  // Neue Gi-Bestellung starten: Vorlage des (im Tab gewählten) Dojos laden und
+  // die Gi-Bestellvorlage als leeres Formular öffnen. Nutzt filterDojoId →
+  // unabhängig vom oberen Switcher (kein Dojo-Mismatch / 404 mehr).
+  const neueGiBestellung = async () => {
+    const djId = filterDojoId || activeDojo?.id;
+    if (!djId) { setDojoFehler('Bitte ein Dojo auswählen'); return; }
+    setDojoFehler('');
+    setNeuLoading(true);
+    try {
+      const res = await axios.get(`/bestellvorlagen?dojo_id=${djId}`);
+      const vorlagen = res.data?.data || [];
+      if (!vorlagen.length) {
+        setDojoFehler('Für dieses Dojo ist keine Gi-Bestellvorlage angelegt. Bitte zuerst unter „Bestellvorlagen" eine anlegen.');
+        return;
+      }
+      const vorlage = vorlagen.find(v =>
+        (v.typ || '').toLowerCase().includes('gi') || (v.name || '').toLowerCase().includes('gi')
+      ) || vorlagen[0];
+      setGiOverlay({ vorlage, editingId: null, formdata: null, dojoId: djId });
+    } catch (e) {
+      setDojoFehler(e?.response?.data?.message || e?.message || 'Fehler beim Laden der Vorlage');
+    } finally {
+      setNeuLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (activeSubTab === 'dojo') {
@@ -563,6 +590,9 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
               )}
               <button onClick={() => loadDojoBestellungen()} style={{ padding: '0.3rem 0.8rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: 'var(--ds-text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}>
                 Aktualisieren
+              </button>
+              <button onClick={neueGiBestellung} disabled={neuLoading} style={{ padding: '0.3rem 0.9rem', background: 'var(--ds-accent, #d4af37)', border: '1px solid var(--ds-accent, #d4af37)', borderRadius: '6px', color: '#1a1a1a', fontSize: '0.8rem', fontWeight: 700, cursor: neuLoading ? 'wait' : 'pointer', opacity: neuLoading ? 0.6 : 1 }}>
+                {neuLoading ? 'Lädt…' : '+ Neue Gi-Bestellung'}
               </button>
             </div>
           </div>
