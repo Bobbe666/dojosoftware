@@ -13,8 +13,12 @@ router.get('/', (req, res) => {
 
   const vorId = req.query.vorlage_id;
   const params = vorId ? [dojoId, vorId] : [dojoId];
+  // WICHTIG: formdata (enthält Base64-Bilder, mehrere MB) NICHT in der Liste laden
+  // → sonst lädt die Übersicht über langsame Leitungen ewig. Detail via GET /:id.
   const sql = `
-    SELECT b.*, l.firmenname AS lieferant_firmenname
+    SELECT b.bestellung_id, b.dojo_id, b.vorlage_id, b.lieferant_id, b.lieferant_name,
+           b.bestelldatum, b.lieferdatum, b.status, b.erstellt_am,
+           l.firmenname AS lieferant_firmenname
     FROM gi_bestellungen b
     LEFT JOIN lieferanten l ON b.lieferant_id = l.lieferant_id
     WHERE b.dojo_id = ?
@@ -26,6 +30,25 @@ router.get('/', (req, res) => {
     if (err) return res.status(500).json({ success: false, message: 'Datenbankfehler', error: err.message });
     res.json({ success: true, data: rows });
   });
+});
+
+// GET /:id — eine einzelne Bestellung MIT formdata (für Öffnen/Preview)
+router.get('/:id', (req, res) => {
+  const dojoId = getSecureDojoId(req);
+  if (!dojoId) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
+
+  db.query(
+    `SELECT b.*, l.firmenname AS lieferant_firmenname
+     FROM gi_bestellungen b
+     LEFT JOIN lieferanten l ON b.lieferant_id = l.lieferant_id
+     WHERE b.bestellung_id = ? AND b.dojo_id = ?`,
+    [req.params.id, dojoId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ success: false, message: 'Datenbankfehler', error: err.message });
+      if (!rows.length) return res.status(404).json({ success: false, message: 'Bestellung nicht gefunden' });
+      res.json({ success: true, data: rows[0] });
+    }
+  );
 });
 
 // POST / — neue Bestellung speichern
