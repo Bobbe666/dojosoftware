@@ -1225,3 +1225,40 @@
   .perf-freq-pct { display: none; }
   .perf-pyramide-stil { min-width: 100%; }
 }
+
+/* ── Widget: Beliebteste Kurse ── */
+.perf-beliebt { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.25rem 0 0.5rem; }
+.perf-beliebt-sub { margin: 0 0 0.5rem; font-size: 0.78rem; color: var(--ds-text-muted); }
+.perf-beliebt-empty { padding: 1rem; font-size: 0.85rem; color: var(--ds-text-muted); }
+.perf-beliebt-row { display: flex; align-items: center; gap: 0.6rem; }
+.perf-beliebt-rank {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 700;
+  background: var(--ds-accent-15); color: var(--ds-accent);
+}
+.perf-beliebt-name {
+  flex: 0 0 200px; min-width: 0; font-size: 0.83rem; font-weight: 600; color: var(--ds-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.perf-beliebt-bar {
+  flex: 1; height: 10px; border-radius: var(--ds-radius-pill);
+  background: var(--ds-bg-elevated); overflow: hidden;
+}
+.perf-beliebt-bar-fill {
+  height: 100%; border-radius: var(--ds-radius-pill);
+  background: linear-gradient(90deg, var(--ds-accent), var(--ds-accent-bright));
+  transition: width 0.4s ease;
+}
+.perf-beliebt-count { flex-shrink: 0; width: 34px; text-align: right; font-size: 0.85rem; font-weight: 700; color: var(--ds-text); }
+@media (max-width: 600px) { .perf-beliebt-name { flex-basis: 110px; } }
+
+/* Onboarding-Kohorten: Erklärtext */
+.perf-kohorte-desc {
+  margin: 0 0 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ds-text-muted);
+  max-width: 720px;
+}
+.perf-kohorte-desc strong { color: var(--ds-text-secondary); }

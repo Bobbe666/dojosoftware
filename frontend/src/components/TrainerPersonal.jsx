@@ -491,15 +491,15 @@ export default function TrainerPersonal() {
                   <table className="tp-table">
                     <thead>
                       <tr>
-                        <th>Kurs / Gruppe</th>
-                        <th>Kampfkunst / Stil</th>
+                        <th>Kurs</th>
+                        <th>Altersgruppe</th>
                       </tr>
                     </thead>
                     <tbody>
                       {selected.kurse.map(k => (
                         <tr key={k.kurs_id}>
-                          <td>{k.gruppenname}</td>
-                          <td>{k.stil || '–'}</td>
+                          <td>{k.stil || k.gruppenname || 'Kurs'}</td>
+                          <td>{k.gruppenname || '–'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -664,7 +664,12 @@ export default function TrainerPersonal() {
                           {vergData.monatsStunden.map(s => (
                             <tr key={s.id}>
                               <td>{new Date(s.datum).toLocaleDateString('de-DE')}</td>
-                              <td>{s.kursname}</td>
+                              <td>
+                                {s.kursname}
+                                {s.kurs_altersgruppe && s.kurs_altersgruppe !== s.kursname && (
+                                  <div style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{s.kurs_altersgruppe}</div>
+                                )}
+                              </td>
                               <td>{parseFloat(s.stunden).toFixed(1)} h</td>
                               <td>
                                 <span className={`tp-badge ${s.status === 'bestaetigt' ? 'tp-badge--aktiv' : 'tp-badge--pausiert'}`}>

@@ -688,3 +688,13 @@
     border-bottom: 1px solid var(--ds-border-subtle);
   }
 }
+
+/* Transparenz-Hinweis (Werte-Herkunft) */
+.be-hinweis {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ds-text-muted);
+  max-width: 640px;
+}
+.be-hinweis strong { color: var(--ds-text-secondary); }

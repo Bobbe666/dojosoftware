@@ -89,10 +89,9 @@ body {
 
 /* ===== GOLDENE ÜBERSCHRIFTEN MIT EFFEKTEN ===== */
 h1, h2, h3, h4, h5, h6 {
-  color: var(--primary) !important;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
-               0 0 4px var(--ds-accent-50) !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-  font-weight: 600 !important;
+  color: var(--ds-heading-color, var(--ds-accent)) !important;
+  text-shadow: var(--ds-heading-shadow, none) !important;
+  text-transform: var(--ds-heading-transform, uppercase) !important;
+  letter-spacing: 0.3px;
+  font-weight: 700;
 }

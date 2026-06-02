@@ -304,6 +304,39 @@ export default function ThemeEinstellungen() {
         </label>
       </Section>
 
+      {/* ── Überschriften ── */}
+      <Section title="Überschriften">
+        <label className="te-field">
+          <span className="te-label">Farbe</span>
+          <Segment
+            options={[
+              { label: 'Akzent', value: 'accent' },
+              { label: 'Textfarbe', value: 'text' },
+              { label: 'Eigene', value: 'custom' },
+            ]}
+            value={cfg.headingColor?.startsWith('#') ? 'custom' : cfg.headingColor}
+            onChange={v => update({ headingColor: v === 'custom' ? (cfg.headingColor?.startsWith('#') ? cfg.headingColor : '#d4af37') : v })}
+          />
+        </label>
+        {cfg.headingColor?.startsWith('#') && (
+          <div className="te-color-field">
+            <input type="color" value={cfg.headingColor}
+              onChange={e => update({ headingColor: e.target.value })} />
+            <span className="te-color-hex">{cfg.headingColor}</span>
+          </div>
+        )}
+        <label className="te-toggle-row">
+          <span>GROSSBUCHSTABEN (Versalien)</span>
+          <input type="checkbox" className="te-switch" checked={cfg.headingUppercase}
+            onChange={e => update({ headingUppercase: e.target.checked })} />
+        </label>
+        <label className="te-toggle-row">
+          <span>Dezenter Schatten</span>
+          <input type="checkbox" className="te-switch" checked={cfg.headingShadow}
+            onChange={e => update({ headingShadow: e.target.checked })} />
+        </label>
+      </Section>
+
       {/* ── Form ── */}
       <Section title="Form (Ecken, Buttons, Tabs)">
         <label className="te-field">

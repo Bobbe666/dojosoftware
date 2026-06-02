@@ -1463,8 +1463,10 @@ const CheckinSystem = () => {
                             >
                               <div className="course-card-header">
                                 <div className="course-info">
-                                  <h4 className="course-name-primary">{course.stil || course.kurs_name}</h4>
-                                  <div className="course-style-secondary">{course.kurs_name}</div>
+                                  <h4 className="course-name-primary">{course.stil || course.kurs_name || 'Kurs'}</h4>
+                                  {course.kurs_name && course.kurs_name !== course.stil && (
+                                    <div className="course-style-secondary">{course.kurs_name}</div>
+                                  )}
                                   <div className="course-details">
                                     <span className="course-time">
                                       <Clock size={14} />
@@ -1515,7 +1517,12 @@ const CheckinSystem = () => {
                     <div className="course-summary">
                       {selectedCourses.map((course, index) => (
                         <div key={index} className="course-summary-item">
-                          <span>{course.kurs_name}</span>
+                          <span>
+                            {course.stil || course.kurs_name || course.gruppenname || 'Kurs'}
+                            {course.kurs_name && (course.stil && course.stil !== course.kurs_name) && (
+                              <div style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{course.kurs_name}</div>
+                            )}
+                          </span>
                           <span>{course.zeit}</span>
                         </div>
                       ))}

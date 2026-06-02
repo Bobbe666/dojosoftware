@@ -324,7 +324,10 @@ const RaumVerwaltung = () => {
                       {kurse.length > 0 && (
                         <div className="rv-kurse-list">
                           {kurse.slice(0, 4).map(k => (
-                            <span key={k.kurs_id} className="rv-kurs-chip">{k.gruppenname || k.name}</span>
+                            <span key={k.kurs_id} className="rv-kurs-chip">
+                              {k.stil || k.gruppenname || k.name || 'Kurs'}
+                              {k.gruppenname && <span style={{ display: 'block', fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{k.gruppenname}</span>}
+                            </span>
                           ))}
                           {kurse.length > 4 && <span className="rv-kurs-chip rv-kurs-chip--more">+{kurse.length - 4}</span>}
                         </div>

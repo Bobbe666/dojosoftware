@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
     }
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
     const [rows] = await pool.query(
-      `SELECT ts.*, t.vorname, t.nachname, k.gruppenname
+      `SELECT ts.*, t.vorname, t.nachname, k.gruppenname, k.stil
        FROM trainer_stunden ts
        JOIN trainer t ON t.trainer_id = ts.trainer_id
        LEFT JOIN kurse k ON k.kurs_id = ts.kurs_id
@@ -57,7 +57,7 @@ router.get('/summary', async (req, res) => {
          COUNT(ts.id)                      AS anzahl_einheiten,
          COALESCE(SUM(ts.stunden), 0)      AS total_stunden,
          ROUND(COALESCE(SUM(ts.stunden), 0) * COALESCE(t.stundenlohn, 0), 2) AS berechnet_lohn,
-         GROUP_CONCAT(DISTINCT k.gruppenname ORDER BY k.gruppenname SEPARATOR ', ') AS kurse
+         GROUP_CONCAT(DISTINCT k.stil ORDER BY k.stil SEPARATOR ', ') AS kurse
        FROM trainer t
        LEFT JOIN trainer_stunden ts ON ts.trainer_id = t.trainer_id
          AND MONTH(ts.datum) = ? AND YEAR(ts.datum) = ? AND ts.dojo_id = ?

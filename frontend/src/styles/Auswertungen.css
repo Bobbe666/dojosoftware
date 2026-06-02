@@ -2334,3 +2334,10 @@
   border-radius: 4px;
   background: var(--dot-color, #6b7280);
 }
+
+/* ── Zentrale Tab-Leiste (ds-tabs) — ersetzt die alte .tab-navigation ── */
+.aw-tabs {
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;          /* viele Tabs umbrechen statt scrollen */
+}
+.aw-tabs .ds-tab-icon { font-size: 1rem; line-height: 1; }

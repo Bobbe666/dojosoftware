@@ -200,16 +200,14 @@ const PublicCheckinDisplay = () => {
                       </span>
                     )}
                   </div>
-                  {checkin.kurse && checkin.kurse.length > 0 && (
+                  {(checkin.stil || checkin.kurs_name) && (checkin.stil || checkin.kurs_name) !== 'Freies Training' && (
                     <div className="member-courses">
-                      {checkin.kurse.slice(0, 2).map((kurs, idx) => (
-                        <span key={idx} className="course-tag">
-                          {kurs}
-                        </span>
-                      ))}
-                      {checkin.kurse.length > 2 && (
-                        <span className="course-tag more">
-                          +{checkin.kurse.length - 2}
+                      <span className="course-tag">
+                        {checkin.stil || checkin.kurs_name}
+                      </span>
+                      {checkin.kurs_name && checkin.kurs_name !== checkin.stil && checkin.kurs_name !== 'Freies Training' && (
+                        <span style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400, display: 'block', marginTop: '0.15em' }}>
+                          {checkin.kurs_name}
                         </span>
                       )}
                     </div>

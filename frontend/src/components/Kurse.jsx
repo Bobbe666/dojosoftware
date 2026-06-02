@@ -825,7 +825,10 @@ const Kurse = () => {
                           className={`ku-card${isSelected ? ' ku-card--selected' : ''}`}
                           onClick={() => toggleKursExpanded(kurs.kurs_id)}
                         >
-                          <div className="ku-card-name">{kurs.gruppenname || '—'}</div>
+                          <div className="ku-card-name">
+                            {kurs.stil || kurs.gruppenname || 'Kurs'}
+                            {kurs.gruppenname && <div style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{kurs.gruppenname}</div>}
+                          </div>
                           <div className="ku-card-meta">
                             {schedule.slice(0, 3).map((s, i) => (
                               <span key={i} className="ku-schedule-tag">
@@ -865,7 +868,10 @@ const Kurse = () => {
                       <div className="ku-detail-panel ku-cockpit">
                         {/* Cockpit Header */}
                         <div className="ku-cockpit-header">
-                          <span className="ku-cockpit-title">{kurs.gruppenname}</span>
+                          <span className="ku-cockpit-title">
+                            {kurs.stil || kurs.gruppenname || 'Kurs'}
+                            {kurs.gruppenname && <span style={{ display: 'block', fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{kurs.gruppenname}</span>}
+                          </span>
                           <div className="ku-cockpit-tabs">
                             <button
                               className={`ku-cockpit-tab${activeTab === 'details' ? ' ku-cockpit-tab--active' : ''}`}

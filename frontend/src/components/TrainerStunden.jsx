@@ -254,7 +254,14 @@ const TrainerStunden = () => {
                     </div>
                     <div style={{ flex: 1, minWidth: '120px' }}>
                       <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{s.vorname} {s.nachname}</div>
-                      {s.kursname && <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>🥋 {s.kursname}</div>}
+                      {(s.stil || s.kursname || s.gruppenname) && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                          🥋 {s.stil || s.kursname || s.gruppenname}
+                          {s.stil && (s.kursname || s.gruppenname) && (
+                            <div style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400, paddingLeft: '1.4em' }}>{s.kursname || s.gruppenname}</div>
+                          )}
+                        </div>
+                      )}
                       {s.notiz && <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>{s.notiz}</div>}
                     </div>
                     <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem', minWidth: '50px', textAlign: 'right' }}>

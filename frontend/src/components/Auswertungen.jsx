@@ -88,7 +88,7 @@ function Auswertungen() {
     : null;
   const dojoParam = activeDojoId ? `?dojo_id=${activeDojoId}` : '';
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+  const COLORS = ['var(--ds-accent)', 'var(--ds-info)', 'var(--ds-success)', 'var(--ds-warning)', '#8b5cf6'];
 
   useEffect(() => {
     loadAuswertungen();
@@ -458,18 +458,18 @@ function Auswertungen() {
         </div>
       </div>
 
-      <div className="tab-navigation">
+      <nav className="ds-tabs aw-tabs">
         {tabs.map(tab => (
           <button
             key={tab.id}
-            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+            className={`ds-tab ${activeTab === tab.id ? 'is-active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
           >
-            <span className="tab-icon">{tab.icon}</span>
-            <span className="tab-label">{tab.label}</span>
+            <span className="ds-tab-icon">{tab.icon}</span>
+            <span>{tab.label}</span>
           </button>
         ))}
-      </div>
+      </nav>
 
       <div className="tab-content">
         {activeTab === 'breakeven' && (
@@ -481,6 +481,11 @@ function Auswertungen() {
                 <div className="be-page-header-left">
                   <h2>🧮 Break-Even-Analyse</h2>
                   <p>BEP = Fixkosten / (Ø-Beitrag − variable Kosten pro Mitglied)</p>
+                  <p className="be-hinweis">
+                    ℹ️ Der Ø-Beitrag wird aus euren <strong>aktiven Verträgen</strong> berechnet
+                    {breakEvenForm.durchschnittsbeitrag === 85 ? ' (Standardwert 85 €, da keine Verträge gefunden)' : ''}.
+                    Die <strong>Kostenfelder</strong> sind Vorlagen — bitte mit euren echten Werten füllen.
+                  </p>
                 </div>
                 {breakEvenCalc && (
                   <div className="be-hero-kpi">
@@ -623,31 +628,31 @@ function Auswertungen() {
                         </div>
                         <ResponsiveContainer width="100%" height={210}>
                           <LineChart data={breakEvenCalc.chartData} margin={{ top: 5, right: 10, bottom: 20, left: 10 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
                             <XAxis
                               dataKey="mitglieder"
-                              stroke="rgba(255,255,255,0.3)"
-                              tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }}
+                              stroke="var(--ds-border-strong)"
+                              tick={{ fontSize: 10, fill: 'var(--ds-text-muted)' }}
                               label={{ value: 'Mitglieder', position: 'insideBottom', offset: -10, style: { fill: 'rgba(255,255,255,0.35)', fontSize: 10 } }}
                             />
                             <YAxis
-                              stroke="rgba(255,255,255,0.3)"
-                              tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }}
+                              stroke="var(--ds-border-strong)"
+                              tick={{ fontSize: 10, fill: 'var(--ds-text-muted)' }}
                               tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
                             />
                             <Tooltip
                               formatter={(v, name) => [formatCurrency(v), name === 'kosten' ? 'Kosten' : 'Umsatz']}
                               labelFormatter={(l) => `${l} Mitglieder`}
-                              contentStyle={{ background: 'rgba(15,15,30,0.97)', border: '1px solid rgba(255,215,0,0.25)', borderRadius: 8, fontSize: 12 }}
+                              contentStyle={{ background: 'var(--ds-bg-surface)', border: '1px solid var(--ds-border-accent)', borderRadius: 8, fontSize: 12, color: 'var(--ds-text)' }}
                             />
                             <ReferenceLine
                               x={breakEvenCalc.bep}
-                              stroke="rgba(255,215,0,0.6)"
+                              stroke="var(--ds-accent)"
                               strokeDasharray="5 3"
-                              label={{ value: `BEP`, position: 'top', style: { fill: '#ffd700', fontSize: 11, fontWeight: 700 } }}
+                              label={{ value: `BEP`, position: 'top', style: { fill: 'var(--ds-accent)', fontSize: 11, fontWeight: 700 } }}
                             />
-                            <Line type="monotone" dataKey="kosten" stroke="#ef4444" strokeWidth={2} dot={false} />
-                            <Line type="monotone" dataKey="umsatz" stroke="#10b981" strokeWidth={2} dot={false} />
+                            <Line type="monotone" dataKey="kosten" stroke="var(--ds-danger)" strokeWidth={2} dot={false} />
+                            <Line type="monotone" dataKey="umsatz" stroke="var(--ds-success)" strokeWidth={2} dot={false} />
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
@@ -793,8 +798,8 @@ function Auswertungen() {
                             (wa?.jahr || []);
           const xKey = growthPeriod === 'jahr' ? 'jahr' : growthPeriod === 'quartal' ? 'quartal' : growthPeriod === 'monat' ? 'monat' : 'periode';
           const rotateTick = growthPeriod === 'woche' || growthPeriod === 'monat';
-          const tooltipStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12 };
-          const PIE_COLORS = ['#ffd700','#10b981','#63b3ed','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
+          const tooltipStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid var(--ds-accent)', borderRadius: 8, fontSize: 12 };
+          const PIE_COLORS = ['var(--ds-accent)','var(--ds-success)','var(--ds-info)','var(--ds-warning)','#8b5cf6','#ec4899','#06b6d4'];
           const maxPeak = anw?.spitzenzeiten?.length ? Math.max(...anw.spitzenzeiten.map(z => z.teilnehmer)) : 1;
 
           return (
@@ -896,18 +901,18 @@ function Auswertungen() {
                       <ComposedChart data={chartData} margin={{ top: 5, right: 20, bottom: rotateTick ? 60 : 10, left: 0 }}>
                         <defs>
                           <linearGradient id="ovGrowth" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#ffd700" stopOpacity={0.5}/>
-                            <stop offset="95%" stopColor="#ffd700" stopOpacity={0.03}/>
+                            <stop offset="5%" stopColor="var(--ds-accent)" stopOpacity={0.5}/>
+                            <stop offset="95%" stopColor="var(--ds-accent)" stopOpacity={0.03}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                        <XAxis dataKey={xKey} stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }}
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
+                        <XAxis dataKey={xKey} stroke="var(--ds-border-strong)" tick={{ fontSize: 11, fill: 'var(--ds-text-muted)' }}
                           angle={rotateTick ? -40 : 0} textAnchor={rotateTick ? 'end' : 'middle'} />
-                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <YAxis stroke="var(--ds-border-strong)" tick={{ fontSize: 11, fill: 'var(--ds-text-muted)' }} />
                         <Tooltip contentStyle={tooltipStyle} />
-                        <Area type="monotone" dataKey="neueMitglieder" stroke="#ffd700" strokeWidth={2} fill="url(#ovGrowth)" />
-                        <Line type="monotone" dataKey="neueMitglieder" stroke="#ffd700" strokeWidth={2.5}
-                          dot={{ fill: '#ffd700', r: 3, strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                        <Area type="monotone" dataKey="neueMitglieder" stroke="var(--ds-accent)" strokeWidth={2} fill="url(#ovGrowth)" />
+                        <Line type="monotone" dataKey="neueMitglieder" stroke="var(--ds-accent)" strokeWidth={2.5}
+                          dot={{ fill: 'var(--ds-accent)', r: 3, strokeWidth: 0 }} activeDot={{ r: 6 }} />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
@@ -950,9 +955,9 @@ function Auswertungen() {
                   <div className="ov-card-body">
                     <ResponsiveContainer width="100%" height={190}>
                       <BarChart data={ma.geschlechterVerteilung} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                        <XAxis dataKey="geschlecht" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} />
-                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
+                        <XAxis dataKey="geschlecht" stroke="var(--ds-border-strong)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} />
+                        <YAxis stroke="var(--ds-border-strong)" tick={{ fontSize: 11, fill: 'var(--ds-text-muted)' }} />
                         <Tooltip contentStyle={tooltipStyle} />
                         <Bar dataKey="anzahl" radius={[4,4,0,0]}>
                           {ma.geschlechterVerteilung.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
@@ -970,11 +975,11 @@ function Auswertungen() {
                   <div className="ov-card-body">
                     <ResponsiveContainer width="100%" height={190}>
                       <BarChart data={ma.eintrittsJahre} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                        <XAxis dataKey="jahr" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} />
-                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
+                        <XAxis dataKey="jahr" stroke="var(--ds-border-strong)" tick={{ fontSize: 10, fill: 'var(--ds-text-muted)' }} />
+                        <YAxis stroke="var(--ds-border-strong)" tick={{ fontSize: 11, fill: 'var(--ds-text-muted)' }} />
                         <Tooltip contentStyle={tooltipStyle} />
-                        <Bar dataKey="anzahl" fill="#10b981" radius={[4,4,0,0]} />
+                        <Bar dataKey="anzahl" fill="var(--ds-success)" radius={[4,4,0,0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -988,11 +993,11 @@ function Auswertungen() {
                   <div className="ov-card-body">
                     <ResponsiveContainer width="100%" height={190}>
                       <BarChart data={ov.stilAnalyse.verteilung.filter(s => s.anzahl > 0)} margin={{ top: 5, right: 10, bottom: 40, left: -10 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} angle={-35} textAnchor="end" />
-                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
+                        <XAxis dataKey="name" stroke="var(--ds-border-strong)" tick={{ fontSize: 10, fill: 'var(--ds-text-muted)' }} angle={-35} textAnchor="end" />
+                        <YAxis stroke="var(--ds-border-strong)" tick={{ fontSize: 11, fill: 'var(--ds-text-muted)' }} />
                         <Tooltip contentStyle={tooltipStyle} />
-                        <Bar dataKey="anzahl" fill="#f59e0b" radius={[4,4,0,0]} />
+                        <Bar dataKey="anzahl" fill="var(--ds-warning)" radius={[4,4,0,0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1006,9 +1011,9 @@ function Auswertungen() {
                   <div className="ov-card-body">
                     <ResponsiveContainer width="100%" height={190}>
                       <BarChart data={ma.graduierungsStats} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                        <XAxis type="number" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} />
-                        <YAxis dataKey="gurtfarbe" type="category" width={90} stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.5)' }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
+                        <XAxis type="number" stroke="var(--ds-border-strong)" tick={{ fontSize: 10, fill: 'var(--ds-text-muted)' }} />
+                        <YAxis dataKey="gurtfarbe" type="category" width={90} stroke="var(--ds-border-strong)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.5)' }} />
                         <Tooltip contentStyle={tooltipStyle} />
                         <Bar dataKey="anzahl" radius={[0,4,4,0]}>
                           {ma.graduierungsStats.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
@@ -1049,11 +1054,11 @@ function Auswertungen() {
                   <div className="ov-card-body">
                     <ResponsiveContainer width="100%" height={190}>
                       <BarChart data={anw?.wochentagsVerteilung || []} margin={{ top: 5, right: 10, bottom: 30, left: -10 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                        <XAxis dataKey="tag" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.45)' }} angle={-30} textAnchor="end" />
-                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
+                        <XAxis dataKey="tag" stroke="var(--ds-border-strong)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.45)' }} angle={-30} textAnchor="end" />
+                        <YAxis stroke="var(--ds-border-strong)" tick={{ fontSize: 11, fill: 'var(--ds-text-muted)' }} />
                         <Tooltip contentStyle={tooltipStyle} />
-                        <Bar dataKey="anzahl" fill="#ffd700" radius={[4,4,0,0]} />
+                        <Bar dataKey="anzahl" fill="var(--ds-accent)" radius={[4,4,0,0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1088,10 +1093,10 @@ function Auswertungen() {
           const maxUmsatz = tarife.length > 0 ? Math.max(...tarife.map(t => Number(t.monatsumsatz) || 0)) : 1;
           const totalUmsatz = tarife.reduce((s, t) => s + (Number(t.monatsumsatz) || 0), 0) || 1;
           const totalMitgl = tarife.reduce((s, t) => s + (Number(t.anzahl) || 0), 0);
-          const PIE_COLORS = ['#ffd700','#10b981','#63b3ed','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
+          const PIE_COLORS = ['var(--ds-accent)','var(--ds-success)','var(--ds-info)','var(--ds-warning)','#8b5cf6','#ec4899','#06b6d4'];
           const opt = beitragsvergleich;
           const hasOpt = opt?.zusammenfassung?.gesamt > 0;
-          const ttStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12 };
+          const ttStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid var(--ds-accent)', borderRadius: 8, fontSize: 12 };
 
           return (
             <div className="fin-wrapper">
@@ -1216,9 +1221,9 @@ function Auswertungen() {
                         }))}
                         margin={{ top: 5, right: 10, bottom: 45, left: -10 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.45)' }} angle={-30} textAnchor="end" />
-                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
+                        <XAxis dataKey="name" stroke="var(--ds-border-strong)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.45)' }} angle={-30} textAnchor="end" />
+                        <YAxis stroke="var(--ds-border-strong)" tick={{ fontSize: 11, fill: 'var(--ds-text-muted)' }} />
                         <Tooltip contentStyle={ttStyle} formatter={(v, n) => [n === 'anzahl' ? `${v} Mitglieder` : formatCurrency(v), n === 'anzahl' ? 'Mitglieder' : 'Beitrag']} />
                         <Bar dataKey="anzahl" radius={[4, 4, 0, 0]}>
                           {tarife.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
@@ -1283,9 +1288,9 @@ function Auswertungen() {
         })()}
 
         {activeTab === 'members' && (() => {
-          const ttStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12, color: 'var(--ds-text)' };
+          const ttStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid var(--ds-accent)', borderRadius: 8, fontSize: 12, color: 'var(--ds-text)' };
           const axisStyle = { tick: { fill: 'rgba(255,255,255,0.45)', fontSize: 11 }, axisLine: { stroke: 'rgba(255,255,255,0.08)' }, tickLine: false };
-          const gridStyle = { stroke: 'rgba(255,255,255,0.06)', strokeDasharray: '0' };
+          const gridStyle = { stroke: 'var(--ds-border)', strokeDasharray: '0' };
           const periodLabel = timePeriod === 'monthly' ? 'Monatlich' : timePeriod === 'quarterly' ? 'Quartal' : timePeriod === 'biannually' ? 'Halbjahr' : 'Jährlich';
           return (
           <div className="mem-wrapper">
@@ -1346,15 +1351,15 @@ function Auswertungen() {
                         <AreaChart data={memberAnalytics.zugänge}>
                           <defs>
                             <linearGradient id="zugGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                              <stop offset="5%" stopColor="var(--ds-success)" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="var(--ds-success)" stopOpacity={0}/>
                             </linearGradient>
                           </defs>
                           <CartesianGrid {...gridStyle} />
                           <XAxis dataKey="periode" {...axisStyle} />
                           <YAxis {...axisStyle} />
                           <Tooltip contentStyle={ttStyle} />
-                          <Area type="monotone" dataKey="wert" stroke="#10b981" strokeWidth={2} fill="url(#zugGrad)" dot={false} />
+                          <Area type="monotone" dataKey="wert" stroke="var(--ds-success)" strokeWidth={2} fill="url(#zugGrad)" dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     ) : (
@@ -1374,15 +1379,15 @@ function Auswertungen() {
                         <AreaChart data={memberAnalytics.kündigungen}>
                           <defs>
                             <linearGradient id="kündGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                              <stop offset="5%" stopColor="var(--ds-danger)" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="var(--ds-danger)" stopOpacity={0}/>
                             </linearGradient>
                           </defs>
                           <CartesianGrid {...gridStyle} />
                           <XAxis dataKey="periode" {...axisStyle} />
                           <YAxis {...axisStyle} />
                           <Tooltip contentStyle={ttStyle} />
-                          <Area type="monotone" dataKey="wert" stroke="#ef4444" strokeWidth={2} fill="url(#kündGrad)" dot={false} />
+                          <Area type="monotone" dataKey="wert" stroke="var(--ds-danger)" strokeWidth={2} fill="url(#kündGrad)" dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     ) : (
@@ -1402,15 +1407,15 @@ function Auswertungen() {
                         <AreaChart data={memberAnalytics.ruhepausen}>
                           <defs>
                             <linearGradient id="ruheGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                              <stop offset="5%" stopColor="var(--ds-warning)" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="var(--ds-warning)" stopOpacity={0}/>
                             </linearGradient>
                           </defs>
                           <CartesianGrid {...gridStyle} />
                           <XAxis dataKey="periode" {...axisStyle} />
                           <YAxis {...axisStyle} />
                           <Tooltip contentStyle={ttStyle} />
-                          <Area type="monotone" dataKey="wert" stroke="#f59e0b" strokeWidth={2} fill="url(#ruheGrad)" dot={false} />
+                          <Area type="monotone" dataKey="wert" stroke="var(--ds-warning)" strokeWidth={2} fill="url(#ruheGrad)" dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     ) : (
@@ -1474,7 +1479,7 @@ function Auswertungen() {
                         dataKey="anzahl"
                       >
                         {auswertungsData.mitgliederAnalyse.demographics.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={['#ffd700','#10b981','#63b3ed','#f59e0b','#8b5cf6'][index % 5]} />
+                          <Cell key={`cell-${index}`} fill={['var(--ds-accent)','var(--ds-success)','var(--ds-info)','var(--ds-warning)','#8b5cf6'][index % 5]} />
                         ))}
                       </Pie>
                       <Tooltip contentStyle={ttStyle} />
@@ -1501,11 +1506,11 @@ function Auswertungen() {
           const vjDelta = vorjahrMonat > 0 ? Math.round(((dieserMonat - vorjahrMonat) / vorjahrMonat) * 100) : null;
 
           const quelle = rs.quelle || {};
-          const gesamtQuelle = (quelle.empfehlung || 0) + (quelle.direkt || 0);
+          const gesamtQuelle = (quelle.empfehlung || 0) + (quelle.direkt || 0) + (quelle.mit_promo || 0);
           const quelleData = [
             { name: 'Direkt', value: quelle.direkt || 0, color: '#6366f1' },
-            { name: 'Empfehlung', value: quelle.empfehlung || 0, color: '#22c55e' },
-            { name: 'Promo-Code', value: quelle.mit_promo || 0, color: '#f59e0b' }
+            { name: 'Empfehlung', value: quelle.empfehlung || 0, color: 'var(--ds-success)' },
+            { name: 'Promo-Code', value: quelle.mit_promo || 0, color: 'var(--ds-warning)' }
           ].filter(d => d.value > 0);
 
           const formatMonat = (m) => {
@@ -1558,19 +1563,19 @@ function Auswertungen() {
                   <ResponsiveContainer width="100%" height={200}>
                     <ComposedChart data={rs.trendData || []} margin={{ top: 8, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
-                      <XAxis dataKey="monat" tickFormatter={formatMonat} tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                      <YAxis allowDecimals={false} tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                      <XAxis dataKey="monat" tickFormatter={formatMonat} tick={{ fill: 'var(--ds-text-muted)', fontSize: 11 }} />
+                      <YAxis allowDecimals={false} tick={{ fill: 'var(--ds-text-muted)', fontSize: 11 }} />
                       <Tooltip
-                        contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12 }}
+                        contentStyle={{ background: 'var(--ds-bg-surface)', border: '1px solid var(--ds-border-accent)', borderRadius: 8, fontSize: 12, color: 'var(--ds-text)' }}
                         labelFormatter={formatMonat}
                       />
                       <Bar dataKey="anzahl" name="Anmeldungen" fill="#6366f1" radius={[3, 3, 0, 0]} />
-                      <Line dataKey="vorjahr" name="Vorjahr" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                      <Line dataKey="vorjahr" name="Vorjahr" stroke="var(--ds-warning)" strokeWidth={2} dot={false} strokeDasharray="4 2" />
                     </ComposedChart>
                   </ResponsiveContainer>
                   <div className="anm-legend">
                     <span className="anm-legend-item"><span style={{background:'#6366f1'}}></span>Anmeldungen</span>
-                    <span className="anm-legend-item"><span style={{background:'#f59e0b'}}></span>Vorjahr</span>
+                    <span className="anm-legend-item"><span style={{background:'var(--ds-warning)'}}></span>Vorjahr</span>
                   </div>
                 </div>
 
@@ -1589,7 +1594,7 @@ function Auswertungen() {
                             ))}
                           </Pie>
                           <Tooltip
-                            contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12 }}
+                            contentStyle={{ background: 'var(--ds-bg-surface)', border: '1px solid var(--ds-border-accent)', borderRadius: 8, fontSize: 12, color: 'var(--ds-text)' }}
                           />
                         </PieChart>
                       </ResponsiveContainer>
@@ -1613,12 +1618,12 @@ function Auswertungen() {
                   <ResponsiveContainer width="100%" height={160}>
                     <BarChart data={rs.wochentage || []} margin={{ top: 8, right: 5, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
-                      <XAxis dataKey="tag" tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                      <YAxis allowDecimals={false} tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                      <XAxis dataKey="tag" tick={{ fill: 'var(--ds-text-muted)', fontSize: 11 }} />
+                      <YAxis allowDecimals={false} tick={{ fill: 'var(--ds-text-muted)', fontSize: 10 }} />
                       <Tooltip
-                        contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12 }}
+                        contentStyle={{ background: 'var(--ds-bg-surface)', border: '1px solid var(--ds-border-accent)', borderRadius: 8, fontSize: 12, color: 'var(--ds-text)' }}
                       />
-                      <Bar dataKey="anzahl" name="Anmeldungen" fill="#22c55e" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="anzahl" name="Anmeldungen" fill="var(--ds-success)" radius={[3, 3, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1766,7 +1771,7 @@ function Auswertungen() {
           const topPeak  = peaks.length  > 0 ? peaks[0] : null;
           const aktivQuote = sum.totalMembers > 0
             ? Math.round((sum.activeMembers / sum.totalMembers) * 100) : 0;
-          const DAUER_COLORS = ['#f59e0b','#ffd700','#10b981','#3b82f6','#8b5cf6'];
+          const DAUER_COLORS = ['var(--ds-warning)','var(--ds-accent)','var(--ds-success)','var(--ds-info)','#8b5cf6'];
           const toggleSection = (key) => setCollapsedPerfSections(p => ({ ...p, [key]: !p[key] }));
           const toggleTier = (key) => setExpandedRisikoTiers(p => ({ ...p, [key]: !p[key] }));
           const SectionHeader = ({ sKey, title }) => (
@@ -1785,16 +1790,16 @@ function Auswertungen() {
               <div className="perf-kpi-row">
                 <div className="perf-kpi">
                   <div className="perf-kpi-label">
-                    Ø Check-ins / Tag
+                    Ø Check-ins / Trainingstag
                     <span className="perf-tooltip-wrap">
                       <span className="perf-info-icon">ℹ</span>
-                      <span className="perf-tooltip">Durchschnittliche Anzahl an Check-ins pro Tag über die letzten 90 Tage. Zeigt wie aktiv das Dojo genutzt wird.</span>
+                      <span className="perf-tooltip">Durchschnittliche Check-ins an einem Tag, an dem trainiert wurde (Tage ganz ohne Check-in zählen nicht mit) — letzte 90 Tage. Zeigt, wie voll ein typischer Trainingstag ist.</span>
                     </span>
                   </div>
                   <div className="perf-kpi-value perf-kpi-value--gold">
                     {anw.durchschnittlicheAnwesenheit}
                   </div>
-                  <div className="perf-kpi-sub">letzte 90 Tage</div>
+                  <div className="perf-kpi-sub">pro Trainingstag (90 Tage)</div>
                 </div>
                 <div className="perf-kpi">
                   <div className="perf-kpi-label">
@@ -1937,16 +1942,42 @@ function Auswertungen() {
                 </div>
               )}
 
+              {/* ── Beliebteste Kurse ── */}
+              <SectionHeader sKey="beliebt" title="🏆 Beliebteste Kurse" />
+              {!collapsedPerfSections.beliebt && (() => {
+                const bk = auswertungsData?.kursAnalyse?.beliebtsteKurse || [];
+                if (bk.length === 0) {
+                  return <div className="perf-beliebt-empty">Noch keine Check-in-Daten für Kurse vorhanden.</div>;
+                }
+                const maxT = Math.max(...bk.map(k => k.teilnehmer), 1);
+                return (
+                  <div className="perf-beliebt">
+                    <p className="perf-beliebt-sub">Unterschiedliche Mitglieder mit Check-in (letzte 90 Tage)</p>
+                    {bk.map((k, i) => (
+                      <div className="perf-beliebt-row" key={i}>
+                        <span className="perf-beliebt-rank">{i + 1}</span>
+                        <span className="perf-beliebt-name" title={k.name}>{k.name}</span>
+                        <div className="perf-beliebt-bar">
+                          <div className="perf-beliebt-bar-fill"
+                            style={{ width: `${Math.round((k.teilnehmer / maxT) * 100)}%` }} />
+                        </div>
+                        <span className="perf-beliebt-count">{k.teilnehmer}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
               {/* ── Kurs-Performance ── */}
               <SectionHeader sKey="kurse" title="🏋 Kurs-Performance" />
               {!collapsedPerfSections.kurse && kursPerformance && (() => {
                 const { kurse: kp, wochenplan, freieSlots } = kursPerformance;
                 const maxSchnitt = kp.length > 0 ? Math.max(...kp.map(k => k.schnitt_pro_tag)) : 1;
                 const stilFarben = {
-                  'Enso Karate':    '#ffd700',
+                  'Enso Karate':    'var(--ds-accent)',
                   'Kickboxen':      '#f97316',
-                  'ShieldX':        '#3b82f6',
-                  'Brazilian Jiu Jitsu': '#10b981',
+                  'ShieldX':        'var(--ds-info)',
+                  'Brazilian Jiu Jitsu': 'var(--ds-success)',
                 };
                 const stilColor = (stil) => stilFarben[stil] || '#8b5cf6';
                 const tageOrder = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
@@ -1967,10 +1998,10 @@ function Auswertungen() {
                               {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="perf-kurs-rank-num">{i+1}</span>}
                             </div>
                             <div className="perf-kurs-info">
-                              <div className="perf-kurs-name">{k.name}</div>
+                              <div className="perf-kurs-name">{k.stil}</div>
                               <div className="perf-kurs-meta">
                                 <span className="perf-kurs-stil-dot" style={{ background: stilColor(k.stil) }} />
-                                <span className="perf-kurs-stil">{k.stil}</span>
+                                <span className="perf-kurs-stil">{k.name}</span>
                                 <span className="perf-kurs-sep">·</span>
                                 <span>{k.tage.map(t => t.tag.slice(0,2)).join(', ')}</span>
                                 {k.checkins_gesamt > 0 && <><span className="perf-kurs-sep">·</span><span>{k.checkins_gesamt} Check-ins</span></>}
@@ -2013,9 +2044,9 @@ function Auswertungen() {
                                   <div className="perf-wplan-time">
                                     {k.start?.slice(0,5)} – {k.ende?.slice(0,5)}
                                   </div>
-                                  <div className="perf-wplan-kname">{k.name}</div>
+                                  <div className="perf-wplan-kname">{k.stil}</div>
                                   <div className="perf-wplan-kmeta">
-                                    <span className="perf-wplan-stil">{k.stil}</span>
+                                    <span className="perf-wplan-stil">{k.name}</span>
                                     {k.checkins > 0 && (
                                       <span className="perf-wplan-checkins">⬤ Ø {k.schnitt}/Einheit</span>
                                     )}
@@ -2073,8 +2104,8 @@ function Auswertungen() {
                   {/* Absprung-Risiko */}
                   {absprungRisiko && (() => {
                     const tiers = [
-                      { key: 'tier3w', data: absprungRisiko.tier3w, label: '3–6 Wochen', color: '#f59e0b' },
-                      { key: 'tier6w', data: absprungRisiko.tier6w, label: '6W – 2 Monate', color: '#ef4444' },
+                      { key: 'tier3w', data: absprungRisiko.tier3w, label: '3–6 Wochen', color: 'var(--ds-warning)' },
+                      { key: 'tier6w', data: absprungRisiko.tier6w, label: '6W – 2 Monate', color: 'var(--ds-danger)' },
                       { key: 'tier2m', data: absprungRisiko.tier2m, label: '2+ Monate / noch nie', color: '#dc2626' },
                     ];
                     const total = tiers.reduce((s, t) => s + t.data.length, 0);
@@ -2120,8 +2151,8 @@ function Auswertungen() {
                   {vertragsablauf && (() => {
                     const buckets = [
                       { data: vertragsablauf.in30, label: '≤ 30 Tage', color: '#dc2626' },
-                      { data: vertragsablauf.in60, label: '31–60 Tage', color: '#f59e0b' },
-                      { data: vertragsablauf.in90, label: '61–90 Tage', color: '#6b7280' },
+                      { data: vertragsablauf.in60, label: '31–60 Tage', color: 'var(--ds-warning)' },
+                      { data: vertragsablauf.in90, label: '61–90 Tage', color: 'var(--ds-text-muted)' },
                     ];
                     const total = buckets.reduce((s, b) => s + b.data.length, 0);
                     return (
@@ -2280,6 +2311,12 @@ function Auswertungen() {
                           <span className="perf-card-title">Onboarding-Kohorten</span>
                           <span className="perf-card-meta">% trainiert in Monat 1 / 2 / 3</span>
                         </div>
+                        <p className="perf-kohorte-desc">
+                          Eine <strong>Kohorte</strong> sind alle Mitglieder, die im selben Monat eingetreten sind.
+                          Die Tabelle zeigt, wie viel Prozent dieser Gruppe im <strong>1., 2. und 3. Monat</strong> nach
+                          Eintritt noch trainiert haben. So erkennst du, ob neue Mitglieder gut „dranbleiben" —
+                          hohe Werte = starkes Onboarding, stark fallende Werte = neue Mitglieder springen früh ab.
+                        </p>
                         <div className="perf-kohorte-table">
                           <div className="perf-kohorte-header-row">
                             <div className="perf-kohorte-cell perf-kohorte-cell--head">Monat</div>
@@ -2343,7 +2380,7 @@ function Auswertungen() {
                                   <div className="perf-pyramide-level" key={i}>
                                     <div className="perf-pyramide-bar-wrap">
                                       <div className="perf-pyramide-bar"
-                                        style={{ width: `${pct}%`, background: isWhite ? 'rgba(255,255,255,0.18)' : hex, borderColor: isWhite ? 'rgba(255,255,255,0.3)' : hex }} />
+                                        style={{ width: `${pct}%`, background: isWhite ? 'rgba(255,255,255,0.18)' : hex, borderColor: isWhite ? 'var(--ds-border-strong)' : hex }} />
                                     </div>
                                     <div className="perf-pyramide-label" title={stufe.grad_name}>{stufe.grad_name}</div>
                                     <div className="perf-pyramide-count">{stufe.count}</div>

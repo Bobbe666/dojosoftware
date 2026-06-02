@@ -71,7 +71,8 @@ const MemberSchedule = () => {
           while (d <= end) {
             generated.push({
               id: `${kurs.id}-${d.toISOString().split('T')[0]}`,
-              title: kurs.kursname || kurs.gruppenname || 'Training',
+              title: kurs.stil || kurs.gruppenname || kurs.kursname || 'Training',
+              gruppenname: kurs.gruppenname || kurs.kursname || '',
               trainer: `${kurs.trainer_vorname||''} ${kurs.trainer_nachname||''}`.trim() || 'Trainer',
               zeit: `${kurs.uhrzeit_start} - ${kurs.uhrzeit_ende}`,
               datum: d.toISOString().split('T')[0],
@@ -162,7 +163,8 @@ const MemberSchedule = () => {
     // 3. Konvertiere Stundenplan zu Event-Format
     let regularEvents = dayEvents.map(kurs => ({
       id: `stundenplan-${kurs.id}`,
-      title: kurs.kursname || 'Kurs',
+      title: kurs.stil || kurs.gruppenname || kurs.kursname || 'Kurs',
+      gruppenname: kurs.gruppenname || kurs.kursname || '',
       trainer: `${kurs.trainer_vorname || ''} ${kurs.trainer_nachname || ''}`.trim() || 'Kein Trainer',
       zeit: `${kurs.uhrzeit_start} - ${kurs.uhrzeit_ende}`,
       raum: kurs.raumname || 'Kein Raum',
@@ -239,6 +241,9 @@ const MemberSchedule = () => {
                   <div className="event-icon">{event.isMemberCourse ? '✓' : '•'}</div>
                   <div className="event-details">
                     <div className="event-name">{event.title}</div>
+                    {event.gruppenname && event.gruppenname !== event.title && (
+                      <div className="event-name" style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{event.gruppenname}</div>
+                    )}
                     <div className="event-time">{event.zeit}</div>
                   </div>
                 </div>
@@ -458,6 +463,9 @@ const MemberSchedule = () => {
                             <h3 className="ms-card-title">
                               {termin.title}
                             </h3>
+                            {termin.gruppenname && termin.gruppenname !== termin.title && (
+                              <div style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{termin.gruppenname}</div>
+                            )}
                             <span className={`ms-status-badge${termin.status === 'bestätigt' ? ' ms-status-badge--bestaetigt' : ' ms-status-badge--angemeldet'}`}>
                               {termin.status === 'bestätigt' ? '✓ Bestätigt' : '⏳ Angemeldet'}
                             </span>

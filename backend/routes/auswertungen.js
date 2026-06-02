@@ -319,15 +319,22 @@ router.get('/complete', async (req, res) => {
             WHERE 1=1 ${dF}
         `, dP);
 
-        // Beliebteste Kurse (vereinfacht, da kursmitglieder-Tabelle nicht existiert)
+        // Beliebteste Kurse — ECHTE Teilnehmer = unterschiedliche Mitglieder,
+        // die in den letzten 90 Tagen zu diesem Kurs eingecheckt haben.
         const beliebtsteKurse = await queryAsync(`
             SELECT
-                gruppenname as name,
-                0 as teilnehmer
-            FROM kurse
-            ORDER BY gruppenname ASC
+                k.stil AS name,
+                COUNT(DISTINCT c.mitglied_id) AS teilnehmer
+            FROM kurse k
+            LEFT JOIN stundenplan s ON s.kurs_id = k.kurs_id
+            LEFT JOIN checkins c
+                ON  c.stundenplan_id = s.stundenplan_id
+                AND c.checkin_time >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+            WHERE 1=1 ${dF.replace('dojo_id', 'k.dojo_id')}
+            GROUP BY k.stil
+            ORDER BY teilnehmer DESC, k.stil ASC
             LIMIT 5
-        `);
+        `, dP);
 
         // Stil-Verteilung
         const stilVerteilung = await queryAsync(`
@@ -1214,35 +1221,51 @@ router.get('/kurs-performance', async (req, res) => {
             wochenplan[tag].sort((a, b) => a.start.localeCompare(b.start));
         }
 
-        // ── 4. Freie Kapazitäten: Lücken pro Tag ermitteln (> 30 Min Pause)
+        // ── 4. Freie Kapazitäten: Öffnungsfenster aus dem ECHTEN Stundenplan ableiten
+        //     (frühester Kursbeginn / spätestes Kursende) statt fest verdrahteter Zeiten.
         const freieSlots = {};
-        const DOJO_OPEN  = '14:00:00';
-        const DOJO_CLOSE = '22:00:00';
+        let DOJO_OPEN = null, DOJO_CLOSE = null;
         for (const tag of tageReihenfolge) {
-            const kurseAmTag = wochenplan[tag];
-            if (kurseAmTag.length === 0) {
-                freieSlots[tag] = [{ start: DOJO_OPEN, ende: DOJO_CLOSE, minuten: 480 }];
-                continue;
+            for (const k of wochenplan[tag]) {
+                if (!DOJO_OPEN  || k.start < DOJO_OPEN)  DOJO_OPEN  = k.start;
+                if (!DOJO_CLOSE || k.ende  > DOJO_CLOSE) DOJO_CLOSE = k.ende;
             }
-            const slots = [];
-            let cursor = DOJO_OPEN;
-            for (const k of kurseAmTag) {
-                if (k.start > cursor) {
-                    const minuten = zeitDiff(cursor, k.start);
-                    if (minuten >= 30) slots.push({ start: cursor, ende: k.start, minuten });
+        }
+        if (DOJO_OPEN && DOJO_CLOSE) {
+            const fensterMin = zeitDiff(DOJO_OPEN, DOJO_CLOSE);
+            for (const tag of tageReihenfolge) {
+                const kurseAmTag = wochenplan[tag];
+                if (kurseAmTag.length === 0) {
+                    freieSlots[tag] = [{ start: DOJO_OPEN, ende: DOJO_CLOSE, minuten: fensterMin }];
+                    continue;
                 }
-                if (k.ende > cursor) cursor = k.ende;
+                const slots = [];
+                let cursor = DOJO_OPEN;
+                for (const k of kurseAmTag) {
+                    if (k.start > cursor) {
+                        const minuten = zeitDiff(cursor, k.start);
+                        if (minuten >= 30) slots.push({ start: cursor, ende: k.start, minuten });
+                    }
+                    if (k.ende > cursor) cursor = k.ende;
+                }
+                if (cursor < DOJO_CLOSE) {
+                    const minuten = zeitDiff(cursor, DOJO_CLOSE);
+                    if (minuten >= 30) slots.push({ start: cursor, ende: DOJO_CLOSE, minuten });
+                }
+                freieSlots[tag] = slots;
             }
-            if (cursor < DOJO_CLOSE) {
-                const minuten = zeitDiff(cursor, DOJO_CLOSE);
-                if (minuten >= 30) slots.push({ start: cursor, ende: DOJO_CLOSE, minuten });
-            }
-            freieSlots[tag] = slots;
+        } else {
+            // Keine Kursdaten → keine freien Zeiten ausweisbar (statt erfundener Zeiten)
+            for (const tag of tageReihenfolge) freieSlots[tag] = [];
         }
 
         res.json({
             success: true,
-            data: { kurse, wochenplan, freieSlots }
+            data: {
+                kurse, wochenplan, freieSlots,
+                // Transparenz: tatsächliches Öffnungsfenster aus dem Stundenplan
+                oeffnung: (DOJO_OPEN && DOJO_CLOSE) ? { von: DOJO_OPEN, bis: DOJO_CLOSE } : null
+            }
         });
 
     } catch (err) {
@@ -1668,26 +1691,27 @@ router.get('/registrierungen-stats', async (req, res) => {
             return { tag: label, anzahl: row ? row.anzahl : 0 };
         });
 
-        // 4. Quelle: Empfehlung vs. direkt (aus referrals-Tabelle)
+        // 4.+5. Quelle EXKLUSIV pro Mitglied (keine Doppelzählung):
+        //   Empfehlung  > Promo-Code > Direkt — jedes Mitglied genau EINE Kategorie.
+        //   EXISTS statt JOIN → keine Zeilen-Vervielfachung bei mehreren
+        //   Referrals/Registrierungen pro Mitglied. Summe = alle Neuzugänge (12 Mon.).
         const quelleRows = await queryAsync(`
             SELECT
-              SUM(CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END) AS empfehlung,
-              SUM(CASE WHEN r.id IS NULL     THEN 1 ELSE 0 END) AS direkt
-            FROM mitglieder m
-            LEFT JOIN referrals r ON r.geworbenes_mitglied_id = m.mitglied_id
-            WHERE m.eintrittsdatum >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-              ${mClause}
-        `, mParams);
-
-        // 5. Promo-Code vs. kein Code (aus registrierungen – join über email)
-        const promoRows = await queryAsync(`
-            SELECT
-              SUM(CASE WHEN rg.promo_code IS NOT NULL AND rg.promo_code != '' THEN 1 ELSE 0 END) AS mit_promo,
-              SUM(CASE WHEN rg.promo_code IS NULL OR rg.promo_code = ''       THEN 1 ELSE 0 END) AS ohne_promo
-            FROM registrierungen rg
-            JOIN mitglieder m ON m.email = rg.email
-            WHERE m.eintrittsdatum >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-              ${mClause}
+              SUM(CASE WHEN hasRef = 1 THEN 1 ELSE 0 END)                  AS empfehlung,
+              SUM(CASE WHEN hasRef = 0 AND hasPromo = 1 THEN 1 ELSE 0 END) AS mit_promo,
+              SUM(CASE WHEN hasRef = 0 AND hasPromo = 0 THEN 1 ELSE 0 END) AS direkt
+            FROM (
+              SELECT
+                m.mitglied_id,
+                EXISTS(SELECT 1 FROM referrals r
+                       WHERE r.geworbenes_mitglied_id = m.mitglied_id) AS hasRef,
+                EXISTS(SELECT 1 FROM registrierungen rg
+                       WHERE rg.email = m.email
+                         AND rg.promo_code IS NOT NULL AND rg.promo_code != '') AS hasPromo
+              FROM mitglieder m
+              WHERE m.eintrittsdatum >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                ${mClause}
+            ) t
         `, mParams);
 
         // 6. Registrierungs-Funnel: Status-Verteilung aus registrierungen
@@ -1759,8 +1783,7 @@ router.get('/registrierungen-stats', async (req, res) => {
                 quelle: {
                     empfehlung: quelleRows[0]?.empfehlung || 0,
                     direkt: quelleRows[0]?.direkt || 0,
-                    mit_promo: promoRows[0]?.mit_promo || 0,
-                    ohne_promo: promoRows[0]?.ohne_promo || 0
+                    mit_promo: quelleRows[0]?.mit_promo || 0
                 },
                 funnel
             }

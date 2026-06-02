@@ -586,8 +586,10 @@ const Stundenplan = () => {
                             <div className="mini-time">
                               {formatTime(eintrag.uhrzeit_start)} - {formatTime(eintrag.uhrzeit_ende)}
                             </div>
-                            <div className="mini-style">{eintrag.stil}</div>
-                            <div className="mini-name">{eintrag.kursname}</div>
+                            <div className="mini-style">{eintrag.stil || eintrag.gruppenname || eintrag.kursname || 'Kurs'}</div>
+                            {(eintrag.gruppenname || eintrag.kursname) && (
+                              <div className="mini-name" style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{eintrag.gruppenname || eintrag.kursname}</div>
+                            )}
                             {eintrag.raumname && (
                               <div className="mini-raum">🏢 {eintrag.raumname}</div>
                             )}
@@ -651,9 +653,11 @@ const Stundenplan = () => {
                       
                       <div className="slot-center">
                         <div className="course-info-expanded">
-                          <div className="course-name-big">{eintrag.kursname || 'Unbekannt'}</div>
+                          <div className="course-name-big">🥋 {eintrag.stil || eintrag.gruppenname || eintrag.kursname || 'Kurs'}</div>
+                          {(eintrag.gruppenname || eintrag.kursname) && (
+                            <div style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{eintrag.gruppenname || eintrag.kursname}</div>
+                          )}
                           <div className="course-details-expanded">
-                            <span className="course-style-big">🥋 {eintrag.stil || '?'}</span>
                             <span className="course-trainer-big">
                               👨‍🏫 {eintrag.trainer_vorname || '?'} {eintrag.trainer_nachname || ''}
                             </span>
@@ -1102,8 +1106,10 @@ const Stundenplan = () => {
                     </select>
                   ) : (
                     <div>
-                      <span className="stundenplan-value kurs-name">{eintrag.kursname || "Unbekannt"}</span>
-                      <div className="stil-tag">{eintrag.stil || "?"}</div>
+                      <span className="stundenplan-value kurs-name">{eintrag.stil || eintrag.gruppenname || eintrag.kursname || "Kurs"}</span>
+                      {(eintrag.gruppenname || eintrag.kursname) && (
+                        <div style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{eintrag.gruppenname || eintrag.kursname}</div>
+                      )}
                     </div>
                   )}
                 </div>

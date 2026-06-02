@@ -478,7 +478,8 @@ router.get("/:id/verguetung", async (req, res) => {
     // Aktuelle Monats-Stunden mit Kursname
     const [monatsStunden] = await pool.query(
       `SELECT ts.id, ts.datum, ts.stunden, ts.status, ts.notiz,
-              COALESCE(k.gruppenname, 'Kein Kurs') AS kursname
+              COALESCE(k.stil, k.gruppenname, 'Kein Kurs') AS kursname,
+              k.gruppenname AS kurs_altersgruppe
        FROM trainer_stunden ts
        LEFT JOIN kurse k ON k.kurs_id = ts.kurs_id
        WHERE ts.trainer_id = ? AND MONTH(ts.datum) = ? AND YEAR(ts.datum) = ? ${dojoStunden}

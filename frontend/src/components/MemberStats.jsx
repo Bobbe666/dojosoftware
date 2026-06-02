@@ -559,7 +559,12 @@ const MemberStats = () => {
                         </div>
                         <div className="training-course">
                           <Trophy size={14} />
-                          <span>{tag.kurs_name || tag.kurs || tag.gruppenname}</span>
+                          <span>
+                            {tag.stil || tag.kurs_name || tag.kurs || tag.gruppenname || 'Kurs'}
+                            {(tag.stil && (tag.kurs_name || tag.gruppenname)) && (
+                              <div style={{ fontSize: '0.72em', opacity: 0.65, fontWeight: 400 }}>{tag.kurs_name || tag.gruppenname}</div>
+                            )}
+                          </span>
                         </div>
                         <div className="training-trainer">
                           <Award size={14} />

@@ -108,6 +108,10 @@ export const DEFAULT_THEME = {
   // ── Header (eigene Ebene) ──
   headerBg: '',          // '' = Modus-Standard (Surface)
   headerText: '',        // '' = Modus-Standard
+  // ── Überschriften ──
+  headingColor: 'accent',   // 'accent' | 'text' | '#hex'
+  headingUppercase: true,   // GROSSBUCHSTABEN
+  headingShadow: false,     // dezenter Schatten
   // ── Deko ──
   kanji: false,          // dezentes Kanji-Wasserzeichen im Hintergrund
   kanjiChar: '武道',      // welches Zeichen (Budō = „Kriegskunst-Weg")
@@ -324,6 +328,14 @@ export function applyThemeConfig(cfg) {
     root.removeProperty('--ds-header-text');
     root.removeProperty('--ds-header-border');
   }
+
+  // ── Überschriften ──
+  const hColor = c.headingColor === 'text' ? 'var(--ds-text)'
+    : (typeof c.headingColor === 'string' && c.headingColor.startsWith('#')) ? c.headingColor
+    : 'var(--ds-accent)';
+  root.setProperty('--ds-heading-color', hColor);
+  root.setProperty('--ds-heading-transform', c.headingUppercase ? 'uppercase' : 'none');
+  root.setProperty('--ds-heading-shadow', c.headingShadow ? '0 1px 3px rgba(0,0,0,0.35)' : 'none');
 
   // ── Kanji-Wasserzeichen ──
   if (c.kanji) {

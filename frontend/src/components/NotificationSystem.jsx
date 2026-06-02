@@ -1910,7 +1910,7 @@ const NotificationSystem = () => {
             </select>
             {selectedKurs && (
               <div className="ns-kurs-info">
-                Empfänger: alle Mitglieder, die in den letzten 30 Tagen an <strong>{selectedKurs.name}</strong> teilgenommen haben
+                Empfänger: alle Mitglieder, die in den letzten 30 Tagen an <strong>{selectedKurs.stil_name || selectedKurs.name || 'Kurs'}{selectedKurs.stil_name && selectedKurs.name ? ` (${selectedKurs.name})` : ''}</strong> teilgenommen haben
               </div>
             )}
           </div>
