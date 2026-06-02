@@ -16,6 +16,36 @@ import {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.4',
+    date: '2026-06-02',
+    type: 'major',
+    title: 'White-Label Theme-System, überarbeitete Auswertungen & einheitliche Kursnamen',
+    description: 'Das größte Design- und Daten-Update bisher: Jedes Dojo kann sein Portal komplett selbst gestalten (Farben, Schrift, Layout — pro Subdomain gespeichert). Die Auswertungen wurden theme-fähig gemacht und mehrere Kennzahlen auf Korrektheit geprüft und korrigiert. Kursnamen erscheinen jetzt überall einheitlich als Disziplin (z.B. „Kickboxen") mit der Altersgruppe klein darunter — auch in der Check-in-App, wo zusätzlich der Foto-Upload (iPhone/HEIC) repariert wurde.',
+    highlights: [
+      '🎨 NEU: „Design & Themes" (Enterprise) — Modus Dunkel/Hell/Washi, 7 fertige Themen (Klassisch Gold, Karate, Japanisch, Chinesisch, Kickboxen, MMA, Zen) und freie Einstellung von Akzent-, Button- & Textfarbe',
+      '🖌 Header, Sidebar und Überschriften einzeln einstellbar (Farbe, Versalien, Schatten); Schriftart + Text-/Überschriften-Größe, Ecken-Radius, Button-Form, Tab-Stil, Verlauf/Glow/Schatten',
+      '🈁 Optionales Kanji-Wasserzeichen; eigene Schriften (Karate/Bonzai) ladbar',
+      '🏢 Pro Dojo/Subdomain gespeichert — jeder Kunde baut sein eigenes Portal; Branding greift schon vor dem Login',
+      '📊 Auswertungen jetzt theme-fähig: Diagramme, Achsen & Tooltips folgen Hell/Washi/Akzent (vorher in hellen Themes unlesbar)',
+      '✅ Daten-Korrektheit: „freie Zeiten" aus echtem Stundenplan statt fester Öffnungszeiten; „Beliebteste Kurse" mit echten Teilnehmerzahlen (neues Widget); Anmeldungs-Quellen ohne Doppelzählung; präzisere Kennzahl-Bezeichnungen',
+      '📋 Onboarding-Kohorten mit verständlicher Erklärung',
+      '🥋 Kursname = Disziplin (z.B. „Enso Karate") als Titel, Altersgruppe klein darunter — durchgängig (Check-in, Stundenplan, Kurse, Trainer, Auswertungen)',
+      '📷 Check-in-App: Foto-Upload vom iPhone repariert (HEIC → JPEG), Fotos per Klick vergrößerbar, Altersgruppen wieder sichtbar',
+      '🔒 Sicherheit: lokaler Login-Bypass im Produktiv-Build dauerhaft deaktiviert; Test-Tooling repariert',
+    ],
+    details: 'Token-basiertes Design-System (CSS Custom Properties --ds-*) als zentrale Quelle; Laufzeit-Override via dsTheme.js, Persistenz pro Dojo über Tabelle dojo_theme (Migration 183) + Route /api/dojo-theme (GET/PUT/DELETE/public). Hunderte CSS-Dateien per Skript von hartkodierten Farben (Hintergründe, Text, Rahmen) auf Token gebrückt; globale Überschriften-Regel variablen-gesteuert. Auswertungen: recharts-Farben auf var(--ds-*), exklusive Quellen-Aggregation (EXISTS), Öffnungsfenster aus stundenplan MIN/MAX. Kursname: Anzeige auf k.stil umgestellt (gruppenname als Sub), Backend /trainer-stunden + Vergütung um stil ergänzt. Check-in-App (eigenständiges Projekt): clientseitige HEIC→JPEG-Umwandlung per Canvas, Backend-fileFilter akzeptiert HEIC/HEIF, Lightbox für Fotos. Login-Bypass an import.meta.env.DEV gebunden (im Prod-Build immer false).',
+    files: [
+      'frontend/src/design-system/* (ds-tokens.css, ds-components.css)',
+      'frontend/src/utils/dsTheme.js, components/ThemeEinstellungen.jsx',
+      'frontend/src/components/Auswertungen.jsx (+ Auswertungen-*.css)',
+      'frontend/src/components/{CheckinSystem,Stundenplan,Kurse,Trainer*,Member*,RaumVerwaltung,NotificationSystem}.jsx',
+      'backend/routes/{dojo-theme,auswertungen,trainer,trainerStunden,checkin}.js',
+      'backend/migrations/183_dojo_theme.sql',
+      'checkin-app: pages/{CheckinPage,Courses,SelbstCheckin}.jsx',
+      'version.js', 'SystemChangelog.jsx',
+    ],
+  },
+  {
     version: '3.0.3',
     date: '2026-03-31',
     type: 'feature',
