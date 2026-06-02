@@ -24,8 +24,11 @@ const memberFotoStorage = multer.diskStorage({
 const memberFotoUpload = multer({
   storage: memberFotoStorage,
   fileFilter: (req, file, cb) => {
-    if (['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.mimetype)) cb(null, true);
-    else cb(new Error('Nur JPEG, PNG oder WebP erlaubt'), false);
+    // HEIC/HEIF (iPhone) zusätzlich erlauben — der Client wandelt i.d.R. schon in JPEG;
+    // dies ist der Fallback, falls die Umwandlung scheitert.
+    const ok = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    if (ok.includes((file.mimetype || '').toLowerCase())) cb(null, true);
+    else cb(new Error('Nur JPEG, PNG, WebP oder HEIC erlaubt'), false);
   },
   limits: { fileSize: 10 * 1024 * 1024 }
 });
