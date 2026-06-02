@@ -193,9 +193,10 @@ app.use(cors({
   exposedHeaders: ['Content-Type', 'Content-Length', 'X-CSRF-Token'],
 }));
 
-// Body-Parser mit expliziter UTF-8 Konfiguration und 10MB Limit für PDF-HTML
-app.use(express.json({ charset: 'utf-8', limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, charset: 'utf-8', limit: '10mb' }));
+// Body-Parser mit expliziter UTF-8 Konfiguration und 50MB Limit
+// (Gi-Bestellungen enthalten Base64-Bilder: Produktbild, Pflegelabel, Zeichnung)
+app.use(express.json({ charset: 'utf-8', limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, charset: 'utf-8', limit: '50mb' }));
 
 // =============================================
 // SESSION MIDDLEWARE (Phase 2 Security Upgrade)
