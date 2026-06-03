@@ -128,6 +128,14 @@ function urlBase64ToUint8Array(base64String) {
   return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
 }
 
+// Nicht-kritische Arbeit erst nach dem ersten Paint / im Leerlauf ausführen.
+// Reduziert den Re-Render-Sturm beim Laden (iOS-Safari kennt kein
+// requestIdleCallback → setTimeout-Fallback).
+const deferIdle = (cb) =>
+  (typeof window !== 'undefined' && window.requestIdleCallback)
+    ? window.requestIdleCallback(cb, { timeout: 1500 })
+    : setTimeout(cb, 250);
+
 const MemberDashboard = () => {
   const { t } = useTranslation('member');
   const { user } = useAuth();
@@ -214,10 +222,12 @@ const MemberDashboard = () => {
   // Meine Gutscheine
   const [meineGutscheine, setMeineGutscheine] = useState([]);
   useEffect(() => {
-    fetchWithAuth(`${config.apiBaseUrl}/gutscheine/meine`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.success) setMeineGutscheine(d.gutscheine); })
-      .catch(() => {});
+    deferIdle(() => {
+      fetchWithAuth(`${config.apiBaseUrl}/gutscheine/meine`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.success) setMeineGutscheine(d.gutscheine); })
+        .catch(() => {});
+    });
   }, []);
 
   // Marketing-Artikel: verfügbare Artikel + eigene Bestellungen
@@ -228,14 +238,16 @@ const MemberDashboard = () => {
   useEffect(() => {
     const djId = activeDojo?.id || memberData?.dojo_id;
     if (!djId || !user?.mitglied_id) return;
-    fetchWithAuth(`${config.apiBaseUrl}/marketing-artikel/member?dojo_id=${djId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.success) setMarketingArtikel(d.artikel || []); })
-      .catch(() => {});
-    fetchWithAuth(`${config.apiBaseUrl}/marketing-artikel/member/meine-bestellungen?dojo_id=${djId}&mitglied_id=${user.mitglied_id}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setMeineArtikelBestellungen(d.bestellungen || []); })
-      .catch(() => {});
+    deferIdle(() => {
+      fetchWithAuth(`${config.apiBaseUrl}/marketing-artikel/member?dojo_id=${djId}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.success) setMarketingArtikel(d.artikel || []); })
+        .catch(() => {});
+      fetchWithAuth(`${config.apiBaseUrl}/marketing-artikel/member/meine-bestellungen?dojo_id=${djId}&mitglied_id=${user.mitglied_id}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setMeineArtikelBestellungen(d.bestellungen || []); })
+        .catch(() => {});
+    });
   }, [activeDojo?.id, memberData?.dojo_id, user?.mitglied_id]);
 
   // App-Onboarding: einmalig beim ersten Login nach Vertragserstellung
@@ -268,7 +280,7 @@ const MemberDashboard = () => {
         }
       } catch (e) { /* ignore */ }
     };
-    loadFamily();
+    deferIdle(loadFamily);
   }, []);
 
   const handleFamilySwitch = async (targetMitgliedId) => {
@@ -1126,22 +1138,26 @@ const MemberDashboard = () => {
         setAttendanceHistory(attendanceData);
         setPaymentHistory(paymentsData);
 
-        // Alle nachgelagerten Loads parallel ausführen
+        // Kritische nachgelagerte Loads parallel ausführen (Dashboard-Kerninhalt)
         await Promise.all([
           loadMemberStyles(memberData.mitglied_id),
           loadNotifications(memberData.email || user?.email),
           loadApprovedExams(memberData.mitglied_id),
           loadExamResults(memberData.mitglied_id),
-          loadReferralData(memberData.mitglied_id),
           loadNeueEvents(memberData.mitglied_id),
           loadUpcomingEvents(memberData.mitglied_id),
-          loadMemberNews(),
           loadMemberDokumente(memberData.mitglied_id),
-          loadAnnouncements(),
         ]);
 
-        // Separat laden — darf Hauptload nicht blockieren
-        loadMeineUmfragen();
+        // Nicht-kritische Widgets erst nach erstem Paint nachladen
+        // (Referral-Codes, Announcements-Banner, News-Slideshow, Umfragen) —
+        // entlastet den initialen Render-Sturm → bessere Klick-Reaktion.
+        deferIdle(() => {
+          loadReferralData(memberData.mitglied_id);
+          loadMemberNews();
+          loadAnnouncements();
+          loadMeineUmfragen();
+        });
 
       } catch (error) {
         console.error('❌ Fehler beim Laden der Mitgliederdaten:', error);
@@ -1243,7 +1259,7 @@ const MemberDashboard = () => {
         // Fehler still ignorieren — Banner ist nicht kritisch
       }
     };
-    loadNachrichten();
+    deferIdle(loadNachrichten);
   }, [user?.email]);
 
   // Browser-Titel und URL dynamisch setzen
