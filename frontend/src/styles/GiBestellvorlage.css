@@ -591,11 +591,11 @@ select.gv-input { cursor: pointer; }
   font-size: 0.69rem;
   color: var(--ds-accent-50);
   white-space: nowrap;
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* kein overflow:hidden / max-width-Clip mehr → das ✕ (Löschen) bleibt IMMER sichtbar
+     (der Dateiname wird im JSX bereits auf 12 Zeichen gekürzt). */
   flex-shrink: 0;
 }
+.gv-pos-inline-file > .gv-pos-inline-del { flex-shrink: 0; }
 .gv-pos-inline-del {
   background: none;
   border: none;
@@ -752,7 +752,7 @@ select.gv-input { cursor: pointer; }
   font-size: 1.4rem; flex-shrink: 0;
 }
 .gv-datei-info { flex: 1; min-width: 0; }
-.gv-datei-name { font-size: 0.8rem; color: var(--ds-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gv-datei-name { flex: 1; min-width: 0; font-size: 0.8rem; color: var(--ds-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gv-datei-size { font-size: 0.7rem; color: var(--ds-text-faint); margin-top: 0.1rem; }
 .gv-datei-del {
   background: none; border: none; color: rgba(255,80,80,0.6);
