@@ -137,7 +137,6 @@ const KiChatEinstellungen = lazyWithReload(() => import(/* webpackChunkName: "in
 // LAZY LOADED - Member-Bereich
 // ============================================================================
 const MemberDashboard = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberDashboard"));
-const MemberDashboardMobile = lazyWithReload(() => import(/* webpackChunkName: "member-app" */ "./components/MemberDashboardMobile"));
 const ChatPage = lazyWithReload(() => import(/* webpackChunkName: "member-chat" */ "./components/chat/ChatPage"));
 const AdminChatPage = lazyWithReload(() => import(/* webpackChunkName: "admin-chat" */ "./components/chat/AdminChatPage"));
 const BesucherChat = lazyWithReload(() => import(/* webpackChunkName: "besucher-chat" */ "./components/chat/BesucherChat"));
@@ -696,14 +695,9 @@ const App = () => {
                 </MemberOnlyRoute>
               }
             />
-            <Route
-              path="/member-app"
-              element={
-                <MemberOnlyRoute>
-                  <Suspense fallback={<LazyLoadFallback />}><MemberDashboardMobile /></Suspense>
-                </MemberOnlyRoute>
-              }
-            />
+            {/* /member-app (alte Mobile-Version entfernt) → auf das echte Dashboard umleiten,
+                damit alte Lesezeichen/PWA-Icons nicht ins Leere laufen. */}
+            <Route path="/member-app" element={<Navigate to="/member/dashboard" replace />} />
             <Route
               path="/member/profile"
               element={
