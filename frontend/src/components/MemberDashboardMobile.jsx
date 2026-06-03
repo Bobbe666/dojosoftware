@@ -465,18 +465,7 @@ const MemberDashboardMobile = () => {
         </div>
       </div>
 
-      {/* ── App-Update-Banner ── */}
-      {updateAvailable && (
-        <div className="mapp-update-banner">
-          <span className="mapp-update-text">🔄 Neue Version verfügbar</span>
-          <button
-            className="mapp-update-btn"
-            onClick={() => window.location.reload()}
-          >
-            Jetzt laden
-          </button>
-        </div>
-      )}
+      {/* App-Update-Banner konsolidiert → einzige Quelle: <UpdateBanner/> in App.jsx */}
 
       {/* ── Scrollbarer Inhalt ── */}
       <div className="mapp-scroll">
