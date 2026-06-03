@@ -6,6 +6,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import config from '../config/config';
+import { useDojoContext } from '../context/DojoContext';
+
+// Hängt den aktiven Dojo-Filter (dojo_id=…) an eine URL — nötig für Super-Admin,
+// da das Backend (getSecureDojoId) sonst 400 "Kein Dojo." liefert.
+const appendDojo = (url, dojoParam) => {
+  if (!dojoParam) return url;
+  return url + (url.includes('?') ? '&' : '?') + dojoParam;
+};
 import {
   Users, FileText, Download, Plus, Edit, Save, X,
   Calendar, BarChart3, ChevronDown, AlertCircle, CheckCircle, RefreshCw
@@ -37,6 +45,7 @@ const STEUERKLASSEN = [1, 2, 3, 4, 5, 6];
 // Abrechnungen Sub-Tab
 // ---------------------------------------------------------------------------
 const AbrechnungenTab = ({ token }) => {
+  const { getDojoFilterParam } = useDojoContext();
   const [monat, setMonat] = useState(currentMonth);
   const [jahr, setJahr] = useState(currentYear);
   const [mitarbeiter, setMitarbeiter] = useState([]);
@@ -54,7 +63,7 @@ const AbrechnungenTab = ({ token }) => {
   const loadMitarbeiter = useCallback(async () => {
     setMitarbeiterLoading(true);
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/lohnabrechnung/mitarbeiter`);
+      const res = await fetchWithAuth(appendDojo(`${config.apiBaseUrl}/lohnabrechnung/mitarbeiter`, getDojoFilterParam()));
       if (!res.ok) throw new Error(`Fehler ${res.status}`);
       const json = await res.json();
       setMitarbeiter(json.mitarbeiter || json || []);
@@ -68,7 +77,7 @@ const AbrechnungenTab = ({ token }) => {
   const loadAbrechnungen = useCallback(async () => {
     setAbrechnungenLoading(true);
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/lohnabrechnung?monat=${monat}&jahr=${jahr}`);
+      const res = await fetchWithAuth(appendDojo(`${config.apiBaseUrl}/lohnabrechnung?monat=${monat}&jahr=${jahr}`, getDojoFilterParam()));
       if (!res.ok) throw new Error(`Fehler ${res.status}`);
       const json = await res.json();
       setAbrechnungen(json.abrechnungen || json || []);
@@ -95,7 +104,7 @@ const AbrechnungenTab = ({ token }) => {
     }
     setBerechnungLoading(prev => ({ ...prev, [mitarbeiterId]: true }));
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/lohnabrechnung/berechnen`, {
+      const res = await fetchWithAuth(appendDojo(`${config.apiBaseUrl}/lohnabrechnung/berechnen`, getDojoFilterParam()), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mitarbeiter_id: mitarbeiterId, brutto, monat, jahr }),
@@ -115,7 +124,7 @@ const AbrechnungenTab = ({ token }) => {
     if (!v) return;
     setSpeichernLoading(prev => ({ ...prev, [mitarbeiterId]: true }));
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/lohnabrechnung`, {
+      const res = await fetchWithAuth(appendDojo(`${config.apiBaseUrl}/lohnabrechnung`, getDojoFilterParam()), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mitarbeiter_id: mitarbeiterId, monat, jahr, ...v }),
@@ -136,7 +145,7 @@ const AbrechnungenTab = ({ token }) => {
   const downloadPdf = async (abrechnungId) => {
     setPdfLoading(prev => ({ ...prev, [abrechnungId]: true }));
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/lohnabrechnung/${abrechnungId}/pdf`);
+      const res = await fetchWithAuth(appendDojo(`${config.apiBaseUrl}/lohnabrechnung/${abrechnungId}/pdf`, getDojoFilterParam()));
       if (!res.ok) throw new Error(`Fehler ${res.status}`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -324,6 +333,7 @@ const AbrechnungenTab = ({ token }) => {
 // Mitarbeiter Sub-Tab
 // ---------------------------------------------------------------------------
 const MitarbeiterTab = () => {
+  const { getDojoFilterParam } = useDojoContext();
   const [mitarbeiter, setMitarbeiter] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState({});
@@ -334,7 +344,7 @@ const MitarbeiterTab = () => {
   const loadMitarbeiter = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/lohnabrechnung/mitarbeiter`);
+      const res = await fetchWithAuth(appendDojo(`${config.apiBaseUrl}/lohnabrechnung/mitarbeiter`, getDojoFilterParam()));
       if (!res.ok) throw new Error(`Fehler ${res.status}`);
       const json = await res.json();
       const list = json.mitarbeiter || json || [];
@@ -364,7 +374,7 @@ const MitarbeiterTab = () => {
   const save = async (mitarbeiterId) => {
     setSaveLoading(prev => ({ ...prev, [mitarbeiterId]: true }));
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/lohnabrechnung/mitarbeiter/${mitarbeiterId}`, {
+      const res = await fetchWithAuth(appendDojo(`${config.apiBaseUrl}/lohnabrechnung/mitarbeiter/${mitarbeiterId}`, getDojoFilterParam()), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editValues[mitarbeiterId] || {}),
@@ -464,6 +474,7 @@ const MitarbeiterTab = () => {
 // Jahresübersicht Sub-Tab
 // ---------------------------------------------------------------------------
 const JahresuebersichtTab = () => {
+  const { getDojoFilterParam } = useDojoContext();
   const [jahr, setJahr] = useState(currentYear);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -473,7 +484,7 @@ const JahresuebersichtTab = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/lohnabrechnung/uebersicht/${jahr}`);
+      const res = await fetchWithAuth(appendDojo(`${config.apiBaseUrl}/lohnabrechnung/uebersicht/${jahr}`, getDojoFilterParam()));
       if (!res.ok) throw new Error(`Fehler ${res.status}`);
       const json = await res.json();
       setData(json);

@@ -9,6 +9,7 @@ import axios from 'axios';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import GiBestellvorlage, { buildPdfHtml } from './GiBestellvorlage';
+import TShirtBestellvorlage, { buildTShirtPdf } from './TShirtBestellvorlage';
 import { useDojoContext } from '../context/DojoContext';
 import '../styles/BestellungenTab.css';
 
@@ -29,8 +30,10 @@ const BestellungenTab = () => {
   const [dojoBestellungen, setDojoBestellungen] = useState([]);
   const [dojoLoading, setDojoLoading] = useState(false);
   const [giOverlay, setGiOverlay] = useState(null); // { vorlage, editingId, formdata }
+  const [tsOverlay, setTsOverlay] = useState(null); // T-Shirt-Bestellvorlage Overlay
   const [filterDojoId, setFilterDojoId] = useState(null); // null = aus activeDojo
   const [neuLoading, setNeuLoading] = useState(false);
+  const [neuTsLoading, setNeuTsLoading] = useState(false);
 
   const [lowStockItems, setLowStockItems] = useState([]);
   const [bestellungen, setBestellungen] = useState([]);
@@ -176,6 +179,35 @@ const BestellungenTab = () => {
     }
   };
 
+  // Neue T-Shirt-Bestellung starten. Sucht (optional) eine Vorlage mit typ/name
+  // 'tshirt'; funktioniert aber auch ohne Vorlage (vorlage=null).
+  const neueTShirtBestellung = async () => {
+    const djId = filterDojoId || activeDojo?.id;
+    if (!djId) { setDojoFehler('Bitte ein Dojo auswählen'); return; }
+    setDojoFehler('');
+    setNeuTsLoading(true);
+    try {
+      let vorlage = null;
+      try {
+        const res = await axios.get(`/bestellvorlagen?dojo_id=${djId}`);
+        const vorlagen = res.data?.data || [];
+        vorlage = vorlagen.find(v =>
+          (v.typ || '').toLowerCase().includes('shirt') ||
+          (v.typ || '').toLowerCase().includes('tshirt') ||
+          (v.name || '').toLowerCase().includes('shirt')
+        ) || null;
+      } catch { /* Vorlage optional */ }
+      setTsOverlay({ vorlage, editingId: null, formdata: null, dojoId: djId });
+    } catch (e) {
+      setDojoFehler(e?.response?.data?.message || e?.message || 'Fehler beim Öffnen der T-Shirt-Vorlage');
+    } finally {
+      setNeuTsLoading(false);
+    }
+  };
+
+  // True, wenn die Bestellung eine T-Shirt-Bestellung ist (formdata._typ)
+  const istTShirt = (fd) => !!(fd && fd._typ === 'tshirt');
+
   useEffect(() => {
     if (activeSubTab === 'dojo') {
       // Initial-Dojo setzen wenn noch keins gewählt
@@ -197,7 +229,9 @@ const BestellungenTab = () => {
         formdata = typeof fd === 'string' ? JSON.parse(fd) : fd;
       }
       if (!formdata) return;
-      const html = buildPdfHtml(formdata, window.location.origin, [], b.bestellung_id);
+      const html = istTShirt(formdata)
+        ? buildTShirtPdf(formdata, b.bestellung_id)
+        : buildPdfHtml(formdata, window.location.origin, [], b.bestellung_id);
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const win = window.open(url, '_blank');
@@ -229,7 +263,11 @@ const BestellungenTab = () => {
         const fd = res.data?.data?.formdata;
         formdata = typeof fd === 'string' ? JSON.parse(fd) : fd;
       }
-      setGiOverlay({ vorlage, editingId: b.bestellung_id, formdata, dojoId: b.dojo_id });
+      if (istTShirt(formdata)) {
+        setTsOverlay({ vorlage, editingId: b.bestellung_id, formdata, dojoId: b.dojo_id });
+      } else {
+        setGiOverlay({ vorlage, editingId: b.bestellung_id, formdata, dojoId: b.dojo_id });
+      }
     } catch {}
   };
 
@@ -559,6 +597,19 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
         </div>
       )}
 
+      {/* T-Shirt-Bestellvorlage Overlay */}
+      {tsOverlay && (
+        <div style={{ position: 'absolute', inset: 0, background: 'var(--bg-main,#0f0f1a)', zIndex: 20, overflowY: 'auto', padding: '1.25rem', borderRadius: 'inherit' }}>
+          <TShirtBestellvorlage
+            vorlage={tsOverlay.vorlage}
+            initEditingId={tsOverlay.editingId}
+            initFormdata={tsOverlay.formdata}
+            overrideDojoId={tsOverlay.dojoId || filterDojoId || null}
+            onClose={() => { setTsOverlay(null); loadDojoBestellungen(); }}
+          />
+        </div>
+      )}
+
       {/* Sub-Tab Switcher */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.75rem' }}>
         <button
@@ -606,6 +657,9 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
               </button>
               <button onClick={neueGiBestellung} disabled={neuLoading} style={{ padding: '0.3rem 0.9rem', background: 'var(--ds-accent, #d4af37)', border: '1px solid var(--ds-accent, #d4af37)', borderRadius: '6px', color: '#1a1a1a', fontSize: '0.8rem', fontWeight: 700, cursor: neuLoading ? 'wait' : 'pointer', opacity: neuLoading ? 0.6 : 1 }}>
                 {neuLoading ? 'Lädt…' : '+ Neue Gi-Bestellung'}
+              </button>
+              <button onClick={neueTShirtBestellung} disabled={neuTsLoading} style={{ padding: '0.3rem 0.9rem', background: 'rgba(255,255,255,0.07)', border: '1px solid var(--ds-accent, #d4af37)', borderRadius: '6px', color: 'var(--ds-accent, #d4af37)', fontSize: '0.8rem', fontWeight: 700, cursor: neuTsLoading ? 'wait' : 'pointer', opacity: neuTsLoading ? 0.6 : 1 }}>
+                {neuTsLoading ? 'Lädt…' : '+ Neue T-Shirt-Bestellung'}
               </button>
             </div>
           </div>

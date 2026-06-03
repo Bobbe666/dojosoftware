@@ -31,18 +31,36 @@ import '../styles/Auswertungen-Members.css';
 import '../styles/Auswertungen-Belts.css';
 import '../styles/Auswertungen-Anmeldungen.css';
 
-function Auswertungen() {
+// 5-Jahresplan & Ziele + Finanzcockpit — als Finanzen-Unter-Tabs im Hub eingebettet
+const ZieleEntwicklung = React.lazy(() => import('./ZieleEntwicklung'));
+const Finanzcockpit = React.lazy(() => import('./Finanzcockpit'));
+
+function Auswertungen({ embedTab } = {}) {
   const navigate = useNavigate();
   const [auswertungsData, setAuswertungsData] = useState(null);
   const [kostenvorlagen, setKostenvorlagen] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('breakeven');
+  const [activeTab, setActiveTab] = useState(embedTab || 'finanzen');
+  const [subTab, setSubTab] = useState('cockpit');
+
+  // Deep-Link aus Fachbereichen: ?tab=… (& ?sub=…) beim Laden übernehmen
+  useEffect(() => {
+    if (embedTab) return;
+    const p = new URLSearchParams(window.location.search);
+    const t = p.get('tab'); const s = p.get('sub');
+    if (t) setActiveTab(t);
+    if (s) setSubTab(s);
+  }, [embedTab]);
   const [breakEvenData, setBreakEvenData] = useState(null);
   const [breakEvenForm, setBreakEvenForm] = useState({
     fixkosten: {},
     variableKosten: {},
-    durchschnittsbeitrag: 85
+    durchschnittsbeitrag: 85,
+    sonstigeEinnahmen: 0,      // sonstige monatliche Einnahmen (z.B. Ø-Verkauf)
+    aufnahmegebuehr: 49,       // einmalig pro Neumitglied
+    neuanmeldungenMonat: 0,    // Ø Neuanmeldungen/Monat (für Aufnahmegebühr-Zusatzeinnahme)
+    zielgewinn: 0              // gewünschter Gewinn/Monat
   });
   const [formResetKey, setFormResetKey] = useState(0);
   const [timePeriod, setTimePeriod] = useState('monthly');
@@ -64,16 +82,32 @@ function Auswertungen() {
   const [expandedRisikoTiers, setExpandedRisikoTiers] = useState({});
   const [registrierungenStats, setRegistrierungenStats] = useState(null);
 
+  // 4 thematische Top-Tabs mit Unter-Tabs
   const tabs = [
-    { id: 'breakeven', label: 'Break-Even Analyse', icon: '💡' },
-    { id: 'overview', label: 'Übersicht', icon: '📊' },
-    { id: 'financial', label: 'Finanzen', icon: '💰' },
-    { id: 'members', label: 'Mitglieder', icon: '👥' },
-    { id: 'anmeldungen', label: 'Anmeldungen', icon: '📋' },
-    { id: 'belts', label: 'Gürtel', icon: '🥋' },
-    { id: 'performance', label: 'Performance', icon: '📈' },
-    { id: 'forecasting', label: 'Prognosen', icon: '🔮' }
+    { id: 'finanzen',   label: 'Finanzen',   icon: '💰' },
+    { id: 'mitglieder', label: 'Mitglieder', icon: '👥' },
+    { id: 'training',   label: 'Training',   icon: '🥋' },
+    { id: 'prognosen',  label: 'Prognosen',  icon: '🔮' },
   ];
+  const subTabsByTab = {
+    finanzen: [
+      { id: 'cockpit',   label: 'Cockpit',              icon: '📊' },
+      { id: 'breakeven', label: 'Break-Even',           icon: '💡' },
+      { id: 'plan',      label: '5-Jahresplan & Ziele', icon: '🎯' },
+      { id: 'stats',     label: 'Statistik',            icon: '💰' },
+    ],
+    mitglieder: [
+      { id: 'overview',    label: 'Übersicht',   icon: '📊' },
+      { id: 'bestand',     label: 'Bestand',     icon: '👥' },
+      { id: 'anmeldungen', label: 'Anmeldungen', icon: '📋' },
+    ],
+    training: [
+      { id: 'belts',       label: 'Gürtel',          icon: '🥋' },
+      { id: 'performance', label: 'Kurs-Performance', icon: '📈' },
+    ],
+    prognosen: [],
+  };
+  const selectTab = (id) => { setActiveTab(id); setSubTab(subTabsByTab[id]?.[0]?.id || ''); };
 
   const timePeriods = [
     { id: 'monthly', label: 'Monatlich', icon: '📅' },
@@ -135,6 +169,14 @@ function Auswertungen() {
       if (result.success) {
         setKostenvorlagen(result.data);
 
+        // Zusatzeinnahmen-Felder immer frisch aus echten Daten vorbefüllen
+        const extra = {
+          sonstigeEinnahmen: result.data.avgVerkaufMonat || 0,
+          aufnahmegebuehr: result.data.aufnahmegebuehr ?? 49,
+          neuanmeldungenMonat: result.data.avgNeuanmeldungenMonat || 0,
+          zielgewinn: 0,
+        };
+
         // Versuche, die letzte gespeicherte Berechnung zu laden
         try {
           const latestResponse = await axios.get('/auswertungen/break-even/latest');
@@ -146,7 +188,8 @@ function Auswertungen() {
             setBreakEvenForm({
               fixkosten: latestResult.data.fixkosten,
               variableKosten: latestResult.data.variableKosten,
-              durchschnittsbeitrag: result.data.durchschnittsbeitrag
+              durchschnittsbeitrag: result.data.durchschnittsbeitrag,
+              ...extra,
             });
             setFormResetKey(k => k + 1);
           } else {
@@ -154,7 +197,8 @@ function Auswertungen() {
             setBreakEvenForm({
               fixkosten: Object.keys(result.data.fixkosten).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
               variableKosten: Object.keys(result.data.variableKosten).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
-              durchschnittsbeitrag: result.data.durchschnittsbeitrag
+              durchschnittsbeitrag: result.data.durchschnittsbeitrag,
+              ...extra,
             });
             setFormResetKey(k => k + 1);
           }
@@ -164,7 +208,8 @@ function Auswertungen() {
           setBreakEvenForm({
             fixkosten: Object.keys(result.data.fixkosten).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
             variableKosten: Object.keys(result.data.variableKosten).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
-            durchschnittsbeitrag: result.data.durchschnittsbeitrag
+            durchschnittsbeitrag: result.data.durchschnittsbeitrag,
+            ...extra,
           });
         }
       }
@@ -216,6 +261,11 @@ function Auswertungen() {
       scheduleAutoSave(newForm);
       return newForm;
     });
+  };
+
+  // Zusatzeinnahmen / Zielgewinn — nur Session (werden aus echten Daten frisch vorbefüllt, nicht persistiert)
+  const updateBeForm = (key, value) => {
+    setBreakEvenForm(prev => ({ ...prev, [key]: Number(value) || 0 }));
   };
 
   const updateVariableKosten = (key, value) => {
@@ -376,16 +426,31 @@ function Auswertungen() {
     const gesamtKosten = (n) => gesamtFixkosten + variableKostenProMitglied * n;
     const n1 = Math.ceil(bep * 1.2), n2 = Math.ceil(bep * 1.5), n3 = Math.ceil(bep * 2);
 
-    // Chart-Daten: Kosten- vs. Umsatzlinie
+    // ── Zusatzeinnahmen (monatlich) → senken den effektiven Break-Even ──
+    const sonstigeEinnahmen = Number(breakEvenForm.sonstigeEinnahmen) || 0;
+    const aufnahmegebuehr = Number(breakEvenForm.aufnahmegebuehr) || 0;
+    const neuanmeldungenMonat = Number(breakEvenForm.neuanmeldungenMonat) || 0;
+    const aufnahmeEinnahmen = Math.round(aufnahmegebuehr * neuanmeldungenMonat);
+    const zusatzEinnahmen = sonstigeEinnahmen + aufnahmeEinnahmen;
+    const effektiveFixkosten = Math.max(0, gesamtFixkosten - zusatzEinnahmen);
+    const bepEff = Math.ceil(effektiveFixkosten / deckungsbeitrag);
+    // ── Zielgewinn → Mitglieder für gewünschten Monatsgewinn ──
+    const zielgewinn = Number(breakEvenForm.zielgewinn) || 0;
+    const zielMitglieder = Math.max(0, Math.ceil((gesamtFixkosten + zielgewinn - zusatzEinnahmen) / deckungsbeitrag));
+    const zielUmsatz = zielMitglieder * beitrag;
+
+    // Chart-Daten: Kosten- vs. (Gesamt-)Umsatzlinie inkl. Zusatzeinnahmen
     const maxN = Math.max(n3 + 5, 30);
     const chartData = Array.from({ length: 31 }, (_, i) => {
       const n = Math.round((i / 30) * maxN);
-      return { mitglieder: n, kosten: Math.round(gesamtKosten(n)), umsatz: Math.round(n * beitrag) };
+      return { mitglieder: n, kosten: Math.round(gesamtKosten(n)), umsatz: Math.round(n * beitrag + zusatzEinnahmen) };
     });
 
     return {
       bep, gesamtFixkosten, variableKostenProMitglied, deckungsbeitrag,
       breakEvenUmsatz, chartData,
+      zusatzEinnahmen, aufnahmeEinnahmen, sonstigeEinnahmen, bepEff,
+      zielgewinn, zielMitglieder, zielUmsatz,
       szenarien: [
         { name: 'Konservativ', mitglieder: n1, umsatz: n1 * beitrag, gewinn: n1 * beitrag - gesamtKosten(n1), beschreibung: '+20% Sicherheit' },
         { name: 'Optimal',     mitglieder: n2, umsatz: n2 * beitrag, gewinn: n2 * beitrag - gesamtKosten(n2), beschreibung: '+50% über BEP' },
@@ -451,28 +516,52 @@ function Auswertungen() {
 
   return (
     <div className="auswertungen-container">
-      <div className="be-page-header" style={{ marginBottom: '1.5rem' }}>
-        <div className="be-page-header-left">
-          <h2>Dojo Auswertungen</h2>
-          <p>Generiert am {new Date(auswertungsData.generatedAt).toLocaleString('de-DE')}</p>
-        </div>
-      </div>
+      {(!embedTab || subTabsByTab[activeTab]?.length > 0) && (
+        <div className="aw-nav">
+          {!embedTab && (
+            <div className="aw-nav__bar">
+              <div className="aw-nav__title">
+                <h2>Dojo Auswertungen</h2>
+                <p>Generiert am {new Date(auswertungsData.generatedAt).toLocaleString('de-DE')}</p>
+              </div>
+              <nav className="aw-segments">
+                {tabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    className={`aw-segment ${activeTab === tab.id ? 'is-active' : ''}`}
+                    onClick={() => selectTab(tab.id)}
+                  >
+                    <span className="ds-tab-icon">{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+          )}
 
-      <nav className="ds-tabs aw-tabs">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`ds-tab ${activeTab === tab.id ? 'is-active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <span className="ds-tab-icon">{tab.icon}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </nav>
+          {(subTabsByTab[activeTab]?.length > 0) && (
+            <nav className="aw-subnav">
+              {subTabsByTab[activeTab].map(s => (
+                <button key={s.id} type="button"
+                  className={`aw-subnav__tab ${subTab === s.id ? 'is-active' : ''}`}
+                  onClick={() => setSubTab(s.id)}>
+                  <span className="ds-tab-icon">{s.icon}</span><span>{s.label}</span>
+                </button>
+              ))}
+            </nav>
+          )}
+        </div>
+      )}
 
       <div className="tab-content">
-        {activeTab === 'breakeven' && (
+
+        {activeTab === 'finanzen' && subTab === 'cockpit' && (
+          <React.Suspense fallback={<div style={{ padding: '2rem', color: 'var(--ds-text-muted)' }}>Lade Cockpit…</div>}>
+            <Finanzcockpit embed />
+          </React.Suspense>
+        )}
+
+        {activeTab === 'finanzen' && subTab === 'breakeven' && (
           <div className="tab-panel">
             <div className="be-wrapper">
 
@@ -501,6 +590,7 @@ function Auswertungen() {
                 {/* Linke Spalte: Eingaben */}
                 <div className="be-left">
 
+                  <div className="be-group-label">Kosten</div>
                   {/* Fixkosten */}
                   <div className="be-section">
                     <div className="be-section-title">
@@ -553,6 +643,7 @@ function Auswertungen() {
                     ))}
                   </div>
 
+                  <div className="be-group-label">Einnahmen</div>
                   {/* Ø-Beitrag */}
                   <div className="be-section">
                     <div className="be-section-title">
@@ -581,6 +672,62 @@ function Auswertungen() {
                     </div>
                   </div>
 
+                  {/* Zusatzeinnahmen */}
+                  <div className="be-section">
+                    <div className="be-section-title">
+                      <span className="be-section-title-label">➕ Zusatzeinnahmen / Monat</span>
+                      {breakEvenCalc && (
+                        <span className="be-section-total">+{formatCurrency(breakEvenCalc.zusatzEinnahmen)}</span>
+                      )}
+                    </div>
+                    <div className="be-row">
+                      <label>Sonstige Einnahmen (Shop/Verkauf …)</label>
+                      <div className="be-field">
+                        <input key={`se-${formResetKey}`} type="number" defaultValue={breakEvenForm.sonstigeEinnahmen}
+                          onBlur={(e) => updateBeForm('sonstigeEinnahmen', e.target.value)} min="0" step="0.01" />
+                        <span className="be-field-unit">€</span>
+                      </div>
+                    </div>
+                    <div className="be-row">
+                      <label>Aufnahmegebühr / Neumitglied</label>
+                      <div className="be-field">
+                        <input key={`ag-${formResetKey}`} type="number" defaultValue={breakEvenForm.aufnahmegebuehr}
+                          onBlur={(e) => updateBeForm('aufnahmegebuehr', e.target.value)} min="0" step="0.01" />
+                        <span className="be-field-unit">€</span>
+                      </div>
+                    </div>
+                    <div className="be-row">
+                      <label>Ø Neuanmeldungen / Monat</label>
+                      <div className="be-field">
+                        <input key={`nm-${formResetKey}`} type="number" defaultValue={breakEvenForm.neuanmeldungenMonat}
+                          onBlur={(e) => updateBeForm('neuanmeldungenMonat', e.target.value)} min="0" step="0.1" />
+                        <span className="be-field-unit">/M</span>
+                      </div>
+                    </div>
+                    {breakEvenCalc && breakEvenCalc.aufnahmeEinnahmen > 0 && (
+                      <div className="be-row be-row--note">
+                        <label>↳ davon Aufnahmegebühren</label>
+                        <span className="be-row-note">+{formatCurrency(breakEvenCalc.aufnahmeEinnahmen)}/M</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="be-group-label">Ziel</div>
+                  {/* Zielgewinn */}
+                  <div className="be-section">
+                    <div className="be-section-title">
+                      <span className="be-section-title-label">🎯 Zielgewinn / Monat</span>
+                    </div>
+                    <div className="be-row be-beitrag-row">
+                      <label>gewünschter Gewinn / Monat</label>
+                      <div className="be-field">
+                        <input key={`zg-${formResetKey}`} type="number" defaultValue={breakEvenForm.zielgewinn}
+                          onBlur={(e) => updateBeForm('zielgewinn', e.target.value)} min="0" step="50" />
+                        <span className="be-field-unit">€</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Speichern */}
                   <button className="be-save-btn" onClick={calculateBreakEven}>
                     💾 Analyse speichern
@@ -592,17 +739,22 @@ function Auswertungen() {
                 <div className="be-right">
                   {breakEvenCalc ? (
                     <>
-                      {/* KPI-Dreierleiste */}
-                      <div className="be-kpi-row">
+                      {/* KPI-Reihe: 4 Kernzahlen */}
+                      <div className="be-kpi-row be-kpi-row--4">
                         <div className="be-kpi be-kpi--main">
                           <span className="be-kpi-icon">🎯</span>
                           <span className="be-kpi-value">{breakEvenCalc.bep}</span>
-                          <span className="be-kpi-label">BEP Mitglieder</span>
+                          <span className="be-kpi-label">Break-Even Mitglieder</span>
                         </div>
-                        <div className="be-kpi">
-                          <span className="be-kpi-icon">💰</span>
-                          <span className="be-kpi-value">{formatCurrency(breakEvenCalc.breakEvenUmsatz)}</span>
-                          <span className="be-kpi-label">Umsatz nötig / Monat</span>
+                        <div className="be-kpi be-kpi--green">
+                          <span className="be-kpi-icon">✅</span>
+                          <span className="be-kpi-value">{breakEvenCalc.bepEff}</span>
+                          <span className="be-kpi-label">Effektiver BEP{breakEvenCalc.zusatzEinnahmen > 0 ? ' (inkl. Zusatz)' : ''}</span>
+                        </div>
+                        <div className="be-kpi be-kpi--accent">
+                          <span className="be-kpi-icon">📈</span>
+                          <span className="be-kpi-value">{breakEvenCalc.zielgewinn > 0 ? breakEvenCalc.zielMitglieder : '—'}</span>
+                          <span className="be-kpi-label">{breakEvenCalc.zielgewinn > 0 ? `für ${formatCurrency(breakEvenCalc.zielgewinn)} Gewinn` : 'Zielgewinn eingeben'}</span>
                         </div>
                         <div className="be-kpi">
                           <span className="be-kpi-icon">📊</span>
@@ -610,6 +762,38 @@ function Auswertungen() {
                           <span className="be-kpi-label">Deckungsbeitrag / Mitgl.</span>
                         </div>
                       </div>
+
+                      {/* Zusatzeinnahmen — Zusammensetzung (aufgegliedert) */}
+                      {(breakEvenCalc.zusatzEinnahmen > 0) && (
+                        <div className="be-breakdown-card">
+                          <div className="be-section-title">
+                            <span className="be-section-title-label">🧾 Zusatzeinnahmen — Zusammensetzung</span>
+                            <span className="be-section-total">+{formatCurrency(breakEvenCalc.zusatzEinnahmen)}/M</span>
+                          </div>
+                          <div className="be-bd-body">
+                            <div className="be-bd-line be-bd-line--head">
+                              <span>🛒 Verkäufe <small>(Ø letzte 6 Mon.)</small></span>
+                              <span>{formatCurrency(breakEvenCalc.sonstigeEinnahmen)}/M</span>
+                            </div>
+                            {(kostenvorlagen?.verkaufGruppen || []).length > 0 ? (() => {
+                              const max = Math.max(...kostenvorlagen.verkaufGruppen.map(x => x.eur_monat), 1);
+                              return kostenvorlagen.verkaufGruppen.map((g, i) => (
+                                <div className="be-bd-bar-row" key={i}>
+                                  <span className="be-bd-bar-label" title={g.gruppe}>{g.gruppe}</span>
+                                  <div className="be-bd-bar"><div className="be-bd-bar-fill" style={{ width: `${Math.round(g.eur_monat / max * 100)}%` }} /></div>
+                                  <span className="be-bd-bar-val">{formatCurrency(g.eur_monat)}</span>
+                                </div>
+                              ));
+                            })() : (
+                              <div className="be-bd-empty">Keine Verkaufsdaten der letzten 6 Monate.</div>
+                            )}
+                            <div className="be-bd-line be-bd-line--head">
+                              <span>🪪 Aufnahmegebühren <small>{breakEvenForm.neuanmeldungenMonat}/M × {formatCurrency(breakEvenForm.aufnahmegebuehr)}</small></span>
+                              <span>{formatCurrency(breakEvenCalc.aufnahmeEinnahmen)}/M</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Kosten vs. Umsatz Chart */}
                       <div className="be-chart-card">
@@ -633,7 +817,7 @@ function Auswertungen() {
                               dataKey="mitglieder"
                               stroke="var(--ds-border-strong)"
                               tick={{ fontSize: 10, fill: 'var(--ds-text-muted)' }}
-                              label={{ value: 'Mitglieder', position: 'insideBottom', offset: -10, style: { fill: 'rgba(255,255,255,0.35)', fontSize: 10 } }}
+                              label={{ value: 'Mitglieder', position: 'insideBottom', offset: -10, style: { fill: 'var(--ds-text-muted)', fontSize: 10 } }}
                             />
                             <YAxis
                               stroke="var(--ds-border-strong)"
@@ -646,7 +830,7 @@ function Auswertungen() {
                               contentStyle={{ background: 'var(--ds-bg-surface)', border: '1px solid var(--ds-border-accent)', borderRadius: 8, fontSize: 12, color: 'var(--ds-text)' }}
                             />
                             <ReferenceLine
-                              x={breakEvenCalc.bep}
+                              x={breakEvenCalc.bepEff}
                               stroke="var(--ds-accent)"
                               strokeDasharray="5 3"
                               label={{ value: `BEP`, position: 'top', style: { fill: 'var(--ds-accent)', fontSize: 11, fontWeight: 700 } }}
@@ -783,7 +967,15 @@ function Auswertungen() {
           </div>
         )}
 
-        {activeTab === 'overview' && (() => {
+        {activeTab === 'finanzen' && subTab === 'plan' && (
+          <div className="tab-panel">
+            <React.Suspense fallback={<div style={{ padding: '2rem', color: 'var(--ds-text-muted)' }}>Lade 5-Jahresplan…</div>}>
+              <ZieleEntwicklung bereich="dojo" kontextId={activeDojoId} showFinanzrechner={true} showNavigation={false} />
+            </React.Suspense>
+          </div>
+        )}
+
+        {activeTab === 'mitglieder' && subTab === 'overview' && (() => {
           const ov = auswertungsData;
           const s = ov.summary;
           const ma = ov.mitgliederAnalyse;
@@ -1087,7 +1279,7 @@ function Auswertungen() {
           );
         })()}
 
-        {activeTab === 'financial' && (() => {
+        {activeTab === 'finanzen' && subTab === 'stats' && (() => {
           const fin = auswertungsData.finanzielleAuswertung;
           const tarife = fin.tarifVerteilung || [];
           const maxUmsatz = tarife.length > 0 ? Math.max(...tarife.map(t => Number(t.monatsumsatz) || 0)) : 1;
@@ -1287,7 +1479,7 @@ function Auswertungen() {
           );
         })()}
 
-        {activeTab === 'members' && (() => {
+        {activeTab === 'mitglieder' && subTab === 'bestand' && (() => {
           const ttStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid var(--ds-accent)', borderRadius: 8, fontSize: 12, color: 'var(--ds-text)' };
           const axisStyle = { tick: { fill: 'rgba(255,255,255,0.45)', fontSize: 11 }, axisLine: { stroke: 'rgba(255,255,255,0.08)' }, tickLine: false };
           const gridStyle = { stroke: 'var(--ds-border)', strokeDasharray: '0' };
@@ -1494,7 +1686,7 @@ function Auswertungen() {
           );
         })()}
 
-        {activeTab === 'anmeldungen' && (() => {
+        {activeTab === 'mitglieder' && subTab === 'anmeldungen' && (() => {
           const rs = registrierungenStats;
           if (!rs) return <div className="loading-state">Lade Anmeldungsstatistiken…</div>;
 
@@ -1653,7 +1845,7 @@ function Auswertungen() {
           );
         })()}
 
-        {activeTab === 'belts' && beltsData && (
+        {activeTab === 'training' && subTab === 'belts' && beltsData && (
           <div className="blt-wrapper">
 
             {/* ── Header ── */}
@@ -1757,7 +1949,7 @@ function Auswertungen() {
           </div>
         )}
 
-        {activeTab === 'performance' && (() => {
+        {activeTab === 'training' && subTab === 'performance' && (() => {
           const anw   = auswertungsData.anwesenheitsStatistik;
           const sum   = auswertungsData.summary;
           const ma    = auswertungsData.mitgliederAnalyse;
@@ -2438,7 +2630,7 @@ function Auswertungen() {
           );
         })()}
 
-        {activeTab === 'forecasting' && (() => {
+        {activeTab === 'prognosen' && (() => {
           const wa   = auswertungsData.wachstumsAnalyse;
           const prog = wa.prognose || {};
           const vj   = wa.vergleichVorjahr || {};

@@ -946,8 +946,15 @@ const MitgliederListe = () => {
     <div className="app-container">
       <div className="page-header ml-page-header" data-cache-break={cacheBreak}>
 
-        {/* Zeile 1: Nur Titel */}
-        <h2 className="page-title ml-page-title">{t('list.title')}</h2>
+        {/* Zeile 1: Titel + Deep-Link zur Auswertung */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <h2 className="page-title ml-page-title">{t('list.title')}</h2>
+          <button className="ds-btn ds-btn--ghost" style={{ height: '32px', fontSize: '0.8rem' }}
+            onClick={() => navigate('/dashboard/auswertungen?tab=mitglieder&sub=bestand')}
+            title="Mitglieder-Auswertung öffnen">
+            📊 Auswertung
+          </button>
+        </div>
 
         {/* Zeile 2: Status-Chips + Suchfeld + Filter + Aktionen */}
         <div className="ml-toolbar-row">

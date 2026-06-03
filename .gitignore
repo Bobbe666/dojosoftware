@@ -44,8 +44,20 @@ backend/uploads/
 
 # Auto-sync
 auto-commit.sh
+
+# Backup-/Altlast-Dateien (nie committen)
 *.backup
+*.backup_*
+*.backup.*
+*.bak
+*.old
+*.disabled
+*.disabled_*
+*Kopie*
+* - Kopie*
+backups/
 
 # Test-Coverage-Reports (auto-generiert, nicht committen)
 backend/coverage/
+coverage/
 

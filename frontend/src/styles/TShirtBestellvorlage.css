@@ -1,0 +1,249 @@
+/* T-Shirt-Bestellvorlage — ergänzt GiBestellvorlage.css (gv-* Klassen werden mitgenutzt) */
+
+.ts-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .ts-grid { grid-template-columns: 1fr; }
+}
+
+.ts-col { min-width: 0; }
+
+/* Radio-Gruppen */
+.ts-radio-group { margin-bottom: 0.7rem; }
+.ts-radio-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ds-text-muted, #9ca3af);
+  margin-bottom: 0.3rem;
+}
+.ts-radio-opts { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ts-radio {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--ds-text, #e5e7eb);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ts-radio.sm { padding: 0.25rem 0.55rem; font-size: 0.74rem; }
+.ts-radio:hover { border-color: rgba(201, 162, 39, 0.5); }
+.ts-radio.active {
+  background: linear-gradient(135deg, #c9a227, #e0b94a);
+  border-color: #c9a227;
+  color: #1a1a2e;
+  font-weight: 600;
+}
+
+/* Inline-Felder */
+.ts-inline-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+.ts-inline-fields label,
+.ts-footer-fields label,
+.gv-body > label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.74rem;
+  color: var(--ds-text-muted, #9ca3af);
+}
+
+/* Größentabellen */
+.ts-size-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.ts-size-table th,
+.ts-size-table td {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.3rem 0.2rem;
+  text-align: center;
+}
+.ts-size-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ds-text-muted, #9ca3af);
+  font-size: 0.72rem;
+}
+.ts-size-table input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--ds-text, #e5e7eb);
+  text-align: center;
+  font-size: 0.85rem;
+  padding: 0.15rem;
+}
+.ts-size-table input:focus { outline: 1px solid #c9a227; border-radius: 3px; }
+.ts-size-table .ts-sum {
+  background: rgba(201, 162, 39, 0.12);
+  font-weight: 600;
+  color: #e0b94a;
+}
+.ts-total {
+  text-align: right;
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--ds-text-muted, #9ca3af);
+}
+.ts-total strong { color: #e0b94a; font-size: 1rem; }
+
+/* Vorschau */
+.ts-preview {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+.ts-preview-dual { gap: 0.75rem; flex-wrap: wrap; }
+.ts-preview-dual > div { display: flex; }
+.ts-preview-cap {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--ds-text-muted, #9ca3af);
+  margin-top: 0.4rem;
+}
+
+/* Veredelung */
+.ts-ver-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.ts-ver-item {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  transition: border-color 0.15s;
+}
+.ts-ver-item.active { border-color: rgba(201, 162, 39, 0.4); background: rgba(201, 162, 39, 0.05); }
+.ts-ver-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--ds-text, #e5e7eb);
+}
+.ts-ver-head input { accent-color: #c9a227; width: 16px; height: 16px; }
+.ts-ver-detail { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.ts-ver-art { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.ts-ver-maße { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+
+/* Lieferant-Grid */
+.ts-lief-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+.ts-lief-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.74rem;
+  color: var(--ds-text-muted, #9ca3af);
+}
+@media (max-width: 800px) { .ts-lief-grid { grid-template-columns: 1fr 1fr; } }
+
+/* Preise */
+.ts-preis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+.ts-preis-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.74rem;
+  color: var(--ds-text-muted, #9ca3af);
+}
+.ts-preis-input { position: relative; display: flex; align-items: center; }
+.ts-preis-input input { padding-right: 2.2rem; }
+.ts-preis-input span {
+  position: absolute; right: 0.6rem;
+  color: var(--ds-text-muted, #9ca3af); font-size: 0.85rem; pointer-events: none;
+}
+.ts-preis-sum { color: #86efac; font-size: 0.78rem; }
+.ts-gesamtpreis {
+  margin-top: 0.7rem;
+  display: flex; align-items: baseline; gap: 0.7rem;
+  background: rgba(201, 162, 39, 0.1);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+}
+.ts-gesamtpreis > span:first-child {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--ds-text-muted, #9ca3af);
+}
+.ts-gesamtpreis strong { font-size: 1.25rem; color: #e0b94a; }
+.ts-gesamtpreis-hint { margin-left: auto; font-size: 0.75rem; color: var(--ds-text-muted, #9ca3af); }
+
+/* Datei-Upload */
+.ts-upload-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  color: var(--ds-text-muted, #9ca3af);
+  padding: 0.6rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: all 0.15s;
+}
+.ts-upload-btn:hover { border-color: rgba(201, 162, 39, 0.5); color: var(--ds-text, #e5e7eb); }
+.ts-datei-list { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.5rem; }
+.ts-datei-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+}
+.ts-datei-thumb { width: 32px; height: 32px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+.ts-datei-icon { font-size: 1.1rem; flex-shrink: 0; }
+.ts-datei-name { flex: 1; min-width: 0; font-size: 0.8rem; color: var(--ds-text, #e5e7eb); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Eigene Mockup-Vorlage */
+.ts-mockup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.ts-mockup-slot {
+  display: flex; flex-direction: column; gap: 0.4rem; align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0.6rem;
+}
+.ts-mockup-lbl { font-size: 0.74rem; color: var(--ds-text-muted, #9ca3af); }
+.ts-mockup-thumb {
+  max-width: 100%; max-height: 130px; object-fit: contain;
+  border-radius: 6px; background: rgba(255, 255, 255, 0.04);
+}
+.ts-mockup-del {
+  background: none; border: 1px solid rgba(255, 80, 80, 0.3);
+  color: rgba(248, 113, 113, 0.9); border-radius: 6px;
+  padding: 0.2rem 0.6rem; font-size: 0.74rem; cursor: pointer;
+}
+.ts-mockup-hint { font-size: 0.72rem; color: var(--ds-text-faint, #6b7280); margin-top: 0.35rem; }
+
+/* Footer */
+.ts-footer-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+@media (max-width: 700px) {
+  .ts-inline-fields,
+  .ts-preis-grid,
+  .ts-footer-fields { grid-template-columns: 1fr; }
+}

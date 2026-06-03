@@ -143,12 +143,12 @@
   --surface-hover: rgba(255, 255, 255, 0.12); /* Hover-State */
   --surface-active: rgba(255, 255, 255, 0.15); /* Aktiv/Ausgewählt */
 
-  /* ===== TEXT HIERARCHY (nummeriert für konsistente Gewichtung) ===== */
-  --text-1: rgba(255, 255, 255, 0.90);   /* primär — Überschriften, wichtige Werte */
-  --text-2: rgba(255, 255, 255, 0.75);   /* sekundär — Labels, Beschreibungen */
-  --text-3: rgba(255, 255, 255, 0.55);   /* tertiär — Hilfstexte */
-  --text-4: rgba(255, 255, 255, 0.40);   /* subtil — Platzhalter, Deaktiviert */
-  --text-5: rgba(255, 255, 255, 0.35);   /* sehr subtil — Meta-Infos */
+  /* ===== TEXT HIERARCHY (an ds-Token gebrückt → folgt Hell/Washi-Modus) ===== */
+  --text-1: var(--ds-text);              /* primär — Überschriften, wichtige Werte */
+  --text-2: var(--ds-text-secondary);    /* sekundär — Labels, Beschreibungen */
+  --text-3: var(--ds-text-muted);        /* tertiär — Hilfstexte */
+  --text-4: var(--ds-text-faint);        /* subtil — Platzhalter, Deaktiviert */
+  --text-5: var(--ds-text-faint);        /* sehr subtil — Meta-Infos */
 
   /* ===== MODAL-SPEZIFISCH ===== */
   --modal-bg-dark: #13131f;                               /* Minimalistisches Dark-Modal */
@@ -167,7 +167,7 @@
   --status-success-border: rgba(74, 222, 128, 0.3);
 
   /* Warning / Orange */
-  --status-warning: #fbbf24;
+  --status-warning: var(--ds-warning-soft);
   --status-warning-text: var(--ds-warning);
   --status-warning-bg: rgba(251, 191, 36, 0.06);
   --status-warning-bg-hover: rgba(251, 146, 60, 0.12);

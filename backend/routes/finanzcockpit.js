@@ -25,6 +25,15 @@ router.get('/stats', (req, res) => {
   if (start_date && end_date) {
     dateStart = start_date;
     dateEnd = end_date;
+  } else if (period === 'week') {
+    // Aktuelle Kalenderwoche (Montag–Sonntag)
+    const day = now.getDay(); // 0=So .. 6=Sa
+    const diffToMonday = (day === 0 ? -6 : 1 - day);
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    dateStart = monday.toISOString().slice(0, 10);
+    dateEnd = sunday.toISOString().slice(0, 10);
   } else if (period === 'month') {
     dateStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
     dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
@@ -359,6 +368,43 @@ router.get('/stats', (req, res) => {
         }
         resolve(results[0] || { ausgaben_cent: 0 });
       });
+    }),
+
+    // Echte Mahnfälle (spiegelt mahnwesen.js /offene-beitraege Logik)
+    // → Badge + "Ausstehende Beiträge" zeigen NUR wirklich mahnfähige Posten
+    new Promise((resolve, reject) => {
+      let dojoCond = '';
+      let queryParams = [];
+      if (dojoIdList.length > 0) {
+        dojoCond = ` AND b.dojo_id IN (${dojoIdList.map(() => '?').join(',')})`;
+        queryParams.push(...dojoIdList);
+      }
+      const query = `
+        SELECT COUNT(*) AS anzahl, COALESCE(SUM(b.betrag), 0) AS summe
+        FROM beitraege b
+        JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+        WHERE b.bezahlt = 0
+          ${dojoCond}
+          AND LOWER(COALESCE(m.zahlungsmethode, '')) NOT LIKE '%stripe%'
+          AND (
+            (LOWER(COALESCE(m.zahlungsmethode, '')) IN ('sepa-lastschrift','lastschrift','sepa','direct_debit')
+              AND (SELECT COUNT(*) FROM offene_zahlungen oz WHERE oz.mitglied_id = b.mitglied_id AND oz.typ = 'ruecklastschrift') >= 2)
+            OR (LOWER(COALESCE(m.zahlungsmethode, '')) NOT IN ('sepa-lastschrift','lastschrift','sepa','direct_debit')
+              AND DATEDIFF(CURDATE(), b.zahlungsdatum) >= 14)
+            OR (SELECT COUNT(*) FROM mahnungen WHERE beitrag_id = b.beitrag_id) > 0
+          )
+      `;
+      db.query(query, queryParams, (err, results) => {
+        if (err) {
+          logger.error('Fehler bei Mahnfälle-Query:', { error: err });
+          // Tabelle/Spalte fehlt → 0 statt Absturz
+          if (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_FIELD_ERROR') {
+            return resolve({ anzahl: 0, summe: 0 });
+          }
+          return reject(err);
+        }
+        resolve(results[0] || { anzahl: 0, summe: 0 });
+      });
     })
   ]).then(([
     vertraegeStats,
@@ -369,7 +415,8 @@ router.get('/stats', (req, res) => {
     zahllaeufeStats,
     zahlungenStats,
     ausgabenStats,
-    ausgabenPrevStats
+    ausgabenPrevStats,
+    mahnfaelleStats
   ]) => {
     // Berechne Gesamteinnahmen
     const monatlicheEinnahmen = parseFloat(vertraegeStats.monatliche_einnahmen) || 0;
@@ -379,14 +426,10 @@ router.get('/stats', (req, res) => {
     const zahllaeufeEinnahmen = parseFloat(zahllaeufeStats.abgeschlossene_summe) || 0;
     
     // Berechne Gesamteinnahmen basierend auf Periode
-    let gesamteinnahmen = 0;
-    if (period === 'month') {
-      gesamteinnahmen = monatlicheEinnahmen + verkaeufeEinnahmen + rechnungenEinnahmen + zahlungenEinnahmen + zahllaeufeEinnahmen;
-    } else if (period === 'quarter') {
-      gesamteinnahmen = (monatlicheEinnahmen * 3) + verkaeufeEinnahmen + rechnungenEinnahmen + zahlungenEinnahmen + zahllaeufeEinnahmen;
-    } else {
-      gesamteinnahmen = (monatlicheEinnahmen * 12) + verkaeufeEinnahmen + rechnungenEinnahmen + zahlungenEinnahmen + zahllaeufeEinnahmen;
-    }
+    // Wiederkehrende Vertragseinnahmen sind monatlich → Multiplikator je Periode
+    const recurringMultiplier = period === 'quarter' ? 3 : period === 'year' ? 12 : 1; // week & month = 1
+    const gesamteinnahmen = (monatlicheEinnahmen * recurringMultiplier)
+      + verkaeufeEinnahmen + rechnungenEinnahmen + zahlungenEinnahmen + zahllaeufeEinnahmen;
     
     // Berechne Trends
     const verkaeufePrev = (parseFloat(verkaeufePrevStats.umsatz_cent) || 0) / 100;
@@ -440,8 +483,8 @@ router.get('/stats', (req, res) => {
       offeneRechnungen: parseInt(rechnungenStats.offene_rechnungen) || 0,
       offeneRechnungenBetrag: parseFloat(rechnungenStats.offene_summe) || 0,
       ueberfaelligeRechnungen: parseInt(rechnungenStats.ueberfaellige_rechnungen) || 0,
-      ausstehendeZahlungen: parseInt(vertraegeStats.anzahl_vertraege) || 0,
-      ausstehendeZahlungenBetrag: monatlicheEinnahmen,
+      ausstehendeZahlungen: parseInt(mahnfaelleStats.anzahl) || 0,
+      ausstehendeZahlungenBetrag: parseFloat(mahnfaelleStats.summe) || 0,
       // Details
       anzahlVertraege: parseInt(vertraegeStats.anzahl_vertraege) || 0,
       anzahlVerkaeufe: parseInt(verkaeufeStats.anzahl_verkaeufe) || 0,
@@ -603,6 +646,14 @@ router.get('/member-stats', (req, res) => {
   const now = new Date();
   if (start_date && end_date) {
     dateStart = start_date; dateEnd = end_date;
+  } else if (period === 'week') {
+    const day = now.getDay();
+    const diffToMonday = (day === 0 ? -6 : 1 - day);
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    dateStart = monday.toISOString().slice(0, 10);
+    dateEnd = sunday.toISOString().slice(0, 10);
   } else if (period === 'month') {
     dateStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
     dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);

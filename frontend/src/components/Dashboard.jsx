@@ -27,7 +27,6 @@ import MemberDashboard from './MemberDashboard';
 import AdminRegistrationPopup from './AdminRegistrationPopup';
 import SetupWizard from './SetupWizard';
 const TrialExpired = lazy(() => import('./TrialExpired'));
-const ZieleEntwicklung = lazy(() => import('./ZieleEntwicklung'));
 const SuperAdminDashboard = lazy(() => import('./SuperAdminDashboard'));
 const VerbandDashboard = lazy(() => import('./VerbandDashboard'));
 const SupportDashboard = lazy(() => import('./SupportDashboard'));
@@ -312,7 +311,6 @@ function Dashboard() {
     { id: 'events', label: t('tabs.events'), icon: '📅' },
     { id: 'training', label: 'Training', icon: '⏱' },
     { id: 'todos', label: 'To Do', icon: '✅' },
-    { id: 'entwicklung', label: 'Entwicklung', icon: '📈' },
     { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
     { id: 'community', label: 'Community', icon: '🏘️' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
@@ -492,8 +490,8 @@ function Dashboard() {
     {
       icon: '📊',
       title: 'Finanzcockpit',
-      description: 'Übersicht über alle Finanzkennzahlen',
-      path: '/dashboard/finanzcockpit',
+      description: 'Cockpit, Break-Even & 5-Jahresplan an einem Ort',
+      path: '/dashboard/auswertungen?tab=finanzen&sub=cockpit',
       featured: true
     },
     {
@@ -956,7 +954,7 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🏆 TDA Int'l Org - Super-Admin</h2>
-            <span className="version-badge">v{config.app.version}</span>
+            <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -1039,7 +1037,7 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🌐 TDA Verband</h2>
-            <span className="version-badge">v{config.app.version}</span>
+            <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -1104,7 +1102,7 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🎫 Support Center</h2>
-            <span className="version-badge">v{config.app.version}</span>
+            <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -1168,7 +1166,7 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🛍️ TDA Shop</h2>
-            <span className="version-badge">v{config.app.version}</span>
+            <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -1214,7 +1212,7 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>📣 Marketing Hub</h2>
-            <span className="version-badge">v{config.app.version}</span>
+            <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -1260,7 +1258,7 @@ function Dashboard() {
         <div className="dashboard-header-left">
           <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
           <h2>{headerTitle}</h2>
-          <span className="version-badge">v{config.app.version}</span>
+          <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
         </div>
         <div className="dashboard-header-right">
           {(role === 'admin' || role === 'super_admin') && <DojoSwitcher />}
@@ -1717,27 +1715,8 @@ function Dashboard() {
                         )
                       )}
 
-                      {/* 📈 Entwicklung & 5-Jahresplan Tab (Enterprise) */}
-                      {activeTab === 'entwicklung' && (
-                        subscription?.plan_type === 'enterprise' ? (
-                          <Suspense fallback={<div style={{padding:'2rem',color:'var(--text-3)'}}>Lade…</div>}>
-                            <ZieleEntwicklung bereich="dojo" kontextId={activeDojo?.id || null} showFinanzrechner={true} showNavigation={false} />
-                          </Suspense>
-                        ) : (
-                          <div className="feature-upgrade-banner">
-                            <div className="feature-upgrade-icon">📈</div>
-                            <h3 className="feature-upgrade-title">Entwicklung & 5-Jahresplan</h3>
-                            <p className="feature-upgrade-desc">
-                              Plane die Entwicklung deines Dojos über 5 Jahre — Mitgliederziele, Umsatzprognosen
-                              und Finanzrechner in einem Dashboard.<br />
-                              Verfügbar im <strong>Enterprise-Plan</strong>.
-                            </p>
-                            <button className="feature-upgrade-btn" onClick={() => handleNavigation('/dashboard/plan')}>
-                              Jetzt upgraden →
-                            </button>
-                          </div>
-                        )
-                      )}
+                      {/* „Entwicklung & 5-Jahresplan" ist jetzt als Tab in den Auswertungen
+                          integriert (zusammen mit Break-Even) — alter Einzel-Tab entfernt. */}
 
                       {/* ✨ Kommunikation & Marketing Tab ✨ */}
                       {activeTab === 'kommunikation' && (

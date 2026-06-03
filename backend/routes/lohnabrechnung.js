@@ -160,7 +160,7 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query(
       `SELECT la.*, p.vorname, p.nachname, p.position AS mitarbeiter_position
        FROM lohnabrechnung la
-       JOIN personal p ON la.personal_id = p.id
+       JOIN personal p ON la.personal_id = p.personal_id
        WHERE la.dojo_id = ? AND la.jahr = ?
        ORDER BY la.monat DESC, p.nachname ASC`,
       [dojoId, currentYear]
@@ -182,12 +182,12 @@ router.get('/mitarbeiter', async (req, res) => {
     if (!dojoId) return res.status(400).json({ error: 'Kein Dojo.' });
 
     const [rows] = await pool.query(
-      `SELECT id, vorname, nachname, position, email, telefon, einstellungsdatum,
-              gehalt, beschaeftigungsart,
+      `SELECT personal_id AS id, vorname, nachname, position, email, telefon, einstellungsdatum,
+              grundgehalt AS gehalt, beschaeftigungsart,
               steuerklasse, sv_nummer, krankenkasse, krankenkasse_zusatz,
               kinderfreibetrag, kirchensteuer_land, steueridentnummer
        FROM personal
-       WHERE dojo_id = ? AND aktiv = 1
+       WHERE dojo_id = ? AND status = 'aktiv'
        ORDER BY nachname ASC, vorname ASC`,
       [dojoId]
     );
@@ -220,7 +220,7 @@ router.put('/mitarbeiter/:id', async (req, res) => {
 
     // Sicherheitscheck: Mitarbeiter gehört zum Dojo
     const [[ma]] = await pool.query(
-      'SELECT id FROM personal WHERE id = ? AND dojo_id = ?',
+      'SELECT personal_id FROM personal WHERE personal_id = ? AND dojo_id = ?',
       [personalId, dojoId]
     );
     if (!ma) return res.status(404).json({ error: 'Mitarbeiter nicht gefunden.' });
@@ -234,7 +234,7 @@ router.put('/mitarbeiter/:id', async (req, res) => {
          kinderfreibetrag = ?,
          kirchensteuer_land = ?,
          steueridentnummer = ?
-       WHERE id = ? AND dojo_id = ?`,
+       WHERE personal_id = ? AND dojo_id = ?`,
       [
         steuerklasse || 1,
         sv_nummer || null,
@@ -269,10 +269,10 @@ router.post('/berechnen', async (req, res) => {
     }
 
     const [[personalRow]] = await pool.query(
-      `SELECT id, vorname, nachname, position,
+      `SELECT personal_id AS id, vorname, nachname, position,
               steuerklasse, sv_nummer, krankenkasse, krankenkasse_zusatz,
               kinderfreibetrag, kirchensteuer_land, steueridentnummer
-       FROM personal WHERE id = ? AND dojo_id = ?`,
+       FROM personal WHERE personal_id = ? AND dojo_id = ?`,
       [parseInt(personal_id), dojoId]
     );
     if (!personalRow) return res.status(404).json({ error: 'Mitarbeiter nicht gefunden.' });
@@ -313,14 +313,14 @@ router.post('/', async (req, res) => {
     }
 
     const [[personalRow]] = await pool.query(
-      `SELECT id, vorname, nachname,
+      `SELECT personal_id AS id, vorname, nachname,
               steuerklasse, krankenkasse_zusatz, kinderfreibetrag, kirchensteuer_land
-       FROM personal WHERE id = ? AND dojo_id = ?`,
+       FROM personal WHERE personal_id = ? AND dojo_id = ?`,
       [parseInt(personal_id), dojoId]
     );
     if (!personalRow) return res.status(404).json({ error: 'Mitarbeiter nicht gefunden.' });
 
-    const [[d]] = await pool.query('SELECT organisation_name FROM dojo WHERE id = ?', [dojoId]);
+    const [[d]] = await pool.query('SELECT dojoname AS organisation_name FROM dojo WHERE id = ?', [dojoId]);
     const calc = berechneLohn(personalRow, brutto, sonderzahlung);
 
     const [result] = await pool.query(
@@ -379,7 +379,7 @@ router.get('/uebersicht/:jahr', async (req, res) => {
               ROUND(SUM(la.kv_an + la.kv_ag), 2) AS gesamt_kv,
               ROUND(SUM(la.sonderzahlung), 2) AS gesamt_sonderzahlungen
        FROM lohnabrechnung la
-       JOIN personal p ON la.personal_id = p.id
+       JOIN personal p ON la.personal_id = p.personal_id
        WHERE la.dojo_id = ? AND la.jahr = ?
        GROUP BY la.personal_id, p.vorname, p.nachname, p.position
        ORDER BY p.nachname ASC`,
@@ -421,7 +421,7 @@ router.get('/:id/pdf', async (req, res) => {
               d.email AS dojo_email, d.telefon AS dojo_telefon,
               d.iban AS dojo_iban, d.bic AS dojo_bic
        FROM lohnabrechnung la
-       JOIN personal p ON la.personal_id = p.id
+       JOIN personal p ON la.personal_id = p.personal_id
        LEFT JOIN dojo d ON la.dojo_id = d.id
        WHERE la.abrechnung_id = ? AND la.dojo_id = ?`,
       [parseInt(req.params.id), dojoId]

@@ -57,18 +57,18 @@ router.get('/', async (req, res) => {
       ORDER BY monat
     `, [secureDojoId, jahr]);
 
-    // 3. Monatliche Beitragseinnahmen aus transaktionen (Mitgliedsbeiträge)
+    // 3. Monatliche Beitragseinnahmen aus beitraege (bezahlte Mitgliedsbeiträge)
+    //    Hinweis: transaktionen-Tabelle hat keine Datumsspalte → beitraege als Quelle
     const [beitragseinnahmen] = await pool.query(`
       SELECT
-        MONTH(t.erstellt_am) AS monat,
-        SUM(t.betrag) AS summe,
+        MONTH(COALESCE(b.bezahlt_am, b.zahlungsdatum)) AS monat,
+        SUM(b.betrag) AS summe,
         COUNT(*) AS anzahl
-      FROM transaktionen t
-      JOIN mitglieder m ON t.mitglied_id = m.mitglied_id
-      WHERE m.dojo_id = ?
-        AND t.status = 'bezahlt'
-        AND YEAR(t.erstellt_am) = ?
-      GROUP BY MONTH(t.erstellt_am)
+      FROM beitraege b
+      WHERE b.dojo_id = ?
+        AND b.bezahlt = 1
+        AND YEAR(COALESCE(b.bezahlt_am, b.zahlungsdatum)) = ?
+      GROUP BY monat
       ORDER BY monat
     `, [secureDojoId, jahr]);
 
@@ -90,12 +90,11 @@ router.get('/', async (req, res) => {
     `, [secureDojoId, jahr - 1]);
 
     const [vorjahrBeitraege] = await pool.query(`
-      SELECT SUM(t.betrag) AS gesamt
-      FROM transaktionen t
-      JOIN mitglieder m ON t.mitglied_id = m.mitglied_id
-      WHERE m.dojo_id = ?
-        AND t.status = 'bezahlt'
-        AND YEAR(t.erstellt_am) = ?
+      SELECT SUM(b.betrag) AS gesamt
+      FROM beitraege b
+      WHERE b.dojo_id = ?
+        AND b.bezahlt = 1
+        AND YEAR(COALESCE(b.bezahlt_am, b.zahlungsdatum)) = ?
     `, [secureDojoId, jahr - 1]);
 
     // 5. Ausgaben nach Kategorie (Jahrestotal)

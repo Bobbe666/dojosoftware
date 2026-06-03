@@ -660,6 +660,48 @@ router.get('/kostenvorlagen', async (req, res) => {
             f.params);
         const durchschnittsbeitrag = Math.round(vertraegeResult[0]?.avg_beitrag || 85);
 
+        // Ø Verkaufsumsatz/Monat (letzte 6 Monate, nicht storniert) — Vorschlag für „sonstige Einnahmen"
+        const verkaufResult = await queryAsync(
+            `SELECT COALESCE(SUM(brutto_gesamt_cent),0)/100 AS summe
+               FROM verkaeufe
+              WHERE storniert = 0
+                AND verkauf_datum >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) ${f.clause}`,
+            f.params);
+        const avgVerkaufMonat = Math.round((verkaufResult[0]?.summe || 0) / 6);
+
+        // Verkäufe nach Warengruppe (Ø €/Monat, 6 Monate) — Aufschlüsselung
+        const verkaufGruppen = await queryAsync(
+            `SELECT COALESCE(ag.name, 'Sonstiges') AS gruppe,
+                    ROUND(SUM(vp.brutto_cent)/100/6) AS eur_monat
+               FROM verkauf_positionen vp
+               JOIN verkaeufe v ON v.verkauf_id = vp.verkauf_id
+               LEFT JOIN artikel a ON a.artikel_id = vp.artikel_id
+               LEFT JOIN artikelgruppen ag ON ag.id = a.artikelgruppe_id
+              WHERE v.storniert = 0
+                AND v.verkauf_datum >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                ${f.clause.replace('dojo_id', 'v.dojo_id')}
+              GROUP BY gruppe
+              HAVING eur_monat > 0
+              ORDER BY eur_monat DESC`,
+            f.params).catch(() => []);
+
+        // Monatstrend Verkäufe (letzte 6 Monate) — macht den Ø transparent
+        const verkaufTrend = await queryAsync(
+            `SELECT DATE_FORMAT(verkauf_datum, '%Y-%m') AS monat,
+                    ROUND(SUM(brutto_gesamt_cent)/100) AS eur
+               FROM verkaeufe
+              WHERE storniert = 0
+                AND verkauf_datum >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) ${f.clause}
+              GROUP BY monat ORDER BY monat`,
+            f.params).catch(() => []);
+
+        // Ø Neuanmeldungen/Monat (letzte 12 Monate) — für die Aufnahmegebühr-Zusatzeinnahme
+        const neuResult = await queryAsync(
+            `SELECT COUNT(*) AS anzahl FROM mitglieder
+              WHERE eintrittsdatum >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) ${f.clause}`,
+            f.params);
+        const avgNeuanmeldungenMonat = Math.round(((neuResult[0]?.anzahl || 0) / 12) * 10) / 10;
+
         const vorlagen = {
             fixkosten: {
                 miete: 2500,
@@ -678,7 +720,12 @@ router.get('/kostenvorlagen', async (req, res) => {
                 material: 1,
                 sonstiges: 1
             },
-            durchschnittsbeitrag: durchschnittsbeitrag
+            durchschnittsbeitrag: durchschnittsbeitrag,
+            avgVerkaufMonat,                 // Ø Verkaufsumsatz/Monat (6 Mon.)
+            verkaufGruppen,                  // Aufschlüsselung nach Warengruppe (Ø €/Monat)
+            verkaufTrend,                    // Monatstrend Verkäufe (6 Mon.)
+            avgNeuanmeldungenMonat,          // Ø Neuanmeldungen/Monat (12 Mon.)
+            aufnahmegebuehr: 49              // Standard-Aufnahmegebühr
         };
 
         res.json({ success: true, data: vorlagen });

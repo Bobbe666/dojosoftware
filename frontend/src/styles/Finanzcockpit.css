@@ -224,12 +224,12 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 .finanzcockpit__kpi-grid {
   display: grid;
   gap: var(--ui-stats-gap);
-  grid-template-columns: var(--ui-stats-cols);
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
 }
 
 .finanzcockpit__kpi-card {
-  background: var(--surface-2);
-  border: 1px solid var(--border-accent);
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-border);
   border-radius: var(--comp-radius-xl);
   padding: var(--spacing-sm);
   display: flex;
@@ -1326,4 +1326,319 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 .finanzcockpit__badge {
   padding: 0.2rem 0.6rem;
   font-size: 0.65rem;
+}
+
+/* ============================================================
+   EDLER REDESIGN — KPI-Karten Premium (2026-06)
+   Mehr Tiefe, moderne Squircle-Icons, sauberes Raster
+   ============================================================ */
+
+/* Sauberes Raster: 6-up (xl) → 3-up (lg) → 2-up (sm), keine Waisen-Karte */
+.finanzcockpit__kpi-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+@media (max-width: 1320px) { .finanzcockpit__kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px)  { .finanzcockpit__kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* Karte: dezenter Verlauf + weiche Tiefe statt flachem Dunkel */
+.finanzcockpit__kpi-card {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--ds-bg-elevated) 70%, transparent) 0%,
+    var(--ds-bg-card) 100%);
+  border: 1px solid var(--ds-border);
+  border-radius: 16px;
+  padding: 0.95rem 1rem 1rem;
+  gap: 0.6rem;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+    0 2px 10px rgba(0, 0, 0, 0.16);
+}
+/* Gold-Hairline auf KPI-Karten entfernen → ruhiger, edler */
+.finanzcockpit__kpi-card::before { display: none; }
+
+.finanzcockpit__kpi-card--clickable:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--ds-accent) 45%, var(--ds-border));
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.finanzcockpit__kpi-meta { gap: 0.55rem; align-items: center; }
+
+/* Squircle-Icon statt Kreis = moderner */
+.finanzcockpit__kpi-icon {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 11px;
+}
+.finanzcockpit__kpi-icon svg { width: 17px; height: 17px; }
+
+.finanzcockpit__kpi-label {
+  font-size: 0.64rem;
+  letter-spacing: 0.13em;
+  color: var(--ds-text-muted);
+}
+
+/* Zahl als Held: tabellarische Ziffern, enger, kräftiger */
+.finanzcockpit__kpi-value {
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-text);
+}
+
+/* Trend-Zeile farbcodiert nach Ton */
+.finanzcockpit__kpi-detail {
+  font-size: 0.68rem;
+  color: var(--ds-text-faint);
+}
+.finanzcockpit__kpi-card--positive .finanzcockpit__kpi-detail { color: var(--ds-success); }
+.finanzcockpit__kpi-card--negative .finanzcockpit__kpi-detail { color: var(--ds-danger); }
+.finanzcockpit__kpi-card--warning  .finanzcockpit__kpi-detail { color: #f59e0b; }
+
+/* Icon-Tönung kräftiger & konsistent (Squircle) */
+.finanzcockpit__kpi-icon {
+  background: color-mix(in srgb, var(--ds-accent) 14%, transparent);
+  color: var(--ds-accent);
+}
+.finanzcockpit__kpi-card--positive .finanzcockpit__kpi-icon { color: var(--ds-success); background: color-mix(in srgb, var(--ds-success) 16%, transparent); }
+.finanzcockpit__kpi-card--negative .finanzcockpit__kpi-icon { color: var(--ds-danger);  background: color-mix(in srgb, var(--ds-danger) 16%, transparent); }
+.finanzcockpit__kpi-card--warning  .finanzcockpit__kpi-icon { color: #f59e0b;            background: color-mix(in srgb, #f59e0b 16%, transparent); }
+
+/* Mitglieder-Mini-Karten an Premium-Look angleichen */
+.finanzcockpit__kpi-card--mini {
+  padding: 0.85rem 0.95rem 0.9rem;
+}
+.finanzcockpit__kpi-card--mini .finanzcockpit__kpi-value {
+  font-size: 1.4rem;
+}
+
+/* ============================================================
+   NEUE ANORDNUNG: Übersicht → Aktionen → Grafiken (2026-06)
+   Klar gestapelt, Grafiken gleich groß
+   ============================================================ */
+
+/* AKTIONEN: 3 Gruppen horizontal in einer Leiste */
+.fc__actions-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  background: var(--surface-3);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--comp-radius-xl);
+  padding: 0.95rem 1.1rem;
+  position: relative;
+  overflow: hidden;
+}
+.fc__actions-bar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gradient-gold);
+  opacity: 0.6;
+}
+.fc__actions-bar .fc__action-group {
+  padding: 0 1.1rem;
+  border-left: 1px solid var(--ds-border-subtle);
+}
+.fc__actions-bar .fc__action-group:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+.fc__actions-bar .fc__action-group:last-child {
+  padding-right: 0;
+}
+
+@media (max-width: 900px) {
+  .fc__actions-bar { grid-template-columns: 1fr; gap: 0.75rem; }
+  .fc__actions-bar .fc__action-group {
+    padding: 0.75rem 0 0;
+    border-left: none;
+    border-top: 1px solid var(--ds-border-subtle);
+  }
+  .fc__actions-bar .fc__action-group:first-child { padding-top: 0; border-top: none; }
+}
+
+/* ============================================================
+   KPI-DETAIL-MODAL (Klick auf Kennzahl → größeres Popup)
+   Opake dunkle Fläche (nie var(--bg-card))
+   ============================================================ */
+.fc__modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  animation: fcModalFade 0.16s ease;
+}
+.fc__modal {
+  position: relative;
+  width: min(460px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(30, 30, 52, 0.99) 0%, rgba(20, 20, 36, 0.99) 100%);
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 22%, var(--ds-border));
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  padding: 1.5rem 1.5rem 1.3rem;
+  animation: fcModalPop 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.fc__modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gradient-gold);
+  border-radius: 18px 18px 0 0;
+}
+.fc__modal-close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.95rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ds-text-muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.fc__modal-close:hover { background: rgba(255, 255, 255, 0.12); color: var(--ds-text); }
+
+.fc__modal-head {
+  margin-bottom: 1.1rem;
+  padding-right: 2rem;
+}
+.fc__modal-eyebrow {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ds-text-muted);
+  margin-bottom: 0.3rem;
+}
+.fc__modal-title {
+  margin: 0 0 0.55rem 0;
+  font-size: 1.05rem;
+  color: var(--ds-text);
+}
+.fc__modal-hero {
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-accent);
+  line-height: 1.05;
+}
+.fc__modal-rows {
+  display: flex;
+  flex-direction: column;
+}
+.fc__modal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--ds-border-subtle, rgba(255,255,255,0.06));
+}
+.fc__modal-row:last-child { border-bottom: none; }
+.fc__modal-row-label {
+  font-size: 0.85rem;
+  color: var(--ds-text-secondary);
+}
+.fc__modal-row-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ds-text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.fc__modal-row-value.is-positive { color: var(--ds-success); }
+.fc__modal-row-value.is-negative { color: var(--ds-danger); }
+.fc__modal-row-value.is-warning  { color: #f59e0b; }
+
+.fc__modal-cta {
+  margin-top: 1.1rem;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 40%, transparent);
+  border-radius: 11px;
+  background: var(--ds-accent-15);
+  color: var(--ds-accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.fc__modal-cta:hover { background: var(--ds-accent-25, var(--ds-accent-15)); transform: translateY(-1px); }
+
+@keyframes fcModalFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fcModalPop {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Embed-Toolbar: Periode-Auswahl im eingebetteten Cockpit (Hub) */
+.fc__embed-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.1rem;
+}
+.fc__embed-period-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  color: var(--ds-text-muted);
+}
+.fc__embed-period-info svg { color: var(--ds-accent); }
+
+/* Insights-Karte: volle Breite (sonst zu schmal & unlesbar) */
+.finanzcockpit__details .finanzcockpit__insights {
+  grid-column: 1 / -1;
+}
+/* Einschätzungen mehrspaltig, wenn breit → kurze Texte füllen die Fläche */
+.finanzcockpit__details .finanzcockpit__insights .finanzcockpit__insight-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.4rem 0.7rem;
+}
+
+/* GRAFIKEN: zwei gleich große Charts nebeneinander */
+.fc__charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  align-items: stretch;
+}
+.fc__charts-grid > .finanzcockpit-card {
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 900px) {
+  .fc__charts-grid { grid-template-columns: 1fr; }
 }

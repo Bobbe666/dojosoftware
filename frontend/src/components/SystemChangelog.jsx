@@ -16,6 +16,32 @@ import {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.5',
+    date: '2026-06-03',
+    type: 'feature',
+    title: 'T-Shirt-Bestellvorlage, Finanzcockpit-Überarbeitung & großer Code-Cleanup',
+    description: 'Neue eigenständige T-Shirt-Bestellvorlage (analog zur Gi-Vorlage) mit Schnitt-/Größen-/Veredelungs-Auswahl, Lieferant & Preisen, Datei-Upload und interaktiver Vorschau. Dazu das überarbeitete Finanzcockpit, korrigierte Auswertungen/Lohnabrechnung sowie ein umfangreicher technischer Cleanup (Aufteilung großer Komponenten, Entfernen alter Backup-Dateien).',
+    highlights: [
+      '👕 T-SHIRT-BESTELLVORLAGE: eigene Vorlage parallel zur Gi — Ausschnitt (Rundhals/V), Ärmel (kurz/lang/ärmellos), Passform; Größen Kinder & Erwachsene mit Mengen; Veredelung (Druck/Stickerei/Flex) je Position (Brust links/mittig, Rücken, Ärmel li/re) mit Maßen',
+      '🖼 INTERAKTIVE VORSCHAU: parametrische T-Shirt-Skizze (Vorder-/Rückseite) — Logos werden an ihrer Position eingeblendet und können per Drag frei verschoben werden; eigene Vorlage (Photoshop/KI-Bild) als Hintergrund hochladbar',
+      '📎 DATEI-UPLOAD: Designdateien/Logos je Position und allgemein — werden ins PDF eingebettet',
+      '💶 LIEFERANT & PREISE: Lieferant aus Liste/Freitext, Stückpreise (Kinder/Erwachsene), Währung (EUR/USD/CHF) und automatischer Gesamtpreis — auch im PDF',
+      '📊 FINANZCOCKPIT: elegantere KPI-Karten, klickbare Detail-Popups, aufgeräumte Anordnung (Karten → Übersicht → Grafiken), Zeitraum-Umschalter (Woche/Monat/Quartal/Jahr), echte Daten statt Platzhalter',
+      '🧹 CODE-CLEANUP: große Komponenten (Buchhaltung, Prüfungen, Stilverwaltung, Dojo-Lizenzverwaltung) in fokussierte Tab-Komponenten aufgeteilt; ~62.000 Zeilen alter Backup-/Altdateien entfernt',
+      '🛠 FIXES: Lohnabrechnung (Spalten-Mapping & Dojo-Filter), Jahresübersicht, Gi-Bestellung (mehrseitiger Druck, Vorschau, Datei-Löschen) korrigiert',
+    ],
+    details: 'Neu: frontend/src/components/TShirtBestellvorlage.jsx (+ buildTShirtPdf) + styles/TShirtBestellvorlage.css. Speicherung in gi_bestellungen mit formdata._typ=\'tshirt\' (kein DB-Schema-Change). Interaktive Vorschau als React-SVG mit Pointer-Drag (Position-Override pro Veredelung). Eigene Mockup-Bilder + Logos als Base64 im formdata, ins PDF eingebettet. BestellungenTab.jsx mit Button „+ Neue T-Shirt-Bestellung", typ-bewusster Vorschau/Bearbeiten. Cleanup: Extraktion von Buchhaltung*/Pruefungs*/Stil*/Lizenz*-Tab-Komponenten; Löschen von _backup_pre_refactor/, *.bak, *.old, *.backup-Dateien. Backend: lohnabrechnung.js (personal-Spalten personal_id/grundgehalt/status, dojo.dojoname), jahresuebersicht.js (Datumsquelle beitraege).',
+    files: [
+      'frontend/src/components/TShirtBestellvorlage.jsx (neu)',
+      'frontend/src/styles/TShirtBestellvorlage.css (neu)',
+      'frontend/src/components/BestellungenTab.jsx',
+      'frontend/src/components/{Finanzcockpit,Auswertungen}.jsx',
+      'frontend/src/components/{Buchhaltung,Pruefungs,Stil,Lizenz}*Tab.jsx (extrahiert)',
+      'backend/routes/{auswertungen,finanzcockpit,jahresuebersicht,lohnabrechnung}.js',
+      'version.js', 'SystemChangelog.jsx',
+    ],
+  },
+  {
     version: '3.0.4',
     date: '2026-06-02',
     type: 'major',

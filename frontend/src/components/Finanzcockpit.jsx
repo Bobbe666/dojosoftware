@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   LineChart,
@@ -51,7 +52,7 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#f97316'];
 
-const Finanzcockpit = () => {
+const Finanzcockpit = ({ embed = false } = {}) => {
   const navigate = useNavigate();
   const { updateTrigger } = useMitgliederUpdate();
   const { getDojoFilterParam, activeDojo, filter, dojos, switchDojo, setFilter } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
@@ -66,6 +67,15 @@ const Finanzcockpit = () => {
   const [tarifData, setTarifData] = useState([]);
   const [alerts, setAlerts] = useState({ ruecklastschriften: 0 });
   const [aktiverChartTab, setAktiverChartTab] = useState('zahlungsarten');
+  const [openKpi, setOpenKpi] = useState(null); // KPI-Detail-Modal
+
+  // Escape schließt das Detail-Modal
+  useEffect(() => {
+    if (!openKpi) return;
+    const onKey = (e) => { if (e.key === 'Escape') setOpenKpi(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openKpi]);
 
   useEffect(() => {
     loadFinanzStats();
@@ -345,6 +355,160 @@ const Finanzcockpit = () => {
     ? (stats.verkaeufeEinnahmen || 0) / stats.anzahlVerkaeufe
     : 0;
 
+  // Detail-Inhalte für das KPI-Modal (mehr Details beim Klick auf eine Kennzahl)
+  const periodRange = stats ? `${formatDate(stats.dateStart)} – ${formatDate(stats.dateEnd)}` : '';
+  const kpiDetailDefs = stats ? {
+    revenue: {
+      title: 'Gesamteinnahmen', subtitle: `${periodLabel} · ${periodRange}`,
+      hero: formatCurrency(stats.gesamteinnahmen),
+      rows: [
+        { label: 'Vertragseinnahmen (wiederkehrend)', value: formatCurrency(stats.monatlicheEinnahmen) },
+        { label: 'Verkäufe', value: formatCurrency(stats.verkaeufeEinnahmen) },
+        { label: 'Rechnungen (bezahlt)', value: formatCurrency(stats.rechnungenEinnahmen) },
+        { label: 'Zahlungen', value: formatCurrency(stats.zahlungenEinnahmen) },
+        { label: 'Zahlläufe', value: formatCurrency(stats.zahllaeufeEinnahmen) },
+        { label: 'Trend vs. Vorperiode', value: `${stats.einnahmenTrend >= 0 ? '+' : ''}${(stats.einnahmenTrend ?? 0).toFixed(1)} %`, tone: stats.einnahmenTrend >= 0 ? 'positive' : 'negative' }
+      ],
+      route: '/dashboard/jahresuebersicht', routeLabel: 'Jahresübersicht öffnen'
+    },
+    expenses: {
+      title: 'Gesamtausgaben', subtitle: `${periodLabel} · ${periodRange}`,
+      hero: formatCurrency(stats.gesamteAusgaben),
+      rows: [
+        { label: 'Anzahl Buchungen', value: formatNumber(stats.anzahlAusgaben) },
+        { label: 'Trend vs. Vorperiode', value: stats.ausgabenTrend !== 0 ? `${stats.ausgabenTrend > 0 ? '+' : ''}${(stats.ausgabenTrend ?? 0).toFixed(1)} %` : 'Keine Vergleichsdaten', tone: stats.ausgabenTrend > 0 ? 'negative' : 'positive' }
+      ],
+      route: '/dashboard/ausgaben', routeLabel: 'Ausgaben öffnen'
+    },
+    cashflow: {
+      title: 'Cashflow', subtitle: `${periodLabel} · ${periodRange}`,
+      hero: formatCurrency(stats.cashflow),
+      rows: [
+        { label: 'Einnahmen', value: formatCurrency(stats.gesamteinnahmen), tone: 'positive' },
+        { label: 'Ausgaben', value: formatCurrency(stats.gesamteAusgaben), tone: 'negative' },
+        { label: 'Marge', value: `${(stats.cashflowProzent ?? 0).toFixed(1)} %`, tone: stats.cashflow >= 0 ? 'positive' : 'negative' }
+      ],
+      route: '/dashboard/euer', routeLabel: 'EÜR öffnen'
+    },
+    'open-invoices': {
+      title: 'Offene Rechnungen', subtitle: 'Aktueller Stand',
+      hero: formatNumber(stats.offeneRechnungen),
+      rows: [
+        { label: 'Offener Betrag', value: formatCurrency(stats.offeneRechnungenBetrag), tone: stats.offeneRechnungenBetrag > 0 ? 'warning' : 'positive' },
+        { label: 'Überfällige Rechnungen', value: formatNumber(stats.ueberfaelligeRechnungen), tone: stats.ueberfaelligeRechnungen > 0 ? 'negative' : 'positive' },
+        { label: 'Mahnfähige Beiträge', value: `${formatNumber(stats.ausstehendeZahlungen)} · ${formatCurrency(stats.ausstehendeZahlungenBetrag)}`, tone: stats.ausstehendeZahlungen > 0 ? 'warning' : 'positive' }
+      ],
+      route: '/dashboard/rechnungen', routeLabel: 'Rechnungen öffnen'
+    },
+    contracts: {
+      title: 'Aktive Verträge', subtitle: 'Wiederkehrende Einnahmen',
+      hero: formatNumber(stats.anzahlVertraege),
+      rows: [
+        { label: 'Monatlich', value: formatCurrency(stats.monatlicheEinnahmen) },
+        { label: 'Quartal (×3)', value: formatCurrency(stats.quartalsEinnahmen) },
+        { label: 'Jahr (×12)', value: formatCurrency(stats.jahresEinnahmen) },
+        { label: 'Ø Beitrag pro Vertrag', value: stats.anzahlVertraege > 0 ? formatCurrency(stats.monatlicheEinnahmen / stats.anzahlVertraege) : '–' }
+      ],
+      route: '/dashboard/beitraege', routeLabel: 'Beiträge verwalten'
+    },
+    sales: {
+      title: 'Verkäufe', subtitle: `${periodLabel} · ${periodRange}`,
+      hero: formatNumber(stats.anzahlVerkaeufe),
+      rows: [
+        { label: 'Umsatz', value: formatCurrency(stats.verkaeufeEinnahmen) },
+        { label: 'Ø pro Verkauf', value: formatCurrency(averageSale) },
+        { label: 'davon Bar', value: formatCurrency(stats.barEinnahmen) },
+        { label: 'davon Karte', value: formatCurrency(stats.kartenEinnahmen) }
+      ],
+      route: '/dashboard/tresen', routeLabel: 'Tresen / Verkäufe öffnen'
+    },
+    // ── Übersichts-Karten (Klick auf Karte → Detail) ──
+    income: {
+      title: 'Einnahmen-Übersicht', subtitle: 'Wiederkehrende & variable Umsätze',
+      hero: formatCurrency(stats.monatlicheEinnahmen),
+      rows: [
+        { label: 'Monatlich', value: formatCurrency(stats.monatlicheEinnahmen) },
+        { label: 'Quartal (×3)', value: formatCurrency(stats.quartalsEinnahmen) },
+        { label: 'Jahr (×12)', value: formatCurrency(stats.jahresEinnahmen) },
+        { label: 'Verkäufe (Periode)', value: formatCurrency(stats.verkaeufeEinnahmen) },
+        { label: 'Rechnungen (bezahlt)', value: formatCurrency(stats.rechnungenEinnahmen) },
+        { label: 'Trend vs. Vorperiode', value: `${stats.einnahmenTrend >= 0 ? '+' : ''}${(stats.einnahmenTrend ?? 0).toFixed(1)} %`, tone: stats.einnahmenTrend >= 0 ? 'positive' : 'negative' }
+      ],
+      route: '/dashboard/jahresuebersicht', routeLabel: 'Jahresübersicht öffnen'
+    },
+    payments: {
+      title: 'Zahlungsarten', subtitle: 'Verteilung nach Einnahmen',
+      hero: formatCurrency(
+        (stats.barEinnahmen || 0) + (stats.kartenEinnahmen || 0) + (stats.lastschriftEinnahmen || 0) +
+        (stats.ueberweisungEinnahmen || 0) + (stats.paypalEinnahmen || 0) + (stats.sonstigeEinnahmen || 0)
+      ),
+      rows: [
+        { label: 'Lastschrift / SEPA', value: formatCurrency(stats.lastschriftEinnahmen) },
+        { label: 'Bar', value: formatCurrency(stats.barEinnahmen) },
+        { label: 'Karte', value: formatCurrency(stats.kartenEinnahmen) },
+        { label: 'Überweisung', value: formatCurrency(stats.ueberweisungEinnahmen) },
+        { label: 'PayPal', value: formatCurrency(stats.paypalEinnahmen) },
+        { label: 'Sonstige', value: formatCurrency(stats.sonstigeEinnahmen) }
+      ].filter(r => r.value !== formatCurrency(0)),
+      route: '/dashboard/tresen', routeLabel: 'Verkäufe / Kasse öffnen'
+    },
+    'open-posten': {
+      title: 'Offene Posten', subtitle: 'Forderungen & offene Beiträge',
+      hero: formatCurrency(stats.offeneRechnungenBetrag),
+      rows: [
+        { label: 'Offener Betrag', value: formatCurrency(stats.offeneRechnungenBetrag), tone: stats.offeneRechnungenBetrag > 0 ? 'warning' : 'positive' },
+        { label: 'Offene Rechnungen', value: formatNumber(stats.offeneRechnungen) },
+        { label: 'Überfällige Rechnungen', value: formatNumber(stats.ueberfaelligeRechnungen), tone: stats.ueberfaelligeRechnungen > 0 ? 'negative' : 'positive' },
+        { label: 'Mahnfähige Beiträge', value: `${formatNumber(stats.ausstehendeZahlungen)} · ${formatCurrency(stats.ausstehendeZahlungenBetrag)}`, tone: stats.ausstehendeZahlungen > 0 ? 'warning' : 'positive' }
+      ],
+      route: '/dashboard/rechnungen', routeLabel: 'Rechnungen öffnen'
+    }
+  } : {};
+
+  if (memberStats) {
+    kpiDetailDefs['avg-beitrag'] = {
+      title: 'Ø Monatsbeitrag', subtitle: 'Über alle aktiven Verträge',
+      hero: formatCurrency(memberStats.avgMonatsbeitrag),
+      rows: [
+        { label: 'Aktive Verträge', value: formatNumber(memberStats.totalVertraege) },
+        { label: 'Monatsvolumen gesamt', value: formatCurrency((memberStats.avgMonatsbeitrag || 0) * (memberStats.totalVertraege || 0)) }
+      ],
+      route: '/dashboard/beitraege', routeLabel: 'Beiträge verwalten'
+    };
+    kpiDetailDefs['sepa-rate'] = {
+      title: 'SEPA-Quote', subtitle: 'Anteil Lastschrift-Zahler',
+      hero: `${memberStats.sepaRate} %`,
+      rows: [
+        { label: 'Mit SEPA-Mandat', value: formatNumber(memberStats.sepaCount), tone: 'positive' },
+        { label: 'Ohne SEPA-Mandat', value: formatNumber((memberStats.totalVertraege || 0) - (memberStats.sepaCount || 0)), tone: 'warning' },
+        { label: 'Verträge gesamt', value: formatNumber(memberStats.totalVertraege) }
+      ],
+      route: '/dashboard/mitglieder-filter/ohne-sepa', routeLabel: 'Mitglieder ohne SEPA anzeigen'
+    };
+    if (memberStats.inkassoQuote !== null) {
+      kpiDetailDefs['inkasso'] = {
+        title: 'Inkasso-Quote', subtitle: 'Bezahlte Rechnungen (ohne Stripe)',
+        hero: `${memberStats.inkassoQuote} %`,
+        rows: [
+          { label: 'Bezahlt', value: formatNumber(memberStats.bezahltRechnungen), tone: 'positive' },
+          { label: 'Offen', value: formatNumber((memberStats.totalRechnungen || 0) - (memberStats.bezahltRechnungen || 0)), tone: 'warning' },
+          { label: 'Rechnungen gesamt', value: formatNumber(memberStats.totalRechnungen) }
+        ],
+        route: '/dashboard/rechnungen', routeLabel: 'Rechnungen öffnen'
+      };
+    }
+    kpiDetailDefs['netto-wachstum'] = {
+      title: 'Netto-Wachstum', subtitle: `${periodLabel} · ${periodRange}`,
+      hero: `${memberStats.nettoWachstum > 0 ? '+' : ''}${memberStats.nettoWachstum}`,
+      rows: [
+        { label: 'Neue Verträge', value: `+${formatNumber(memberStats.neueMitglieder)}`, tone: 'positive' },
+        { label: 'Beendete Verträge', value: `−${formatNumber(memberStats.verloreneMitglieder)}`, tone: 'negative' },
+        { label: 'Netto', value: `${memberStats.nettoWachstum > 0 ? '+' : ''}${memberStats.nettoWachstum}`, tone: memberStats.nettoWachstum >= 0 ? 'positive' : 'negative' }
+      ],
+      route: '/dashboard/mitglieder', routeLabel: 'Mitglieder öffnen'
+    };
+  }
+
   const kpiCards = stats ? [
     {
       id: 'revenue',
@@ -475,10 +639,11 @@ const Finanzcockpit = () => {
       route: '/dashboard/rechnungen'
     },
     {
-      label: 'Ausstehende Beiträge',
+      label: 'Mahnfähige Beiträge',
       value: formatCurrency(stats.ausstehendeZahlungenBetrag),
-      sublabel: `${formatNumber(stats.ausstehendeZahlungen)} Verträge`,
-      route: '/dashboard/beitraege'
+      sublabel: `${formatNumber(stats.ausstehendeZahlungen)} Mahnfälle`,
+      tone: stats.ausstehendeZahlungen > 0 ? 'warning' : 'positive',
+      route: '/dashboard/mahnwesen'
     }
   ] : [];
 
@@ -636,7 +801,21 @@ const Finanzcockpit = () => {
   }
 
   return (
-    <div className="finanzcockpit">
+    <div className={`finanzcockpit${embed ? ' finanzcockpit--embed' : ''}`}>
+      {embed && (
+        <div className="fc__embed-toolbar">
+          <div className="finanzcockpit__period-selector">
+            <button className={selectedPeriod === 'week' ? 'is-active' : ''} onClick={() => setSelectedPeriod('week')}>Woche</button>
+            <button className={selectedPeriod === 'month' ? 'is-active' : ''} onClick={() => setSelectedPeriod('month')}>Monat</button>
+            <button className={selectedPeriod === 'quarter' ? 'is-active' : ''} onClick={() => setSelectedPeriod('quarter')}>Quartal</button>
+            <button className={selectedPeriod === 'year' ? 'is-active' : ''} onClick={() => setSelectedPeriod('year')}>Jahr</button>
+          </div>
+          <span className="fc__embed-period-info">
+            <Calendar size={14} /> {formatDate(stats.dateStart)} – {formatDate(stats.dateEnd)}
+          </span>
+        </div>
+      )}
+      {!embed && (
       <header className="finanzcockpit-card finanzcockpit__header">
         <div className="finanzcockpit__header-top">
           <div className="finanzcockpit__headline">
@@ -671,6 +850,12 @@ const Finanzcockpit = () => {
 
             <div className="finanzcockpit__period-selector">
               <button
+                className={selectedPeriod === 'week' ? 'is-active' : ''}
+                onClick={() => setSelectedPeriod('week')}
+              >
+                Woche
+              </button>
+              <button
                 className={selectedPeriod === 'month' ? 'is-active' : ''}
                 onClick={() => setSelectedPeriod('month')}
               >
@@ -696,21 +881,22 @@ const Finanzcockpit = () => {
           </div>
         </div>
       </header>
+      )}
 
       <section className="finanzcockpit__kpi-grid">
-        {kpiCards.map(({ id, icon: Icon, label, value, detail, tone, route }) => (
+        {kpiCards.map(({ id, icon: Icon, label, value, detail, tone }) => (
           <div
             key={id}
-            className={`finanzcockpit-card finanzcockpit__kpi-card finanzcockpit__kpi-card--${tone}${route ? ' finanzcockpit__kpi-card--clickable' : ''}`}
-            onClick={() => route && navigate(route)}
-            title={route ? `Zu ${label}` : undefined}
+            className={`finanzcockpit-card finanzcockpit__kpi-card finanzcockpit__kpi-card--${tone} finanzcockpit__kpi-card--clickable`}
+            onClick={() => setOpenKpi(id)}
+            title={`${label} – Details anzeigen`}
           >
             <div className="finanzcockpit__kpi-meta">
               <div className="finanzcockpit__kpi-icon">
                 <Icon size={18} />
               </div>
               <span className="finanzcockpit__kpi-label">{label}</span>
-              {route && <ChevronRight size={13} className="finanzcockpit__kpi-arrow" />}
+              <ChevronRight size={13} className="finanzcockpit__kpi-arrow" />
             </div>
             <div className="finanzcockpit__kpi-value">{value}</div>
             <span className="finanzcockpit__kpi-detail">{detail}</span>
@@ -723,10 +909,16 @@ const Finanzcockpit = () => {
           <p className="finanzcockpit__member-section-label">Mitglieder-Kennzahlen</p>
           <div className="finanzcockpit__member-kpi-grid">
             {memberKpiCards.map(({ id, icon: Icon, label, value, detail, tone, progress }) => (
-              <div key={id} className={`finanzcockpit-card finanzcockpit__kpi-card finanzcockpit__kpi-card--mini finanzcockpit__kpi-card--${tone}`}>
+              <div
+                key={id}
+                className={`finanzcockpit-card finanzcockpit__kpi-card finanzcockpit__kpi-card--mini finanzcockpit__kpi-card--${tone}${kpiDetailDefs[id] ? ' finanzcockpit__kpi-card--clickable' : ''}`}
+                onClick={() => kpiDetailDefs[id] && setOpenKpi(id)}
+                title={kpiDetailDefs[id] ? `${label} – Details anzeigen` : undefined}
+              >
                 <div className="finanzcockpit__kpi-meta">
                   <div className="finanzcockpit__kpi-icon"><Icon size={16} /></div>
                   <span className="finanzcockpit__kpi-label">{label}</span>
+                  {kpiDetailDefs[id] && <ChevronRight size={12} className="finanzcockpit__kpi-arrow" />}
                 </div>
                 <div className="finanzcockpit__kpi-value">{value}</div>
                 <span className="finanzcockpit__kpi-detail">{detail}</span>
@@ -752,132 +944,9 @@ const Finanzcockpit = () => {
         </section>
       )}
 
-      <div className="fc__main-grid">
-        {/* Linke Spalte: Charts + Insights */}
-        <div className="fc__charts-col">
-          <div className="finanzcockpit-card">
-            <div className="finanzcockpit__card-header">
-              <div>
-                <span className="finanzcockpit__card-eyebrow">Performance</span>
-                <h3>Umsatz-Entwicklung</h3>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                <XAxis dataKey="label" stroke="rgba(255,255,255,0.5)" />
-                <YAxis stroke="rgba(255,255,255,0.5)" tickFormatter={formatCurrencyCompact} />
-                <Tooltip contentStyle={{ backgroundColor: 'var(--modal-bg-dark)', border: '1px solid var(--border-accent)', borderRadius: '12px', color: 'var(--text-1)' }} formatter={(value) => formatCurrency(value)} />
-                <Legend />
-                <Line type="monotone" dataKey="umsatz" stroke="#ffd700" strokeWidth={2} name="Umsatz" dot={{ fill: '#ffd700', r: 3 }} activeDot={{ r: 5 }} />
-                <Line type="monotone" dataKey="trend" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" name="Trend" dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="fc__charts-bottom-row">
-            <div className="finanzcockpit-card">
-              <div className="finanzcockpit__card-header">
-                <div>
-                  <span className="finanzcockpit__card-eyebrow">Aufschlüsselung</span>
-                  <h3>{aktiverChartTab === 'zahlungsarten' ? 'Zahlungsarten' : 'Einnahmen'}</h3>
-                </div>
-                <div className="fc__chart-tabs">
-                  <button className={aktiverChartTab === 'zahlungsarten' ? 'is-active' : ''} onClick={() => setAktiverChartTab('zahlungsarten')}>
-                    <PieChartIcon size={13} /> Zahlungsarten
-                  </button>
-                  <button className={aktiverChartTab === 'einnahmen' ? 'is-active' : ''} onClick={() => setAktiverChartTab('einnahmen')}>
-                    <BarChart3 size={13} /> Aufschlüsselung
-                  </button>
-                </div>
-              </div>
-              {aktiverChartTab === 'zahlungsarten' && paymentMethodData.length > 0 && (
-                <ResponsiveContainer width="100%" height={180}>
-                  <PieChart>
-                    <Pie data={paymentMethodData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`} outerRadius={65} dataKey="value">
-                      {paymentMethodData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: 'var(--modal-bg-dark)', border: '1px solid var(--border-accent)', borderRadius: '12px', color: 'var(--text-1)' }} formatter={(value) => formatCurrency(value)} />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-              {aktiverChartTab === 'zahlungsarten' && paymentMethodData.length === 0 && (
-                <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>
-              )}
-              {aktiverChartTab === 'einnahmen' && incomeBreakdownData.length > 0 && (
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={incomeBreakdownData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" />
-                    <YAxis stroke="rgba(255,255,255,0.5)" tickFormatter={formatCurrencyCompact} />
-                    <Tooltip content={<CustomIncomeTooltip />} />
-                    <Bar dataKey="value" fill="#ffd700" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-              {aktiverChartTab === 'einnahmen' && incomeBreakdownData.length === 0 && (
-                <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>
-              )}
-            </div>
-
-            <div className="finanzcockpit-card finanzcockpit__insights">
-              <div className="finanzcockpit__card-header">
-                <div>
-                  <span className="finanzcockpit__card-eyebrow">Insights</span>
-                  <h3>Einschätzungen</h3>
-                </div>
-              </div>
-              <ul className="finanzcockpit__insight-list">
-                {[...insights, ...memberInsights].map(({ id, icon: Icon, title, description, tone }) => (
-                  <li key={id}>
-                    <div className={`finanzcockpit__insight-icon${tone ? ` finanzcockpit__insight-icon--${tone}` : ''}`}><Icon size={13} /></div>
-                    <div>
-                      <p className="finanzcockpit__insight-title">{title}</p>
-                      <p className="finanzcockpit__insight-description">{description}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Rechte Spalte: Aktionen */}
-        <div className="fc__actions-col">
-          <div className="fc__action-groups">
-            <div className="fc__action-group">
-              <h3 className="fc__action-group-title">Abrechnung</h3>
-              <div className="fc__action-list">
-                <ActionCard icon={CreditCard} label="Lastschriftlauf" desc="SEPA-Einzüge starten" iconColor="#3b82f6" onClick={() => navigate('/dashboard/lastschriftlauf')} />
-                <ActionCard icon={AlertCircle} label="Mahnwesen" desc="Überfällige Zahlungen" iconColor="#f59e0b" onClick={() => navigate('/dashboard/mahnwesen')} badge={stats?.ausstehendeZahlungen || 0} />
-                <ActionCard icon={RotateCcw} label="Rücklastschriften" desc="Fehlgeschlagene Abbuchungen" iconColor="#ef4444" onClick={() => navigate('/dashboard/ruecklastschriften')} badge={alerts.ruecklastschriften} />
-                <ActionCard icon={DollarSign} label="Beiträge verwalten" desc="Verträge und Tarife" iconColor="#10b981" onClick={() => navigate('/dashboard/beitraege')} />
-                <ActionCard icon={Upload} label="Kontoauszug importieren" desc="CSV / MT940 importieren" iconColor="#f97316" onClick={() => navigate('/dashboard/kontoauszug-import')} />
-              </div>
-            </div>
-
-            <div className="fc__action-group">
-              <h3 className="fc__action-group-title">Mitglieder-Analysen</h3>
-              <div className="fc__action-list">
-                <ActionCard icon={AlertCircle} label="Ohne SEPA-Mandat" desc="Mitglieder ohne Einzugsermächtigung" iconColor="#ef4444" onClick={() => navigate('/dashboard/mitglieder-filter/ohne-sepa')} />
-                <ActionCard icon={FileText} label="Ohne Vertrag" desc="Mitglieder ohne aktiven Vertrag" iconColor="#f59e0b" onClick={() => navigate('/dashboard/mitglieder-filter/ohne-vertrag')} />
-                <ActionCard icon={AlertTriangle} label="Tarif-Abweichungen" desc="Soll/Ist-Vergleich der Beiträge" iconColor="#8b5cf6" onClick={() => navigate('/dashboard/mitglieder-filter/tarif-abweichung')} />
-                <ActionCard icon={CreditCard} label="Nach Zahlungsweise" desc="Gruppiert nach Bar / Karte / SEPA" iconColor="#3b82f6" onClick={() => navigate('/dashboard/mitglieder-filter/zahlungsweisen')} />
-              </div>
-            </div>
-
-            <div className="fc__action-group">
-              <h3 className="fc__action-group-title">Dokumente & Export</h3>
-              <div className="fc__action-list">
-                <ActionCard icon={FileSpreadsheet} label="Dokument-Vorlagen" desc="Briefe und E-Mails verwalten" iconColor="#8B0000" onClick={() => navigate('/dashboard/vorlagen')} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      {/* ══ ÜBERSICHT: Kennzahlen-Karten + Insights ══ */}
       <section className="finanzcockpit__details">
-        <div className="finanzcockpit-card finanzcockpit__detail-card finanzcockpit__detail-card--clickable" onClick={() => navigate('/dashboard/jahresuebersicht')}>
+        <div className="finanzcockpit-card finanzcockpit__detail-card finanzcockpit__detail-card--clickable" onClick={() => setOpenKpi('income')}>
           <div className="finanzcockpit__detail-header">
             <TrendingUp size={16} />
             <div>
@@ -901,13 +970,14 @@ const Finanzcockpit = () => {
           </div>
         </div>
 
-        <div className="finanzcockpit-card finanzcockpit__detail-card">
+        <div className="finanzcockpit-card finanzcockpit__detail-card finanzcockpit__detail-card--clickable" onClick={() => setOpenKpi('payments')}>
           <div className="finanzcockpit__detail-header">
             <PieChartIcon size={16} />
             <div>
               <h3>Zahlungsarten</h3>
               <p>Verteilung nach Einnahmen</p>
             </div>
+            <ChevronRight size={14} className="finanzcockpit__detail-arrow" />
           </div>
           <div>
             {zahlungsartenRows.length > 0 ? zahlungsartenRows.map(row => {
@@ -920,7 +990,7 @@ const Finanzcockpit = () => {
                       <span className="fc__payment-row-label">{row.label}</span>
                     </div>
                     <div className="fc__payment-row-right">
-                      <span className="fc__payment-row-pct">{pct}\u202f%</span>
+                      <span className="fc__payment-row-pct">{`${pct}\u202f%`}</span>
                       <span className="fc__payment-row-value">{formatCurrency(row.value)}</span>
                     </div>
                   </div>
@@ -933,20 +1003,21 @@ const Finanzcockpit = () => {
           </div>
         </div>
 
-        <div className="finanzcockpit-card finanzcockpit__detail-card">
+        <div className="finanzcockpit-card finanzcockpit__detail-card finanzcockpit__detail-card--clickable" onClick={() => setOpenKpi('open-posten')}>
           <div className="finanzcockpit__detail-header">
             <FileText size={16} />
             <div>
               <h3>Offene Posten</h3>
               <p>Forderungen und offene Beiträge</p>
             </div>
+            <ChevronRight size={14} className="finanzcockpit__detail-arrow" />
           </div>
           <div className="finanzcockpit__metrics-list">
             {dueMetrics.map(metric => (
               <div
                 key={metric.label}
                 className={`finanzcockpit__metric-row${metric.route ? ' finanzcockpit__metric-row--clickable' : ''}`}
-                onClick={metric.route ? () => navigate(metric.route) : undefined}
+                onClick={metric.route ? (e) => { e.stopPropagation(); navigate(metric.route); } : undefined}
               >
                 <span className="finanzcockpit__metric-label">{metric.label}</span>
                 <span className={`finanzcockpit__metric-value ${metric.tone ? `is-${metric.tone}` : ''}`}>
@@ -1017,7 +1088,157 @@ const Finanzcockpit = () => {
             })()}
           </div>
         )}
+
+        <div className="finanzcockpit-card finanzcockpit__insights">
+          <div className="finanzcockpit__card-header">
+            <div>
+              <span className="finanzcockpit__card-eyebrow">Insights</span>
+              <h3>Einschätzungen</h3>
+            </div>
+          </div>
+          <ul className="finanzcockpit__insight-list">
+            {[...insights, ...memberInsights].map(({ id, icon: Icon, title, description, tone }) => (
+              <li key={id}>
+                <div className={`finanzcockpit__insight-icon${tone ? ` finanzcockpit__insight-icon--${tone}` : ''}`}><Icon size={13} /></div>
+                <div>
+                  <p className="finanzcockpit__insight-title">{title}</p>
+                  <p className="finanzcockpit__insight-description">{description}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
+
+      {/* ══ AKTIONEN: Schnellzugriffe (horizontal) ══ */}
+      <div className="fc__actions-bar">
+        <div className="fc__action-group">
+          <h3 className="fc__action-group-title">Abrechnung</h3>
+          <div className="fc__action-list">
+            <ActionCard icon={CreditCard} label="Lastschriftlauf" desc="SEPA-Einzüge starten" iconColor="#3b82f6" onClick={() => navigate('/dashboard/lastschriftlauf')} />
+            <ActionCard icon={AlertCircle} label="Mahnwesen" desc="Überfällige Zahlungen" iconColor="#f59e0b" onClick={() => navigate('/dashboard/mahnwesen')} badge={stats?.ausstehendeZahlungen || 0} />
+            <ActionCard icon={RotateCcw} label="Rücklastschriften" desc="Fehlgeschlagene Abbuchungen" iconColor="#ef4444" onClick={() => navigate('/dashboard/ruecklastschriften')} badge={alerts.ruecklastschriften} />
+            <ActionCard icon={DollarSign} label="Beiträge verwalten" desc="Verträge und Tarife" iconColor="#10b981" onClick={() => navigate('/dashboard/beitraege')} />
+            <ActionCard icon={Upload} label="Kontoauszug importieren" desc="CSV / MT940 importieren" iconColor="#f97316" onClick={() => navigate('/dashboard/kontoauszug-import')} />
+          </div>
+        </div>
+
+        <div className="fc__action-group">
+          <h3 className="fc__action-group-title">Mitglieder-Analysen</h3>
+          <div className="fc__action-list">
+            <ActionCard icon={AlertCircle} label="Ohne SEPA-Mandat" desc="Mitglieder ohne Einzugsermächtigung" iconColor="#ef4444" onClick={() => navigate('/dashboard/mitglieder-filter/ohne-sepa')} />
+            <ActionCard icon={FileText} label="Ohne Vertrag" desc="Mitglieder ohne aktiven Vertrag" iconColor="#f59e0b" onClick={() => navigate('/dashboard/mitglieder-filter/ohne-vertrag')} />
+            <ActionCard icon={AlertTriangle} label="Tarif-Abweichungen" desc="Soll/Ist-Vergleich der Beiträge" iconColor="#8b5cf6" onClick={() => navigate('/dashboard/mitglieder-filter/tarif-abweichung')} />
+            <ActionCard icon={CreditCard} label="Nach Zahlungsweise" desc="Gruppiert nach Bar / Karte / SEPA" iconColor="#3b82f6" onClick={() => navigate('/dashboard/mitglieder-filter/zahlungsweisen')} />
+          </div>
+        </div>
+
+        <div className="fc__action-group">
+          <h3 className="fc__action-group-title">Dokumente & Export</h3>
+          <div className="fc__action-list">
+            <ActionCard icon={FileSpreadsheet} label="Dokument-Vorlagen" desc="Briefe und E-Mails verwalten" iconColor="#8B0000" onClick={() => navigate('/dashboard/vorlagen')} />
+          </div>
+        </div>
+      </div>
+
+      {/* ══ GRAFIKEN: gleich groß, sauber nebeneinander ══ */}
+      <section className="fc__charts-grid">
+        <div className="finanzcockpit-card">
+          <div className="finanzcockpit__card-header">
+            <div>
+              <span className="finanzcockpit__card-eyebrow">Performance</span>
+              <h3>Umsatz-Entwicklung</h3>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={timelineData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <XAxis dataKey="label" stroke="rgba(255,255,255,0.5)" />
+              <YAxis stroke="rgba(255,255,255,0.5)" tickFormatter={formatCurrencyCompact} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--modal-bg-dark)', border: '1px solid var(--border-accent)', borderRadius: '12px', color: 'var(--text-1)' }} formatter={(value) => formatCurrency(value)} />
+              <Legend />
+              <Line type="monotone" dataKey="umsatz" stroke="#ffd700" strokeWidth={2} name="Umsatz" dot={{ fill: '#ffd700', r: 3 }} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="trend" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" name="Trend" dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="finanzcockpit-card">
+          <div className="finanzcockpit__card-header">
+            <div>
+              <span className="finanzcockpit__card-eyebrow">Aufschlüsselung</span>
+              <h3>{aktiverChartTab === 'zahlungsarten' ? 'Zahlungsarten' : 'Einnahmen'}</h3>
+            </div>
+            <div className="fc__chart-tabs">
+              <button className={aktiverChartTab === 'zahlungsarten' ? 'is-active' : ''} onClick={() => setAktiverChartTab('zahlungsarten')}>
+                <PieChartIcon size={13} /> Zahlungsarten
+              </button>
+              <button className={aktiverChartTab === 'einnahmen' ? 'is-active' : ''} onClick={() => setAktiverChartTab('einnahmen')}>
+                <BarChart3 size={13} /> Aufschlüsselung
+              </button>
+            </div>
+          </div>
+          {aktiverChartTab === 'zahlungsarten' && paymentMethodData.length > 0 && (
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie data={paymentMethodData} cx="50%" cy="50%" labelLine={false} label={({ percent }) => percent >= 0.08 ? `${(percent * 100).toFixed(0)}%` : ''} innerRadius={55} outerRadius={92} paddingAngle={2} dataKey="value">
+                  {paymentMethodData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" />)}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: 'var(--modal-bg-dark)', border: '1px solid var(--border-accent)', borderRadius: '12px', color: 'var(--text-1)' }} formatter={(value) => formatCurrency(value)} />
+                <Legend verticalAlign="bottom" height={24} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '0.72rem' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+          {aktiverChartTab === 'zahlungsarten' && paymentMethodData.length === 0 && (
+            <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>
+          )}
+          {aktiverChartTab === 'einnahmen' && incomeBreakdownData.length > 0 && (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={incomeBreakdownData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" />
+                <YAxis stroke="rgba(255,255,255,0.5)" tickFormatter={formatCurrencyCompact} />
+                <Tooltip content={<CustomIncomeTooltip />} />
+                <Bar dataKey="value" fill="#ffd700" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+          {aktiverChartTab === 'einnahmen' && incomeBreakdownData.length === 0 && (
+            <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>
+          )}
+        </div>
+      </section>
+
+      {/* ══ KPI-DETAIL-MODAL (Portal an body → immer im Viewport zentriert) ══ */}
+      {openKpi && kpiDetailDefs[openKpi] && createPortal(
+        <div className="fc__modal-overlay" onClick={() => setOpenKpi(null)}>
+          <div className="fc__modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <button className="fc__modal-close" onClick={() => setOpenKpi(null)} aria-label="Schließen">×</button>
+            <div className="fc__modal-head">
+              <span className="fc__modal-eyebrow">{kpiDetailDefs[openKpi].subtitle}</span>
+              <h3 className="fc__modal-title">{kpiDetailDefs[openKpi].title}</h3>
+              <div className="fc__modal-hero">{kpiDetailDefs[openKpi].hero}</div>
+            </div>
+            <div className="fc__modal-rows">
+              {kpiDetailDefs[openKpi].rows.map((r) => (
+                <div key={r.label} className="fc__modal-row">
+                  <span className="fc__modal-row-label">{r.label}</span>
+                  <span className={`fc__modal-row-value${r.tone ? ` is-${r.tone}` : ''}`}>{r.value}</span>
+                </div>
+              ))}
+            </div>
+            {kpiDetailDefs[openKpi].route && (
+              <button
+                className="fc__modal-cta"
+                onClick={() => { const r = kpiDetailDefs[openKpi].route; setOpenKpi(null); navigate(r); }}
+              >
+                {kpiDetailDefs[openKpi].routeLabel || 'Öffnen'} <ChevronRight size={15} />
+              </button>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
