@@ -35,6 +35,13 @@ import VorlagenSendenModal from './VorlagenSendenModal';
 import HofNominierungModal from './HofNominierungModal';
 import GuertelRechner from './GuertelRechner';
 
+// ISO-/Datums-String → yyyy-MM-dd für <input type="date"> (war beim Tab-Refactor
+// verloren gegangen, wird hier aber noch von letzte_pruefung/geburtsdatum genutzt).
+function toInputDate(isoString) {
+  if (!isoString) return '';
+  return new Date(isoString).toISOString().split('T')[0];
+}
+
 // Custom Dropdown Component with full dark mode styling
 function CustomSelect({ value, onChange, options, className = "", style = {}, disabled = false }) {
   const [isOpen, setIsOpen] = useState(false);
