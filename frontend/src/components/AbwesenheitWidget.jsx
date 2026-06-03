@@ -21,7 +21,7 @@ const addDays = (d, n) => { const dt = new Date(d + 'T00:00'); dt.setDate(dt.get
 const endOfWeek = (d) => { const dt = new Date(d + 'T00:00'); const day = dt.getDay(); const diff = day === 0 ? 0 : 7 - day; dt.setDate(dt.getDate() + diff); return dt.toISOString().slice(0, 10); };
 const nextMonday = (d) => { const dt = new Date(d + 'T00:00'); const day = dt.getDay(); dt.setDate(dt.getDate() + (day === 1 ? 7 : (8 - day) % 7)); return dt.toISOString().slice(0, 10); };
 
-export default function AbwesenheitWidget() {
+function AbwesenheitWidget() {
   const [abwesenheiten, setAbwesenheiten] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -203,3 +203,5 @@ export default function AbwesenheitWidget() {
     </div>
   );
 }
+
+export default React.memo(AbwesenheitWidget);

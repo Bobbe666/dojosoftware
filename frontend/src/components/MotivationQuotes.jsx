@@ -148,4 +148,4 @@ const MotivationQuotes = ({ showRefresh = true, compact = false }) => {
   );
 };
 
-export default MotivationQuotes;
+export default React.memo(MotivationQuotes);

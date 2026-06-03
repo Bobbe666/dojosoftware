@@ -9,4 +9,4 @@ const BuddyGruppenWidget = () => {
   );
 };
 
-export default BuddyGruppenWidget;
+export default React.memo(BuddyGruppenWidget);

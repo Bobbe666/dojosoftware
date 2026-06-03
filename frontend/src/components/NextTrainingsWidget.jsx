@@ -104,4 +104,4 @@ const NextTrainingsWidget = () => {
   );
 };
 
-export default NextTrainingsWidget;
+export default React.memo(NextTrainingsWidget);

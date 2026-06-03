@@ -141,4 +141,4 @@ const BadgeDisplay = ({ mitgliedId, compact = false }) => {
   );
 };
 
-export default BadgeDisplay;
+export default React.memo(BadgeDisplay);

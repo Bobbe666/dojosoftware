@@ -362,4 +362,4 @@ const TrainingReminders = () => {
   );
 };
 
-export default TrainingReminders;
+export default React.memo(TrainingReminders);
