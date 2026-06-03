@@ -186,9 +186,16 @@ const BestellungenTab = () => {
     }
   }, [activeSubTab, loadDojoBestellungen]); // eslint-disable-line
 
-  const previewGiPdf = (b) => {
+  const previewGiPdf = async (b) => {
     try {
-      const formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
+      let formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
+      if (!formdata) {
+        // formdata wird in der Liste nicht mehr mitgeladen → einzeln nachladen
+        const djId = b.dojo_id || filterDojoId || activeDojo?.id;
+        const res = await axios.get(`/gi-bestellungen/${b.bestellung_id}${djId ? `?dojo_id=${djId}` : ''}`);
+        const fd = res.data?.data?.formdata;
+        formdata = typeof fd === 'string' ? JSON.parse(fd) : fd;
+      }
       if (!formdata) return;
       const html = buildPdfHtml(formdata, window.location.origin, [], b.bestellung_id);
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -205,17 +212,23 @@ const BestellungenTab = () => {
   };
 
   const openGiBestellung = async (b) => {
+    const djId = b.dojo_id || filterDojoId || activeDojo?.id;
     let vorlage = null;
     if (b.vorlage_id) {
       try {
-        const djId = activeDojo?.id;
         const url = djId ? `/bestellvorlagen/${b.vorlage_id}?dojo_id=${djId}` : `/bestellvorlagen/${b.vorlage_id}`;
         const res = await axios.get(url);
         vorlage = res.data?.data || null;
       } catch {}
     }
     try {
-      const formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
+      let formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
+      if (!formdata) {
+        // formdata wird in der Liste nicht mehr mitgeladen → einzeln nachladen
+        const res = await axios.get(`/gi-bestellungen/${b.bestellung_id}${djId ? `?dojo_id=${djId}` : ''}`);
+        const fd = res.data?.data?.formdata;
+        formdata = typeof fd === 'string' ? JSON.parse(fd) : fd;
+      }
       setGiOverlay({ vorlage, editingId: b.bestellung_id, formdata, dojoId: b.dojo_id });
     } catch {}
   };

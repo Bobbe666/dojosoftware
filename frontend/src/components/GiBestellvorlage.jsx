@@ -2210,7 +2210,8 @@ table.qt tfoot td.rl{background:var(--gold);color:var(--dark);}
 @media print{
   @page{size:A4;margin:14mm 18mm;}
   body{background:white;}
-  .page{margin:0;padding:0;width:auto;min-height:0;box-shadow:none;}
+  .page{margin:0;padding:0;width:auto;min-height:0;box-shadow:none;break-after:page;page-break-after:always;}
+  .page:last-child{break-after:auto;page-break-after:auto;}
   .sec{break-inside:avoid;page-break-inside:avoid;}
   .qt-wrap{break-inside:avoid;page-break-inside:avoid;}
   .ms-wrap{break-before:page;page-break-before:always;}
