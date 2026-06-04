@@ -184,6 +184,9 @@ const EuerUebersicht = ({ isTDA = false }) => {
     verkaeufe: m.einnahmen.verkaeufe || 0
   })) : [];
 
+  // Erstattungen (Einnahmeminderung) — Spalte nur zeigen, wenn vorhanden
+  const hatErstattungen = (euerData?.jahresSumme?.einnahmen_erstattungen || 0) > 0;
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -405,6 +408,7 @@ const EuerUebersicht = ({ isTDA = false }) => {
                   <th className="u-td-right">Verkäufe</th>
                 </>
               )}
+              {hatErstattungen && <th className="u-td-right">Erstattungen</th>}
               <th className="eu-td-success">Einnahmen</th>
               <th className="eu-td-error">Ausgaben</th>
               <th className="eu-td-right-bold">Überschuss</th>
@@ -431,6 +435,7 @@ const EuerUebersicht = ({ isTDA = false }) => {
                     <td className="u-td-right">{formatCurrency(m.einnahmen.verkaeufe)}</td>
                   </>
                 )}
+                {hatErstattungen && <td className="u-td-right" style={{ color: '#f87171' }}>{(m.einnahmen.erstattungen || 0) > 0 ? `−${formatCurrency(m.einnahmen.erstattungen)}` : '—'}</td>}
                 <td className="eu-td-success-muted">
                   {formatCurrency(m.einnahmen.gesamt)}
                 </td>
@@ -458,6 +463,7 @@ const EuerUebersicht = ({ isTDA = false }) => {
                   <td className="u-td-right">{formatCurrency(euerData?.jahresSumme?.einnahmen_verkaeufe)}</td>
                 </>
               )}
+              {hatErstattungen && <td className="u-td-right" style={{ color: '#f87171' }}>−{formatCurrency(euerData?.jahresSumme?.einnahmen_erstattungen)}</td>}
               <td className="eu-td-success">
                 {formatCurrency(euerData?.jahresSumme?.einnahmen_gesamt)}
               </td>

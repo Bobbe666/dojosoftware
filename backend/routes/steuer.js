@@ -262,6 +262,26 @@ async function handleUstVAPreview(req, res) {
       [dojoId, zd.von, zd.bis]
     ).catch(err => { logger.warn('steuer: beitraege nicht abfragbar', { err: err.message }); return [[]]; });
 
+    // Erstattungen — NEGATIVE Ausgangsumsätze (USt-Korrektur §17 UStG, 19% analog Beiträge)
+    const erstattungenQuery = pool.query(
+      `SELECT
+         NULL                                                  AS id,
+         'erstattung'                                          AS quelle,
+         NULL                                                  AS rechnungsnummer,
+         ROUND(-SUM(betrag) / 1.19, 2)                         AS netto_betrag,
+         19                                                    AS mwst_satz,
+         ROUND(-(SUM(betrag) - SUM(betrag) / 1.19), 2)         AS mwst_betrag,
+         DATE_FORMAT(MIN(erstattet_am), '%Y-%m-01')            AS datum,
+         CONCAT('Erstattungen ', DATE_FORMAT(MIN(erstattet_am), '%M %Y')) AS beschreibung
+       FROM erstattungen
+       WHERE dojo_id = ?
+         AND erstattet_am BETWEEN ? AND ?
+         AND status IN ('erstattet','veranlasst')
+       GROUP BY YEAR(erstattet_am), MONTH(erstattet_am)
+      `,
+      [dojoId, zd.von, zd.bis]
+    ).catch(err => { logger.warn('steuer: erstattungen nicht abfragbar', { err: err.message }); return [[]]; });
+
     // Alle Abfragen parallel ausführen
     const [
       [rechnungen],
@@ -270,6 +290,7 @@ async function handleUstVAPreview(req, res) {
       [belegeAusgaben],
       [kassenbuch],
       [beitraege],
+      [erstattungen],
     ] = await Promise.all([
       rechnungenQuery,
       verkaufeQuery,
@@ -277,12 +298,13 @@ async function handleUstVAPreview(req, res) {
       belegeAusgabenQuery,
       kassenbuchQuery,
       beitraegeQuery,
+      erstattungenQuery,
     ]);
 
     // ----- Kennziffern berechnen ------------------------------------------
 
-    // Alle Einnahmen-Zeilen zusammenführen (beitraege ohne MwSt-Satz → landen in steuerfreie)
-    const alleEinnahmen = [...rechnungen, ...verkaeufe, ...belegeEinnahmen, ...beitraege];
+    // Alle Einnahmen-Zeilen zusammenführen (Erstattungen mindern als negative 19%-Umsätze)
+    const alleEinnahmen = [...rechnungen, ...verkaeufe, ...belegeEinnahmen, ...beitraege, ...erstattungen];
 
     const einnahmen19   = alleEinnahmen.filter(r => Number(r.mwst_satz) === 19);
     const einnahmen7    = alleEinnahmen.filter(r => Number(r.mwst_satz) === 7);

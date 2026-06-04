@@ -81,6 +81,17 @@ router.get('/dojo/:dojo_id', async (req, res) => {
     `;
     const verkaeufe = await queryAsync(verkaufeQuery, [dojo_id, jahr]);
 
+    // 3b. Erstattungen (Einnahmeminderung, §11 EStG — im Erstattungsdatum)
+    let erstattungen = [];
+    try {
+      erstattungen = await queryAsync(`
+        SELECT MONTH(erstattet_am) as monat, SUM(betrag) as summe
+        FROM erstattungen
+        WHERE dojo_id = ? AND YEAR(erstattet_am) = ? AND status IN ('erstattet','veranlasst')
+        GROUP BY MONTH(erstattet_am)
+      `, [dojo_id, jahr]);
+    } catch (e) { /* Tabelle evtl. noch nicht migriert */ }
+
     // 4. Kassenbuch Ausgaben (gesamt pro Monat)
     const ausgabenQuery = `
       SELECT
@@ -149,10 +160,12 @@ router.get('/dojo/:dojo_id', async (req, res) => {
       const ausgabeMonat = ausgaben.find(a => a.monat === m);
       const belegeAusgabeMonat = belegeAusgaben.find(a => a.monat === m);
 
+      const erstattungMonat = erstattungen.find(e => e.monat === m);
       const einnahmen_beitraege = parseFloat(beitragMonat?.summe || 0);
       const einnahmen_rechnungen = parseFloat(rechnungMonat?.summe || 0);
       const einnahmen_verkaeufe = centToEuro(verkaufMonat?.summe_cent || 0);
-      const einnahmen_gesamt = einnahmen_beitraege + einnahmen_rechnungen + einnahmen_verkaeufe;
+      const einnahmen_erstattungen = parseFloat(erstattungMonat?.summe || 0); // positiv; wird abgezogen
+      const einnahmen_gesamt = einnahmen_beitraege + einnahmen_rechnungen + einnahmen_verkaeufe - einnahmen_erstattungen;
 
       const ausgaben_kasse = centToEuro(ausgabeMonat?.summe_cent || 0);
       const ausgaben_belege = parseFloat(belegeAusgabeMonat?.summe || 0);
@@ -173,6 +186,7 @@ router.get('/dojo/:dojo_id', async (req, res) => {
           beitraege: einnahmen_beitraege,
           rechnungen: einnahmen_rechnungen,
           verkaeufe: einnahmen_verkaeufe,
+          erstattungen: einnahmen_erstattungen,
           gesamt: einnahmen_gesamt
         },
         ausgaben: {
@@ -188,6 +202,7 @@ router.get('/dojo/:dojo_id', async (req, res) => {
       einnahmen_beitraege: 0,
       einnahmen_rechnungen: 0,
       einnahmen_verkaeufe: 0,
+      einnahmen_erstattungen: 0,
       einnahmen_gesamt: 0,
       ausgaben_gesamt: 0,
       ueberschuss: 0
@@ -202,6 +217,7 @@ router.get('/dojo/:dojo_id', async (req, res) => {
         einnahmen_beitraege: acc.einnahmen_beitraege + m.einnahmen.beitraege,
         einnahmen_rechnungen: acc.einnahmen_rechnungen + m.einnahmen.rechnungen,
         einnahmen_verkaeufe: acc.einnahmen_verkaeufe + m.einnahmen.verkaeufe,
+        einnahmen_erstattungen: acc.einnahmen_erstattungen + (m.einnahmen.erstattungen || 0),
         einnahmen_gesamt: acc.einnahmen_gesamt + m.einnahmen.gesamt,
         ausgaben_gesamt: acc.ausgaben_gesamt + m.ausgaben.gesamt,
         ueberschuss: acc.ueberschuss + m.ueberschuss
@@ -279,6 +295,17 @@ router.get('/tda', async (req, res) => {
     `;
     const verkaeufe = await queryAsync(verkaufeQuery, [TDA_DOJO_ID, jahr]);
 
+    // 3b. Erstattungen (Einnahmeminderung)
+    let erstattungen = [];
+    try {
+      erstattungen = await queryAsync(`
+        SELECT MONTH(erstattet_am) as monat, SUM(betrag) as summe
+        FROM erstattungen
+        WHERE dojo_id = ? AND YEAR(erstattet_am) = ? AND status IN ('erstattet','veranlasst')
+        GROUP BY MONTH(erstattet_am)
+      `, [TDA_DOJO_ID, jahr]);
+    } catch (e) { /* Tabelle evtl. noch nicht migriert */ }
+
     // 4. Verbandsmitgliedschaften (bezahlt)
     const verbandQuery = `
       SELECT
@@ -353,9 +380,11 @@ router.get('/tda', async (req, res) => {
       const einnahmen_verkaeufe = centToEuro(verkaufMonat?.summe_cent || 0);
       const einnahmen_verband = parseFloat(verbandMonat?.summe || 0);
       const einnahmen_software = parseFloat(softwareMonat?.summe || 0);
+      const erstattungMonat = erstattungen.find(e => e.monat === m);
+      const einnahmen_erstattungen = parseFloat(erstattungMonat?.summe || 0); // positiv; wird abgezogen
 
       const einnahmen_gesamt = einnahmen_mitglieder + einnahmen_rechnungen +
-                               einnahmen_verkaeufe + einnahmen_verband + einnahmen_software;
+                               einnahmen_verkaeufe + einnahmen_verband + einnahmen_software - einnahmen_erstattungen;
 
       const ausgaben_kasse = centToEuro(ausgabeMonat?.summe_cent || 0);
       const ausgaben_belege = parseFloat(belegeAusgabeMonat?.summe || 0);
@@ -371,6 +400,7 @@ router.get('/tda', async (req, res) => {
           verkaeufe: einnahmen_verkaeufe,
           verbandsmitgliedschaften: einnahmen_verband,
           software_lizenzen: einnahmen_software,
+          erstattungen: einnahmen_erstattungen,
           gesamt: einnahmen_gesamt
         },
         ausgaben: {
@@ -387,6 +417,7 @@ router.get('/tda', async (req, res) => {
       einnahmen_verkaeufe: acc.einnahmen_verkaeufe + m.einnahmen.verkaeufe,
       einnahmen_verband: acc.einnahmen_verband + m.einnahmen.verbandsmitgliedschaften,
       einnahmen_software: acc.einnahmen_software + m.einnahmen.software_lizenzen,
+      einnahmen_erstattungen: acc.einnahmen_erstattungen + (m.einnahmen.erstattungen || 0),
       einnahmen_gesamt: acc.einnahmen_gesamt + m.einnahmen.gesamt,
       ausgaben_gesamt: acc.ausgaben_gesamt + m.ausgaben.gesamt,
       ueberschuss: acc.ueberschuss + m.ueberschuss
@@ -396,6 +427,7 @@ router.get('/tda', async (req, res) => {
       einnahmen_verkaeufe: 0,
       einnahmen_verband: 0,
       einnahmen_software: 0,
+      einnahmen_erstattungen: 0,
       einnahmen_gesamt: 0,
       ausgaben_gesamt: 0,
       ueberschuss: 0

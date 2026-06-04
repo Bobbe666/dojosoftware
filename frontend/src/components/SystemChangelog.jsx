@@ -16,6 +16,31 @@ import {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.9',
+    date: '2026-06-04',
+    type: 'feature',
+    title: 'Rückerstattungen durchgängig: zentrale Erfassung, Stripe-Sync & vollständige Buchhaltung (EÜR/USt)',
+    description: 'Rückerstattungen werden jetzt zentral erfasst (manuell, über den Button und direkt in Stripe ausgelöste) und durchgängig berücksichtigt — im Mitglieder-Check ebenso wie in der gesamten Buchhaltung: EÜR, BWA-Summen, Umsatzsteuer-Voranmeldung und Kleinunternehmer-Umsatz.',
+    highlights: [
+      '🏦 ZENTRALE ERFASSUNG: Neue Tabelle für alle Erstattungen — manuell (von anderem Konto), über den „↩ Rückerstatten"-Button ausgelöste und direkt im Stripe-Dashboard gemachte. Eine einzige Quelle für Übersicht und Buchhaltung',
+      '🔄 STRIPE-SYNC + WEBHOOK: Erstattungen aus Stripe werden automatisch übernommen — per Webhook (Echtzeit) und per Abgleich/Backfill (auch historische). Lechners 140 € wurde dabei nachgetragen',
+      '🧾 EÜR / ÜBERSCHUSS: Erstattungen mindern die Einnahmen im Erstattungsmonat (§11 EStG). Eigene „Erstattungen"-Spalte in der EÜR-Tabelle, korrekt in Monats- und Jahressummen',
+      '🧮 UMSATZSTEUER (UStVA): Erstattungen korrigieren Umsatz und Umsatzsteuer (§17 UStG) — Kz81/Kz35 werden sauber gemindert. Bei Kleinunternehmern (§19) wird der Bruttoumsatz automatisch reduziert',
+      '🔍 CHECK: Bereits erstattete Auffälligkeiten werden im Mitglieder-Check als „erledigt" markiert; offene vs. erstattete Summe getrennt ausgewiesen',
+      '⑤ ÜBERSICHT: Spalte „Rückerstattung" zeigt manuelle und Stripe-Erstattungen mit Status (auch „veranlasst", solange die SEPA-Gutschrift noch läuft)',
+      '🪟 BEDIENUNG: Manuelle Erstattung jetzt als komfortables Modal (Betrag, Datum, Quelle/Konto, Bemerkungen) statt enger Inline-Eingabe',
+    ],
+    details: 'Migration 186: zentrale Tabelle `erstattungen` (Quellen manuell/stripe_button/stripe_sync/stripe_extern, dedup über stripe_refund_id, status erstattet/veranlasst). Migration 187: v_euer_einnahmen um Erstattungs-Branch (negativer betrag_brutto) erweitert → wirkt auf alle View-Konsumenten inkl. Kleinunternehmer-Bruttoumsatz. services/erstattungSync.js: Backfill/periodischer Stripe-Refund-Sync (ordnet Mitglied/Posten-Art zu). routes/stripe.js Webhook: charge.refunded + refund.created/updated. routes/finanzcockpit.js: /refund persistiert Button-Refunds, POST /erstattungen/sync, manuelle-erstattung + Check + mitglied-finanz auf erstattungen umgestellt. routes/euer.js: Erstattungs-Query (Dojo + TDA), Abzug + Jahressumme. routes/steuer.js: negative 19%-Erstattungszeilen in der UStVA-Pipeline. Frontend: MitgliedFinanzUebersicht.jsx (Modal, Spalte ⑤, Check-Badges), EuerUebersicht.jsx (Erstattungs-Spalte).',
+    files: [
+      'backend/migrations/186_erstattungen_zentral.sql, 187_euer_view_erstattungen.sql (neu)',
+      'backend/scripts/run-migration-186.js (neu)',
+      'backend/services/erstattungSync.js (neu)',
+      'backend/routes/{finanzcockpit,stripe,euer,steuer}.js',
+      'frontend/src/components/{MitgliedFinanzUebersicht,EuerUebersicht}.jsx',
+      'version.js', 'SystemChangelog.jsx',
+    ],
+  },
+  {
     version: '3.0.8',
     date: '2026-06-04',
     type: 'feature',
