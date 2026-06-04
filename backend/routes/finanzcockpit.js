@@ -969,7 +969,7 @@ router.get('/mitglied-check/:id', async (req, res) => {
     if (m.dojo_id !== dojoId) return res.status(403).json({ success: false, error: 'Kein Zugriff' });
 
     const [txs] = await fcPool.query(
-      `SELECT t.id, t.betrag, t.status, t.beitrag_ids, t.created_at, b.monat, b.jahr
+      `SELECT t.id, t.betrag, t.status, t.beitrag_ids, t.created_at, t.stripe_payment_intent_id, b.monat, b.jahr
        FROM stripe_lastschrift_transaktion t JOIN stripe_lastschrift_batch b ON t.batch_id = b.batch_id
        WHERE t.mitglied_id = ? ORDER BY t.created_at`, [mid]);
     const [beitraege] = await fcPool.query(`SELECT beitrag_id, art, betrag, zahlungsdatum FROM beitraege WHERE mitglied_id = ?`, [mid]);
@@ -1110,12 +1110,75 @@ router.get('/mitglied-check/:id', async (req, res) => {
       return { monat: v.monat, jahr: v.jahr, geschickt: v.geschickt, erwartet, differenz: v.geschickt - erwartet, anzahl_tx: v.anzahl_tx, anzahl_beitraege: v.ids.size };
     }).sort((a, b) => (b.jahr - a.jahr) || (b.monat - a.monat));
 
+    // ── Erstattungen berücksichtigen (manuell + Stripe) ──────────────────
+    // Bereits zurückerstattete Beträge mindern die auffällige Summe.
+    const manErstattetByTx = {};
+    try {
+      const [meRows] = await fcPool.query(
+        `SELECT transaktion_id, SUM(betrag) AS summe FROM manuelle_erstattungen
+         WHERE mitglied_id = ? AND transaktion_id IS NOT NULL GROUP BY transaktion_id`, [mid]);
+      meRows.forEach(r => { manErstattetByTx[r.transaktion_id] = num(r.summe); });
+    } catch (e) { /* Tabelle evtl. noch nicht migriert */ }
+
+    // Stripe-Erstattungen live — nur für Transaktionen, die in Findings auftauchen
+    const findingTxIds = [...new Set(findings.flatMap(f => f.txs || []))];
+    const stripeErstattetByTx = {};
+    if (findingTxIds.length > 0) {
+      try {
+        const provider = await PaymentProviderFactory.getProvider(dojoId);
+        if (provider && provider.stripe) {
+          const opts = provider.connectedAccountId ? { stripeAccount: provider.connectedAccountId } : undefined;
+          const txById = {};
+          txs.forEach(t => { txById[t.id] = t; });
+          for (const txId of findingTxIds) {
+            const t = txById[txId];
+            if (!t || !t.stripe_payment_intent_id) continue;
+            try {
+              const intent = await provider.stripe.paymentIntents.retrieve(t.stripe_payment_intent_id, { expand: ['latest_charge'] }, opts);
+              const charge = (intent.latest_charge && typeof intent.latest_charge === 'object') ? intent.latest_charge : null;
+              if (charge && charge.amount_refunded) stripeErstattetByTx[txId] = (charge.amount_refunded || 0) / 100;
+            } catch (e) { /* einzelner PI nicht abrufbar → ignorieren */ }
+          }
+        }
+      } catch (e) { /* Stripe nicht verfügbar → ohne Stripe-Abgleich weiter */ }
+    }
+
+    const erstattetForTxs = (txIds) => (txIds || []).reduce(
+      (s, id) => s + (manErstattetByTx[id] || 0) + (stripeErstattetByTx[id] || 0), 0);
+
+    // Findings nachbearbeiten: erstatteten Anteil abziehen, ggf. als erledigt markieren
+    let zuVielNetto = 0;
+    let erstattetGesamt = 0;
+    findings.forEach(f => {
+      const brutto = num(f.betrag_zu_viel);
+      if (f.txs && f.txs.length > 0 && brutto > 0) {
+        const erstattet = Math.min(erstattetForTxs(f.txs), brutto);
+        if (erstattet > 0.01) {
+          f.betrag_zu_viel_brutto = brutto;
+          f.erstattet = erstattet;
+          f.betrag_zu_viel = Math.max(0, brutto - erstattet);
+          erstattetGesamt += erstattet;
+          if (f.betrag_zu_viel <= 0.01) {
+            f.erledigt = true;
+            f.schwere = 'info';
+            f.detail += ` — bereits erstattet (${erstattet.toFixed(2)} €), erledigt.`;
+          } else {
+            f.detail += ` Davon ${erstattet.toFixed(2)} € bereits erstattet, offen ${f.betrag_zu_viel.toFixed(2)} €.`;
+          }
+        }
+      }
+      zuVielNetto += num(f.betrag_zu_viel);
+    });
+
     res.json({
       success: true,
       mitglied: `${m.vorname} ${m.nachname}`,
       alles_ok: findings.length === 0,
-      summe_auffaellig: zuViel,
-      findings: findings.sort((a, b) => (b.betrag_zu_viel || 0) - (a.betrag_zu_viel || 0)),
+      summe_auffaellig: zuVielNetto,
+      summe_auffaellig_brutto: zuViel,
+      summe_erstattet: erstattetGesamt,
+      offene_findings: findings.filter(f => !f.erledigt && f.typ !== 'fehlender_beitrag').length,
+      findings: findings.sort((a, b) => (a.erledigt === b.erledigt ? 0 : a.erledigt ? 1 : -1) || (b.betrag_zu_viel || 0) - (a.betrag_zu_viel || 0)),
       monatsvergleich,
     });
   } catch (err) {

@@ -314,16 +314,26 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
             ) : (
               <div style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '0.9rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <strong style={{ color: '#fca5a5', fontSize: '0.95rem' }}>⚠ {check.findings.length} Auffälligkeit{check.findings.length !== 1 ? 'en' : ''} gefunden</strong>
-                  {check.summe_auffaellig > 0 && <span style={{ fontWeight: 700, color: '#ef4444' }}>ca. {eur(check.summe_auffaellig)} zu viel abgebucht</span>}
+                  <strong style={{ color: '#fca5a5', fontSize: '0.95rem' }}>⚠ {check.findings.length} Auffälligkeit{check.findings.length !== 1 ? 'en' : ''} gefunden{typeof check.offene_findings === 'number' && check.offene_findings < check.findings.length ? ` (${check.offene_findings} offen)` : ''}</strong>
+                  <span style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    {check.summe_auffaellig > 0 && <span style={{ fontWeight: 700, color: '#ef4444' }}>ca. {eur(check.summe_auffaellig)} offen zu viel</span>}
+                    {check.summe_erstattet > 0 && <span style={{ fontWeight: 700, color: '#4ade80' }}>↩ {eur(check.summe_erstattet)} bereits erstattet</span>}
+                  </span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {check.findings.map((f, i) => (
-                    <div key={i} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '0.55rem 0.7rem', borderLeft: '3px solid #ef4444' }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary,#e2e8f0)' }}>{TYP_ICON[f.typ] || '•'} {f.titel}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary,#cbd5e1)', marginTop: 2 }}>{f.detail}</div>
-                    </div>
-                  ))}
+                  {check.findings.map((f, i) => {
+                    const farbe = f.erledigt ? '#22c55e' : (f.schwere === 'mittel' ? '#f59e0b' : '#ef4444');
+                    return (
+                      <div key={i} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '0.55rem 0.7rem', borderLeft: `3px solid ${farbe}`, opacity: f.erledigt ? 0.85 : 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary,#e2e8f0)', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          <span>{f.erledigt ? '✅' : (TYP_ICON[f.typ] || '•')} {f.titel}</span>
+                          {f.erledigt && <Badge color="#22c55e" bg="rgba(34,197,94,0.14)">erstattet · erledigt</Badge>}
+                          {!f.erledigt && f.erstattet > 0 && <Badge color="#4ade80" bg="rgba(34,197,94,0.12)">teilw. erstattet</Badge>}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary,#cbd5e1)', marginTop: 2 }}>{f.detail}</div>
+                      </div>
+                    );
+                  })}
                 </div>
                 {check.monatsvergleich && check.monatsvergleich.length > 0 && (
                   <div style={{ marginTop: '0.85rem', overflowX: 'auto' }}>
