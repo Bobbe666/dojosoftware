@@ -172,6 +172,15 @@ router.delete("/:beitrag_id", (req, res) => {
 
     db.query(query, params, (err, result) => {
         if (err) {
+            // DB-Guard (Migration 184): Beitrag ist von einer aktiven/abgeschlossenen
+            // Stripe-Lastschrift referenziert und darf nicht gelöscht werden
+            if (err.errno === 1644 || err.sqlState === '45000') {
+                logger.warn(`Beitrag-Löschung durch Guard blockiert: ${err.message}`);
+                return res.status(409).json({
+                    error: 'Beitrag ist mit einer Stripe-Lastschrift verknüpft und kann nicht gelöscht werden.',
+                    details: 'Der Beitrag wird von einer laufenden oder abgeschlossenen Lastschrift referenziert. Stoppe oder erstatte die Lastschrift zuerst.'
+                });
+            }
             logger.error('Fehler beim Löschen des Beitrags:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }

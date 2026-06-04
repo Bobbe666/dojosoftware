@@ -859,6 +859,21 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
       [mid]
     );
 
+    // Manuelle Erstattungen (außerhalb Stripe, z. B. von anderem Konto)
+    let manuelleErstattungen = [];
+    try {
+      const [meRows] = await fcPool.query(
+        `SELECT id, transaktion_id, betrag, erstattet_am, quelle, bemerkung, erstellt_von, created_at
+         FROM manuelle_erstattungen WHERE mitglied_id = ? ORDER BY erstattet_am DESC, id DESC`,
+        [mid]
+      );
+      manuelleErstattungen = meRows;
+    } catch (e) { /* Tabelle evtl. noch nicht migriert */ }
+    const meByTx = {};
+    manuelleErstattungen.forEach(me => {
+      if (me.transaktion_id != null) (meByTx[me.transaktion_id] = meByTx[me.transaktion_id] || []).push(me);
+    });
+
     // Aufgelöste Posten je Stripe-Transaktion: vorhandene Beiträge direkt,
     // verwaiste (regeneriert/gelöscht) automatisch dem aktuellen Beitrag
     // desselben Monats (= Lauf monat/jahr) zuordnen.
@@ -874,6 +889,7 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
     });
     const usedFallback = new Set();
     lastschriften.forEach(t => {
+      t.manuelle_erstattungen = meByTx[t.id] || [];
       let bIds = []; try { bIds = JSON.parse(t.beitrag_ids || '[]'); } catch {}
       t.posten = bIds.map(id => {
         const b = bById[id];
@@ -930,6 +946,7 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
       verkaeufe,
       lastschriften,
       ruecklastschriften,
+      manuelle_erstattungen: manuelleErstattungen,
       artikel_uebersicht: artikelUebersicht,
     });
   } catch (err) {
@@ -1187,6 +1204,58 @@ router.get('/stripe-details/:pi', async (req, res) => {
     });
   } catch (err) {
     logger.error('Fehler bei stripe-details:', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/finanzcockpit/manuelle-erstattung/:txId?dojo_id=
+// Erfasst eine manuelle (außer-Stripe) Erstattung zu einer Transaktion.
+// Body: { betrag_cent, erstattet_am, quelle, bemerkung }
+router.post('/manuelle-erstattung/:txId', async (req, res) => {
+  try {
+    const dojoId = parseInt(req.query.dojo_id);
+    const txId = parseInt(req.params.txId);
+    const { betrag_cent, erstattet_am, quelle, bemerkung } = req.body || {};
+    if (!dojoId || !txId) return res.status(400).json({ success: false, error: 'dojo_id und txId erforderlich' });
+    if (!betrag_cent || betrag_cent <= 0) return res.status(400).json({ success: false, error: 'Betrag erforderlich' });
+
+    const [[tx]] = await fcPool.query(
+      `SELECT t.id, t.mitglied_id, m.dojo_id
+       FROM stripe_lastschrift_transaktion t JOIN mitglieder m ON t.mitglied_id = m.mitglied_id WHERE t.id = ?`, [txId]);
+    if (!tx) return res.status(404).json({ success: false, error: 'Transaktion nicht gefunden' });
+    if (tx.dojo_id !== dojoId) return res.status(403).json({ success: false, error: 'Kein Zugriff' });
+
+    const betrag = Math.round(betrag_cent) / 100;
+    const datum = erstattet_am || new Date().toISOString().split('T')[0];
+    const erstelltVon = req.user ? (req.user.name || req.user.username || req.user.email || `User ${req.user.id || ''}`) : null;
+
+    const [result] = await fcPool.query(
+      `INSERT INTO manuelle_erstattungen (transaktion_id, mitglied_id, dojo_id, betrag, erstattet_am, quelle, bemerkung, erstellt_von)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [txId, tx.mitglied_id, dojoId, betrag, datum, quelle || null, bemerkung || null, erstelltVon]
+    );
+
+    logger.info(`🏦 Manuelle Erstattung erfasst: tx${txId}, ${betrag} € (${quelle || 'ohne Quelle'})`);
+    res.json({ success: true, id: result.insertId, betrag, erstattet_am: datum });
+  } catch (err) {
+    logger.error('Fehler bei manuelle-erstattung (POST):', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /api/finanzcockpit/manuelle-erstattung/:id?dojo_id=
+router.delete('/manuelle-erstattung/:id', async (req, res) => {
+  try {
+    const dojoId = parseInt(req.query.dojo_id);
+    const id = parseInt(req.params.id);
+    if (!dojoId || !id) return res.status(400).json({ success: false, error: 'dojo_id und id erforderlich' });
+
+    const [result] = await fcPool.query(
+      `DELETE FROM manuelle_erstattungen WHERE id = ? AND dojo_id = ?`, [id, dojoId]);
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Fehler bei manuelle-erstattung (DELETE):', { error: err });
     res.status(500).json({ success: false, error: err.message });
   }
 });

@@ -4545,7 +4545,10 @@ router.post("/:id/archivieren", async (req, res) => {
     await conn.query('DELETE FROM gruppen_mitglieder WHERE mitglied_id = ?', [mitgliedId]);
     await conn.query('DELETE FROM verkaeufe WHERE mitglied_id = ?', [mitgliedId]);
     await conn.query('DELETE FROM gesetzlicher_vertreter WHERE mitglied_id = ?', [mitgliedId]);
+    // Guard-Ausnahme: legitime Komplett-Archivierung darf auch referenzierte Beiträge löschen
+    await conn.query('SET @allow_beitrag_delete = 1');
     await conn.query('DELETE FROM beitraege WHERE mitglied_id = ?', [mitgliedId]);
+    await conn.query('SET @allow_beitrag_delete = 0');
     await conn.query('DELETE FROM anwesenheit WHERE mitglied_id = ?', [mitgliedId]);
     await conn.query('DELETE FROM anwesenheit_protokoll WHERE mitglied_id = ?', [mitgliedId]);
     await conn.query('DELETE FROM checkins WHERE mitglied_id = ?', [mitgliedId]);
@@ -4625,6 +4628,7 @@ router.post("/:id/archivieren", async (req, res) => {
 
   } catch (error) {
     if (conn) {
+      await conn.query('SET @allow_beitrag_delete = 0').catch(() => {});
       await conn.rollback();
       conn.release();
     }
@@ -4799,7 +4803,10 @@ router.post("/bulk-archivieren", async (req, res) => {
       await conn.query('DELETE FROM gruppen_mitglieder WHERE mitglied_id = ?', [mitgliedId]);
       await conn.query('DELETE FROM verkaeufe WHERE mitglied_id = ?', [mitgliedId]);
       await conn.query('DELETE FROM gesetzlicher_vertreter WHERE mitglied_id = ?', [mitgliedId]);
+      // Guard-Ausnahme: legitime Komplett-Archivierung darf auch referenzierte Beiträge löschen
+      await conn.query('SET @allow_beitrag_delete = 1');
       await conn.query('DELETE FROM beitraege WHERE mitglied_id = ?', [mitgliedId]);
+      await conn.query('SET @allow_beitrag_delete = 0');
       await conn.query('DELETE FROM anwesenheit WHERE mitglied_id = ?', [mitgliedId]);
       await conn.query('DELETE FROM anwesenheit_protokoll WHERE mitglied_id = ?', [mitgliedId]);
       await conn.query('DELETE FROM checkins WHERE mitglied_id = ?', [mitgliedId]);
@@ -4871,6 +4878,7 @@ router.post("/bulk-archivieren", async (req, res) => {
 
     } catch (error) {
       if (conn) {
+        await conn.query('SET @allow_beitrag_delete = 0').catch(() => {});
         await conn.rollback();
         conn.release();
       }

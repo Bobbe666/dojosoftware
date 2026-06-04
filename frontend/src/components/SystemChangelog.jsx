@@ -16,6 +16,30 @@ import {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.8',
+    date: '2026-06-04',
+    type: 'feature',
+    title: 'Beitrags-Schutz (DB-Guard) & manuelle Erstattungen außerhalb Stripe',
+    description: 'Zwei Sicherungen rund um Lastschriften: Ein Datenbank-Guard verhindert dauerhaft, dass Beiträge gelöscht werden, solange sie von einer laufenden oder abgeschlossenen Stripe-Lastschrift referenziert werden (Ursache der früheren „Datensatz erneuert/unbekannt"-Verweise). Zusätzlich lassen sich jetzt Erstattungen erfassen, die NICHT über Stripe, sondern manuell von einem anderen Konto erfolgt sind.',
+    highlights: [
+      '🛡 DB-GUARD: Ein Beitrag, der von einer Stripe-Lastschrift (processing oder succeeded) referenziert wird, kann nicht mehr gelöscht werden — dadurch entstehen keine verwaisten Verweise mehr. Ausnahme nur für die legitime Komplett-Archivierung eines Mitglieds',
+      '🏦 MANUELLE ERSTATTUNG: Neuer Button „🏦 Manuell erstattet" pro Abbuchung in der Mitglieder-Finanzübersicht — für Beträge, die außerhalb Stripe (z. B. per Überweisung von einem anderen Konto) zurückerstattet wurden. Mit Betrag, Datum, Quelle/Konto und Bemerkungen',
+      '⑤ ABGLEICH: Manuelle Erstattungen erscheinen in Spalte ⑤ „Rückerstattung" neben den Stripe-Refunds (eindeutig als „manuell" gekennzeichnet) und fließen in die „Summe erstattet" ein; einzeln wieder löschbar',
+      '🔎 URSACHE GEKLÄRT: Die früheren verwaisten Beitrags-Verweise stammten aus einem einmaligen Vorfall (Frühjahr 2026), nicht aus einer laufenden Regenerierung. Der Guard schließt diese Lücke endgültig',
+    ],
+    details: 'Migration 184: BEFORE-DELETE-Trigger trg_beitraege_block_referenced_delete auf beitraege — prüft via JSON_CONTAINS gegen stripe_lastschrift_transaktion (status processing/succeeded), SIGNAL 45000 bei Verstoß; Bypass über Session-Var @allow_beitrag_delete=1 (in routes/mitglieder.js Archivierungs-Flows pollution-sicher gesetzt/zurückgesetzt). routes/beitraege.js DELETE liefert bei Guard-Treffer 409 mit Klartext. Migration 185: Tabelle manuelle_erstattungen (transaktion_id, mitglied_id, dojo_id, betrag, erstattet_am, quelle, bemerkung). finanzcockpit.js: mitglied-finanz lädt manuelle_erstattungen je Transaktion + Endpunkte POST/DELETE /manuelle-erstattung (dojo-isoliert). Frontend MitgliedFinanzUebersicht.jsx: Erfassungs-Formular in Spalte ②, Anzeige + Löschen in Spalte ⑤.',
+    files: [
+      'backend/migrations/184_beitraege_delete_guard.sql (neu)',
+      'backend/migrations/185_manuelle_erstattungen.sql (neu)',
+      'backend/scripts/run-migration-184.js, run-migration-185.js (neu)',
+      'backend/routes/mitglieder.js (Guard-Bypass in Archivierung)',
+      'backend/routes/beitraege.js (Guard-Fehlermeldung)',
+      'backend/routes/finanzcockpit.js (manuelle-erstattung POST/DELETE + mitglied-finanz)',
+      'frontend/src/components/MitgliedFinanzUebersicht.jsx',
+      'version.js', 'SystemChangelog.jsx',
+    ],
+  },
+  {
     version: '3.0.7',
     date: '2026-06-04',
     type: 'feature',

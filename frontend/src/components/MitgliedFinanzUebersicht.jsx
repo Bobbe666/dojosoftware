@@ -145,6 +145,49 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
     }
   };
 
+  // Manuelle Erstattung (außerhalb Stripe, z. B. von anderem Konto)
+  const [manualForm, setManualForm] = useState(null); // tx.id, dessen Formular offen ist
+  const [manualFields, setManualFields] = useState({ betrag: '', datum: '', quelle: '', bemerkung: '' });
+  const [savingManual, setSavingManual] = useState(false);
+  const heute = () => new Date().toISOString().split('T')[0];
+  const openManual = (tx) => {
+    setManualFields({ betrag: (Number(tx.betrag) || 0).toFixed(2), datum: heute(), quelle: '', bemerkung: '' });
+    setManualForm(manualForm === tx.id ? null : tx.id);
+  };
+  const submitManual = async (tx) => {
+    const betragCent = Math.round(parseFloat(String(manualFields.betrag).replace(',', '.')) * 100);
+    if (!betragCent || betragCent <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
+    setSavingManual(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/manuelle-erstattung/${tx.id}?dojo_id=${dojoId}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ betrag_cent: betragCent, erstattet_am: manualFields.datum || heute(), quelle: manualFields.quelle || null, bemerkung: manualFields.bemerkung || null }),
+      });
+      const d = await res.json();
+      if (d.success) {
+        setManualForm(null);
+        oeffne(data.mitglied.mitglied_id, data.mitglied.name);
+      } else {
+        alert('Speichern nicht möglich: ' + (d.error || 'Unbekannter Fehler'));
+      }
+    } catch (e) {
+      alert('Fehler beim Speichern: ' + e.message);
+    } finally {
+      setSavingManual(false);
+    }
+  };
+  const deleteManual = async (meId) => {
+    if (!window.confirm('Diese manuelle Erstattung wirklich löschen?')) return;
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/manuelle-erstattung/${meId}?dojo_id=${dojoId}`, { method: 'DELETE' });
+      const d = await res.json();
+      if (d.success) oeffne(data.mitglied.mitglied_id, data.mitglied.name);
+      else alert('Löschen nicht möglich: ' + (d.error || 'Unbekannter Fehler'));
+    } catch (e) {
+      alert('Fehler beim Löschen: ' + e.message);
+    }
+  };
+
   const [check, setCheck] = useState(null);
   const [checkLoading, setCheckLoading] = useState(false);
   const ladeCheck = async (mid) => {
@@ -368,6 +411,9 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
               const stoppBtn = { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', borderRadius: 6, padding: '0.28rem 0.6rem', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', margin: '3px 0', whiteSpace: 'nowrap' };
               const refundBtn = { background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.5)', color: '#fbbf24', borderRadius: 6, padding: '0.28rem 0.6rem', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', margin: '3px 0', whiteSpace: 'nowrap' };
               const miniRefundBtn = { background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', color: '#fbbf24', borderRadius: 5, padding: '0 0.4rem', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0, lineHeight: 1.5 };
+              const manualBtn = { background: 'rgba(56,189,248,0.13)', border: '1px solid rgba(56,189,248,0.45)', color: '#38bdf8', borderRadius: 6, padding: '0.28rem 0.6rem', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', margin: '3px 0', whiteSpace: 'nowrap', display: 'block' };
+              const mlbl = { fontSize: '0.66rem', color: 'var(--text-muted,#94a3b8)', textTransform: 'uppercase', letterSpacing: '0.03em', flex: 1 };
+              const mInp = { display: 'block', marginTop: 2, padding: '0.3rem 0.4rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 5, color: 'var(--text-primary,#e2e8f0)', fontSize: '0.8rem', width: '100%', boxSizing: 'border-box' };
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                   {monate.map(grp => {
@@ -432,6 +478,22 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                                     <div style={{ fontSize: '0.9rem', margin: '2px 0' }}><strong>{eur(tx.betrag)}</strong> <Badge color={s.color} bg={s.bg}>{s.label}</Badge></div>
                                     {tx.status === 'processing' && <button onClick={() => stoppeTx(tx)} disabled={stoppingTx[tx.id]} style={stoppBtn}>{stoppingTx[tx.id] ? 'Stoppt…' : '🚫 Stoppen'}</button>}
                                     {(tx.status === 'succeeded' || (lv && lv.charge && lv.charge.bezahlt && !lv.charge.erstattet)) && <button onClick={() => refundTx(tx)} disabled={refundingTx[tx.id]} style={refundBtn}>{refundingTx[tx.id] ? 'Erstattet…' : '↩ Rückerstatten'}</button>}
+                                    <button onClick={() => openManual(tx)} style={manualBtn} title="Erstattung erfassen, die außerhalb Stripe (z. B. von einem anderen Konto) erfolgt ist">🏦 Manuell erstattet</button>
+                                    {manualForm === tx.id && (
+                                      <div style={{ marginTop: 6, padding: '0.55rem', background: 'rgba(56,189,248,0.07)', border: '1px solid rgba(56,189,248,0.3)', borderRadius: 8 }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#7dd3fc', fontWeight: 700, marginBottom: 5 }}>🏦 Manuelle Erstattung (außerhalb Stripe)</div>
+                                        <div style={{ display: 'flex', gap: 6, marginBottom: 5 }}>
+                                          <label style={mlbl}>Betrag €<input type="text" inputMode="decimal" value={manualFields.betrag} onChange={e => setManualFields(f => ({ ...f, betrag: e.target.value }))} style={mInp} /></label>
+                                          <label style={mlbl}>Datum<input type="date" value={manualFields.datum} onChange={e => setManualFields(f => ({ ...f, datum: e.target.value }))} style={mInp} /></label>
+                                        </div>
+                                        <label style={{ ...mlbl, display: 'block', marginBottom: 5 }}>Quelle / Konto<input type="text" placeholder="z. B. Überweisung von Geschäftskonto" value={manualFields.quelle} onChange={e => setManualFields(f => ({ ...f, quelle: e.target.value }))} style={{ ...mInp, width: '100%' }} /></label>
+                                        <label style={{ ...mlbl, display: 'block', marginBottom: 6 }}>Bemerkungen<textarea rows={2} placeholder="optionale Notiz" value={manualFields.bemerkung} onChange={e => setManualFields(f => ({ ...f, bemerkung: e.target.value }))} style={{ ...mInp, width: '100%', resize: 'vertical' }} /></label>
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                          <button onClick={() => submitManual(tx)} disabled={savingManual} style={{ ...refundBtn, background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.5)', color: '#4ade80', margin: 0 }}>{savingManual ? 'Speichert…' : '✓ Speichern'}</button>
+                                          <button onClick={() => setManualForm(null)} style={{ ...liveBtn, background: 'rgba(148,163,184,0.12)', borderColor: 'rgba(148,163,184,0.4)', color: '#cbd5e1' }}>Abbrechen</button>
+                                        </div>
+                                      </div>
+                                    )}
                                     {tx.error_message && <div style={{ color: '#fca5a5', fontSize: '0.72rem', marginTop: 3 }}>⚠ {tx.error_message}</div>}
                                     <div style={{ fontSize: '0.66rem', color: 'var(--text-muted,#94a3b8)', fontFamily: 'monospace', marginTop: 4, wordBreak: 'break-all' }}>PI: {tx.stripe_payment_intent_id || '—'}</div>
                                   </div>
@@ -463,21 +525,34 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                                   {/* 5) Rückerstattung */}
                                   <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.7rem' }}>
                                     <div style={lbl}>⑤ Rückerstattung</div>
-                                    {!lv || lv.error ? (
-                                      <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.76rem' }}>{lv ? '—' : 'Erst „Live laden" (③)'}</div>
-                                    ) : (lv.refunds && lv.refunds.length > 0) ? (
-                                      <div style={{ fontSize: '0.8rem' }}>
-                                        {lv.refunds.map((r, ri) => (
-                                          <div key={ri} style={{ marginBottom: 3 }}>
-                                            <span style={{ color: '#fbbf24', fontWeight: 600 }}>↩ {eur(r.betrag)}</span> <Badge color={r.status === 'succeeded' ? '#22c55e' : r.status === 'failed' ? '#ef4444' : '#f59e0b'} bg={r.status === 'succeeded' ? 'rgba(34,197,94,0.12)' : r.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)'}>{r.status}</Badge>
-                                            {r.erstellt ? <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.72rem' }}> · {new Date(r.erstellt * 1000).toLocaleDateString('de-DE')}</span> : ''}
-                                          </div>
-                                        ))}
-                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted,#94a3b8)', marginTop: 2 }}>Summe erstattet: {eur(lv.refunds.reduce((s2, r) => s2 + (r.betrag || 0), 0))}</div>
-                                      </div>
-                                    ) : (
-                                      <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.78rem' }}>Keine Rückerstattung</div>
-                                    )}
+                                    {(() => {
+                                      const stripeRefunds = (lv && !lv.error && lv.refunds) ? lv.refunds : [];
+                                      const manuelle = tx.manuelle_erstattungen || [];
+                                      if (stripeRefunds.length === 0 && manuelle.length === 0) {
+                                        return <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.78rem' }}>{!lv ? 'Keine manuelle · Stripe erst „Live laden" (③)' : 'Keine Rückerstattung'}</div>;
+                                      }
+                                      const summe = stripeRefunds.reduce((s2, r) => s2 + (r.betrag || 0), 0) + manuelle.reduce((s2, me) => s2 + (Number(me.betrag) || 0), 0);
+                                      return (
+                                        <div style={{ fontSize: '0.8rem' }}>
+                                          {stripeRefunds.map((r, ri) => (
+                                            <div key={'s' + ri} style={{ marginBottom: 3 }}>
+                                              <span style={{ color: '#fbbf24', fontWeight: 600 }}>↩ {eur(r.betrag)}</span> <Badge color={r.status === 'succeeded' ? '#22c55e' : r.status === 'failed' ? '#ef4444' : '#f59e0b'} bg={r.status === 'succeeded' ? 'rgba(34,197,94,0.12)' : r.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)'}>{r.status}</Badge> <Badge color="#a78bfa" bg="rgba(167,139,250,0.12)">Stripe</Badge>
+                                              {r.erstellt ? <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.72rem' }}> · {new Date(r.erstellt * 1000).toLocaleDateString('de-DE')}</span> : ''}
+                                            </div>
+                                          ))}
+                                          {manuelle.map((me) => (
+                                            <div key={'m' + me.id} style={{ marginBottom: 4 }}>
+                                              <span style={{ color: '#38bdf8', fontWeight: 600 }}>🏦 {eur(me.betrag)}</span> <Badge color="#38bdf8" bg="rgba(56,189,248,0.12)">manuell</Badge>
+                                              <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.72rem' }}> · {datum(me.erstattet_am)}</span>
+                                              <button onClick={() => deleteManual(me.id)} title="Manuelle Erstattung löschen" style={{ marginLeft: 5, background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.72rem', padding: 0 }}>✕</button>
+                                              {me.quelle ? <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.7rem' }}>Quelle: {me.quelle}</div> : ''}
+                                              {me.bemerkung ? <div style={{ color: 'var(--text-secondary,#cbd5e1)', fontSize: '0.7rem', fontStyle: 'italic' }}>{me.bemerkung}</div> : ''}
+                                            </div>
+                                          ))}
+                                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted,#94a3b8)', marginTop: 2 }}>Summe erstattet: {eur(summe)}</div>
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                               );
