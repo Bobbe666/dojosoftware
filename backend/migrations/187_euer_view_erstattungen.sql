@@ -1,92 +1,81 @@
 -- ============================================================================
 -- Migration 187: Erstattungen als negative Einnahmen in v_euer_einnahmen
 -- ----------------------------------------------------------------------------
--- Rückerstattungen mindern die Einnahmen im Erstattungsdatum (§11 EStG
--- Abflussprinzip). Neuer UNION-Branch mit NEGATIVEM betrag_brutto.
--- Basis: Migration 098 (unverändert) + Erstattungs-Branch.
+-- Rückerstattungen mindern die Einnahmen im Erstattungsdatum (§11 EStG).
+-- Basis: AKTUELLE View-Definition (Stand 2026-06, via SHOW CREATE VIEW) +
+-- neuer Erstattungs-Branch mit NEGATIVEM betrag_brutto.
 -- Wirksame Erstattungen = status IN ('erstattet','veranlasst').
 -- ============================================================================
 
+-- Collation an die übrigen Tabellen angleichen (sonst UNION-Collation-Konflikt)
+ALTER TABLE erstattungen CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE OR REPLACE VIEW v_euer_einnahmen AS
 
--- Manuelle Belege (Einnahmen)
-SELECT
-    'beleg' as quelle, beleg_id as referenz_id, dojo_id, organisation_name,
-    beleg_datum as datum, betrag_brutto, kategorie, beschreibung,
-    YEAR(beleg_datum) as jahr, MONTH(beleg_datum) as monat
-FROM buchhaltung_belege
-WHERE buchungsart = 'einnahme' AND storniert = FALSE
-  AND kategorie NOT IN ('privateinlage', 'privatentnahme')
+SELECT 'Beleg' AS quelle, b.beleg_id AS referenz_id, b.dojo_id, b.organisation_name,
+       b.beleg_datum AS datum, b.betrag_brutto, b.kategorie, b.beschreibung,
+       YEAR(b.beleg_datum) AS jahr, MONTH(b.beleg_datum) AS monat
+FROM buchhaltung_belege b
+WHERE b.buchungsart = 'einnahme' AND b.storniert = 0
+  AND b.kategorie NOT IN ('privateinlage','privatentnahme')
 
 UNION ALL
 
--- Mitgliedsbeiträge (nur bezahlt + kein Rechnungsbezug)
-SELECT
-    'beitrag' as quelle, b.beitrag_id as referenz_id, b.dojo_id,
-    CASE WHEN b.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END,
-    b.zahlungsdatum as datum, b.betrag, 'mitgliedsbeitraege' as kategorie,
-    CONCAT('Mitgliedsbeitrag ', MONTH(b.zahlungsdatum), '/', YEAR(b.zahlungsdatum)),
-    YEAR(b.zahlungsdatum) as jahr, MONTH(b.zahlungsdatum) as monat
+SELECT 'Beitrag' AS quelle, b.beitrag_id AS referenz_id, COALESCE(b.dojo_id,1) AS dojo_id,
+       CASE WHEN b.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END AS organisation_name,
+       b.zahlungsdatum AS datum, b.betrag AS betrag_brutto, 'betriebseinnahmen' AS kategorie,
+       CONCAT('Mitgliedsbeitrag ', MONTH(b.zahlungsdatum), '/', YEAR(b.zahlungsdatum)) AS beschreibung,
+       YEAR(b.zahlungsdatum) AS jahr, MONTH(b.zahlungsdatum) AS monat
 FROM beitraege b
-WHERE b.bezahlt = 1 AND b.rechnung_id IS NULL
+WHERE b.bezahlt = 1 AND b.rechnung_id IS NULL AND b.euer_ausblenden = 0
 
 UNION ALL
 
--- Rechnungen
-SELECT
-    'rechnung' as quelle, r.rechnung_id as referenz_id, m.dojo_id,
-    CASE WHEN m.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END,
-    r.bezahlt_am as datum, r.gesamtbetrag, 'sonstige_einnahmen' as kategorie,
-    CONCAT('Rechnung ', r.rechnung_nummer),
-    YEAR(r.bezahlt_am) as jahr, MONTH(r.bezahlt_am) as monat
+SELECT 'Rechnung' AS quelle, r.rechnung_id AS referenz_id, COALESCE(r.dojo_id,1) AS dojo_id,
+       CASE WHEN r.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END AS organisation_name,
+       r.bezahlt_am AS datum, COALESCE(r.brutto_betrag, r.betrag) AS betrag_brutto, 'betriebseinnahmen' AS kategorie,
+       CONCAT('Rechnung ', r.rechnungsnummer) AS beschreibung,
+       YEAR(r.bezahlt_am) AS jahr, MONTH(r.bezahlt_am) AS monat
 FROM rechnungen r
-JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
 WHERE r.status = 'bezahlt' AND r.bezahlt_am IS NOT NULL
 
 UNION ALL
 
--- Verkäufe
-SELECT
-    'verkauf' as quelle, v.verkauf_id as referenz_id, v.dojo_id,
-    CASE WHEN v.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END,
-    v.verkauf_datum as datum, v.brutto_gesamt_cent / 100, 'sonstige_einnahmen' as kategorie,
-    CONCAT('Verkauf ', COALESCE(v.bon_nummer, v.verkauf_id)),
-    YEAR(v.verkauf_datum) as jahr, MONTH(v.verkauf_datum) as monat
+SELECT 'Verkauf' AS quelle, v.verkauf_id AS referenz_id, COALESCE(v.dojo_id,1) AS dojo_id,
+       CASE WHEN v.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END AS organisation_name,
+       v.verkauf_datum AS datum, v.brutto_gesamt_cent / 100 AS betrag_brutto, 'betriebseinnahmen' AS kategorie,
+       CONCAT('Verkauf ', v.bon_nummer) AS beschreibung,
+       YEAR(v.verkauf_datum) AS jahr, MONTH(v.verkauf_datum) AS monat
 FROM verkaeufe v
-WHERE v.storniert = 0
 
 UNION ALL
 
--- Kassenbuch-Einnahmen
-SELECT
-    'kassenbuch' as quelle, k.eintrag_id as referenz_id, COALESCE(k.dojo_id, 1) as dojo_id,
-    CASE WHEN k.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END,
-    k.geschaeft_datum as datum, k.betrag_cent / 100, 'sonstige_einnahmen' as kategorie,
-    k.beschreibung, YEAR(k.geschaeft_datum) as jahr, MONTH(k.geschaeft_datum) as monat
+SELECT 'Bank' AS quelle, bt.transaktion_id AS referenz_id, bt.dojo_id, bt.organisation_name,
+       bt.buchungsdatum AS datum, bt.betrag AS betrag_brutto, COALESCE(bt.kategorie,'betriebseinnahmen') AS kategorie,
+       CONCAT(bt.auftraggeber_empfaenger, ': ', COALESCE(bt.verwendungszweck,'')) AS beschreibung,
+       YEAR(bt.buchungsdatum) AS jahr, MONTH(bt.buchungsdatum) AS monat
+FROM bank_transaktionen bt
+WHERE bt.betrag > 0 AND bt.status = 'zugeordnet'
+  AND bt.kategorie NOT IN ('privateinlage','privatentnahme')
+  AND bt.beleg_id IS NULL
+  AND (bt.match_typ IS NULL OR bt.match_typ NOT IN ('rechnung','beitrag','verkauf'))
+
+UNION ALL
+
+SELECT 'Kasse' AS quelle, k.eintrag_id AS referenz_id, COALESCE(k.dojo_id,1) AS dojo_id,
+       CASE WHEN k.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END AS organisation_name,
+       k.geschaeft_datum AS datum, k.betrag_cent / 100 AS betrag_brutto, 'betriebseinnahmen' AS kategorie,
+       k.beschreibung, YEAR(k.geschaeft_datum) AS jahr, MONTH(k.geschaeft_datum) AS monat
 FROM kassenbuch k
 WHERE k.bewegungsart = 'einnahme'
 
 UNION ALL
 
--- Bank-Einnahmen (nur ungematchte)
-SELECT
-    'bank' as quelle, bt.transaktion_id as referenz_id, bt.dojo_id, bt.organisation_name,
-    bt.buchungsdatum as datum, bt.betrag, COALESCE(bt.kategorie, 'sonstige_einnahmen'),
-    bt.verwendungszweck, YEAR(bt.buchungsdatum) as jahr, MONTH(bt.buchungsdatum) as monat
-FROM bank_transaktionen bt
-WHERE bt.betrag > 0 AND bt.status = 'zugeordnet'
-  AND bt.kategorie NOT IN ('privateinlage', 'privatentnahme')
-  AND bt.beleg_id IS NULL
-  AND (bt.match_typ IS NULL OR bt.match_typ NOT IN ('rechnung', 'beitrag', 'verkauf'))
-
-UNION ALL
-
 -- Erstattungen (NEGATIVE Einnahmen, §11 EStG Abflussprinzip)
-SELECT
-    'erstattung' as quelle, e.id as referenz_id, e.dojo_id,
-    CASE WHEN e.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END,
-    e.erstattet_am as datum, -e.betrag, 'erstattungen' as kategorie,
-    CONCAT('Erstattung ', COALESCE(e.quelle_art, 'sonstige'), ' ', MONTH(e.erstattet_am), '/', YEAR(e.erstattet_am)),
-    YEAR(e.erstattet_am) as jahr, MONTH(e.erstattet_am) as monat
+SELECT 'Erstattung' AS quelle, e.id AS referenz_id, e.dojo_id,
+       CASE WHEN e.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END AS organisation_name,
+       e.erstattet_am AS datum, -e.betrag AS betrag_brutto, 'erstattungen' AS kategorie,
+       CONCAT('Erstattung ', COALESCE(e.quelle_art,'sonstige'), ' ', MONTH(e.erstattet_am), '/', YEAR(e.erstattet_am)) AS beschreibung,
+       YEAR(e.erstattet_am) AS jahr, MONTH(e.erstattet_am) AS monat
 FROM erstattungen e
-WHERE e.status IN ('erstattet', 'veranlasst');
+WHERE e.status IN ('erstattet','veranlasst');
