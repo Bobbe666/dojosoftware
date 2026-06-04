@@ -467,6 +467,33 @@ function initCronJobs() {
     }
   });
 
+  // ── Stripe-Erstattungen Sync ──────────────────────────────────────────────
+  // Täglich um 04:50 — gleicht Stripe-Refunds in die zentrale erstattungen-Tabelle
+  // ab (Absicherung gegen verpasste Webhooks; deckt auch direkt im Stripe-Dashboard
+  // ausgelöste Rückerstattungen lückenlos ab).
+  cron.schedule('50 4 * * *', async () => {
+    try {
+      const { syncStripeRefunds } = require('./services/erstattungSync');
+      const dojos = await queryAsync(
+        `SELECT id FROM dojo WHERE payment_provider IN ('stripe_connect','stripe_datev')`
+      );
+      if (!dojos.length) return;
+      let gesamtNeu = 0;
+      for (const d of dojos) {
+        try {
+          const r = await syncStripeRefunds(d.id, { sinceDays: 30 });
+          gesamtNeu += (r.neu || 0);
+        } catch (e) {
+          logger.warn(`Erstattungs-Sync dojo ${d.id}: ${e.message}`);
+        }
+      }
+      if (gesamtNeu > 0) logger.success(`💸 Erstattungs-Sync: ${gesamtNeu} neue Erstattung(en) erfasst`);
+      else logger.info('ℹ️ Erstattungs-Sync: keine neuen Erstattungen');
+    } catch (error) {
+      logger.error('❌ Erstattungs-Sync Cron Fehler', { error: error.message });
+    }
+  });
+
   // ── Auto-Lastschrift Artikelverkäufe ──────────────────────────────────────
   // Täglich um 00:05 Uhr — zieht offene Lastschrift-Verkäufe automatisch ein
   cron.schedule('5 0 * * *', async () => {
