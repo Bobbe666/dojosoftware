@@ -146,13 +146,13 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
   };
 
   // Manuelle Erstattung (außerhalb Stripe, z. B. von anderem Konto)
-  const [manualForm, setManualForm] = useState(null); // tx.id, dessen Formular offen ist
+  const [manualForm, setManualForm] = useState(null); // tx-Objekt, dessen Modal offen ist
   const [manualFields, setManualFields] = useState({ betrag: '', datum: '', quelle: '', bemerkung: '' });
   const [savingManual, setSavingManual] = useState(false);
   const heute = () => new Date().toISOString().split('T')[0];
   const openManual = (tx) => {
     setManualFields({ betrag: (Number(tx.betrag) || 0).toFixed(2), datum: heute(), quelle: '', bemerkung: '' });
-    setManualForm(manualForm === tx.id ? null : tx.id);
+    setManualForm((manualForm && manualForm.id === tx.id) ? null : tx);
   };
   const submitManual = async (tx) => {
     const betragCent = Math.round(parseFloat(String(manualFields.betrag).replace(',', '.')) * 100);
@@ -412,8 +412,6 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
               const refundBtn = { background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.5)', color: '#fbbf24', borderRadius: 6, padding: '0.28rem 0.6rem', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', margin: '3px 0', whiteSpace: 'nowrap' };
               const miniRefundBtn = { background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', color: '#fbbf24', borderRadius: 5, padding: '0 0.4rem', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0, lineHeight: 1.5 };
               const manualBtn = { background: 'rgba(56,189,248,0.13)', border: '1px solid rgba(56,189,248,0.45)', color: '#38bdf8', borderRadius: 6, padding: '0.28rem 0.6rem', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', margin: '3px 0', whiteSpace: 'nowrap', display: 'block' };
-              const mlbl = { fontSize: '0.66rem', color: 'var(--text-muted,#94a3b8)', textTransform: 'uppercase', letterSpacing: '0.03em', flex: 1 };
-              const mInp = { display: 'block', marginTop: 2, padding: '0.3rem 0.4rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 5, color: 'var(--text-primary,#e2e8f0)', fontSize: '0.8rem', width: '100%', boxSizing: 'border-box' };
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                   {monate.map(grp => {
@@ -479,21 +477,6 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                                     {tx.status === 'processing' && <button onClick={() => stoppeTx(tx)} disabled={stoppingTx[tx.id]} style={stoppBtn}>{stoppingTx[tx.id] ? 'Stoppt…' : '🚫 Stoppen'}</button>}
                                     {(tx.status === 'succeeded' || (lv && lv.charge && lv.charge.bezahlt && !lv.charge.erstattet)) && <button onClick={() => refundTx(tx)} disabled={refundingTx[tx.id]} style={refundBtn}>{refundingTx[tx.id] ? 'Erstattet…' : '↩ Rückerstatten'}</button>}
                                     <button onClick={() => openManual(tx)} style={manualBtn} title="Erstattung erfassen, die außerhalb Stripe (z. B. von einem anderen Konto) erfolgt ist">🏦 Manuell erstattet</button>
-                                    {manualForm === tx.id && (
-                                      <div style={{ marginTop: 6, padding: '0.55rem', background: 'rgba(56,189,248,0.07)', border: '1px solid rgba(56,189,248,0.3)', borderRadius: 8 }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#7dd3fc', fontWeight: 700, marginBottom: 5 }}>🏦 Manuelle Erstattung (außerhalb Stripe)</div>
-                                        <div style={{ display: 'flex', gap: 6, marginBottom: 5 }}>
-                                          <label style={mlbl}>Betrag €<input type="text" inputMode="decimal" value={manualFields.betrag} onChange={e => setManualFields(f => ({ ...f, betrag: e.target.value }))} style={mInp} /></label>
-                                          <label style={mlbl}>Datum<input type="date" value={manualFields.datum} onChange={e => setManualFields(f => ({ ...f, datum: e.target.value }))} style={mInp} /></label>
-                                        </div>
-                                        <label style={{ ...mlbl, display: 'block', marginBottom: 5 }}>Quelle / Konto<input type="text" placeholder="z. B. Überweisung von Geschäftskonto" value={manualFields.quelle} onChange={e => setManualFields(f => ({ ...f, quelle: e.target.value }))} style={{ ...mInp, width: '100%' }} /></label>
-                                        <label style={{ ...mlbl, display: 'block', marginBottom: 6 }}>Bemerkungen<textarea rows={2} placeholder="optionale Notiz" value={manualFields.bemerkung} onChange={e => setManualFields(f => ({ ...f, bemerkung: e.target.value }))} style={{ ...mInp, width: '100%', resize: 'vertical' }} /></label>
-                                        <div style={{ display: 'flex', gap: 6 }}>
-                                          <button onClick={() => submitManual(tx)} disabled={savingManual} style={{ ...refundBtn, background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.5)', color: '#4ade80', margin: 0 }}>{savingManual ? 'Speichert…' : '✓ Speichern'}</button>
-                                          <button onClick={() => setManualForm(null)} style={{ ...liveBtn, background: 'rgba(148,163,184,0.12)', borderColor: 'rgba(148,163,184,0.4)', color: '#cbd5e1' }}>Abbrechen</button>
-                                        </div>
-                                      </div>
-                                    )}
                                     {tx.error_message && <div style={{ color: '#fca5a5', fontSize: '0.72rem', marginTop: 3 }}>⚠ {tx.error_message}</div>}
                                     <div style={{ fontSize: '0.66rem', color: 'var(--text-muted,#94a3b8)', fontFamily: 'monospace', marginTop: 4, wordBreak: 'break-all' }}>PI: {tx.stripe_payment_intent_id || '—'}</div>
                                   </div>
@@ -682,6 +665,57 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
           )}
         </div>
       )}
+
+      {/* Modal: Manuelle Erstattung (außerhalb Stripe) */}
+      {manualForm && (
+        <div
+          onClick={() => !savingManual && setManualForm(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 4000, background: 'rgba(8,10,20,0.72)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 460, background: 'linear-gradient(160deg, rgba(26,26,46,0.99), rgba(18,18,34,0.99))', border: '1px solid rgba(56,189,248,0.35)', borderRadius: 14, boxShadow: '0 24px 60px rgba(0,0,0,0.55)', padding: '1.3rem', color: 'var(--text-primary,#e2e8f0)' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+              <div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#7dd3fc' }}>🏦 Manuelle Erstattung</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted,#94a3b8)', marginTop: 2 }}>
+                  außerhalb Stripe · Lauf {manualForm.monat}/{manualForm.jahr} · geschickt {eur(manualForm.betrag)}
+                </div>
+              </div>
+              <button onClick={() => !savingManual && setManualForm(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted,#94a3b8)', fontSize: '1.4rem', lineHeight: 1, cursor: 'pointer', padding: 0 }}>×</button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.7rem', marginBottom: '0.8rem' }}>
+              <label style={{ flex: 1, fontSize: '0.72rem', color: 'var(--text-muted,#94a3b8)', textTransform: 'uppercase', letterSpacing: '0.03em', fontWeight: 600 }}>
+                Betrag €
+                <input type="text" inputMode="decimal" autoFocus value={manualFields.betrag} onChange={e => setManualFields(f => ({ ...f, betrag: e.target.value }))} style={modalInp} />
+              </label>
+              <label style={{ flex: 1, fontSize: '0.72rem', color: 'var(--text-muted,#94a3b8)', textTransform: 'uppercase', letterSpacing: '0.03em', fontWeight: 600 }}>
+                Erstattet am
+                <input type="date" value={manualFields.datum} onChange={e => setManualFields(f => ({ ...f, datum: e.target.value }))} style={modalInp} />
+              </label>
+            </div>
+
+            <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted,#94a3b8)', textTransform: 'uppercase', letterSpacing: '0.03em', fontWeight: 600, marginBottom: '0.8rem' }}>
+              Quelle / Konto
+              <input type="text" placeholder="z. B. Überweisung von Geschäftskonto" value={manualFields.quelle} onChange={e => setManualFields(f => ({ ...f, quelle: e.target.value }))} style={modalInp} />
+            </label>
+
+            <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted,#94a3b8)', textTransform: 'uppercase', letterSpacing: '0.03em', fontWeight: 600, marginBottom: '1.1rem' }}>
+              Bemerkungen
+              <textarea rows={3} placeholder="optionale Notiz" value={manualFields.bemerkung} onChange={e => setManualFields(f => ({ ...f, bemerkung: e.target.value }))} style={{ ...modalInp, resize: 'vertical' }} />
+            </label>
+
+            <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end' }}>
+              <button onClick={() => setManualForm(null)} disabled={savingManual} style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.4)', color: '#cbd5e1', borderRadius: 8, padding: '0.5rem 1rem', fontSize: '0.84rem', fontWeight: 600, cursor: 'pointer' }}>Abbrechen</button>
+              <button onClick={() => submitManual(manualForm)} disabled={savingManual} style={{ background: 'rgba(34,197,94,0.18)', border: '1px solid rgba(34,197,94,0.55)', color: '#4ade80', borderRadius: 8, padding: '0.5rem 1.2rem', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer' }}>{savingManual ? 'Speichert…' : '✓ Erstattung speichern'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 5, padding: '0.5rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 8, color: 'var(--text-primary,#e2e8f0)', fontSize: '0.9rem', fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' };
