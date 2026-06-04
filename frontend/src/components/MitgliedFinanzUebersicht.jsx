@@ -538,6 +538,7 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                                                 {istManuell
                                                   ? <Badge color="#38bdf8" bg="rgba(56,189,248,0.12)">manuell</Badge>
                                                   : <Badge color="#a78bfa" bg="rgba(167,139,250,0.12)">Stripe</Badge>}
+                                                {me.status === 'veranlasst' && <Badge color="#f59e0b" bg="rgba(245,158,11,0.12)">veranlasst</Badge>}
                                                 <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.72rem' }}> · {datum(me.erstattet_am)}</span>
                                                 {istManuell && <button onClick={() => deleteManual(me.id)} title="Manuelle Erstattung löschen" style={{ marginLeft: 5, background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.72rem', padding: 0 }}>✕</button>}
                                                 {me.quelle_konto ? <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.7rem' }}>Quelle: {me.quelle_konto}</div> : ''}

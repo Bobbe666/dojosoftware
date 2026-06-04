@@ -656,7 +656,7 @@ async function handleRefundObject(r, charge) {
          (dojo_id, mitglied_id, quelle, transaktion_id, stripe_payment_intent_id, stripe_charge_id, stripe_refund_id, betrag, quelle_art, erstattet_am, status, bemerkung)
        VALUES (?, ?, 'stripe_extern', ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE betrag = VALUES(betrag), status = VALUES(status), mitglied_id = COALESCE(VALUES(mitglied_id), mitglied_id)`,
-      [tx.dojo_id, tx.mitglied_id, tx.id, pi, chargeId, r.id, (r.amount || 0) / 100, art, erstattetAm, r.status === 'succeeded' ? 'erstattet' : 'offen', r.reason || null]
+      [tx.dojo_id, tx.mitglied_id, tx.id, pi, chargeId, r.id, (r.amount || 0) / 100, art, erstattetAm, r.status === 'succeeded' ? 'erstattet' : 'veranlasst', r.reason || null]
     );
     logger.info(`💸 Webhook-Erstattung erfasst: ${r.id} (${(r.amount || 0) / 100} €, dojo ${tx.dojo_id})`);
   } catch (e) {

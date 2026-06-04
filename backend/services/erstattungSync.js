@@ -78,7 +78,8 @@ async function syncStripeRefunds(dojoId, { sinceDays = null } = {}) {
 
       const betrag = (r.amount || 0) / 100;
       const erstattetAm = new Date((r.created || Math.floor(Date.now() / 1000)) * 1000).toISOString().split('T')[0];
-      const status = r.status === 'succeeded' ? 'erstattet' : 'offen';
+      // succeeded = abgeschlossen, pending = veranlasst (SEPA-Gutschrift unterwegs) — beide wirksam
+      const status = r.status === 'succeeded' ? 'erstattet' : 'veranlasst';
 
       const [res] = await pool.query(
         `INSERT INTO erstattungen

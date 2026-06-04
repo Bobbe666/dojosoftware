@@ -864,8 +864,8 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
     try {
       const [meRows] = await fcPool.query(
         `SELECT id, transaktion_id, betrag, erstattet_am, quelle, quelle_konto, quelle_art,
-                bemerkung, erstellt_von, created_at, stripe_refund_id
-         FROM erstattungen WHERE mitglied_id = ? AND status = 'erstattet'
+                bemerkung, erstellt_von, created_at, stripe_refund_id, status
+         FROM erstattungen WHERE mitglied_id = ? AND status IN ('erstattet','veranlasst')
          ORDER BY erstattet_am DESC, id DESC`,
         [mid]
       );
@@ -1118,7 +1118,7 @@ router.get('/mitglied-check/:id', async (req, res) => {
     try {
       const [meRows] = await fcPool.query(
         `SELECT transaktion_id, SUM(betrag) AS summe FROM erstattungen
-         WHERE mitglied_id = ? AND status = 'erstattet' AND transaktion_id IS NOT NULL
+         WHERE mitglied_id = ? AND status IN ('erstattet','veranlasst') AND transaktion_id IS NOT NULL
          GROUP BY transaktion_id`, [mid]);
       meRows.forEach(r => { erstattetByTx[r.transaktion_id] = num(r.summe); });
     } catch (e) { /* Tabelle evtl. noch nicht migriert */ }
@@ -1213,7 +1213,7 @@ router.post('/refund/:txId', async (req, res) => {
          VALUES (?, ?, 'stripe_button', ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE betrag = VALUES(betrag), status = VALUES(status)`,
         [dojoId, tx.mitglied_id, txId, tx.stripe_payment_intent_id, tx.stripe_charge_id || (typeof refund.charge === 'string' ? refund.charge : null),
-         refund.id, refund.amount / 100, art, erstattetAm, refund.status === 'succeeded' ? 'erstattet' : 'offen', grund || null]
+         refund.id, refund.amount / 100, art, erstattetAm, refund.status === 'succeeded' ? 'erstattet' : 'veranlasst', grund || null]
       );
     } catch (e) { logger.warn('Erstattung konnte nicht in erstattungen persistiert werden: ' + e.message); }
 
