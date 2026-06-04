@@ -50,6 +50,8 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const [availableBanks, setAvailableBanks] = useState([]);
   const [selectedBank, setSelectedBank] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
+  const [zusammensetzung, setZusammensetzung] = useState({}); // mitglied_id -> { posten, gesamt, verwendungszweck }
+  const [zusLoading, setZusLoading] = useState({});
 
   // Zahllauf erstellen State
   const [zahllaufCreating, setZahllaufCreating] = useState(false);
@@ -288,14 +290,28 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
         .reduce((sum, i) => sum + parseFloat(i.betrag || 0), 0)
     : 0;
 
-  // Toggle für Beiträge-Details Dropdown
-  const toggleRowExpanded = (mitgliedId) => {
+  // Aufschlüsselung einer anstehenden Abbuchung nachladen (read-only)
+  const ladeZusammensetzung = async (mid) => {
+    if (!mid || zusammensetzung[mid] || zusLoading[mid]) return;
+    setZusLoading(prev => ({ ...prev, [mid]: true }));
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/zusammensetzung?mitglied_id=${mid}${dojoId ? `&dojo_id=${dojoId}` : ''}`);
+      const d = await res.json();
+      if (d.success) setZusammensetzung(prev => ({ ...prev, [mid]: d }));
+    } catch { /* still */ }
+    finally { setZusLoading(prev => ({ ...prev, [mid]: false })); }
+  };
+
+  // Toggle für Beiträge-Details Dropdown (+ Aufschlüsselung laden)
+  const toggleRowExpanded = (item) => {
+    const key = itemKey(item);
     setExpandedRows(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(mitgliedId)) {
-        newSet.delete(mitgliedId);
+      if (newSet.has(key)) {
+        newSet.delete(key);
       } else {
-        newSet.add(mitgliedId);
+        newSet.add(key);
+        if (item.mitglied_id && !item.is_starterpaket) ladeZusammensetzung(item.mitglied_id);
       }
       return newSet;
     });
@@ -1514,7 +1530,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                   <React.Fragment key={index}>
                     <tr>
                       <td className="ll-td-expand"
-                          onClick={() => toggleRowExpanded(itemKey(item))}>
+                          onClick={() => toggleRowExpanded(item)}>
                         {expandedRows.has(itemKey(item)) ? (
                           <ChevronDown size={18} />
                         ) : (
@@ -1578,29 +1594,55 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                         </button>
                       </td>
                     </tr>
-                    {/* Details-Zeile - nur anzeigen wenn expandiert */}
-                    {expandedRows.has(itemKey(item)) && item.beitraege && item.beitraege.length > 0 && (
+                    {/* Details-Zeile - Aufschlüsselung der Abbuchung */}
+                    {expandedRows.has(itemKey(item)) && (
                       <tr className="details-row">
                         <td colSpan={100} className="ll-details-td">
                           <div className="ll-details-inner">
-                            <div className="ll-details-heading">
-                              <span>Einzelne Beiträge</span>
-                              <span className="ll-details-count">{item.beitraege.length} Position{item.beitraege.length !== 1 ? 'en' : ''}</span>
-                            </div>
-                            <div className="ll-details-list">
-                              <div className="ll-details-list-header">
-                                <span className="ll-details-col-desc">Beschreibung</span>
-                                <span className="ll-details-col-datum">Datum</span>
-                                <span className="ll-details-col-betrag">Betrag</span>
-                              </div>
-                              {item.beitraege.map((beitrag, bIdx) => (
-                                <div key={bIdx} className="ll-details-list-row">
-                                  <span className="ll-details-col-desc">{beitrag.beschreibung || beitrag.monat}</span>
-                                  <span className="ll-details-col-datum">{beitrag.datum}</span>
-                                  <span className="ll-details-col-betrag ll-details-col-betrag--val">{formatCurrency(beitrag.betrag)}</span>
-                                </div>
-                              ))}
-                            </div>
+                            {(() => {
+                              const fmtD = (d) => { if (!d) return '—'; const dt = new Date(d); return isNaN(dt) ? String(d) : dt.toLocaleDateString('de-DE'); };
+                              const z = item.mitglied_id ? zusammensetzung[item.mitglied_id] : null;
+                              const loading = item.mitglied_id ? zusLoading[item.mitglied_id] : false;
+                              const posten = (z && z.posten && z.posten.length)
+                                ? z.posten
+                                : (item.beitraege || []).map(b => ({ label: b.beschreibung || b.monat || 'Beitrag', datum: b.datum, betrag: parseFloat(b.betrag || 0), info: null }));
+                              if (loading && !posten.length) return <div className="ll-details-heading"><span>Lädt Aufschlüsselung…</span></div>;
+                              if (!posten.length) return <div className="ll-details-heading"><span>Keine Einzelposten vorhanden.</span></div>;
+                              return (
+                                <>
+                                  <div className="ll-details-heading">
+                                    <span>Zusammensetzung der Abbuchung</span>
+                                    <span className="ll-details-count">{posten.length} Position{posten.length !== 1 ? 'en' : ''}</span>
+                                  </div>
+                                  <div className="ll-details-list">
+                                    <div className="ll-details-list-header">
+                                      <span className="ll-details-col-desc">Posten</span>
+                                      <span className="ll-details-col-datum">Fällig</span>
+                                      <span className="ll-details-col-betrag">Betrag</span>
+                                    </div>
+                                    {posten.map((p, pIdx) => (
+                                      <div key={pIdx} className="ll-details-list-row">
+                                        <span className="ll-details-col-desc">{p.label}{p.info ? ` · ${p.info}` : ''}</span>
+                                        <span className="ll-details-col-datum">{fmtD(p.datum)}</span>
+                                        <span className="ll-details-col-betrag ll-details-col-betrag--val">{formatCurrency(p.betrag)}</span>
+                                      </div>
+                                    ))}
+                                    {z && (
+                                      <div className="ll-details-list-row" style={{ fontWeight: 700, borderTop: '1px solid rgba(255,255,255,0.18)', marginTop: 2 }}>
+                                        <span className="ll-details-col-desc">Gesamt</span>
+                                        <span className="ll-details-col-datum"></span>
+                                        <span className="ll-details-col-betrag ll-details-col-betrag--val">{formatCurrency(z.gesamt)}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {z && z.verwendungszweck && (
+                                    <div style={{ marginTop: '0.6rem', fontSize: '0.8rem', color: 'var(--text-secondary, #cbd5e1)' }}>
+                                      📄 <strong>Verwendungszweck (so sieht es das Mitglied):</strong> {z.verwendungszweck}
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>

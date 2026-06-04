@@ -1096,8 +1096,25 @@ class StripeDataevProvider {
         // Verarbeite jeden Mitglied
         for (const item of mitgliederMitBeitraegen) {
             try {
-                const beitragIds = item.beitraege ? item.beitraege.map(b => b.beitrag_id) : [];
-                const description = `Mitgliedsbeitrag ${monat}/${jahr} - ${item.offene_monate || ''}`;
+                const beitragIds = item.beitraege ? item.beitraege.map(b => b.beitrag_id).filter(Boolean) : [];
+                // Verwendungszweck aus den Posten zusammensetzen (nur Text).
+                let description = `Mitgliedsbeitrag ${String(monat).padStart(2, '0')}/${jahr}`;
+                try {
+                    if (beitragIds.length > 0) {
+                        const ph = beitragIds.map(() => '?').join(',');
+                        const arts = await new Promise((resolve, reject) => {
+                            db.query(`SELECT art, COUNT(*) AS c FROM beitraege WHERE beitrag_id IN (${ph}) GROUP BY art`, beitragIds,
+                                (err, rows) => err ? reject(err) : resolve(rows));
+                        });
+                        const ART = { mitgliedsbeitrag: 'Mitgliedsbeitrag', pruefungsgebuehr: 'Pruefungsgebuehr', artikel: 'Artikel', aufnahmegebuehr: 'Aufnahmegebuehr' };
+                        const parts = (arts || []).map(a => {
+                            const l = ART[a.art] || a.art || 'Beitrag';
+                            return a.c > 1 ? `${a.c}x ${l}` : l;
+                        });
+                        if (parts.length > 0) description = `${parts.join(' + ')} ${String(monat).padStart(2, '0')}/${jahr}`;
+                        if (description.length > 140) description = description.slice(0, 137) + '...';
+                    }
+                } catch (_) { /* Fallback */ }
 
                 const result = await this.chargeSepaDirectDebit(
                     item.mitglied_id,

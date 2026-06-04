@@ -12,6 +12,12 @@ import '../styles/components.css';
 import '../styles/themes.css';
 import '../styles/MemberPayments.css';
 
+const fmtDate = (d) => {
+  if (!d) return '';
+  const dt = new Date(d);
+  return isNaN(dt) ? String(d).slice(0, 10) : dt.toLocaleDateString('de-DE');
+};
+
 const MemberPayments = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -23,6 +29,7 @@ const MemberPayments = () => {
   const [loading, setLoading] = useState(true);
   const [deletingPm, setDeletingPm] = useState(null);
   const [activeTab, setActiveTab] = useState('offen');
+  const [naechste, setNaechste] = useState(null); // Zusammensetzung nächste Abbuchung
 
   const loadData = useCallback(async () => {
     if (!user?.mitglied_id) return;
@@ -68,6 +75,16 @@ const MemberPayments = () => {
   }, [user?.mitglied_id, paymentHistory.length]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Zusammensetzung der nächsten Abbuchung laden
+  useEffect(() => {
+    let aktiv = true;
+    fetchWithAuth(`${config.apiBaseUrl}/member-payments/naechste-abbuchung`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (aktiv && d?.success) setNaechste(d); })
+      .catch(() => {});
+    return () => { aktiv = false; };
+  }, []);
   useEffect(() => {
     if (activeTab === 'historie') loadHistory();
   }, [activeTab, loadHistory]);
@@ -151,6 +168,48 @@ const MemberPayments = () => {
               <h3 className="mp-card-title">Gespeicherte Karten</h3>
             </div>
           </div>
+
+          {/* Nächste Abbuchung – Zusammensetzung */}
+          {naechste && (naechste.posten.length > 0 || naechste.lastschriften.length > 0) && (
+            <div style={{ background: 'var(--bg-card, #1a1a2e)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '1.1rem', marginBottom: '1.25rem' }}>
+              <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', color: 'var(--text-primary, #e2e8f0)' }}>💳 Nächste Abbuchung – Zusammensetzung</h3>
+              {naechste.posten.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {naechste.posten.map((p, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', fontSize: '0.88rem', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <span style={{ color: 'var(--text-primary, #e2e8f0)' }}>{p.label}{p.datum ? <span style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.78rem' }}> · fällig {fmtDate(p.datum)}</span> : ''}</span>
+                      <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{formatCurrency(p.betrag)}</span>
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, paddingTop: '0.5rem', fontSize: '0.95rem', color: 'var(--text-primary, #e2e8f0)' }}>
+                    <span>Gesamt</span><span>{formatCurrency(naechste.gesamt)}</span>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.86rem', margin: 0 }}>Aktuell keine offenen Posten für die nächste Abbuchung.</p>
+              )}
+
+              {naechste.lastschriften.length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted, #94a3b8)', marginBottom: '0.4rem' }}>Letzte Abbuchungen</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {naechste.lastschriften.map((l, i) => {
+                      const st = l.status === 'succeeded' ? { t: 'Eingezogen', c: '#22c55e' } : l.status === 'processing' ? { t: 'In Einzug', c: '#f59e0b' } : l.status === 'failed' ? { t: 'Fehlgeschlagen', c: '#ef4444' } : { t: l.status, c: '#94a3b8' };
+                      return (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', fontSize: '0.84rem', padding: '0.25rem 0' }}>
+                          <span style={{ color: 'var(--text-muted, #94a3b8)' }}>{fmtDate(l.datum)} · Lauf {l.monat}/{l.jahr}</span>
+                          <span style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                            <span style={{ color: st.c, fontSize: '0.78rem', fontWeight: 600 }}>{st.t}</span>
+                            <span style={{ fontWeight: 600, whiteSpace: 'nowrap', color: 'var(--text-primary, #e2e8f0)' }}>{formatCurrency(l.betrag)}</span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="mp-tabs">

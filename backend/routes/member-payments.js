@@ -217,4 +217,51 @@ router.post('/rechnung/:id/bezahlt', authenticateToken, async (req, res) => {
     }
 });
 
+// GET /api/member-payments/naechste-abbuchung
+// Zeigt dem Mitglied, woraus sich die nächste Abbuchung zusammensetzt
+// (eigene offene Posten) + die letzten Lastschriften. Nur eigene Daten.
+router.get('/naechste-abbuchung', authenticateToken, async (req, res) => {
+    try {
+        const mid = req.user?.mitglied_id;
+        if (!mid) return res.status(403).json({ error: 'Nur für Mitglieder zugänglich' });
+        const n = new Date();
+        const bis = new Date(n.getFullYear(), n.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+        const [beitraege] = await pool.query(
+            `SELECT art, betrag, zahlungsdatum, beschreibung FROM beitraege
+             WHERE mitglied_id = ? AND bezahlt = 0 AND zahlungsdatum <= ? ORDER BY zahlungsdatum`, [mid, bis]);
+        const [rechnungen] = await pool.query(
+            `SELECT rechnungsnummer, COALESCE(gesamtsumme, betrag) AS betrag, COALESCE(rechnungsdatum, datum) AS datum
+             FROM rechnungen WHERE mitglied_id = ? AND archiviert = 0 AND status IN ('offen','teilweise_bezahlt','ueberfaellig')
+             ORDER BY COALESCE(rechnungsdatum, datum)`, [mid]);
+        const [verkaeufe] = await pool.query(
+            `SELECT bon_nummer, brutto_gesamt_cent / 100 AS betrag, verkauf_datum FROM verkaeufe
+             WHERE mitglied_id = ? AND zahlungsart = 'lastschrift' AND zahlungsstatus = 'offen' AND (storniert = 0 OR storniert IS NULL)
+             ORDER BY verkauf_datum`, [mid]);
+        const [lastschriften] = await pool.query(
+            `SELECT t.betrag, t.status, t.created_at, b.monat, b.jahr
+             FROM stripe_lastschrift_transaktion t JOIN stripe_lastschrift_batch b ON t.batch_id = b.batch_id
+             WHERE t.mitglied_id = ? ORDER BY t.created_at DESC LIMIT 12`, [mid]);
+
+        const num = (v) => parseFloat(v) || 0;
+        const ART = { mitgliedsbeitrag: 'Mitgliedsbeitrag', pruefungsgebuehr: 'Prüfungsgebühr', artikel: 'Artikel', aufnahmegebuehr: 'Aufnahmegebühr' };
+        const posten = [
+            ...beitraege.map(b => ({ label: ART[b.art] || b.art || 'Beitrag', betrag: num(b.betrag), datum: b.zahlungsdatum, info: b.beschreibung || null })),
+            ...rechnungen.map(r => ({ label: `Rechnung ${r.rechnungsnummer || ''}`.trim(), betrag: num(r.betrag), datum: r.datum, info: null })),
+            ...verkaeufe.map(v => ({ label: 'Artikel / Verkauf', betrag: num(v.betrag), datum: v.verkauf_datum, info: null })),
+        ];
+        const gesamt = posten.reduce((s, p) => s + p.betrag, 0);
+        res.json({
+            success: true,
+            gesamt,
+            anzahl: posten.length,
+            posten,
+            lastschriften: lastschriften.map(l => ({ betrag: num(l.betrag), status: l.status, datum: l.created_at, monat: l.monat, jahr: l.jahr })),
+        });
+    } catch (err) {
+        logger.error('Fehler bei naechste-abbuchung:', { error: err });
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
