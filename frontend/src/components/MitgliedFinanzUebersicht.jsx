@@ -40,6 +40,18 @@ function analysiereBeitraege(beitraege) {
   const aktuellSumme = aktuell.reduce((s, b) => s + (parseFloat(b.betrag) || 0), 0);
   return { aktuell, aktuellSumme, laeufe };
 }
+
+// Stripe-Transaktionen nach Monat/Jahr gruppieren (für den Abgleich)
+function gruppiereNachMonat(lastschriften) {
+  const map = {};
+  (lastschriften || []).forEach(t => {
+    const key = `${t.jahr}-${String(t.monat).padStart(2, '0')}`;
+    if (!map[key]) map[key] = { key, monat: t.monat, jahr: t.jahr, label: `${MONATE[(t.monat || 1) - 1]} ${t.jahr}`, txs: [], geschickt: 0 };
+    map[key].txs.push(t);
+    map[key].geschickt += parseFloat(t.betrag) || 0;
+  });
+  return Object.values(map).sort((a, b) => b.key.localeCompare(a.key));
+}
 const LS_STATUS = {
   succeeded: { label: 'Eingezogen', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
   processing: { label: 'In Einzug', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
@@ -73,6 +85,28 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const debRef = useRef(null);
+  const [expandedTx, setExpandedTx] = useState(new Set());
+  const [stripeLive, setStripeLive] = useState({});
+  const [stripeLiveLoading, setStripeLiveLoading] = useState({});
+
+  const [expandedMonths, setExpandedMonths] = useState(new Set());
+  const toggleMonth = (key) => setExpandedMonths(prev => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; });
+  const toggleTx = (id) => setExpandedTx(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  const ladeMonatLive = (txs) => { (txs || []).forEach(tx => { if (tx.stripe_payment_intent_id) ladeStripeLive(tx); }); };
+  const ladeStripeLive = async (tx) => {
+    const id = tx.id;
+    if (!tx.stripe_payment_intent_id || stripeLive[id] || stripeLiveLoading[id]) return;
+    setStripeLiveLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/stripe-details/${tx.stripe_payment_intent_id}?dojo_id=${dojoId}`);
+      const d = await res.json();
+      setStripeLive(prev => ({ ...prev, [id]: d.success ? d : { error: d.error || 'Fehler' } }));
+    } catch (e) {
+      setStripeLive(prev => ({ ...prev, [id]: { error: e.message } }));
+    } finally {
+      setStripeLiveLoading(prev => ({ ...prev, [id]: false }));
+    }
+  };
 
   const suche = (term) => {
     setQ(term);
@@ -204,29 +238,97 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
             </Section>
           )}
 
-          {/* Lastschrift-Abbuchungen */}
-          <Section titel="🏦 Lastschrift-Abbuchungen (Stripe)" count={data.lastschriften.length}>
-            {data.lastschriften.length === 0 ? <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.84rem', padding: '0.5rem 0' }}>Keine Stripe-Lastschriften.</div> : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr><th style={th}>Datum</th><th style={th}>Betrag</th><th style={th}>Status</th><th style={th}>Für (Lauf)</th><th style={th}>Beiträge</th><th style={th}>Payment-Intent</th></tr></thead>
-                <tbody>
-                  {data.lastschriften.map((l) => {
-                    const s = LS_STATUS[l.status] || { label: l.status, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' };
-                    let ids = []; try { ids = JSON.parse(l.beitrag_ids || '[]'); } catch {}
+          {/* Stripe-Abgleich pro Monat: geschickt (wir) vs. tatsächlich (Stripe) */}
+          <Section titel="🏦 Stripe-Abgleich – geschickt vs. tatsächlich (pro Monat)" count={data.lastschriften.length}>
+            {data.lastschriften.length === 0 ? (
+              <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.84rem', padding: '0.5rem 0' }}>Keine Stripe-Lastschriften.</div>
+            ) : (() => {
+              const beitragById = {};
+              (data.beitraege || []).forEach(b => { beitragById[b.beitrag_id] = b; });
+              const monate = gruppiereNachMonat(data.lastschriften);
+              const lbl = { fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted, #94a3b8)', marginBottom: 4 };
+              const liveBtn = { background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.4)', color: '#60a5fa', borderRadius: 6, padding: '0.3rem 0.6rem', fontSize: '0.76rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' };
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  {monate.map(grp => {
+                    const expanded = expandedMonths.has(grp.key);
+                    let tatsaechlich = 0, erstattet = 0, liveGeladen = 0;
+                    grp.txs.forEach(t => {
+                      const lv = stripeLive[t.id];
+                      if (lv && lv.payment_intent) {
+                        liveGeladen++;
+                        if (lv.charge && lv.charge.bezahlt) tatsaechlich += (lv.payment_intent.betrag - (lv.charge.betrag_erstattet || 0));
+                        erstattet += (lv.charge ? lv.charge.betrag_erstattet : 0) || 0;
+                      }
+                    });
+                    const diff = liveGeladen > 0 ? (grp.geschickt - tatsaechlich) : null;
                     return (
-                      <tr key={l.id}>
-                        <td style={td}>{datumZeit(l.created_at)}</td>
-                        <td style={{ ...td, fontWeight: 600 }}>{eur(l.betrag)}</td>
-                        <td style={td}><Badge color={s.color} bg={s.bg}>{s.label}</Badge></td>
-                        <td style={td}>{l.monat}/{l.jahr}</td>
-                        <td style={{ ...td, color: 'var(--text-muted, #94a3b8)', fontSize: '0.78rem' }}>{ids.length ? ids.join(', ') : '—'}</td>
-                        <td style={{ ...td, fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)' }}>{l.stripe_payment_intent_id ? l.stripe_payment_intent_id.slice(0, 20) + '…' : '—'}</td>
-                      </tr>
+                      <div key={grp.key} style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, overflow: 'hidden' }}>
+                        <div onClick={() => toggleMonth(grp.key)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.8rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary, #e2e8f0)' }}>{expanded ? '▾' : '▸'} {grp.label}</span>
+                          <span style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.82rem' }}><span style={{ color: 'var(--text-muted,#94a3b8)' }}>Geschickt:</span> <strong>{eur(grp.geschickt)}</strong> ({grp.txs.length})</span>
+                            {liveGeladen > 0 && <span style={{ fontSize: '0.82rem' }}><span style={{ color: 'var(--text-muted,#94a3b8)' }}>Tatsächlich:</span> <strong style={{ color: '#22c55e' }}>{eur(tatsaechlich)}</strong></span>}
+                            {erstattet > 0 && <span style={{ fontSize: '0.8rem', color: '#ef4444' }}>erstattet {eur(erstattet)}</span>}
+                            {diff != null && Math.abs(diff) > 0.001 && <span style={{ fontSize: '0.8rem', color: '#f59e0b' }}>Δ {eur(diff)}</span>}
+                            <button onClick={(e) => { e.stopPropagation(); setExpandedMonths(prev => { const s = new Set(prev); s.add(grp.key); return s; }); ladeMonatLive(grp.txs); }} style={liveBtn}>↻ Stripe-Abgleich</button>
+                          </span>
+                        </div>
+                        {expanded && (
+                          <div style={{ padding: '0.4rem 0.8rem 0.6rem' }}>
+                            {grp.txs.map(tx => {
+                              const s = LS_STATUS[tx.status] || { label: tx.status, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' };
+                              let ids = []; try { ids = JSON.parse(tx.beitrag_ids || '[]'); } catch {}
+                              const lv = stripeLive[tx.id];
+                              return (
+                                <div key={tx.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0.6rem 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.9rem' }}>
+                                  {/* Links: von uns geschickt */}
+                                  <div>
+                                    <div style={lbl}>📤 Von uns geschickt</div>
+                                    <div style={{ fontSize: '0.84rem', color: 'var(--text-primary,#e2e8f0)' }}>{datumZeit(tx.created_at)}</div>
+                                    <div style={{ fontSize: '0.9rem', margin: '2px 0' }}><strong>{eur(tx.betrag)}</strong> <Badge color={s.color} bg={s.bg}>{s.label}</Badge></div>
+                                    {tx.error_message && <div style={{ color: '#fca5a5', fontSize: '0.78rem' }}>⚠ {tx.error_code}: {tx.error_message}</div>}
+                                    {ids.length > 0 && (
+                                      <div style={{ marginTop: 4 }}>
+                                        {ids.map(id => { const b = beitragById[id]; return (
+                                          <div key={id} style={{ fontSize: '0.78rem', color: 'var(--text-secondary,#cbd5e1)' }}>
+                                            • {b ? (ART_LABEL[b.art] || b.art) : `Beitrag ${id}`} {b ? eur(b.betrag) : ''}{b && b.magicline_description ? <span style={{ color: 'var(--text-muted,#94a3b8)' }}> – {b.magicline_description}</span> : (b && b.beschreibung ? <span style={{ color: 'var(--text-muted,#94a3b8)' }}> – {b.beschreibung}</span> : '')}
+                                          </div>
+                                        ); })}
+                                      </div>
+                                    )}
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted,#94a3b8)', fontFamily: 'monospace', marginTop: 4 }}>PI: {tx.stripe_payment_intent_id || '—'}{tx.stripe_charge_id ? <><br />Charge: {tx.stripe_charge_id}</> : ''}{tx.processed_at ? <><br />verarbeitet: {datumZeit(tx.processed_at)}</> : ''}</div>
+                                  </div>
+                                  {/* Rechts: bei Stripe tatsächlich */}
+                                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.9rem' }}>
+                                    <div style={lbl}>🏦 Bei Stripe tatsächlich</div>
+                                    {stripeLiveLoading[tx.id] ? (
+                                      <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.82rem' }}>Lädt von Stripe…</div>
+                                    ) : lv ? (
+                                      lv.error ? <div style={{ color: '#fca5a5', fontSize: '0.8rem' }}>⚠ {lv.error}</div> : (
+                                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary,#cbd5e1)' }}>
+                                          <div>PI-Status: <strong>{lv.payment_intent.status}</strong></div>
+                                          {lv.charge && <div>Charge: {lv.charge.status} · {lv.charge.bezahlt ? '✓ bezahlt' : 'nicht bezahlt'}{lv.charge.erstattet ? ` · erstattet ${eur(lv.charge.betrag_erstattet)}` : ''}</div>}
+                                          {lv.payment_intent.fehler && <div style={{ color: '#fca5a5' }}>Fehler: {lv.payment_intent.fehler.code} {lv.payment_intent.fehler.decline_code ? `(${lv.payment_intent.fehler.decline_code})` : ''} – {lv.payment_intent.fehler.message}</div>}
+                                          {lv.refunds && lv.refunds.length > 0 && <div style={{ color: '#ef4444' }}>Rückerstattungen: {lv.refunds.map(r => `${eur(r.betrag)} (${r.status})`).join(', ')}</div>}
+                                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted,#94a3b8)', marginTop: 2 }}>Betrag bei Stripe: {eur(lv.payment_intent.betrag)}</div>
+                                        </div>
+                                      )
+                                    ) : (
+                                      <button onClick={() => ladeStripeLive(tx)} style={liveBtn} disabled={!tx.stripe_payment_intent_id}>Live von Stripe laden</button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            )}
+                </div>
+              );
+            })()}
           </Section>
 
           {/* Beiträge */}
@@ -238,7 +340,7 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                   {data.beitraege.map((b) => (
                     <tr key={b.beitrag_id}>
                       <td style={td}>{datum(b.zahlungsdatum)}</td>
-                      <td style={td}>{ART_LABEL[b.art] || b.art}{b.beschreibung ? <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.76rem' }}> · {b.beschreibung}</span> : ''}</td>
+                      <td style={td}>{ART_LABEL[b.art] || b.art}{(b.magicline_description || b.beschreibung) ? <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.76rem' }}> · {b.magicline_description || b.beschreibung}</span> : ''}</td>
                       <td style={{ ...td, fontWeight: 600 }}>{eur(b.betrag)}</td>
                       <td style={td}>{b.bezahlt ? <Badge color="#22c55e" bg="rgba(34,197,94,0.12)">bezahlt</Badge> : <Badge color="#f59e0b" bg="rgba(245,158,11,0.12)">offen</Badge>}</td>
                       <td style={td}>{datum(b.bezahlt_am)}</td>
@@ -277,12 +379,45 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                 <thead><tr><th style={th}>Datum</th><th style={th}>Bon</th><th style={th}>Betrag</th><th style={th}>Status</th><th style={th}>Zahlungsart</th></tr></thead>
                 <tbody>
                   {data.verkaeufe.map((v) => (
-                    <tr key={v.verkauf_id}>
-                      <td style={td}>{datum(v.verkauf_datum)}</td>
-                      <td style={{ ...td, fontSize: '0.78rem' }}>{v.bon_nummer || v.verkauf_id}</td>
-                      <td style={{ ...td, fontWeight: 600 }}>{eur(v.betrag)}</td>
-                      <td style={td}><Badge color={v.zahlungsstatus === 'bezahlt' ? '#22c55e' : '#f59e0b'} bg={v.zahlungsstatus === 'bezahlt' ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)'}>{v.zahlungsstatus}</Badge></td>
-                      <td style={{ ...td, color: 'var(--text-muted, #94a3b8)', fontSize: '0.8rem' }}>{v.zahlungsart || '—'}</td>
+                    <React.Fragment key={v.verkauf_id}>
+                      <tr>
+                        <td style={td}>{datum(v.verkauf_datum)}</td>
+                        <td style={{ ...td, fontSize: '0.78rem' }}>{v.bon_nummer || v.verkauf_id}</td>
+                        <td style={{ ...td, fontWeight: 600 }}>{eur(v.betrag)}</td>
+                        <td style={td}><Badge color={v.zahlungsstatus === 'bezahlt' ? '#22c55e' : '#f59e0b'} bg={v.zahlungsstatus === 'bezahlt' ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)'}>{v.zahlungsstatus}</Badge></td>
+                        <td style={{ ...td, color: 'var(--text-muted, #94a3b8)', fontSize: '0.8rem' }}>{v.zahlungsart || '—'}</td>
+                      </tr>
+                      {v.positionen && v.positionen.length > 0 && (
+                        <tr>
+                          <td colSpan={5} style={{ padding: '0 0.6rem 0.5rem 1.4rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            {v.positionen.map((p) => (
+                              <div key={p.position_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted,#94a3b8)', padding: '0.1rem 0' }}>
+                                <span>• {p.menge}× {p.artikel_name}{p.artikel_nummer ? <span style={{ opacity: 0.6 }}> ({p.artikel_nummer})</span> : ''}</span>
+                                <span>{eur(p.brutto)}</span>
+                              </div>
+                            ))}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </Section>
+          )}
+
+          {/* Artikel-Übersicht: wie oft welcher Artikel */}
+          {data.artikel_uebersicht && data.artikel_uebersicht.length > 0 && (
+            <Section titel="🧮 Artikel-Übersicht (wie oft gekauft)" count={data.artikel_uebersicht.length}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><th style={th}>Artikel</th><th style={th}>Mal gekauft</th><th style={th}>Menge gesamt</th><th style={th}>Summe</th></tr></thead>
+                <tbody>
+                  {data.artikel_uebersicht.map((a, i) => (
+                    <tr key={i}>
+                      <td style={td}>{a.artikel_name}{a.artikel_nummer ? <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.74rem' }}> · {a.artikel_nummer}</span> : ''}</td>
+                      <td style={{ ...td, textAlign: 'center' }}>{a.gekauft}×</td>
+                      <td style={{ ...td, textAlign: 'center', fontWeight: 600 }}>{a.menge_gesamt}</td>
+                      <td style={{ ...td, fontWeight: 600 }}>{eur(a.summe)}</td>
                     </tr>
                   ))}
                 </tbody>

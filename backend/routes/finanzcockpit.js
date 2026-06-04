@@ -2,6 +2,7 @@ const express = require('express');
 const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
+const PaymentProviderFactory = require('../services/PaymentProviderFactory');
 
 // ===== FINANZCOCKPIT STATISTIKEN =====
 // GET /api/finanzcockpit/stats - Hauptstatistiken
@@ -794,7 +795,8 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
     );
 
     const [beitraege] = await fcPool.query(
-      `SELECT beitrag_id, art, betrag, zahlungsdatum, bezahlt, bezahlt_am, zahlungsart, zahllauf_id, beschreibung
+      `SELECT beitrag_id, art, betrag, zahlungsdatum, bezahlt, bezahlt_am, zahlungsart, zahllauf_id,
+              beschreibung, magicline_description, rechnung_id
        FROM beitraege WHERE mitglied_id = ? ORDER BY zahlungsdatum DESC, beitrag_id DESC LIMIT 300`,
       [mid]
     );
@@ -815,11 +817,41 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
     );
 
     const [lastschriften] = await fcPool.query(
-      `SELECT t.id, t.betrag, t.status, t.beitrag_ids, t.created_at, t.stripe_payment_intent_id, b.monat, b.jahr
+      `SELECT t.id, t.betrag, t.status, t.beitrag_ids, t.created_at, t.updated_at, t.processed_at,
+              t.stripe_payment_intent_id, t.stripe_charge_id, t.error_code, t.error_message,
+              t.batch_id, b.monat, b.jahr
        FROM stripe_lastschrift_transaktion t JOIN stripe_lastschrift_batch b ON t.batch_id = b.batch_id
        WHERE t.mitglied_id = ? ORDER BY t.created_at DESC LIMIT 100`,
       [mid]
     );
+
+    // Verkauf-Positionen (welcher Artikel, wie oft) für alle Verkäufe des Mitglieds
+    const verkaufIds = verkaeufe.map(v => v.verkauf_id);
+    let positionen = [];
+    if (verkaufIds.length > 0) {
+      const ph = verkaufIds.map(() => '?').join(',');
+      const [posRows] = await fcPool.query(
+        `SELECT verkauf_id, artikel_id, artikel_name, artikel_nummer, menge, brutto_cent / 100 AS brutto, einzelpreis_cent / 100 AS einzelpreis
+         FROM verkauf_positionen WHERE verkauf_id IN (${ph}) ORDER BY verkauf_id, position_nummer`,
+        verkaufIds
+      );
+      positionen = posRows;
+    }
+    // Positionen den Verkäufen zuordnen
+    const posByVerkauf = {};
+    positionen.forEach(p => { (posByVerkauf[p.verkauf_id] = posByVerkauf[p.verkauf_id] || []).push(p); });
+    verkaeufe.forEach(v => { v.positionen = posByVerkauf[v.verkauf_id] || []; });
+
+    // Artikel-Übersicht: wie oft wurde welcher Artikel gekauft + Gesamtbetrag
+    const artikelMap = {};
+    positionen.forEach(p => {
+      const key = p.artikel_name || `Artikel ${p.artikel_id}`;
+      if (!artikelMap[key]) artikelMap[key] = { artikel_name: key, artikel_nummer: p.artikel_nummer, gekauft: 0, menge_gesamt: 0, summe: 0 };
+      artikelMap[key].gekauft += 1;
+      artikelMap[key].menge_gesamt += parseInt(p.menge) || 0;
+      artikelMap[key].summe += parseFloat(p.brutto) || 0;
+    });
+    const artikelUebersicht = Object.values(artikelMap).sort((a, b) => b.menge_gesamt - a.menge_gesamt);
 
     const [ruecklastschriften] = await fcPool.query(
       `SELECT id, original_betrag AS betrag, rueckgabe_code, rueckgabe_grund, rueckgabe_datum, status
@@ -868,9 +900,56 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
       verkaeufe,
       lastschriften,
       ruecklastschriften,
+      artikel_uebersicht: artikelUebersicht,
     });
   } catch (err) {
     logger.error('Fehler bei mitglied-finanz:', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/finanzcockpit/stripe-details/:pi?dojo_id=
+// Live von Stripe: Status, Charge, Rückerstattungen, Fehlergrund zu einem Payment-Intent
+router.get('/stripe-details/:pi', async (req, res) => {
+  try {
+    const dojoId = parseInt(req.query.dojo_id);
+    const pi = req.params.pi;
+    if (!dojoId || !pi) return res.status(400).json({ success: false, error: 'dojo_id und payment_intent erforderlich' });
+    const provider = await PaymentProviderFactory.getProvider(dojoId);
+    if (!provider || !provider.stripe) return res.status(400).json({ success: false, error: 'Stripe nicht konfiguriert' });
+    const opts = provider.connectedAccountId ? { stripeAccount: provider.connectedAccountId } : undefined;
+
+    const intent = await provider.stripe.paymentIntents.retrieve(pi, { expand: ['latest_charge'] }, opts);
+    const charge = (intent.latest_charge && typeof intent.latest_charge === 'object') ? intent.latest_charge : null;
+
+    let refunds = [];
+    if (charge && charge.id) {
+      try {
+        const rf = await provider.stripe.refunds.list({ charge: charge.id, limit: 10 }, opts);
+        refunds = (rf.data || []).map(r => ({ id: r.id, betrag: (r.amount || 0) / 100, status: r.status, grund: r.reason, erstellt: r.created }));
+      } catch (_) { /* keine Refunds */ }
+    }
+
+    res.json({
+      success: true,
+      payment_intent: {
+        id: intent.id,
+        status: intent.status,
+        betrag: (intent.amount || 0) / 100,
+        waehrung: intent.currency,
+        erstellt: intent.created,
+        beschreibung: intent.description,
+        fehler: intent.last_payment_error
+          ? { code: intent.last_payment_error.code, message: intent.last_payment_error.message, decline_code: intent.last_payment_error.decline_code }
+          : null,
+      },
+      charge: charge
+        ? { id: charge.id, status: charge.status, bezahlt: !!charge.paid, erstattet: !!charge.refunded, betrag_erstattet: (charge.amount_refunded || 0) / 100, beschreibung: charge.description }
+        : null,
+      refunds,
+    });
+  } catch (err) {
+    logger.error('Fehler bei stripe-details:', { error: err });
     res.status(500).json({ success: false, error: err.message });
   }
 });
