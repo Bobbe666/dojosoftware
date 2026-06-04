@@ -2306,9 +2306,11 @@ router.post("/stripe/retry-single", async (req, res) => {
 
         const result = await provider.processLastschriftBatch(mitgliedData, useMonat, useJahr);
 
-        // Erfolgreich bezahlte Beiträge markieren
+        // Beiträge markieren sobald sie in einer Stripe-Transaktion sind
+        // (succeeded = sofort bestätigt; processing = SEPA läuft) → verhindert
+        // Doppelabbuchung beim nächsten Lauf (bei Rücklastschrift wird zurückgesetzt).
         const trans = result.transactions?.[0];
-        if (trans?.status === 'succeeded' && beitraege.length > 0) {
+        if ((trans?.status === 'succeeded' || trans?.status === 'processing') && beitraege.length > 0) {
             for (const b of beitraege) {
                 await queryAsync(
                     'UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = ? WHERE beitrag_id = ?',
