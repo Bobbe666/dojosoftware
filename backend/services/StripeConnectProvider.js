@@ -350,6 +350,30 @@ class StripeConnectProvider {
             throw new Error('Stripe Connect nicht konfiguriert für dieses Dojo');
         }
 
+        // 🛡️ Doppellauf-Schutz: Kein zweiter Lauf für dasselbe Dojo + Monat/Jahr,
+        // solange ein vorheriger Lauf noch in der Schwebe ist (processing/partial)
+        // und nicht älter als 14 Tage. Verhindert versehentliche Doppel-/
+        // Wiederholungs-Abbuchungen (z.B. Auto-Lauf + manueller Lauf, Doppelklick).
+        // Einzelne fehlgeschlagene Buchungen werden weiter über "Wiederholen" erneut versucht.
+        const offeneBatches = await queryAsync(
+            `SELECT batch_id, status, created_at FROM stripe_lastschrift_batch
+             WHERE dojo_id = ? AND monat = ? AND jahr = ?
+               AND status IN ('processing', 'partial')
+               AND created_at >= (NOW() - INTERVAL 14 DAY)
+             ORDER BY created_at DESC LIMIT 1`,
+            [this.dojoConfig.id, monat, jahr]
+        );
+        if (offeneBatches && offeneBatches.length > 0) {
+            const b = offeneBatches[0];
+            const err = new Error(
+                `Doppellauf verhindert: Für ${String(monat).padStart(2, '0')}/${jahr} läuft bereits ein Lastschrift-Lauf (${b.batch_id}, Status „${b.status}", gestartet ${new Date(b.created_at).toLocaleString('de-DE')}). ` +
+                `Ein zweiter Lauf für denselben Monat ist gesperrt, solange dieser nicht abgeschlossen ist. ` +
+                `Einzelne fehlgeschlagene Buchungen können über „Wiederholen" erneut versucht werden.`
+            );
+            err.code = 'DUPLICATE_BATCH_BLOCKED';
+            throw err;
+        }
+
         const batchId = `BATCH-${this.dojoConfig.id}-${jahr}${String(monat).padStart(2, '0')}-${Date.now()}`;
 
         logger.info(`📦 Stripe Connect Lastschrift-Batch gestartet: ${batchId}`);
