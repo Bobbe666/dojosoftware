@@ -350,25 +350,25 @@ class StripeConnectProvider {
             throw new Error('Stripe Connect nicht konfiguriert für dieses Dojo');
         }
 
-        // 🛡️ Doppellauf-Schutz: Kein zweiter Lauf für dasselbe Dojo + Monat/Jahr,
-        // solange ein vorheriger Lauf noch in der Schwebe ist (processing/partial)
-        // und nicht älter als 14 Tage. Verhindert versehentliche Doppel-/
-        // Wiederholungs-Abbuchungen (z.B. Auto-Lauf + manueller Lauf, Doppelklick).
-        // Einzelne fehlgeschlagene Buchungen werden weiter über "Wiederholen" erneut versucht.
+        // 🛡️ Parallellauf-Schutz: Nur einen GLEICHZEITIG laufenden Lauf pro Dojo +
+        // Monat/Jahr zulassen — blockt nur, wenn gerade ein Lauf 'processing' und
+        // jünger als 30 Min ist (Doppelklick, Auto-Lauf + manueller Lauf zur selben
+        // Zeit). Folge-Läufe (z.B. am nächsten Tag für neu dazugekommene Mitglieder)
+        // bleiben möglich; die eigentliche Doppel-Abbuchungs-Sicherung erfolgt
+        // pro Beitrag (NOT-EXISTS-Guard bucht bereits eingezogene Beiträge nicht erneut).
         const offeneBatches = await queryAsync(
             `SELECT batch_id, status, created_at FROM stripe_lastschrift_batch
              WHERE dojo_id = ? AND monat = ? AND jahr = ?
-               AND status IN ('processing', 'partial')
-               AND created_at >= (NOW() - INTERVAL 14 DAY)
+               AND status = 'processing'
+               AND created_at >= (NOW() - INTERVAL 30 MINUTE)
              ORDER BY created_at DESC LIMIT 1`,
             [this.dojoConfig.id, monat, jahr]
         );
         if (offeneBatches && offeneBatches.length > 0) {
             const b = offeneBatches[0];
             const err = new Error(
-                `Doppellauf verhindert: Für ${String(monat).padStart(2, '0')}/${jahr} läuft bereits ein Lastschrift-Lauf (${b.batch_id}, Status „${b.status}", gestartet ${new Date(b.created_at).toLocaleString('de-DE')}). ` +
-                `Ein zweiter Lauf für denselben Monat ist gesperrt, solange dieser nicht abgeschlossen ist. ` +
-                `Einzelne fehlgeschlagene Buchungen können über „Wiederholen" erneut versucht werden.`
+                `Parallellauf verhindert: Für ${String(monat).padStart(2, '0')}/${jahr} läuft gerade bereits ein Lastschrift-Lauf (${b.batch_id}, gestartet ${new Date(b.created_at).toLocaleString('de-DE')}). ` +
+                `Bitte einen Moment warten, bis dieser abgeschlossen ist, und dann erneut starten.`
             );
             err.code = 'DUPLICATE_BATCH_BLOCKED';
             throw err;

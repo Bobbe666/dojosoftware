@@ -1051,15 +1051,16 @@ class StripeDataevProvider {
             throw new Error('Stripe nicht konfiguriert für dieses Dojo');
         }
 
-        // 🛡️ Doppellauf-Schutz: Kein zweiter Lauf für dasselbe Dojo + Monat/Jahr,
-        // solange ein vorheriger noch in der Schwebe ist (processing/partial, <14 Tage).
-        // Verhindert versehentliche Doppel-/Wiederholungs-Abbuchungen.
+        // 🛡️ Parallellauf-Schutz: nur einen GLEICHZEITIG laufenden Lauf pro Dojo +
+        // Monat/Jahr — blockt nur bei 'processing' jünger als 30 Min (Doppelklick,
+        // Auto + manuell zur selben Zeit). Folge-Läufe am Folgetag bleiben möglich;
+        // Doppel-Abbuchungs-Sicherung erfolgt pro Beitrag (NOT-EXISTS-Guard).
         const offeneBatches = await new Promise((resolve, reject) => {
             db.query(
                 `SELECT batch_id, status, created_at FROM stripe_lastschrift_batch
                  WHERE dojo_id = ? AND monat = ? AND jahr = ?
-                   AND status IN ('processing', 'partial')
-                   AND created_at >= (NOW() - INTERVAL 14 DAY)
+                   AND status = 'processing'
+                   AND created_at >= (NOW() - INTERVAL 30 MINUTE)
                  ORDER BY created_at DESC LIMIT 1`,
                 [this.dojoConfig.id, monat, jahr],
                 (err, rows) => err ? reject(err) : resolve(rows)
@@ -1068,9 +1069,8 @@ class StripeDataevProvider {
         if (offeneBatches && offeneBatches.length > 0) {
             const b = offeneBatches[0];
             const err = new Error(
-                `Doppellauf verhindert: Für ${String(monat).padStart(2, '0')}/${jahr} läuft bereits ein Lastschrift-Lauf (${b.batch_id}, Status „${b.status}"). ` +
-                `Ein zweiter Lauf für denselben Monat ist gesperrt, solange dieser nicht abgeschlossen ist. ` +
-                `Einzelne fehlgeschlagene Buchungen können über „Wiederholen" erneut versucht werden.`
+                `Parallellauf verhindert: Für ${String(monat).padStart(2, '0')}/${jahr} läuft gerade bereits ein Lastschrift-Lauf (${b.batch_id}, gestartet ${new Date(b.created_at).toLocaleString('de-DE')}). ` +
+                `Bitte einen Moment warten, bis dieser abgeschlossen ist, und dann erneut starten.`
             );
             err.code = 'DUPLICATE_BATCH_BLOCKED';
             throw err;
