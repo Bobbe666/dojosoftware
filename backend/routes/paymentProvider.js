@@ -209,8 +209,8 @@ router.post('/refund-webhook', async (req, res) => {
 
         const db = require('../db');
         const [dojos] = await db.promise().query(
-            `SELECT id, stripe_refund_webhook_secret FROM dojo
-             WHERE stripe_refund_webhook_secret IS NOT NULL AND stripe_refund_webhook_secret <> ''`
+            `SELECT dojo_id AS id, secret AS stripe_refund_webhook_secret FROM stripe_refund_webhooks
+             WHERE secret IS NOT NULL AND secret <> ''`
         );
         if (!dojos.length) {
             logger.warn('Refund-Webhook: kein Secret konfiguriert');
