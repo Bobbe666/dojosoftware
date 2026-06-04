@@ -925,9 +925,13 @@ router.get('/mitglied-check/:id', async (req, res) => {
       `SELECT t.id, t.betrag, t.status, t.beitrag_ids, t.created_at, b.monat, b.jahr
        FROM stripe_lastschrift_transaktion t JOIN stripe_lastschrift_batch b ON t.batch_id = b.batch_id
        WHERE t.mitglied_id = ? ORDER BY t.created_at`, [mid]);
-    const [beitraege] = await fcPool.query(`SELECT beitrag_id, art, betrag FROM beitraege WHERE mitglied_id = ?`, [mid]);
+    const [beitraege] = await fcPool.query(`SELECT beitrag_id, art, betrag, zahlungsdatum FROM beitraege WHERE mitglied_id = ?`, [mid]);
+    const [[vertrag]] = await fcPool.query(
+      `SELECT ruhepause_von, ruhepause_bis FROM vertraege WHERE mitglied_id = ?
+       ORDER BY FIELD(status, 'aktiv', 'ruhepause') DESC, vertragsbeginn DESC LIMIT 1`, [mid]);
 
     const ART = { mitgliedsbeitrag: 'Mitgliedsbeitrag', pruefungsgebuehr: 'Prüfungsgebühr', artikel: 'Artikel', aufnahmegebuehr: 'Aufnahmegebühr' };
+    const MONATE_DE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
     const bById = {};
     beitraege.forEach(b => { bById[b.beitrag_id] = b; });
     const num = (v) => parseFloat(v) || 0;
@@ -986,7 +990,57 @@ router.get('/mitglied-check/:id', async (req, res) => {
       }
     });
 
-    // 4) Monatsvergleich: geschickt vs. erwartet (Summe der DISTINCT zugeordneten Beiträge)
+    // 4) Doppelter Monatsbeitrag (zwei mitgliedsbeitrag-Beiträge im selben Monat)
+    const beitragMonat = {};
+    beitraege.filter(b => b.art === 'mitgliedsbeitrag' && b.zahlungsdatum).forEach(b => {
+      const d = new Date(b.zahlungsdatum);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      (beitragMonat[key] = beitragMonat[key] || []).push(b);
+    });
+    Object.entries(beitragMonat).forEach(([key, bs]) => {
+      if (bs.length > 1) {
+        const [jahr, monat] = key.split('-').map(Number);
+        const summe = bs.reduce((s, b) => s + num(b.betrag), 0);
+        const extra = summe - num(bs[0].betrag);
+        zuViel += extra;
+        findings.push({
+          schwere: 'hoch', typ: 'doppelter_monatsbeitrag',
+          titel: `Doppelter Monatsbeitrag für ${MONATE_DE[monat - 1]} ${jahr}`,
+          detail: `${bs.length} Mitgliedsbeiträge im selben Monat (Beiträge ${bs.map(b => b.beitrag_id).join(', ')}), zusammen ${summe.toFixed(2)} € — ca. ${extra.toFixed(2)} € zu viel.`,
+          betrag_zu_viel: extra,
+        });
+      }
+    });
+
+    // 5) Fehlender Monatsbeitrag (Lücke in der Sequenz; Ruhepause ausgenommen)
+    const monthKeys = Object.keys(beitragMonat).sort();
+    if (monthKeys.length >= 2) {
+      const [y0, m0] = monthKeys[0].split('-').map(Number);
+      const [y1, m1] = monthKeys[monthKeys.length - 1].split('-').map(Number);
+      const ruheVon = vertrag && vertrag.ruhepause_von ? new Date(vertrag.ruhepause_von) : null;
+      const ruheBis = vertrag && vertrag.ruhepause_bis ? new Date(vertrag.ruhepause_bis) : null;
+      const fehlend = [];
+      let cy = y0, cm = m0;
+      while (cy < y1 || (cy === y1 && cm <= m1)) {
+        const key = `${cy}-${String(cm).padStart(2, '0')}`;
+        if (!beitragMonat[key]) {
+          const monthDate = new Date(cy, cm - 1, 15);
+          const inRuhe = ruheVon && ruheBis && monthDate >= ruheVon && monthDate <= ruheBis;
+          if (!inRuhe) fehlend.push(`${MONATE_DE[cm - 1]} ${cy}`);
+        }
+        cm++; if (cm > 12) { cm = 1; cy++; }
+      }
+      if (fehlend.length > 0) {
+        findings.push({
+          schwere: 'mittel', typ: 'fehlender_beitrag',
+          titel: `${fehlend.length} fehlende${fehlend.length === 1 ? 'r' : ''} Monatsbeitrag`,
+          detail: `Kein Mitgliedsbeitrag vorhanden für: ${fehlend.join(', ')}. (Ruhepausen sind ausgenommen.)`,
+          betrag_zu_viel: 0,
+        });
+      }
+    }
+
+    // 6) Monatsvergleich: geschickt vs. erwartet (Summe der DISTINCT zugeordneten Beiträge)
     const byMonth = {};
     real.forEach(t => {
       const key = `${t.jahr}-${String(t.monat).padStart(2, '0')}`;

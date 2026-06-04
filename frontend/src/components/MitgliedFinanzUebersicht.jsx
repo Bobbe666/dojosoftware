@@ -21,7 +21,7 @@ const datumZeit = (d) => {
 
 const ART_LABEL = { mitgliedsbeitrag: 'Mitgliedsbeitrag', pruefungsgebuehr: 'Prüfungsgebühr', artikel: 'Artikel', aufnahmegebuehr: 'Aufnahmegebühr' };
 const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
-const TYP_ICON = { doppelbuchung: '🔁', betrags_abweichung: '⚖️', phantom: '👻' };
+const TYP_ICON = { doppelbuchung: '🔁', betrags_abweichung: '⚖️', phantom: '👻', doppelter_monatsbeitrag: '📅', fehlender_beitrag: '➖' };
 
 // Offene Beiträge in „jetzt fällig" (aktueller Lauf) + künftige Läufe (nach Monat gruppiert) aufteilen
 function analysiereBeitraege(beitraege) {
