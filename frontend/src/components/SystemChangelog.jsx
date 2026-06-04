@@ -16,6 +16,29 @@ import {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.6',
+    date: '2026-06-04',
+    type: 'feature',
+    title: 'Mitglieder-Finanzübersicht, Lastschrift-Schutz & Mitglieder-App-Performance',
+    description: 'Neue Finanzübersicht pro Mitglied im Finanzcockpit (Suche + vollständige Aufschlüsselung aller Abbuchungen und offenen Posten), mehrere Schutzmechanismen gegen Lastschrift-Doppelabbuchungen sowie ein deutlich entlastetes, schnelleres Mitglieder-Dashboard.',
+    highlights: [
+      '🔎 FINANZCOCKPIT: Mitglieder-Finanzübersicht — Mitglied suchen → genaue Aufschlüsselung: was wann wie wo eingezogen wurde (Stripe-Lastschriften, Beiträge, Rechnungen, Verkäufe, Rücklastschriften) + was noch offen/in Einzug ist',
+      '🏦 LASTSCHRIFT-SCHUTZ: Retry-Pfad markiert Beiträge auch bei „in Verarbeitung" (verhindert Doppelabbuchung); Parallellauf-Schutz (kein zweiter Lauf für denselben Monat während ein Lauf gerade läuft)',
+      '⚡ PERFORMANCE: Mitglieder-Dashboard (app.tda-vib.de) deutlich entlastet — Shop-, News- & Vertragsstatus-Bereiche in eigene, memoizte Komponenten ausgelagert; nicht-kritische Ladevorgänge in den Leerlauf verschoben → flüssigere Bedienung, weniger „mehrfach klicken"',
+      '🛠 STABILITÄT: Mitglied-Detail-Crash (fehlende Datumsfunktion) behoben; doppelte „Neue Version"-Banner auf einen konsolidiert; Server-Memory-Limit erhöht (keine kurzen Ausfälle mehr)',
+    ],
+    details: 'Backend: /api/finanzcockpit/mitglied-suche + /mitglied-finanz/:id (aggregiert beitraege, rechnungen, verkaeufe, stripe_lastschrift_transaktion, mitglied_ruecklastschriften je Mitglied, dojo-isoliert). Lastschrift: processLastschriftBatch (StripeConnect + StripeDataev) blockt parallele Läufe (status=processing, <30min); Retry markiert bei processing. Frontend: MitgliedFinanzUebersicht.jsx im Finanzcockpit; MemberDashboard in MemberShopWidgets/MemberNewsWidget/MemberContractStatus aufgeteilt (React.memo); deferIdle für unkritische Fetches; MemberDashboardMobile (toter Code) entfernt; WartungsBanner.jsx (auto-expiring Hinweis).',
+    files: [
+      'backend/routes/finanzcockpit.js (mitglied-suche, mitglied-finanz)',
+      'backend/services/{StripeConnectProvider,StripeDataevProvider}.js (Parallellauf-Schutz)',
+      'backend/routes/lastschriftlauf.js (Retry markiert bei processing)',
+      'frontend/src/components/MitgliedFinanzUebersicht.jsx (neu)',
+      'frontend/src/components/{MemberShopWidgets,MemberNewsWidget,MemberContractStatus,WartungsBanner}.jsx (neu)',
+      'frontend/src/components/{Finanzcockpit,MemberDashboard}.jsx',
+      'version.js', 'SystemChangelog.jsx',
+    ],
+  },
+  {
     version: '3.0.5',
     date: '2026-06-03',
     type: 'feature',

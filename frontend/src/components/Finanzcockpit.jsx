@@ -44,6 +44,7 @@ import {
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE: Dojo-Filter
 import config from "../config/config";
+import MitgliedFinanzUebersicht from "./MitgliedFinanzUebersicht.jsx";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Finanzcockpit.css";
@@ -1131,6 +1132,13 @@ const Finanzcockpit = ({ embed = false } = {}) => {
             <ActionCard icon={AlertTriangle} label="Tarif-Abweichungen" desc="Soll/Ist-Vergleich der Beiträge" iconColor="#8b5cf6" onClick={() => navigate('/dashboard/mitglieder-filter/tarif-abweichung')} />
             <ActionCard icon={CreditCard} label="Nach Zahlungsweise" desc="Gruppiert nach Bar / Karte / SEPA" iconColor="#3b82f6" onClick={() => navigate('/dashboard/mitglieder-filter/zahlungsweisen')} />
           </div>
+          {activeDojo?.id ? (
+            <MitgliedFinanzUebersicht dojoId={activeDojo.id} />
+          ) : (
+            <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.22)', borderRadius: 10, color: 'var(--text-muted, #94a3b8)', fontSize: '0.85rem' }}>
+              🔎 Für die Mitglieder-Finanzübersicht bitte oben ein einzelnes Dojo auswählen.
+            </div>
+          )}
         </div>
 
         <div className="fc__action-group">

@@ -721,4 +721,158 @@ router.get('/member-stats', (req, res) => {
   });
 });
 
+// =====================================================================
+// MITGLIEDER-FINANZÜBERSICHT — Suche + vollständige Aufschlüsselung
+// =====================================================================
+const fcPool = db.promise();
+const maskIban = (iban) => {
+  if (!iban) return null;
+  const s = String(iban).replace(/\s/g, '');
+  return s.length > 8 ? `${s.slice(0, 4)} **** ${s.slice(-4)}` : s;
+};
+
+// GET /api/finanzcockpit/mitglied-suche?dojo_id=&q=
+router.get('/mitglied-suche', async (req, res) => {
+  try {
+    const dojoId = parseInt(req.query.dojo_id);
+    const q = (req.query.q || '').trim();
+    if (!dojoId) return res.status(400).json({ success: false, error: 'dojo_id erforderlich' });
+    if (q.length < 2) return res.json({ success: true, mitglieder: [] });
+    const like = `%${q}%`;
+    const [rows] = await fcPool.query(
+      `SELECT mitglied_id, vorname, nachname, aktiv, gekuendigt
+       FROM mitglieder
+       WHERE dojo_id = ?
+         AND (CONCAT(vorname, ' ', nachname) LIKE ? OR nachname LIKE ? OR vorname LIKE ?)
+       ORDER BY nachname, vorname LIMIT 25`,
+      [dojoId, like, like, like]
+    );
+    res.json({
+      success: true,
+      mitglieder: rows.map(r => ({
+        mitglied_id: r.mitglied_id,
+        name: `${r.vorname} ${r.nachname}`,
+        aktiv: !!r.aktiv,
+        gekuendigt: !!r.gekuendigt,
+      })),
+    });
+  } catch (err) {
+    logger.error('Fehler bei mitglied-suche:', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/finanzcockpit/mitglied-finanz/:id?dojo_id=
+router.get('/mitglied-finanz/:id', async (req, res) => {
+  try {
+    const dojoId = parseInt(req.query.dojo_id);
+    const mid = parseInt(req.params.id);
+    if (!dojoId || !mid) return res.status(400).json({ success: false, error: 'dojo_id und id erforderlich' });
+
+    // Mitglied (mit Dojo-Isolation)
+    const [[m]] = await fcPool.query(
+      `SELECT mitglied_id, vorname, nachname, zahlungsmethode, iban, kontoinhaber, bankname,
+              stripe_customer_id, aktiv, gekuendigt, gekuendigt_am, vertragsfrei
+       FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?`,
+      [mid, dojoId]
+    );
+    if (!m) return res.status(404).json({ success: false, error: 'Mitglied nicht gefunden' });
+
+    const [[vertrag]] = await fcPool.query(
+      `SELECT status, COALESCE(monatlicher_beitrag, monatsbeitrag) AS monatsbeitrag, billing_cycle,
+              vertragsbeginn, vertragsende, kuendigungsdatum, ruhepause_von, ruhepause_bis
+       FROM vertraege WHERE mitglied_id = ?
+       ORDER BY FIELD(status, 'aktiv', 'ruhepause') DESC, vertragsbeginn DESC LIMIT 1`,
+      [mid]
+    );
+
+    const [[sepa]] = await fcPool.query(
+      `SELECT status, mandatsreferenz, iban, provider, stripe_payment_method_id
+       FROM sepa_mandate WHERE mitglied_id = ? AND archiviert = 0
+       ORDER BY FIELD(status, 'aktiv') DESC, created_at DESC LIMIT 1`,
+      [mid]
+    );
+
+    const [beitraege] = await fcPool.query(
+      `SELECT beitrag_id, art, betrag, zahlungsdatum, bezahlt, bezahlt_am, zahlungsart, zahllauf_id, beschreibung
+       FROM beitraege WHERE mitglied_id = ? ORDER BY zahlungsdatum DESC, beitrag_id DESC LIMIT 300`,
+      [mid]
+    );
+
+    const [rechnungen] = await fcPool.query(
+      `SELECT rechnung_id, rechnungsnummer, COALESCE(gesamtsumme, betrag) AS betrag, status,
+              COALESCE(rechnungsdatum, datum) AS datum, faelligkeitsdatum, bezahlt_am, zahlungsart, art, beschreibung
+       FROM rechnungen WHERE mitglied_id = ? AND archiviert = 0
+       ORDER BY COALESCE(rechnungsdatum, datum) DESC LIMIT 100`,
+      [mid]
+    );
+
+    const [verkaeufe] = await fcPool.query(
+      `SELECT verkauf_id, bon_nummer, brutto_gesamt_cent / 100 AS betrag, zahlungsart, zahlungsstatus, verkauf_datum, bemerkung
+       FROM verkaeufe WHERE mitglied_id = ? AND (storniert = 0 OR storniert IS NULL)
+       ORDER BY verkauf_datum DESC LIMIT 100`,
+      [mid]
+    );
+
+    const [lastschriften] = await fcPool.query(
+      `SELECT t.id, t.betrag, t.status, t.beitrag_ids, t.created_at, t.stripe_payment_intent_id, b.monat, b.jahr
+       FROM stripe_lastschrift_transaktion t JOIN stripe_lastschrift_batch b ON t.batch_id = b.batch_id
+       WHERE t.mitglied_id = ? ORDER BY t.created_at DESC LIMIT 100`,
+      [mid]
+    );
+
+    const [ruecklastschriften] = await fcPool.query(
+      `SELECT id, original_betrag AS betrag, rueckgabe_code, rueckgabe_grund, rueckgabe_datum, status
+       FROM mitglied_ruecklastschriften WHERE mitglied_id = ? ORDER BY rueckgabe_datum DESC LIMIT 50`,
+      [mid]
+    );
+
+    const num = (v) => parseFloat(v) || 0;
+    const offeneBeitraege = beitraege.filter(b => !b.bezahlt);
+    const bezahltGesamt = beitraege.filter(b => b.bezahlt).reduce((s, b) => s + num(b.betrag), 0);
+    const offenGesamt =
+      offeneBeitraege.reduce((s, b) => s + num(b.betrag), 0) +
+      rechnungen.filter(r => ['offen', 'teilweise_bezahlt', 'ueberfaellig'].includes(r.status)).reduce((s, r) => s + num(r.betrag), 0) +
+      verkaeufe.filter(v => v.zahlungsstatus === 'offen').reduce((s, v) => s + num(v.betrag), 0);
+    const inEinzug = lastschriften.filter(l => l.status === 'processing').reduce((s, l) => s + num(l.betrag), 0);
+    const naechste = offeneBeitraege
+      .filter(b => b.zahlungsdatum)
+      .sort((a, b) => String(a.zahlungsdatum).localeCompare(String(b.zahlungsdatum)))[0];
+
+    res.json({
+      success: true,
+      mitglied: {
+        mitglied_id: m.mitglied_id,
+        name: `${m.vorname} ${m.nachname}`,
+        zahlungsmethode: m.zahlungsmethode,
+        iban_maskiert: maskIban(m.iban),
+        kontoinhaber: m.kontoinhaber,
+        bankname: m.bankname,
+        stripe_customer_id: m.stripe_customer_id,
+        aktiv: !!m.aktiv,
+        gekuendigt: !!m.gekuendigt,
+        gekuendigt_am: m.gekuendigt_am,
+        vertragsfrei: !!m.vertragsfrei,
+      },
+      vertrag: vertrag || null,
+      sepa: sepa ? { ...sepa, iban: maskIban(sepa.iban) } : null,
+      zusammenfassung: {
+        bezahlt_gesamt: bezahltGesamt,
+        offen_gesamt: offenGesamt,
+        in_einzug_gesamt: inEinzug,
+        anzahl_offene_beitraege: offeneBeitraege.length,
+        naechste_faelligkeit: naechste ? { betrag: num(naechste.betrag), faellig: naechste.zahlungsdatum, art: naechste.art } : null,
+      },
+      beitraege,
+      rechnungen,
+      verkaeufe,
+      lastschriften,
+      ruecklastschriften,
+    });
+  } catch (err) {
+    logger.error('Fehler bei mitglied-finanz:', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

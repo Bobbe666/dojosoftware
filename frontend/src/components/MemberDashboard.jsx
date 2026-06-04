@@ -56,6 +56,7 @@ import NextTrainingsWidget from './NextTrainingsWidget.jsx';
 import MemberShopWidgets from './MemberShopWidgets.jsx';
 import MemberNewsWidget from './MemberNewsWidget.jsx';
 import MemberContractStatus from './MemberContractStatus.jsx';
+import WartungsBanner from './WartungsBanner.jsx';
 
 
 
@@ -1254,6 +1255,9 @@ const MemberDashboard = () => {
   return (
     <div className="dashboard-container">
       <MemberHeader />
+
+      {/* Wartungshinweis (auto-expiring bis So 08.06. Mitternacht) */}
+      <WartungsBanner />
 
       {/* News-Popup: erscheint bei als_popup=1 markierten News */}
       <NewsPopup />
