@@ -95,6 +95,29 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
   const toggleTx = (id) => setExpandedTx(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   const ladeMonatLive = (txs) => { (txs || []).forEach(tx => { if (tx.stripe_payment_intent_id) ladeStripeLive(tx); }); };
 
+  const [stoppingTx, setStoppingTx] = useState({});
+  const stoppeTx = async (tx) => {
+    if (!window.confirm(`Abbuchung über ${eur(tx.betrag)} (Lauf ${tx.monat}/${tx.jahr}) wirklich stoppen/stornieren?\n\nDie zugeordneten Beiträge werden wieder als offen gestellt. Geht nur, solange Stripe noch nicht eingezogen hat (processing).`)) return;
+    setStoppingTx(prev => ({ ...prev, [tx.id]: true }));
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/stripe/storno/${tx.id}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grund: 'Über Finanzübersicht gestoppt' }),
+      });
+      const d = await res.json();
+      if (d.success) {
+        alert('✓ Abbuchung gestoppt/storniert. Die zugeordneten Beiträge sind wieder offen. Die Übersicht wird aktualisiert.');
+        oeffne(data.mitglied.mitglied_id, data.mitglied.name);
+      } else {
+        alert('Stoppen nicht möglich: ' + (d.error || 'Unbekannter Fehler'));
+      }
+    } catch (e) {
+      alert('Fehler beim Stoppen: ' + e.message);
+    } finally {
+      setStoppingTx(prev => ({ ...prev, [tx.id]: false }));
+    }
+  };
+
   const [check, setCheck] = useState(null);
   const [checkLoading, setCheckLoading] = useState(false);
   const ladeCheck = async (mid) => {
@@ -354,6 +377,12 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                                     <div style={lbl}>📤 Von uns geschickt</div>
                                     <div style={{ fontSize: '0.84rem', color: 'var(--text-primary,#e2e8f0)' }}>{datumZeit(tx.created_at)}</div>
                                     <div style={{ fontSize: '0.9rem', margin: '2px 0' }}><strong>{eur(tx.betrag)}</strong> <Badge color={s.color} bg={s.bg}>{s.label}</Badge></div>
+                                    {tx.status === 'processing' && (
+                                      <button onClick={() => stoppeTx(tx)} disabled={stoppingTx[tx.id]}
+                                        style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', borderRadius: 6, padding: '0.3rem 0.7rem', fontSize: '0.78rem', fontWeight: 700, cursor: stoppingTx[tx.id] ? 'wait' : 'pointer', margin: '3px 0' }}>
+                                        {stoppingTx[tx.id] ? 'Stoppt…' : '🚫 Abbuchung stoppen'}
+                                      </button>
+                                    )}
                                     {tx.error_message && <div style={{ color: '#fca5a5', fontSize: '0.78rem' }}>⚠ {tx.error_code}: {tx.error_message}</div>}
                                     {ids.length > 0 && (
                                       <div style={{ marginTop: 4 }}>
