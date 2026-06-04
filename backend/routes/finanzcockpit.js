@@ -859,18 +859,20 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
       [mid]
     );
 
-    // Manuelle Erstattungen (außerhalb Stripe, z. B. von anderem Konto)
-    let manuelleErstattungen = [];
+    // Erstattungen (manuell + Stripe), zentrale Tabelle
+    let erstattungenAlle = [];
     try {
       const [meRows] = await fcPool.query(
-        `SELECT id, transaktion_id, betrag, erstattet_am, quelle, bemerkung, erstellt_von, created_at
-         FROM manuelle_erstattungen WHERE mitglied_id = ? ORDER BY erstattet_am DESC, id DESC`,
+        `SELECT id, transaktion_id, betrag, erstattet_am, quelle, quelle_konto, quelle_art,
+                bemerkung, erstellt_von, created_at, stripe_refund_id
+         FROM erstattungen WHERE mitglied_id = ? AND status = 'erstattet'
+         ORDER BY erstattet_am DESC, id DESC`,
         [mid]
       );
-      manuelleErstattungen = meRows;
+      erstattungenAlle = meRows;
     } catch (e) { /* Tabelle evtl. noch nicht migriert */ }
     const meByTx = {};
-    manuelleErstattungen.forEach(me => {
+    erstattungenAlle.forEach(me => {
       if (me.transaktion_id != null) (meByTx[me.transaktion_id] = meByTx[me.transaktion_id] || []).push(me);
     });
 
@@ -889,7 +891,7 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
     });
     const usedFallback = new Set();
     lastschriften.forEach(t => {
-      t.manuelle_erstattungen = meByTx[t.id] || [];
+      t.erstattungen = meByTx[t.id] || [];
       let bIds = []; try { bIds = JSON.parse(t.beitrag_ids || '[]'); } catch {}
       t.posten = bIds.map(id => {
         const b = bById[id];
@@ -946,7 +948,7 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
       verkaeufe,
       lastschriften,
       ruecklastschriften,
-      manuelle_erstattungen: manuelleErstattungen,
+      erstattungen: erstattungenAlle,
       artikel_uebersicht: artikelUebersicht,
     });
   } catch (err) {
@@ -1110,41 +1112,19 @@ router.get('/mitglied-check/:id', async (req, res) => {
       return { monat: v.monat, jahr: v.jahr, geschickt: v.geschickt, erwartet, differenz: v.geschickt - erwartet, anzahl_tx: v.anzahl_tx, anzahl_beitraege: v.ids.size };
     }).sort((a, b) => (b.jahr - a.jahr) || (b.monat - a.monat));
 
-    // ── Erstattungen berücksichtigen (manuell + Stripe) ──────────────────
+    // ── Erstattungen berücksichtigen (zentrale Tabelle: manuell + Stripe) ──
     // Bereits zurückerstattete Beträge mindern die auffällige Summe.
-    const manErstattetByTx = {};
+    const erstattetByTx = {};
     try {
       const [meRows] = await fcPool.query(
-        `SELECT transaktion_id, SUM(betrag) AS summe FROM manuelle_erstattungen
-         WHERE mitglied_id = ? AND transaktion_id IS NOT NULL GROUP BY transaktion_id`, [mid]);
-      meRows.forEach(r => { manErstattetByTx[r.transaktion_id] = num(r.summe); });
+        `SELECT transaktion_id, SUM(betrag) AS summe FROM erstattungen
+         WHERE mitglied_id = ? AND status = 'erstattet' AND transaktion_id IS NOT NULL
+         GROUP BY transaktion_id`, [mid]);
+      meRows.forEach(r => { erstattetByTx[r.transaktion_id] = num(r.summe); });
     } catch (e) { /* Tabelle evtl. noch nicht migriert */ }
 
-    // Stripe-Erstattungen live — nur für Transaktionen, die in Findings auftauchen
-    const findingTxIds = [...new Set(findings.flatMap(f => f.txs || []))];
-    const stripeErstattetByTx = {};
-    if (findingTxIds.length > 0) {
-      try {
-        const provider = await PaymentProviderFactory.getProvider(dojoId);
-        if (provider && provider.stripe) {
-          const opts = provider.connectedAccountId ? { stripeAccount: provider.connectedAccountId } : undefined;
-          const txById = {};
-          txs.forEach(t => { txById[t.id] = t; });
-          for (const txId of findingTxIds) {
-            const t = txById[txId];
-            if (!t || !t.stripe_payment_intent_id) continue;
-            try {
-              const intent = await provider.stripe.paymentIntents.retrieve(t.stripe_payment_intent_id, { expand: ['latest_charge'] }, opts);
-              const charge = (intent.latest_charge && typeof intent.latest_charge === 'object') ? intent.latest_charge : null;
-              if (charge && charge.amount_refunded) stripeErstattetByTx[txId] = (charge.amount_refunded || 0) / 100;
-            } catch (e) { /* einzelner PI nicht abrufbar → ignorieren */ }
-          }
-        }
-      } catch (e) { /* Stripe nicht verfügbar → ohne Stripe-Abgleich weiter */ }
-    }
-
     const erstattetForTxs = (txIds) => (txIds || []).reduce(
-      (s, id) => s + (manErstattetByTx[id] || 0) + (stripeErstattetByTx[id] || 0), 0);
+      (s, id) => s + (erstattetByTx[id] || 0), 0);
 
     // Findings nachbearbeiten: erstatteten Anteil abziehen, ggf. als erledigt markieren
     let zuVielNetto = 0;
@@ -1197,7 +1177,7 @@ router.post('/refund/:txId', async (req, res) => {
     if (!dojoId || !txId) return res.status(400).json({ success: false, error: 'dojo_id und txId erforderlich' });
 
     const [[tx]] = await fcPool.query(
-      `SELECT t.id, t.betrag, t.status, t.stripe_payment_intent_id, m.dojo_id
+      `SELECT t.id, t.betrag, t.status, t.stripe_payment_intent_id, t.stripe_charge_id, t.beitrag_ids, t.mitglied_id, m.dojo_id
        FROM stripe_lastschrift_transaktion t JOIN mitglieder m ON t.mitglied_id = m.mitglied_id WHERE t.id = ?`, [txId]);
     if (!tx) return res.status(404).json({ success: false, error: 'Transaktion nicht gefunden' });
     if (tx.dojo_id !== dojoId) return res.status(403).json({ success: false, error: 'Kein Zugriff' });
@@ -1216,6 +1196,26 @@ router.post('/refund/:txId', async (req, res) => {
       `UPDATE stripe_lastschrift_transaktion SET error_message = CONCAT(COALESCE(error_message, ''), ?), updated_at = NOW() WHERE id = ?`,
       [` | Rückerstattet ${(refund.amount / 100).toFixed(2)} € (${refund.id})${grund ? ': ' + grund : ''}`, txId]
     );
+
+    // In zentrale Erstattungs-Tabelle persistieren (für Buchhaltung/EÜR/USt)
+    try {
+      let art = 'unbekannt';
+      let bIds = []; try { bIds = JSON.parse(tx.beitrag_ids || '[]'); } catch {}
+      if (bIds.length > 0) {
+        const ph = bIds.map(() => '?').join(',');
+        const [arts] = await fcPool.query(`SELECT art FROM beitraege WHERE beitrag_id IN (${ph})`, bIds);
+        if (arts.length > 0) art = arts.every(a => a.art === 'artikel') ? 'verkauf' : 'beitrag';
+      }
+      const erstattetAm = (refund.created ? new Date(refund.created * 1000) : new Date()).toISOString().split('T')[0];
+      await fcPool.query(
+        `INSERT INTO erstattungen
+           (dojo_id, mitglied_id, quelle, transaktion_id, stripe_payment_intent_id, stripe_charge_id, stripe_refund_id, betrag, quelle_art, erstattet_am, status, bemerkung)
+         VALUES (?, ?, 'stripe_button', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE betrag = VALUES(betrag), status = VALUES(status)`,
+        [dojoId, tx.mitglied_id, txId, tx.stripe_payment_intent_id, tx.stripe_charge_id || (typeof refund.charge === 'string' ? refund.charge : null),
+         refund.id, refund.amount / 100, art, erstattetAm, refund.status === 'succeeded' ? 'erstattet' : 'offen', grund || null]
+      );
+    } catch (e) { logger.warn('Erstattung konnte nicht in erstattungen persistiert werden: ' + e.message); }
 
     logger.info(`💸 Refund tx${txId} (PI ${tx.stripe_payment_intent_id}): ${refund.amount / 100} € — ${refund.id}`);
     res.json({ success: true, refund_id: refund.id, betrag_erstattet: refund.amount / 100, status: refund.status });
@@ -1292,10 +1292,23 @@ router.post('/manuelle-erstattung/:txId', async (req, res) => {
     const datum = erstattet_am || new Date().toISOString().split('T')[0];
     const erstelltVon = req.user ? (req.user.name || req.user.username || req.user.email || `User ${req.user.id || ''}`) : null;
 
+    // Posten-Art (für USt) aus der Ursprungs-Transaktion ableiten
+    let art = 'unbekannt';
+    try {
+      const [[txp]] = await fcPool.query(`SELECT beitrag_ids FROM stripe_lastschrift_transaktion WHERE id = ?`, [txId]);
+      let bIds = []; try { bIds = JSON.parse(txp?.beitrag_ids || '[]'); } catch {}
+      if (bIds.length > 0) {
+        const ph = bIds.map(() => '?').join(',');
+        const [arts] = await fcPool.query(`SELECT art FROM beitraege WHERE beitrag_id IN (${ph})`, bIds);
+        if (arts.length > 0) art = arts.every(a => a.art === 'artikel') ? 'verkauf' : 'beitrag';
+      }
+    } catch (e) { /* Art bleibt unbekannt */ }
+
     const [result] = await fcPool.query(
-      `INSERT INTO manuelle_erstattungen (transaktion_id, mitglied_id, dojo_id, betrag, erstattet_am, quelle, bemerkung, erstellt_von)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [txId, tx.mitglied_id, dojoId, betrag, datum, quelle || null, bemerkung || null, erstelltVon]
+      `INSERT INTO erstattungen
+         (dojo_id, mitglied_id, quelle, transaktion_id, betrag, mwst_satz, quelle_art, erstattet_am, quelle_konto, bemerkung, erstellt_von, status)
+       VALUES (?, ?, 'manuell', ?, ?, NULL, ?, ?, ?, ?, ?, 'erstattet')`,
+      [dojoId, tx.mitglied_id, txId, betrag, art, datum, quelle || null, bemerkung || null, erstelltVon]
     );
 
     logger.info(`🏦 Manuelle Erstattung erfasst: tx${txId}, ${betrag} € (${quelle || 'ohne Quelle'})`);
@@ -1313,12 +1326,29 @@ router.delete('/manuelle-erstattung/:id', async (req, res) => {
     const id = parseInt(req.params.id);
     if (!dojoId || !id) return res.status(400).json({ success: false, error: 'dojo_id und id erforderlich' });
 
+    // Nur manuell erfasste Erstattungen sind löschbar (Stripe-Einträge kommen aus dem Sync)
     const [result] = await fcPool.query(
-      `DELETE FROM manuelle_erstattungen WHERE id = ? AND dojo_id = ?`, [id, dojoId]);
-    if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+      `DELETE FROM erstattungen WHERE id = ? AND dojo_id = ? AND quelle = 'manuell'`, [id, dojoId]);
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Nicht gefunden oder nicht löschbar (nur manuelle Erstattungen)' });
     res.json({ success: true });
   } catch (err) {
     logger.error('Fehler bei manuelle-erstattung (DELETE):', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/finanzcockpit/erstattungen/sync?dojo_id=  Body: { sinceDays? }
+// Holt Stripe-Refunds in die zentrale erstattungen-Tabelle (Backfill/Abgleich).
+router.post('/erstattungen/sync', async (req, res) => {
+  try {
+    const dojoId = parseInt(req.query.dojo_id);
+    if (!dojoId) return res.status(400).json({ success: false, error: 'dojo_id erforderlich' });
+    const sinceDays = req.body && req.body.sinceDays ? parseInt(req.body.sinceDays) : null;
+    const { syncStripeRefunds } = require('../services/erstattungSync');
+    const result = await syncStripeRefunds(dojoId, { sinceDays });
+    res.json({ success: result.ok, ...result });
+  } catch (err) {
+    logger.error('Fehler bei erstattungen/sync:', { error: err });
     res.status(500).json({ success: false, error: err.message });
   }
 });

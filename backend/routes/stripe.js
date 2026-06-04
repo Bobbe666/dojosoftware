@@ -594,6 +594,16 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(event.data.object);
         break;
+      case "charge.refunded": {
+        const charge = event.data.object;
+        const refunds = (charge.refunds && charge.refunds.data) || [];
+        for (const r of refunds) await handleRefundObject(r, charge);
+        break;
+      }
+      case "refund.created":
+      case "refund.updated":
+        await handleRefundObject(event.data.object, null);
+        break;
     }
 
     res.json({ received: true });
@@ -602,6 +612,57 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
     res.status(400).json({ error: error.message });
   }
 });
+
+// Erstattung (Refund) aus Webhook in zentrale erstattungen-Tabelle schreiben.
+// Deckt direkt im Stripe-Dashboard ausgelöste Rückerstattungen ab.
+async function handleRefundObject(r, charge) {
+  try {
+    if (!r || !r.id) return;
+    if (r.status && !['succeeded', 'pending'].includes(r.status)) return;
+    const pool = db.promise();
+    const pi = (typeof r.payment_intent === 'string' ? r.payment_intent : (r.payment_intent && r.payment_intent.id))
+      || (charge && (typeof charge.payment_intent === 'string' ? charge.payment_intent : (charge.payment_intent && charge.payment_intent.id))) || null;
+    const chargeId = (typeof r.charge === 'string' ? r.charge : (r.charge && r.charge.id)) || (charge && charge.id) || null;
+
+    // Ursprungs-Transaktion über payment_intent (Fallback: charge_id) zuordnen
+    let tx = null;
+    if (pi) {
+      const [[row]] = await pool.query(
+        `SELECT t.id, t.mitglied_id, t.beitrag_ids, m.dojo_id
+         FROM stripe_lastschrift_transaktion t JOIN mitglieder m ON t.mitglied_id = m.mitglied_id
+         WHERE t.stripe_payment_intent_id = ?`, [pi]);
+      tx = row || null;
+    }
+    if (!tx && chargeId) {
+      const [[row]] = await pool.query(
+        `SELECT t.id, t.mitglied_id, t.beitrag_ids, m.dojo_id
+         FROM stripe_lastschrift_transaktion t JOIN mitglieder m ON t.mitglied_id = m.mitglied_id
+         WHERE t.stripe_charge_id = ?`, [chargeId]);
+      tx = row || null;
+    }
+    if (!tx) { logger.warn(`Refund ${r.id}: keine zugehörige Transaktion gefunden (pi=${pi})`); return; }
+
+    let art = 'unbekannt';
+    let bIds = []; try { bIds = JSON.parse(tx.beitrag_ids || '[]'); } catch {}
+    if (bIds.length > 0) {
+      const ph = bIds.map(() => '?').join(',');
+      const [arts] = await pool.query(`SELECT art FROM beitraege WHERE beitrag_id IN (${ph})`, bIds);
+      if (arts.length > 0) art = arts.every(a => a.art === 'artikel') ? 'verkauf' : 'beitrag';
+    }
+    const erstattetAm = new Date((r.created || Math.floor(Date.now() / 1000)) * 1000).toISOString().split('T')[0];
+
+    await pool.query(
+      `INSERT INTO erstattungen
+         (dojo_id, mitglied_id, quelle, transaktion_id, stripe_payment_intent_id, stripe_charge_id, stripe_refund_id, betrag, quelle_art, erstattet_am, status, bemerkung)
+       VALUES (?, ?, 'stripe_extern', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE betrag = VALUES(betrag), status = VALUES(status), mitglied_id = COALESCE(VALUES(mitglied_id), mitglied_id)`,
+      [tx.dojo_id, tx.mitglied_id, tx.id, pi, chargeId, r.id, (r.amount || 0) / 100, art, erstattetAm, r.status === 'succeeded' ? 'erstattet' : 'offen', r.reason || null]
+    );
+    logger.info(`💸 Webhook-Erstattung erfasst: ${r.id} (${(r.amount || 0) / 100} €, dojo ${tx.dojo_id})`);
+  } catch (e) {
+    logger.error('handleRefundObject Fehler:', { error: e.message });
+  }
+}
 
 // Webhook Handlers
 async function handleCheckoutComplete(session) {

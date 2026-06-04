@@ -519,27 +519,36 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                                   <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.7rem' }}>
                                     <div style={lbl}>⑤ Rückerstattung</div>
                                     {(() => {
-                                      const stripeRefunds = (lv && !lv.error && lv.refunds) ? lv.refunds : [];
-                                      const manuelle = tx.manuelle_erstattungen || [];
-                                      if (stripeRefunds.length === 0 && manuelle.length === 0) {
-                                        return <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.78rem' }}>{!lv ? 'Keine manuelle · Stripe erst „Live laden" (③)' : 'Keine Rückerstattung'}</div>;
+                                      // Zentrale Erstattungen (DB: manuell + Stripe via Sync/Button)
+                                      const erstattungen = tx.erstattungen || [];
+                                      const dbRefundIds = new Set(erstattungen.map(e => e.stripe_refund_id).filter(Boolean));
+                                      // Stripe-Live nur, soweit noch NICHT in der DB (Doppelzählung vermeiden)
+                                      const stripeOnly = (lv && !lv.error && lv.refunds ? lv.refunds : []).filter(r => !dbRefundIds.has(r.id));
+                                      if (erstattungen.length === 0 && stripeOnly.length === 0) {
+                                        return <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.78rem' }}>Keine Rückerstattung</div>;
                                       }
-                                      const summe = stripeRefunds.reduce((s2, r) => s2 + (r.betrag || 0), 0) + manuelle.reduce((s2, me) => s2 + (Number(me.betrag) || 0), 0);
+                                      const summe = erstattungen.reduce((s2, e) => s2 + (Number(e.betrag) || 0), 0) + stripeOnly.reduce((s2, r) => s2 + (r.betrag || 0), 0);
                                       return (
                                         <div style={{ fontSize: '0.8rem' }}>
-                                          {stripeRefunds.map((r, ri) => (
+                                          {erstattungen.map((me) => {
+                                            const istManuell = me.quelle === 'manuell';
+                                            return (
+                                              <div key={'e' + me.id} style={{ marginBottom: 4 }}>
+                                                <span style={{ color: istManuell ? '#38bdf8' : '#fbbf24', fontWeight: 600 }}>{istManuell ? '🏦' : '↩'} {eur(me.betrag)}</span>{' '}
+                                                {istManuell
+                                                  ? <Badge color="#38bdf8" bg="rgba(56,189,248,0.12)">manuell</Badge>
+                                                  : <Badge color="#a78bfa" bg="rgba(167,139,250,0.12)">Stripe</Badge>}
+                                                <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.72rem' }}> · {datum(me.erstattet_am)}</span>
+                                                {istManuell && <button onClick={() => deleteManual(me.id)} title="Manuelle Erstattung löschen" style={{ marginLeft: 5, background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.72rem', padding: 0 }}>✕</button>}
+                                                {me.quelle_konto ? <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.7rem' }}>Quelle: {me.quelle_konto}</div> : ''}
+                                                {me.bemerkung ? <div style={{ color: 'var(--text-secondary,#cbd5e1)', fontSize: '0.7rem', fontStyle: 'italic' }}>{me.bemerkung}</div> : ''}
+                                              </div>
+                                            );
+                                          })}
+                                          {stripeOnly.map((r, ri) => (
                                             <div key={'s' + ri} style={{ marginBottom: 3 }}>
-                                              <span style={{ color: '#fbbf24', fontWeight: 600 }}>↩ {eur(r.betrag)}</span> <Badge color={r.status === 'succeeded' ? '#22c55e' : r.status === 'failed' ? '#ef4444' : '#f59e0b'} bg={r.status === 'succeeded' ? 'rgba(34,197,94,0.12)' : r.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)'}>{r.status}</Badge> <Badge color="#a78bfa" bg="rgba(167,139,250,0.12)">Stripe</Badge>
+                                              <span style={{ color: '#fbbf24', fontWeight: 600 }}>↩ {eur(r.betrag)}</span> <Badge color={r.status === 'succeeded' ? '#22c55e' : r.status === 'failed' ? '#ef4444' : '#f59e0b'} bg={r.status === 'succeeded' ? 'rgba(34,197,94,0.12)' : r.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)'}>{r.status}</Badge> <Badge color="#a78bfa" bg="rgba(167,139,250,0.12)">Stripe · neu</Badge>
                                               {r.erstellt ? <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.72rem' }}> · {new Date(r.erstellt * 1000).toLocaleDateString('de-DE')}</span> : ''}
-                                            </div>
-                                          ))}
-                                          {manuelle.map((me) => (
-                                            <div key={'m' + me.id} style={{ marginBottom: 4 }}>
-                                              <span style={{ color: '#38bdf8', fontWeight: 600 }}>🏦 {eur(me.betrag)}</span> <Badge color="#38bdf8" bg="rgba(56,189,248,0.12)">manuell</Badge>
-                                              <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.72rem' }}> · {datum(me.erstattet_am)}</span>
-                                              <button onClick={() => deleteManual(me.id)} title="Manuelle Erstattung löschen" style={{ marginLeft: 5, background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.72rem', padding: 0 }}>✕</button>
-                                              {me.quelle ? <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.7rem' }}>Quelle: {me.quelle}</div> : ''}
-                                              {me.bemerkung ? <div style={{ color: 'var(--text-secondary,#cbd5e1)', fontSize: '0.7rem', fontStyle: 'italic' }}>{me.bemerkung}</div> : ''}
                                             </div>
                                           ))}
                                           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted,#94a3b8)', marginTop: 2 }}>Summe erstattet: {eur(summe)}</div>
