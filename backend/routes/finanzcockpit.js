@@ -964,6 +964,7 @@ router.get('/mitglied-check/:id', async (req, res) => {
     real.forEach(t => {
       const ids = parseIds(t.beitrag_ids);
       if (ids.length === 0) return;
+      if (!ids.every(id => bById[id])) return; // Beiträge regeneriert/gelöscht → kein verlässlicher Soll-Vergleich
       const sum = ids.reduce((s, id) => s + (bById[id] ? num(bById[id].betrag) : 0), 0);
       const diff = num(t.betrag) - sum;
       if (Math.abs(diff) > 0.01) {
@@ -1044,13 +1045,21 @@ router.get('/mitglied-check/:id', async (req, res) => {
     const byMonth = {};
     real.forEach(t => {
       const key = `${t.jahr}-${String(t.monat).padStart(2, '0')}`;
-      if (!byMonth[key]) byMonth[key] = { monat: t.monat, jahr: t.jahr, geschickt: 0, anzahl_tx: 0, ids: new Set() };
+      if (!byMonth[key]) byMonth[key] = { monat: t.monat, jahr: t.jahr, geschickt: 0, anzahl_tx: 0, ids: new Set(), regeneriertBetrag: 0 };
       byMonth[key].geschickt += num(t.betrag);
       byMonth[key].anzahl_tx += 1;
-      parseIds(t.beitrag_ids).forEach(id => byMonth[key].ids.add(id));
+      const ids = parseIds(t.beitrag_ids);
+      if (ids.length === 0) {
+        // Phantom (ohne Zuordnung) → trägt 0 zum „erwartet" bei → erscheint als Differenz
+      } else if (ids.every(id => bById[id])) {
+        ids.forEach(id => byMonth[key].ids.add(id)); // auflösbar → distinct (deckt Doppelbuchung als Differenz auf)
+      } else {
+        byMonth[key].regeneriertBetrag += num(t.betrag); // Beitrag regeneriert → abgebuchten Betrag als erwartet annehmen
+      }
     });
     const monatsvergleich = Object.values(byMonth).map(v => {
-      const erwartet = [...v.ids].reduce((s, id) => s + (bById[id] ? num(bById[id].betrag) : 0), 0);
+      const erwartetResolved = [...v.ids].reduce((s, id) => s + (bById[id] ? num(bById[id].betrag) : 0), 0);
+      const erwartet = erwartetResolved + v.regeneriertBetrag;
       return { monat: v.monat, jahr: v.jahr, geschickt: v.geschickt, erwartet, differenz: v.geschickt - erwartet, anzahl_tx: v.anzahl_tx, anzahl_beitraege: v.ids.size };
     }).sort((a, b) => (b.jahr - a.jahr) || (b.monat - a.monat));
 
