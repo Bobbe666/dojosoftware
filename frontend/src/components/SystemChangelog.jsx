@@ -5,10 +5,25 @@
 // ============================================================================
 
 import React, { useState } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import {
   Sparkles, Calendar, Zap, Shield, CreditCard, Users,
   Settings, Bug, Star, ChevronDown, ChevronUp, ExternalLink
 } from 'lucide-react';
+
+// Super-Admin (kein dojo_id im Token oder super-Rolle) sieht ALLE Einträge;
+// Dojo-Admins der Subdomains sehen keine 'intern'-Einträge.
+const istSuperAdminScope = () => {
+  try {
+    const token = localStorage.getItem('dojo_auth_token');
+    if (!token) return false;
+    const d = jwtDecode(token);
+    const role = (d.role || d.rolle || '').toString().toLowerCase();
+    return d.dojo_id === null || d.dojo_id === undefined || role.includes('super');
+  } catch {
+    return false;
+  }
+};
 
 // ============================================================================
 // CHANGELOG DATEN - Hier neue Einträge hinzufügen!
@@ -16,9 +31,29 @@ import {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.10',
+    date: '2026-06-04',
+    type: 'improvement',
+    zielgruppe: 'intern', // Meta — nur Super-Admin
+    title: 'Changelog-Zielgruppen: technische Einträge nur für Super-Admin',
+    description: 'Changelog-Einträge können jetzt pro Eintrag eine Zielgruppe haben: „intern" (nur Super-Admin) oder „betreiber" (zusätzlich die Admins der Subdomain-Dojos). Technische Releases bleiben intern; allgemeine Feature-Neuerungen erreichen damit auch die Dojo-Admins. Mitglieder sehen weiterhin keine Changelogs.',
+    highlights: [
+      '🎯 ZIELGRUPPEN: Feld „zielgruppe" pro Eintrag — intern (Super-Admin) vs. betreiber (auch Dojo-Admins der Subdomains)',
+      '🔒 Technische Releases (Erstattungen, Stripe-Webhooks, Buchhaltung) sind als intern markiert und für Dojo-Admins ausgeblendet',
+      '👥 ChangelogPopup + volle Changelog-Ansicht filtern nach Rolle (Super-Admin sieht alles; Dojo-Admin nur betreiber-Einträge)',
+    ],
+    details: 'ChangelogPopup.jsx + SystemChangelog.jsx: Scope-Erkennung via JWT (dojo_id null/super-Rolle = Super-Admin). getNewEntries + displayedChangelog filtern Einträge mit zielgruppe===\'intern\' für Dojo-Admins aus. Neue technische Einträge bekommen zielgruppe: \'intern\'.',
+    files: [
+      'frontend/src/components/ChangelogPopup.jsx',
+      'frontend/src/components/SystemChangelog.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.9',
     date: '2026-06-04',
     type: 'feature',
+    zielgruppe: 'intern', // technisch — nur Super-Admin, nicht für Dojo-Admins der Subdomains
     title: 'Rückerstattungen durchgängig: zentrale Erfassung, Stripe-Sync & vollständige Buchhaltung (EÜR/USt)',
     description: 'Rückerstattungen werden jetzt zentral erfasst (manuell, über den Button und direkt in Stripe ausgelöste) und durchgängig berücksichtigt — im Mitglieder-Check ebenso wie in der gesamten Buchhaltung: EÜR, BWA-Summen, Umsatzsteuer-Voranmeldung und Kleinunternehmer-Umsatz.',
     highlights: [
@@ -44,6 +79,7 @@ export const CHANGELOG = [
     version: '3.0.8',
     date: '2026-06-04',
     type: 'feature',
+    zielgruppe: 'intern', // technisch — nur Super-Admin, nicht für Dojo-Admins der Subdomains
     title: 'Beitrags-Schutz (DB-Guard) & manuelle Erstattungen außerhalb Stripe',
     description: 'Zwei Sicherungen rund um Lastschriften: Ein Datenbank-Guard verhindert dauerhaft, dass Beiträge gelöscht werden, solange sie von einer laufenden oder abgeschlossenen Stripe-Lastschrift referenziert werden (Ursache der früheren „Datensatz erneuert/unbekannt"-Verweise). Zusätzlich lassen sich jetzt Erstattungen erfassen, die NICHT über Stripe, sondern manuell von einem anderen Konto erfolgt sind.',
     highlights: [
@@ -731,7 +767,10 @@ const SystemChangelog = ({ maxItems = 5, showAll = false, isAdmin = false }) => 
     }));
   };
 
-  const displayedChangelog = showAllItems ? CHANGELOG : CHANGELOG.slice(0, maxItems);
+  // Interne (technische) Einträge nur für Super-Admin; Dojo-Admins sehen sie nicht
+  const isSuperAdmin = istSuperAdminScope();
+  const sichtbaresChangelog = CHANGELOG.filter(e => isSuperAdmin || e.zielgruppe !== 'intern');
+  const displayedChangelog = showAllItems ? sichtbaresChangelog : sichtbaresChangelog.slice(0, maxItems);
 
   return (
     <div style={styles.container}>

@@ -28,22 +28,31 @@ const TYPE_LABEL = {
   improvement: 'Verbesserung',
 };
 
-const getUserId = () => {
+// Liest userId + Zielgruppen-Scope aus dem JWT.
+// Super-Admin (kein dojo_id im Token oder super-Rolle) sieht ALLE Einträge;
+// Dojo-Admins der Subdomains sehen nur Einträge, die NICHT als 'intern' markiert sind.
+const getAuth = () => {
   try {
     const token = localStorage.getItem('dojo_auth_token');
-    if (!token) return null;
+    if (!token) return { userId: null, isSuperAdmin: false };
     const d = jwtDecode(token);
-    return d.id || d.user_id || null;
+    const userId = d.id || d.user_id || null;
+    const role = (d.role || d.rolle || '').toString().toLowerCase();
+    const isSuperAdmin = d.dojo_id === null || d.dojo_id === undefined || role.includes('super');
+    return { userId, isSuperAdmin };
   } catch {
-    return null;
+    return { userId: null, isSuperAdmin: false };
   }
 };
+
+// Sichtbarkeit eines Eintrags je nach Scope (intern = nur Super-Admin)
+const istSichtbar = (eintrag, isSuperAdmin) => isSuperAdmin || eintrag.zielgruppe !== 'intern';
 
 const seenKey = (userId, version) => `cl_seen_${userId}_v${version}`;
 const laterKey = (userId, version) => `cl_later_${userId}_v${version}`;
 
-// Einträge seit der zuletzt gesehenen Version
-const getNewEntries = (userId) => {
+// Einträge seit der zuletzt gesehenen Version (nach Zielgruppe gefiltert)
+const getNewEntries = (userId, isSuperAdmin) => {
   // Letzte bestätigte Version finden
   let lastSeenIdx = CHANGELOG.length; // default: alle neu
   for (let i = 0; i < CHANGELOG.length; i++) {
@@ -52,15 +61,15 @@ const getNewEntries = (userId) => {
       break;
     }
   }
-  // Alles vor dem letzten gesehenen Eintrag ist neu
-  return CHANGELOG.slice(0, lastSeenIdx);
+  // Alles vor dem letzten gesehenen Eintrag ist neu — interne Einträge für Dojo-Admins ausblenden
+  return CHANGELOG.slice(0, lastSeenIdx).filter(e => istSichtbar(e, isSuperAdmin));
 };
 
 const ChangelogPopup = () => {
   const [visible, setVisible] = useState(false);
   const [entries, setEntries] = useState([]);
   const [expanded, setExpanded] = useState(null);
-  const userId = getUserId();
+  const { userId, isSuperAdmin } = getAuth();
 
   useEffect(() => {
     if (!userId) return;
@@ -68,13 +77,13 @@ const ChangelogPopup = () => {
     // "Später lesen" in dieser Session gesetzt?
     if (sessionStorage.getItem(laterKey(userId, CURRENT_VERSION)) === '1') return;
 
-    const newEntries = getNewEntries(userId);
+    const newEntries = getNewEntries(userId, isSuperAdmin);
     if (newEntries.length === 0) return;
 
     setEntries(newEntries);
     setExpanded(newEntries[0]?.version ?? null); // neuesten Eintrag aufgeklappt
     setVisible(true);
-  }, [userId]);
+  }, [userId, isSuperAdmin]);
 
   const confirm = () => {
     if (!userId) return;
