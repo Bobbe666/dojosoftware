@@ -195,7 +195,8 @@ app.use(cors({
 
 // Body-Parser mit expliziter UTF-8 Konfiguration und 50MB Limit
 // (Gi-Bestellungen enthalten Base64-Bilder: Produktbild, Pflegelabel, Zeichnung)
-app.use(express.json({ charset: 'utf-8', limit: '50mb' }));
+// rawBody anhängen (für Stripe-Webhook-Signaturprüfung, z. B. /api/payment-provider/refund-webhook)
+app.use(express.json({ charset: 'utf-8', limit: '50mb', verify: (req, res, buf) => { req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true, charset: 'utf-8', limit: '50mb' }));
 
 // =============================================

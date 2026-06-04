@@ -196,6 +196,54 @@ router.post('/stripe/webhook', express.raw({type: 'application/json'}), async (r
     }
 });
 
+// ── Dedizierter Refund-Webhook ────────────────────────────────────────────
+// Empfängt NUR Erstattungs-Events (charge.refunded / refund.created/updated)
+// und schreibt sie in die zentrale erstattungen-Tabelle. Bewusst getrennt vom
+// allgemeinen Webhook, um keine payment_intent/DATEV-Verarbeitung auszulösen.
+// Validiert die Signatur gegen die pro Dojo gespeicherten Refund-Webhook-Secrets.
+router.post('/refund-webhook', async (req, res) => {
+    try {
+        const sig = req.headers['stripe-signature'];
+        if (!sig) return res.status(400).json({ error: 'Keine Stripe-Signatur' });
+        if (!req.rawBody) return res.status(400).json({ error: 'Kein Raw-Body verfügbar' });
+
+        const db = require('../db');
+        const [dojos] = await db.promise().query(
+            `SELECT id, stripe_refund_webhook_secret FROM dojo
+             WHERE stripe_refund_webhook_secret IS NOT NULL AND stripe_refund_webhook_secret <> ''`
+        );
+        if (!dojos.length) {
+            logger.warn('Refund-Webhook: kein Secret konfiguriert');
+            return res.status(400).json({ error: 'Kein Refund-Webhook-Secret konfiguriert' });
+        }
+
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_dummy');
+        let event = null;
+        for (const d of dojos) {
+            try { event = stripe.webhooks.constructEvent(req.rawBody, sig, d.stripe_refund_webhook_secret); break; } catch (_) { /* nächstes Secret */ }
+        }
+        if (!event) {
+            logger.warn('Refund-Webhook: Signatur zu keinem Secret passend');
+            return res.status(400).json({ error: 'Signatur ungültig' });
+        }
+
+        const { erfasseRefundEvent } = require('../services/erstattungSync');
+        if (event.type === 'charge.refunded') {
+            const charge = event.data.object;
+            const refunds = (charge.refunds && charge.refunds.data) || [];
+            for (const r of refunds) await erfasseRefundEvent(r, charge);
+        } else if (event.type === 'refund.created' || event.type === 'refund.updated') {
+            await erfasseRefundEvent(event.data.object, null);
+        } else {
+            logger.info(`Refund-Webhook: ignoriere Event ${event.type}`);
+        }
+        res.json({ received: true });
+    } catch (error) {
+        logger.error('Refund-Webhook Fehler:', { error: error.message });
+        res.status(400).json({ error: 'Webhook-Verarbeitung fehlgeschlagen' });
+    }
+});
+
 // Manueller Stripe-Sync: Offene Lastschriften des letzten Monats bei Stripe abfragen
 // POST /api/payment-provider/stripe/sync-lastschriften
 // Body (optional): { monat, jahr, dojo_id }  — lässt man weg → letzter Monat

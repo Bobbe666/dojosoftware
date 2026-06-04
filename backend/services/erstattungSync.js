@@ -103,4 +103,55 @@ async function syncStripeRefunds(dojoId, { sinceDays = null } = {}) {
   return result;
 }
 
-module.exports = { syncStripeRefunds };
+/**
+ * Erfasst ein einzelnes Refund-Objekt aus einem Webhook-Event in `erstattungen`.
+ * @param {object} r        Stripe Refund-Objekt
+ * @param {object} charge   optional: zugehöriges Charge-Objekt (für payment_intent/charge-Fallback)
+ * @param {string} quelle   'stripe_extern' (Webhook) — Default
+ */
+async function erfasseRefundEvent(r, charge = null, quelle = 'stripe_extern') {
+  if (!r || !r.id) return { ok: false, grund: 'kein Refund-Objekt' };
+  if (r.status && !['succeeded', 'pending'].includes(r.status)) return { ok: false, grund: `status ${r.status}` };
+
+  const pi = (typeof r.payment_intent === 'string' ? r.payment_intent : (r.payment_intent && r.payment_intent.id))
+    || (charge && (typeof charge.payment_intent === 'string' ? charge.payment_intent : (charge.payment_intent && charge.payment_intent.id))) || null;
+  const chargeId = (typeof r.charge === 'string' ? r.charge : (r.charge && r.charge.id)) || (charge && charge.id) || null;
+
+  let tx = null;
+  if (pi) {
+    const [[row]] = await pool.query(
+      `SELECT t.id, t.mitglied_id, t.beitrag_ids, m.dojo_id
+       FROM stripe_lastschrift_transaktion t JOIN mitglieder m ON t.mitglied_id = m.mitglied_id
+       WHERE t.stripe_payment_intent_id = ?`, [pi]);
+    tx = row || null;
+  }
+  if (!tx && chargeId) {
+    const [[row]] = await pool.query(
+      `SELECT t.id, t.mitglied_id, t.beitrag_ids, m.dojo_id
+       FROM stripe_lastschrift_transaktion t JOIN mitglieder m ON t.mitglied_id = m.mitglied_id
+       WHERE t.stripe_charge_id = ?`, [chargeId]);
+    tx = row || null;
+  }
+  if (!tx) { logger.warn(`Refund ${r.id}: keine zugehörige Transaktion gefunden (pi=${pi})`); return { ok: false, grund: 'keine Transaktion' }; }
+
+  let art = 'unbekannt';
+  let bIds = []; try { bIds = JSON.parse(tx.beitrag_ids || '[]'); } catch {}
+  if (bIds.length > 0) {
+    const ph = bIds.map(() => '?').join(',');
+    const [arts] = await pool.query(`SELECT art FROM beitraege WHERE beitrag_id IN (${ph})`, bIds);
+    if (arts.length > 0) art = arts.every(a => a.art === 'artikel') ? 'verkauf' : 'beitrag';
+  }
+  const erstattetAm = new Date((r.created || Math.floor(Date.now() / 1000)) * 1000).toISOString().split('T')[0];
+
+  await pool.query(
+    `INSERT INTO erstattungen
+       (dojo_id, mitglied_id, quelle, transaktion_id, stripe_payment_intent_id, stripe_charge_id, stripe_refund_id, betrag, quelle_art, erstattet_am, status, bemerkung)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE betrag = VALUES(betrag), status = VALUES(status), mitglied_id = COALESCE(VALUES(mitglied_id), mitglied_id)`,
+    [tx.dojo_id, tx.mitglied_id, quelle, tx.id, pi, chargeId, r.id, (r.amount || 0) / 100, art, erstattetAm, r.status === 'succeeded' ? 'erstattet' : 'veranlasst', r.reason || null]
+  );
+  logger.info(`💸 Webhook-Erstattung erfasst: ${r.id} (${(r.amount || 0) / 100} €, dojo ${tx.dojo_id})`);
+  return { ok: true, dojoId: tx.dojo_id };
+}
+
+module.exports = { syncStripeRefunds, erfasseRefundEvent };
