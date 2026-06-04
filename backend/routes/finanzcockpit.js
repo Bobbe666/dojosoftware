@@ -908,6 +908,112 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
   }
 });
 
+// GET /api/finanzcockpit/mitglied-check/:id?dojo_id=
+// Automatische Problemanalyse: Doppelbuchungen, Betrags-Abweichungen,
+// Phantom-Abbuchungen + Monatsvergleich (geschickt vs. erwartet).
+router.get('/mitglied-check/:id', async (req, res) => {
+  try {
+    const dojoId = parseInt(req.query.dojo_id);
+    const mid = parseInt(req.params.id);
+    if (!dojoId || !mid) return res.status(400).json({ success: false, error: 'dojo_id und id erforderlich' });
+
+    const [[m]] = await fcPool.query(`SELECT vorname, nachname, dojo_id FROM mitglieder WHERE mitglied_id = ?`, [mid]);
+    if (!m) return res.status(404).json({ success: false, error: 'Mitglied nicht gefunden' });
+    if (m.dojo_id !== dojoId) return res.status(403).json({ success: false, error: 'Kein Zugriff' });
+
+    const [txs] = await fcPool.query(
+      `SELECT t.id, t.betrag, t.status, t.beitrag_ids, t.created_at, b.monat, b.jahr
+       FROM stripe_lastschrift_transaktion t JOIN stripe_lastschrift_batch b ON t.batch_id = b.batch_id
+       WHERE t.mitglied_id = ? ORDER BY t.created_at`, [mid]);
+    const [beitraege] = await fcPool.query(`SELECT beitrag_id, art, betrag FROM beitraege WHERE mitglied_id = ?`, [mid]);
+
+    const ART = { mitgliedsbeitrag: 'Mitgliedsbeitrag', pruefungsgebuehr: 'Prüfungsgebühr', artikel: 'Artikel', aufnahmegebuehr: 'Aufnahmegebühr' };
+    const bById = {};
+    beitraege.forEach(b => { bById[b.beitrag_id] = b; });
+    const num = (v) => parseFloat(v) || 0;
+    const parseIds = (s) => { try { return JSON.parse(s || '[]'); } catch { return []; } };
+    const tag = (d) => { try { return new Date(d).toISOString().slice(0, 10); } catch { return String(d).slice(0, 10); } };
+    const real = txs.filter(t => t.status === 'succeeded' || t.status === 'processing');
+
+    const findings = [];
+    let zuViel = 0;
+
+    // 1) Doppelte Beiträge (gleiche beitrag_id in mehreren echten Transaktionen)
+    const byBeitrag = {};
+    real.forEach(t => parseIds(t.beitrag_ids).forEach(id => { (byBeitrag[id] = byBeitrag[id] || []).push(t); }));
+    Object.entries(byBeitrag).forEach(([id, ts]) => {
+      if (ts.length > 1) {
+        const b = bById[id];
+        const sorted = [...ts].sort((a, b2) => new Date(a.created_at) - new Date(b2.created_at));
+        const extra = sorted.slice(1).reduce((s, t) => s + num(t.betrag), 0);
+        zuViel += extra;
+        findings.push({
+          schwere: 'hoch', typ: 'doppelbuchung',
+          titel: `Beitrag ${id} (${b ? (ART[b.art] || b.art) : '?'}${b ? `, ${num(b.betrag).toFixed(2)} €` : ''}) ${ts.length}× abgebucht`,
+          detail: `${ts.map(t => `tx${t.id} (${num(t.betrag).toFixed(2)} €, ${tag(t.created_at)})`).join(' + ')} → ca. ${extra.toFixed(2)} € zu viel.`,
+          betrag_zu_viel: extra, txs: ts.map(t => t.id),
+        });
+      }
+    });
+
+    // 2) Betrags-Abweichung (Transaktionsbetrag ≠ Summe der zugeordneten Beiträge)
+    real.forEach(t => {
+      const ids = parseIds(t.beitrag_ids);
+      if (ids.length === 0) return;
+      const sum = ids.reduce((s, id) => s + (bById[id] ? num(bById[id].betrag) : 0), 0);
+      const diff = num(t.betrag) - sum;
+      if (Math.abs(diff) > 0.01) {
+        if (diff > 0) zuViel += diff;
+        findings.push({
+          schwere: 'hoch', typ: 'betrags_abweichung',
+          titel: `tx${t.id}: Betrag passt nicht zu den Posten`,
+          detail: `Abgebucht ${num(t.betrag).toFixed(2)} €, die zugeordneten Beiträge (${ids.join(', ')}) ergeben aber ${sum.toFixed(2)} € — Differenz ${diff > 0 ? '+' : ''}${diff.toFixed(2)} €.`,
+          betrag_zu_viel: diff > 0 ? diff : 0, txs: [t.id],
+        });
+      }
+    });
+
+    // 3) Phantom (echte Abbuchung ohne jede Zuordnung)
+    real.forEach(t => {
+      if (parseIds(t.beitrag_ids).length === 0 && num(t.betrag) > 0) {
+        zuViel += num(t.betrag);
+        findings.push({
+          schwere: 'hoch', typ: 'phantom',
+          titel: `tx${t.id}: ${num(t.betrag).toFixed(2)} € ohne Beitrags-Zuordnung`,
+          detail: `Diese Abbuchung (Lauf ${t.monat}/${t.jahr}, Status ${t.status}, ${tag(t.created_at)}) hat keine zugeordneten Posten — nicht nachvollziehbar, möglicher Fehl-/Doppeleinzug.`,
+          betrag_zu_viel: num(t.betrag), txs: [t.id],
+        });
+      }
+    });
+
+    // 4) Monatsvergleich: geschickt vs. erwartet (Summe der DISTINCT zugeordneten Beiträge)
+    const byMonth = {};
+    real.forEach(t => {
+      const key = `${t.jahr}-${String(t.monat).padStart(2, '0')}`;
+      if (!byMonth[key]) byMonth[key] = { monat: t.monat, jahr: t.jahr, geschickt: 0, anzahl_tx: 0, ids: new Set() };
+      byMonth[key].geschickt += num(t.betrag);
+      byMonth[key].anzahl_tx += 1;
+      parseIds(t.beitrag_ids).forEach(id => byMonth[key].ids.add(id));
+    });
+    const monatsvergleich = Object.values(byMonth).map(v => {
+      const erwartet = [...v.ids].reduce((s, id) => s + (bById[id] ? num(bById[id].betrag) : 0), 0);
+      return { monat: v.monat, jahr: v.jahr, geschickt: v.geschickt, erwartet, differenz: v.geschickt - erwartet, anzahl_tx: v.anzahl_tx, anzahl_beitraege: v.ids.size };
+    }).sort((a, b) => (b.jahr - a.jahr) || (b.monat - a.monat));
+
+    res.json({
+      success: true,
+      mitglied: `${m.vorname} ${m.nachname}`,
+      alles_ok: findings.length === 0,
+      summe_auffaellig: zuViel,
+      findings: findings.sort((a, b) => (b.betrag_zu_viel || 0) - (a.betrag_zu_viel || 0)),
+      monatsvergleich,
+    });
+  } catch (err) {
+    logger.error('Fehler bei mitglied-check:', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // GET /api/finanzcockpit/stripe-details/:pi?dojo_id=
 // Live von Stripe: Status, Charge, Rückerstattungen, Fehlergrund zu einem Payment-Intent
 router.get('/stripe-details/:pi', async (req, res) => {

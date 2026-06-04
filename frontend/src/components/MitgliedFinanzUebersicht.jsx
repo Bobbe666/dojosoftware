@@ -21,6 +21,7 @@ const datumZeit = (d) => {
 
 const ART_LABEL = { mitgliedsbeitrag: 'Mitgliedsbeitrag', pruefungsgebuehr: 'Prüfungsgebühr', artikel: 'Artikel', aufnahmegebuehr: 'Aufnahmegebühr' };
 const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const TYP_ICON = { doppelbuchung: '🔁', betrags_abweichung: '⚖️', phantom: '👻' };
 
 // Offene Beiträge in „jetzt fällig" (aktueller Lauf) + künftige Läufe (nach Monat gruppiert) aufteilen
 function analysiereBeitraege(beitraege) {
@@ -93,6 +94,23 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
   const toggleMonth = (key) => setExpandedMonths(prev => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; });
   const toggleTx = (id) => setExpandedTx(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   const ladeMonatLive = (txs) => { (txs || []).forEach(tx => { if (tx.stripe_payment_intent_id) ladeStripeLive(tx); }); };
+
+  const [check, setCheck] = useState(null);
+  const [checkLoading, setCheckLoading] = useState(false);
+  const ladeCheck = async (mid) => {
+    if (!mid) return;
+    setCheckLoading(true);
+    setCheck(null);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/mitglied-check/${mid}?dojo_id=${dojoId}`);
+      const d = await res.json();
+      setCheck(d.success ? d : { error: d.error || 'Fehler' });
+    } catch (e) {
+      setCheck({ error: e.message });
+    } finally {
+      setCheckLoading(false);
+    }
+  };
   const ladeStripeLive = async (tx) => {
     const id = tx.id;
     if (!tx.stripe_payment_intent_id || stripeLive[id] || stripeLiveLoading[id]) return;
@@ -128,6 +146,7 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
     setLoading(true);
     setError('');
     setData(null);
+    setCheck(null);
     try {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/mitglied-finanz/${mid}?dojo_id=${dojoId}`);
       const d = await res.json();
@@ -185,7 +204,55 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
             {data.mitglied.zahlungsmethode && <Badge color="#60a5fa" bg="rgba(96,165,250,0.12)">{data.mitglied.zahlungsmethode}</Badge>}
             {data.sepa && <Badge color={data.sepa.status === 'aktiv' ? '#22c55e' : '#f59e0b'} bg={data.sepa.status === 'aktiv' ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)'}>SEPA {data.sepa.status}{data.sepa.iban ? ` · ${data.sepa.iban}` : ''}</Badge>}
             {data.vertrag?.monatsbeitrag != null && <Badge color="#e2e8f0" bg="rgba(255,255,255,0.08)">Soll {eur(data.vertrag.monatsbeitrag)}/Monat</Badge>}
+            <button onClick={() => ladeCheck(data.mitglied.mitglied_id)} disabled={checkLoading}
+              style={{ marginLeft: 'auto', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.45)', color: '#f87171', borderRadius: 8, padding: '0.4rem 0.85rem', fontSize: '0.82rem', fontWeight: 700, cursor: checkLoading ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
+              {checkLoading ? 'Prüft…' : '🔍 Check / Problemanalyse'}
+            </button>
           </div>
+
+          {/* Problemanalyse-Panel */}
+          {check && (
+            check.error ? (
+              <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '0.8rem 1rem', marginBottom: '0.9rem', color: '#fca5a5', fontSize: '0.85rem' }}>⚠ {check.error}</div>
+            ) : check.alles_ok ? (
+              <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 10, padding: '0.8rem 1rem', marginBottom: '0.9rem', color: '#86efac', fontSize: '0.88rem' }}>
+                ✓ Keine Auffälligkeiten gefunden — die Abbuchungen sind plausibel (keine Doppel-/Phantom-Buchungen, Beträge passen zu den Posten).
+              </div>
+            ) : (
+              <div style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '0.9rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <strong style={{ color: '#fca5a5', fontSize: '0.95rem' }}>⚠ {check.findings.length} Auffälligkeit{check.findings.length !== 1 ? 'en' : ''} gefunden</strong>
+                  {check.summe_auffaellig > 0 && <span style={{ fontWeight: 700, color: '#ef4444' }}>ca. {eur(check.summe_auffaellig)} zu viel abgebucht</span>}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {check.findings.map((f, i) => (
+                    <div key={i} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '0.55rem 0.7rem', borderLeft: '3px solid #ef4444' }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary,#e2e8f0)' }}>{TYP_ICON[f.typ] || '•'} {f.titel}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary,#cbd5e1)', marginTop: 2 }}>{f.detail}</div>
+                    </div>
+                  ))}
+                </div>
+                {check.monatsvergleich && check.monatsvergleich.length > 0 && (
+                  <div style={{ marginTop: '0.85rem', overflowX: 'auto' }}>
+                    <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted, #94a3b8)', marginBottom: '0.4rem' }}>Monatsvergleich: geschickt vs. erwartet</div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead><tr><th style={th}>Monat</th><th style={th}>Geschickt</th><th style={th}>Erwartet</th><th style={th}>Differenz</th></tr></thead>
+                      <tbody>
+                        {check.monatsvergleich.map((mv, i) => (
+                          <tr key={i}>
+                            <td style={td}>{MONATE[(mv.monat || 1) - 1]} {mv.jahr}</td>
+                            <td style={td}>{eur(mv.geschickt)}</td>
+                            <td style={td}>{eur(mv.erwartet)}</td>
+                            <td style={{ ...td, fontWeight: 700, color: Math.abs(mv.differenz) > 0.01 ? '#ef4444' : '#22c55e' }}>{mv.differenz > 0 ? '+' : ''}{eur(mv.differenz)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          )}
 
           {/* KPI-Kacheln */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.6rem' }}>
