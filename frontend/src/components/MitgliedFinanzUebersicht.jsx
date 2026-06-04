@@ -405,26 +405,25 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                                   {/* 1) Soll */}
                                   <div>
                                     <div style={lbl}>① Soll – sollte eingezogen werden</div>
-                                    {ids.length > 0 ? (() => {
-                                      const alleAufgeloest = ids.every(id => beitragById[id]);
-                                      const aufgeloestSumme = ids.reduce((acc, id) => acc + (beitragById[id] ? (parseFloat(beitragById[id].betrag) || 0) : 0), 0);
-                                      // Fallback: wenn Beitrag-Datensätze regeneriert/gelöscht wurden, gilt der abgebuchte Betrag als Soll
+                                    {(() => {
+                                      const posten = tx.posten || ids.map(id => { const b = beitragById[id]; return b ? { beitrag_id: id, label: ART_LABEL[b.art] || b.art, betrag: parseFloat(b.betrag) || 0, beschreibung: b.magicline_description || b.beschreibung, aufgeloest: true, zugeordnet: false } : { beitrag_id: id, label: 'Beitrag (Datensatz erneuert)', betrag: null, aufgeloest: false, zugeordnet: false }; });
+                                      if (!posten || posten.length === 0) return <div style={{ color: '#f59e0b', fontSize: '0.8rem' }}>⚠ Keine Zuordnung (Phantom)</div>;
+                                      const alleAufgeloest = posten.every(p => p.aufgeloest);
+                                      const aufgeloestSumme = posten.reduce((acc, p) => acc + (p.aufgeloest ? (p.betrag || 0) : 0), 0);
                                       const sollSumme = alleAufgeloest ? aufgeloestSumme : (parseFloat(tx.betrag) || 0);
                                       return (<>
                                         <div style={{ fontSize: '0.9rem', margin: '2px 0' }}><strong>{eur(sollSumme)}</strong>{!alleAufgeloest && <span style={{ fontSize: '0.68rem', color: 'var(--text-muted,#94a3b8)' }}> (lt. Abbuchung)</span>}</div>
                                         <div style={{ marginTop: 2 }}>
-                                          {ids.map(id => { const b = beitragById[id]; const kannErstatten = b && parseFloat(b.betrag) > 0 && (tx.status === 'succeeded' || (lv && lv.charge && lv.charge.bezahlt)); return (
-                                            <div key={id} style={{ fontSize: '0.74rem', color: 'var(--text-secondary,#cbd5e1)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 4 }}>
-                                              <span>• {b ? (ART_LABEL[b.art] || b.art) : (lv && lv.payment_intent && lv.payment_intent.beschreibung ? lv.payment_intent.beschreibung : 'Beitrag (Datensatz erneuert)')} {b ? eur(b.betrag) : ''}{b && (b.magicline_description || b.beschreibung) ? <span style={{ color: 'var(--text-muted,#94a3b8)' }}> – {b.magicline_description || b.beschreibung}</span> : ''}</span>
-                                              {kannErstatten && <button onClick={() => refundTx(tx, Math.round(parseFloat(b.betrag) * 100), ART_LABEL[b.art] || b.art)} disabled={refundingTx[tx.id]} style={miniRefundBtn} title="Nur diese Position erstatten">↩</button>}
+                                          {posten.map((p, pi) => { const kannErstatten = p.aufgeloest && p.betrag > 0 && (tx.status === 'succeeded' || (lv && lv.charge && lv.charge.bezahlt)); return (
+                                            <div key={pi} style={{ fontSize: '0.74rem', color: 'var(--text-secondary,#cbd5e1)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 4 }}>
+                                              <span>• {p.label}{p.aufgeloest ? ` ${eur(p.betrag)}` : ''}{p.beschreibung ? <span style={{ color: 'var(--text-muted,#94a3b8)' }}> – {p.beschreibung}</span> : ''}{p.zugeordnet ? <span style={{ color: 'var(--text-muted,#94a3b8)', fontStyle: 'italic' }}> (autom. zugeordnet)</span> : ''}</span>
+                                              {kannErstatten && <button onClick={() => refundTx(tx, Math.round(p.betrag * 100), p.label)} disabled={refundingTx[tx.id]} style={miniRefundBtn} title="Nur diese Position erstatten">↩</button>}
                                             </div>
                                           ); })}
                                         </div>
                                         {alleAufgeloest && Math.abs(aufgeloestSumme - (parseFloat(tx.betrag) || 0)) > 0.01 && <div style={{ color: '#f59e0b', fontSize: '0.72rem', marginTop: 3 }}>⚠ weicht von „Geschickt" ab</div>}
                                       </>);
-                                    })() : (
-                                      <div style={{ color: '#f59e0b', fontSize: '0.8rem' }}>⚠ Keine Zuordnung (Phantom)</div>
-                                    )}
+                                    })()}
                                   </div>
                                   {/* 2) Geschickt */}
                                   <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.7rem' }}>

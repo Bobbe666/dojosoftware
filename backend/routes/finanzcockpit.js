@@ -859,6 +859,36 @@ router.get('/mitglied-finanz/:id', async (req, res) => {
       [mid]
     );
 
+    // Aufgelöste Posten je Stripe-Transaktion: vorhandene Beiträge direkt,
+    // verwaiste (regeneriert/gelöscht) automatisch dem aktuellen Beitrag
+    // desselben Monats (= Lauf monat/jahr) zuordnen.
+    const bArtLabel = { mitgliedsbeitrag: 'Mitgliedsbeitrag', pruefungsgebuehr: 'Prüfungsgebühr', artikel: 'Artikel', aufnahmegebuehr: 'Aufnahmegebühr' };
+    const bById = {};
+    beitraege.forEach(b => { bById[b.beitrag_id] = b; });
+    const beitragByMonth = {};
+    beitraege.forEach(b => {
+      if (!b.zahlungsdatum) return;
+      const d = new Date(b.zahlungsdatum);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      (beitragByMonth[key] = beitragByMonth[key] || []).push(b);
+    });
+    const usedFallback = new Set();
+    lastschriften.forEach(t => {
+      let bIds = []; try { bIds = JSON.parse(t.beitrag_ids || '[]'); } catch {}
+      t.posten = bIds.map(id => {
+        const b = bById[id];
+        if (b) return { beitrag_id: id, art: b.art, label: bArtLabel[b.art] || b.art, betrag: parseFloat(b.betrag) || 0, beschreibung: b.magicline_description || b.beschreibung || null, aufgeloest: true, zugeordnet: false };
+        // verwaist → aktuellen Beitrag desselben Monats zuordnen
+        const key = `${t.jahr}-${String(t.monat).padStart(2, '0')}`;
+        const cand = (beitragByMonth[key] || []).find(c => !usedFallback.has(c.beitrag_id));
+        if (cand) {
+          usedFallback.add(cand.beitrag_id);
+          return { beitrag_id: cand.beitrag_id, art: cand.art, label: bArtLabel[cand.art] || cand.art, betrag: parseFloat(cand.betrag) || 0, beschreibung: cand.magicline_description || cand.beschreibung || null, aufgeloest: true, zugeordnet: true };
+        }
+        return { beitrag_id: id, art: null, label: 'Beitrag (Datensatz erneuert)', betrag: null, beschreibung: null, aufgeloest: false, zugeordnet: false };
+      });
+    });
+
     const num = (v) => parseFloat(v) || 0;
     const offeneBeitraege = beitraege.filter(b => !b.bezahlt);
     const bezahltGesamt = beitraege.filter(b => b.bezahlt).reduce((s, b) => s + num(b.betrag), 0);
