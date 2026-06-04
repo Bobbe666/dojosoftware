@@ -119,18 +119,22 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
   };
 
   const [refundingTx, setRefundingTx] = useState({});
-  const refundTx = async (tx) => {
-    if (!window.confirm(`Diese Abbuchung über ${eur(tx.betrag)} (Lauf ${tx.monat}/${tx.jahr}) wirklich an das Mitglied zurückerstatten?\n\nDie Rückerstattung erfolgt über Stripe an das Bankkonto des Mitglieds.`)) return;
+  const refundTx = async (tx, betragCent, label) => {
+    const betText = betragCent ? eur(betragCent / 100) : eur(tx.betrag);
+    const was = betragCent ? `die Position „${label}" über ${betText}` : `die komplette Abbuchung über ${betText}`;
+    if (!window.confirm(`${was} (Lauf ${tx.monat}/${tx.jahr}) wirklich an das Mitglied zurückerstatten?\n\nDie Rückerstattung erfolgt über Stripe an das Bankkonto des Mitglieds.`)) return;
     setRefundingTx(prev => ({ ...prev, [tx.id]: true }));
     try {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/refund/${tx.id}?dojo_id=${dojoId}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ grund: 'Über Finanzübersicht erstattet' }),
+        body: JSON.stringify({ grund: label ? `Position: ${label}` : 'Komplett erstattet', betrag_cent: betragCent || undefined }),
       });
       const d = await res.json();
       if (d.success) {
-        alert(`✓ Rückerstattung über ${eur(d.betrag_erstattet)} ausgelöst (Status: ${d.status}). Die Übersicht wird aktualisiert.`);
-        oeffne(data.mitglied.mitglied_id, data.mitglied.name);
+        alert(`✓ Rückerstattung über ${eur(d.betrag_erstattet)} ausgelöst (Status: ${d.status}).`);
+        // Live-Stripe-Daten für diese Transaktion neu laden → Rückerstattung erscheint in ⑤
+        setStripeLive(prev => { const c = { ...prev }; delete c[tx.id]; return c; });
+        setTimeout(() => ladeStripeLive(tx), 600);
       } else {
         alert('Rückerstattung nicht möglich: ' + (d.error || 'Unbekannter Fehler'));
       }
@@ -363,6 +367,7 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
               const liveBtn = { background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.4)', color: '#60a5fa', borderRadius: 6, padding: '0.3rem 0.6rem', fontSize: '0.76rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' };
               const stoppBtn = { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', borderRadius: 6, padding: '0.28rem 0.6rem', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', margin: '3px 0', whiteSpace: 'nowrap' };
               const refundBtn = { background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.5)', color: '#fbbf24', borderRadius: 6, padding: '0.28rem 0.6rem', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', margin: '3px 0', whiteSpace: 'nowrap' };
+              const miniRefundBtn = { background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', color: '#fbbf24', borderRadius: 5, padding: '0 0.4rem', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0, lineHeight: 1.5 };
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                   {monate.map(grp => {
@@ -396,7 +401,7 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                               let ids = []; try { ids = JSON.parse(tx.beitrag_ids || '[]'); } catch {}
                               const lv = stripeLive[tx.id];
                               return (
-                                <div key={tx.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0.6rem 0', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(155px, 1fr))', gap: '0.7rem' }}>
+                                <div key={tx.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0.6rem 0', display: 'grid', gridTemplateColumns: 'repeat(5, minmax(150px, 1fr))', gap: '0.7rem' }}>
                                   {/* 1) Soll */}
                                   <div>
                                     <div style={lbl}>① Soll – sollte eingezogen werden</div>
@@ -405,9 +410,10 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                                       return (<>
                                         <div style={{ fontSize: '0.9rem', margin: '2px 0' }}><strong>{eur(sollSumme)}</strong></div>
                                         <div style={{ marginTop: 2 }}>
-                                          {ids.map(id => { const b = beitragById[id]; return (
-                                            <div key={id} style={{ fontSize: '0.74rem', color: 'var(--text-secondary,#cbd5e1)' }}>
-                                              • {b ? (ART_LABEL[b.art] || b.art) : `Beitrag ${id}`} {b ? eur(b.betrag) : '(unbekannt)'}{b && (b.magicline_description || b.beschreibung) ? <span style={{ color: 'var(--text-muted,#94a3b8)' }}> – {b.magicline_description || b.beschreibung}</span> : ''}
+                                          {ids.map(id => { const b = beitragById[id]; const kannErstatten = b && parseFloat(b.betrag) > 0 && (tx.status === 'succeeded' || (lv && lv.charge && lv.charge.bezahlt)); return (
+                                            <div key={id} style={{ fontSize: '0.74rem', color: 'var(--text-secondary,#cbd5e1)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 4 }}>
+                                              <span>• {b ? (ART_LABEL[b.art] || b.art) : `Beitrag ${id}`} {b ? eur(b.betrag) : '(unbekannt)'}{b && (b.magicline_description || b.beschreibung) ? <span style={{ color: 'var(--text-muted,#94a3b8)' }}> – {b.magicline_description || b.beschreibung}</span> : ''}</span>
+                                              {kannErstatten && <button onClick={() => refundTx(tx, Math.round(parseFloat(b.betrag) * 100), ART_LABEL[b.art] || b.art)} disabled={refundingTx[tx.id]} style={miniRefundBtn} title="Nur diese Position erstatten">↩</button>}
                                             </div>
                                           ); })}
                                         </div>
@@ -449,8 +455,26 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                                         {lv.payment_intent.status === 'processing' && <div style={{ color: '#f59e0b' }}>⏳ In Verarbeitung – Ergebnis steht aus</div>}
                                         {(lv.payment_intent.status === 'canceled' || lv.payment_intent.status === 'requires_payment_method') && <div style={{ color: '#ef4444' }}>✗ Nicht eingezogen / abgebrochen</div>}
                                         {lv.payment_intent.fehler && <div style={{ color: '#fca5a5' }}>Grund: {lv.payment_intent.fehler.decline_code || lv.payment_intent.fehler.code} – {lv.payment_intent.fehler.message}</div>}
-                                        {lv.refunds && lv.refunds.length > 0 && <div style={{ color: '#fbbf24', marginTop: 2 }}>Rückerstattungen: {lv.refunds.map(r => `${eur(r.betrag)} (${r.status})`).join(', ')}</div>}
                                       </div>
+                                    )}
+                                  </div>
+                                  {/* 5) Rückerstattung */}
+                                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.7rem' }}>
+                                    <div style={lbl}>⑤ Rückerstattung</div>
+                                    {!lv || lv.error ? (
+                                      <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.76rem' }}>{lv ? '—' : 'Erst „Live laden" (③)'}</div>
+                                    ) : (lv.refunds && lv.refunds.length > 0) ? (
+                                      <div style={{ fontSize: '0.8rem' }}>
+                                        {lv.refunds.map((r, ri) => (
+                                          <div key={ri} style={{ marginBottom: 3 }}>
+                                            <span style={{ color: '#fbbf24', fontWeight: 600 }}>↩ {eur(r.betrag)}</span> <Badge color={r.status === 'succeeded' ? '#22c55e' : r.status === 'failed' ? '#ef4444' : '#f59e0b'} bg={r.status === 'succeeded' ? 'rgba(34,197,94,0.12)' : r.status === 'failed' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)'}>{r.status}</Badge>
+                                            {r.erstellt ? <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.72rem' }}> · {new Date(r.erstellt * 1000).toLocaleDateString('de-DE')}</span> : ''}
+                                          </div>
+                                        ))}
+                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted,#94a3b8)', marginTop: 2 }}>Summe erstattet: {eur(lv.refunds.reduce((s2, r) => s2 + (r.betrag || 0), 0))}</div>
+                                      </div>
+                                    ) : (
+                                      <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.78rem' }}>Keine Rückerstattung</div>
                                     )}
                                   </div>
                                 </div>
