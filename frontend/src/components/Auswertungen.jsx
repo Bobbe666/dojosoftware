@@ -21,6 +21,7 @@ import {
   ReferenceLine
 } from 'recharts';
 import axios from 'axios';
+import MitgliedFinanzUebersicht from './MitgliedFinanzUebersicht.jsx';
 import '../styles/Auswertungen.css';
 import '../styles/Auswertungen-BreakEven.css';
 import '../styles/Auswertungen-Overview.css';
@@ -100,6 +101,7 @@ function Auswertungen({ embedTab } = {}) {
       { id: 'overview',    label: 'Übersicht',   icon: '📊' },
       { id: 'bestand',     label: 'Bestand',     icon: '👥' },
       { id: 'anmeldungen', label: 'Anmeldungen', icon: '📋' },
+      { id: 'finanzen',    label: 'Finanzen',    icon: '💶' },
     ],
     training: [
       { id: 'belts',       label: 'Gürtel',          icon: '🥋' },
@@ -973,6 +975,16 @@ function Auswertungen({ embedTab } = {}) {
               <ZieleEntwicklung bereich="dojo" kontextId={activeDojoId} showFinanzrechner={true} showNavigation={false} />
             </React.Suspense>
           </div>
+        )}
+
+        {activeTab === 'mitglieder' && subTab === 'finanzen' && (
+          activeDojo?.id ? (
+            <MitgliedFinanzUebersicht dojoId={activeDojo.id} />
+          ) : (
+            <div style={{ padding: '1.25rem', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.22)', borderRadius: 10, color: 'var(--text-muted, #94a3b8)', fontSize: '0.88rem' }}>
+              🔎 Für die Mitglieder-Finanzübersicht bitte oben ein einzelnes Dojo auswählen.
+            </div>
+          )
         )}
 
         {activeTab === 'mitglieder' && subTab === 'overview' && (() => {

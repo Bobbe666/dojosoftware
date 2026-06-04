@@ -20,6 +20,26 @@ const datumZeit = (d) => {
 };
 
 const ART_LABEL = { mitgliedsbeitrag: 'Mitgliedsbeitrag', pruefungsgebuehr: 'Prüfungsgebühr', artikel: 'Artikel', aufnahmegebuehr: 'Aufnahmegebühr' };
+const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+// Offene Beiträge in „jetzt fällig" (aktueller Lauf) + künftige Läufe (nach Monat gruppiert) aufteilen
+function analysiereBeitraege(beitraege) {
+  const heute = new Date();
+  const monatsEnde = new Date(heute.getFullYear(), heute.getMonth() + 1, 0, 23, 59, 59);
+  const offen = (beitraege || []).filter(b => !b.bezahlt && b.zahlungsdatum);
+  const aktuell = offen.filter(b => new Date(b.zahlungsdatum) <= monatsEnde);
+  const map = {};
+  offen.filter(b => new Date(b.zahlungsdatum) > monatsEnde).forEach(b => {
+    const d = new Date(b.zahlungsdatum);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (!map[key]) map[key] = { key, label: `${MONATE[d.getMonth()]} ${d.getFullYear()}`, posten: [], summe: 0 };
+    map[key].posten.push(b);
+    map[key].summe += parseFloat(b.betrag) || 0;
+  });
+  const laeufe = Object.values(map).sort((a, b) => a.key.localeCompare(b.key));
+  const aktuellSumme = aktuell.reduce((s, b) => s + (parseFloat(b.betrag) || 0), 0);
+  return { aktuell, aktuellSumme, laeufe };
+}
 const LS_STATUS = {
   succeeded: { label: 'Eingezogen', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
   processing: { label: 'In Einzug', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
@@ -87,6 +107,7 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
   };
 
   const z = data?.zusammenfassung;
+  const analyse = data ? analysiereBeitraege(data.beitraege) : null;
 
   return (
     <div style={{ ...card, marginTop: '1rem' }}>
@@ -139,6 +160,49 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
             <div style={card}><div style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)' }}>Gerade in Einzug</div><div style={{ fontSize: '1.2rem', fontWeight: 700, color: z.in_einzug_gesamt > 0 ? '#f59e0b' : '#e2e8f0' }}>{eur(z.in_einzug_gesamt)}</div></div>
             <div style={card}><div style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)' }}>Nächste Fälligkeit</div>{z.naechste_faelligkeit ? <><div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#e2e8f0' }}>{eur(z.naechste_faelligkeit.betrag)}</div><div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)' }}>{datum(z.naechste_faelligkeit.faellig)}</div></> : <div style={{ fontSize: '1rem', color: 'var(--text-muted, #94a3b8)' }}>—</div>}</div>
           </div>
+
+          {/* Aktuell fällig (nächster/aktueller Lastschriftlauf) */}
+          <Section titel="🔜 Aktuell fällig – nächster Lastschriftlauf" count={analyse?.aktuell.length || 0}>
+            {!analyse || analyse.aktuell.length === 0 ? (
+              <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.84rem', padding: '0.5rem 0' }}>Aktuell keine fälligen offenen Beiträge.</div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><th style={th}>Fällig</th><th style={th}>Art</th><th style={th}>Betrag</th></tr></thead>
+                <tbody>
+                  {analyse.aktuell.map((b) => (
+                    <tr key={b.beitrag_id}>
+                      <td style={td}>{datum(b.zahlungsdatum)}</td>
+                      <td style={td}>{ART_LABEL[b.art] || b.art}{b.beschreibung ? <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.76rem' }}> · {b.beschreibung}</span> : ''}</td>
+                      <td style={{ ...td, fontWeight: 600 }}>{eur(b.betrag)}</td>
+                    </tr>
+                  ))}
+                  <tr><td style={{ ...td, fontWeight: 700 }} colSpan={2}>Summe nächste Abbuchung</td><td style={{ ...td, fontWeight: 700, color: '#f59e0b' }}>{eur(analyse.aktuellSumme)}</td></tr>
+                </tbody>
+              </table>
+            )}
+          </Section>
+
+          {/* Künftige Lastschrift-Läufe (nach Monat) */}
+          {analyse && analyse.laeufe.length > 0 && (
+            <Section titel="📅 Künftige Lastschrift-Läufe" count={analyse.laeufe.length}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {analyse.laeufe.map((lauf) => (
+                  <div key={lauf.key} style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '0.6rem 0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary, #e2e8f0)' }}>{lauf.label}</strong>
+                      <span style={{ fontWeight: 700, color: '#60a5fa' }}>{eur(lauf.summe)}</span>
+                    </div>
+                    {lauf.posten.map((p) => (
+                      <div key={p.beitrag_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary, #cbd5e1)', padding: '0.15rem 0' }}>
+                        <span>{ART_LABEL[p.art] || p.art}{p.beschreibung ? ` · ${p.beschreibung}` : ''} <span style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.75rem' }}>({datum(p.zahlungsdatum)})</span></span>
+                        <span>{eur(p.betrag)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
 
           {/* Lastschrift-Abbuchungen */}
           <Section titel="🏦 Lastschrift-Abbuchungen (Stripe)" count={data.lastschriften.length}>
