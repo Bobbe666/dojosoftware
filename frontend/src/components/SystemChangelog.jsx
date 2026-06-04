@@ -16,6 +16,35 @@ import {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.7',
+    date: '2026-06-04',
+    type: 'feature',
+    title: 'Mitglieder-Finanzübersicht & Stripe-Abgleich: Fehler-Check, Stoppen & Rückerstatten',
+    description: 'Eine vollständige, gezielte Finanzübersicht pro Mitglied (Auswertungen → Mitglieder → Finanzen sowie im Finanzcockpit): genaue Aufschlüsselung aller Abbuchungen, automatische Problemanalyse für Doppel-/Phantom-Buchungen, ein 5-stufiger Stripe-Abgleich (Soll → Geschickt → Bei Stripe → Zurück → Rückerstattung) und direkte Aktionen zum Stoppen oder (Teil-)Erstatten.',
+    highlights: [
+      '🔎 MITGLIEDER-FINANZÜBERSICHT: Mitglied suchen → alle Zahlungen auf einen Blick (Beiträge, Rechnungen, Verkäufe mit Einzel-Artikeln, Stripe-Lastschriften, Rücklastschriften) + KPIs (bezahlt / offen / in Einzug / nächste Fälligkeit). Verfügbar in „Auswertungen → Mitglieder → Finanzen" und im Finanzcockpit',
+      '🔜 SOLL & ZUKUNFT: „Aktuell fällig – nächster Lastschriftlauf" und „Künftige Lastschrift-Läufe" (offene Beiträge nach Monat gruppiert) — du siehst, was kommt, ohne zwischen Mitgliedern zu wechseln',
+      '🏦 STRIPE-ABGLEICH (pro Monat, 5 Stufen): ① Soll (was eingezogen werden sollte) → ② Geschickt (von uns an Stripe) → ③ Bei Stripe (Live-Status) → ④ Zurück (Ergebnis nach Abbuchung) → ⑤ Rückerstattung. Differenz-Anzeige (Δ) deckt Abweichungen sofort auf',
+      '🔍 CHECK / PROBLEMANALYSE: erkennt automatisch Doppelbuchungen, Betrags-Abweichungen, Phantom-Abbuchungen, doppelte Monatsbeiträge und fehlende Beiträge (Ruhepausen ausgenommen) + Monatsvergleich „geschickt vs. erwartet"',
+      '🚫 ABBUCHUNG STOPPEN: laufende (processing) Stripe-Einzüge direkt aus der Software stornieren — Beiträge werden wieder offen gestellt',
+      '↩ RÜCKERSTATTEN: bereits eingezogene Abbuchungen komplett ODER pro Position (Teil-Rückerstattung) über Stripe erstatten; die Rückerstattung erscheint mit Stripe-Status-Abgleich in Spalte ⑤',
+      '🧾 ARTIKEL-DETAILS: Verkäufe mit Einzelposten (welcher Artikel, Menge, Preis) + „Artikel-Übersicht" (wie oft welcher Artikel gekauft wurde)',
+      '🛡 LASTSCHRIFT-SCHUTZ: Retry markiert Beiträge auch bei „in Verarbeitung"; Parallellauf-Schutz (kein zweiter gleichzeitiger Lauf für denselben Monat) — verhindert Doppelabbuchungen',
+      '🔧 MITGLIEDER-HINWEIS: Wartungs-Banner in der Mitglieder-App (bei Wartungsfenstern, blendet sich automatisch wieder aus)',
+    ],
+    details: 'Backend (alles dojo-isoliert): /api/finanzcockpit/mitglied-suche, /mitglied-finanz/:id (inkl. magicline_description, verkauf_positionen, artikel_uebersicht, alle Stripe-Felder), /mitglied-check/:id (Findings + Monatsvergleich), /stripe-details/:pi (Live-PI/Charge/Refunds/Fehler via Provider, connected account), /refund/:txId (Voll-/Teil-Refund). /api/lastschriftlauf/zusammensetzung + /member-payments/naechste-abbuchung. Doppellauf-/Retry-Schutz in StripeConnectProvider + StripeDataevProvider + lastschriftlauf.js. Frontend: MitgliedFinanzUebersicht.jsx (5-Spalten-Abgleich, Check-Panel, Stop/Refund-Buttons), eingebunden in Auswertungen.jsx (Sub-Tab Finanzen) + Finanzcockpit.jsx; WartungsBanner.jsx in MemberDashboard; MemberPayments.jsx mit „Nächste Abbuchung".',
+    files: [
+      'backend/routes/finanzcockpit.js (mitglied-suche/-finanz/-check, refund, stripe-details)',
+      'backend/routes/lastschriftlauf.js (zusammensetzung, Retry-/Storno-Pfad)',
+      'backend/routes/member-payments.js (naechste-abbuchung)',
+      'backend/services/{StripeConnectProvider,StripeDataevProvider}.js (Verwendungszweck, Parallellauf-Schutz)',
+      'frontend/src/components/MitgliedFinanzUebersicht.jsx (neu)',
+      'frontend/src/components/{Auswertungen,Finanzcockpit,MemberPayments,MemberDashboard}.jsx',
+      'frontend/src/components/WartungsBanner.jsx (neu)',
+      'version.js', 'SystemChangelog.jsx',
+    ],
+  },
+  {
     version: '3.0.6',
     date: '2026-06-04',
     type: 'feature',
