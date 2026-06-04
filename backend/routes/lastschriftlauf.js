@@ -2601,4 +2601,59 @@ router.get('/auto-protokoll/:id/csv', async (req, res) => {
     }
 });
 
+// =====================================================================
+// GET /api/lastschriftlauf/zusammensetzung?mitglied_id=&dojo_id=&bis=
+// Read-only: woraus sich eine anstehende Abbuchung zusammensetzt
+// (offene Beiträge + Rechnungen + Verkäufe). Basis für Vorschau-Detail,
+// Verwendungszweck und Member-App-Anzeige.
+// =====================================================================
+router.get('/zusammensetzung', async (req, res) => {
+    try {
+        const pool = db.promise();
+        const secureDojoId = getSecureDojoId(req);
+        const mid = parseInt(req.query.mitglied_id);
+        if (!mid) return res.status(400).json({ error: 'mitglied_id erforderlich' });
+
+        let bis = req.query.bis;
+        if (!bis) { const n = new Date(); bis = new Date(n.getFullYear(), n.getMonth() + 1, 0).toISOString().slice(0, 10); }
+
+        const [[m]] = await pool.query(
+            `SELECT mitglied_id, vorname, nachname, dojo_id FROM mitglieder WHERE mitglied_id = ?`, [mid]);
+        if (!m) return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+        if (secureDojoId && m.dojo_id !== secureDojoId) return res.status(403).json({ error: 'Kein Zugriff auf dieses Mitglied' });
+
+        const [beitraege] = await pool.query(
+            `SELECT beitrag_id, art, betrag, zahlungsdatum, beschreibung FROM beitraege
+             WHERE mitglied_id = ? AND bezahlt = 0 AND zahlungsdatum <= ? ORDER BY zahlungsdatum`, [mid, bis]);
+        const [rechnungen] = await pool.query(
+            `SELECT rechnung_id, rechnungsnummer, COALESCE(gesamtsumme, betrag) AS betrag, COALESCE(rechnungsdatum, datum) AS datum, beschreibung
+             FROM rechnungen WHERE mitglied_id = ? AND archiviert = 0 AND status IN ('offen','teilweise_bezahlt','ueberfaellig')
+             ORDER BY COALESCE(rechnungsdatum, datum)`, [mid]);
+        const [verkaeufe] = await pool.query(
+            `SELECT verkauf_id, bon_nummer, brutto_gesamt_cent / 100 AS betrag, verkauf_datum, bemerkung FROM verkaeufe
+             WHERE mitglied_id = ? AND zahlungsart = 'lastschrift' AND zahlungsstatus = 'offen' AND (storniert = 0 OR storniert IS NULL)
+             ORDER BY verkauf_datum`, [mid]);
+
+        const num = (v) => parseFloat(v) || 0;
+        const ART = { mitgliedsbeitrag: 'Mitgliedsbeitrag', pruefungsgebuehr: 'Prüfungsgebühr', artikel: 'Artikel', aufnahmegebuehr: 'Aufnahmegebühr' };
+        const posten = [
+            ...beitraege.map(b => ({ typ: 'beitrag', label: ART[b.art] || b.art || 'Beitrag', betrag: num(b.betrag), datum: b.zahlungsdatum, info: b.beschreibung || null })),
+            ...rechnungen.map(r => ({ typ: 'rechnung', label: `Rechnung ${r.rechnungsnummer || r.rechnung_id}`, betrag: num(r.betrag), datum: r.datum, info: r.beschreibung || null })),
+            ...verkaeufe.map(v => ({ typ: 'verkauf', label: `Verkauf ${v.bon_nummer || v.verkauf_id}`, betrag: num(v.betrag), datum: v.verkauf_datum, info: v.bemerkung || null })),
+        ];
+        const gesamt = posten.reduce((s, p) => s + p.betrag, 0);
+
+        // Kurz-Verwendungszweck (für SEPA, ~140 Zeichen)
+        const counts = {};
+        posten.forEach(p => { counts[p.label] = (counts[p.label] || 0) + 1; });
+        let verwendungszweck = Object.entries(counts).map(([l, c]) => (c > 1 ? `${c}x ${l}` : l)).join(' + ');
+        if (verwendungszweck.length > 130) verwendungszweck = verwendungszweck.slice(0, 127) + '...';
+
+        res.json({ success: true, mitglied: `${m.vorname} ${m.nachname}`, bis, gesamt, anzahl: posten.length, posten, verwendungszweck });
+    } catch (err) {
+        logger.error('Fehler bei lastschriftlauf/zusammensetzung:', { error: err });
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
