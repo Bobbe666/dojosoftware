@@ -118,6 +118,29 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
     }
   };
 
+  const [refundingTx, setRefundingTx] = useState({});
+  const refundTx = async (tx) => {
+    if (!window.confirm(`Diese Abbuchung über ${eur(tx.betrag)} (Lauf ${tx.monat}/${tx.jahr}) wirklich an das Mitglied zurückerstatten?\n\nDie Rückerstattung erfolgt über Stripe an das Bankkonto des Mitglieds.`)) return;
+    setRefundingTx(prev => ({ ...prev, [tx.id]: true }));
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/refund/${tx.id}?dojo_id=${dojoId}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grund: 'Über Finanzübersicht erstattet' }),
+      });
+      const d = await res.json();
+      if (d.success) {
+        alert(`✓ Rückerstattung über ${eur(d.betrag_erstattet)} ausgelöst (Status: ${d.status}). Die Übersicht wird aktualisiert.`);
+        oeffne(data.mitglied.mitglied_id, data.mitglied.name);
+      } else {
+        alert('Rückerstattung nicht möglich: ' + (d.error || 'Unbekannter Fehler'));
+      }
+    } catch (e) {
+      alert('Fehler bei Rückerstattung: ' + e.message);
+    } finally {
+      setRefundingTx(prev => ({ ...prev, [tx.id]: false }));
+    }
+  };
+
   const [check, setCheck] = useState(null);
   const [checkLoading, setCheckLoading] = useState(false);
   const ladeCheck = async (mid) => {
@@ -338,6 +361,8 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
               const monate = gruppiereNachMonat(data.lastschriften);
               const lbl = { fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted, #94a3b8)', marginBottom: 4 };
               const liveBtn = { background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.4)', color: '#60a5fa', borderRadius: 6, padding: '0.3rem 0.6rem', fontSize: '0.76rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' };
+              const stoppBtn = { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', borderRadius: 6, padding: '0.28rem 0.6rem', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', margin: '3px 0', whiteSpace: 'nowrap' };
+              const refundBtn = { background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.5)', color: '#fbbf24', borderRadius: 6, padding: '0.28rem 0.6rem', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', margin: '3px 0', whiteSpace: 'nowrap' };
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                   {monate.map(grp => {
@@ -371,47 +396,61 @@ export default function MitgliedFinanzUebersicht({ dojoId }) {
                               let ids = []; try { ids = JSON.parse(tx.beitrag_ids || '[]'); } catch {}
                               const lv = stripeLive[tx.id];
                               return (
-                                <div key={tx.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0.6rem 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.9rem' }}>
-                                  {/* Links: von uns geschickt */}
+                                <div key={tx.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0.6rem 0', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(155px, 1fr))', gap: '0.7rem' }}>
+                                  {/* 1) Soll */}
                                   <div>
-                                    <div style={lbl}>📤 Von uns geschickt</div>
-                                    <div style={{ fontSize: '0.84rem', color: 'var(--text-primary,#e2e8f0)' }}>{datumZeit(tx.created_at)}</div>
-                                    <div style={{ fontSize: '0.9rem', margin: '2px 0' }}><strong>{eur(tx.betrag)}</strong> <Badge color={s.color} bg={s.bg}>{s.label}</Badge></div>
-                                    {tx.status === 'processing' && (
-                                      <button onClick={() => stoppeTx(tx)} disabled={stoppingTx[tx.id]}
-                                        style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', borderRadius: 6, padding: '0.3rem 0.7rem', fontSize: '0.78rem', fontWeight: 700, cursor: stoppingTx[tx.id] ? 'wait' : 'pointer', margin: '3px 0' }}>
-                                        {stoppingTx[tx.id] ? 'Stoppt…' : '🚫 Abbuchung stoppen'}
-                                      </button>
-                                    )}
-                                    {tx.error_message && <div style={{ color: '#fca5a5', fontSize: '0.78rem' }}>⚠ {tx.error_code}: {tx.error_message}</div>}
-                                    {ids.length > 0 && (
-                                      <div style={{ marginTop: 4 }}>
-                                        {ids.map(id => { const b = beitragById[id]; return (
-                                          <div key={id} style={{ fontSize: '0.78rem', color: 'var(--text-secondary,#cbd5e1)' }}>
-                                            • {b ? (ART_LABEL[b.art] || b.art) : `Beitrag ${id}`} {b ? eur(b.betrag) : ''}{b && b.magicline_description ? <span style={{ color: 'var(--text-muted,#94a3b8)' }}> – {b.magicline_description}</span> : (b && b.beschreibung ? <span style={{ color: 'var(--text-muted,#94a3b8)' }}> – {b.beschreibung}</span> : '')}
-                                          </div>
-                                        ); })}
-                                      </div>
-                                    )}
-                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted,#94a3b8)', fontFamily: 'monospace', marginTop: 4 }}>PI: {tx.stripe_payment_intent_id || '—'}{tx.stripe_charge_id ? <><br />Charge: {tx.stripe_charge_id}</> : ''}{tx.processed_at ? <><br />verarbeitet: {datumZeit(tx.processed_at)}</> : ''}</div>
-                                  </div>
-                                  {/* Rechts: bei Stripe tatsächlich */}
-                                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.9rem' }}>
-                                    <div style={lbl}>🏦 Bei Stripe tatsächlich</div>
-                                    {stripeLiveLoading[tx.id] ? (
-                                      <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.82rem' }}>Lädt von Stripe…</div>
-                                    ) : lv ? (
-                                      lv.error ? <div style={{ color: '#fca5a5', fontSize: '0.8rem' }}>⚠ {lv.error}</div> : (
-                                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary,#cbd5e1)' }}>
-                                          <div>PI-Status: <strong>{lv.payment_intent.status}</strong></div>
-                                          {lv.charge && <div>Charge: {lv.charge.status} · {lv.charge.bezahlt ? '✓ bezahlt' : 'nicht bezahlt'}{lv.charge.erstattet ? ` · erstattet ${eur(lv.charge.betrag_erstattet)}` : ''}</div>}
-                                          {lv.payment_intent.fehler && <div style={{ color: '#fca5a5' }}>Fehler: {lv.payment_intent.fehler.code} {lv.payment_intent.fehler.decline_code ? `(${lv.payment_intent.fehler.decline_code})` : ''} – {lv.payment_intent.fehler.message}</div>}
-                                          {lv.refunds && lv.refunds.length > 0 && <div style={{ color: '#ef4444' }}>Rückerstattungen: {lv.refunds.map(r => `${eur(r.betrag)} (${r.status})`).join(', ')}</div>}
-                                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted,#94a3b8)', marginTop: 2 }}>Betrag bei Stripe: {eur(lv.payment_intent.betrag)}</div>
+                                    <div style={lbl}>① Soll – sollte eingezogen werden</div>
+                                    {ids.length > 0 ? (() => {
+                                      const sollSumme = ids.reduce((acc, id) => acc + (beitragById[id] ? (parseFloat(beitragById[id].betrag) || 0) : 0), 0);
+                                      return (<>
+                                        <div style={{ fontSize: '0.9rem', margin: '2px 0' }}><strong>{eur(sollSumme)}</strong></div>
+                                        <div style={{ marginTop: 2 }}>
+                                          {ids.map(id => { const b = beitragById[id]; return (
+                                            <div key={id} style={{ fontSize: '0.74rem', color: 'var(--text-secondary,#cbd5e1)' }}>
+                                              • {b ? (ART_LABEL[b.art] || b.art) : `Beitrag ${id}`} {b ? eur(b.betrag) : '(unbekannt)'}{b && (b.magicline_description || b.beschreibung) ? <span style={{ color: 'var(--text-muted,#94a3b8)' }}> – {b.magicline_description || b.beschreibung}</span> : ''}
+                                            </div>
+                                          ); })}
                                         </div>
-                                      )
-                                    ) : (
-                                      <button onClick={() => ladeStripeLive(tx)} style={liveBtn} disabled={!tx.stripe_payment_intent_id}>Live von Stripe laden</button>
+                                        {Math.abs(sollSumme - (parseFloat(tx.betrag) || 0)) > 0.01 && <div style={{ color: '#f59e0b', fontSize: '0.72rem', marginTop: 3 }}>⚠ weicht von „Geschickt" ab</div>}
+                                      </>);
+                                    })() : (
+                                      <div style={{ color: '#f59e0b', fontSize: '0.8rem' }}>⚠ Keine Zuordnung (Phantom)</div>
+                                    )}
+                                  </div>
+                                  {/* 2) Geschickt */}
+                                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.7rem' }}>
+                                    <div style={lbl}>② Geschickt – an Stripe</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-primary,#e2e8f0)' }}>{datumZeit(tx.created_at)}</div>
+                                    <div style={{ fontSize: '0.9rem', margin: '2px 0' }}><strong>{eur(tx.betrag)}</strong> <Badge color={s.color} bg={s.bg}>{s.label}</Badge></div>
+                                    {tx.status === 'processing' && <button onClick={() => stoppeTx(tx)} disabled={stoppingTx[tx.id]} style={stoppBtn}>{stoppingTx[tx.id] ? 'Stoppt…' : '🚫 Stoppen'}</button>}
+                                    {(tx.status === 'succeeded' || (lv && lv.charge && lv.charge.bezahlt && !lv.charge.erstattet)) && <button onClick={() => refundTx(tx)} disabled={refundingTx[tx.id]} style={refundBtn}>{refundingTx[tx.id] ? 'Erstattet…' : '↩ Rückerstatten'}</button>}
+                                    {tx.error_message && <div style={{ color: '#fca5a5', fontSize: '0.72rem', marginTop: 3 }}>⚠ {tx.error_message}</div>}
+                                    <div style={{ fontSize: '0.66rem', color: 'var(--text-muted,#94a3b8)', fontFamily: 'monospace', marginTop: 4, wordBreak: 'break-all' }}>PI: {tx.stripe_payment_intent_id || '—'}</div>
+                                  </div>
+                                  {/* 3) Bei Stripe */}
+                                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.7rem' }}>
+                                    <div style={lbl}>③ Bei Stripe – aktueller Stand</div>
+                                    {stripeLiveLoading[tx.id] ? <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.8rem' }}>Lädt…</div>
+                                      : lv ? (lv.error ? <div style={{ color: '#fca5a5', fontSize: '0.78rem' }}>⚠ {lv.error}</div> : (
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary,#cbd5e1)' }}>
+                                          <div>PI-Status: <strong>{lv.payment_intent.status}</strong></div>
+                                          <div>Betrag: {eur(lv.payment_intent.betrag)}</div>
+                                          {lv.charge && <div>Charge: {lv.charge.status}</div>}
+                                        </div>
+                                      )) : <button onClick={() => ladeStripeLive(tx)} style={liveBtn} disabled={!tx.stripe_payment_intent_id}>Live laden</button>}
+                                  </div>
+                                  {/* 4) Zurück von Stripe */}
+                                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.7rem' }}>
+                                    <div style={lbl}>④ Zurück – nach der Abbuchung</div>
+                                    {!lv || lv.error ? <div style={{ color: 'var(--text-muted,#94a3b8)', fontSize: '0.76rem' }}>{lv ? '—' : 'Erst „Live laden" (③)'}</div> : (
+                                      <div style={{ fontSize: '0.8rem' }}>
+                                        {lv.charge && lv.charge.bezahlt && !lv.charge.erstattet && <div style={{ color: '#22c55e' }}>✓ Eingezogen {eur(lv.payment_intent.betrag)}</div>}
+                                        {lv.charge && lv.charge.erstattet && <div style={{ color: '#fbbf24' }}>↩ Erstattet {eur(lv.charge.betrag_erstattet)}</div>}
+                                        {lv.payment_intent.status === 'processing' && <div style={{ color: '#f59e0b' }}>⏳ In Verarbeitung – Ergebnis steht aus</div>}
+                                        {(lv.payment_intent.status === 'canceled' || lv.payment_intent.status === 'requires_payment_method') && <div style={{ color: '#ef4444' }}>✗ Nicht eingezogen / abgebrochen</div>}
+                                        {lv.payment_intent.fehler && <div style={{ color: '#fca5a5' }}>Grund: {lv.payment_intent.fehler.decline_code || lv.payment_intent.fehler.code} – {lv.payment_intent.fehler.message}</div>}
+                                        {lv.refunds && lv.refunds.length > 0 && <div style={{ color: '#fbbf24', marginTop: 2 }}>Rückerstattungen: {lv.refunds.map(r => `${eur(r.betrag)} (${r.status})`).join(', ')}</div>}
+                                      </div>
                                     )}
                                   </div>
                                 </div>

@@ -1068,6 +1068,44 @@ router.get('/mitglied-check/:id', async (req, res) => {
   }
 });
 
+// POST /api/finanzcockpit/refund/:txId?dojo_id=  Body: { betrag_cent?, grund? }
+// Rückerstattung einer (bereits eingezogenen) Stripe-Lastschrift-Transaktion
+router.post('/refund/:txId', async (req, res) => {
+  try {
+    const dojoId = parseInt(req.query.dojo_id);
+    const txId = parseInt(req.params.txId);
+    const { betrag_cent, grund } = req.body || {};
+    if (!dojoId || !txId) return res.status(400).json({ success: false, error: 'dojo_id und txId erforderlich' });
+
+    const [[tx]] = await fcPool.query(
+      `SELECT t.id, t.betrag, t.status, t.stripe_payment_intent_id, m.dojo_id
+       FROM stripe_lastschrift_transaktion t JOIN mitglieder m ON t.mitglied_id = m.mitglied_id WHERE t.id = ?`, [txId]);
+    if (!tx) return res.status(404).json({ success: false, error: 'Transaktion nicht gefunden' });
+    if (tx.dojo_id !== dojoId) return res.status(403).json({ success: false, error: 'Kein Zugriff' });
+    if (!tx.stripe_payment_intent_id) return res.status(400).json({ success: false, error: 'Keine Stripe-Transaktion zum Erstatten' });
+
+    const provider = await PaymentProviderFactory.getProvider(dojoId);
+    if (!provider || !provider.stripe) return res.status(400).json({ success: false, error: 'Stripe nicht konfiguriert' });
+    const opts = provider.connectedAccountId ? { stripeAccount: provider.connectedAccountId } : undefined;
+
+    const params = { payment_intent: tx.stripe_payment_intent_id, reason: 'requested_by_customer' };
+    if (betrag_cent && betrag_cent > 0) params.amount = Math.round(betrag_cent);
+
+    const refund = await provider.stripe.refunds.create(params, opts);
+
+    await fcPool.query(
+      `UPDATE stripe_lastschrift_transaktion SET error_message = CONCAT(COALESCE(error_message, ''), ?), updated_at = NOW() WHERE id = ?`,
+      [` | Rückerstattet ${(refund.amount / 100).toFixed(2)} € (${refund.id})${grund ? ': ' + grund : ''}`, txId]
+    );
+
+    logger.info(`💸 Refund tx${txId} (PI ${tx.stripe_payment_intent_id}): ${refund.amount / 100} € — ${refund.id}`);
+    res.json({ success: true, refund_id: refund.id, betrag_erstattet: refund.amount / 100, status: refund.status });
+  } catch (err) {
+    logger.error('Fehler bei refund:', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // GET /api/finanzcockpit/stripe-details/:pi?dojo_id=
 // Live von Stripe: Status, Charge, Rückerstattungen, Fehlergrund zu einem Payment-Intent
 router.get('/stripe-details/:pi', async (req, res) => {
