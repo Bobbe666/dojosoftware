@@ -133,11 +133,15 @@ function ArtikelBestellungenPopup({ onClose, onAcknowledged, activeDojo }) {
   }, [onClose]);
 
   const handleAcknowledge = async () => {
+    if (!activeDojo?.id) { onClose(); return; } // Super-Admin ohne Dojo-Kontext → Backend würde 400 liefern
     try {
       await axios.post(withDojoParam('/marketing-artikel/bestellungen/acknowledge', activeDojo));
       onAcknowledged();
       onClose();
-    } catch (err) { console.error('Acknowledge fehlgeschlagen', err); }
+    } catch (err) {
+      console.error('Acknowledge fehlgeschlagen', err);
+      alert('Konnte nicht als gelesen markiert werden: ' + (err.response?.data?.error || err.message));
+    }
   };
 
   const statusColor = { offen: '#f59e0b', in_einzug: '#3b82f6', bezahlt: '#22c55e', storniert: '#6b7280' };
@@ -222,6 +226,7 @@ function NeueVertraegePopup({ onClose, onAcknowledged, activeDojo }) {
       onClose();
     } catch (err) {
       console.error('Acknowledge fehlgeschlagen', err);
+      alert('Konnte nicht als gelesen markiert werden: ' + (err.response?.data?.error || err.response?.data?.message || err.message));
     } finally {
       setConfirming(false);
     }

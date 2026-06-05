@@ -84,10 +84,13 @@ export default function MarketingArtikelTab() {
   };
 
   const handleAcknowledge = async () => {
+    if (!activeDojo?.id) return; // Super-Admin ohne Dojo-Kontext → Backend würde 400 liefern
     try {
       await axios.post(withDojo('/marketing-artikel/bestellungen/acknowledge', activeDojo));
       load();
-    } catch (e) {}
+    } catch (e) {
+      console.error('Acknowledge fehlgeschlagen:', e);
+    }
   };
 
   const openEdit = (a) => {

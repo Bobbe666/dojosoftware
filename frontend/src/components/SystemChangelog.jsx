@@ -31,6 +31,26 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.18',
+    date: '2026-06-05',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Gi-Bestellung: PDF-Vorschau (Auge) funktioniert jetzt — Safari-Popup-Fix',
+    description: 'Der 👁-Button bei Gi-/T-Shirt-Bestellungen tat nichts: window.open wurde erst NACH dem Daten-Nachladen aufgerufen — Safari blockiert Popups außerhalb des direkten Klick-Kontexts, und ein stiller catch verschluckte den Fehler. Jetzt öffnet das Fenster sofort beim Klick, das PDF wird hineingeschrieben, und Fehler werden sichtbar gemeldet. Zusätzlich 400er-Rauschen bei Acknowledge-Aufrufen ohne Dojo-Kontext beseitigt.',
+    highlights: [
+      '👁 PDF-VORSCHAU: Fenster öffnet synchron im Klick (Safari-sicher), HTML wird danach hineingeschrieben — gleiches Muster wie beim Druck in der Bestellvorlage',
+      '🔔 FEHLER SICHTBAR: Statt catch {} gibt es jetzt eine klare Meldung, wenn die Vorschau scheitert',
+      '🧹 400-RAUSCHEN WEG: Marketing-Acknowledge + Verträge-Acknowledge prüfen den Dojo-Kontext bzw. melden Fehler statt still zu scheitern',
+    ],
+    details: 'BestellungenTab.previewGiPdf: window.open("",_blank) vor dem await, win.document.write(html) statt Blob-URL-open; Fallback-Download bei geblocktem Popup; Fehler-Alert. MarketingArtikelTab + CockpitUebersicht (ArtikelBestellungenPopup, NeueVertraegePopup): activeDojo?.id-Guards + Fehler-Alerts.',
+    files: [
+      'frontend/src/components/BestellungenTab.jsx',
+      'frontend/src/components/MarketingArtikelTab.jsx',
+      'frontend/src/components/CockpitUebersicht.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.17',
     date: '2026-06-05',
     type: 'improvement',

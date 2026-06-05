@@ -219,6 +219,10 @@ const BestellungenTab = () => {
   }, [activeSubTab, loadDojoBestellungen]); // eslint-disable-line
 
   const previewGiPdf = async (b) => {
+    // WICHTIG: Fenster SOFORT im Klick-Kontext öffnen — Safari blockiert window.open
+    // nach einem await (kein User-Gesture-Kontext mehr). HTML wird danach
+    // hineingeschrieben (gleiches Muster wie in GiBestellvorlage).
+    const win = window.open('', '_blank');
     try {
       let formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
       if (!formdata) {
@@ -228,21 +232,28 @@ const BestellungenTab = () => {
         const fd = res.data?.data?.formdata;
         formdata = typeof fd === 'string' ? JSON.parse(fd) : fd;
       }
-      if (!formdata) return;
+      if (!formdata) throw new Error('Keine Formulardaten zu dieser Bestellung gefunden');
       const html = istTShirt(formdata)
         ? buildTShirtPdf(formdata, b.bestellung_id)
         : buildPdfHtml(formdata, window.location.origin, [], b.bestellung_id);
-      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const win = window.open(url, '_blank');
       if (win) {
-        setTimeout(() => { win.focus(); URL.revokeObjectURL(url); }, 2000);
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+        win.focus();
       } else {
+        // Popup geblockt → als Datei herunterladen
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = `bestellung_${b.bestellung_id}.html`; a.click();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
       }
-    } catch {}
+    } catch (err) {
+      if (win) win.close();
+      console.error('PDF-Vorschau fehlgeschlagen:', err);
+      alert('PDF-Vorschau fehlgeschlagen: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   const openGiBestellung = async (b) => {
