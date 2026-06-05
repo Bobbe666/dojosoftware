@@ -63,6 +63,7 @@ import AcademySection from './AcademySection';
 import HofLiveSection from './HofLiveSection';
 import DailyBriefing from './DailyBriefing';
 import ShopBestellungen from './ShopBestellungen';
+import CommandPalette from './CommandPalette';
 
 
 const SuperAdminDashboard = () => {
@@ -774,6 +775,9 @@ const SuperAdminDashboard = () => {
 
   return (
     <div className="super-admin-dashboard">
+
+      {/* ── Cmd+K Command-Palette (globale Suche) ──────────────────── */}
+      <CommandPalette onNavigate={(tab) => setActiveTab(tab)} />
 
       {/* ── Daily Briefing Popup (ausgelagert: DailyBriefing.jsx) ──── */}
       {showDailyBriefing && (

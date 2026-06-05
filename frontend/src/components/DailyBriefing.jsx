@@ -56,8 +56,10 @@ const DailyBriefing = ({ globalStats, overviewSummary, unreadCount, sslWarnings,
             </div>
           </div>
 
-          {/* Neue Eingänge — ausstehende Registrierungen & Anfragen */}
-          {(eingaenge?.verband_registrierungen?.length > 0 || eingaenge?.kontakt_anfragen?.length > 0) && (
+          {/* Neue Eingänge — alles, was bearbeitet werden will, an einem Ort */}
+          {(eingaenge?.verband_registrierungen?.length > 0 || eingaenge?.kontakt_anfragen?.length > 0 ||
+            eingaenge?.wiedervorlagen?.length > 0 || eingaenge?.bestellungen?.length > 0 ||
+            eingaenge?.ruecklastschriften?.length > 0 || eingaenge?.tickets?.length > 0) && (
             <div>
               <div className="sad-trial-warning-meta">📨 Neue Eingänge — bitte bearbeiten</div>
               <div className="sad2-flex-col-04">
@@ -83,6 +85,64 @@ const DailyBriefing = ({ globalStats, overviewSummary, unreadCount, sslWarnings,
                     <span className="sad2-fw600">✉️ Kontaktanfrage: {a.name}{a.subject ? ` — ${a.subject}` : ''}</span>
                     <span className={a.tage_offen >= 3 ? 'sad-trial-days--urgent' : 'sad-trial-days--warning'}>
                       {a.tage_offen === 0 ? 'heute' : `seit ${a.tage_offen} Tag${a.tage_offen !== 1 ? 'en' : ''}`} unbearbeitet
+                    </span>
+                  </div>
+                ))}
+                {/* Rücklastschriften — fehlgeschlagene Stripe-Abbuchungen der letzten 7 Tage */}
+                {(eingaenge?.ruecklastschriften || []).map((l, i) => (
+                  <div
+                    key={`rl-${i}`}
+                    className="sad-trial-item sad-trial-item--urgent"
+                    onClick={() => onNavigate?.('finanzen')}
+                    style={{ cursor: 'pointer' }}
+                    title="Zum Finanzen-Tab wechseln"
+                  >
+                    <span className="sad2-fw600">🏦 Lastschrift fehlgeschlagen: {l.mitglied_name} ({l.dojoname}) — {Number(l.betrag).toFixed(2)} €</span>
+                    <span className="sad-trial-days--urgent">{l.error_message ? l.error_message.slice(0, 40) : 'failed'}</span>
+                  </div>
+                ))}
+                {/* Akquise-Wiedervorlagen — heute fällig oder überfällig */}
+                {(eingaenge?.wiedervorlagen || []).map((w, i) => (
+                  <div
+                    key={`wv-${i}`}
+                    className={`sad-trial-item ${w.tage_ueberfaellig >= 3 ? 'sad-trial-item--urgent' : 'sad-trial-item--warning'}`}
+                    onClick={() => onNavigate?.('kontakte')}
+                    style={{ cursor: 'pointer' }}
+                    title="Zu den Kontakten wechseln"
+                  >
+                    <span className="sad2-fw600">📞 Wiedervorlage: {w.organisation}{w.naechste_aktion_info ? ` — ${w.naechste_aktion_info}` : ''}</span>
+                    <span className={w.tage_ueberfaellig >= 3 ? 'sad-trial-days--urgent' : 'sad-trial-days--warning'}>
+                      {w.tage_ueberfaellig <= 0 ? 'heute fällig' : `${w.tage_ueberfaellig} Tag${w.tage_ueberfaellig !== 1 ? 'e' : ''} überfällig`}
+                    </span>
+                  </div>
+                ))}
+                {/* Offene Shop-Bestellungen */}
+                {(eingaenge?.bestellungen || []).map((b, i) => (
+                  <div
+                    key={`bs-${i}`}
+                    className={`sad-trial-item ${b.tage_offen >= 3 ? 'sad-trial-item--urgent' : 'sad-trial-item--warning'}`}
+                    onClick={() => onNavigate?.('finanzen')}
+                    style={{ cursor: 'pointer' }}
+                    title="Zum Finanzen-Tab wechseln"
+                  >
+                    <span className="sad2-fw600">📦 Bestellung {b.bestellnummer}: {b.kunde_name} — {(b.gesamtbetrag_cent / 100).toFixed(2)} €</span>
+                    <span className={b.tage_offen >= 3 ? 'sad-trial-days--urgent' : 'sad-trial-days--warning'}>
+                      {b.tage_offen === 0 ? 'heute' : `seit ${b.tage_offen} Tag${b.tage_offen !== 1 ? 'en' : ''}`} offen
+                    </span>
+                  </div>
+                ))}
+                {/* Offene Support-Tickets */}
+                {(eingaenge?.tickets || []).map((t, i) => (
+                  <div
+                    key={`ti-${i}`}
+                    className={`sad-trial-item ${t.tage_offen >= 3 ? 'sad-trial-item--urgent' : 'sad-trial-item--warning'}`}
+                    onClick={() => onNavigate?.('kommunikation')}
+                    style={{ cursor: 'pointer' }}
+                    title="Zum Kommunikation-Tab wechseln"
+                  >
+                    <span className="sad2-fw600">🎫 Ticket {t.ticket_nummer}: {t.betreff}{t.ersteller_name ? ` (${t.ersteller_name})` : ''}</span>
+                    <span className={t.tage_offen >= 3 ? 'sad-trial-days--urgent' : 'sad-trial-days--warning'}>
+                      {t.tage_offen === 0 ? 'heute' : `seit ${t.tage_offen} Tag${t.tage_offen !== 1 ? 'en' : ''}`} offen
                     </span>
                   </div>
                 ))}

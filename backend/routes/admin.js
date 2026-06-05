@@ -480,87 +480,82 @@ router.get('/global-stats', requireSuperAdmin, async (req, res) => {
   try {
     const stats = {};
 
-    // 1. Dojo-Übersicht
-    const [dojoStats] = await db.promise().query(`
-      SELECT
-        COUNT(*) as total_dojos,
-        SUM(ist_aktiv) as active_dojos,
-        SUM(mitgliederzahl_aktuell) as total_members_declared
-      FROM dojo
-    `);
-    stats.dojos = dojoStats[0];
-
-    // 2. Mitglieder (nur aktive Dojos, kein Demo)
-    const [memberStats] = await db.promise().query(`
-      SELECT
-        COUNT(*) as total_members,
-        SUM(CASE WHEN m.aktiv = 1 THEN 1 ELSE 0 END) as active_members,
-        COUNT(DISTINCT m.dojo_id) as dojos_with_members
-      FROM mitglieder m
-      JOIN dojo d ON m.dojo_id = d.id
-      WHERE d.ist_aktiv = 1
-    `);
-    stats.members = memberStats[0];
-
-    // 3. Kurse (nur aktive Dojos)
-    const [courseStats] = await db.promise().query(`
-      SELECT
-        COUNT(*) as total_courses,
-        COUNT(DISTINCT k.dojo_id) as dojos_with_courses
-      FROM kurse k
-      JOIN dojo d ON k.dojo_id = d.id
-      WHERE d.ist_aktiv = 1
-    `);
-    stats.courses = courseStats[0];
-
-    // 4. Trainer (nur aktive Dojos)
-    const [trainerStats] = await db.promise().query(`
-      SELECT
-        COUNT(*) as total_trainers,
-        COUNT(DISTINCT t.dojo_id) as dojos_with_trainers
-      FROM trainer t
-      JOIN dojo d ON t.dojo_id = d.id
-      WHERE d.ist_aktiv = 1
-    `);
-    stats.trainers = trainerStats[0];
-
-    // 5. Aktive Check-ins heute (alle Dojos)
-    const [checkinStats] = await db.promise().query(`
-      SELECT
-        COUNT(*) as active_checkins_today
-      FROM checkins
-      WHERE DATE(checkin_time) = CURDATE() AND status = 'active'
-    `);
-    stats.checkins = checkinStats[0];
-
-    // 6. Offene Beiträge (vergangene + aktueller Monat, ohne demo1)
+    // Offene Beiträge: Cutoff = Anfang nächster Monat
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const cutoffDate = nextMonth.toISOString().slice(0, 10);
-    const [beitraegeStats] = await db.promise().query(
-      `SELECT COUNT(*) as open_payments, SUM(betrag) as open_amount FROM beitraege WHERE bezahlt = 0 AND dojo_id != 4 AND zahlungsdatum < ?`,
-      [cutoffDate]
-    );
-    stats.payments = beitraegeStats[0];
 
-    // 7. Dojos nach Aktivitäts-Ranking
-    const [topDojos] = await db.promise().query(`
-      SELECT
-        d.id,
-        d.dojoname,
-        d.subdomain,
-        COUNT(DISTINCT m.mitglied_id) as member_count,
-        COUNT(DISTINCT k.kurs_id) as course_count,
-        COUNT(DISTINCT t.trainer_id) as trainer_count
-      FROM dojo d
-      LEFT JOIN mitglieder m ON d.id = m.dojo_id AND m.aktiv = 1
-      LEFT JOIN kurse k ON d.id = k.dojo_id
-      LEFT JOIN trainer t ON d.id = t.dojo_id
-      WHERE d.ist_aktiv = 1
-      GROUP BY d.id
-      ORDER BY member_count DESC
-      LIMIT 10
-    `);
+    // Alle Statistik-Queries PARALLEL (vorher sequenziell → spürbar langsamer)
+    const [
+      [dojoStats], [memberStats], [courseStats], [trainerStats],
+      [checkinStats], [beitraegeStats], [topDojos]
+    ] = await Promise.all([
+      db.promise().query(`
+        SELECT
+          COUNT(*) as total_dojos,
+          SUM(ist_aktiv) as active_dojos,
+          SUM(mitgliederzahl_aktuell) as total_members_declared
+        FROM dojo
+      `),
+      db.promise().query(`
+        SELECT
+          COUNT(*) as total_members,
+          SUM(CASE WHEN m.aktiv = 1 THEN 1 ELSE 0 END) as active_members,
+          COUNT(DISTINCT m.dojo_id) as dojos_with_members
+        FROM mitglieder m
+        JOIN dojo d ON m.dojo_id = d.id
+        WHERE d.ist_aktiv = 1
+      `),
+      db.promise().query(`
+        SELECT
+          COUNT(*) as total_courses,
+          COUNT(DISTINCT k.dojo_id) as dojos_with_courses
+        FROM kurse k
+        JOIN dojo d ON k.dojo_id = d.id
+        WHERE d.ist_aktiv = 1
+      `),
+      db.promise().query(`
+        SELECT
+          COUNT(*) as total_trainers,
+          COUNT(DISTINCT t.dojo_id) as dojos_with_trainers
+        FROM trainer t
+        JOIN dojo d ON t.dojo_id = d.id
+        WHERE d.ist_aktiv = 1
+      `),
+      db.promise().query(`
+        SELECT
+          COUNT(*) as active_checkins_today
+        FROM checkins
+        WHERE DATE(checkin_time) = CURDATE() AND status = 'active'
+      `),
+      db.promise().query(
+        `SELECT COUNT(*) as open_payments, SUM(betrag) as open_amount FROM beitraege WHERE bezahlt = 0 AND dojo_id != 4 AND zahlungsdatum < ?`,
+        [cutoffDate]
+      ),
+      db.promise().query(`
+        SELECT
+          d.id,
+          d.dojoname,
+          d.subdomain,
+          COUNT(DISTINCT m.mitglied_id) as member_count,
+          COUNT(DISTINCT k.kurs_id) as course_count,
+          COUNT(DISTINCT t.trainer_id) as trainer_count
+        FROM dojo d
+        LEFT JOIN mitglieder m ON d.id = m.dojo_id AND m.aktiv = 1
+        LEFT JOIN kurse k ON d.id = k.dojo_id
+        LEFT JOIN trainer t ON d.id = t.dojo_id
+        WHERE d.ist_aktiv = 1
+        GROUP BY d.id
+        ORDER BY member_count DESC
+        LIMIT 10
+      `)
+    ]);
+    stats.dojos = dojoStats[0];
+    stats.members = memberStats[0];
+    stats.courses = courseStats[0];
+    stats.trainers = trainerStats[0];
+    stats.checkins = checkinStats[0];
+    stats.payments = beitraegeStats[0];
     stats.top_dojos = topDojos;
 
     // 8. Speicherplatz-Statistiken (echte Server-Festplatte)
@@ -593,51 +588,47 @@ router.get('/tda-stats', requireSuperAdmin, async (req, res) => {
     const TDA_DOJO_ID = 2;
     const stats = {};
 
-    // 1. TDA Mitglieder
-    const [memberStats] = await db.promise().query(`
-      SELECT
-        COUNT(*) as total_members,
-        SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as active_members
-      FROM mitglieder
-      WHERE dojo_id = ?
-    `, [TDA_DOJO_ID]);
+    // Alle TDA-Queries PARALLEL (vorher sequenziell)
+    const [
+      [memberStats], [courseStats], [trainerStats], [checkinStats], [beitraegeStats]
+    ] = await Promise.all([
+      db.promise().query(`
+        SELECT
+          COUNT(*) as total_members,
+          SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as active_members
+        FROM mitglieder
+        WHERE dojo_id = ?
+      `, [TDA_DOJO_ID]),
+      db.promise().query(`
+        SELECT COUNT(*) as total_courses
+        FROM kurse
+        WHERE dojo_id = ?
+      `, [TDA_DOJO_ID]),
+      db.promise().query(`
+        SELECT COUNT(*) as total_trainers
+        FROM trainer
+        WHERE dojo_id = ?
+      `, [TDA_DOJO_ID]),
+      db.promise().query(`
+        SELECT COUNT(*) as active_checkins_today
+        FROM checkins c
+        JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
+        WHERE m.dojo_id = ?
+          AND DATE(c.checkin_time) = CURDATE()
+          AND c.status = 'active'
+      `, [TDA_DOJO_ID]),
+      db.promise().query(`
+        SELECT
+          COUNT(*) as open_payments,
+          SUM(betrag) as open_amount
+        FROM beitraege
+        WHERE dojo_id = ? AND bezahlt = 0
+      `, [TDA_DOJO_ID])
+    ]);
     stats.members = memberStats[0];
-
-    // 2. TDA Kurse
-    const [courseStats] = await db.promise().query(`
-      SELECT COUNT(*) as total_courses
-      FROM kurse
-      WHERE dojo_id = ?
-    `, [TDA_DOJO_ID]);
     stats.courses = courseStats[0];
-
-    // 3. TDA Trainer
-    const [trainerStats] = await db.promise().query(`
-      SELECT COUNT(*) as total_trainers
-      FROM trainer
-      WHERE dojo_id = ?
-    `, [TDA_DOJO_ID]);
     stats.trainers = trainerStats[0];
-
-    // 4. TDA Check-ins heute
-    const [checkinStats] = await db.promise().query(`
-      SELECT COUNT(*) as active_checkins_today
-      FROM checkins c
-      JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
-      WHERE m.dojo_id = ?
-        AND DATE(c.checkin_time) = CURDATE()
-        AND c.status = 'active'
-    `, [TDA_DOJO_ID]);
     stats.checkins = checkinStats[0];
-
-    // 5. TDA Offene Beiträge
-    const [beitraegeStats] = await db.promise().query(`
-      SELECT
-        COUNT(*) as open_payments,
-        SUM(betrag) as open_amount
-      FROM beitraege
-      WHERE dojo_id = ? AND bezahlt = 0
-    `, [TDA_DOJO_ID]);
     stats.payments = beitraegeStats[0];
 
     logger.info(' Admin: TDA International Statistiken abgerufen');
@@ -2483,52 +2474,88 @@ router.get('/overview-summary', requireSuperAdmin, async (req, res) => {
 
     // 2. Neuanmeldungen (bereits parallel geladen)
 
-    // 3. Trial läuft bald ab
-    const [trialExpiring] = await db.promise().query(`
-      SELECT dojoname, trial_ends_at, DATEDIFF(trial_ends_at, NOW()) as tage_noch
-      FROM dojo
-      WHERE subscription_status = 'trial' AND trial_ends_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 14 DAY) AND ist_aktiv = 1
-      ORDER BY trial_ends_at ASC LIMIT 5
-    `);
+    // 3.–7. Trial-Warnungen, Neueste, Neue Eingänge — alles PARALLEL (vorher sequenziell)
+    const [
+      [trialExpiring],
+      [neuesteDojos],
+      [neuesteMitglieder],
+      [neuesteVerbandsmitglieder],
+      [ausstehendeRegistrierungen],
+      [offeneKontaktanfragen]
+    ] = await Promise.all([
+      db.promise().query(`
+        SELECT dojoname, trial_ends_at, DATEDIFF(trial_ends_at, NOW()) as tage_noch
+        FROM dojo
+        WHERE subscription_status = 'trial' AND trial_ends_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 14 DAY) AND ist_aktiv = 1
+        ORDER BY trial_ends_at ASC LIMIT 5
+      `),
+      db.promise().query(`
+        SELECT dojoname, inhaber, ort, created_at, subscription_status FROM dojo WHERE ist_aktiv = 1 ORDER BY created_at DESC LIMIT 5
+      `),
+      db.promise().query(`
+        SELECT m.vorname, m.nachname, m.eintrittsdatum, d.dojoname
+        FROM mitglieder m
+        JOIN dojo d ON m.dojo_id = d.id
+        WHERE d.ist_aktiv = 1
+        ORDER BY m.eintrittsdatum DESC, m.mitglied_id DESC
+        LIMIT 5
+      `),
+      db.promise().query(`
+        SELECT COALESCE(NULLIF(CONCAT(TRIM(COALESCE(person_vorname,'')), ' ', TRIM(COALESCE(person_nachname,''))), ' '), dojo_name, 'Unbekannt') as name,
+          typ, status, created_at, mitgliedsnummer
+        FROM verbandsmitgliedschaften ORDER BY created_at DESC LIMIT 5
+      `),
+      db.promise().query(`
+        SELECT id,
+          COALESCE(NULLIF(CONCAT(TRIM(COALESCE(person_vorname,'')), ' ', TRIM(COALESCE(person_nachname,''))), ' '), dojo_name, 'Unbekannt') as name,
+          person_email, typ, created_at, DATEDIFF(NOW(), created_at) as tage_offen
+        FROM verbandsmitgliedschaften
+        WHERE status = 'ausstehend'
+        ORDER BY created_at DESC LIMIT 10
+      `),
+      db.promise().query(`
+        SELECT id, name, email, subject, erstellt_am, DATEDIFF(NOW(), erstellt_am) as tage_offen
+        FROM kontakt_anfragen
+        WHERE bearbeitet = 0
+        ORDER BY erstellt_am DESC LIMIT 10
+      `)
+    ]);
 
-    // 4. Neueste Dojo-Anmeldungen (nur aktive)
-    const [neuesteDojos] = await db.promise().query(`
-      SELECT dojoname, inhaber, ort, created_at, subscription_status FROM dojo WHERE ist_aktiv = 1 ORDER BY created_at DESC LIMIT 5
-    `);
-
-    // 5. Neueste Verbandsmitglieder
-    // 6. Neueste Dojo-Mitglieder (nur aus aktiven Dojos, kein Demo)
-    const [neuesteMitglieder] = await db.promise().query(`
-      SELECT m.vorname, m.nachname, m.eintrittsdatum, d.dojoname
-      FROM mitglieder m
-      JOIN dojo d ON m.dojo_id = d.id
-      WHERE d.ist_aktiv = 1
-      ORDER BY m.eintrittsdatum DESC, m.mitglied_id DESC
-      LIMIT 5
-    `);
-
-    const [neuesteVerbandsmitglieder] = await db.promise().query(`
-      SELECT COALESCE(NULLIF(CONCAT(TRIM(COALESCE(person_vorname,'')), ' ', TRIM(COALESCE(person_nachname,''))), ' '), dojo_name, 'Unbekannt') as name,
-        typ, status, created_at, mitgliedsnummer
-      FROM verbandsmitgliedschaften ORDER BY created_at DESC LIMIT 5
-    `);
-
-    // 7. Neue Eingänge — ausstehende Registrierungen & unbearbeitete Anfragen (nicht übersehen!)
-    const [ausstehendeRegistrierungen] = await db.promise().query(`
-      SELECT id,
-        COALESCE(NULLIF(CONCAT(TRIM(COALESCE(person_vorname,'')), ' ', TRIM(COALESCE(person_nachname,''))), ' '), dojo_name, 'Unbekannt') as name,
-        person_email, typ, created_at, DATEDIFF(NOW(), created_at) as tage_offen
-      FROM verbandsmitgliedschaften
-      WHERE status = 'ausstehend'
-      ORDER BY created_at DESC LIMIT 10
-    `);
-
-    const [offeneKontaktanfragen] = await db.promise().query(`
-      SELECT id, name, email, subject, erstellt_am, DATEDIFF(NOW(), erstellt_am) as tage_offen
-      FROM kontakt_anfragen
-      WHERE bearbeitet = 0
-      ORDER BY erstellt_am DESC LIMIT 10
-    `);
+    // 8. Briefing-Erweiterung: Wiedervorlagen, Bestellungen, Rücklastschriften, Tickets
+    const [
+      [faelligeWiedervorlagen],
+      [offeneBestellungen],
+      [fehlgeschlageneLastschriften],
+      [offeneTickets]
+    ] = await Promise.all([
+      db.promise().query(`
+        SELECT id, organisation, naechste_aktion, naechste_aktion_info,
+          DATEDIFF(NOW(), naechste_aktion) as tage_ueberfaellig
+        FROM akquise_kontakte
+        WHERE naechste_aktion IS NOT NULL AND naechste_aktion <= CURDATE()
+          AND status NOT IN ('gewonnen', 'abgelehnt')
+        ORDER BY naechste_aktion ASC LIMIT 10`),
+      db.promise().query(`
+        SELECT id, bestellnummer, kunde_name, gesamtbetrag_cent,
+          DATEDIFF(NOW(), bestellt_am) as tage_offen
+        FROM shop_bestellungen
+        WHERE status = 'offen'
+        ORDER BY bestellt_am ASC LIMIT 10`),
+      db.promise().query(`
+        SELECT t.id, t.betrag, t.error_message, t.updated_at,
+          CONCAT(m.vorname, ' ', m.nachname) as mitglied_name, d.dojoname
+        FROM stripe_lastschrift_transaktion t
+        JOIN mitglieder m ON t.mitglied_id = m.mitglied_id
+        JOIN dojo d ON m.dojo_id = d.id
+        WHERE t.status = 'failed' AND t.updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        ORDER BY t.updated_at DESC LIMIT 10`),
+      db.promise().query(`
+        SELECT id, ticket_nummer, betreff, ersteller_name,
+          DATEDIFF(NOW(), created_at) as tage_offen
+        FROM support_tickets
+        WHERE status = 'offen'
+        ORDER BY created_at ASC LIMIT 10`)
+    ]);
 
     res.json({
       success: true,
@@ -2544,11 +2571,52 @@ router.get('/overview-summary', requireSuperAdmin, async (req, res) => {
       neueste_verbandsmitglieder: neuesteVerbandsmitglieder,
       neue_eingaenge: {
         verband_registrierungen: ausstehendeRegistrierungen,
-        kontakt_anfragen: offeneKontaktanfragen
+        kontakt_anfragen: offeneKontaktanfragen,
+        wiedervorlagen: faelligeWiedervorlagen,
+        bestellungen: offeneBestellungen,
+        ruecklastschriften: fehlgeschlageneLastschriften,
+        tickets: offeneTickets
       }
     });
   } catch (error) {
     console.error('❌ Fehler beim Laden der Übersicht:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/admin/global-search?q= — Globale Suche für die Cmd+K Command-Palette
+// Durchsucht Dojos, Mitglieder, Akquise-Kontakte und Verbandsmitglieder (je max. 5)
+router.get('/global-search', requireSuperAdmin, async (req, res) => {
+  const q = (req.query.q || '').trim();
+  if (q.length < 2) return res.json({ success: true, results: { dojos: [], mitglieder: [], kontakte: [], verband: [] } });
+  const like = `%${q}%`;
+  try {
+    const [[dojos], [mitglieder], [kontakte], [verband]] = await Promise.all([
+      db.promise().query(`
+        SELECT id, dojoname, inhaber, ort, subscription_status
+        FROM dojo WHERE ist_aktiv = 1 AND (dojoname LIKE ? OR inhaber LIKE ? OR ort LIKE ?)
+        ORDER BY dojoname LIMIT 5`, [like, like, like]),
+      db.promise().query(`
+        SELECT m.mitglied_id, m.vorname, m.nachname, m.email, d.dojoname
+        FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id
+        WHERE d.ist_aktiv = 1 AND (m.vorname LIKE ? OR m.nachname LIKE ? OR m.email LIKE ? OR CONCAT(m.vorname, ' ', m.nachname) LIKE ?)
+        ORDER BY m.nachname LIMIT 5`, [like, like, like, like]),
+      db.promise().query(`
+        SELECT id, organisation, ansprechpartner, ort, email, status
+        FROM akquise_kontakte
+        WHERE organisation LIKE ? OR ansprechpartner LIKE ? OR ort LIKE ? OR email LIKE ?
+        ORDER BY organisation LIMIT 5`, [like, like, like, like]),
+      db.promise().query(`
+        SELECT id,
+          COALESCE(NULLIF(CONCAT(TRIM(COALESCE(person_vorname,'')), ' ', TRIM(COALESCE(person_nachname,''))), ' '), dojo_name, 'Unbekannt') as name,
+          person_email, typ, status, mitgliedsnummer
+        FROM verbandsmitgliedschaften
+        WHERE person_vorname LIKE ? OR person_nachname LIKE ? OR person_email LIKE ? OR dojo_name LIKE ? OR mitgliedsnummer LIKE ?
+        ORDER BY created_at DESC LIMIT 5`, [like, like, like, like, like])
+    ]);
+    res.json({ success: true, results: { dojos, mitglieder, kontakte, verband } });
+  } catch (error) {
+    console.error('❌ Fehler bei globaler Suche:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -31,6 +31,27 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.16',
+    date: '2026-06-05',
+    type: 'feature',
+    zielgruppe: 'intern', // Super-Admin-Komfort — nur intern
+    title: 'Cmd+K-Suche, Briefing-Vollausbau & schnellere Erstladung',
+    description: 'Drei Komfort-Upgrades fürs Super-Admin-Dashboard: Eine globale Command-Palette (Cmd+K) durchsucht Dojos, Mitglieder, Kontakte und Verbandsmitglieder. Das Daily Briefing zeigt jetzt ALLE offenen Eingänge (auch Wiedervorlagen, Bestellungen, Rücklastschriften, Tickets). Und die Dashboard-Erstladung ist deutlich schneller, weil die Statistik-Queries jetzt parallel laufen.',
+    highlights: [
+      '⌨️ CMD+K: Globale Suche über Dojos, Mitglieder, Akquise-Kontakte und Verbandsmitglieder + Schnellaktionen für alle Tabs — mit Pfeiltasten/Enter bedienbar',
+      '📨 BRIEFING KOMPLETT: Neu im täglichen Popup — überfällige Akquise-Wiedervorlagen, offene Shop-Bestellungen, fehlgeschlagene Lastschriften (letzte 7 Tage) und offene Support-Tickets; jeweils klickbar zum richtigen Tab',
+      '⚡ SCHNELLER: global-stats (7 Queries), tda-stats (5) und overview-summary (6) laufen jetzt parallel statt nacheinander — Erstladung spürbar flotter',
+    ],
+    details: 'Backend admin.js: GET /admin/global-search (4 Entitäten je LIMIT 5, min. 2 Zeichen); overview-summary um neue_eingaenge.wiedervorlagen/bestellungen/ruecklastschriften/tickets erweitert (akquise_kontakte naechste_aktion<=CURDATE, shop_bestellungen status=offen, stripe_lastschrift_transaktion status=failed 7d, support_tickets status=offen); sequenzielle awaits in global-stats/tda-stats/overview-summary durch Promise.all ersetzt. Frontend: CommandPalette.jsx (Cmd+K/Ctrl+K, Debounce 250ms, opaker Modal-Hintergrund), DailyBriefing.jsx um 4 Eingangs-Typen erweitert.',
+    files: [
+      'backend/routes/admin.js',
+      'frontend/src/components/CommandPalette.jsx',
+      'frontend/src/components/DailyBriefing.jsx',
+      'frontend/src/components/SuperAdminDashboard.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.15',
     date: '2026-06-05',
     type: 'feature',
