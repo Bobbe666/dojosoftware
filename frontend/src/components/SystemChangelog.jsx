@@ -31,6 +31,33 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.13',
+    date: '2026-06-05',
+    type: 'improvement',
+    zielgruppe: 'intern', // Dashboard-Aufräumen — nur intern
+    title: 'Super-Admin-Dashboard aufgeräumt: EINE Prognose-Engine, Dubletten entfernt',
+    description: 'Die Wachstums-/Finanzprognosen waren 4× unterschiedlich implementiert (lineare Regression, simples Ø, gewichtete Ziele) und lieferten je nach Stelle andere Zahlen. Jetzt gibt es eine zentrale Prognose-Engine (Ø-Wachstum mit Ausreißer-Filter), aus der alle Dashboards ziehen. Zusätzlich doppelte UI-Blöcke und API-Calls entfernt.',
+    highlights: [
+      '📈 EINE PROGNOSE-ENGINE: /api/admin/prognose (Ø-Wachstum letzte 12 Monate, Spike-Filter via Median) — Finanz-Chart, Lizenz-Statistik und Entwicklung zeigen jetzt konsistente Zahlen',
+      '🎯 ENTWICKLUNG: 5-Jahres-Planung zeigt jetzt die echte Ist-Prognose direkt neben den Soll-Zielen („Ziel erreichbar ✓")',
+      '🧹 DUBLETTEN WEG: SSL-Warnungen + Jahresziele je als EINE Komponente (vorher 2× inline kopiert); Akquise-Tab in der Lizenzverwaltung durch Verweis auf den Haupt-Tab Kontakte ersetzt',
+      '⚡ WENIGER API-CALLS: Turnier-Liste wird nur noch 1× geladen; toter StatisticsTab-Import entfernt',
+    ],
+    details: 'Backend routes/admin.js: GET /admin/prognose (dojos/verbandsmitglieder/mitglieder, buildForecast mit Median-Spike-Filter). Frontend: utils/prognose.js (identische Methode für Zeitreihen), SuperAdminFinanzen nutzt appendPrognose statt eigener linearer Regression (Trend-Linie entfernt), LizenzStatisticsTab + ZieleEntwicklung konsumieren /admin/prognose. Neue Komponenten SslWarnungen.jsx + JahreszieleProgress.jsx (variant briefing/cockpit) ersetzen 4 Inline-Blöcke in SuperAdminDashboard.jsx. EventSoftwareSection erhält preloadedTurniere. DojoLizenzverwaltung: Akquise-Tab → sa-navigate CustomEvent zu Kontakte.',
+    files: [
+      'backend/routes/admin.js',
+      'frontend/src/utils/prognose.js',
+      'frontend/src/components/SslWarnungen.jsx',
+      'frontend/src/components/JahreszieleProgress.jsx',
+      'frontend/src/components/SuperAdminDashboard.jsx',
+      'frontend/src/components/SuperAdminFinanzen.jsx',
+      'frontend/src/components/LizenzStatisticsTab.jsx',
+      'frontend/src/components/ZieleEntwicklung.jsx',
+      'frontend/src/components/DojoLizenzverwaltung.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.12',
     date: '2026-06-05',
     type: 'feature',

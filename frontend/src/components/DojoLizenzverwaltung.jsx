@@ -12,7 +12,6 @@ import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import LizenzDokumente from './LizenzDokumente';
 import DemoTermine from './DemoTermine';
-import AkquiseDashboard from './AkquiseDashboard';
 import LizenzStatisticsTab from './LizenzStatisticsTab';
 import LizenzFeaturesTab from './LizenzFeaturesTab';
 import LizenzVergleichTab from './LizenzVergleichTab';
@@ -2132,10 +2131,23 @@ const DojoLizenzverwaltung = () => {
           </div>
         )}
 
-        {/* Akquise Tab */}
+        {/* Akquise Tab — umgezogen in den Haupt-Tab „🗂️ Kontakte" (zentrale Kontaktdatenbank) */}
         {activeTab === 'akquise' && (
           <div className="tab-content">
-            <AkquiseDashboard />
+            <div style={{ textAlign: 'center', padding: '48px 20px' }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🗂️</div>
+              <h3 style={{ margin: '0 0 8px' }}>Die Akquise ist umgezogen</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: 14, maxWidth: 460, margin: '0 auto 18px' }}>
+                Alle Kontakte (Akquise, Events, Verband, Veranstaltungen) findest du jetzt zentral
+                im Haupt-Tab <strong>„Kontakte"</strong> des Super-Admin-Dashboards.
+              </p>
+              <button
+                className="btn-primary"
+                onClick={() => window.dispatchEvent(new CustomEvent('sa-navigate', { detail: { tab: 'kontakte' } }))}
+              >
+                Zu den Kontakten →
+              </button>
+            </div>
           </div>
         )}
 

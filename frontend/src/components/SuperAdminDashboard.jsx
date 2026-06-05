@@ -16,11 +16,12 @@ import {
 } from 'lucide-react';
 import '../styles/SuperAdminDashboard.css';
 import TodoPanel from './TodoPanel';
+import SslWarnungen from './SslWarnungen';
+import JahreszieleProgress from './JahreszieleProgress';
 import LastschriftAutoProtokollBanner from './LastschriftAutoProtokollBanner';
 import StilErinnerungBanner from './StilErinnerungBanner';
 
 // Lazy-load all tab-specific components so they don't block initial render
-const StatisticsTab       = lazy(() => import('./StatisticsTab'));
 const ContractsTab        = lazy(() => import('./ContractsTab'));
 const UsersTab            = lazy(() => import('./UsersTab'));
 const FinanzenTab         = lazy(() => import('./FinanzenTab'));
@@ -57,7 +58,7 @@ const InfraChecks           = lazy(() => import('./InfraChecks'));
 const TabLoader = () => <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Lädt…</div>;
 
 // ── EventSoftware-Sektion ──────────────────────────────────────────────────
-function EventSoftwareSection({ token }) {
+function EventSoftwareSection({ token, preloadedTurniere }) {
   const [subTab, setSubTab] = useState('uebersicht');
   const [turniere, setTurniere] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,12 +83,18 @@ function EventSoftwareSection({ token }) {
   };
 
   useEffect(() => {
+    // Turniere kommen bereits vom Dashboard-Load (loadAllData) — kein zweiter API-Call
+    if (preloadedTurniere) {
+      setTurniere(preloadedTurniere);
+      setLoading(false);
+      return;
+    }
     if (!token) return;
     axios.get('/plattform-zentrale/turniere', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => setTurniere(r.data.turniere || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, preloadedTurniere]);
 
   const heute = new Date();
   heute.setHours(0, 0, 0, 0);
@@ -622,6 +629,7 @@ const SuperAdminDashboard = () => {
   const [overviewSummary, setOverviewSummary] = useState(null);
   const [hofStats, setHofStats] = useState(null);
   const [eventStats, setEventStats] = useState(null);
+  const [turniereList, setTurniereList] = useState(null); // Roh-Liste für EventSoftwareSection (kein Doppel-Load)
   const [academyStats, setAcademyStats] = useState(null);
 
   // State für Dojo-Management
@@ -789,6 +797,7 @@ const SuperAdminDashboard = () => {
 
       if (evResult.status === 'fulfilled') {
         const turniere = evResult.value.data?.turniere || [];
+        setTurniereList(turniere);
         const heute = new Date(); heute.setHours(0, 0, 0, 0);
         const upcoming = turniere.filter(t => new Date(t.start_datum || t.datum) >= heute);
         const offen = turniere.filter(t => t.anmeldeschluss && new Date(t.anmeldeschluss) >= heute);
@@ -963,6 +972,13 @@ const SuperAdminDashboard = () => {
       setIcalSaveMsg('❌ ' + (typeof errRaw === 'object' ? JSON.stringify(errRaw) : errRaw));
     }
   };
+
+  // Tab-Navigation von Unterkomponenten (z.B. „Zu den Kontakten" in der Lizenzverwaltung)
+  useEffect(() => {
+    const handler = (e) => { if (e.detail?.tab) setActiveTab(e.detail.tab); };
+    window.addEventListener('sa-navigate', handler);
+    return () => window.removeEventListener('sa-navigate', handler);
+  }, []);
 
   // Lade E-Mail-Einstellungen wenn Tab aktiv
   useEffect(() => {
@@ -1458,69 +1474,10 @@ const SuperAdminDashboard = () => {
               )}
 
               {/* SSL-Zertifikat-Warnungen */}
-              {sslWarnings.length > 0 && (
-                <div>
-                  <div className="sad-trial-warning-meta">🔒 SSL-Zertifikate — Handlungsbedarf</div>
-                  <div className="sad2-flex-col-04">
-                    {sslWarnings.map((cert, i) => {
-                      const isUrgent = cert.status === 'expired' || cert.status === 'critical';
-                      const renewCmd = cert.renewalType === 'manual'
-                        ? `certbot certonly --manual --preferred-challenges dns --force-renewal -d '${cert.domains}'`
-                        : `certbot renew --cert-name ${cert.name}`;
-                      return (
-                        <div key={i} className={`sad-ssl-item ${isUrgent ? 'sad-ssl-item--urgent' : 'sad-ssl-item--warning'}`}>
-                          <div className="sad-ssl-item-header">
-                            <span className="sad2-fw600">{cert.domains}</span>
-                            <span className={`sad-ssl-badge ${isUrgent ? 'sad-ssl-badge--urgent' : 'sad-ssl-badge--warning'}`}>
-                              {cert.status === 'expired' ? 'ABGELAUFEN' : `noch ${cert.daysLeft} Tag${cert.daysLeft !== 1 ? 'e' : ''}`}
-                            </span>
-                          </div>
-                          <div className="sad-ssl-item-type">
-                            {cert.renewalType === 'manual' ? '⚠️ Manuell erneuern (DNS-Challenge)' : '✅ Auto-Renewal (nginx) — läuft automatisch'}
-                          </div>
-                          <div className="sad-ssl-cmd-block">
-                            <code className="sad-ssl-cmd">
-                              ssh -i ~/.ssh/id_ed25519_dojo_deploy -p 2222 root@dojo.tda-intl.org "{renewCmd}"
-                            </code>
-                            {cert.renewalType === 'manual' && (
-                              <div className="sad-ssl-dns-hint">
-                                Dann: Bei <strong>Alfahosting → DNS-System → Zonendatei importieren</strong>:<br/>
-                                <code style={{fontSize:'0.82em', display:'block', marginTop:'0.3rem', wordBreak:'break-all'}}>_acme-challenge.{cert.domains.replace('*.', '').replace('tda-intl.org', 'dojo')} IN TXT "[Wert]"</code>
-                                Warten bis DNS propagiert (<code>dig TXT _acme-challenge.{cert.domains.replace('*.', '')} @8.8.8.8 +short</code>), dann Enter drücken.
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              <SslWarnungen warnings={sslWarnings} variant="briefing" />
 
               {/* Jahresziele */}
-              {overviewSummary?.goals?.length > 0 && (
-                <div>
-                  <div className="sad-uppercase-meta">🎯 Jahresziele {new Date().getFullYear()}</div>
-                  <div className="sad-briefing-goals-list">
-                    {overviewSummary.goals.map(goal => {
-                      const label = goal.typ === 'dojos' ? '🏯 Dojos' : goal.typ === 'verband_mitglieder' ? '🏆 Verbandsmitglieder' : goal.typ === 'software_nutzer' ? '🥋 Software-Nutzer' : goal.typ;
-                      const pct = Math.min(goal.prozent, 100);
-                      const color = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
-                      return (
-                        <div key={goal.typ}>
-                          <div className="sad-briefing-goal-header">
-                            <span className="sad2-fw600">{label}</span>
-                            <span className="u-text-secondary">{goal.ist_wert} / {goal.ziel_wert} <span className={`sad-briefing-goal-pct sad-goal-pct--${pct >= 80 ? 'good' : pct >= 50 ? 'mid' : 'low'}`}>({pct}%)</span></span>
-                          </div>
-                          <div className="sad-briefing-goal-bar-track">
-                            <div className="sad-briefing-goal-bar-fill" style={{ width: `${pct}%`, backgroundSize: `${Math.round(10000 / Math.max(pct, 1))}% 100%` }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              <JahreszieleProgress goals={overviewSummary?.goals || []} variant="briefing" />
 
             </div>
 
@@ -1598,56 +1555,16 @@ const SuperAdminDashboard = () => {
             </div>
 
             {/* ── Zone 2: Alerts (SSL + Trial) ────────────────────────── */}
-            {sslWarnings.length > 0 && (
-              <div className="sad-ssl-alert-bar">
-                <div className="sad-ssl-alert-bar-header">
-                  <span>🔒 SSL-Zertifikate — Handlungsbedarf ({sslWarnings.length})</span>
-                  <button className="sad-ssl-refresh-btn" onClick={async () => {
-                    try {
-                      const r = await axios.get('/admin/ssl-status', { headers: { Authorization: `Bearer ${token}` } });
-                      if (r.data.success) setSslWarnings(r.data.warnings || []);
-                    } catch (_) {}
-                  }}>↺ Aktualisieren</button>
-                </div>
-                {sslWarnings.map((cert, i) => {
-                  const isUrgent = cert.status === 'expired' || cert.status === 'critical';
-                  const renewCmd = cert.renewalType === 'manual'
-                    ? `certbot certonly --manual --preferred-challenges dns --force-renewal -d '${cert.domains}'`
-                    : `certbot renew --cert-name ${cert.name}`;
-                  return (
-                    <details key={i} className={`sad-ssl-alert-item ${isUrgent ? 'sad-ssl-alert-item--urgent' : 'sad-ssl-alert-item--warning'}`}>
-                      <summary className="sad-ssl-alert-summary">
-                        <span className={`sad-ssl-dot ${isUrgent ? 'sad-ssl-dot--urgent' : 'sad-ssl-dot--warning'}`} />
-                        <span className="sad2-fw600">{cert.domains}</span>
-                        <span className="sad-ssl-alert-days">
-                          {cert.status === 'expired' ? 'ABGELAUFEN' : `läuft in ${cert.daysLeft} Tag${cert.daysLeft !== 1 ? 'en' : ''} ab`}
-                          {' '}· {cert.renewalType === 'manual' ? 'Manuell' : 'Auto'}
-                        </span>
-                      </summary>
-                      <div className="sad-ssl-alert-body">
-                        {cert.renewalType === 'manual' ? (
-                          <>
-                            <p className="sad-ssl-step"><strong>1.</strong> SSH-Befehl auf dem Server ausführen:</p>
-                            <code className="sad-ssl-cmd">ssh -i ~/.ssh/id_ed25519_dojo_deploy -p 2222 root@dojo.tda-intl.org "{renewCmd}"</code>
-                            <p className="sad-ssl-step"><strong>2.</strong> Certbot zeigt einen TXT-Record-Wert an. Bei <strong>Alfahosting → DNS-System → Zonendatei importieren</strong> einfügen:</p>
-                            <code className="sad-ssl-cmd">_acme-challenge.{cert.domains.replace('*.', '').replace('tda-intl.org', 'dojo')} IN TXT "[Wert von certbot]"</code>
-                            <p className="sad-ssl-step" style={{fontSize:'0.85em', color:'var(--text-muted, #aaa)', marginTop:'-0.5rem'}}>Falls der alte _acme-challenge-Eintrag noch existiert: zuerst löschen (Mülleimer), dann Speichern, dann Zonendatei importieren.</p>
-                            <p className="sad-ssl-step"><strong>3.</strong> DNS-Propagation prüfen (ca. 1–5 Min.):<br/><code style={{fontSize:'0.85em'}}>dig TXT _acme-challenge.{cert.domains.replace('*.', '')} @8.8.8.8 +short</code></p>
-                            <p className="sad-ssl-step"><strong>4.</strong> Erst wenn der neue Wert erscheint → im Terminal <strong>Enter</strong> drücken.</p>
-                            <p className="sad-ssl-step"><strong>5.</strong> Nginx neu laden: <code>systemctl reload nginx</code></p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="sad-ssl-step">Wird automatisch erneuert (certbot.timer läuft täglich). Bei Problemen manuell anstoßen:</p>
-                            <code className="sad-ssl-cmd">ssh -i ~/.ssh/id_ed25519_dojo_deploy -p 2222 root@dojo.tda-intl.org "{renewCmd}"</code>
-                          </>
-                        )}
-                      </div>
-                    </details>
-                  );
-                })}
-              </div>
-            )}
+            <SslWarnungen
+              warnings={sslWarnings}
+              variant="cockpit"
+              onRefresh={async () => {
+                try {
+                  const r = await axios.get('/admin/ssl-status', { headers: { Authorization: `Bearer ${token}` } });
+                  if (r.data.success) setSslWarnings(r.data.warnings || []);
+                } catch (_) {}
+              }}
+            />
 
             {/* Trial-Monitor — kompakter Alert, nur wenn Trials ablaufen */}
             {(overviewSummary?.trial_expiring || []).length > 0 && (
@@ -1786,36 +1703,11 @@ const SuperAdminDashboard = () => {
             </div>
 
             {/* ── Zone 4: Jahresziele ─────────────────────────────────── */}
-            {overviewSummary?.goals?.length > 0 && (
-              <section className="sad-goals-section">
-                <div className="sad-goals-section-header">
-                  <h3 className="sad-goals-section-title">
-                    <TrendingUp size={18} /> Jahresziele {new Date().getFullYear()} — Soll/Ist
-                  </h3>
-                  <button onClick={() => setActiveTab('entwicklung')} className="sad-goals-section-btn">
-                    Details →
-                  </button>
-                </div>
-                <div className="sad-goals-grid" style={{ gridTemplateColumns: `repeat(${overviewSummary.goals.length}, 1fr)` }}>
-                  {overviewSummary.goals.map(goal => {
-                    const label = goal.typ === 'dojos' ? '🏯 Dojos' : goal.typ === 'verband_mitglieder' ? '🏆 Verbandsmitglieder' : goal.typ === 'software_nutzer' ? '🥋 Software-Nutzer' : goal.typ === 'umsatz' ? '💰 Umsatz' : goal.typ;
-                    const pct = Math.min(goal.prozent, 100);
-                    return (
-                      <div key={goal.typ}>
-                        <div className="sad-goals-goal-header">
-                          <span className="sad2-fw600">{label}</span>
-                          <span className="u-text-secondary">{goal.ist_wert} / {goal.ziel_wert}</span>
-                        </div>
-                        <div className="sad-goals-bar-track">
-                          <div className="sad-goals-bar-fill" style={{ width: `${pct}%`, backgroundSize: `${Math.round(10000 / Math.max(pct, 1))}% 100%` }} />
-                        </div>
-                        <div className={`sad-goals-pct-label sad-goal-pct--${pct >= 80 ? 'good' : pct >= 50 ? 'mid' : 'low'}`}>{pct}%</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
+            <JahreszieleProgress
+              goals={overviewSummary?.goals || []}
+              variant="cockpit"
+              onDetails={() => setActiveTab('entwicklung')}
+            />
 
             {/* ── Zone 5: Activity Feed (2-col) ───────────────────────── */}
             <div className="u-grid-2col">
@@ -1980,7 +1872,7 @@ const SuperAdminDashboard = () => {
 
             {/* ── EventSoftware ──────────────────────────────────────── */}
             {softwareSection === 'eventsoftware' && (
-              <EventSoftwareSection token={token} />
+              <EventSoftwareSection token={token} preloadedTurniere={turniereList} />
             )}
 
             {/* ── TDA Academy ────────────────────────────────────────── */}

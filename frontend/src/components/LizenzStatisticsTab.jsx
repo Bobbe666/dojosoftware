@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, Users, CreditCard, TrendingUp, PieChart, MapPin, Activity, DollarSign, HardDrive, Flag, Heart } from 'lucide-react';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+import config from '../config/config';
 
 // Ausgelagert aus DojoLizenzverwaltung.jsx (Statistics-Tab, read-only Dashboard).
 const LizenzStatisticsTab = ({ dojos, message, stats, dojosWithHealth, healthOverview }) => {
+  // Zentrale Prognose (eine Engine: /api/admin/prognose, Ø-Wachstum + Spike-Filter)
+  const [zentralePrognose, setZentralePrognose] = useState(null);
+  useEffect(() => {
+    fetchWithAuth(`${config.apiBaseUrl}/admin/prognose`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setZentralePrognose(d); })
+      .catch(() => {});
+  }, []);
   return (
           <div className="st-dashboard">
 
@@ -354,11 +364,14 @@ const LizenzStatisticsTab = ({ dojos, message, stats, dojosWithHealth, healthOve
             <div className="st-card">
               <div className="st-card-title">
                 <TrendingUp size={13} />
-                Prognose 6 Monate
+                Prognose 6 Monate {zentralePrognose ? '(zentrale Engine)' : ''}
               </div>
               {[1, 2, 3, 4, 5, 6].map(month => {
-                const avgGrowth = stats.avgMonthlyGrowth || stats.newThisMonth || 0.5;
-                const projected = Math.round(stats.total + avgGrowth * month);
+                // ZENTRALE Prognose-Engine (/api/admin/prognose); Fallback: lokale Näherung
+                const avgGrowth = zentralePrognose?.dojos?.wachstum_monat
+                  ?? (stats.avgMonthlyGrowth || stats.newThisMonth || 0.5);
+                const basis = zentralePrognose?.dojos?.aktuell ?? stats.total;
+                const projected = Math.round(basis + avgGrowth * month);
                 const avgMrrPerDojo = (stats.total - 1) > 0 ? stats.potentialMrr / (stats.total - 1) : 49;
                 const projectedMrr = Math.round(stats.potentialMrr + Math.round(avgGrowth * month) * avgMrrPerDojo);
                 const monthName = new Date(new Date().setMonth(new Date().getMonth() + month)).toLocaleDateString('de-DE', { month: 'short', year: '2-digit' });

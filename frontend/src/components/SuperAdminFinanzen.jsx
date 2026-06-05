@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -43,6 +41,7 @@ import { useDojoContext } from '../context/DojoContext.jsx';
 import config from "../config/config";
 import "../styles/SuperAdminFinanzen.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import { appendPrognose } from '../utils/prognose';
 // VerbandRechnungErstellen wurde nach BuchhaltungTab verschoben
 
 const COLORS = {
@@ -121,9 +120,8 @@ const SuperAdminFinanzen = () => {
       if (timelineRes.ok) {
         const data = await timelineRes.json();
         if (data.success && data.data) {
-          // Berechne Prognose
-          const withPrognose = calculatePrognose(data.data);
-          setTimelineData(withPrognose);
+          // Prognose via ZENTRALE Methode (utils/prognose.js — identisch zu /api/admin/prognose)
+          setTimelineData(appendPrognose(data.data, 'umsatz', 6));
         }
       }
 
@@ -133,56 +131,6 @@ const SuperAdminFinanzen = () => {
       setError(err.message);
       setLoading(false);
     }
-  };
-
-  // Prognose-Berechnung (Lineare Regression)
-  const calculatePrognose = (data) => {
-    if (!data || data.length < 3) return data;
-
-    const n = data.length;
-    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-
-    data.forEach((point, index) => {
-      const y = point.umsatz || 0;
-      sumX += index;
-      sumY += y;
-      sumXY += index * y;
-      sumX2 += index * index;
-    });
-
-    const denominator = (n * sumX2 - sumX * sumX);
-    if (denominator === 0) return data;
-
-    const slope = (n * sumXY - sumX * sumY) / denominator;
-    const intercept = (sumY - slope * sumX) / n;
-
-    // Füge Trendwerte zu bestehenden Daten hinzu
-    const dataWithTrend = data.map((point, index) => ({
-      ...point,
-      trend: Math.max(0, slope * index + intercept)
-    }));
-
-    // Füge 6 Monate Prognose hinzu
-    const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-    const lastDate = new Date();
-
-    for (let i = 1; i <= 6; i++) {
-      const futureDate = new Date();
-      futureDate.setMonth(futureDate.getMonth() + i);
-      const monthLabel = months[futureDate.getMonth()] + ' ' + futureDate.getFullYear().toString().slice(-2);
-
-      const prognoseValue = Math.max(0, slope * (n + i - 1) + intercept);
-      dataWithTrend.push({
-        label: monthLabel,
-        umsatz: null,
-        prognose: prognoseValue,
-        prognoseMin: prognoseValue * 0.85,
-        prognoseMax: prognoseValue * 1.15,
-        isPrognose: true
-      });
-    }
-
-    return dataWithTrend;
   };
 
   // Formatierungsfunktionen
@@ -599,15 +547,6 @@ const SuperAdminFinanzen = () => {
                 strokeDasharray="5 5"
                 name="Prognose"
                 dot={{ fill: COLORS.gesamt, r: 3 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="trend"
-                stroke="#22c55e"
-                strokeWidth={2}
-                strokeDasharray="3 3"
-                name="Trend"
-                dot={false}
               />
             </AreaChart>
           </ResponsiveContainer>

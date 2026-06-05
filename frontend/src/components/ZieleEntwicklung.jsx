@@ -38,6 +38,8 @@ const ZieleEntwicklung = ({
   const [statistiken, setStatistiken] = useState({});
   const [beitraege, setBeitraege] = useState([]);
   const [vergleiche, setVergleiche] = useState(null);
+  // Zentrale Ist-Prognose (eine Engine: /api/admin/prognose) — nur Org/Verband (Super-Admin)
+  const [zentralePrognose, setZentralePrognose] = useState(null);
 
   // UI State
   const [editMode, setEditMode] = useState(false);
@@ -150,6 +152,14 @@ const ZieleEntwicklung = ({
   useEffect(() => {
     loadData();
   }, [bereich, kontextId]);
+
+  // Zentrale Prognose laden (Super-Admin-Endpunkt; bei Dojo-Admins schlägt der Call still fehl)
+  useEffect(() => {
+    if (bereich === 'dojo') return;
+    axios.get('/admin/prognose', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => { if (r.data?.success) setZentralePrognose(r.data); })
+      .catch(() => {});
+  }, [bereich]);
 
   const loadData = async () => {
     setLoading(true);
@@ -591,6 +601,37 @@ const ZieleEntwicklung = ({
                 })}
               </tbody>
             </table>
+
+            {/* Echte Ist-Prognose aus der zentralen Engine — zum Abgleich mit den Soll-Zielen */}
+            {zentralePrognose && (
+              <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8,
+                background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.25)', fontSize: 13 }}>
+                <strong>📈 Ist-Prognose in 12 Monaten</strong>
+                <span style={{ opacity: 0.7 }}> (zentrale Engine: Ø-Wachstum, Ausreißer gefiltert — zum Vergleich mit deinen Zielen):</span>
+                <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 6 }}>
+                  {[
+                    ['Aktive Dojos', zentralePrognose.dojos, 'dojos'],
+                    ['Verbandsmitglieder', zentralePrognose.verbandsmitglieder, 'verband_mitglieder'],
+                    ['Mitglieder (aktiv)', zentralePrognose.mitglieder, 'dojo_mitglieder'],
+                  ].map(([label, p, zielKey]) => {
+                    if (!p) return null;
+                    const zielJahr = ziele[zielKey]?.[currentYear] || 0;
+                    const erreicht = zielJahr > 0 && p.prognose_12m >= zielJahr;
+                    return (
+                      <span key={label}>
+                        {label}: <strong>{p.aktuell} → {p.prognose_12m}</strong>
+                        <span style={{ opacity: 0.65 }}> (+{p.wachstum_monat}/Monat)</span>
+                        {zielJahr > 0 && (
+                          <span style={{ marginLeft: 4, color: erreicht ? '#22c55e' : '#f59e0b', fontWeight: 600 }}>
+                            {erreicht ? '✓ Ziel erreichbar' : `Ziel ${zielJahr}`}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

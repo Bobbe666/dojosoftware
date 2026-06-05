@@ -2553,6 +2553,65 @@ router.get('/overview-summary', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/prognose — ZENTRALE Wachstums-Prognose (eine Engine für alle Dashboards)
+// Methode: Ø monatliches Wachstum der letzten 12 Monate, Spike-Filter via Median
+// (Ausreißer wie Massen-Importe > 3×Median werden auf Median gekappt)
+router.get('/prognose', requireSuperAdmin, async (req, res) => {
+  const buildForecast = (verlauf, aktuell) => {
+    const werte = verlauf.map(r => Number(r.neu) || 0);
+    const sortiert = [...werte].sort((a, b) => a - b);
+    const median = sortiert.length ? sortiert[Math.floor(sortiert.length / 2)] : 0;
+    const gefiltert = werte.map(v => (median > 0 && v > median * 3) ? median : v);
+    const avg = gefiltert.length ? gefiltert.reduce((a, b) => a + b, 0) / gefiltert.length : 0;
+    return {
+      aktuell,
+      wachstum_monat: Math.round(avg * 10) / 10,
+      prognose_3m: Math.round(aktuell + avg * 3),
+      prognose_6m: Math.round(aktuell + avg * 6),
+      prognose_12m: Math.round(aktuell + avg * 12),
+      verlauf
+    };
+  };
+
+  try {
+    const [
+      [dojoVerlauf], [[{ dojoAktuell }]],
+      [verbandVerlauf], [[{ verbandAktuell }]],
+      [mitgliederVerlauf], [[{ mitgliederAktuell }]]
+    ] = await Promise.all([
+      db.promise().query(`
+        SELECT DATE_FORMAT(created_at, '%Y-%m') AS monat, COUNT(*) AS neu
+        FROM dojo WHERE ist_aktiv = 1 AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+        GROUP BY monat ORDER BY monat`),
+      db.promise().query(`SELECT COUNT(*) AS dojoAktuell FROM dojo WHERE ist_aktiv = 1`),
+      db.promise().query(`
+        SELECT DATE_FORMAT(created_at, '%Y-%m') AS monat, COUNT(*) AS neu
+        FROM verbandsmitgliedschaften WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+        GROUP BY monat ORDER BY monat`),
+      db.promise().query(`SELECT COUNT(*) AS verbandAktuell FROM verbandsmitgliedschaften WHERE status = 'aktiv'`),
+      db.promise().query(`
+        SELECT DATE_FORMAT(m.eintrittsdatum, '%Y-%m') AS monat, COUNT(*) AS neu
+        FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id
+        WHERE d.ist_aktiv = 1 AND m.eintrittsdatum >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+        GROUP BY monat ORDER BY monat`),
+      db.promise().query(`
+        SELECT COUNT(*) AS mitgliederAktuell
+        FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id WHERE d.ist_aktiv = 1`)
+    ]);
+
+    res.json({
+      success: true,
+      methode: 'avg_growth_median_spike_filter',
+      dojos: buildForecast(dojoVerlauf, dojoAktuell),
+      verbandsmitglieder: buildForecast(verbandVerlauf, verbandAktuell),
+      mitglieder: buildForecast(mitgliederVerlauf, mitgliederAktuell)
+    });
+  } catch (error) {
+    console.error('❌ Fehler bei zentraler Prognose:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // GET /api/admin/ssl-status — SSL-Zertifikat-Status aller Domains (certbot)
 router.get('/ssl-status', requireSuperAdmin, async (req, res) => {
   const { exec } = require('child_process');
