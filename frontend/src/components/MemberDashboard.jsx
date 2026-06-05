@@ -56,6 +56,7 @@ import NextTrainingsWidget from './NextTrainingsWidget.jsx';
 import MemberShopWidgets from './MemberShopWidgets.jsx';
 import MemberNewsWidget from './MemberNewsWidget.jsx';
 import MemberContractStatus from './MemberContractStatus.jsx';
+import PruefungsEinladungPopup from './PruefungsEinladungPopup.jsx';
 import WartungsBanner from './WartungsBanner.jsx';
 
 
@@ -469,6 +470,7 @@ const MemberDashboard = () => {
   };
 
   const submitUmfrageAntwort = async (umfrageId) => {
+    if (umfrageSending) return; // Doppel-Klick-Schutz während laufendem Request
     const a = umfrageAntworten[umfrageId] || {};
     setUmfrageSending(umfrageId);
     try {
@@ -752,12 +754,14 @@ const MemberDashboard = () => {
     }
   };
 
-  // Zeige Einladungs-Popup wenn ungelesene Prüfungseinladung vorhanden
+  // Zeige Einladungs-Popup wenn ungelesene Prüfungseinladung vorhanden.
+  // Guard: Nur setzen wenn noch KEIN Popup offen ist — sonst wird das offene Popup
+  // bei jedem approvedExams-Update ersetzt/remountet (User-Eingaben gehen verloren).
   useEffect(() => {
     if (approvedExams && approvedExams.length > 0) {
       const ungelesen = approvedExams.find(e => !e.benachrichtigung_gelesen);
       if (ungelesen) {
-        setPruefungsEinladungPopup(ungelesen);
+        setPruefungsEinladungPopup(prev => prev || ungelesen);
       }
     }
   }, [approvedExams]);
@@ -1125,10 +1129,9 @@ const MemberDashboard = () => {
             setShowStilAuswahl(true);
           }
 
-          // Lade stilspezifische Daten für jeden Stil
-          result.stile.forEach(async (stil) => {
-            await loadStyleSpecificData(memberId, stil.stil_id);
-          });
+          // Lade stilspezifische Daten für alle Stile PARALLEL und kontrolliert
+          // (vorher forEach(async) → unkontrollierte Einzel-Renders je nach Netzlaufzeit)
+          await Promise.all(result.stile.map(stil => loadStyleSpecificData(memberId, stil.stil_id)));
         }
       }
     } catch (error) {
@@ -1224,6 +1227,9 @@ const MemberDashboard = () => {
   };
 
   // Berechne aktuelle Gürtelfarben aus memberStile
+  // Popup-Umfragen nur neu filtern wenn sich pendingUmfragen ändert (nicht bei jedem Render)
+  const popupUmfragen = useMemo(() => pendingUmfragen.filter(u => u.als_popup), [pendingUmfragen]);
+
   const currentBelts = useMemo(() => {
     if (!memberStile || memberStile.length === 0) {
       return [{ name: 'Weiß', farbe: '#ffffff' }];
@@ -1248,9 +1254,6 @@ const MemberDashboard = () => {
     return belts.length > 0 ? belts : [{ name: 'Weiß', farbe: '#ffffff' }];
   }, [memberStile, styleSpecificData]);
 
-  // Debug: Log memberData status on render
-  console.log('🎨 MemberDashboard Render - memberData:', memberData ? 'vorhanden' : 'nicht vorhanden', memberData);
-  console.log('🎨 Aktuelle Gürtel:', currentBelts.map(b => b.name).join(', '));
 
   return (
     <div className="dashboard-container">
@@ -1445,132 +1448,15 @@ const MemberDashboard = () => {
         </div>
       )}
 
-      {/* Prüfungseinladungs-Popup (Lesebestätigung) */}
-      {pruefungsEinladungPopup && (() => {
-        const pid = pruefungsEinladungPopup.pruefung_id;
-        const zusageState = pruefungZusageState[pid];
-        const showNeinOptions = zusageState === 'nein';
-        const auswahlSet = alternativeTermineAuswahl[pid] || new Set();
-        const optionen = getAlternativeTerminOptions(pruefungsEinladungPopup.pruefungsdatum);
-
-        return (
-          <div className="pnp-overlay" onClick={() => setPruefungsEinladungPopup(null)}>
-            <div className="pnp-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
-              <div className="pnp-header">
-                <div className="pnp-header-left">
-                  <span style={{ fontSize: '20px' }}>🥋</span>
-                  <span className="pnp-header-title">Gürtelprüfung – Einladung</span>
-                </div>
-                <button className="pnp-close-btn" onClick={() => setPruefungsEinladungPopup(null)} title="Schließen">✕</button>
-              </div>
-              <div className="pnp-body">
-                <p style={{ marginBottom: '0.75rem', lineHeight: '1.5' }}>
-                  Du wurdest zur <strong>{pruefungsEinladungPopup.stil_name}</strong>-Prüfung eingeladen!
-                </p>
-                {pruefungsEinladungPopup.graduierung_nachher && (
-                  <p style={{ marginBottom: '0.5rem' }}>
-                    🎯 Prüfung zum: <strong>{pruefungsEinladungPopup.graduierung_nachher}</strong>
-                  </p>
-                )}
-                {pruefungsEinladungPopup.pruefungsdatum && (
-                  <p style={{ marginBottom: '0.5rem' }}>
-                    📅 Termin: <strong>{new Date(pruefungsEinladungPopup.pruefungsdatum).toLocaleDateString('de-DE', {
-                      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
-                    })}</strong>
-                    {pruefungsEinladungPopup.pruefungszeit && ` um ${pruefungsEinladungPopup.pruefungszeit} Uhr`}
-                  </p>
-                )}
-                {pruefungsEinladungPopup.pruefungsort && (
-                  <p style={{ marginBottom: '0.75rem' }}>
-                    📍 Ort: <strong>{pruefungsEinladungPopup.pruefungsort}</strong>
-                  </p>
-                )}
-
-                {!showNeinOptions ? (
-                  <>
-                    <p style={{ marginBottom: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      Kannst du an diesem Termin teilnehmen?
-                    </p>
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
-                      <button
-                        className="pnp-confirm-btn"
-                        style={{ flex: 1, background: 'linear-gradient(135deg, #16a34a, #15803d)', opacity: zusageState === 'sending' ? 0.6 : 1 }}
-                        disabled={zusageState === 'sending'}
-                        onClick={() => handleTerminZusage(pruefungsEinladungPopup, 'kommt')}
-                      >
-                        ✅ Ja, ich kann kommen
-                      </button>
-                      <button
-                        style={{
-                          flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(239,68,68,.4)',
-                          background: 'rgba(239,68,68,.12)', color: '#f87171', fontWeight: 600, cursor: 'pointer',
-                          fontSize: '14px', opacity: zusageState === 'sending' ? 0.6 : 1
-                        }}
-                        disabled={zusageState === 'sending'}
-                        onClick={() => setPruefungZusageState(prev => ({ ...prev, [pid]: 'nein' }))}
-                      >
-                        ❌ Nein, ich kann nicht
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p style={{ marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      Schade! An welchen Terminen könntest du?
-                    </p>
-                    <p style={{ marginBottom: '0.75rem', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Wähle mögliche Alternativtermine aus (±7 Tage):
-                    </p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '1rem', maxHeight: '180px', overflowY: 'auto' }}>
-                      {optionen.map(d => {
-                        const selected = auswahlSet.has(d);
-                        return (
-                          <button
-                            key={d}
-                            onClick={() => {
-                              setAlternativeTermineAuswahl(prev => {
-                                const s = new Set(prev[pid] || []);
-                                selected ? s.delete(d) : s.add(d);
-                                return { ...prev, [pid]: s };
-                              });
-                            }}
-                            style={{
-                              padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
-                              border: `1px solid ${selected ? 'rgba(99,102,241,.6)' : 'rgba(255,255,255,.15)'}`,
-                              background: selected ? 'rgba(99,102,241,.25)' : 'rgba(255,255,255,.06)',
-                              color: selected ? '#a5b4fc' : 'var(--text-secondary)',
-                              fontWeight: selected ? 600 : 400,
-                              transition: 'all 0.15s'
-                            }}
-                          >
-                            {new Date(d + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,.15)', background: 'rgba(255,255,255,.06)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '13px' }}
-                        onClick={() => setPruefungZusageState(prev => ({ ...prev, [pid]: null }))}
-                      >
-                        ← Zurück
-                      </button>
-                      <button
-                        className="pnp-confirm-btn"
-                        style={{ flex: 1, opacity: zusageState === 'sending' ? 0.6 : 1 }}
-                        disabled={zusageState === 'sending'}
-                        onClick={() => handleTerminZusage(pruefungsEinladungPopup, 'kommt_nicht', [...auswahlSet])}
-                      >
-                        {zusageState === 'sending' ? '⏳ Speichere…' : '✓ Bestätigen'}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {/* Prüfungseinladungs-Popup — ausgelagert + memoized (Perf-Fix: war IIFE im Render) */}
+      {pruefungsEinladungPopup && (
+        <PruefungsEinladungPopup
+          pruefung={pruefungsEinladungPopup}
+          sending={pruefungZusageState[pruefungsEinladungPopup.pruefung_id] === 'sending'}
+          onClose={() => setPruefungsEinladungPopup(null)}
+          onZusage={(antwort, alternativeDaten = []) => handleTerminZusage(pruefungsEinladungPopup, antwort, alternativeDaten)}
+        />
+      )}
 
       {/* Zahlungshinweis-Banner */}
       {hatMahnung && zahlungsNachrichten.length > 0 && (
@@ -1701,7 +1587,7 @@ const MemberDashboard = () => {
       )}
 
       {/* Offene Popup-Umfragen — prominent, unter Hero-Buttons */}
-      {pendingUmfragen.filter(u => u.als_popup).map(u => {
+      {popupUmfragen.map(u => {
         const a = umfrageAntworten[u.id] || {};
         const res = umfrageResults[u.id];
         const hatJaNein = u.typ === 'ja_nein' || u.typ === 'beides';
@@ -1820,10 +1706,10 @@ const MemberDashboard = () => {
       {/* Gurt-Widget — weiter unten, sekundäre Info */}
       {memberData && currentBelts.length > 0 && (
         <div className="md-belt-widget md-anim-fade-in-up">
-          {currentBelts.map((b, i) => {
+          {currentBelts.map((b) => {
             const beltColor = b.farbe || '#ffffff';
             return (
-              <div key={i} className="md-belt-row" style={{ '--belt-color': beltColor }}>
+              <div key={`${b.stilName || ''}-${b.name}`} className="md-belt-row" style={{ '--belt-color': beltColor }}>
                 <div className="md-belt-stripe" style={{ background: beltColor }} />
                 <div className="md-belt-content">
                   <div className="md-belt-name">{b.name}</div>
@@ -1963,8 +1849,8 @@ const MemberDashboard = () => {
               <div className="member-stat-icon">🎓</div>
               <h3 className="member-stat-label">GÜRTEL</h3>
               <div className="member-belt-list">
-                {currentBelts.map((b, i) => (
-                  <div key={i} className="member-belt-entry">
+                {currentBelts.map((b) => (
+                  <div key={`${b.stilName || ''}-${b.name}`} className="member-belt-entry">
                     {b.stilName && (
                       <span className="member-belt-stilname">{b.stilName}</span>
                     )}

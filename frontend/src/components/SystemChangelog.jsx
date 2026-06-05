@@ -31,6 +31,26 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.17',
+    date: '2026-06-05',
+    type: 'improvement',
+    zielgruppe: 'intern', // Member-App Performance — nur intern
+    title: 'Mitglieder-App: „Mehrfach klicken"-Ursachen behoben (Re-Render-Fixes)',
+    description: 'Die Wurzeln des „man muss mehrfach klicken"-Problems in der Mitglieder-App (app.tda-vib.de) wurden gefunden und behoben: Das Prüfungseinladungs-Popup wurde bei jedem Dashboard-Render neu erzeugt (Eingaben gingen verloren), eine Race-Condition beim Stil-Laden erzeugte unkontrollierte Renders, und Umfrage-Buttons konnten doppelt feuern.',
+    highlights: [
+      '🥋 PRÜFUNGS-POPUP: Aus dem 3.200-Zeilen-Render in eigene memoized Komponente ausgelagert — Termin-Klicks re-rendern nicht mehr das ganze Dashboard, Popup bleibt bei Daten-Updates stabil offen (vorher: ersetzt/remountet → Eingaben weg)',
+      '🏁 RACE-CONDITION: Stil-Daten laden jetzt parallel via Promise.all statt forEach(async) — keine zufällig getakteten Einzel-Renders mehr',
+      '🛡️ DOPPEL-KLICK-SCHUTZ: Umfrage-Absenden ignoriert weitere Klicks während der Request läuft',
+      '🧹 RENDER-PFAD: Debug-console.logs aus dem Render entfernt, Popup-Umfragen-Filter memoized, stabile Keys statt Array-Index bei Gürtel-Listen',
+    ],
+    details: 'PruefungsEinladungPopup.jsx (React.memo, eigener State für Nein-Flow + Terminauswahl — vorher IIFE mit Parent-State). MemberDashboard.jsx: useEffect approvedExams mit prev||-Guard (Popup wird nicht mehr ersetzt), loadMemberStyles Promise.all, submitUmfrageAntwort Guard, popupUmfragen useMemo, 2 Render-console.logs raus, currentBelts-Keys stilName-name. 3.210 → 3.096 Zeilen.',
+    files: [
+      'frontend/src/components/PruefungsEinladungPopup.jsx',
+      'frontend/src/components/MemberDashboard.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.16',
     date: '2026-06-05',
     type: 'feature',
