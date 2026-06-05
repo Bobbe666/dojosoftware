@@ -54,13 +54,19 @@ router.post('/html-pdf', async (req, res) => {
   }
   try {
     const puppeteer = require('puppeteer');
+    // Script-Tags entfernen: print-helper.js löst window.print() aus → hängt in
+    // Headless-Chrome (Navigation timeout). Fürs PDF-Rendern sind Scripts unnötig.
+    const cleanHtml = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<script\b[^>]*\/?>/gi, '');
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     });
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      page.setDefaultNavigationTimeout(60000);
+      await page.setContent(cleanHtml, { waitUntil: 'load', timeout: 60000 });
+      // Auf Webfonts warten (falls eingebunden), dann kurz settlen lassen
+      try { await page.evaluateHandle('document.fonts.ready'); } catch (_) {}
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
