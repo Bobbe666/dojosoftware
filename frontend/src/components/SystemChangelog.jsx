@@ -31,6 +31,30 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.14',
+    date: '2026-06-05',
+    type: 'improvement',
+    zielgruppe: 'intern', // Refactoring — nur intern
+    title: 'SuperAdminDashboard entschlackt: -30% Code, Sektionen ausgelagert',
+    description: 'Das SuperAdminDashboard war mit 3.420 Zeilen ein Monolith. Die Produkt-Sektionen (EventSoftware, Academy, Hall of Fame), das Daily Briefing und die Shop-Bestellungen sind jetzt eigene Komponenten; toter Code wurde entfernt. Reines Refactoring ohne Verhaltensänderung — vor dem Deploy wurden DB-Backups (dojo + tda) erstellt.',
+    highlights: [
+      '✂️ AUSGELAGERT: EventSoftwareSection, AcademySection, HofLiveSection, DailyBriefing, ShopBestellungen — je eine eigene Datei',
+      '📉 3.420 → 2.426 Zeilen in SuperAdminDashboard.jsx (-29%)',
+      '🗑️ TOTER CODE: StatisticsTab.jsx + StatisticsTab.css gelöscht (wurde nirgends mehr gerendert)',
+      '💾 SICHERHEIT: DB-Backups vor dem Refactoring (/root/backups/dojo_pre_refactor_*, tda_pre_refactor_*)',
+    ],
+    details: 'Pure Code-Moves: EventSoftwareSection.jsx (275 Z., inkl. preloadedTurniere-Prop), AcademySection.jsx (170 Z.), HofLiveSection.jsx (121 Z.), DailyBriefing.jsx (Props: globalStats/overviewSummary/unreadCount/sslWarnings/onClose/onNavigate), ShopBestellungen.jsx (eigenständig mit eigenem State+Loadern, Prop: token). SuperAdminDashboard.jsx behält Orchestrierung, Tabs und Cockpit.',
+    files: [
+      'frontend/src/components/SuperAdminDashboard.jsx',
+      'frontend/src/components/EventSoftwareSection.jsx',
+      'frontend/src/components/AcademySection.jsx',
+      'frontend/src/components/HofLiveSection.jsx',
+      'frontend/src/components/DailyBriefing.jsx',
+      'frontend/src/components/ShopBestellungen.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.13',
     date: '2026-06-05',
     type: 'improvement',
