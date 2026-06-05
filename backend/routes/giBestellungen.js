@@ -33,6 +33,19 @@ router.get('/', (req, res) => {
 });
 
 // GET /:id — eine einzelne Bestellung MIT formdata (für Öffnen/Preview)
+// Wiederverwendbare Browser-Instanz — puppeteer.launch dauert 1-3s pro Aufruf.
+// Lazy-Init beim ersten PDF, bei Crash/Disconnect wird neu gestartet.
+let _pdfBrowser = null;
+async function getPdfBrowser() {
+  const puppeteer = require('puppeteer');
+  if (_pdfBrowser && _pdfBrowser.connected) return _pdfBrowser;
+  _pdfBrowser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+  });
+  return _pdfBrowser;
+}
+
 // POST /html-pdf — Bestell-HTML serverseitig zu echtem PDF rendern (Download-Button)
 // MUSS vor den /:id-Routen stehen. Nutzt dasselbe Puppeteer-Muster wie vorlagenPdfGenerator.
 router.post('/html-pdf', async (req, res) => {
@@ -53,19 +66,15 @@ router.post('/html-pdf', async (req, res) => {
     return res.status(400).json({ success: false, message: 'HTML fehlt (Feld pdfHtml)' });
   }
   try {
-    const puppeteer = require('puppeteer');
     // Script-Tags entfernen: print-helper.js löst window.print() aus → hängt in
     // Headless-Chrome (Navigation timeout). Fürs PDF-Rendern sind Scripts unnötig.
     const cleanHtml = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<script\b[^>]*\/?>/gi, '');
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    });
+    const browser = await getPdfBrowser();
+    const page = await browser.newPage();
     try {
-      const page = await browser.newPage();
       page.setDefaultNavigationTimeout(60000);
       await page.setContent(cleanHtml, { waitUntil: 'load', timeout: 60000 });
-      // Auf Webfonts warten (falls eingebunden), dann kurz settlen lassen
+      // Auf Webfonts warten (falls eingebunden)
       try { await page.evaluateHandle('document.fonts.ready'); } catch (_) {}
       const pdfBuffer = await page.pdf({
         format: 'A4',
@@ -78,10 +87,12 @@ router.post('/html-pdf', async (req, res) => {
       res.setHeader('Content-Disposition', `attachment; filename="${safe}.pdf"`);
       res.send(Buffer.from(pdfBuffer));
     } finally {
-      await browser.close();
+      // Nur die Page schließen — der Browser bleibt für den nächsten Aufruf warm
+      await page.close().catch(() => {});
     }
   } catch (err) {
     console.error('❌ Gi-Bestellung PDF-Render fehlgeschlagen:', err);
+    _pdfBrowser = null; // bei Fehler Browser-Neustart beim nächsten Aufruf erzwingen
     res.status(500).json({ success: false, message: 'PDF-Erstellung fehlgeschlagen', error: err.message });
   }
 });

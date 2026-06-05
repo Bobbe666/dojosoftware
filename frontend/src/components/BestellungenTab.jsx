@@ -232,19 +232,17 @@ const BestellungenTab = () => {
     }
     if (!formdata) throw new Error('Keine Formulardaten zu dieser Bestellung gefunden');
 
-    // Server-Logos der Vorlage einbetten (gleiche Logik wie im Druck-Pfad der Vorlage)
+    // Server-Logos der Vorlage als ABSOLUTE URLs einbinden (kein Base64!):
+    // /uploads ist öffentlich — Vorschau-Tab und Puppeteer laden die Bilder direkt.
+    // Vorher wurden alle Logos clientseitig zu Base64 gewandelt und beim Download
+    // als 10-20-MB-JSON über den User-Upload geschickt → extrem langsam.
     let eingebetteteDateien = [];
     if (b.vorlage_id && djId && !istTShirt(formdata)) {
       try {
         const dRes = await axios.get(`/bestellvorlagen/${b.vorlage_id}/dateien?dojo_id=${djId}`);
-        const bilder = (dRes.data?.data || []).filter(d => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name));
-        eingebetteteDateien = await Promise.all(bilder.map(async (d) => {
-          try {
-            const blob = await (await fetch(`${window.location.origin}${d.pfad}`)).blob();
-            const b64 = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(blob); });
-            return { ...d, dataUrl: b64 };
-          } catch { return { ...d, dataUrl: null }; }
-        }));
+        eingebetteteDateien = (dRes.data?.data || [])
+          .filter(d => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name))
+          .map(d => ({ ...d, dataUrl: `${window.location.origin}${d.pfad}` }));
       } catch (e) { console.error('Vorlagen-Logos konnten nicht geladen werden:', e); }
     }
 
