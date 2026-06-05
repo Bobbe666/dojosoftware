@@ -267,12 +267,8 @@ const BestellungenTab = () => {
         win.document.close();
         win.focus();
       } else {
-        // Popup geblockt → als Datei herunterladen
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `bestellung_${b.bestellung_id}.html`; a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        // Popup geblockt → klarer Hinweis statt verwirrendem HTML-Download
+        alert('Die Vorschau wurde vom Browser als Popup blockiert.\nBitte Popups für diese Seite erlauben — oder den ⬇️-Button für den PDF-Download nutzen.');
       }
     } catch (err) {
       if (win) win.close();
@@ -291,10 +287,17 @@ const BestellungenTab = () => {
         { html, filename: `bestellung_${b.bestellung_id}` },
         { responseType: 'blob' }
       );
-      const url = URL.createObjectURL(res.data);
+      // Safari-sicher (Muster aus utils/openApiBlob): expliziter MIME-Type +
+      // Link muss im DOM hängen, sonst „Download nicht möglich"
+      const blob = new Blob([res.data], { type: res.headers['content-type'] || 'application/pdf' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `bestellung_${b.bestellung_id}.pdf`; a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      a.href = url;
+      a.download = `bestellung_${b.bestellung_id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
       console.error('PDF-Download fehlgeschlagen:', err);
       let msg = err.message;
