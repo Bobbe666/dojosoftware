@@ -2513,6 +2513,23 @@ router.get('/overview-summary', requireSuperAdmin, async (req, res) => {
       FROM verbandsmitgliedschaften ORDER BY created_at DESC LIMIT 5
     `);
 
+    // 7. Neue Eingänge — ausstehende Registrierungen & unbearbeitete Anfragen (nicht übersehen!)
+    const [ausstehendeRegistrierungen] = await db.promise().query(`
+      SELECT id,
+        COALESCE(NULLIF(CONCAT(TRIM(COALESCE(person_vorname,'')), ' ', TRIM(COALESCE(person_nachname,''))), ' '), dojo_name, 'Unbekannt') as name,
+        person_email, typ, created_at, DATEDIFF(NOW(), created_at) as tage_offen
+      FROM verbandsmitgliedschaften
+      WHERE status = 'ausstehend'
+      ORDER BY created_at DESC LIMIT 10
+    `);
+
+    const [offeneKontaktanfragen] = await db.promise().query(`
+      SELECT id, name, email, subject, erstellt_am, DATEDIFF(NOW(), erstellt_am) as tage_offen
+      FROM kontakt_anfragen
+      WHERE bearbeitet = 0
+      ORDER BY erstellt_am DESC LIMIT 10
+    `);
+
     res.json({
       success: true,
       goals: goalsWithIst,
@@ -2524,7 +2541,11 @@ router.get('/overview-summary', requireSuperAdmin, async (req, res) => {
       trial_expiring: trialExpiring,
       neueste_mitglieder: neuesteMitglieder,
       neueste_dojos: neuesteDojos,
-      neueste_verbandsmitglieder: neuesteVerbandsmitglieder
+      neueste_verbandsmitglieder: neuesteVerbandsmitglieder,
+      neue_eingaenge: {
+        verband_registrierungen: ausstehendeRegistrierungen,
+        kontakt_anfragen: offeneKontaktanfragen
+      }
     });
   } catch (error) {
     console.error('❌ Fehler beim Laden der Übersicht:', error);

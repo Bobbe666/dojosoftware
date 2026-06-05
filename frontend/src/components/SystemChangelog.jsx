@@ -31,6 +31,25 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.11',
+    date: '2026-06-05',
+    type: 'feature',
+    zielgruppe: 'intern', // Super-Admin-Briefing + Akquise — nur intern
+    title: 'Daily Briefing: Neue Eingänge — keine Registrierung mehr übersehen + 185 Akquise-Kontakte importiert',
+    description: 'Das tägliche Briefing-Popup im Super-Admin-Dashboard zeigt jetzt prominent alle ausstehenden Verbands-Registrierungen und unbearbeiteten Kontaktanfragen — damit Eingänge wie neue Verbandsmitgliedschafts-Anträge nicht mehr untergehen. Zusätzlich wurden 185 recherchierte Kampfsportschulen-Kontakte (200 km um Vilsbiburg) ins Akquise-CRM importiert.',
+    highlights: [
+      '📨 NEUE EINGÄNGE: Eigene Sektion im Daily Briefing — ausstehende Verbands-Registrierungen (status „ausstehend") und unbearbeitete Kontaktanfragen, mit „seit X Tagen offen"-Anzeige',
+      '🔴 ESKALATION: Einträge, die 3+ Tage offen sind, werden rot markiert; Klick auf eine Verbands-Registrierung springt direkt in den Verband-Tab',
+      '🥋 AKQUISE-IMPORT: 185 Kampfsportschulen-Kontakte (dedupliziert) im Akquise-CRM — Tags „verifiziert" (78, echte Recherche), „unverifiziert" (14) und „domain-tot" (93, Domain existiert nicht, bei Bounce löschen)',
+    ],
+    details: 'Backend routes/admin.js /overview-summary: neue Response-Sektion neue_eingaenge (verbandsmitgliedschaften status=ausstehend + kontakt_anfragen bearbeitet=0, je max. 10, mit tage_offen via DATEDIFF). Frontend SuperAdminDashboard.jsx: Briefing-Sektion „📨 Neue Eingänge" nach dem KPI-Grid, nutzt sad-trial-item-Klassen. Import: 11 Excel-Rechercheblöcke geparst, DNS-Doppel-Check (94 von 109 Domains aus Block 2–11 nicht registriert = KI-Halluzination), per SQL in akquise_kontakte (quelle=internet, Tag kampfsport-recherche-2026).',
+    files: [
+      'backend/routes/admin.js',
+      'frontend/src/components/SuperAdminDashboard.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.10',
     date: '2026-06-04',
     type: 'improvement',

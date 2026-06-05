@@ -1406,6 +1406,40 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
 
+              {/* Neue Eingänge — ausstehende Registrierungen & Anfragen */}
+              {(overviewSummary?.neue_eingaenge?.verband_registrierungen?.length > 0 || overviewSummary?.neue_eingaenge?.kontakt_anfragen?.length > 0) && (
+                <div>
+                  <div className="sad-trial-warning-meta">📨 Neue Eingänge — bitte bearbeiten</div>
+                  <div className="sad2-flex-col-04">
+                    {(overviewSummary?.neue_eingaenge?.verband_registrierungen || []).map((r, i) => (
+                      <div
+                        key={`vr-${i}`}
+                        className={`sad-trial-item ${r.tage_offen >= 3 ? 'sad-trial-item--urgent' : 'sad-trial-item--warning'}`}
+                        onClick={() => { closeBriefing(); setActiveTab('verband'); }}
+                        style={{ cursor: 'pointer' }}
+                        title="Zum Verband-Tab wechseln"
+                      >
+                        <span className="sad2-fw600">🏆 Verbands-Registrierung: {r.name}{r.person_email ? ` (${r.person_email})` : ''}</span>
+                        <span className={r.tage_offen >= 3 ? 'sad-trial-days--urgent' : 'sad-trial-days--warning'}>
+                          {r.tage_offen === 0 ? 'heute' : `seit ${r.tage_offen} Tag${r.tage_offen !== 1 ? 'en' : ''}`} ausstehend
+                        </span>
+                      </div>
+                    ))}
+                    {(overviewSummary?.neue_eingaenge?.kontakt_anfragen || []).map((a, i) => (
+                      <div
+                        key={`ka-${i}`}
+                        className={`sad-trial-item ${a.tage_offen >= 3 ? 'sad-trial-item--urgent' : 'sad-trial-item--warning'}`}
+                      >
+                        <span className="sad2-fw600">✉️ Kontaktanfrage: {a.name}{a.subject ? ` — ${a.subject}` : ''}</span>
+                        <span className={a.tage_offen >= 3 ? 'sad-trial-days--urgent' : 'sad-trial-days--warning'}>
+                          {a.tage_offen === 0 ? 'heute' : `seit ${a.tage_offen} Tag${a.tage_offen !== 1 ? 'en' : ''}`} unbearbeitet
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Trial-Warnungen */}
               {overviewSummary?.trial_expiring?.length > 0 && (
                 <div>
