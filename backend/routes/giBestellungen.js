@@ -37,9 +37,16 @@ router.get('/', (req, res) => {
 // MUSS vor den /:id-Routen stehen. Nutzt dasselbe Puppeteer-Muster wie vorlagenPdfGenerator.
 router.post('/html-pdf', async (req, res) => {
   const dojoId = getSecureDojoId(req);
-  if (!dojoId) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
+  if (!dojoId) {
+    console.warn('⚠️ html-pdf 400 (Dojo): user.rolle=', req.user?.rolle, 'user.dojo_id=', req.user?.dojo_id, 'query.dojo_id=', req.query.dojo_id);
+    return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
+  }
   const { html, filename } = req.body || {};
   if (!html || typeof html !== 'string') {
+    console.warn('⚠️ html-pdf 400 (HTML): typeof html=', typeof html,
+      '| body-keys=', Object.keys(req.body || {}).join(','),
+      '| content-type=', req.headers['content-type'],
+      '| content-length=', req.headers['content-length']);
     return res.status(400).json({ success: false, message: 'HTML fehlt' });
   }
   try {
