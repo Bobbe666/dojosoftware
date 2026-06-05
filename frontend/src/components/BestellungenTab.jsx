@@ -282,9 +282,11 @@ const BestellungenTab = () => {
     setPdfDownloading(b.bestellung_id);
     try {
       const { html, djId } = await assembleBestellungHtml(b);
+      // Feld heißt bewusst „pdfHtml" — der securityMonitor nimmt dieses Feld vom
+      // XSS-Scan aus (PDF-HTML würde sonst als Angriff geblockt → 400)
       const res = await axios.post(
         `/gi-bestellungen/html-pdf${djId ? `?dojo_id=${djId}` : ''}`,
-        { html, filename: `bestellung_${b.bestellung_id}` },
+        { pdfHtml: html, filename: `bestellung_${b.bestellung_id}` },
         { responseType: 'blob' }
       );
       // Safari-sicher (Muster aus utils/openApiBlob): expliziter MIME-Type +

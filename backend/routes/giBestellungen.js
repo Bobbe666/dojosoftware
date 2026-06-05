@@ -41,13 +41,16 @@ router.post('/html-pdf', async (req, res) => {
     console.warn('⚠️ html-pdf 400 (Dojo): user.rolle=', req.user?.rolle, 'user.dojo_id=', req.user?.dojo_id, 'query.dojo_id=', req.query.dojo_id);
     return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
   }
-  const { html, filename } = req.body || {};
+  // Feld MUSS „pdfHtml" heißen: securityMonitor nimmt genau dieses Feld vom
+  // XSS-/SQLi-Scan aus (PDF-HTML enthält legitime Script-/Style-Tags → False-Positive 400)
+  const { pdfHtml, filename } = req.body || {};
+  const html = pdfHtml;
   if (!html || typeof html !== 'string') {
-    console.warn('⚠️ html-pdf 400 (HTML): typeof html=', typeof html,
+    console.warn('⚠️ html-pdf 400 (HTML): typeof pdfHtml=', typeof pdfHtml,
       '| body-keys=', Object.keys(req.body || {}).join(','),
       '| content-type=', req.headers['content-type'],
       '| content-length=', req.headers['content-length']);
-    return res.status(400).json({ success: false, message: 'HTML fehlt' });
+    return res.status(400).json({ success: false, message: 'HTML fehlt (Feld pdfHtml)' });
   }
   try {
     const puppeteer = require('puppeteer');
