@@ -33,6 +33,43 @@ router.get('/', (req, res) => {
 });
 
 // GET /:id — eine einzelne Bestellung MIT formdata (für Öffnen/Preview)
+// POST /html-pdf — Bestell-HTML serverseitig zu echtem PDF rendern (Download-Button)
+// MUSS vor den /:id-Routen stehen. Nutzt dasselbe Puppeteer-Muster wie vorlagenPdfGenerator.
+router.post('/html-pdf', async (req, res) => {
+  const dojoId = getSecureDojoId(req);
+  if (!dojoId) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
+  const { html, filename } = req.body || {};
+  if (!html || typeof html !== 'string') {
+    return res.status(400).json({ success: false, message: 'HTML fehlt' });
+  }
+  try {
+    const puppeteer = require('puppeteer');
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    });
+    try {
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        preferCSSPageSize: true,
+        margin: { top: 0, bottom: 0, left: 0, right: 0 }
+      });
+      const safe = String(filename || 'bestellung').replace(/[^a-zA-Z0-9_\-]/g, '_');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${safe}.pdf"`);
+      res.send(Buffer.from(pdfBuffer));
+    } finally {
+      await browser.close();
+    }
+  } catch (err) {
+    console.error('❌ Gi-Bestellung PDF-Render fehlgeschlagen:', err);
+    res.status(500).json({ success: false, message: 'PDF-Erstellung fehlgeschlagen', error: err.message });
+  }
+});
+
 router.get('/:id', (req, res) => {
   const dojoId = getSecureDojoId(req);
   if (!dojoId) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });

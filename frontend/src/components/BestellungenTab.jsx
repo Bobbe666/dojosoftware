@@ -32,6 +32,7 @@ const BestellungenTab = () => {
   const [giOverlay, setGiOverlay] = useState(null); // { vorlage, editingId, formdata }
   const [tsOverlay, setTsOverlay] = useState(null); // T-Shirt-Bestellvorlage Overlay
   const [filterDojoId, setFilterDojoId] = useState(null); // null = aus activeDojo
+  const [pdfDownloading, setPdfDownloading] = useState(null); // bestellung_id während PDF-Download läuft
   const [neuLoading, setNeuLoading] = useState(false);
   const [neuTsLoading, setNeuTsLoading] = useState(false);
 
@@ -218,42 +219,48 @@ const BestellungenTab = () => {
     }
   }, [activeSubTab, loadDojoBestellungen]); // eslint-disable-line
 
+  // Gemeinsame HTML-Erzeugung für Vorschau (👁) und PDF-Download (⬇):
+  // formdata laden, Server-Logos der Vorlage als Base64 einbetten, PDF-HTML bauen.
+  const assembleBestellungHtml = async (b) => {
+    const djId = b.dojo_id || filterDojoId || activeDojo?.id;
+    let formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
+    if (!formdata) {
+      // formdata wird in der Liste nicht mehr mitgeladen → einzeln nachladen
+      const res = await axios.get(`/gi-bestellungen/${b.bestellung_id}${djId ? `?dojo_id=${djId}` : ''}`);
+      const fd = res.data?.data?.formdata;
+      formdata = typeof fd === 'string' ? JSON.parse(fd) : fd;
+    }
+    if (!formdata) throw new Error('Keine Formulardaten zu dieser Bestellung gefunden');
+
+    // Server-Logos der Vorlage einbetten (gleiche Logik wie im Druck-Pfad der Vorlage)
+    let eingebetteteDateien = [];
+    if (b.vorlage_id && djId && !istTShirt(formdata)) {
+      try {
+        const dRes = await axios.get(`/bestellvorlagen/${b.vorlage_id}/dateien?dojo_id=${djId}`);
+        const bilder = (dRes.data?.data || []).filter(d => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name));
+        eingebetteteDateien = await Promise.all(bilder.map(async (d) => {
+          try {
+            const blob = await (await fetch(`${window.location.origin}${d.pfad}`)).blob();
+            const b64 = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(blob); });
+            return { ...d, dataUrl: b64 };
+          } catch { return { ...d, dataUrl: null }; }
+        }));
+      } catch (e) { console.error('Vorlagen-Logos konnten nicht geladen werden:', e); }
+    }
+
+    const html = istTShirt(formdata)
+      ? buildTShirtPdf(formdata, b.bestellung_id)
+      : buildPdfHtml(formdata, window.location.origin, eingebetteteDateien, b.bestellung_id);
+    return { html, djId };
+  };
+
   const previewGiPdf = async (b) => {
     // WICHTIG: Fenster SOFORT im Klick-Kontext öffnen — Safari blockiert window.open
     // nach einem await (kein User-Gesture-Kontext mehr). HTML wird danach
     // hineingeschrieben (gleiches Muster wie in GiBestellvorlage).
     const win = window.open('', '_blank');
     try {
-      const djId = b.dojo_id || filterDojoId || activeDojo?.id;
-      let formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
-      if (!formdata) {
-        // formdata wird in der Liste nicht mehr mitgeladen → einzeln nachladen
-        const res = await axios.get(`/gi-bestellungen/${b.bestellung_id}${djId ? `?dojo_id=${djId}` : ''}`);
-        const fd = res.data?.data?.formdata;
-        formdata = typeof fd === 'string' ? JSON.parse(fd) : fd;
-      }
-      if (!formdata) throw new Error('Keine Formulardaten zu dieser Bestellung gefunden');
-
-      // Server-Logos der Vorlage einbetten (gleiche Logik wie im Druck-Pfad der Vorlage)
-      // — vorher wurde [] übergeben → PDF zeigte „kein Logo" an allen Positionen
-      let eingebetteteDateien = [];
-      if (b.vorlage_id && djId && !istTShirt(formdata)) {
-        try {
-          const dRes = await axios.get(`/bestellvorlagen/${b.vorlage_id}/dateien?dojo_id=${djId}`);
-          const bilder = (dRes.data?.data || []).filter(d => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name));
-          eingebetteteDateien = await Promise.all(bilder.map(async (d) => {
-            try {
-              const blob = await (await fetch(`${window.location.origin}${d.pfad}`)).blob();
-              const b64 = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(blob); });
-              return { ...d, dataUrl: b64 };
-            } catch { return { ...d, dataUrl: null }; }
-          }));
-        } catch (e) { console.error('Vorlagen-Logos konnten nicht geladen werden:', e); }
-      }
-
-      const html = istTShirt(formdata)
-        ? buildTShirtPdf(formdata, b.bestellung_id)
-        : buildPdfHtml(formdata, window.location.origin, eingebetteteDateien, b.bestellung_id);
+      const { html } = await assembleBestellungHtml(b);
       if (win) {
         win.document.open();
         win.document.write(html);
@@ -271,6 +278,33 @@ const BestellungenTab = () => {
       if (win) win.close();
       console.error('PDF-Vorschau fehlgeschlagen:', err);
       alert('PDF-Vorschau fehlgeschlagen: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  // ⬇ Echtes PDF herunterladen — serverseitig via Puppeteer gerendert
+  const downloadGiPdf = async (b) => {
+    setPdfDownloading(b.bestellung_id);
+    try {
+      const { html, djId } = await assembleBestellungHtml(b);
+      const res = await axios.post(
+        `/gi-bestellungen/html-pdf${djId ? `?dojo_id=${djId}` : ''}`,
+        { html, filename: `bestellung_${b.bestellung_id}` },
+        { responseType: 'blob' }
+      );
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url; a.download = `bestellung_${b.bestellung_id}.pdf`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) {
+      console.error('PDF-Download fehlgeschlagen:', err);
+      let msg = err.message;
+      // Bei responseType blob steckt die Fehlermeldung in einem Blob
+      if (err.response?.data instanceof Blob) {
+        try { msg = JSON.parse(await err.response.data.text()).message || msg; } catch {}
+      }
+      alert('PDF-Download fehlgeschlagen: ' + msg);
+    } finally {
+      setPdfDownloading(null);
     }
   };
 
@@ -786,7 +820,10 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                         {b.erstellt_am ? new Date(b.erstellt_am).toLocaleDateString('de-DE') : '—'}
                       </td>
                       <td className="actions">
-                        <button className="action-btn view" title="PDF-Vorschau" onClick={() => previewGiPdf(b)} style={{ fontSize: '1rem', padding: '0.25rem 0.5rem' }}>👁</button>
+                        <button className="action-btn view" title="PDF-Vorschau (Drucken)" onClick={() => previewGiPdf(b)} style={{ fontSize: '1rem', padding: '0.25rem 0.5rem' }}>👁</button>
+                        <button className="action-btn view" title="PDF herunterladen" onClick={() => downloadGiPdf(b)} disabled={pdfDownloading === b.bestellung_id} style={{ fontSize: '1rem', padding: '0.25rem 0.5rem' }}>
+                          {pdfDownloading === b.bestellung_id ? '⏳' : '⬇️'}
+                        </button>
                         <button className="action-btn view" onClick={() => openGiBestellung(b)}>Bearbeiten</button>
                         <button className="action-btn" style={{ color: 'rgba(255,80,80,0.7)', background: 'none', border: '1px solid rgba(255,80,80,0.2)' }}
                           onClick={async () => {

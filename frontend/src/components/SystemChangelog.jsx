@@ -31,6 +31,25 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.20',
+    date: '2026-06-05',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Gi-Bestellungen: echter PDF-Download (⬇️) neben der Vorschau (👁)',
+    description: 'Neben dem Auge (Vorschau im neuen Tab, fürs Drucken) gibt es jetzt einen Download-Button, der die Bestellung als echtes PDF herunterlädt — serverseitig mit Puppeteer gerendert, inklusive aller eingebetteten Logos und dem Logo-&-Branding-Anhangsblatt.',
+    highlights: [
+      '⬇️ PDF-DOWNLOAD: Ein Klick lädt bestellung_<Nr>.pdf herunter — echtes PDF, kein HTML',
+      '👁 VORSCHAU bleibt wie gehabt (neuer Tab, von dort drucken)',
+      '♻️ Beide Buttons nutzen dieselbe HTML-Erzeugung (formdata + Logo-Einbettung) — keine Abweichungen zwischen Vorschau und Download',
+    ],
+    details: 'Backend giBestellungen.js: POST /html-pdf (vor den /:id-Routen) — Puppeteer setContent + page.pdf (A4, printBackground, preferCSSPageSize), Content-Disposition attachment. Frontend BestellungenTab: assembleBestellungHtml(b) als gemeinsame Basis für previewGiPdf + downloadGiPdf (responseType blob, Lade-Indikator ⏳, Blob-Fehlerauswertung).',
+    files: [
+      'backend/routes/giBestellungen.js',
+      'frontend/src/components/BestellungenTab.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.19',
     date: '2026-06-05',
     type: 'fix',
