@@ -33,6 +33,16 @@ const STATUS_PIPELINE = [
   { id: 'pausiert',     label: 'Pausiert',      color: '#9ca3af', bg: 'rgba(156,163,175,0.12)' },
 ];
 
+// Einsatzbereiche: wofür steht ein Kontakt zur Verfügung (Mehrfachauswahl, komma-separiert in DB)
+const EINSATZBEREICHE = [
+  { id: 'dojosoftware',    label: '💻 Dojosoftware',     color: '#3b82f6', bg: 'rgba(59,130,246,0.12)'  },
+  { id: 'events',          label: '🗓️ Events/Turniere',  color: '#fb923c', bg: 'rgba(251,146,60,0.12)'  },
+  { id: 'verband',         label: '🏆 Verband',           color: '#eab308', bg: 'rgba(234,179,8,0.12)'   },
+  { id: 'veranstaltungen', label: '🎓 Veranstaltungen',   color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)'  },
+];
+const ALLE_BEREICHE = EINSATZBEREICHE.map(b => b.id).join(',');
+const parseBereiche = (s) => (s || '').split(',').map(x => x.trim()).filter(Boolean);
+
 const ART_ICONS = {
   email:       <Mail size={14} />,
   brief:       <FileText size={14} />,
@@ -108,6 +118,7 @@ const AkquiseDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [typFilter, setTypFilter] = useState('');
   const [tagFilter, setTagFilter] = useState('');
+  const [bereichFilter, setBereichFilter] = useState('');
 
   // Bulk select
   const [bulkSelected, setBulkSelected] = useState(new Set());
@@ -151,6 +162,7 @@ const AkquiseDashboard = () => {
       email:'', telefon:'', webseite:'', strasse:'', plz:'', ort:'',
       land:'Deutschland', sportart:'', mitglieder_anzahl:'', gegruendet_jahr:'',
       status:'neu', prioritaet:'mittel', quelle:'manuell',
+      einsatzbereiche: ALLE_BEREICHE,
       naechste_aktion:'', naechste_aktion_info:'', notiz:'', tags:[],
     };
   }
@@ -164,15 +176,16 @@ const AkquiseDashboard = () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (statusFilter) params.append('status', statusFilter);
-      if (typFilter)    params.append('typ', typFilter);
-      if (searchTerm)   params.append('search', searchTerm);
+      if (statusFilter)  params.append('status', statusFilter);
+      if (typFilter)     params.append('typ', typFilter);
+      if (searchTerm)    params.append('search', searchTerm);
+      if (bereichFilter) params.append('einsatzbereich', bereichFilter);
       const r = await fetchWithAuth(`${API}/kontakte?${params}`);
       const d = await r.json();
       setKontakte(d.kontakte || []);
     } catch (e) { showError('Fehler beim Laden'); }
     finally { setLoading(false); }
-  }, [statusFilter, typFilter, searchTerm]);
+  }, [statusFilter, typFilter, searchTerm, bereichFilter]);
 
   const loadStats    = useCallback(async () => {
     try { const r = await fetchWithAuth(`${API}/stats`); const d = await r.json(); if (d.success) setStats(d); } catch (_) {}
@@ -339,6 +352,24 @@ const AkquiseDashboard = () => {
         showSuccess(`${d.updated} Kontakte auf "${bulkStatus}" gesetzt`);
         setBulkSelected(new Set()); setBulkStatus('');
         loadKontakte(); loadStats();
+      }
+    } catch (e) { showError('Fehler'); }
+  };
+
+  // Bulk: Einsatzbereich für ausgewählte Kontakte hinzufügen/entfernen wäre komplexer —
+  // pragmatisch: kompletten Bereiche-Satz setzen
+  const handleBulkBereiche = async (bereiche) => {
+    if (bulkSelected.size === 0) return showError('Keine Kontakte ausgewählt');
+    try {
+      const r = await fetchWithAuth(`${API}/kontakte/bulk-update`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ ids:[...bulkSelected], einsatzbereiche: bereiche })
+      });
+      const d = await r.json();
+      if (d.success) {
+        showSuccess(`Einsatzbereiche für ${d.updated} Kontakte gesetzt`);
+        setBulkSelected(new Set());
+        loadKontakte();
       }
     } catch (e) { showError('Fehler'); }
   };
@@ -569,8 +600,8 @@ const AkquiseDashboard = () => {
             <Target size={20} style={{ color:'#fb923c' }}/>
           </div>
           <div>
-            <h3 style={{ margin:0, fontSize:18, fontWeight:700, letterSpacing:0.3 }}>Akquise & Partnerschaften</h3>
-            {stats && <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:1 }}>{stats.gesamt} Kontakte · {stats.gewonnen} gewonnen</div>}
+            <h3 style={{ margin:0, fontSize:18, fontWeight:700, letterSpacing:0.3 }}>Zentrale Kontakte</h3>
+            {stats && <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:1 }}>{stats.gesamt} Kontakte für Akquise, Events, Verband & Veranstaltungen · {stats.gewonnen} gewonnen</div>}
           </div>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -765,6 +796,10 @@ const AkquiseDashboard = () => {
             <option value="schule">Schule</option><option value="verband">Verband</option>
             <option value="verein">Verein</option><option value="sonstige">Sonstige</option>
           </select>
+          <select value={bereichFilter} onChange={e => setBereichFilter(e.target.value)} style={INP}>
+            <option value="">Alle Bereiche</option>
+            {EINSATZBEREICHE.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}
+          </select>
           {allTags.length > 0 && (
             <select value={tagFilter} onChange={e => setTagFilter(e.target.value)} style={INP}>
               <option value="">Alle Tags</option>
@@ -787,6 +822,12 @@ const AkquiseDashboard = () => {
             <button className="btn-primary" style={{ padding:'6px 14px', fontSize:13 }} onClick={handleBulkUpdate}>
               Anwenden
             </button>
+            <select value="" onChange={e => { if (e.target.value) handleBulkBereiche(e.target.value); }}
+              style={{ ...INP, width:'auto', maxWidth:210 }}>
+              <option value="">Bereiche setzen…</option>
+              <option value={ALLE_BEREICHE}>Alle Bereiche</option>
+              {EINSATZBEREICHE.map(b => <option key={b.id} value={b.id}>nur {b.label}</option>)}
+            </select>
             <button className="btn-secondary" style={{ padding:'6px 12px', fontSize:13 }} onClick={() => setBulkSelected(new Set())}>
               Abwählen
             </button>
@@ -830,6 +871,28 @@ const AkquiseDashboard = () => {
                                 {t}
                               </span>
                             ))}
+                            {/* Einsatzbereiche */}
+                            {parseBereiche(k.einsatzbereiche).map(bid => {
+                              const b = EINSATZBEREICHE.find(x => x.id === bid);
+                              return b ? (
+                                <span key={bid} title={`Verfügbar für ${b.label}`} style={{ fontSize:10, background:b.bg, color:b.color, padding:'1px 6px', borderRadius:10, border:`1px solid ${b.color}40` }}>
+                                  {b.label}
+                                </span>
+                              ) : null;
+                            })}
+                            {/* Verknüpfungen zu anderen Systemen */}
+                            {k.verband_match_id && (
+                              <span title={`Verknüpft: Verbandsmitgliedschaft #${k.verband_match_id} (${k.verband_match_status})`}
+                                style={{ fontSize:10, fontWeight:700, background:'rgba(34,197,94,0.12)', color:'#22c55e', padding:'1px 6px', borderRadius:10, border:'1px solid rgba(34,197,94,0.4)' }}>
+                                🔗 Verbandsmitglied{k.verband_match_status !== 'aktiv' ? ` (${k.verband_match_status})` : ''}
+                              </span>
+                            )}
+                            {k.dojo_match_id && (
+                              <span title={`Verknüpft: Dojo "${k.dojo_match_name}" nutzt die Software`}
+                                style={{ fontSize:10, fontWeight:700, background:'rgba(34,197,94,0.12)', color:'#22c55e', padding:'1px 6px', borderRadius:10, border:'1px solid rgba(34,197,94,0.4)' }}>
+                                🔗 Dojo: {k.dojo_match_name}
+                              </span>
+                            )}
                           </div>
                           <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>
                             {k.ansprechpartner && `${k.ansprechpartner} · `}
@@ -1616,6 +1679,31 @@ const AkquiseDashboard = () => {
           <div>
             <label style={{ display:'block', fontSize:12, marginBottom:4 }}>Mitglieder ca.</label>
             <input type="number" value={kontaktForm.mitglieder_anzahl||''} onChange={e=>setKontaktForm(p=>({...p,mitglieder_anzahl:e.target.value}))} style={INP}/>
+          </div>
+        </div>
+
+        {/* Einsatzbereiche — wofür steht der Kontakt zur Verfügung */}
+        <div>
+          <label style={{ display:'block', fontSize:12, marginBottom:6, fontWeight:600 }}>Einsatzbereiche</label>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:10 }}>
+            {EINSATZBEREICHE.map(b => {
+              const aktiv = parseBereiche(kontaktForm.einsatzbereiche).includes(b.id);
+              return (
+                <label key={b.id} style={{ display:'inline-flex', alignItems:'center', gap:6, cursor:'pointer',
+                  fontSize:13, padding:'5px 12px', borderRadius:20,
+                  background: aktiv ? b.bg : 'var(--bg-secondary)',
+                  color: aktiv ? b.color : 'var(--text-muted)',
+                  border: `1px solid ${aktiv ? b.color + '60' : 'var(--border)'}` }}>
+                  <input type="checkbox" checked={aktiv} style={{ display:'none' }}
+                    onChange={() => setKontaktForm(p => {
+                      const cur = parseBereiche(p.einsatzbereiche);
+                      const next = aktiv ? cur.filter(x => x !== b.id) : [...cur, b.id];
+                      return { ...p, einsatzbereiche: next.join(',') };
+                    })}/>
+                  {aktiv ? '✓ ' : ''}{b.label}
+                </label>
+              );
+            })}
           </div>
         </div>
 

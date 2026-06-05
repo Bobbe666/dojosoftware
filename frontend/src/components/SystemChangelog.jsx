@@ -31,6 +31,28 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.12',
+    date: '2026-06-05',
+    type: 'feature',
+    zielgruppe: 'intern', // Super-Admin-Kontaktdatenbank — nur intern
+    title: 'Zentrale Kontaktdatenbank: eigener Haupt-Tab, Einsatzbereiche & System-Verknüpfungen',
+    description: 'Die Akquise-Kontakte sind jetzt eine zentrale Kontaktdatenbank für alle Bereiche — nicht mehr nur Dojosoftware-Vertrieb. Jeder Kontakt kann für Dojosoftware, Events/Turniere, Verband und Veranstaltungen eingesetzt werden und ist über einen eigenen Haupt-Tab „🗂️ Kontakte" direkt erreichbar. Bestehende Verbandsmitgliedschaften und Software-Dojos werden automatisch verknüpft angezeigt.',
+    highlights: [
+      '🗂️ HAUPT-TAB: „Kontakte" direkt im Super-Admin-Dashboard (neben Verband) — keine 3 Klicks mehr über Software → Lizenzen → Akquise',
+      '🎯 EINSATZBEREICHE: Jeder Kontakt für beliebige Bereiche nutzbar (💻 Dojosoftware, 🗓️ Events/Turniere, 🏆 Verband, 🎓 Veranstaltungen) — als Filter, im Formular als Chips, per Bulk-Aktion setzbar',
+      '🔗 VERKNÜPFUNGEN: Kontakte mit passender E-Mail zeigen automatisch Badges „Verbandsmitglied" (inkl. Status) und „Dojo nutzt Software" — man sieht sofort, wer schon Kunde/Mitglied ist',
+      '📥 BESTAND: Alle 215 vorhandenen Kontakte (Recherche + Turniersoftware) für alle 4 Bereiche freigeschaltet',
+    ],
+    details: 'Migration 189: akquise_kontakte.einsatzbereiche VARCHAR(255) DEFAULT dojosoftware, Bestand auf alle Bereiche gesetzt. Backend routes/admin/akquise.js: GET /kontakte mit einsatzbereich-Filter (FIND_IN_SET) + Verknüpfungs-Subselects (verbandsmitgliedschaften per person_email/dojo_email, dojo per email), POST/PUT/bulk-update um einsatzbereiche erweitert. Frontend AkquiseDashboard.jsx: EINSATZBEREICHE-Konstante, Filter-Select, Chip-Checkboxen im Formular, Badges in Liste, Bulk-Select. SuperAdminDashboard.jsx: neuer Top-Level-Tab kontakte (lazy AkquiseDashboard).',
+    files: [
+      'backend/migrations/189_akquise_einsatzbereiche.sql',
+      'backend/routes/admin/akquise.js',
+      'frontend/src/components/AkquiseDashboard.jsx',
+      'frontend/src/components/SuperAdminDashboard.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.11',
     date: '2026-06-05',
     type: 'feature',

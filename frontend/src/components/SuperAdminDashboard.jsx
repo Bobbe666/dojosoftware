@@ -37,6 +37,7 @@ const Lastschriftlauf     = lazy(() => import('./Lastschriftlauf'));
 const Zahllaeufe          = lazy(() => import('./Zahllaeufe'));
 const PasswortVerwaltung  = lazy(() => import('./PasswortVerwaltung'));
 const DojoLizenzverwaltung = lazy(() => import('./DojoLizenzverwaltung'));
+const AkquiseDashboard    = lazy(() => import('./AkquiseDashboard'));
 const AdminChatPage       = lazy(() => import('./chat/AdminChatPage'));
 const BesucherChat        = lazy(() => import('./chat/BesucherChat'));
 const SecurityDashboard   = lazy(() => import('./SecurityDashboard'));
@@ -1333,6 +1334,7 @@ const SuperAdminDashboard = () => {
     { id: 'overview',      label: 'Cockpit',        icon: '🎛️' },
     { id: 'todos',         label: 'To Do',          icon: '✅' },
     { id: 'verband',       label: 'Verband',        icon: '🏆' },
+    { id: 'kontakte',      label: 'Kontakte',       icon: '🗂️' },
     { id: 'software',      label: 'Software',       icon: '💻' },
     { id: 'finanzen',      label: 'Finanzen',       icon: '💰' },
     { id: 'kommunikation', label: 'Komm.',          icon: '📣', badge: unreadCount > 0 ? unreadCount : null },
@@ -2158,6 +2160,13 @@ const SuperAdminDashboard = () => {
         {/* ═══ Verband ══════════════════════════════════════════════ */}
         {activeTab === 'verband' && (
           <VerbandsMitglieder />
+        )}
+
+        {/* ═══ Kontakte — zentrale Kontaktdatenbank (alle Bereiche) ══ */}
+        {activeTab === 'kontakte' && (
+          <Suspense fallback={<TabLoader />}>
+            <AkquiseDashboard />
+          </Suspense>
         )}
 
         {/* ═══ Entwicklung ══════════════════════════════════════════ */}

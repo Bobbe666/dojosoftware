@@ -420,18 +420,27 @@ router.delete('/vorlagen/:id', async (req, res) => {
 
 // GET /api/admin/akquise/kontakte
 router.get('/kontakte', async (req, res) => {
-  const { status, typ, prioritaet, search, limit = 200 } = req.query;
+  const { status, typ, prioritaet, search, einsatzbereich, limit = 200 } = req.query;
   try {
     let sql = `
       SELECT k.*,
         (SELECT COUNT(*) FROM akquise_aktivitaeten a WHERE a.kontakt_id = k.id) AS aktivitaeten_count,
-        (SELECT MAX(a.datum) FROM akquise_aktivitaeten a WHERE a.kontakt_id = k.id) AS letzte_aktivitaet
+        (SELECT MAX(a.datum) FROM akquise_aktivitaeten a WHERE a.kontakt_id = k.id) AS letzte_aktivitaet,
+        (SELECT vm.id FROM verbandsmitgliedschaften vm
+          WHERE k.email IS NOT NULL AND (vm.person_email = k.email OR vm.dojo_email = k.email)
+          ORDER BY vm.status = 'aktiv' DESC LIMIT 1) AS verband_match_id,
+        (SELECT vm.status FROM verbandsmitgliedschaften vm
+          WHERE k.email IS NOT NULL AND (vm.person_email = k.email OR vm.dojo_email = k.email)
+          ORDER BY vm.status = 'aktiv' DESC LIMIT 1) AS verband_match_status,
+        (SELECT d.id FROM dojo d WHERE k.email IS NOT NULL AND d.email = k.email AND d.ist_aktiv = 1 LIMIT 1) AS dojo_match_id,
+        (SELECT d.dojoname FROM dojo d WHERE k.email IS NOT NULL AND d.email = k.email AND d.ist_aktiv = 1 LIMIT 1) AS dojo_match_name
       FROM akquise_kontakte k WHERE 1=1
     `;
     const params = [];
     if (status)     { sql += ' AND k.status = ?';     params.push(status); }
     if (typ)        { sql += ' AND k.typ = ?';         params.push(typ); }
     if (prioritaet) { sql += ' AND k.prioritaet = ?';  params.push(prioritaet); }
+    if (einsatzbereich) { sql += ' AND FIND_IN_SET(?, k.einsatzbereiche)'; params.push(einsatzbereich); }
     if (search) {
       sql += ' AND (k.organisation LIKE ? OR k.ansprechpartner LIKE ? OR k.ort LIKE ? OR k.email LIKE ?)';
       const s = `%${search}%`;
@@ -496,12 +505,13 @@ router.get('/kontakte/check-duplicate', async (req, res) => {
 
 // POST /api/admin/akquise/kontakte/bulk-update
 router.post('/kontakte/bulk-update', async (req, res) => {
-  const { ids, status, prioritaet } = req.body;
+  const { ids, status, prioritaet, einsatzbereiche } = req.body;
   if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ success: false, message: 'Keine IDs' });
   const updates = [];
   const params = [];
   if (status)     { updates.push('status=?');     params.push(status); }
   if (prioritaet) { updates.push('prioritaet=?'); params.push(prioritaet); }
+  if (einsatzbereiche) { updates.push('einsatzbereiche=?'); params.push(Array.isArray(einsatzbereiche) ? einsatzbereiche.join(',') : einsatzbereiche); }
   if (updates.length === 0) return res.status(400).json({ success: false, message: 'Kein Feld' });
   try {
     const placeholders = ids.map(() => '?').join(',');
@@ -604,20 +614,21 @@ router.post('/kontakte', async (req, res) => {
   const { organisation, typ, ansprechpartner, position, email, telefon, webseite,
           strasse, plz, ort, land, sportart, mitglieder_anzahl, gegruendet_jahr,
           status, prioritaet, quelle, naechste_aktion, naechste_aktion_info, notiz,
-          tags, tda_vereins_id } = req.body;
+          tags, tda_vereins_id, einsatzbereiche } = req.body;
   if (!organisation) return res.status(400).json({ success: false, message: 'Organisation ist Pflichtfeld' });
   try {
     const [result] = await pool.query(`
       INSERT INTO akquise_kontakte
         (organisation, typ, ansprechpartner, position, email, telefon, webseite,
          strasse, plz, ort, land, sportart, mitglieder_anzahl, gegruendet_jahr,
-         status, prioritaet, quelle, naechste_aktion, naechste_aktion_info, notiz,
+         status, prioritaet, quelle, einsatzbereiche, naechste_aktion, naechste_aktion_info, notiz,
          tags, tda_vereins_id, zustaendig_user_id)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `, [organisation, typ||'schule', ansprechpartner||null, position||null, email||null,
         telefon||null, webseite||null, strasse||null, plz||null, ort||null, land||'Deutschland',
         sportart||null, mitglieder_anzahl||null, gegruendet_jahr||null,
         status||'neu', prioritaet||'mittel', quelle||'manuell',
+        (Array.isArray(einsatzbereiche) ? einsatzbereiche.join(',') : einsatzbereiche) || 'dojosoftware,events,verband,veranstaltungen',
         naechste_aktion||null, naechste_aktion_info||null, notiz||null,
         tags ? JSON.stringify(tags) : null, tda_vereins_id||null, req.user?.id||null]);
     const [[kontakt]] = await pool.query('SELECT * FROM akquise_kontakte WHERE id=?', [result.insertId]);
@@ -633,21 +644,22 @@ router.put('/kontakte/:id', async (req, res) => {
   const { organisation, typ, ansprechpartner, position, email, telefon, webseite,
           strasse, plz, ort, land, sportart, mitglieder_anzahl, gegruendet_jahr,
           status, prioritaet, quelle, naechste_aktion, naechste_aktion_info,
-          notiz, tags } = req.body;
+          notiz, tags, einsatzbereiche } = req.body;
   try {
     // Status-Änderung protokollieren
-    const [[alt]] = await pool.query('SELECT status FROM akquise_kontakte WHERE id=?', [req.params.id]);
+    const [[alt]] = await pool.query('SELECT status, einsatzbereiche FROM akquise_kontakte WHERE id=?', [req.params.id]);
     await pool.query(`
       UPDATE akquise_kontakte SET
         organisation=?, typ=?, ansprechpartner=?, position=?, email=?, telefon=?,
         webseite=?, strasse=?, plz=?, ort=?, land=?, sportart=?, mitglieder_anzahl=?,
-        gegruendet_jahr=?, status=?, prioritaet=?, quelle=?,
+        gegruendet_jahr=?, status=?, prioritaet=?, quelle=?, einsatzbereiche=?,
         naechste_aktion=?, naechste_aktion_info=?, notiz=?, tags=?
       WHERE id=?
     `, [organisation, typ||'schule', ansprechpartner||null, position||null, email||null,
         telefon||null, webseite||null, strasse||null, plz||null, ort||null, land||'Deutschland',
         sportart||null, mitglieder_anzahl||null, gegruendet_jahr||null,
         status||'neu', prioritaet||'mittel', quelle||'manuell',
+        (Array.isArray(einsatzbereiche) ? einsatzbereiche.join(',') : einsatzbereiche) || alt?.einsatzbereiche || 'dojosoftware',
         naechste_aktion||null, naechste_aktion_info||null, notiz||null,
         tags ? JSON.stringify(tags) : null, req.params.id]);
     // Status-Wechsel als Aktivität protokollieren
