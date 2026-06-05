@@ -236,7 +236,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
       .catch(() => {});
   }, [artikel?.artikel_id]); // eslint-disable-line
 
-  const dojoId = activeDojo?.id;
+  // WICHTIG: Fallback-Kette wie in TShirtBestellvorlage — beim Super-Admin ist
+  // activeDojo der String 'super-admin' (→ .id undefined), dann wurden Vorlagen-
+  // Dateien/Logos nie geladen und Uploads schlugen still mit 400 fehl.
+  const dojoId = overrideDojoId || vorlage?.dojo_id || activeDojo?.id || null;
 
   const loadLieferanten = useCallback(async (overrideId) => {
     const id = overrideId || dojoId;
@@ -264,7 +267,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
     if (vorlage?.vorlage_id && dojoId) {
       axios.get(`/bestellvorlagen/${vorlage.vorlage_id}/dateien?dojo_id=${dojoId}`)
         .then(res => setDateien(res.data?.data || []))
-        .catch(() => {});
+        .catch(err => console.error('Vorlagen-Dateien konnten nicht geladen werden:', err));
     }
   }, [vorlage?.vorlage_id, dojoId]);
 
@@ -299,7 +302,10 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
         fd, { headers: { 'Content-Type': 'multipart/form-data' } }
       );
       if (res.data?.datei) setDateien(prev => [...prev, res.data.datei]);
-    } catch {}
+    } catch (err) {
+      console.error('Datei-Upload fehlgeschlagen:', err);
+      alert('Datei-Upload fehlgeschlagen: ' + (err.response?.data?.message || err.message));
+    }
     finally {
       setUploadingFile(false);
       uploadTagRef.current = null;

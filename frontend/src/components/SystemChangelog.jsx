@@ -31,6 +31,23 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.19',
+    date: '2026-06-05',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Gi-Bestellvorlage: gespeicherte Logos wurden nicht angezeigt (Super-Admin dojo_id-Bug)',
+    description: 'Die in der Vorlage hochgeladenen Logos waren korrekt auf dem Server gespeichert, wurden aber beim Öffnen nicht geladen: Die Gi-Vorlage nutzte nur activeDojo.id als Dojo-Kontext — beim Super-Admin ist activeDojo aber der String „super-admin" (ohne .id), wodurch der Dateien-Load nie feuerte und Uploads still mit 400 scheiterten. Jetzt gilt dieselbe Fallback-Kette wie in der T-Shirt-Vorlage.',
+    highlights: [
+      '🖼️ LOGOS WIEDER DA: Fallback overrideDojoId → vorlage.dojo_id → activeDojo.id — Vorlagen-Dateien laden jetzt auch im Super-Admin-Kontext',
+      '🔔 FEHLER SICHTBAR: Datei-Upload und Dateien-Load melden Fehler statt still zu scheitern (catch {} entfernt)',
+    ],
+    details: 'GiBestellvorlage.jsx Z.239: dojoId-Konstante um overrideDojoId + vorlage?.dojo_id erweitert (Muster aus TShirtBestellvorlage Z.202). uploadDatei: Fehler-Alert. Dateien-Effect: console.error. Die Logos lagen die ganze Zeit in vorlage_dateien (Server-Upload mit tag=Position funktionierte im Dojo-Kontext).',
+    files: [
+      'frontend/src/components/GiBestellvorlage.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.18',
     date: '2026-06-05',
     type: 'fix',
