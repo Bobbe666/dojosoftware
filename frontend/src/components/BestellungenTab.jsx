@@ -224,18 +224,36 @@ const BestellungenTab = () => {
     // hineingeschrieben (gleiches Muster wie in GiBestellvorlage).
     const win = window.open('', '_blank');
     try {
+      const djId = b.dojo_id || filterDojoId || activeDojo?.id;
       let formdata = typeof b.formdata === 'string' ? JSON.parse(b.formdata) : b.formdata;
       if (!formdata) {
         // formdata wird in der Liste nicht mehr mitgeladen → einzeln nachladen
-        const djId = b.dojo_id || filterDojoId || activeDojo?.id;
         const res = await axios.get(`/gi-bestellungen/${b.bestellung_id}${djId ? `?dojo_id=${djId}` : ''}`);
         const fd = res.data?.data?.formdata;
         formdata = typeof fd === 'string' ? JSON.parse(fd) : fd;
       }
       if (!formdata) throw new Error('Keine Formulardaten zu dieser Bestellung gefunden');
+
+      // Server-Logos der Vorlage einbetten (gleiche Logik wie im Druck-Pfad der Vorlage)
+      // — vorher wurde [] übergeben → PDF zeigte „kein Logo" an allen Positionen
+      let eingebetteteDateien = [];
+      if (b.vorlage_id && djId && !istTShirt(formdata)) {
+        try {
+          const dRes = await axios.get(`/bestellvorlagen/${b.vorlage_id}/dateien?dojo_id=${djId}`);
+          const bilder = (dRes.data?.data || []).filter(d => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(d.original_name));
+          eingebetteteDateien = await Promise.all(bilder.map(async (d) => {
+            try {
+              const blob = await (await fetch(`${window.location.origin}${d.pfad}`)).blob();
+              const b64 = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(blob); });
+              return { ...d, dataUrl: b64 };
+            } catch { return { ...d, dataUrl: null }; }
+          }));
+        } catch (e) { console.error('Vorlagen-Logos konnten nicht geladen werden:', e); }
+      }
+
       const html = istTShirt(formdata)
         ? buildTShirtPdf(formdata, b.bestellung_id)
-        : buildPdfHtml(formdata, window.location.origin, [], b.bestellung_id);
+        : buildPdfHtml(formdata, window.location.origin, eingebetteteDateien, b.bestellung_id);
       if (win) {
         win.document.open();
         win.document.write(html);
