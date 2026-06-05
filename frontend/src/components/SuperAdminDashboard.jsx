@@ -24,7 +24,6 @@ import StilErinnerungBanner from './StilErinnerungBanner';
 // Lazy-load all tab-specific components so they don't block initial render
 const ContractsTab        = lazy(() => import('./ContractsTab'));
 const UsersTab            = lazy(() => import('./UsersTab'));
-const FinanzenTab         = lazy(() => import('./FinanzenTab'));
 const SuperAdminFinanzen  = lazy(() => import('./SuperAdminFinanzen'));
 const FehlendeMandateTab  = lazy(() => import('./FinanzenTab').then(m => ({ default: m.FehlendeMandateTab || (() => null) })));
 const BuchhaltungTab      = lazy(() => import('./BuchhaltungTab'));
@@ -54,6 +53,7 @@ const PlatformStatusTab     = lazy(() => import('./PlatformStatusTab'));
 const OnboardingStatusTab   = lazy(() => import('./OnboardingStatusTab'));
 const MRRTab                = lazy(() => import('./MRRTab'));
 const InfraChecks           = lazy(() => import('./InfraChecks'));
+const WachstumPrognose      = lazy(() => import('./WachstumPrognose'));
 
 const TabLoader = () => <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Lädt…</div>;
 
@@ -115,6 +115,7 @@ const SuperAdminDashboard = () => {
     finanzen: 'finanzen',
     system: 'status',
     plattform: 'zentrale',
+    entwicklung: 'ziele',
   });
   const setSubTab = (group, tab) => setSubActiveTab(prev => ({ ...prev, [group]: tab }));
   // State für Lastschrift Sub-Tab
@@ -1355,9 +1356,20 @@ const SuperAdminDashboard = () => {
           </Suspense>
         )}
 
-        {/* ═══ Entwicklung ══════════════════════════════════════════ */}
+        {/* ═══ Entwicklung — Statistik-Hub ══════════════════════════ */}
         {activeTab === 'entwicklung' && (
-          <ZieleEntwicklung bereich="org" />
+          <div>
+            {renderSubTabs('entwicklung', [
+              { id: 'ziele',    icon: '🎯', label: 'Ziele & Planung' },
+              { id: 'wachstum', icon: '📈', label: 'Wachstum & Prognose' },
+            ])}
+            {(subActiveTab.entwicklung ?? 'ziele') === 'ziele' && <ZieleEntwicklung bereich="org" />}
+            {subActiveTab.entwicklung === 'wachstum' && (
+              <Suspense fallback={<TabLoader />}>
+                <WachstumPrognose />
+              </Suspense>
+            )}
+          </div>
         )}
 
         {/* ═══ Finanzen ══════════════════════════════════════════════ */}

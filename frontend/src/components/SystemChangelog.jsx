@@ -31,6 +31,26 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.15',
+    date: '2026-06-05',
+    type: 'feature',
+    zielgruppe: 'intern', // Statistik-Hub — nur intern
+    title: 'Statistik-Hub: Entwicklung-Tab mit „Wachstum & Prognose"-Charts',
+    description: 'Der Entwicklung-Tab ist jetzt ein Hub mit zwei Untertabs: „Ziele & Planung" (5-Jahres-Planung wie bisher) und neu „Wachstum & Prognose" — Verlaufs-Charts der letzten 12 Monate plus 12-Monats-Prognose für Dojos, Verbandsmitglieder und Mitglieder, direkt aus der zentralen Prognose-Engine. Damit ist Paket C des Dashboard-Aufräumens abgeschlossen.',
+    highlights: [
+      '📈 NEU: Wachstum & Prognose — Bestands-Verlauf (12 Monate) + gestrichelte Prognose-Linie (12 Monate) pro Kennzahl, mit aktuell / +3 / +6 / +12 Monate',
+      '🎯 Ziele & Planung unverändert als erster Untertab',
+      '🧹 Tote Imports entfernt (FinanzenTab im SuperAdminDashboard)',
+      '📋 BEWUSST NICHT GEMACHT: BuchhaltungTab/VerbandsMitglieder-Split — beide sind auf Tab-Ebene bereits componentized; die verbleibenden Inline-Modals haben 25+ Parent-Referenzen, Extraktion wäre Kosmetik mit Regressionsrisiko',
+    ],
+    details: 'WachstumPrognose.jsx: konsumiert /api/admin/prognose, rekonstruiert Bestands-Verlauf aus monatlichen Zugängen (aktuell minus künftige Deltas rückwärts), AreaChart mit Prognose-Fortschreibung (wachstum_monat). SuperAdminDashboard: entwicklung-Tab mit renderSubTabs (ziele|wachstum), subActiveTab.entwicklung default ziele.',
+    files: [
+      'frontend/src/components/WachstumPrognose.jsx',
+      'frontend/src/components/SuperAdminDashboard.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.14',
     date: '2026-06-05',
     type: 'improvement',
