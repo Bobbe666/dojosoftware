@@ -31,6 +31,23 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.34',
+    date: '2026-06-07',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'To-Do-Liste aus Apple-Reminders importiert + thematische Bereiche',
+    description: '100 persönliche Aufgaben aus den Apple-Reminders ins zentrale To-Do-System übernommen — eine Plattform statt zwei. Neue thematische Bereiche zum Filtern: Finanzen, Prüfungen, Training, Shop, Apps, Website, System, Mitglieder, Setup, HoF.',
+    highlights: [
+      '🍎 100 To-Dos importiert, nach Bereich + Priorität sortiert (WICHTIG-Block → hoch/dringend)',
+      '🏷️ NEUE FILTER-BEREICHE im To-Do-Panel: 💰 Finanzen, 🥋 Prüfungen, 🏋️ Training, 🛒 Shop, 📱 Apps, 🌐 Website, ⚙️ System, 👥 Mitglieder, 🔧 Setup, 🌟 HoF',
+      '📊 Verteilung: System 18 · Finanzen 17 · Apps 16 · Prüfungen 13 · Shop 12 · Mitglieder 7 · Website 7 …',
+    ],
+    details: 'TodoPanel.jsx: KONTEXT_LABELS um thematische Bereiche erweitert. Import per Bulk-INSERT (dojo_id NULL, erstellt_von admin). Tauchen automatisch im Heute-Tab + Briefing auf.',
+    files: [
+      'frontend/src/components/TodoPanel.jsx',
+    ],
+  },
+  {
     version: '3.0.33',
     date: '2026-06-07',
     type: 'fix',

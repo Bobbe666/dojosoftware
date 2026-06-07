@@ -8,8 +8,11 @@ const PRIO_LABELS = {
 };
 const STATUS_LABEL = { offen: 'Offen', in_bearbeitung: 'In Arbeit', erledigt: 'Erledigt' };
 const KONTEXT_LABELS = {
-  allgemein: 'Allgemein', dojosoftware: 'DojoSoftware', events: 'Events',
-  hof: 'Hall of Fame', verband: 'Verband', lizenzen: 'Lizenzen',
+  allgemein: 'Allgemein',
+  finanzen: '💰 Finanzen', pruefungen: '🥋 Prüfungen', training: '🏋️ Training',
+  shop: '🛒 Shop', apps: '📱 Apps', website: '🌐 Website', system: '⚙️ System',
+  mitglieder: '👥 Mitglieder', setup: '🔧 Setup',
+  events: '🎪 Events', hof: '🌟 Hall of Fame', verband: 'Verband', lizenzen: 'Lizenzen',
 };
 // Label für einen Kontext — freie Werte (z.B. "Event: Sommercamp") direkt anzeigen
 const kontextLabel = (k) => KONTEXT_LABELS[k] || k;
