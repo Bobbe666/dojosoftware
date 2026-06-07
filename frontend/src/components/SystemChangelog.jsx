@@ -31,6 +31,26 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.25',
+    date: '2026-06-07',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: '☀️ Heute-Tab: permanente Tagesansicht als Standard im Super-Admin-Dashboard',
+    description: 'Neuer Tab „Heute" ganz links (Standard beim Öffnen): überfällige + fällige To-Dos direkt abhakbar, Termine aller Plattformen (7 Tage), Neues (Meldungen, Pilot-Bewerbungen, Feedback) mit Sprung zum passenden Tab. Das tägliche Briefing-Popup erscheint nur noch, wenn etwas ÜBERFÄLLIG ist.',
+    highlights: [
+      '☀️ HEUTE-TAB als Default — das Briefing als dauerhafte Seite statt flüchtigem Popup',
+      '☑ TO-DOS DIREKT ABHAKBAR (optimistisch, mit Undo) — neuer Endpoint POST /api/briefing/todo/:id/status (PUT /todos/:id hätte alle Felder überschrieben)',
+      '📅 TERMINE + 🔔 NEUES in zwei Spalten; „Neues"-Einträge springen per Klick zu Kommunikation/PlattformZentrale',
+      '🔕 POPUP ENTSCHÄRFT: morgens nur noch bei überfälligen To-Dos — sonst landet man direkt im Heute-Tab',
+    ],
+    details: 'Frontend: HeuteTab.jsx + HeuteTab.css, SuperAdminDashboard.jsx (Tab vorne, Default heute, Popup-Gate via /briefing). Backend: routes/briefing.js POST /todo/:id/status (Status-only-Update). Changelog-Modal-Fix (Portal) aus demselben Tag inklusive.',
+    files: [
+      'frontend/src/components/HeuteTab.jsx',
+      'frontend/src/components/SuperAdminDashboard.jsx',
+      'backend/routes/briefing.js',
+    ],
+  },
+  {
     version: '3.0.24',
     date: '2026-06-07',
     type: 'feature',

@@ -4,8 +4,11 @@
 // ============================================================================
 const express = require('express');
 const router  = express.Router();
+const db      = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { buildBriefing, syncEventChecklisten } = require('../services/briefingService');
+
+const pool = db.promise();
 
 // Super-Admin Guard (wie demo-termine.js)
 function onlySuperAdmin(req, res, next) {
@@ -23,6 +26,24 @@ router.get('/', authenticateToken, onlySuperAdmin, async (req, res) => {
   } catch (err) {
     console.error('[Briefing] Fehler:', err.message);
     res.status(500).json({ success: false, error: 'Briefing konnte nicht geladen werden.' });
+  }
+});
+
+// POST /api/briefing/todo/:id/status — To-Do aus der Heute-Ansicht abhaken/öffnen
+// (gezieltes Status-Update; PUT /api/todos/:id überschreibt ALLE Felder)
+router.post('/todo/:id(\\d+)/status', authenticateToken, onlySuperAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['offen', 'in_bearbeitung', 'erledigt'].includes(status)) {
+      return res.status(400).json({ success: false, error: 'Ungültiger Status' });
+    }
+    const [result] = await pool.query('UPDATE todos SET status = ? WHERE id = ?', [status, req.params.id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, error: 'To-Do nicht gefunden' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

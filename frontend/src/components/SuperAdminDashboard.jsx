@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import '../styles/SuperAdminDashboard.css';
 import TodoPanel from './TodoPanel';
+import HeuteTab from './HeuteTab';
 import SslWarnungen from './SslWarnungen';
 import JahreszieleProgress from './JahreszieleProgress';
 import LastschriftAutoProtokollBanner from './LastschriftAutoProtokollBanner';
@@ -107,8 +108,8 @@ const SuperAdminDashboard = () => {
   // State für Daily Briefing Popup
   const [showDailyBriefing, setShowDailyBriefing] = useState(false);
   const [sslWarnings, setSslWarnings] = useState([]);
-  // State für Tab-Navigation
-  const [activeTab, setActiveTab] = useState('overview');
+  // State für Tab-Navigation — ☀️ Heute ist die Standard-Ansicht
+  const [activeTab, setActiveTab] = useState('heute');
   // State für Sub-Tabs pro Gruppe
   const [subActiveTab, setSubActiveTab] = useState({
     dojosoftware: 'lizenzen',
@@ -208,9 +209,17 @@ const SuperAdminDashboard = () => {
       if (globalRes.status === 'fulfilled')  setGlobalStats(globalRes.value.data.stats);
       if (overviewRes.status === 'fulfilled' && overviewRes.value.data.success) setOverviewSummary(overviewRes.value.data);
 
-      // Daily Briefing: einmal pro Tag anzeigen
+      // Daily Briefing Popup: einmal pro Tag — aber nur noch, wenn etwas
+      // ÜBERFÄLLIG ist (die normale Übersicht ist jetzt der ☀️ Heute-Tab)
       const today = new Date().toDateString();
-      if (localStorage.getItem('sa-briefing-date') !== today) setShowDailyBriefing(true);
+      if (localStorage.getItem('sa-briefing-date') !== today) {
+        axios.get('/briefing', { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => {
+            if ((r.data.briefing?.ueberfaellige_todos || []).length > 0) setShowDailyBriefing(true);
+            else localStorage.setItem('sa-briefing-date', today);
+          })
+          .catch(() => {});
+      }
 
     } catch (err) {
       console.error('❌ Fehler beim Laden der Super-Admin Daten:', err);
@@ -745,6 +754,7 @@ const SuperAdminDashboard = () => {
 
   // Tab Definitions — produkt-basierte Hauptnavigation
   const tabs = [
+    { id: 'heute',         label: 'Heute',          icon: '☀️' },
     { id: 'overview',      label: 'Cockpit',        icon: '🎛️' },
     { id: 'todos',         label: 'To Do',          icon: '✅' },
     { id: 'verband',       label: 'Verband',        icon: '🏆' },
@@ -813,6 +823,10 @@ const SuperAdminDashboard = () => {
       {/* Tab Content */}
       <Suspense fallback={<TabLoader />}>
       <div className="tab-content">
+        {activeTab === 'heute' && (
+          <HeuteTab onNavigate={(tab) => setActiveTab(tab)} />
+        )}
+
         {activeTab === 'overview' && (
           <>
             <LastschriftAutoProtokollBanner dojoId="all" />
