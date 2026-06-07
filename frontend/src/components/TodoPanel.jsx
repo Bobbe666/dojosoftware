@@ -8,9 +8,11 @@ const PRIO_LABELS = {
 };
 const STATUS_LABEL = { offen: 'Offen', in_bearbeitung: 'In Arbeit', erledigt: 'Erledigt' };
 const KONTEXT_LABELS = {
-  allgemein: 'Allgemein', lizenzen: 'Lizenzen', verband: 'Verband',
-  hof: 'Hall of Fame', events: 'Events',
+  allgemein: 'Allgemein', dojosoftware: 'DojoSoftware', events: 'Events',
+  hof: 'Hall of Fame', verband: 'Verband', lizenzen: 'Lizenzen',
 };
+// Label für einen Kontext — freie Werte (z.B. "Event: Sommercamp") direkt anzeigen
+const kontextLabel = (k) => KONTEXT_LABELS[k] || k;
 
 const EMPTY_FORM = {
   titel: '', beschreibung: '', prioritaet: 'normal',
@@ -446,7 +448,7 @@ export default function TodoPanel({ compact = false, fixedKontext = null }) {
                     <span className={`todo-badge todo-badge--${t.prioritaet}`}>{PRIO_LABELS[t.prioritaet]}</span>
                   )}
                   {!fixedKontext && t.kontext !== 'allgemein' && (
-                    <span className="todo-badge todo-badge--kontext">{KONTEXT_LABELS[t.kontext]}</span>
+                    <span className="todo-badge todo-badge--kontext">{kontextLabel(t.kontext)}</span>
                   )}
                   {t.faellig_am && (
                     <span className={`todo-badge ${isOverdue(t.faellig_am) && t.status !== 'erledigt' ? 'todo-badge--due-overdue' : 'todo-badge--due'}`}>

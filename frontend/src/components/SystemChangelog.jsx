@@ -31,6 +31,24 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.33',
+    date: '2026-06-07',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'To-Do-Bereiche: freier Kontext + neuer Bereich „DojoSoftware"',
+    description: 'Die kontext-Spalte war ein starres ENUM — die Event-Checklisten und der Quick-Add (Kontext „Event: …") wären daran gescheitert. Jetzt Freitext. Neuer Bereich „DojoSoftware" für die Aufgabenverwaltung; Vorbereitung für den Import der bisherigen Apple-Reminders.',
+    highlights: [
+      '🏷️ KONTEXT als Freitext (Migration 195) — behebt latenten Bug bei Auto-Checklisten & Quick-Add',
+      '💻 NEUER BEREICH „DojoSoftware" neben Events / Hall of Fame',
+      '🍎 VORBEREITUNG: Import der persönlichen To-Dos aus Apple-Reminders ins zentrale To-Do-System',
+    ],
+    details: 'Migration 195 (todos.kontext ENUM→VARCHAR(80)). TodoPanel.jsx: KONTEXT_LABELS um dojosoftware ergänzt, kontextLabel()-Fallback für freie Werte (z.B. „Event: …").',
+    files: [
+      'backend/migrations/195_todos_kontext_freitext.sql',
+      'frontend/src/components/TodoPanel.jsx',
+    ],
+  },
+  {
     version: '3.0.32',
     date: '2026-06-07',
     type: 'feature',
