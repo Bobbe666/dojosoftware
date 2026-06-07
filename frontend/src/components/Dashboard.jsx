@@ -140,6 +140,9 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState('checkin');
   const [hilfeSupportView, setHilfeSupportView] = useState(null);
   const [einstellungenView, setEinstellungenView] = useState(null);
+  // Changelog-Popup beim Klick auf die Versionsnummer (funktioniert in ALLEN
+  // Dashboard-Varianten — Super-Admin/Verband/Support/Shop haben keinen Einstellungen-Tab)
+  const [showVersionChangelog, setShowVersionChangelog] = useState(false);
 
   // Sidebar collapsed state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
@@ -954,7 +957,15 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🏆 TDA Int'l Org - Super-Admin</h2>
-            <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
+            <span className="version-badge" style={{ cursor: 'pointer' }} title="Changelog anzeigen" onClick={() => setShowVersionChangelog(true)}>v{config.app.version}</span>
+            {showVersionChangelog && (
+              <div onClick={() => setShowVersionChangelog(false)} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(26,26,46,0.99)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '12px', maxWidth: '720px', width: '100%', maxHeight: '80vh', overflowY: 'auto', padding: '1.5rem', position: 'relative' }}>
+                  <button onClick={() => setShowVersionChangelog(false)} aria-label="Schließen" style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1rem', cursor: 'pointer' }}>✕</button>
+                  <SystemChangelog maxItems={10} isAdmin={role === 'admin' || role === 'super_admin'} />
+                </div>
+              </div>
+            )}
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -1037,7 +1048,15 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🌐 TDA Verband</h2>
-            <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
+            <span className="version-badge" style={{ cursor: 'pointer' }} title="Changelog anzeigen" onClick={() => setShowVersionChangelog(true)}>v{config.app.version}</span>
+            {showVersionChangelog && (
+              <div onClick={() => setShowVersionChangelog(false)} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(26,26,46,0.99)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '12px', maxWidth: '720px', width: '100%', maxHeight: '80vh', overflowY: 'auto', padding: '1.5rem', position: 'relative' }}>
+                  <button onClick={() => setShowVersionChangelog(false)} aria-label="Schließen" style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1rem', cursor: 'pointer' }}>✕</button>
+                  <SystemChangelog maxItems={10} isAdmin={role === 'admin' || role === 'super_admin'} />
+                </div>
+              </div>
+            )}
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -1102,7 +1121,15 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🎫 Support Center</h2>
-            <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
+            <span className="version-badge" style={{ cursor: 'pointer' }} title="Changelog anzeigen" onClick={() => setShowVersionChangelog(true)}>v{config.app.version}</span>
+            {showVersionChangelog && (
+              <div onClick={() => setShowVersionChangelog(false)} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(26,26,46,0.99)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '12px', maxWidth: '720px', width: '100%', maxHeight: '80vh', overflowY: 'auto', padding: '1.5rem', position: 'relative' }}>
+                  <button onClick={() => setShowVersionChangelog(false)} aria-label="Schließen" style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1rem', cursor: 'pointer' }}>✕</button>
+                  <SystemChangelog maxItems={10} isAdmin={role === 'admin' || role === 'super_admin'} />
+                </div>
+              </div>
+            )}
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -1166,7 +1193,15 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🛍️ TDA Shop</h2>
-            <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
+            <span className="version-badge" style={{ cursor: 'pointer' }} title="Changelog anzeigen" onClick={() => setShowVersionChangelog(true)}>v{config.app.version}</span>
+            {showVersionChangelog && (
+              <div onClick={() => setShowVersionChangelog(false)} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(26,26,46,0.99)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '12px', maxWidth: '720px', width: '100%', maxHeight: '80vh', overflowY: 'auto', padding: '1.5rem', position: 'relative' }}>
+                  <button onClick={() => setShowVersionChangelog(false)} aria-label="Schließen" style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1rem', cursor: 'pointer' }}>✕</button>
+                  <SystemChangelog maxItems={10} isAdmin={role === 'admin' || role === 'super_admin'} />
+                </div>
+              </div>
+            )}
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -1212,7 +1247,15 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>📣 Marketing Hub</h2>
-            <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
+            <span className="version-badge" style={{ cursor: 'pointer' }} title="Changelog anzeigen" onClick={() => setShowVersionChangelog(true)}>v{config.app.version}</span>
+            {showVersionChangelog && (
+              <div onClick={() => setShowVersionChangelog(false)} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(26,26,46,0.99)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '12px', maxWidth: '720px', width: '100%', maxHeight: '80vh', overflowY: 'auto', padding: '1.5rem', position: 'relative' }}>
+                  <button onClick={() => setShowVersionChangelog(false)} aria-label="Schließen" style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1rem', cursor: 'pointer' }}>✕</button>
+                  <SystemChangelog maxItems={10} isAdmin={role === 'admin' || role === 'super_admin'} />
+                </div>
+              </div>
+            )}
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -1258,7 +1301,15 @@ function Dashboard() {
         <div className="dashboard-header-left">
           <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
           <h2>{headerTitle}</h2>
-          <span className="version-badge" style={{ cursor: 'pointer' }} title="System & Info öffnen" onClick={() => { setActiveTab('einstellungen'); setEinstellungenView('info'); }}>v{config.app.version}</span>
+          <span className="version-badge" style={{ cursor: 'pointer' }} title="Changelog anzeigen" onClick={() => setShowVersionChangelog(true)}>v{config.app.version}</span>
+          {showVersionChangelog && (
+            <div onClick={() => setShowVersionChangelog(false)} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(26,26,46,0.99)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '12px', maxWidth: '720px', width: '100%', maxHeight: '80vh', overflowY: 'auto', padding: '1.5rem', position: 'relative' }}>
+                <button onClick={() => setShowVersionChangelog(false)} aria-label="Schließen" style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1rem', cursor: 'pointer' }}>✕</button>
+                <SystemChangelog maxItems={10} isAdmin={role === 'admin' || role === 'super_admin'} />
+              </div>
+            </div>
+          )}
         </div>
         <div className="dashboard-header-right">
           {(role === 'admin' || role === 'super_admin') && <DojoSwitcher />}
