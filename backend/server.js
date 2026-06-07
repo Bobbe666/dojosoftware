@@ -1726,6 +1726,15 @@ try {
   logger.error("Fehler beim Laden der Route", { route: "pilot-feedback", error: error.message });
 }
 
+// 10.2f TÄGLICHES BRIEFING (Super-Admin Tagesübersicht)
+try {
+  const briefingRouter = require(path.join(__dirname, "routes", "briefing.js"));
+  app.use("/api/briefing", briefingRouter);
+  logger.success("Route gemountet", { path: "/api/briefing" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "briefing", error: error.message });
+}
+
 // 10.2e ENTWICKLUNGS-ANFRAGEN (Homepage/Software-Anfragen von tda-intl.org)
 try {
   const entwicklungsAnfragenRouter = require(path.join(__dirname, "routes", "entwicklungs-anfragen.js"));

@@ -31,6 +31,30 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.24',
+    date: '2026-06-07',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Tägliches Briefing erweitert: Terminplaner, To-Dos & automatische Event-Checklisten',
+    description: 'Das „Dein Tag"-Popup (1× täglich beim ersten Super-Admin-Login) zeigt jetzt zusätzlich: überfällige + diese Woche fällige To-Dos, alle Termine der nächsten 7 Tage (Turniere, Events, HoF, Prüfungen, Demos) und neue Pilot-Bewerbungen. Für kommende Events/HoF-Veranstaltungen werden automatisch Aufgaben-Checklisten angelegt. Dazu täglich 7:00 eine Briefing-Mail.',
+    highlights: [
+      '📋 TO-DOS IM BRIEFING: 🔥 überfällig (rot) + fällig in 7 Tagen (gelb) — Klick öffnet todo.tda-intl.org',
+      '📅 TERMINPLANER: heute + nächste 7 Tage aus ALLEN Plattformen (Kalender-Aggregation wiederverwendet)',
+      '✅ AUTO-CHECKLISTEN: pro kommendem Event/HoF-Termin 6 Aufgaben mit Fristen (Einladungen -42d … Nachbereitung +1d) — einmalig pro Event, gelöschte Aufgaben bleiben gelöscht (Log-Tabelle)',
+      '📧 MORGEN-MAIL 7:00: dieselbe Übersicht als E-Mail an info@tda-intl.com (Cron)',
+      '♻️ REFACTOR: Kalender-Aggregation aus plattform-zentrale.js nach services/kalenderAggregation.js extrahiert',
+    ],
+    details: 'Backend: services/briefingService.js (buildBriefing, syncEventChecklisten, sendBriefingMail), routes/briefing.js (GET /api/briefing, POST /sync-checklisten), Migration 192 (briefing_event_checklisten), Cron 07:00. Frontend: DailyBriefing.jsx lädt /api/briefing selbst dazu (Rest des Popups unverändert).',
+    files: [
+      'backend/services/briefingService.js',
+      'backend/services/kalenderAggregation.js',
+      'backend/routes/briefing.js',
+      'backend/migrations/192_briefing_event_checklisten.sql',
+      'backend/cron-jobs.js',
+      'frontend/src/components/DailyBriefing.jsx',
+    ],
+  },
+  {
     version: '3.0.23',
     date: '2026-06-07',
     type: 'feature',

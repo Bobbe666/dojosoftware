@@ -494,6 +494,22 @@ function initCronJobs() {
     }
   });
 
+  // ── Tägliches Briefing ───────────────────────────────────────────────────
+  // Täglich um 07:00 — Event-Checklisten anlegen + "Dein Tag"-Mail an Admin
+  cron.schedule('0 7 * * *', async () => {
+    try {
+      const { syncEventChecklisten, sendBriefingMail } = require('./services/briefingService');
+      const sync = await syncEventChecklisten();
+      if (sync.neueChecklisten > 0) {
+        logger.success(`📋 Event-Checklisten: ${sync.neueChecklisten} neu (${sync.neueAufgaben} Aufgaben)`);
+      }
+      await sendBriefingMail();
+      logger.success('☀️ Briefing-Mail versendet');
+    } catch (error) {
+      logger.error('❌ Briefing Cron Fehler', { error: error.message });
+    }
+  });
+
   // ── Pilot-Partner Feedback-Umfragen ──────────────────────────────────────
   // Täglich um 10:00 — plant + versendet fällige Fragebögen an Pilot-Partner
   // (Tag 14 Einrichtung, Tag 28 Erfahrungen, danach alle 28 Tage; Erinnerung nach 7 Tagen)

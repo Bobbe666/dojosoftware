@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import SslWarnungen from './SslWarnungen';
 import JahreszieleProgress from './JahreszieleProgress';
 
@@ -9,12 +10,31 @@ import JahreszieleProgress from './JahreszieleProgress';
 //   globalStats, overviewSummary, unreadCount, sslWarnings — Daten
 //   onClose()           — schließen + Datum in localStorage merken (Parent)
 //   onNavigate(tabId)   — Tab-Wechsel im Dashboard (schließt vorher das Popup)
+// Lädt zusätzlich selbst GET /api/briefing:
+//   To-Dos (überfällig + nächste 7 Tage) · Termine aller Plattformen ·
+//   neue Pilot-Bewerbungen  (Backend: services/briefingService.js)
 // ============================================================================
+
+const PRIO_ICON = { dringend: '🔴', hoch: '🟠', normal: '🟡', niedrig: '⚪' };
+const TYP_ICON = { turnier: '🥊', event: '🎪', hof: '🌟', pruefung: '🥋', demo: '🎯' };
+
+const fmtTag = (d) =>
+  new Date(d).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
 
 const DailyBriefing = ({ globalStats, overviewSummary, unreadCount, sslWarnings, onClose, onNavigate }) => {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Guten Morgen' : hour < 18 ? 'Guten Tag' : 'Guten Abend';
   const eingaenge = overviewSummary?.neue_eingaenge;
+
+  // Terminplaner-Daten (To-Dos + plattformübergreifende Termine)
+  const [agenda, setAgenda] = useState(null);
+  useEffect(() => {
+    const token = localStorage.getItem('dojo_auth_token');
+    if (!token) return;
+    axios.get('/briefing', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setAgenda(r.data.briefing))
+      .catch(() => {}); // Briefing-Zusatz nicht ladbar → Rest des Popups bleibt nutzbar
+  }, []);
 
   return (
     <div className="sad-briefing-overlay" onClick={onClose}>
@@ -55,6 +75,56 @@ const DailyBriefing = ({ globalStats, overviewSummary, unreadCount, sslWarnings,
               ))}
             </div>
           </div>
+
+          {/* ── Terminplaner: To-Dos + Termine aller Plattformen ── */}
+          {agenda && (agenda.ueberfaellige_todos.length > 0 || agenda.faellige_todos.length > 0) && (
+            <div>
+              <div className="sad-trial-warning-meta">📋 Deine Aufgaben</div>
+              <div className="sad2-flex-col-04">
+                {agenda.ueberfaellige_todos.map((t) => (
+                  <a key={`ut-${t.id}`} href="https://todo.tda-intl.org" target="_blank" rel="noreferrer"
+                     className="sad-trial-item sad-trial-item--urgent" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                    <span className="sad2-fw600">🔥 {PRIO_ICON[t.prioritaet] || ''} {t.titel}{t.kontext ? ` · ${t.kontext}` : ''}</span>
+                    <span className="sad-trial-days--urgent">überfällig seit {fmtTag(t.faellig_am)}</span>
+                  </a>
+                ))}
+                {agenda.faellige_todos.map((t) => (
+                  <a key={`ft-${t.id}`} href="https://todo.tda-intl.org" target="_blank" rel="noreferrer"
+                     className="sad-trial-item sad-trial-item--warning" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                    <span className="sad2-fw600">{PRIO_ICON[t.prioritaet] || '🟡'} {t.titel}{t.kontext ? ` · ${t.kontext}` : ''}</span>
+                    <span className="sad-trial-days--warning">fällig {fmtTag(t.faellig_am)}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {agenda && (agenda.termine_heute.length > 0 || agenda.termine_demnaechst.length > 0) && (
+            <div>
+              <div className="sad-trial-warning-meta">📅 Termine — heute & nächste 7 Tage</div>
+              <div className="sad2-flex-col-04">
+                {agenda.termine_heute.map((t) => (
+                  <div key={t.id} className="sad-trial-item sad-trial-item--urgent">
+                    <span className="sad2-fw600">{TYP_ICON[t.typ] || '📅'} HEUTE{t.uhrzeit ? ` ${t.uhrzeit}` : ''}: {t.titel}{t.ort ? ` (${t.ort})` : ''}</span>
+                  </div>
+                ))}
+                {agenda.termine_demnaechst.map((t) => (
+                  <div key={t.id} className="sad-trial-item sad-trial-item--warning">
+                    <span className="sad2-fw600">{TYP_ICON[t.typ] || '📅'} {t.titel}{t.ort ? ` (${t.ort})` : ''}</span>
+                    <span className="sad-trial-days--warning">{fmtTag(t.datum)}{t.uhrzeit ? ` ${t.uhrzeit}` : ''}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {agenda?.neues?.neue_pilot_bewerbungen > 0 && (
+            <div className="sad2-flex-col-04">
+              <div className="sad-trial-item sad-trial-item--warning">
+                <span className="sad2-fw600">🏆 {agenda.neues.neue_pilot_bewerbungen} neue Pilot-Bewerbung(en) — PlattformZentrale → Pilot-Programm</span>
+              </div>
+            </div>
+          )}
 
           {/* Neue Eingänge — alles, was bearbeitet werden will, an einem Ort */}
           {(eingaenge?.verband_registrierungen?.length > 0 || eingaenge?.kontakt_anfragen?.length > 0 ||
