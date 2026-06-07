@@ -31,6 +31,24 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.31',
+    date: '2026-06-07',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Heute-Tab: 🌟 Kommende Highlights — große Events der nächsten 6 Monate',
+    description: 'HoF-Events, Events und Turniere liegen meist außerhalb des 7-Tage-Fensters und waren im Heute-Tab unsichtbar. Neue Sektion „Kommende Highlights": die nächsten großen Termine (max. 5) der kommenden 6 Monate, klickbar verlinkt (HoF → hof.tda-intl.org, Events/Turniere → events.tda-intl.org). Auch in der Morgen-Mail enthalten.',
+    highlights: [
+      '🌟 HIGHLIGHTS-SEKTION im Heute-Tab: HoF/Events/Turniere bis 6 Monate voraus, mit Jahresangabe',
+      '🔗 ALLE verlinkt — Klick öffnet die jeweilige Plattform',
+      '📧 MORGEN-MAIL zeigt die Highlights ebenfalls',
+    ],
+    details: 'briefingService.js: Kalender-Abruf auf 180 Tage erweitert, Split in 7-Tage-Termine + Highlights (typ hof/event/turnier, max 5). HeuteTab.jsx: neue Sektion, TerminZeile mit mitJahr-Datum.',
+    files: [
+      'backend/services/briefingService.js',
+      'frontend/src/components/HeuteTab.jsx',
+    ],
+  },
+  {
     version: '3.0.30',
     date: '2026-06-07',
     type: 'fix',

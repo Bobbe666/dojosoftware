@@ -96,6 +96,7 @@ async function syncEventChecklisten() {
 async function buildBriefing() {
   const heute = toLocalDate(new Date());
   const bis = addDays(heute, VORSCHAU_TAGE);
+  const bisHighlights = addDays(heute, 180); // große Events: 6 Monate Vorschau
 
   const [
     [ueberfaellig],
@@ -117,7 +118,7 @@ async function buildBriefing() {
       WHERE status != 'erledigt' AND faellig_am BETWEEN ? AND ?
       ORDER BY faellig_am ASC LIMIT 25
     `, [heute, bis]),
-    collectKalenderEintraege(heute, bis),
+    collectKalenderEintraege(heute, bisHighlights),
     pool.query(`SELECT COUNT(*) AS n FROM super_admin_notifications WHERE gelesen = FALSE AND archiviert = FALSE`),
     pool.query(`SELECT COUNT(*) AS n FROM pilot_bewerbungen WHERE status = 'neu'`),
     pool.query(`
@@ -127,11 +128,17 @@ async function buildBriefing() {
     `),
   ]);
 
-  const termine = kalender.events.map(e => ({
+  const alle = kalender.events.map(e => ({
     ...e,
     datum: String(e.datum).slice(0, 10),
     heute: String(e.datum).slice(0, 10) === heute,
   }));
+  // 7-Tage-Fenster für die Tagesansicht …
+  const termine = alle.filter(t => t.datum <= bis);
+  // … plus große Events (HoF/Events/Turniere) darüber hinaus als Highlights
+  const highlights = alle
+    .filter(t => t.datum > bis && ['hof', 'event', 'turnier'].includes(t.typ))
+    .slice(0, 5);
 
   return {
     datum: heute,
@@ -139,6 +146,7 @@ async function buildBriefing() {
     faellige_todos: faellig,
     termine_heute: termine.filter(t => t.heute),
     termine_demnaechst: termine.filter(t => !t.heute),
+    highlights,
     neues: {
       ungelesene_meldungen: meldungen.n,
       neue_pilot_bewerbungen: bewerbungen.n,
@@ -189,6 +197,7 @@ function renderBriefingHtml(b) {
     sektion(`✅ Zu tun — nächste ${VORSCHAU_TAGE} Tage (${b.faellige_todos.length})`, liste(b.faellige_todos, todoZeile)) +
     sektion(`📅 Heute (${b.termine_heute.length})`, liste(b.termine_heute, terminZeile)) +
     sektion(`🗓 Demnächst (${b.termine_demnaechst.length})`, liste(b.termine_demnaechst, terminZeile)) +
+    sektion(`🌟 Kommende Highlights (${(b.highlights || []).length})`, liste(b.highlights || [], terminZeile)) +
     sektion('🔔 Neues', neuesItems.length ? `<ul style="margin:0;padding-left:18px">${neuesItems.map(i => `<li style="margin:4px 0">${i}</li>`).join('')}</ul>` : '') +
     `<p style="margin-top:20px"><a href="https://dojo.tda-intl.org" style="color:#b8860b">→ Zum Dashboard</a> · <a href="https://todo.tda-intl.org" style="color:#b8860b">→ Zu den Aufgaben</a></p>` +
     `</div>`

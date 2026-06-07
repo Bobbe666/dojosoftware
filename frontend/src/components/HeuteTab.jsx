@@ -101,13 +101,14 @@ export default function HeuteTab({ onNavigate }) {
 
   const { ueberfaellige_todos: ueberfaellig, faellige_todos: faellig,
           termine_heute: heute, termine_demnaechst: demnaechst, neues } = agenda;
+  const highlights = agenda.highlights || [];
 
   const neuesItems = [];
   if (neues.ungelesene_meldungen > 0) neuesItems.push({ icon: '🔔', text: `${neues.ungelesene_meldungen} ungelesene Meldung(en)`, tab: 'kommunikation' });
   if (neues.neue_pilot_bewerbungen > 0) neuesItems.push({ icon: '🏆', text: `${neues.neue_pilot_bewerbungen} neue Pilot-Bewerbung(en)`, tab: 'plattform' });
   if (neues.pilot_feedback_letzte_7_tage > 0) neuesItems.push({ icon: '📝', text: `${neues.pilot_feedback_letzte_7_tage} Pilot-Feedback(s) diese Woche`, tab: 'plattform' });
 
-  const allesLeer = !ueberfaellig.length && !faellig.length && !heute.length && !demnaechst.length && !neuesItems.length;
+  const allesLeer = !ueberfaellig.length && !faellig.length && !heute.length && !demnaechst.length && !neuesItems.length && !highlights.length;
 
   const TodoZeile = ({ t, urgent }) => {
     const done = erledigt.has(t.id);
@@ -127,20 +128,23 @@ export default function HeuteTab({ onNavigate }) {
     );
   };
 
-  const TerminZeile = ({ t, istHeute }) => {
+  const TerminZeile = ({ t, istHeute, mitJahr }) => {
     const meta = TYP_META[t.typ] || { icon: '📅', label: '' };
     const oeffnen = () => {
       if (!t.url) return;
       if (t.url.startsWith('/')) window.location.href = t.url;
       else window.open(t.url, '_blank', 'noopener');
     };
+    const datumLabel = mitJahr
+      ? new Date(t.datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : fmtTag(t.datum);
     return (
       <div
         className={`heute-termin ${istHeute ? 'heute-termin--heute' : ''} ${t.url ? 'heute-termin--link' : ''}`}
         onClick={oeffnen}
         title={t.url ? 'Öffnen' : undefined}
       >
-        <span className="heute-termin-datum">{istHeute ? 'HEUTE' : fmtTag(t.datum)}{t.uhrzeit ? ` · ${t.uhrzeit}` : ''}</span>
+        <span className="heute-termin-datum">{istHeute ? 'HEUTE' : datumLabel}{t.uhrzeit ? ` · ${t.uhrzeit}` : ''}</span>
         <span className="heute-termin-text">{meta.icon} {t.titel}{t.ort ? ` (${t.ort})` : ''}</span>
         <span className="heute-termin-typ">{meta.label}{t.url ? ' →' : ''}</span>
       </div>
@@ -215,6 +219,13 @@ export default function HeuteTab({ onNavigate }) {
               <h3>📅 Termine — heute & nächste 7 Tage</h3>
               {heute.map(t => <TerminZeile key={t.id} t={t} istHeute />)}
               {demnaechst.map(t => <TerminZeile key={t.id} t={t} />)}
+            </section>
+          )}
+
+          {highlights.length > 0 && (
+            <section className="heute-sektion">
+              <h3>🌟 Kommende Highlights — nächste 6 Monate</h3>
+              {highlights.map(t => <TerminZeile key={t.id} t={t} mitJahr />)}
             </section>
           )}
 
