@@ -31,6 +31,25 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.29',
+    date: '2026-06-07',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Termine im Dashboard & Heute-Tab sind jetzt klickbar',
+    description: 'Klick auf einen Termin öffnet das Ziel: Gürtelprüfungen → Prüfungsverwaltung (/dashboard/stile/pruefungen), Turniere/Events → events.tda-intl.org, HoF → hof.tda-intl.org. Gilt für die Termin-Listen und den Kalender in der Plattform-Zentrale sowie die Termine im ☀️ Heute-Tab.',
+    highlights: [
+      '🥋 GÜRTELPRÜFUNG anklicken → Prüfungsverwaltung öffnet sich direkt',
+      '🔗 INTERNE Ziele im selben Tab, externe Plattformen (Events/HoF) in neuem Tab',
+      '🖱 Hover zeigt Cursor + „→" am Typ-Badge, wenn ein Termin verlinkt ist',
+    ],
+    details: 'kalenderAggregation.js: pruefung.url = /dashboard/stile/pruefungen. PlattformZentrale.jsx: EvRow + Kalender-Einträge mit openEventUrl (stopPropagation im Tageszellen-Klick). HeuteTab.jsx: TerminZeile klickbar.',
+    files: [
+      'backend/services/kalenderAggregation.js',
+      'frontend/src/components/PlattformZentrale.jsx',
+      'frontend/src/components/HeuteTab.jsx',
+    ],
+  },
+  {
     version: '3.0.28',
     date: '2026-06-07',
     type: 'fix',

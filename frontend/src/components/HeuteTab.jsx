@@ -129,11 +129,20 @@ export default function HeuteTab({ onNavigate }) {
 
   const TerminZeile = ({ t, istHeute }) => {
     const meta = TYP_META[t.typ] || { icon: '📅', label: '' };
+    const oeffnen = () => {
+      if (!t.url) return;
+      if (t.url.startsWith('/')) window.location.href = t.url;
+      else window.open(t.url, '_blank', 'noopener');
+    };
     return (
-      <div className={`heute-termin ${istHeute ? 'heute-termin--heute' : ''}`}>
+      <div
+        className={`heute-termin ${istHeute ? 'heute-termin--heute' : ''} ${t.url ? 'heute-termin--link' : ''}`}
+        onClick={oeffnen}
+        title={t.url ? 'Öffnen' : undefined}
+      >
         <span className="heute-termin-datum">{istHeute ? 'HEUTE' : fmtTag(t.datum)}{t.uhrzeit ? ` · ${t.uhrzeit}` : ''}</span>
         <span className="heute-termin-text">{meta.icon} {t.titel}{t.ort ? ` (${t.ort})` : ''}</span>
-        <span className="heute-termin-typ">{meta.label}</span>
+        <span className="heute-termin-typ">{meta.label}{t.url ? ' →' : ''}</span>
       </div>
     );
   };

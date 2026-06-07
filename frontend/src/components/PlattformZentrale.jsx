@@ -47,10 +47,22 @@ const getEvtDate = (ev) => parseDate(ev.datum || ev.date || '');
 const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 const getWeekStart = (d) => { const c = new Date(d); c.setDate(c.getDate() - ((c.getDay() + 6) % 7)); c.setHours(0,0,0,0); return c; };
 
+// Termin-Link öffnen: interne Pfade im selben Tab, externe Plattformen in neuem Tab
+const openEventUrl = (ev) => {
+  if (!ev?.url) return;
+  if (ev.url.startsWith('/')) window.location.href = ev.url;
+  else window.open(ev.url, '_blank', 'noopener');
+};
+
 function EvRow({ ev }) {
   const col = PLATFORM_COLORS[ev.platform] || PLATFORM_COLORS.dojo;
   return (
-    <div className="pz-event-row" style={{ borderLeft: `3px solid ${col.dot}` }}>
+    <div
+      className="pz-event-row"
+      style={{ borderLeft: `3px solid ${col.dot}`, ...(ev.url ? { cursor: 'pointer' } : {}) }}
+      onClick={() => openEventUrl(ev)}
+      title={ev.url ? 'Öffnen' : undefined}
+    >
       <div className="pz-event-date">{fmt(ev.datum || ev.date)}</div>
       <div className="pz-event-body">
         <span className="pz-event-title">{ev.titel || ev.title || ev.name}</span>
@@ -73,8 +85,10 @@ function CalDayCell({ date, evs, onClick, compact }) {
       {evs.slice(0, compact ? 2 : 3).map((ev, j) => {
         const col = PLATFORM_COLORS[ev.platform] || PLATFORM_COLORS.dojo;
         return (
-          <div key={j} className="pz-cal-event" style={{ background: col.bg, color: col.text, borderLeft: `2px solid ${col.dot}` }}
-            title={`${ev.titel || ev.title || ev.name} (${PLATFORM_LABELS[ev.platform]})`}>
+          <div key={j} className="pz-cal-event"
+            style={{ background: col.bg, color: col.text, borderLeft: `2px solid ${col.dot}`, ...(ev.url ? { cursor: 'pointer' } : {}) }}
+            onClick={(e) => { if (ev.url) { e.stopPropagation(); openEventUrl(ev); } }}
+            title={`${ev.titel || ev.title || ev.name} (${PLATFORM_LABELS[ev.platform]})${ev.url ? ' — Klick zum Öffnen' : ''}`}>
             {(ev.titel || ev.title || ev.name || '').substring(0, compact ? 12 : 18)}
           </div>
         );

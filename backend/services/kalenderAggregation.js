@@ -129,7 +129,7 @@ async function collectKalenderEintraege(von, bis) {
         status: p.status,
         dojo_name: p.dojo_name,
         farbe: '#4ade80',
-        url: null
+        url: '/dashboard/stile/pruefungen'
       });
     });
   }
