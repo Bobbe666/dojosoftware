@@ -29,6 +29,12 @@ export default function HeuteTab({ onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [fehler, setFehler] = useState('');
   const [erledigt, setErledigt] = useState(new Set()); // optimistisch abgehakt
+  // ➕ Neues To-Do (Quick-Add)
+  const [showNeu, setShowNeu] = useState(false);
+  const [neuTitel, setNeuTitel] = useState('');
+  const [neuFaellig, setNeuFaellig] = useState(() => new Date().toISOString().slice(0, 10));
+  const [neuPrio, setNeuPrio] = useState('normal');
+  const [neuSaving, setNeuSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,6 +72,26 @@ export default function HeuteTab({ onNavigate }) {
         if (war) next.add(todoId); else next.delete(todoId);
         return next;
       });
+    }
+  };
+
+  const neuesAnlegen = async () => {
+    if (!neuTitel.trim() || neuSaving) return;
+    setNeuSaving(true);
+    try {
+      await axios.post('/todos',
+        { titel: neuTitel.trim(), faellig_am: neuFaellig || null, prioritaet: neuPrio },
+        { headers: authHeader });
+      setNeuTitel('');
+      setNeuPrio('normal');
+      setNeuFaellig(new Date().toISOString().slice(0, 10));
+      setShowNeu(false);
+      load();
+    } catch (err) {
+      const m = err.response?.data?.error || err.message;
+      setFehler(typeof m === 'string' ? m : JSON.stringify(m));
+    } finally {
+      setNeuSaving(false);
     }
   };
 
@@ -120,10 +146,35 @@ export default function HeuteTab({ onNavigate }) {
           <p className="heute-sub">Dein Tag auf einen Blick — To-Dos, Termine und Neues aus allen Plattformen</p>
         </div>
         <div className="heute-head-actions">
+          <button className="heute-btn heute-btn--primary" onClick={() => setShowNeu(s => !s)}>➕ Neues To-Do</button>
           <a href="https://todo.tda-intl.org" target="_blank" rel="noreferrer" className="heute-btn heute-btn--ghost">📋 To-Do-App</a>
           <button className="heute-btn heute-btn--ghost" onClick={load}>🔄 Aktualisieren</button>
         </div>
       </div>
+
+      {showNeu && (
+        <div className="heute-neu-form">
+          <input
+            type="text"
+            value={neuTitel}
+            onChange={e => setNeuTitel(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && neuesAnlegen()}
+            placeholder="Was ist zu tun?"
+            autoFocus
+          />
+          <input type="date" value={neuFaellig} onChange={e => setNeuFaellig(e.target.value)} title="Fällig am" />
+          <select value={neuPrio} onChange={e => setNeuPrio(e.target.value)} title="Priorität">
+            <option value="dringend">🔴 Dringend</option>
+            <option value="hoch">🟠 Hoch</option>
+            <option value="normal">🟡 Normal</option>
+            <option value="niedrig">⚪ Niedrig</option>
+          </select>
+          <button className="heute-btn heute-btn--primary" onClick={neuesAnlegen} disabled={neuSaving || !neuTitel.trim()}>
+            {neuSaving ? '⏳' : 'Anlegen'}
+          </button>
+          <button className="heute-btn heute-btn--ghost" onClick={() => setShowNeu(false)}>Abbrechen</button>
+        </div>
+      )}
 
       {allesLeer && (
         <div className="heute-leer">🎉 Keine offenen Punkte — alles im grünen Bereich!</div>

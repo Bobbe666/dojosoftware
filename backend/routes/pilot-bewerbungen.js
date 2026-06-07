@@ -248,6 +248,15 @@ router.put('/admin/:id', authenticateToken, onlySuperAdmin, async (req, res) => 
       return res.status(400).json({ success: false, error: 'Keine Änderungen übergeben' });
     }
 
+    // Alten Status merken — Mails nur bei ECHTEM Statuswechsel, nicht bei jedem Speichern
+    const [[vorher]] = await pool.query(
+      'SELECT status, schulname, ansprechpartner, email FROM pilot_bewerbungen WHERE id = ?',
+      [req.params.id]
+    );
+    if (!vorher) {
+      return res.status(404).json({ success: false, error: 'Bewerbung nicht gefunden' });
+    }
+
     params.push(req.params.id);
     const [result] = await pool.query(
       `UPDATE pilot_bewerbungen SET ${updates.join(', ')} WHERE id = ?`,
@@ -255,6 +264,29 @@ router.put('/admin/:id', authenticateToken, onlySuperAdmin, async (req, res) => 
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, error: 'Bewerbung nicht gefunden' });
+    }
+
+    // Status → "in_pruefung": Bewerber benachrichtigen, dass die Bewerbung
+    // angekommen ist und jetzt geprüft wird
+    if (status === 'in_pruefung' && vorher.status !== 'in_pruefung') {
+      const b = vorher;
+      sendEmail({
+        to: b.email,
+        subject: 'Eure Pilot-Partner-Bewerbung wird geprüft 🔍',
+        text:
+          `Hallo ${b.ansprechpartner},\n\n` +
+          `gute Nachrichten: Eure Bewerbung für "${b.schulname}" ist bei uns angekommen ` +
+          `und befindet sich jetzt in der Prüfung.\n\n` +
+          `Wir schauen uns jede Bewerbung persönlich an und melden uns, sobald die ` +
+          `Entscheidung gefallen ist.\n\n` +
+          `Viele Grüße\nTDA International`,
+        html:
+          `<p>Hallo <strong>${esc(b.ansprechpartner)}</strong>,</p>` +
+          `<p>gute Nachrichten: Eure Bewerbung für <strong>„${esc(b.schulname)}"</strong> ist bei uns angekommen und befindet sich jetzt <strong>in der Prüfung</strong>. 🔍</p>` +
+          `<p>Wir schauen uns jede Bewerbung persönlich an und melden uns, sobald die Entscheidung gefallen ist.</p>` +
+          `<p>Viele Grüße<br><strong>TDA International</strong></p>`,
+        replyTo: 'info@tda-intl.com'
+      }).catch(err => console.error('[Pilot-Bewerbung] In-Prüfung-Mail-Fehler:', err.message));
     }
 
     // Status → "gewonnen": Programm-Start setzen (falls leer) + Feedback-Umfragen planen

@@ -755,6 +755,7 @@ const SuperAdminDashboard = () => {
   // Tab Definitions — produkt-basierte Hauptnavigation
   const tabs = [
     { id: 'heute',         label: 'Heute',          icon: '☀️' },
+    { id: 'plattform',     label: 'Dashboard',      icon: '🌐' },
     { id: 'overview',      label: 'Cockpit',        icon: '🎛️' },
     { id: 'todos',         label: 'To Do',          icon: '✅' },
     { id: 'verband',       label: 'Verband',        icon: '🏆' },
@@ -762,7 +763,6 @@ const SuperAdminDashboard = () => {
     { id: 'software',      label: 'Software',       icon: '💻' },
     { id: 'finanzen',      label: 'Finanzen',       icon: '💰' },
     { id: 'kommunikation', label: 'Komm.',          icon: '📣', badge: unreadCount > 0 ? unreadCount : null },
-    { id: 'plattform',     label: 'Org-Kalender',   icon: '🌐' },
     { id: 'entwicklung',   label: 'Entwicklung',    icon: '🎯' },
     { id: 'system',        label: 'System',         icon: '⚙️' },
   ];

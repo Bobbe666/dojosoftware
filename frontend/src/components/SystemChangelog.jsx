@@ -31,6 +31,25 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.26',
+    date: '2026-06-07',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Heute-Tab: Quick-Add für To-Dos · Pilot: „In Prüfung"-Mail · Tab „Dashboard"',
+    description: 'Drei Verbesserungen: ➕ Neues To-Do direkt aus dem Heute-Tab anlegen (Titel, Fälligkeit, Priorität — Enter zum Speichern). Pilot-Bewerber erhalten automatisch eine E-Mail, wenn ihre Bewerbung auf „In Prüfung" gesetzt wird (nur bei echtem Statuswechsel). Der Tab „Org-Kalender" heißt jetzt „Dashboard" und sitzt zwischen Heute und Cockpit.',
+    highlights: [
+      '➕ QUICK-ADD im Heute-Tab: Inline-Formular, POST /api/todos, danach Auto-Refresh der Tagesansicht',
+      '🔍 IN-PRÜFUNG-MAIL: Bewerber weiß sofort, dass die Bewerbung angekommen ist — Guard gegen Doppel-Mails (alter Status wird geprüft)',
+      '🌐 TAB UMBENANNT: „Org-Kalender" → „Dashboard" (PlattformZentrale: Kalender, News, Turniere, HoF, Umfragen, Demo-Termine, Pilot) — Position 2 nach Heute',
+    ],
+    details: 'HeuteTab.jsx (Quick-Add-Form + CSS), pilot-bewerbungen.js (Statuswechsel-Erkennung via SELECT vor UPDATE), SuperAdminDashboard.jsx (tabs-Array umsortiert, id plattform unverändert — Sub-Tabs und Navigation funktionieren weiter).',
+    files: [
+      'frontend/src/components/HeuteTab.jsx',
+      'frontend/src/components/SuperAdminDashboard.jsx',
+      'backend/routes/pilot-bewerbungen.js',
+    ],
+  },
+  {
     version: '3.0.25',
     date: '2026-06-07',
     type: 'feature',
