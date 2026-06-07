@@ -1465,7 +1465,13 @@ function UebersichtView({ token }) {
             ) : (
               <div className="pz-ub-list">
                 {pruefungen.map((ev, i) => (
-                  <div key={i} className="pz-event-row" style={{ borderLeft: `3px solid ${PLATFORM_COLORS.pruefung.dot}` }}>
+                  <div
+                    key={i}
+                    className="pz-event-row"
+                    style={{ borderLeft: `3px solid ${PLATFORM_COLORS.pruefung.dot}`, cursor: 'pointer' }}
+                    onClick={() => openEventUrl({ url: ev.url || '/dashboard/stile/pruefungen' })}
+                    title="Prüfungsverwaltung öffnen"
+                  >
                     <div className="pz-event-date">{fmt(ev.datum || ev.date)}</div>
                     <div className="pz-event-body">
                       <span className="pz-event-title">{ev.titel || ev.title || ev.name}</span>
@@ -1490,7 +1496,13 @@ function UebersichtView({ token }) {
               </div>
               <div className="pz-ub-list">
                 {data.hof.slice(0, 5).map((v, i) => (
-                  <div key={i} className="pz-event-row" style={{ borderLeft: `3px solid ${PLATFORM_COLORS.hof.dot}` }}>
+                  <div
+                    key={i}
+                    className="pz-event-row"
+                    style={{ borderLeft: `3px solid ${PLATFORM_COLORS.hof.dot}`, cursor: 'pointer' }}
+                    onClick={() => openEventUrl({ url: 'https://hof.tda-intl.org' })}
+                    title="Hall of Fame öffnen"
+                  >
                     <div className="pz-event-date">{fmt(v.datum)}</div>
                     <div className="pz-event-body">
                       <span className="pz-event-title">{v.titel}</span>
@@ -1825,7 +1837,11 @@ const TABS = [
 
 export default function PlattformZentrale() {
   const { token } = useAuth();
-  const [activeTab, setActiveTab] = useState('uebersicht');
+  // Deep-Link ?pz=<tab-id> (z.B. /dashboard?pz=demo-termine aus Termin-Klicks)
+  const [activeTab, setActiveTab] = useState(() => {
+    const pz = new URLSearchParams(window.location.search).get('pz');
+    return pz && TABS.some(t => t.id === pz) ? pz : 'uebersicht';
+  });
 
   return (
     <div className="pz-root">

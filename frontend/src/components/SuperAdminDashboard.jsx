@@ -108,8 +108,11 @@ const SuperAdminDashboard = () => {
   // State für Daily Briefing Popup
   const [showDailyBriefing, setShowDailyBriefing] = useState(false);
   const [sslWarnings, setSslWarnings] = useState([]);
-  // State für Tab-Navigation — ☀️ Heute ist die Standard-Ansicht
-  const [activeTab, setActiveTab] = useState('heute');
+  // State für Tab-Navigation — ☀️ Heute ist die Standard-Ansicht.
+  // Deep-Link ?pz=<tab> (z.B. aus Termin-Klicks) öffnet direkt die Plattform-Zentrale.
+  const [activeTab, setActiveTab] = useState(() =>
+    new URLSearchParams(window.location.search).get('pz') ? 'plattform' : 'heute'
+  );
   // State für Sub-Tabs pro Gruppe
   const [subActiveTab, setSubActiveTab] = useState({
     dojosoftware: 'lizenzen',

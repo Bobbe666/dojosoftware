@@ -31,6 +31,25 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.30',
+    date: '2026-06-07',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Termin-Klicks: Übersicht-Zeilen repariert + Demo-Termine verlinkt',
+    description: 'Die Gürtelprüfungs- und HoF-Zeilen in der Plattform-Zentrale-Übersicht hatten eigene Markup-Blöcke und waren von v3.0.29 nicht abgedeckt — jetzt ebenfalls klickbar. Demo-Termine öffnen per Deep-Link (?pz=demo-termine) direkt den Demo-Termine-Tab — auch aus dem Heute-Tab heraus.',
+    highlights: [
+      '🥋 ÜBERSICHT: Gürtelprüfungs-Zeilen → Prüfungsverwaltung, HoF-Zeilen → hof.tda-intl.org',
+      '🎯 DEMO-TERMINE: Klick öffnet Dashboard → Plattform-Zentrale → Demo-Termine (Deep-Link ?pz=<tab>)',
+      '🔗 DEEP-LINKS: /dashboard?pz=demo-termine funktioniert auch als Lesezeichen — SuperAdminDashboard + PlattformZentrale werten den Parameter beim Laden aus',
+    ],
+    details: 'kalenderAggregation.js: demo.url=/dashboard?pz=demo-termine. SuperAdminDashboard.jsx + PlattformZentrale.jsx: activeTab-Initializer liest URLSearchParams pz. UebersichtView: Prüfungs-/HoF-Zeilen mit openEventUrl.',
+    files: [
+      'backend/services/kalenderAggregation.js',
+      'frontend/src/components/PlattformZentrale.jsx',
+      'frontend/src/components/SuperAdminDashboard.jsx',
+    ],
+  },
+  {
     version: '3.0.29',
     date: '2026-06-07',
     type: 'improvement',

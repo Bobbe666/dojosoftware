@@ -151,7 +151,8 @@ async function collectKalenderEintraege(von, bis) {
         uhrzeit,
         ort: null,
         farbe: '#f472b6',
-        url: null,
+        // Deep-Link: öffnet Dashboard → Plattform-Zentrale → Demo-Termine-Tab
+        url: '/dashboard?pz=demo-termine',
         raw_id: d.id
       });
     });
