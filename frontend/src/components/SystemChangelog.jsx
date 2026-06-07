@@ -31,6 +31,25 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.22',
+    date: '2026-06-07',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Entwicklungs-Anfragen: Homepage/Software-Anfragen landen in den Meldungen',
+    description: 'Neues öffentliches Formular auf tda-intl.org/homepage-erstellung.html (Homepage-Erstellung & Individualsoftware für Kampfsportschulen). Anfragen erscheinen als Meldung im SuperAdminDashboard (Kommunikation → Meldungen, Priorität wichtig) und gehen zusätzlich per E-Mail an info@tda-intl.com.',
+    highlights: [
+      '🛠️ NEUER ENDPOINT POST /api/entwicklungs-anfragen — öffentlich, mit Honeypot + Rate-Limit (3/Std/IP)',
+      '🔔 MELDUNG im SuperAdminDashboard: typ entwicklungs_anfrage, Priorität „wichtig" — Name, Kontakt, Projekt-Typ und Beschreibung direkt in der Nachricht',
+      '🌐 LANDING: dritte Produktkarte „Homepage & Individualentwicklung" auf tda-intl.org + eigene Seite mit Formular',
+    ],
+    details: 'Backend: routes/entwicklungs-anfragen.js — INSERT INTO super_admin_notifications (CREATE TABLE IF NOT EXISTS Guard identisch zu admin.js). Kein neues Frontend in der Dojosoftware nötig — Meldungen-Tab zeigt die Anfragen automatisch.',
+    files: [
+      'backend/routes/entwicklungs-anfragen.js',
+      'backend/server.js',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.21',
     date: '2026-06-07',
     type: 'feature',

@@ -1715,6 +1715,16 @@ try {
   logger.error("Fehler beim Laden der Route", { route: "pilot-bewerbungen", error: error.message });
 }
 
+// 10.2e ENTWICKLUNGS-ANFRAGEN (Homepage/Software-Anfragen von tda-intl.org)
+try {
+  const entwicklungsAnfragenRouter = require(path.join(__dirname, "routes", "entwicklungs-anfragen.js"));
+  // Öffentlich: POST /api/entwicklungs-anfragen → super_admin_notifications + Mail
+  app.use("/api/entwicklungs-anfragen", entwicklungsAnfragenRouter);
+  logger.success("Route gemountet", { path: "/api/entwicklungs-anfragen" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "entwicklungs-anfragen", error: error.message });
+}
+
 // Gutschein-System (Premium Feature)
 // Öffentlich: GET /api/gutscheine/public/:code  (kein Auth erforderlich — in Route definiert)
 // Geschützt:  alle anderen /api/gutscheine/... Endpunkte (requireFeature('gutscheine'))
