@@ -1898,6 +1898,35 @@ router.get('/activities', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /admin/cron-status - letzte Läufe der geplanten Jobs (System-Tab)
+router.get('/cron-status', requireSuperAdmin, async (req, res) => {
+  try {
+    // Bekannte Jobs mit Klartext-Label + Zeitplan; Status kommt aus cron_runs
+    const JOBS = [
+      { key: 'briefing',       label: '☀️ Tägliches Briefing + Event-Checklisten', plan: 'täglich 07:00' },
+      { key: 'pilot_feedback', label: '📝 Pilot-Feedback-Umfragen',                 plan: 'täglich 10:00' },
+    ];
+    let rows = [];
+    try {
+      [rows] = await db.promise().query('SELECT * FROM cron_runs');
+    } catch { /* Tabelle evtl. noch nicht migriert */ }
+    const byKey = Object.fromEntries(rows.map(r => [r.job_key, r]));
+    const jobs = JOBS.map(j => {
+      const r = byKey[j.key];
+      return {
+        ...j,
+        letzter_lauf: r?.letzter_lauf || null,
+        erfolg: r ? !!r.erfolg : null,
+        info: r?.info || null,
+        dauer_ms: r?.dauer_ms || null,
+      };
+    });
+    res.json({ success: true, jobs });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // GET /admin/notifications - Benachrichtigungen abrufen
 router.get('/notifications', requireSuperAdmin, async (req, res) => {
   try {

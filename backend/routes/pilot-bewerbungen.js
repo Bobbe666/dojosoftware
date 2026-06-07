@@ -113,6 +113,51 @@ async function sendBewerberBestaetigung(b) {
   });
 }
 
+// Pilot-Bewerbung als Akquise-Kontakt anlegen (heißer Lead).
+// Existiert die E-Mail schon, wird nur eine Aktivität ergänzt statt ein Duplikat angelegt.
+async function legeAkquiseKontaktAn(b) {
+  const [vorhanden] = await pool.query(
+    'SELECT id FROM akquise_kontakte WHERE email = ? LIMIT 1', [b.email]
+  );
+
+  let kontaktId;
+  if (vorhanden.length > 0) {
+    kontaktId = vorhanden[0].id;
+    // Bestehenden Kontakt als Pilot-Bewerber markieren + hochpriorisieren
+    await pool.query(
+      `UPDATE akquise_kontakte
+       SET prioritaet = 'hoch',
+           tags = TRIM(BOTH ',' FROM CONCAT(COALESCE(NULLIF(tags,''),''), ',pilot-beworben'))
+       WHERE id = ? AND (tags IS NULL OR tags NOT LIKE '%pilot-beworben%')`,
+      [kontaktId]
+    );
+  } else {
+    const [result] = await pool.query(
+      `INSERT INTO akquise_kontakte
+         (organisation, ansprechpartner, email, telefon, ort, webseite, sportart,
+          mitglieder_anzahl, typ, status, prioritaet, quelle, tags, notiz)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'schule', 'interessiert', 'hoch', 'pilot', 'pilot-beworben', ?)`,
+      [
+        b.schulname, b.ansprechpartner, b.email, b.telefon || null, b.ort || null,
+        b.website || null, b.stilrichtungen || null,
+        parseInt(String(b.mitglieder_anzahl || '').replace(/\D/g, ''), 10) || null,
+        `Pilot-Partner-Bewerbung. Aktuelle Software: ${b.aktuelle_software || '–'}. ` +
+        `Herausforderung: ${b.herausforderung || '–'}`,
+      ]
+    );
+    kontaktId = result.insertId;
+  }
+
+  // Aktivität protokollieren
+  await pool.query(
+    `INSERT INTO akquise_aktivitaeten (kontakt_id, art, betreff, inhalt)
+     VALUES (?, 'sonstiges', 'Pilot-Partner-Bewerbung eingegangen', ?)`,
+    [kontaktId, `Begründung: ${b.begruendung || '–'}`]
+  ).catch(() => { /* Aktivitäten-Tabelle optional — Kontakt ist das Wichtige */ });
+
+  return kontaktId;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ÖFFENTLICHE ROUTE (kein Auth)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -183,10 +228,30 @@ router.post('/', async (req, res) => {
     sendAdminBenachrichtigung(bewerbung).catch(err => console.error('[Pilot-Bewerbung] Admin-Mail-Fehler:', err.message));
     sendBewerberBestaetigung(bewerbung).catch(err => console.error('[Pilot-Bewerbung] Bestätigungs-Mail-Fehler:', err.message));
 
+    // Heißer Lead → automatisch in den Akquise-Trichter (Duplikat-Schutz via E-Mail)
+    legeAkquiseKontaktAn(bewerbung).catch(err => console.error('[Pilot-Bewerbung] Akquise-Sync-Fehler:', err.message));
+
     res.json({ success: true, message: 'Bewerbung erfolgreich eingereicht! Wir melden uns in Kürze bei dir.' });
   } catch (err) {
     console.error('[Pilot-Bewerbung] Fehler:', err.message);
     res.status(500).json({ success: false, error: 'Bewerbung konnte nicht gespeichert werden. Bitte versuche es später erneut.' });
+  }
+});
+
+// GET /api/pilot-bewerbungen/public/partner — gewonnene Partner für die Website
+// (anonymisiert: nur Schulname + Ort, kein Kontakt) — Social Proof auf tda-intl.org
+router.get('/public/partner', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT schulname, ort, stilrichtungen, programm_start
+      FROM pilot_bewerbungen
+      WHERE status = 'gewonnen'
+      ORDER BY programm_start DESC, id DESC
+      LIMIT 24
+    `);
+    res.json({ success: true, partner: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -266,27 +331,83 @@ router.put('/admin/:id', authenticateToken, onlySuperAdmin, async (req, res) => 
       return res.status(404).json({ success: false, error: 'Bewerbung nicht gefunden' });
     }
 
-    // Status → "in_pruefung": Bewerber benachrichtigen, dass die Bewerbung
-    // angekommen ist und jetzt geprüft wird
-    if (status === 'in_pruefung' && vorher.status !== 'in_pruefung') {
+    // Status-Mails — nur bei ECHTEM Wechsel
+    if (status && status !== vorher.status) {
       const b = vorher;
-      sendEmail({
-        to: b.email,
-        subject: 'Eure Pilot-Partner-Bewerbung wird geprüft 🔍',
-        text:
-          `Hallo ${b.ansprechpartner},\n\n` +
-          `gute Nachrichten: Eure Bewerbung für "${b.schulname}" ist bei uns angekommen ` +
-          `und befindet sich jetzt in der Prüfung.\n\n` +
-          `Wir schauen uns jede Bewerbung persönlich an und melden uns, sobald die ` +
-          `Entscheidung gefallen ist.\n\n` +
-          `Viele Grüße\nTDA International`,
-        html:
-          `<p>Hallo <strong>${esc(b.ansprechpartner)}</strong>,</p>` +
-          `<p>gute Nachrichten: Eure Bewerbung für <strong>„${esc(b.schulname)}"</strong> ist bei uns angekommen und befindet sich jetzt <strong>in der Prüfung</strong>. 🔍</p>` +
-          `<p>Wir schauen uns jede Bewerbung persönlich an und melden uns, sobald die Entscheidung gefallen ist.</p>` +
-          `<p>Viele Grüße<br><strong>TDA International</strong></p>`,
-        replyTo: 'info@tda-intl.com'
-      }).catch(err => console.error('[Pilot-Bewerbung] In-Prüfung-Mail-Fehler:', err.message));
+
+      if (status === 'in_pruefung') {
+        sendEmail({
+          to: b.email,
+          subject: 'Eure Pilot-Partner-Bewerbung wird geprüft 🔍',
+          text:
+            `Hallo ${b.ansprechpartner},\n\n` +
+            `gute Nachrichten: Eure Bewerbung für "${b.schulname}" ist bei uns angekommen ` +
+            `und befindet sich jetzt in der Prüfung.\n\n` +
+            `Wir schauen uns jede Bewerbung persönlich an und melden uns, sobald die ` +
+            `Entscheidung gefallen ist.\n\n` +
+            `Viele Grüße\nTDA International`,
+          html:
+            `<p>Hallo <strong>${esc(b.ansprechpartner)}</strong>,</p>` +
+            `<p>gute Nachrichten: Eure Bewerbung für <strong>„${esc(b.schulname)}"</strong> ist bei uns angekommen und befindet sich jetzt <strong>in der Prüfung</strong>. 🔍</p>` +
+            `<p>Wir schauen uns jede Bewerbung persönlich an und melden uns, sobald die Entscheidung gefallen ist.</p>` +
+            `<p>Viele Grüße<br><strong>TDA International</strong></p>`,
+          replyTo: 'info@tda-intl.com'
+        }).catch(err => console.error('[Pilot-Bewerbung] In-Prüfung-Mail-Fehler:', err.message));
+      }
+
+      if (status === 'gewonnen') {
+        sendEmail({
+          to: b.email,
+          subject: '🏆 Herzlichen Glückwunsch — ihr seid TDA Pilot-Partner!',
+          text:
+            `Hallo ${b.ansprechpartner},\n\n` +
+            `wir freuen uns riesig: "${b.schulname}" ist unser neuer Pilot-Partner! 🏆\n\n` +
+            `Das erwartet euch jetzt:\n` +
+            `• 12 Monate kostenlose Nutzung der kompletten DojoSoftware\n` +
+            `• Persönliche Einrichtung gemeinsam mit uns\n` +
+            `• Übernahme eurer bestehenden Daten\n\n` +
+            `Wir melden uns in den nächsten Tagen persönlich bei euch, um den Start zu planen. ` +
+            `Von Zeit zu Zeit schicken wir euch außerdem einen kurzen Fragebogen (2 Minuten), ` +
+            `damit wir die Software gemeinsam mit euch noch besser machen.\n\n` +
+            `Willkommen an Bord!\nTDA International`,
+          html:
+            `<p>Hallo <strong>${esc(b.ansprechpartner)}</strong>,</p>` +
+            `<p>wir freuen uns riesig: <strong>„${esc(b.schulname)}"</strong> ist unser neuer <strong>Pilot-Partner</strong>! 🏆</p>` +
+            `<p><strong>Das erwartet euch jetzt:</strong></p>` +
+            `<ul>` +
+            `<li>12 Monate kostenlose Nutzung der kompletten DojoSoftware</li>` +
+            `<li>Persönliche Einrichtung gemeinsam mit uns</li>` +
+            `<li>Übernahme eurer bestehenden Daten</li>` +
+            `</ul>` +
+            `<p>Wir melden uns in den nächsten Tagen persönlich bei euch, um den Start zu planen. Von Zeit zu Zeit schicken wir euch außerdem einen kurzen Fragebogen (2 Minuten), damit wir die Software gemeinsam mit euch noch besser machen.</p>` +
+            `<p>Willkommen an Bord!<br><strong>TDA International</strong></p>`,
+          replyTo: 'info@tda-intl.com'
+        }).catch(err => console.error('[Pilot-Bewerbung] Gewonnen-Mail-Fehler:', err.message));
+      }
+
+      if (status === 'abgelehnt') {
+        sendEmail({
+          to: b.email,
+          subject: 'Eure Pilot-Partner-Bewerbung',
+          text:
+            `Hallo ${b.ansprechpartner},\n\n` +
+            `vielen Dank für euer Interesse am TDA Pilot-Partner-Programm und die Mühe, ` +
+            `die ihr euch mit der Bewerbung für "${b.schulname}" gemacht habt.\n\n` +
+            `Wir können pro Monat leider nur eine Schule als Pilot-Partner aufnehmen — ` +
+            `dieses Mal ist die Wahl auf eine andere Schule gefallen. Das ist keine Wertung ` +
+            `eurer Schule!\n\n` +
+            `Ihr könnt die DojoSoftware natürlich trotzdem jederzeit 14 Tage kostenlos testen — ` +
+            `meldet euch gern bei uns.\n\n` +
+            `Sportliche Grüße\nTDA International`,
+          html:
+            `<p>Hallo <strong>${esc(b.ansprechpartner)}</strong>,</p>` +
+            `<p>vielen Dank für euer Interesse am TDA Pilot-Partner-Programm und die Mühe, die ihr euch mit der Bewerbung für <strong>„${esc(b.schulname)}"</strong> gemacht habt.</p>` +
+            `<p>Wir können pro Monat leider nur eine Schule als Pilot-Partner aufnehmen — dieses Mal ist die Wahl auf eine andere Schule gefallen. Das ist keine Wertung eurer Schule!</p>` +
+            `<p>Ihr könnt die DojoSoftware natürlich trotzdem jederzeit <strong>14 Tage kostenlos testen</strong> — meldet euch gern bei uns.</p>` +
+            `<p>Sportliche Grüße<br><strong>TDA International</strong></p>`,
+          replyTo: 'info@tda-intl.com'
+        }).catch(err => console.error('[Pilot-Bewerbung] Abgelehnt-Mail-Fehler:', err.message));
+      }
     }
 
     // Status → "gewonnen": Programm-Start setzen (falls leer) + Feedback-Umfragen planen

@@ -44,6 +44,7 @@ export default function PilotBewerbungen() {
   const [feedback, setFeedback] = useState({});         // { [bewerbungId]: umfragen[] }
   const [feedbackOpen, setFeedbackOpen] = useState(null); // geöffnete Antworten (umfrage.id)
   const [startDrafts, setStartDrafts] = useState({});
+  const [auswertung, setAuswertung] = useState(null);
 
   const showMsg = (type, text) => {
     setMsg({ type, text });
@@ -69,6 +70,13 @@ export default function PilotBewerbungen() {
   }, [filter, token]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    axios.get('/pilot-feedback/admin/auswertung', { headers: authHeader })
+      .then(r => setAuswertung(r.data.auswertung))
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const updateStatus = async (id, status) => {
     try {
@@ -151,6 +159,39 @@ export default function PilotBewerbungen() {
       </div>
 
       {msg.text && <div className={`pb-msg pb-msg--${msg.type}`}>{msg.text}</div>}
+
+      {/* Feedback-Auswertung — Zufriedenheit der Pilot-Partner */}
+      {auswertung && auswertung.beantwortet > 0 && (
+        <div className="pb-auswertung">
+          <div className="pb-ausw-kpis">
+            <div className="pb-ausw-kpi">
+              <span className="pb-ausw-zahl">{auswertung.gesamt_schnitt ?? '–'}<small>/5</small></span>
+              <span className="pb-ausw-label">⭐ Ø Zufriedenheit</span>
+            </div>
+            <div className="pb-ausw-kpi">
+              <span className="pb-ausw-zahl">{auswertung.quote}<small>%</small></span>
+              <span className="pb-ausw-label">Antwortquote</span>
+            </div>
+            <div className="pb-ausw-kpi">
+              <span className="pb-ausw-zahl">{auswertung.beantwortet}<small>/{auswertung.gesendet}</small></span>
+              <span className="pb-ausw-label">Fragebögen beantwortet</span>
+            </div>
+          </div>
+          {auswertung.fragen.length > 0 && (
+            <div className="pb-ausw-fragen">
+              {auswertung.fragen.map(f => (
+                <div className="pb-ausw-frage" key={f.key}>
+                  <span className="pb-ausw-frage-text">{f.text}</span>
+                  <span className="pb-ausw-bar">
+                    <span className="pb-ausw-bar-fill" style={{ width: `${(f.schnitt / 5) * 100}%` }} />
+                  </span>
+                  <span className="pb-ausw-frage-wert">{f.schnitt} <em>({f.anzahl})</em></span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Status-Filter-Chips */}
       <div className="pb-chips">

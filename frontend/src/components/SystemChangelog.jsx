@@ -31,6 +31,31 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.32',
+    date: '2026-06-07',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Pilot rundum: Gewinn/Absage-Mails, Feedback-Auswertung, Akquise-Sync, Cron-Status & mehr',
+    description: 'Sechs Verbesserungen rund um Pilot-Programm, Briefing und Betrieb: automatische Mails bei „Gewonnen"/„Abgelehnt", Zufriedenheits-Auswertung im Pilot-Tab, automatischer Akquise-Lead aus jeder Bewerbung, Event-Zuordnung beim Quick-Add, öffentliche Partner-Liste auf der Website und ein Cron-Status im System-Tab.',
+    highlights: [
+      '🏆 PILOT-MAILS: „Gewonnen" → Willkommen + nächste Schritte, „Abgelehnt" → freundliche Absage (nur bei echtem Statuswechsel)',
+      '⭐ FEEDBACK-AUSWERTUNG im Pilot-Tab: Ø-Zufriedenheit, Antwortquote, Balken pro Frage',
+      '🗂️ AKQUISE-SYNC: jede Bewerbung wird automatisch heißer Akquise-Kontakt (Tag pilot-beworben, Duplikat-Schutz)',
+      '➕ QUICK-ADD: To-Do optional einem kommenden Event zuordnen',
+      '🌟 WEBSITE: „Unsere Pilot-Partner" auf tda-intl.org/pilot-partner.html (anonymisiert, nur gewonnene)',
+      '⏱ CRON-STATUS im System-Tab: sehen, ob Briefing- & Feedback-Jobs laufen (Ampel + letzter Lauf)',
+    ],
+    details: 'Migrationen 193 (quelle-enum +pilot) & 194 (cron_runs). pilot-bewerbungen.js (Status-Mails, legeAkquiseKontaktAn, /public/partner), pilot-feedback.js (/admin/auswertung), cron-jobs.js (recordCronRun), admin.js (/cron-status). Frontend: PilotBewerbungen (Auswertung), HeuteTab (Event-Quick-Add), CronStatus.jsx, pilot-partner.html (Partner-Grid).',
+    files: [
+      'backend/routes/pilot-bewerbungen.js',
+      'backend/routes/pilot-feedback.js',
+      'backend/cron-jobs.js',
+      'backend/routes/admin.js',
+      'frontend/src/components/CronStatus.jsx',
+      'frontend/src/components/HeuteTab.jsx',
+    ],
+  },
+  {
     version: '3.0.31',
     date: '2026-06-07',
     type: 'feature',

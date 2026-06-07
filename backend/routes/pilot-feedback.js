@@ -177,6 +177,59 @@ router.get('/admin/:bewerbungId(\\d+)', authenticateToken, onlySuperAdmin, async
   }
 });
 
+// GET /api/pilot-feedback/admin/auswertung — aggregierte Zufriedenheit über alle Partner
+router.get('/admin/auswertung', authenticateToken, onlySuperAdmin, async (req, res) => {
+  try {
+    const [umfragen] = await pool.query(
+      'SELECT typ, runde, antworten, beantwortet_am FROM pilot_feedback_umfragen'
+    );
+
+    let gesendet = 0, beantwortet = 0;
+    // Pro Frage-Key: Summe + Anzahl der Sterne-Bewertungen
+    const ratings = {}; // key -> { summe, anzahl, text }
+    let alleSterneSumme = 0, alleSterneAnzahl = 0;
+
+    for (const u of umfragen) {
+      gesendet++;
+      if (!u.antworten) continue;
+      beantwortet++;
+      let ant;
+      try { ant = JSON.parse(u.antworten); } catch { continue; }
+      const fragen = (FRAGEBOEGEN[u.typ]?.fragen) || [];
+      for (const f of fragen) {
+        if (f.typ !== 'rating') continue;
+        const wert = ant[f.key];
+        if (!Number.isInteger(wert)) continue;
+        const key = `${u.typ}.${f.key}`;
+        if (!ratings[key]) ratings[key] = { summe: 0, anzahl: 0, text: f.text, typ: u.typ };
+        ratings[key].summe += wert;
+        ratings[key].anzahl += 1;
+        alleSterneSumme += wert;
+        alleSterneAnzahl += 1;
+      }
+    }
+
+    const fragen = Object.entries(ratings).map(([key, r]) => ({
+      key, text: r.text, typ: r.typ,
+      schnitt: Math.round((r.summe / r.anzahl) * 10) / 10,
+      anzahl: r.anzahl,
+    })).sort((a, b) => b.anzahl - a.anzahl);
+
+    res.json({
+      success: true,
+      auswertung: {
+        gesendet,
+        beantwortet,
+        quote: gesendet ? Math.round((beantwortet / gesendet) * 100) : 0,
+        gesamt_schnitt: alleSterneAnzahl ? Math.round((alleSterneSumme / alleSterneAnzahl) * 10) / 10 : null,
+        fragen,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // PUT /api/pilot-feedback/admin/programm-start/:bewerbungId — Programm-Start setzen/ändern
 router.put('/admin/programm-start/:bewerbungId(\\d+)', authenticateToken, onlySuperAdmin, async (req, res) => {
   try {

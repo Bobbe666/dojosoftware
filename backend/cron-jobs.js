@@ -19,6 +19,20 @@ function queryAsync(sql, params = []) {
     });
 }
 
+// Cron-Lauf protokollieren (für System-Tab → Cron-Status)
+async function recordCronRun(jobKey, { erfolg = true, info = null, dauerMs = null } = {}) {
+  try {
+    await queryAsync(
+      `INSERT INTO cron_runs (job_key, letzter_lauf, erfolg, info, dauer_ms)
+       VALUES (?, NOW(), ?, ?, ?)
+       ON DUPLICATE KEY UPDATE letzter_lauf = NOW(), erfolg = VALUES(erfolg), info = VALUES(info), dauer_ms = VALUES(dauer_ms)`,
+      [jobKey, erfolg ? 1 : 0, info ? String(info).slice(0, 500) : null, dauerMs]
+    );
+  } catch (e) {
+    logger.warn(`Cron-Status konnte nicht protokolliert werden (${jobKey}): ${e.message}`);
+  }
+}
+
 /**
  * Auto-Checkout Cron-Job
  * Läuft täglich um 00:00:01 Uhr
@@ -497,6 +511,7 @@ function initCronJobs() {
   // ── Tägliches Briefing ───────────────────────────────────────────────────
   // Täglich um 07:00 — Event-Checklisten anlegen + "Dein Tag"-Mail an Admin
   cron.schedule('0 7 * * *', async () => {
+    const t0 = Date.now();
     try {
       const { syncEventChecklisten, sendBriefingMail } = require('./services/briefingService');
       const sync = await syncEventChecklisten();
@@ -505,8 +520,10 @@ function initCronJobs() {
       }
       await sendBriefingMail();
       logger.success('☀️ Briefing-Mail versendet');
+      await recordCronRun('briefing', { info: `Mail gesendet, ${sync.neueChecklisten} neue Checkliste(n)`, dauerMs: Date.now() - t0 });
     } catch (error) {
       logger.error('❌ Briefing Cron Fehler', { error: error.message });
+      await recordCronRun('briefing', { erfolg: false, info: error.message, dauerMs: Date.now() - t0 });
     }
   });
 
@@ -514,14 +531,17 @@ function initCronJobs() {
   // Täglich um 10:00 — plant + versendet fällige Fragebögen an Pilot-Partner
   // (Tag 14 Einrichtung, Tag 28 Erfahrungen, danach alle 28 Tage; Erinnerung nach 7 Tagen)
   cron.schedule('0 10 * * *', async () => {
+    const t0 = Date.now();
     try {
       const { processPilotFeedback } = require('./services/pilotFeedbackService');
       const r = await processPilotFeedback();
       if (r.gesendet > 0 || r.erinnert > 0) {
         logger.success(`📝 Pilot-Feedback: ${r.gesendet} gesendet, ${r.erinnert} erinnert${r.fehler ? `, ${r.fehler} Fehler` : ''}`);
       }
+      await recordCronRun('pilot_feedback', { erfolg: r.fehler === 0, info: `${r.gesendet} gesendet, ${r.erinnert} erinnert, ${r.fehler} Fehler`, dauerMs: Date.now() - t0 });
     } catch (error) {
       logger.error('❌ Pilot-Feedback Cron Fehler', { error: error.message });
+      await recordCronRun('pilot_feedback', { erfolg: false, info: error.message, dauerMs: Date.now() - t0 });
     }
   });
 

@@ -17,6 +17,7 @@ import {
 import '../styles/SuperAdminDashboard.css';
 import TodoPanel from './TodoPanel';
 import HeuteTab from './HeuteTab';
+import CronStatus from './CronStatus';
 import SslWarnungen from './SslWarnungen';
 import JahreszieleProgress from './JahreszieleProgress';
 import LastschriftAutoProtokollBanner from './LastschriftAutoProtokollBanner';
@@ -1490,6 +1491,7 @@ const SuperAdminDashboard = () => {
 
             {subActiveTab.system === 'status' && (
               <Suspense fallback={<TabLoader />}>
+                <CronStatus token={token} />
                 <PlatformStatusTab token={token} />
               </Suspense>
             )}

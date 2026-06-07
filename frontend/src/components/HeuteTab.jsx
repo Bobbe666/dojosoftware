@@ -34,6 +34,7 @@ export default function HeuteTab({ onNavigate }) {
   const [neuTitel, setNeuTitel] = useState('');
   const [neuFaellig, setNeuFaellig] = useState(() => new Date().toISOString().slice(0, 10));
   const [neuPrio, setNeuPrio] = useState('normal');
+  const [neuKontext, setNeuKontext] = useState(''); // optionale Event-Zuordnung
   const [neuSaving, setNeuSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -80,10 +81,12 @@ export default function HeuteTab({ onNavigate }) {
     setNeuSaving(true);
     try {
       await axios.post('/todos',
-        { titel: neuTitel.trim(), faellig_am: neuFaellig || null, prioritaet: neuPrio },
+        { titel: neuTitel.trim(), faellig_am: neuFaellig || null, prioritaet: neuPrio,
+          kontext: neuKontext || 'allgemein' },
         { headers: authHeader });
       setNeuTitel('');
       setNeuPrio('normal');
+      setNeuKontext('');
       setNeuFaellig(new Date().toISOString().slice(0, 10));
       setShowNeu(false);
       load();
@@ -102,6 +105,9 @@ export default function HeuteTab({ onNavigate }) {
   const { ueberfaellige_todos: ueberfaellig, faellige_todos: faellig,
           termine_heute: heute, termine_demnaechst: demnaechst, neues } = agenda;
   const highlights = agenda.highlights || [];
+  // Events/Termine, denen man ein To-Do zuordnen kann (Demos/Prüfungen ausgenommen)
+  const eventOptionen = [...(agenda.termine_heute || []), ...(agenda.termine_demnaechst || []), ...highlights]
+    .filter(t => ['event', 'hof', 'turnier'].includes(t.typ));
 
   const neuesItems = [];
   if (neues.ungelesene_meldungen > 0) neuesItems.push({ icon: '🔔', text: `${neues.ungelesene_meldungen} ungelesene Meldung(en)`, tab: 'kommunikation' });
@@ -182,6 +188,14 @@ export default function HeuteTab({ onNavigate }) {
             <option value="normal">🟡 Normal</option>
             <option value="niedrig">⚪ Niedrig</option>
           </select>
+          {eventOptionen.length > 0 && (
+            <select value={neuKontext} onChange={e => setNeuKontext(e.target.value)} title="Einem Event zuordnen">
+              <option value="">— ohne Event —</option>
+              {eventOptionen.map(ev => (
+                <option key={ev.id} value={`Event: ${ev.titel}`}>{(TYP_META[ev.typ]?.icon || '📅')} {ev.titel}</option>
+              ))}
+            </select>
+          )}
           <button className="heute-btn heute-btn--primary" onClick={neuesAnlegen} disabled={neuSaving || !neuTitel.trim()}>
             {neuSaving ? '⏳' : 'Anlegen'}
           </button>
