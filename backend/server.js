@@ -1715,6 +1715,17 @@ try {
   logger.error("Fehler beim Laden der Route", { route: "pilot-bewerbungen", error: error.message });
 }
 
+// 10.2d-2 PILOT-PARTNER FEEDBACK (zeitgesteuerte Fragebögen)
+try {
+  const pilotFeedbackRouter = require(path.join(__dirname, "routes", "pilot-feedback.js"));
+  // Öffentlich: GET/POST /api/pilot-feedback/:token
+  // Admin:      /api/pilot-feedback/admin/...  (auth per Route, Super-Admin)
+  app.use("/api/pilot-feedback", pilotFeedbackRouter);
+  logger.success("Route gemountet", { path: "/api/pilot-feedback" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "pilot-feedback", error: error.message });
+}
+
 // 10.2e ENTWICKLUNGS-ANFRAGEN (Homepage/Software-Anfragen von tda-intl.org)
 try {
   const entwicklungsAnfragenRouter = require(path.join(__dirname, "routes", "entwicklungs-anfragen.js"));

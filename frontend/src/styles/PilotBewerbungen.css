@@ -225,3 +225,79 @@
   .pb-card-head { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
   .pb-card-side { width: 100%; justify-content: space-between; }
 }
+
+/* ── Feedback-Umfragen (Status gewonnen) ── */
+.pb-feedback {
+  border: 1px solid rgba(217, 170, 67, 0.25);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  background: rgba(217, 170, 67, 0.04);
+}
+.pb-feedback-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+.pb-start-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #94a3b8);
+}
+.pb-start-row input[type="date"] {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 6px;
+  color: var(--text-primary, #e2e8f0);
+  font-size: 0.78rem;
+  padding: 0.25rem 0.5rem;
+}
+.pb-feedback-empty {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #94a3b8);
+  padding: 0.4rem 0;
+}
+.pb-umfrage {
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  padding: 0.5rem 0;
+}
+.pb-umfrage-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.pb-umfrage-titel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+}
+.pb-umfrage-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+  flex: 1;
+}
+.pb-antworten {
+  margin-top: 0.6rem;
+  padding: 0.6rem 0.85rem;
+  background: rgba(148, 163, 184, 0.06);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.pb-antwort { font-size: 0.83rem; color: var(--text-primary, #e2e8f0); }
+.pb-sterne { color: #d9aa43; font-size: 0.95rem; }
+.pb-sterne em { color: var(--text-secondary, #94a3b8); font-style: normal; font-size: 0.75rem; }
+.pb-antwort-text {
+  margin: 0.25rem 0 0;
+  white-space: pre-wrap;
+  background: rgba(148, 163, 184, 0.06);
+  border-left: 3px solid #d9aa43;
+  border-radius: 4px;
+  padding: 0.45rem 0.7rem;
+}

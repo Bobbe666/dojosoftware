@@ -31,6 +31,30 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.23',
+    date: '2026-06-07',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Pilot-Partner Feedback-System: zeitgesteuerte Fragebögen per E-Mail',
+    description: 'Gewonnene Pilot-Partner bekommen automatisch Kurz-Fragebögen per E-Mail: Tag 14 „Wie war die Einrichtung?", Tag 28 „Erste Erfahrungen", danach alle 28 Tage „Wie läuft\'s?" — je 4–5 Sterne-Fragen + Kommentar, ohne Login beantwortbar. Antworten landen in den Meldungen und im Pilot-Programm-Tab.',
+    highlights: [
+      '📝 3 FRAGEBÖGEN (je ~2 Min): Einrichtung / Erste Erfahrungen / laufender 4-Wochen-Check — Fragenkatalog zentral in pilotFeedbackService.js',
+      '⏰ CRON täglich 10:00: plant + versendet fällige Umfragen, einmalige Erinnerung nach 7 Tagen, Ende nach 12 Monaten',
+      '🔗 ÖFFENTLICHE SEITE dojo.tda-intl.org/pilot-feedback/:token — Sterne-Rating, Auswahl-Chips, Kommentare, kein Login',
+      '🔔 ANTWORTEN → Meldung (typ pilot_feedback) + Mail an info@; einsehbar im Pilot-Tab (PlattformZentrale) mit Sterne-Übersicht',
+      '🏆 STATUS „GEWONNEN" setzt automatisch programm_start (editierbar) und plant die Umfragen; manueller Sofort-Versand möglich',
+    ],
+    details: 'Migration 191 (pilot_feedback_umfragen + pilot_bewerbungen.programm_start). Backend: services/pilotFeedbackService.js (Katalog, planeUmfragen, processPilotFeedback), routes/pilot-feedback.js (public GET/POST per Token-Regex, Admin-CRUD), Cron in cron-jobs.js. Frontend: pages/PilotFeedback.jsx (public Route), PilotBewerbungen.jsx Feedback-Sektion.',
+    files: [
+      'backend/migrations/191_pilot_feedback.sql',
+      'backend/services/pilotFeedbackService.js',
+      'backend/routes/pilot-feedback.js',
+      'backend/cron-jobs.js',
+      'frontend/src/pages/PilotFeedback.jsx',
+      'frontend/src/components/PilotBewerbungen.jsx',
+    ],
+  },
+  {
     version: '3.0.22',
     date: '2026-06-07',
     type: 'feature',

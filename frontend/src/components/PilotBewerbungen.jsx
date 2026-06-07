@@ -18,6 +18,17 @@ function fmt(dt) {
   });
 }
 
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function umfrageStatus(u) {
+  if (u.beantwortet_am) return { icon: '✅', label: `Beantwortet ${fmtDate(u.beantwortet_am)}`, color: '#22c55e' };
+  if (u.gesendet_am)    return { icon: '📤', label: `Gesendet ${fmtDate(u.gesendet_am)}${u.erinnert_am ? ' · erinnert' : ''}`, color: '#f59e0b' };
+  return { icon: '📅', label: `Geplant für ${fmtDate(u.faellig_am)}`, color: '#94a3b8' };
+}
+
 // ─── Haupt-Komponente ─────────────────────────────────────────────────────────
 export default function PilotBewerbungen() {
   const { token } = useAuth();
@@ -30,6 +41,9 @@ export default function PilotBewerbungen() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
   const [notizDrafts, setNotizDrafts] = useState({});
+  const [feedback, setFeedback] = useState({});         // { [bewerbungId]: umfragen[] }
+  const [feedbackOpen, setFeedbackOpen] = useState(null); // geöffnete Antworten (umfrage.id)
+  const [startDrafts, setStartDrafts] = useState({});
 
   const showMsg = (type, text) => {
     setMsg({ type, text });
@@ -72,6 +86,40 @@ export default function PilotBewerbungen() {
       await axios.put(`/pilot-bewerbungen/admin/${id}`, { notiz_intern: notizDrafts[id] ?? '' }, { headers: authHeader });
       showMsg('success', 'Notiz gespeichert');
       load();
+    } catch (err) {
+      const m = err.response?.data?.error || err.message;
+      showMsg('error', typeof m === 'string' ? m : JSON.stringify(m));
+    }
+  };
+
+  const loadFeedback = async (bewerbungId) => {
+    try {
+      const r = await axios.get(`/pilot-feedback/admin/${bewerbungId}`, { headers: authHeader });
+      setFeedback(f => ({ ...f, [bewerbungId]: r.data.umfragen || [] }));
+    } catch (err) {
+      const m = err.response?.data?.error || err.message;
+      showMsg('error', typeof m === 'string' ? m : JSON.stringify(m));
+    }
+  };
+
+  const saveProgrammStart = async (bewerbungId) => {
+    try {
+      await axios.put(`/pilot-feedback/admin/programm-start/${bewerbungId}`,
+        { programm_start: startDrafts[bewerbungId] }, { headers: authHeader });
+      showMsg('success', 'Programm-Start gespeichert — Umfragen neu geplant');
+      load();
+      loadFeedback(bewerbungId);
+    } catch (err) {
+      const m = err.response?.data?.error || err.message;
+      showMsg('error', typeof m === 'string' ? m : JSON.stringify(m));
+    }
+  };
+
+  const sendeUmfrage = async (umfrageId, bewerbungId) => {
+    try {
+      await axios.post(`/pilot-feedback/admin/${umfrageId}/senden`, {}, { headers: authHeader });
+      showMsg('success', 'Umfrage versendet');
+      loadFeedback(bewerbungId);
     } catch (err) {
       const m = err.response?.data?.error || err.message;
       showMsg('error', typeof m === 'string' ? m : JSON.stringify(m));
@@ -132,7 +180,13 @@ export default function PilotBewerbungen() {
           const isOpen = expanded === b.id;
           return (
             <div key={b.id} className={`pb-card ${isOpen ? 'open' : ''}`} style={{ borderLeft: `3px solid ${meta.color}` }}>
-              <div className="pb-card-head" onClick={() => setExpanded(isOpen ? null : b.id)}>
+              <div
+                className="pb-card-head"
+                onClick={() => {
+                  setExpanded(isOpen ? null : b.id);
+                  if (!isOpen && b.status === 'gewonnen' && !feedback[b.id]) loadFeedback(b.id);
+                }}
+              >
                 <div className="pb-card-main">
                   <span className="pb-school">{b.schulname}</span>
                   <span className="pb-meta">
@@ -178,6 +232,72 @@ export default function PilotBewerbungen() {
                     />
                     <button className="pb-btn pb-btn--ghost" onClick={() => saveNotiz(b.id)}>Notiz speichern</button>
                   </div>
+
+                  {b.status === 'gewonnen' && (
+                    <div className="pb-feedback">
+                      <div className="pb-feedback-head">
+                        <span className="pb-label">📝 Feedback-Umfragen</span>
+                        <div className="pb-start-row">
+                          <span>Programm-Start:</span>
+                          <input
+                            type="date"
+                            value={startDrafts[b.id] ?? (b.programm_start ? String(b.programm_start).slice(0, 10) : '')}
+                            onChange={e => setStartDrafts(d => ({ ...d, [b.id]: e.target.value }))}
+                          />
+                          <button className="pb-btn pb-btn--ghost" onClick={() => saveProgrammStart(b.id)}>Speichern</button>
+                        </div>
+                      </div>
+
+                      {!feedback[b.id] && <div className="pb-feedback-empty">⏳ Lade Umfragen…</div>}
+                      {feedback[b.id]?.length === 0 && (
+                        <div className="pb-feedback-empty">
+                          Noch keine Umfragen geplant — Zeitplan: Tag 14 Einrichtung · Tag 28 Erfahrungen · danach alle 28 Tage.
+                          Umfragen erscheinen hier, sobald sie (in den nächsten 7 Tagen) fällig werden.
+                        </div>
+                      )}
+
+                      {(feedback[b.id] || []).map(u => {
+                        const st = umfrageStatus(u);
+                        const antwortenOffen = feedbackOpen === u.id;
+                        return (
+                          <div className="pb-umfrage" key={u.id}>
+                            <div className="pb-umfrage-row">
+                              <span className="pb-umfrage-status" style={{ color: st.color }}>{st.icon}</span>
+                              <span className="pb-umfrage-titel">{u.titel}</span>
+                              <span className="pb-umfrage-meta">{st.label}</span>
+                              {!u.beantwortet_am && (
+                                <button className="pb-btn pb-btn--ghost" onClick={() => sendeUmfrage(u.id, b.id)}>
+                                  {u.gesendet_am ? '↺ Erneut senden' : '📤 Jetzt senden'}
+                                </button>
+                              )}
+                              {u.beantwortet_am && (
+                                <button className="pb-btn" onClick={() => setFeedbackOpen(antwortenOffen ? null : u.id)}>
+                                  {antwortenOffen ? 'Antworten ▲' : 'Antworten ▼'}
+                                </button>
+                              )}
+                            </div>
+                            {antwortenOffen && u.antworten && (
+                              <div className="pb-antworten">
+                                {u.fragen.map(f => {
+                                  const w = u.antworten[f.key];
+                                  return (
+                                    <div className="pb-antwort" key={f.key}>
+                                      <span className="pb-label">{f.text}</span>
+                                      {f.typ === 'rating' && (
+                                        <span className="pb-sterne">{'★'.repeat(w)}{'☆'.repeat(5 - w)} <em>({w}/5)</em></span>
+                                      )}
+                                      {f.typ === 'choice' && <span>{Array.isArray(w) && w.length ? w.join(', ') : '—'}</span>}
+                                      {f.typ === 'text' && <p className="pb-antwort-text">{w || '—'}</p>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   <div className="pb-actions">
                     {Object.entries(STATUS_META).filter(([k]) => k !== b.status).map(([key, m]) => (

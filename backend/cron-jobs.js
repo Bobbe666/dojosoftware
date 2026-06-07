@@ -494,6 +494,21 @@ function initCronJobs() {
     }
   });
 
+  // ── Pilot-Partner Feedback-Umfragen ──────────────────────────────────────
+  // Täglich um 10:00 — plant + versendet fällige Fragebögen an Pilot-Partner
+  // (Tag 14 Einrichtung, Tag 28 Erfahrungen, danach alle 28 Tage; Erinnerung nach 7 Tagen)
+  cron.schedule('0 10 * * *', async () => {
+    try {
+      const { processPilotFeedback } = require('./services/pilotFeedbackService');
+      const r = await processPilotFeedback();
+      if (r.gesendet > 0 || r.erinnert > 0) {
+        logger.success(`📝 Pilot-Feedback: ${r.gesendet} gesendet, ${r.erinnert} erinnert${r.fehler ? `, ${r.fehler} Fehler` : ''}`);
+      }
+    } catch (error) {
+      logger.error('❌ Pilot-Feedback Cron Fehler', { error: error.message });
+    }
+  });
+
   // ── Auto-Lastschrift Artikelverkäufe ──────────────────────────────────────
   // Täglich um 00:05 Uhr — zieht offene Lastschrift-Verkäufe automatisch ein
   cron.schedule('5 0 * * *', async () => {

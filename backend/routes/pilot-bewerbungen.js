@@ -256,6 +256,25 @@ router.put('/admin/:id', authenticateToken, onlySuperAdmin, async (req, res) => 
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, error: 'Bewerbung nicht gefunden' });
     }
+
+    // Status → "gewonnen": Programm-Start setzen (falls leer) + Feedback-Umfragen planen
+    if (status === 'gewonnen') {
+      try {
+        await pool.query(
+          `UPDATE pilot_bewerbungen SET programm_start = COALESCE(programm_start, CURDATE()) WHERE id = ?`,
+          [req.params.id]
+        );
+        const { planeUmfragen } = require('../services/pilotFeedbackService');
+        const [[partner]] = await pool.query(
+          'SELECT id, schulname, ansprechpartner, email, programm_start FROM pilot_bewerbungen WHERE id = ?',
+          [req.params.id]
+        );
+        if (partner) await planeUmfragen(partner);
+      } catch (err) {
+        console.error('[Pilot-Bewerbung] Feedback-Planung Fehler:', err.message);
+      }
+    }
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

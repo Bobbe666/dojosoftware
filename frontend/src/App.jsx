@@ -242,6 +242,7 @@ const LastschriftZustimmung = lazyWithReload(() => import(/* webpackChunkName: "
 const VerbandMitgliedWerden = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/VerbandMitgliedWerden"));
 const ProbetrainingBuchung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/ProbetrainingBuchung"));
 const DemoBuchung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/DemoBuchung"));
+const PilotFeedback = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/PilotFeedback"));
 const EventGastAnmeldung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/EventGastAnmeldung"));
 const GutscheinShop = lazyWithReload(() => import(/* webpackChunkName: "gutschein-shop" */ "./pages/GutscheinShop"));
 const PublicShop = lazyWithReload(() => import(/* webpackChunkName: "shop" */ "./pages/shop/PublicShop"));
@@ -664,6 +665,9 @@ const App = () => {
 
             {/* Demo-Termin buchen - Öffentlich zugänglich (für Software-Interessenten) */}
             <Route path="/demo-buchen" element={<Suspense fallback={<LazyLoadFallback />}><DemoBuchung /></Suspense>} />
+
+            {/* Pilot-Partner Feedback-Umfrage - Öffentlich (Token-Link aus E-Mail) */}
+            <Route path="/pilot-feedback/:token" element={<Suspense fallback={<LazyLoadFallback />}><PilotFeedback /></Suspense>} />
 
             {/* Event Gast-Anmeldung - Öffentlich zugänglich (kein Login erforderlich) */}
             <Route path="/event/:eventId/gast" element={<Suspense fallback={<LazyLoadFallback />}><EventGastAnmeldung /></Suspense>} />
