@@ -1231,147 +1231,6 @@ const SuperAdminDashboard = () => {
         )}
 
         {/* ═══ Kommunikation ════════════════════════════════════════ */}
-        {/* Kommunikation — als Unter-Tab des Dashboards (plattform) */}
-        {activeTab === 'plattform' && subActiveTab.plattform === 'kommunikation' && (
-          <div>
-            <div className="sub-tabs-horizontal sad2-mb-15">
-              <button className={`sub-tab-btn ${kommunikationSubTab === 'pushnachrichten' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('pushnachrichten')}>
-                <Bell size={16} /><span>Pushnachrichten</span>
-              </button>
-              <button className={`sub-tab-btn ${kommunikationSubTab === 'chat-zentrale' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('chat-zentrale')}>
-                <MessageCircle size={16} /><span>Chat-Zentrale</span>
-              </button>
-              <button className={`sub-tab-btn ${kommunikationSubTab === 'support' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('support')}>
-                <MessageSquare size={16} /><span>Support</span>
-              </button>
-              <button className={`sub-tab-btn ${kommunikationSubTab === 'besucher-chat' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('besucher-chat')}>
-                <Globe size={16} /><span>Besucher-Chat</span>
-              </button>
-              <button className={`sub-tab-btn ${kommunikationSubTab === 'kampagnen' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('kampagnen')}>
-                <Send size={16} /><span>Kampagnen</span>
-              </button>
-              <button className={`sub-tab-btn ${kommunikationSubTab === 'marketing-ki' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('marketing-ki')}>
-                <Sparkles size={16} /><span>Marketing KI</span>
-              </button>
-            </div>
-
-            {kommunikationSubTab === 'pushnachrichten' && (
-              <div className="pushnachrichten-tab">
-                <h2 className="section-title sad-section-header">
-                  <Bell size={24} /> Pushnachrichten
-                </h2>
-                <div className="sad2-grid-2col-15">
-                  <div className="sad-card">
-                    <h3 className="sad2-flex-icon-row-mb">
-                      <Send size={18} /> Neue Push-Nachricht senden
-                    </h3>
-                    <div className="form-group sad2-mb-1">
-                      <label className="sad-form-label">Empfänger *</label>
-                      <select value={newPushMessage.empfaenger_typ} onChange={(e) => setNewPushMessage({...newPushMessage, empfaenger_typ: e.target.value})} className="sad2-full-input">
-                        <option value="alle">🌐 Alle (Verbandsmitglieder, Dojos & Mitglieder)</option>
-                        <option value="verbandsmitglieder">🏆 Nur Verbandsmitglieder</option>
-                        <option value="dojos">🏠 Nur Dojos (Dojo-Administratoren)</option>
-                        <option value="mitglieder">👥 Nur Mitglieder in Dojos</option>
-                      </select>
-                    </div>
-                    <div className="form-group sad2-mb-1">
-                      <label className="sad-form-label">Priorität</label>
-                      <select value={newPushMessage.prioritaet} onChange={(e) => setNewPushMessage({...newPushMessage, prioritaet: e.target.value})} className="sad2-full-input">
-                        <option value="normal">📋 Normal</option>
-                        <option value="wichtig">⚠️ Wichtig</option>
-                        <option value="dringend">🚨 Dringend</option>
-                      </select>
-                    </div>
-                    <div className="form-group sad2-mb-1">
-                      <label className="sad-form-label">Titel *</label>
-                      <input type="text" value={newPushMessage.titel} onChange={(e) => setNewPushMessage({...newPushMessage, titel: e.target.value})} placeholder="z.B. Neue Funktion verfügbar" className="sad2-full-input" />
-                    </div>
-                    <div className="form-group sad2-mb-15">
-                      <label className="sad-form-label">Nachricht *</label>
-                      <textarea value={newPushMessage.nachricht} onChange={(e) => setNewPushMessage({...newPushMessage, nachricht: e.target.value})} placeholder="Ihre Nachricht hier eingeben..." rows={4} className="sad-push-textarea" />
-                    </div>
-                    <button onClick={sendPushNotification} disabled={sendingPush || !newPushMessage.titel || !newPushMessage.nachricht} className="sad-push-send-btn">
-                      <Send size={18} />
-                      {sendingPush ? 'Wird gesendet...' : 'Push-Nachricht senden'}
-                    </button>
-                    <div className="sad-push-hint">
-                      <strong>ℹ️ Hinweis:</strong> Push-Nachrichten werden sofort an alle ausgewählten Empfänger gesendet.
-                    </div>
-                  </div>
-                  <div className="sad-card">
-                    <div className="sad2-flex-between-center-mb">
-                      <h3 className="sad2-flex-icon-row">
-                        📥 Eingehende Benachrichtigungen
-                        {unreadCount > 0 && <span className="sad-unread-badge">{unreadCount} neu</span>}
-                      </h3>
-                      <div className="u-flex-gap-sm">
-                        <button onClick={markAllAsRead} disabled={unreadCount === 0} className="sad-tertiary-btn" title="Alle als gelesen markieren">
-                          <CheckCircle size={14} /> Alle gelesen
-                        </button>
-                        <button onClick={loadNotifications} className="sad-refresh-btn" title="Aktualisieren">
-                          <RefreshCw size={16} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="sad2-flex-gap-05-mb">
-                      {['unread','all','archived'].map(f => (
-                        <button key={f} onClick={() => setNotificationFilter(f)} className={`sad-notif-filter-btn ${notificationFilter === f ? 'sad-notif-filter-btn--active' : ''}`}>
-                          {f === 'unread' ? `Ungelesen (${unreadCount})` : f === 'all' ? 'Alle' : 'Archiv'}
-                        </button>
-                      ))}
-                    </div>
-                    {notificationsLoading ? (
-                      <div className="sad-text-center-empty">Lade Benachrichtigungen...</div>
-                    ) : notifications.filter(n => notificationFilter === 'unread' ? !n.gelesen : notificationFilter === 'archived' ? n.archiviert : true).length === 0 ? (
-                      <div className="sad-text-center-empty">
-                        <CheckCircle size={32} className="sad-empty-icon" /><br />Keine Benachrichtigungen
-                      </div>
-                    ) : (
-                      <div className="sad-notif-scroll">
-                        {notifications.filter(n => notificationFilter === 'unread' ? !n.gelesen : notificationFilter === 'archived' ? n.archiviert : true).map(notification => (
-                          <div key={notification.id} className={`sad-notif-item ${!notification.gelesen ? 'sad-notif-item--unread' : ''}`}>
-                            <span className="sad-notif-icon">{notification.typ === 'mitglied_registriert' ? '👤' : notification.typ === 'dojo_registriert' ? '🏠' : notification.typ === 'verbandsmitglied_registriert' ? '🏆' : '🔔'}</span>
-                            <div className="u-flex-1">
-                              <div className="sad-notif-titel">{notification.titel}</div>
-                              <div className="sad-notif-nachricht">{notification.nachricht}</div>
-                            </div>
-                            <div className="sad-notif-btn-row">
-                              {!notification.gelesen && <button onClick={() => markNotificationAsRead(notification.id)} className="sad2-icon-btn" title="Gelesen"><Eye size={14} /></button>}
-                              <button onClick={() => archiveNotification(notification.id)} className="sad2-icon-btn" title="Archivieren"><Archive size={14} /></button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {kommunikationSubTab === 'chat-zentrale' && (
-              <SuperAdminChatZentraleWrapper token={token} />
-            )}
-
-            {kommunikationSubTab === 'support' && (
-              <SupportTickets bereich="org" showAllBereiche={true} />
-            )}
-
-            {kommunikationSubTab === 'besucher-chat' && (
-              <div style={{ height: 600 }}>
-                <BesucherChat />
-              </div>
-            )}
-
-            {kommunikationSubTab === 'kampagnen' && (
-              <KampagnenDashboard />
-            )}
-
-            {kommunikationSubTab === 'marketing-ki' && (
-              <SuperAdminMarketing />
-            )}
-          </div>
-        )}
-
         {/* ═══ Verband ══════════════════════════════════════════════ */}
         {activeTab === 'verband' && (
           <VerbandsMitglieder />
@@ -1467,6 +1326,146 @@ const SuperAdminDashboard = () => {
               { id: 'zugangsdaten',  icon: '🔐', label: 'Zugangsdaten' },
             ])}
             {(subActiveTab.plattform ?? 'zentrale') === 'zentrale' && <PlattformZentrale />}
+            {/* Kommunikation — Unter-Tab-Inhalt */}
+            {subActiveTab.plattform === 'kommunikation' && (
+              <div>
+                <div className="sub-tabs-horizontal sad2-mb-15">
+                  <button className={`sub-tab-btn ${kommunikationSubTab === 'pushnachrichten' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('pushnachrichten')}>
+                    <Bell size={16} /><span>Pushnachrichten</span>
+                  </button>
+                  <button className={`sub-tab-btn ${kommunikationSubTab === 'chat-zentrale' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('chat-zentrale')}>
+                    <MessageCircle size={16} /><span>Chat-Zentrale</span>
+                  </button>
+                  <button className={`sub-tab-btn ${kommunikationSubTab === 'support' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('support')}>
+                    <MessageSquare size={16} /><span>Support</span>
+                  </button>
+                  <button className={`sub-tab-btn ${kommunikationSubTab === 'besucher-chat' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('besucher-chat')}>
+                    <Globe size={16} /><span>Besucher-Chat</span>
+                  </button>
+                  <button className={`sub-tab-btn ${kommunikationSubTab === 'kampagnen' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('kampagnen')}>
+                    <Send size={16} /><span>Kampagnen</span>
+                  </button>
+                  <button className={`sub-tab-btn ${kommunikationSubTab === 'marketing-ki' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('marketing-ki')}>
+                    <Sparkles size={16} /><span>Marketing KI</span>
+                  </button>
+                </div>
+
+                {kommunikationSubTab === 'pushnachrichten' && (
+                  <div className="pushnachrichten-tab">
+                    <h2 className="section-title sad-section-header">
+                      <Bell size={24} /> Pushnachrichten
+                    </h2>
+                    <div className="sad2-grid-2col-15">
+                      <div className="sad-card">
+                        <h3 className="sad2-flex-icon-row-mb">
+                          <Send size={18} /> Neue Push-Nachricht senden
+                        </h3>
+                        <div className="form-group sad2-mb-1">
+                          <label className="sad-form-label">Empfänger *</label>
+                          <select value={newPushMessage.empfaenger_typ} onChange={(e) => setNewPushMessage({...newPushMessage, empfaenger_typ: e.target.value})} className="sad2-full-input">
+                            <option value="alle">🌐 Alle (Verbandsmitglieder, Dojos & Mitglieder)</option>
+                            <option value="verbandsmitglieder">🏆 Nur Verbandsmitglieder</option>
+                            <option value="dojos">🏠 Nur Dojos (Dojo-Administratoren)</option>
+                            <option value="mitglieder">👥 Nur Mitglieder in Dojos</option>
+                          </select>
+                        </div>
+                        <div className="form-group sad2-mb-1">
+                          <label className="sad-form-label">Priorität</label>
+                          <select value={newPushMessage.prioritaet} onChange={(e) => setNewPushMessage({...newPushMessage, prioritaet: e.target.value})} className="sad2-full-input">
+                            <option value="normal">📋 Normal</option>
+                            <option value="wichtig">⚠️ Wichtig</option>
+                            <option value="dringend">🚨 Dringend</option>
+                          </select>
+                        </div>
+                        <div className="form-group sad2-mb-1">
+                          <label className="sad-form-label">Titel *</label>
+                          <input type="text" value={newPushMessage.titel} onChange={(e) => setNewPushMessage({...newPushMessage, titel: e.target.value})} placeholder="z.B. Neue Funktion verfügbar" className="sad2-full-input" />
+                        </div>
+                        <div className="form-group sad2-mb-15">
+                          <label className="sad-form-label">Nachricht *</label>
+                          <textarea value={newPushMessage.nachricht} onChange={(e) => setNewPushMessage({...newPushMessage, nachricht: e.target.value})} placeholder="Ihre Nachricht hier eingeben..." rows={4} className="sad-push-textarea" />
+                        </div>
+                        <button onClick={sendPushNotification} disabled={sendingPush || !newPushMessage.titel || !newPushMessage.nachricht} className="sad-push-send-btn">
+                          <Send size={18} />
+                          {sendingPush ? 'Wird gesendet...' : 'Push-Nachricht senden'}
+                        </button>
+                        <div className="sad-push-hint">
+                          <strong>ℹ️ Hinweis:</strong> Push-Nachrichten werden sofort an alle ausgewählten Empfänger gesendet.
+                        </div>
+                      </div>
+                      <div className="sad-card">
+                        <div className="sad2-flex-between-center-mb">
+                          <h3 className="sad2-flex-icon-row">
+                            📥 Eingehende Benachrichtigungen
+                            {unreadCount > 0 && <span className="sad-unread-badge">{unreadCount} neu</span>}
+                          </h3>
+                          <div className="u-flex-gap-sm">
+                            <button onClick={markAllAsRead} disabled={unreadCount === 0} className="sad-tertiary-btn" title="Alle als gelesen markieren">
+                              <CheckCircle size={14} /> Alle gelesen
+                            </button>
+                            <button onClick={loadNotifications} className="sad-refresh-btn" title="Aktualisieren">
+                              <RefreshCw size={16} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="sad2-flex-gap-05-mb">
+                          {['unread','all','archived'].map(f => (
+                            <button key={f} onClick={() => setNotificationFilter(f)} className={`sad-notif-filter-btn ${notificationFilter === f ? 'sad-notif-filter-btn--active' : ''}`}>
+                              {f === 'unread' ? `Ungelesen (${unreadCount})` : f === 'all' ? 'Alle' : 'Archiv'}
+                            </button>
+                          ))}
+                        </div>
+                        {notificationsLoading ? (
+                          <div className="sad-text-center-empty">Lade Benachrichtigungen...</div>
+                        ) : notifications.filter(n => notificationFilter === 'unread' ? !n.gelesen : notificationFilter === 'archived' ? n.archiviert : true).length === 0 ? (
+                          <div className="sad-text-center-empty">
+                            <CheckCircle size={32} className="sad-empty-icon" /><br />Keine Benachrichtigungen
+                          </div>
+                        ) : (
+                          <div className="sad-notif-scroll">
+                            {notifications.filter(n => notificationFilter === 'unread' ? !n.gelesen : notificationFilter === 'archived' ? n.archiviert : true).map(notification => (
+                              <div key={notification.id} className={`sad-notif-item ${!notification.gelesen ? 'sad-notif-item--unread' : ''}`}>
+                                <span className="sad-notif-icon">{notification.typ === 'mitglied_registriert' ? '👤' : notification.typ === 'dojo_registriert' ? '🏠' : notification.typ === 'verbandsmitglied_registriert' ? '🏆' : '🔔'}</span>
+                                <div className="u-flex-1">
+                                  <div className="sad-notif-titel">{notification.titel}</div>
+                                  <div className="sad-notif-nachricht">{notification.nachricht}</div>
+                                </div>
+                                <div className="sad-notif-btn-row">
+                                  {!notification.gelesen && <button onClick={() => markNotificationAsRead(notification.id)} className="sad2-icon-btn" title="Gelesen"><Eye size={14} /></button>}
+                                  <button onClick={() => archiveNotification(notification.id)} className="sad2-icon-btn" title="Archivieren"><Archive size={14} /></button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {kommunikationSubTab === 'chat-zentrale' && (
+                  <SuperAdminChatZentraleWrapper token={token} />
+                )}
+
+                {kommunikationSubTab === 'support' && (
+                  <SupportTickets bereich="org" showAllBereiche={true} />
+                )}
+
+                {kommunikationSubTab === 'besucher-chat' && (
+                  <div style={{ height: 600 }}>
+                    <BesucherChat />
+                  </div>
+                )}
+
+                {kommunikationSubTab === 'kampagnen' && (
+                  <KampagnenDashboard />
+                )}
+
+                {kommunikationSubTab === 'marketing-ki' && (
+                  <SuperAdminMarketing />
+                )}
+              </div>
+            )}
             {subActiveTab.plattform === 'zugangsdaten' && <PlattformZugangsdaten />}
           </div>
         )}

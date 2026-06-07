@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.28',
+    date: '2026-06-07',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Dashboard: Unter-Tab-Leiste stand beim Kommunikation-Tab unter dem Inhalt',
+    description: 'Beim Wechsel auf Dashboard → Kommunikation rutschte die Unter-Tab-Leiste (Plattform-Zentrale / Kommunikation / Zugangsdaten) ans Seitenende — nicht erkennbar, dass man zurückschalten kann. Der Kommunikation-Block stand im Code vor dem Dashboard-Block; jetzt ist er korrekt verschachtelt, die Leiste bleibt oben.',
+    highlights: [
+      '🧭 UNTER-TABS IMMER OBEN: Kommunikation-Inhalt jetzt innerhalb des plattform-Blocks gerendert',
+    ],
+    details: 'SuperAdminDashboard.jsx: Kommunikation-JSX (140 Zeilen) in den plattform-Block nach renderSubTabs verschoben, Bedingung vereinfacht (subActiveTab statt activeTab+subActiveTab).',
+    files: [
+      'frontend/src/components/SuperAdminDashboard.jsx',
+    ],
+  },
+  {
     version: '3.0.27',
     date: '2026-06-07',
     type: 'improvement',
