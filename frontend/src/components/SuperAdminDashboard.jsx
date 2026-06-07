@@ -416,10 +416,10 @@ const SuperAdminDashboard = () => {
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (activeTab === 'kommunikation' && kommunikationSubTab === 'pushnachrichten') {
+    if (activeTab === 'plattform' && subActiveTab.plattform === 'kommunikation' && kommunikationSubTab === 'pushnachrichten') {
       loadNotifications();
     }
-  }, [activeTab, kommunikationSubTab, notificationFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, subActiveTab.plattform, kommunikationSubTab, notificationFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Aktivitäten laden (letzte Registrierungen, etc.)
   const loadActivities = async () => {
@@ -755,19 +755,28 @@ const SuperAdminDashboard = () => {
   // Tab Definitions — produkt-basierte Hauptnavigation
   const tabs = [
     { id: 'heute',         label: 'Heute',          icon: '☀️' },
-    { id: 'plattform',     label: 'Dashboard',      icon: '🌐' },
+    { id: 'plattform',     label: 'Dashboard',      icon: '🌐', badge: unreadCount > 0 ? unreadCount : null },
     { id: 'overview',      label: 'Cockpit',        icon: '🎛️' },
     { id: 'todos',         label: 'To Do',          icon: '✅' },
     { id: 'verband',       label: 'Verband',        icon: '🏆' },
     { id: 'kontakte',      label: 'Kontakte',       icon: '🗂️' },
     { id: 'software',      label: 'Software',       icon: '💻' },
     { id: 'finanzen',      label: 'Finanzen',       icon: '💰' },
-    { id: 'kommunikation', label: 'Komm.',          icon: '📣', badge: unreadCount > 0 ? unreadCount : null },
     { id: 'entwicklung',   label: 'Entwicklung',    icon: '🎯' },
     { id: 'system',        label: 'System',         icon: '⚙️' },
   ];
 
   // Sub-Tab-Navigation rendern
+  // Zentrale Tab-Navigation — 'kommunikation' ist jetzt Unter-Tab im Dashboard (plattform)
+  const navigateTab = (tab) => {
+    if (tab === 'kommunikation') {
+      setActiveTab('plattform');
+      setSubTab('plattform', 'kommunikation');
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
   const renderSubTabs = (group, subtabs) => (
     <div className="sub-tabs-horizontal sad2-mb-15">
       {subtabs.map(tab => (
@@ -787,7 +796,7 @@ const SuperAdminDashboard = () => {
     <div className="super-admin-dashboard">
 
       {/* ── Cmd+K Command-Palette (globale Suche) ──────────────────── */}
-      <CommandPalette onNavigate={(tab) => setActiveTab(tab)} />
+      <CommandPalette onNavigate={navigateTab} />
 
       {/* ── Daily Briefing Popup (ausgelagert: DailyBriefing.jsx) ──── */}
       {showDailyBriefing && (
@@ -797,7 +806,7 @@ const SuperAdminDashboard = () => {
           unreadCount={unreadCount}
           sslWarnings={sslWarnings}
           onClose={closeBriefing}
-          onNavigate={(tab) => { closeBriefing(); setActiveTab(tab); }}
+          onNavigate={(tab) => { closeBriefing(); navigateTab(tab); }}
         />
       )}
 
@@ -824,7 +833,7 @@ const SuperAdminDashboard = () => {
       <Suspense fallback={<TabLoader />}>
       <div className="tab-content">
         {activeTab === 'heute' && (
-          <HeuteTab onNavigate={(tab) => setActiveTab(tab)} />
+          <HeuteTab onNavigate={navigateTab} />
         )}
 
         {activeTab === 'overview' && (
@@ -855,7 +864,7 @@ const SuperAdminDashboard = () => {
               </div>
               <div
                 className={`compact-stat compact-stat--clickable ${unreadCount > 0 ? 'compact-stat--danger' : ''}`}
-                onClick={() => { setActiveTab('kommunikation'); setKommunikationSubTab('pushnachrichten'); }}
+                onClick={() => { navigateTab('kommunikation'); setKommunikationSubTab('pushnachrichten'); }}
                 title="Zu Benachrichtigungen"
               >
                 <div className="compact-stat-top"><Bell size={16} /><span className="compact-stat-value">{unreadCount}</span></div>
@@ -1222,7 +1231,8 @@ const SuperAdminDashboard = () => {
         )}
 
         {/* ═══ Kommunikation ════════════════════════════════════════ */}
-        {activeTab === 'kommunikation' && (
+        {/* Kommunikation — als Unter-Tab des Dashboards (plattform) */}
+        {activeTab === 'plattform' && subActiveTab.plattform === 'kommunikation' && (
           <div>
             <div className="sub-tabs-horizontal sad2-mb-15">
               <button className={`sub-tab-btn ${kommunikationSubTab === 'pushnachrichten' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('pushnachrichten')}>
@@ -1452,8 +1462,9 @@ const SuperAdminDashboard = () => {
         {activeTab === 'plattform' && (
           <div>
             {renderSubTabs('plattform', [
-              { id: 'zentrale',     icon: '🌐', label: 'Plattform-Zentrale' },
-              { id: 'zugangsdaten', icon: '🔐', label: 'Zugangsdaten' },
+              { id: 'zentrale',      icon: '🌐', label: 'Plattform-Zentrale' },
+              { id: 'kommunikation', icon: '📣', label: 'Kommunikation' },
+              { id: 'zugangsdaten',  icon: '🔐', label: 'Zugangsdaten' },
             ])}
             {(subActiveTab.plattform ?? 'zentrale') === 'zentrale' && <PlattformZentrale />}
             {subActiveTab.plattform === 'zugangsdaten' && <PlattformZugangsdaten />}

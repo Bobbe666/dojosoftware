@@ -31,6 +31,23 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.27',
+    date: '2026-06-07',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Menüleiste entschlackt: Kommunikation ist jetzt Unter-Tab im Dashboard',
+    description: 'Die Haupt-Tab-Leiste war zu lang („System" rechts abgeschnitten). Der Kommunikation-Tab (Pushnachrichten/Meldungen, Chat-Zentrale, Support, Besucher-Chat, Kampagnen) ist jetzt ein Unter-Tab im 🌐 Dashboard. Der Ungelesen-Badge wandert mit auf den Dashboard-Tab.',
+    highlights: [
+      '📣 KOMMUNIKATION → Dashboard-Unter-Tab (zwischen Plattform-Zentrale und Zugangsdaten)',
+      '🔴 BADGE: ungelesene Meldungen werden jetzt am Dashboard-Tab angezeigt',
+      '🧭 NAVIGATION zentralisiert (navigateTab): Klicks aus Heute-Tab, Briefing-Popup, Cockpit-KPI und Command-Palette auf „Kommunikation" landen automatisch im richtigen Unter-Tab',
+    ],
+    details: 'SuperAdminDashboard.jsx: kommunikation aus tabs[] entfernt, Render-Bedingung des Blocks auf plattform+subTab umgestellt (Inhalt unverändert), useEffect-Deps um subActiveTab.plattform ergänzt, navigateTab()-Helper für alle onNavigate-Aufrufer.',
+    files: [
+      'frontend/src/components/SuperAdminDashboard.jsx',
+    ],
+  },
+  {
     version: '3.0.26',
     date: '2026-06-07',
     type: 'feature',
