@@ -353,10 +353,23 @@ export default function TodoPanel({ compact = false, fixedKontext = null }) {
     } catch {}
   };
 
+  const PRIO_RANK = { dringend: 0, hoch: 1, normal: 2, niedrig: 3 };
   const filtered = todos.filter(t => {
     if (statusFilter === 'aktiv')    return t.status !== 'erledigt';
     if (statusFilter === 'erledigt') return t.status === 'erledigt';
     return true;
+  }).sort((a, b) => {
+    // Erledigte immer ganz nach unten — auch direkt nach dem Abhaken
+    const ae = a.status === 'erledigt' ? 1 : 0;
+    const be = b.status === 'erledigt' ? 1 : 0;
+    if (ae !== be) return ae - be;
+    // Sonst nach Priorität, dann Fälligkeit (frühere zuerst)
+    const pr = (PRIO_RANK[a.prioritaet] ?? 9) - (PRIO_RANK[b.prioritaet] ?? 9);
+    if (pr !== 0) return pr;
+    if (a.faellig_am && b.faellig_am) return a.faellig_am < b.faellig_am ? -1 : a.faellig_am > b.faellig_am ? 1 : 0;
+    if (a.faellig_am) return -1;
+    if (b.faellig_am) return 1;
+    return 0;
   });
 
   const openCount   = todos.filter(t => t.status === 'offen').length;

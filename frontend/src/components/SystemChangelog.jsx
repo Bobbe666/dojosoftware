@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.35',
+    date: '2026-06-07',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'To-Do-Panel: Erledigte wandern nach unten, Sortierung nach Priorität',
+    description: 'Im To-Do-Panel werden erledigte Aufgaben jetzt immer ans Listenende sortiert — auch direkt nach dem Abhaken (vorher blieben sie an Ort und Stelle bis zum Neuladen). Offene Aufgaben sortieren nach Priorität (dringend → niedrig), dann nach Fälligkeit.',
+    highlights: [
+      '✅ ERLEDIGTE immer ganz unten — sofort beim Abhaken (clientseitige Sortierung)',
+      '🔢 OFFENE nach Priorität, dann Fälligkeit',
+    ],
+    details: 'TodoPanel.jsx: filtered-Liste mit .sort() — erledigt-Flag zuerst, dann PRIO_RANK, dann faellig_am.',
+    files: [
+      'frontend/src/components/TodoPanel.jsx',
+    ],
+  },
+  {
     version: '3.0.34',
     date: '2026-06-07',
     type: 'feature',
