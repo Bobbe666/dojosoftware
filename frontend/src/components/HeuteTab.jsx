@@ -102,8 +102,10 @@ export default function HeuteTab({ onNavigate }) {
   if (fehler) return <div className="heute-fehler">⚠️ {fehler} <button onClick={load}>Erneut versuchen</button></div>;
   if (!agenda) return null;
 
-  const { ueberfaellige_todos: ueberfaellig, faellige_todos: faellig,
-          termine_heute: heute, termine_demnaechst: demnaechst, neues } = agenda;
+  const { termine_heute: heute, termine_demnaechst: demnaechst, neues } = agenda;
+  // Abgehakte To-Dos sofort ausblenden (erledigt-Set wird beim Klick gesetzt)
+  const ueberfaellig = (agenda.ueberfaellige_todos || []).filter(t => !erledigt.has(t.id));
+  const faellig = (agenda.faellige_todos || []).filter(t => !erledigt.has(t.id));
   const highlights = agenda.highlights || [];
   // Events/Termine, denen man ein To-Do zuordnen kann (Demos/Prüfungen ausgenommen)
   const eventOptionen = [...(agenda.termine_heute || []), ...(agenda.termine_demnaechst || []), ...highlights]

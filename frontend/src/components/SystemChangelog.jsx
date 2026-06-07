@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.36',
+    date: '2026-06-07',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Heute-Tab: abgehakte To-Dos verschwinden sofort',
+    description: 'Im ☀️ Heute-Tab bleibt eine abgehakte Aufgabe nicht mehr durchgestrichen stehen, sondern wird sofort ausgeblendet — der Tag wird kürzer, während du abarbeitest.',
+    highlights: [
+      '✅ Abhaken im Heute-Tab → Aufgabe verschwindet direkt aus der Liste',
+    ],
+    details: 'HeuteTab.jsx: ueberfaellige_todos/faellige_todos werden gegen das erledigt-Set gefiltert.',
+    files: [
+      'frontend/src/components/HeuteTab.jsx',
+    ],
+  },
+  {
     version: '3.0.35',
     date: '2026-06-07',
     type: 'improvement',
