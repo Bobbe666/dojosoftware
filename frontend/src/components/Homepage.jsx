@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import PublicRegistration from "./PublicRegistration";
+import PilotPopup from "./PilotPopup";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Homepage.css";
@@ -17,6 +18,7 @@ const Homepage = () => {
 
   return (
     <div className="homepage">
+      <PilotPopup />
       <header className="homepage-header">
         <div className="container">
           <nav className="homepage-nav">

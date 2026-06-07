@@ -1,0 +1,227 @@
+/* ============================================================================
+   PilotBewerbungen — Super-Admin Verwaltung Pilot-Partner-Programm
+   ============================================================================ */
+
+.pilot-bewerbungen {
+  padding: 1rem 1.5rem;
+  width: 100%;
+}
+
+/* ── Header ── */
+.pb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color, #334155);
+}
+.pb-header h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.2rem;
+  color: var(--text-primary, #f1f5f9);
+}
+.pb-sub {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #94a3b8);
+}
+.pb-refresh {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #334155);
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pb-refresh:hover { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+
+/* ── Messages ── */
+.pb-msg {
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+.pb-msg--success { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.4); color: #4ade80; }
+.pb-msg--error   { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4); color: #f87171; }
+
+/* ── Filter-Chips ── */
+.pb-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.pb-chip {
+  --chip-color: #818cf8;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-color, #334155);
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pb-chip:hover { border-color: var(--chip-color); color: var(--text-primary, #f1f5f9); }
+.pb-chip.active {
+  border-color: var(--chip-color);
+  background: color-mix(in srgb, var(--chip-color) 15%, transparent);
+  color: var(--text-primary, #f1f5f9);
+}
+.pb-chip-count {
+  font-size: 0.7rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(148,163,184,0.15);
+  color: var(--text-secondary, #94a3b8);
+}
+
+/* ── Liste / Cards ── */
+.pb-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.85rem;
+  border: 1px dashed var(--border-color, #334155);
+  border-radius: 8px;
+}
+.pb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.pb-card {
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.pb-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+}
+.pb-card-head:hover { background: rgba(99,102,241,0.06); }
+.pb-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.pb-school {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-primary, #f1f5f9);
+}
+.pb-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+}
+.pb-card-side {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+.pb-badge {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.pb-date {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #94a3b8);
+  white-space: nowrap;
+}
+.pb-toggle {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+/* ── Card-Detail ── */
+.pb-card-body {
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--border-color, #334155);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.pb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.6rem 1.25rem;
+  font-size: 0.82rem;
+  color: var(--text-primary, #e2e8f0);
+}
+.pb-grid a { color: #818cf8; text-decoration: none; }
+.pb-grid a:hover { text-decoration: underline; }
+.pb-label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 0.15rem;
+}
+.pb-text-block p {
+  margin: 0;
+  font-size: 0.83rem;
+  color: var(--text-primary, #e2e8f0);
+  white-space: pre-wrap;
+  background: rgba(148,163,184,0.06);
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+}
+
+/* ── Notiz ── */
+.pb-notiz textarea {
+  width: 100%;
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 6px;
+  color: var(--text-primary, #e2e8f0);
+  font-size: 0.82rem;
+  padding: 0.5rem 0.7rem;
+  resize: vertical;
+  margin-bottom: 0.4rem;
+}
+.pb-notiz textarea:focus { outline: none; border-color: #6366f1; }
+
+/* ── Buttons ── */
+.pb-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.pb-btn {
+  --btn-color: #818cf8;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--btn-color) 50%, transparent);
+  background: color-mix(in srgb, var(--btn-color) 12%, transparent);
+  color: var(--btn-color);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pb-btn:hover { background: color-mix(in srgb, var(--btn-color) 25%, transparent); }
+.pb-btn--ghost { --btn-color: #94a3b8; }
+.pb-btn--danger { --btn-color: #ef4444; margin-left: auto; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .pilot-bewerbungen { padding: 0.75rem; }
+  .pb-card-head { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+  .pb-card-side { width: 100%; justify-content: space-between; }
+}

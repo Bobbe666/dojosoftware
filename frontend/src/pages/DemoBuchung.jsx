@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import PilotPopup from '../components/PilotPopup';
 import './DemoBuchung.css';
 
 const BUNDESLAENDER = [
@@ -223,6 +224,7 @@ export default function DemoBuchung() {
 
   return (
     <div className="db-page">
+      <PilotPopup />
       {/* Header */}
       <div className="db-header">
         <div className="db-logo">

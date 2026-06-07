@@ -31,6 +31,28 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.21',
+    date: '2026-06-07',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Pilot-Partner-Programm: Bewerbungsverwaltung in der PlattformZentrale',
+    description: 'Neues Akquise-Tool: Kampfsportschulen können sich auf tda-intl.com/pilot-partner als „Pilot-Partner des Monats" bewerben (12 Monate kostenlose Nutzung). Die Bewerbungen landen in einem neuen Tab 🏆 Pilot-Programm in der PlattformZentrale mit Status-Workflow und internen Notizen.',
+    highlights: [
+      '🏆 NEUER TAB „Pilot-Programm" in der PlattformZentrale: Bewerbungen sichten, Status setzen (Neu / In Prüfung / Gewonnen / Abgelehnt), interne Notizen',
+      '📋 BEWERBUNGSFORMULAR auf tda-intl.com/pilot-partner — Schulname, Stilrichtungen, Mitgliederzahl, aktuelle Software, größte Herausforderung, Begründung (= Marktforschung inklusive)',
+      '📧 E-MAILS: Benachrichtigung an info@tda-intl.com bei jeder Bewerbung + automatische Eingangsbestätigung an den Bewerber',
+      '🛡️ SPAM-SCHUTZ: Honeypot-Feld, Rate-Limit (3/Stunde pro IP), Duplikat-Sperre (gleiche E-Mail, 30 Tage)',
+    ],
+    details: 'Backend: routes/pilot-bewerbungen.js (öffentl. POST + Admin-CRUD onlySuperAdmin), Migration 190_pilot_bewerbungen.sql (utf8mb4_unicode_ci). Frontend: PilotBewerbungen.jsx + PilotBewerbungen.css, Tab in PlattformZentrale.jsx. Website (tda-websites/tda-intl): Seite /pilot-partner + Popup auf Home.',
+    files: [
+      'backend/routes/pilot-bewerbungen.js',
+      'backend/migrations/190_pilot_bewerbungen.sql',
+      'frontend/src/components/PilotBewerbungen.jsx',
+      'frontend/src/components/PlattformZentrale.jsx',
+      'version.js',
+    ],
+  },
+  {
     version: '3.0.20',
     date: '2026-06-05',
     type: 'feature',

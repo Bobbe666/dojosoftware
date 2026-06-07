@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import '../styles/PlattformZentrale.css';
 import DemoTermine from './DemoTermine';
+import PilotBewerbungen from './PilotBewerbungen';
 
 // ─── Hilfsfunktionen ────────────────────────────────────────────────────────
 
@@ -1801,6 +1802,7 @@ const TABS = [
   { id: 'uebersicht',   icon: '🏠', label: 'Übersicht' },
   { id: 'kalender',     icon: '📅', label: 'Kalender' },
   { id: 'demo-termine', icon: '🎯', label: 'Demo-Termine' },
+  { id: 'pilot',        icon: '🏆', label: 'Pilot-Programm' },
   { id: 'news',         icon: '📰', label: 'News' },
   { id: 'turniere',     icon: '🥊', label: 'Turniere' },
   { id: 'hof',          icon: '🌟', label: 'HoF Events' },
@@ -1845,6 +1847,7 @@ export default function PlattformZentrale() {
       {activeTab === 'hof'          && <HofView         token={token} />}
       {activeTab === 'umfragen'     && <UmfragenView    token={token} />}
       {activeTab === 'demo-termine' && <DemoTermine />}
+      {activeTab === 'pilot'        && <PilotBewerbungen />}
     </div>
   );
 }

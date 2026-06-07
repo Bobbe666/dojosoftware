@@ -1704,6 +1704,17 @@ try {
   logger.error("Fehler beim Laden der Route", { route: "demo-termine", error: error.message });
 }
 
+// 10.2d PILOT-PARTNER-PROGRAMM (Bewerbungen von tda-intl.com)
+try {
+  const pilotBewerbungenRouter = require(path.join(__dirname, "routes", "pilot-bewerbungen.js"));
+  // Öffentlich: POST /api/pilot-bewerbungen
+  // Admin:      /api/pilot-bewerbungen/admin/...  (auth per Route, Super-Admin)
+  app.use("/api/pilot-bewerbungen", pilotBewerbungenRouter);
+  logger.success("Route gemountet", { path: "/api/pilot-bewerbungen" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "pilot-bewerbungen", error: error.message });
+}
+
 // Gutschein-System (Premium Feature)
 // Öffentlich: GET /api/gutscheine/public/:code  (kein Auth erforderlich — in Route definiert)
 // Geschützt:  alle anderen /api/gutscheine/... Endpunkte (requireFeature('gutscheine'))
