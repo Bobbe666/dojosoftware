@@ -31,6 +31,23 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.39',
+    date: '2026-06-08',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'KRITISCH: Mitglieder-App stürzte ab (Gürtel-Widget) — behoben',
+    description: 'Die Mitglieder-App zeigte „Etwas ist schiefgelaufen / Can\'t find variable: i". Ursache: Im Gürtel-Widget des MemberDashboards nutzte ein .map()-Callback den Index i, ohne ihn als Parameter zu deklarieren — im minifizierten Prod-Build ein harter Crash. Der Bug war seit v3.0.17 (05.06.) latent und wurde durch den PWA-Cache der Mitglieder verdeckt; erst nach dem Cache-Reset heute trat er auf.',
+    highlights: [
+      '🐛 currentBelts.map((b)) → currentBelts.map((b, i)) — fehlender Index-Parameter ergänzt',
+      '💥 Behebt den Totalausfall der Mitglieder-App (weißer Fehler-Screen)',
+      '🔎 Diagnose über den echten Fehlertext + minifiziertes Bundle — kein Cache-Problem, echter Code-Bug',
+    ],
+    details: 'MemberDashboard.jsx Z.1709: map-Callback um Index i erweitert (genutzt in Z.1718 „i === 0" für die Nächste-Prüfung-Anzeige am obersten Gürtel).',
+    files: [
+      'frontend/src/components/MemberDashboard.jsx',
+    ],
+  },
+  {
     version: '3.0.38',
     date: '2026-06-08',
     type: 'fix',

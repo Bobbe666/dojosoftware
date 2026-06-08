@@ -1706,7 +1706,7 @@ const MemberDashboard = () => {
       {/* Gurt-Widget — weiter unten, sekundäre Info */}
       {memberData && currentBelts.length > 0 && (
         <div className="md-belt-widget md-anim-fade-in-up">
-          {currentBelts.map((b) => {
+          {currentBelts.map((b, i) => {
             const beltColor = b.farbe || '#ffffff';
             return (
               <div key={`${b.stilName || ''}-${b.name}`} className="md-belt-row" style={{ '--belt-color': beltColor }}>
