@@ -4,6 +4,24 @@
  */
 
 const securityMonitorService = require('../services/securityMonitorService');
+const jwt = require('jsonwebtoken');
+
+/**
+ * Prüft, ob der Request ein gültiges Auth-Token mitbringt (eingeloggter Nutzer).
+ * Eingeloggte Mitglieder/Admins sollen NIE durch die automatische IP-Blockierung
+ * ausgesperrt werden — der Block zielt auf anonyme Angreifer/Brute-Force.
+ */
+function hasValidToken(req) {
+  try {
+    const auth = req.headers['authorization'] || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+    if (!token || !process.env.JWT_SECRET) return false;
+    jwt.verify(token, process.env.JWT_SECRET);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Extrahiert die echte Client-IP (auch hinter Proxy/Load-Balancer)
@@ -68,12 +86,18 @@ const securityMonitorMiddleware = async (req, res, next) => {
     }
 
     // 1. Prüfe ob IP blockiert ist (nur für nicht-sichere Pfade)
-    const isBlocked = await securityMonitorService.isIPBlocked(ip);
-    if (isBlocked) {
-      return res.status(403).json({
-        error: 'Zugriff verweigert',
-        message: 'Ihre IP-Adresse wurde temporär blockiert'
-      });
+    //    Eingeloggte Nutzer (gültiges Token) werden NIE ausgesperrt — der
+    //    automatische Block ist nur für anonyme Angreifer gedacht. Verhindert,
+    //    dass legitime Mitglieder durch Request-Häufungen (z.B. App-Fehler)
+    //    aus der eigenen App ausgesperrt werden.
+    if (!hasValidToken(req)) {
+      const isBlocked = await securityMonitorService.isIPBlocked(ip);
+      if (isBlocked) {
+        return res.status(403).json({
+          error: 'Zugriff verweigert',
+          message: 'Ihre IP-Adresse wurde temporär blockiert'
+        });
+      }
     }
 
     // 2. Prüfe auf SQL-Injection

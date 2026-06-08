@@ -31,6 +31,23 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.40',
+    date: '2026-06-08',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Sicherheit: eingeloggte Nutzer werden nicht mehr automatisch IP-gesperrt',
+    description: 'Beim heutigen App-Crash feuerte die Member-App eine Request-Flut, die der Security-Monitor als Angriff wertete (50 Alerts → IP-Block) — legitime Mitglieder wurden ausgesperrt und sahen „Ihre IP-Adresse wurde temporär blockiert". Jetzt sind eingeloggte Nutzer (gültiges Token) von der automatischen IP-Blockierung ausgenommen; der Schutz gilt weiter voll für anonyme Angreifer.',
+    highlights: [
+      '🔓 Gültiges Auth-Token → niemals automatischer IP-Block (verhindert Selbst-Aussperrung)',
+      '🛡️ Brute-Force-/Angriffsschutz für anonyme Requests bleibt unverändert aktiv',
+      '🧹 Heute fälschlich geblockte IP entsperrt + Alerts bereinigt',
+    ],
+    details: 'middleware/securityMonitor.js: hasValidToken(req) (jwt.verify) — bei gültigem Token wird die isIPBlocked-Prüfung übersprungen. SQLi/XSS-Erkennung bleibt für alle aktiv.',
+    files: [
+      'backend/middleware/securityMonitor.js',
+    ],
+  },
+  {
     version: '3.0.39',
     date: '2026-06-08',
     type: 'fix',
