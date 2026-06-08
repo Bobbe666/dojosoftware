@@ -26,6 +26,7 @@ const ApiHealthCheck = ({ children }) => {
   const checkIntervalRef = useRef(null);
   const countdownIntervalRef = useRef(null);
   const wasOfflineRef = useRef(false);
+  const checkHealthRef = useRef(null);
 
   // Health-Check durchführen
   const checkHealth = useCallback(async (isManualRetry = false) => {
@@ -68,8 +69,10 @@ const ApiHealthCheck = ({ children }) => {
       setConsecutiveFailures(prev => prev + 1);
       setLastError(getErrorMessage(error));
 
-      // Nach 2 Fehlversuchen als offline markieren
-      if (consecutiveFailures >= 1) {
+      // Erst nach 3 aufeinanderfolgenden Fehlversuchen als offline markieren.
+      // So bleibt ein kurzer Backend-Neustart (Deploy, 2-3 Sek) für Nutzer unsichtbar —
+      // die Wartungsseite erscheint nur bei echtem, anhaltendem Ausfall (~45 Sek).
+      if (consecutiveFailures >= 2) {
         setIsOnline(false);
         wasOfflineRef.current = true;
 
@@ -102,13 +105,15 @@ const ApiHealthCheck = ({ children }) => {
     await checkHealth(true);
   };
 
-  // Server:maintenance Event von fetchWithAuth empfangen → sofort offline markieren
+  // checkHealth immer aktuell als Ref halten (für Event-Handler ohne Stale-Closure)
+  useEffect(() => { checkHealthRef.current = checkHealth; }, [checkHealth]);
+
+  // server:maintenance von fetchWithAuth (einzelner fehlgeschlagener API-Call):
+  // NICHT sofort die Wartungsseite zeigen — ein kurzer Deploy-Neustart erzeugt das auch.
+  // Stattdessen nach kurzer Verzögerung verifizieren; offline entscheidet die Schwelle in checkHealth.
   useEffect(() => {
     const handleMaintenance = () => {
-      setIsOnline(false);
-      wasOfflineRef.current = true;
-      setConsecutiveFailures(prev => Math.max(prev, 2));
-      setRetryCountdown(5);
+      setTimeout(() => checkHealthRef.current?.(true), 2500);
     };
     window.addEventListener('server:maintenance', handleMaintenance);
     return () => window.removeEventListener('server:maintenance', handleMaintenance);

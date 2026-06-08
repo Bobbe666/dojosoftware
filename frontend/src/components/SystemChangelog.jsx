@@ -31,6 +31,23 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.38',
+    date: '2026-06-08',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Apps tolerieren kurze Backend-Neustarts — keine „Wartungs"-Meldung mehr bei Deploys',
+    description: 'Ein einzelner fehlgeschlagener API-Call (z.B. während eines 2-3-Sek-Backend-Neustarts beim Deploy) löste sofort die Vollbild-Wartungsseite aus — Mitglieder sahen „Server im Kampf mit den Updates". Jetzt wird ein kurzer Ausfall toleriert: die Wartungsseite erscheint erst nach ~45 Sek anhaltendem Ausfall.',
+    highlights: [
+      '🛡️ Kurzer Backend-Neustart (Deploy) bleibt für Nutzer unsichtbar',
+      '⏱ server:maintenance-Event löst keine Sofort-Wartung mehr aus, sondern erst einen Verify-Check (2,5 Sek)',
+      '🔢 Offline-Schwelle: erst nach 3 aufeinanderfolgenden Fehlversuchen Wartungsseite (statt nach 1)',
+    ],
+    details: 'ApiHealthCheck.jsx: handleMaintenance triggert verzögerten checkHealth statt sofort offline (checkHealthRef gegen Stale-Closure); Offline-Schwelle consecutiveFailures >= 2.',
+    files: [
+      'frontend/src/components/ApiHealthCheck.jsx',
+    ],
+  },
+  {
     version: '3.0.37',
     date: '2026-06-08',
     type: 'fix',
