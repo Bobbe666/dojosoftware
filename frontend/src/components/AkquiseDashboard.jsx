@@ -14,7 +14,7 @@ import {
   ExternalLink, Trophy, UserCheck, MessageSquare, Zap, Flag,
   CheckCircle, XCircle, HelpCircle, Info, Eye, PenLine, Tag,
   LayoutList, Columns, Upload, AlertCircle, CreditCard, Sparkles,
-  ChevronDown, ChevronUp, Square, CheckSquare
+  ChevronDown, ChevronUp, Square, CheckSquare, MapPin
 } from 'lucide-react';
 import config from '../config/config';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
@@ -42,6 +42,32 @@ const EINSATZBEREICHE = [
 ];
 const ALLE_BEREICHE = EINSATZBEREICHE.map(b => b.id).join(',');
 const parseBereiche = (s) => (s || '').split(',').map(x => x.trim()).filter(Boolean);
+
+// Bundesland aus der PLZ ableiten (erste 1-2 Ziffern → Bundesland).
+// Grobe Zuordnung nach PLZ-Leitregionen — reicht zum Sortieren/Gruppieren fürs Telefonieren.
+const plzZuBundesland = (plz) => {
+  const p = String(plz || '').trim();
+  if (!/^\d{2}/.test(p)) return 'Unbekannt';
+  const n = parseInt(p.slice(0, 2), 10);
+  if (n <= 16) return 'Sachsen / Brandenburg / Berlin';           // 01-16
+  if (n <= 19) return 'Mecklenburg-Vorpommern / Brandenburg';     // 17-19
+  if (n <= 25) return 'Hamburg / Schleswig-Holstein';             // 20-25
+  if (n <= 31) return 'Niedersachsen / Bremen';                   // 26-31
+  if (n <= 37) return 'NRW (Ost) / Niedersachsen';                // 32-37
+  if (n <= 39) return 'Sachsen-Anhalt';                           // 38-39
+  if (n <= 53) return 'Nordrhein-Westfalen';                      // 40-53
+  if (n <= 56) return 'Rheinland-Pfalz';                          // 54-56
+  if (n <= 59) return 'Nordrhein-Westfalen';                      // 57-59
+  if (n <= 65) return 'Hessen';                                   // 60-65
+  if (n <= 66) return 'Saarland';                                 // 66
+  if (n <= 69) return 'Rheinland-Pfalz / Baden-Württemberg';      // 67-69
+  if (n <= 79) return 'Baden-Württemberg';                        // 70-79
+  if (n <= 87) return 'Bayern (Süd) / Schwaben';                  // 80-87
+  if (n <= 89) return 'Bayern (Schwaben/Ulm)';                    // 88-89
+  if (n <= 96) return 'Bayern (Franken)';                         // 90-96
+  if (n <= 97) return 'Unterfranken / Hessen';                    // 97
+  return 'Bayern (Ost)';                                          // 98-99 (98/99 = Thüringen — grob)
+};
 
 const ART_ICONS = {
   email:       <Mail size={14} />,
@@ -118,6 +144,7 @@ const AkquiseDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [typFilter, setTypFilter] = useState('');
   const [tagFilter, setTagFilter] = useState('');
+  const [sortByBundesland, setSortByBundesland] = useState(false); // Telefonliste-Modus
   const [bereichFilter, setBereichFilter] = useState('');
 
   // Bulk select
@@ -532,6 +559,14 @@ const AkquiseDashboard = () => {
       if (!tags.includes(tagFilter)) return false;
     }
     return true;
+  }).sort((a, b) => {
+    if (!sortByBundesland) return 0; // Standard-Reihenfolge (vom Backend)
+    // Telefonliste: nach Bundesland (aus PLZ), dann Ort, dann Name
+    const bl = plzZuBundesland(a.plz).localeCompare(plzZuBundesland(b.plz));
+    if (bl !== 0) return bl;
+    const ort = (a.ort || '').localeCompare(b.ort || '');
+    if (ort !== 0) return ort;
+    return (a.organisation || '').localeCompare(b.organisation || '');
   });
 
   // Alle verwendeten Tags sammeln
@@ -770,6 +805,14 @@ const AkquiseDashboard = () => {
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
           <button className="btn-icon" onClick={() => { setStatusFilter(''); setView('overview'); }}><ArrowLeft size={18}/></button>
           <h3 style={{ margin:0, flex:1 }}>Kontakte ({filteredKontakte.length})</h3>
+          <button
+            className={sortByBundesland ? 'btn-primary' : 'btn-secondary'}
+            title="Telefonliste: nach Bundesland sortiert, mit Telefonnummern"
+            onClick={() => setSortByBundesland(v => !v)}
+            style={{ padding:'6px 12px', fontSize:13 }}
+          >
+            <Phone size={14}/> Telefonliste
+          </button>
           <div style={{ display:'flex', gap:6 }}>
             <button className={`btn-icon ${listMode==='list'?'active':''}`} title="Liste" onClick={() => setListMode('list')}><LayoutList size={16}/></button>
             <button className={`btn-icon ${listMode==='kanban'?'active':''}`} title="Kanban" onClick={() => setListMode('kanban')}><Columns size={16}/></button>
@@ -847,10 +890,24 @@ const AkquiseDashboard = () => {
                 <span style={{ fontSize:12, color:'var(--text-muted)' }}>Alle auswählen</span>
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                {filteredKontakte.map(k => {
+                {filteredKontakte.map((k, idx) => {
                   const kTags = (() => { try { return Array.isArray(k.tags) ? k.tags : (k.tags ? JSON.parse(k.tags) : []); } catch { return []; } })();
+                  // Bundesland-Gruppen-Header (nur im Telefonliste-Modus, bei Wechsel)
+                  const bundesland = plzZuBundesland(k.plz);
+                  const prevBundesland = idx > 0 ? plzZuBundesland(filteredKontakte[idx - 1].plz) : null;
+                  const zeigeHeader = sortByBundesland && bundesland !== prevBundesland;
                   return (
-                    <div key={k.id} className="verband-panel" style={{ padding:'10px 14px' }}>
+                    <React.Fragment key={k.id}>
+                    {zeigeHeader && (
+                      <div style={{ display:'flex', alignItems:'center', gap:8, margin:'10px 2px 2px', padding:'4px 0', borderBottom:'1px solid var(--border)' }}>
+                        <MapPin size={14} style={{ color:'#3b82f6' }}/>
+                        <strong style={{ fontSize:13, color:'#3b82f6' }}>{bundesland}</strong>
+                        <span style={{ fontSize:11, color:'var(--text-muted)' }}>
+                          ({filteredKontakte.filter(x => plzZuBundesland(x.plz) === bundesland).length})
+                        </span>
+                      </div>
+                    )}
+                    <div className="verband-panel" style={{ padding:'10px 14px' }}>
                       <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                         <input type="checkbox" checked={bulkSelected.has(k.id)} onChange={() => toggleBulk(k.id)}
                           style={{ width:15, height:15, accentColor:'#3b82f6', cursor:'pointer', flexShrink:0 }}/>
@@ -896,7 +953,11 @@ const AkquiseDashboard = () => {
                           </div>
                           <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>
                             {k.ansprechpartner && `${k.ansprechpartner} · `}
-                            {k.ort && `${k.ort} · `}
+                            {(k.plz || k.ort) && `${k.plz || ''} ${k.ort || ''} · `.trim()}
+                            {k.telefon
+                              ? <a href={`tel:${String(k.telefon).replace(/[^\d+]/g, '')}`} onClick={e => e.stopPropagation()} style={{ color:'#22c55e', fontWeight:600, textDecoration:'none' }}><Phone size={11} style={{ verticalAlign:'middle' }}/> {k.telefon}</a>
+                              : <span style={{ color:'#9ca3af' }}>kein Telefon</span>}
+                            {' · '}
                             {k.aktivitaeten_count > 0 ? `${k.aktivitaeten_count} Akt.` : 'Keine Aktivitäten'}
                             {k.naechste_aktion && new Date(k.naechste_aktion) <= new Date() &&
                               <span style={{ color:'#f59e0b', marginLeft:6 }}><Clock size={11} style={{ verticalAlign:'middle' }}/> Follow-Up fällig</span>}
@@ -916,6 +977,7 @@ const AkquiseDashboard = () => {
                         </div>
                       </div>
                     </div>
+                    </React.Fragment>
                   );
                 })}
               </div>

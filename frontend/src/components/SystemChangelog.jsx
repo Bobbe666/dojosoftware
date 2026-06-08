@@ -31,6 +31,23 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.41',
+    date: '2026-06-08',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Akquise: Telefonliste nach Bundesland (für Sparringstreff-Anrufe)',
+    description: 'In der Kontakte-Übersicht gibt es jetzt einen „📞 Telefonliste"-Button: sortiert die Kontakte nach Bundesland (abgeleitet aus der PLZ), mit Bundesland-Gruppen-Überschriften und klickbaren Telefonnummern (tel:). Ideal zum strukturierten Abtelefonieren — z.B. Einladungen zum Sparringstreff.',
+    highlights: [
+      '📞 TELEFONLISTE-MODUS: Kontakte nach Bundesland gruppiert + sortiert (PLZ → Bundesland)',
+      '☎️ Telefonnummern direkt anklickbar (tel:-Link) + PLZ/Ort in jeder Zeile',
+      '🗂️ Bundesland-Überschriften mit Anzahl je Region',
+    ],
+    details: 'AkquiseDashboard.jsx: plzZuBundesland(plz)-Helper, sortByBundesland-State, Toggle in der Listen-Toolbar, Gruppen-Header bei Bundesland-Wechsel, Telefon in der Kontakt-Meta-Zeile.',
+    files: [
+      'frontend/src/components/AkquiseDashboard.jsx',
+    ],
+  },
+  {
     version: '3.0.40',
     date: '2026-06-08',
     type: 'fix',
