@@ -107,10 +107,16 @@ if [[ "$MODE" == "all" || "$MODE" == "frontend" ]]; then
   echo ""
 
   echo -e "${YELLOW}  Frontend deployen (2 Webroots)...${NC}"
-  # --delete: entfernt alte Chunks vom Server (verhindert Safari "Importing module failed")
-  rsync -az --delete -e "ssh $SSH_OPT" "$FRONTEND_LOCAL/dist/" "$SSH_HOST:$FRONTEND_REMOTE_1"
-  rsync -az --delete -e "ssh $SSH_OPT" "$FRONTEND_LOCAL/dist/" "$SSH_HOST:$FRONTEND_REMOTE_2"
-  echo -e "  ${GREEN}✓ Frontend deployed (dojo.tda-intl.org + app.tda-vib.de)${NC}"
+  # WICHTIG: Gehashte Chunks (assets/) bleiben erhalten, damit bereits offene Tabs/PWAs
+  # ihre alten Chunks weiter laden können (kein 404 / "Importing module failed" nach Deploy).
+  # Content-Hashes kollidieren nie → alt + neu koexistieren. Root-Dateien (index.html, sw.js,
+  # version.json) werden mit --delete aktualisiert. Chunks älter als 14 Tage werden aufgeräumt.
+  for WEBROOT in "$FRONTEND_REMOTE_1" "$FRONTEND_REMOTE_2"; do
+    rsync -az --delete --exclude 'assets/' -e "ssh $SSH_OPT" "$FRONTEND_LOCAL/dist/" "$SSH_HOST:$WEBROOT"
+    rsync -az -e "ssh $SSH_OPT" "$FRONTEND_LOCAL/dist/assets/" "$SSH_HOST:$WEBROOT/assets/"
+    ssh $SSH_OPT "$SSH_HOST" "find '$WEBROOT/assets' -type f -mtime +14 -delete 2>/dev/null || true"
+  done
+  echo -e "  ${GREEN}✓ Frontend deployed (dojo.tda-intl.org + app.tda-vib.de) — alte Chunks bleiben 14 Tage${NC}"
   echo ""
 fi
 

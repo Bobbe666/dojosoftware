@@ -31,6 +31,23 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.42',
+    date: '2026-06-08',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Deploy: offene Tabs überleben Deploys (keine Stale-Chunk-404 mehr)',
+    description: 'Bei jedem Deploy löschte rsync --delete alle alten Programm-Teile (Chunks) — offene Tabs/PWAs, die noch die alte Version geladen hatten, bekamen dann 404 („Failed to load resource") und stürzten ab. Jetzt bleiben die gehashten Chunks erhalten (alt + neu koexistieren kollisionsfrei), nur Chunks älter als 14 Tage werden aufgeräumt.',
+    highlights: [
+      '🗂️ assets/ wird ohne --delete deployed → bereits offene Sitzungen laden ihre Chunks weiter',
+      '🧹 Automatische Aufräumung: Chunks > 14 Tage werden beim Deploy entfernt (kein unbegrenztes Wachstum)',
+      '🔄 index.html/sw.js/version.json weiterhin mit --delete aktualisiert',
+    ],
+    details: 'deploy.sh: zweistufiges rsync (Root mit --delete --exclude assets/, dann assets/ ohne --delete) + find -mtime +14 -delete, für beide Webroots (dojo.tda-intl.org + app.tda-vib.de).',
+    files: [
+      'deploy.sh',
+    ],
+  },
+  {
     version: '3.0.41',
     date: '2026-06-08',
     type: 'feature',
