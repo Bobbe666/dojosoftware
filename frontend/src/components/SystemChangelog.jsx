@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.37',
+    date: '2026-06-08',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Briefing-Popup erscheint wieder zuverlässig (einmal täglich)',
+    description: 'Das „Dein Tag"-Popup kam nicht mehr, weil es seit v3.0.25 nur bei überfälligen To-Dos erschien — die importierten Aufgaben haben aber noch keine Fälligkeitsdaten. Jetzt erscheint es wieder einmal täglich beim ersten Login (mit KPIs, neuen Eingängen, To-Dos & Terminen).',
+    highlights: [
+      '☀️ Popup wieder zuverlässig 1× täglich (kein „nur bei überfällig"-Gate mehr)',
+      '🔑 localStorage-Key gewechselt → erscheint sofort wieder, nicht erst morgen',
+    ],
+    details: 'SuperAdminDashboard.jsx: Inhalts-Gate entfernt, Key sa-briefing-date → sa-briefing-day.',
+    files: [
+      'frontend/src/components/SuperAdminDashboard.jsx',
+    ],
+  },
+  {
     version: '3.0.36',
     date: '2026-06-07',
     type: 'improvement',

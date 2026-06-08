@@ -213,16 +213,10 @@ const SuperAdminDashboard = () => {
       if (globalRes.status === 'fulfilled')  setGlobalStats(globalRes.value.data.stats);
       if (overviewRes.status === 'fulfilled' && overviewRes.value.data.success) setOverviewSummary(overviewRes.value.data);
 
-      // Daily Briefing Popup: einmal pro Tag — aber nur noch, wenn etwas
-      // ÜBERFÄLLIG ist (die normale Übersicht ist jetzt der ☀️ Heute-Tab)
+      // Daily Briefing Popup: einmal pro Tag beim ersten Login
       const today = new Date().toDateString();
-      if (localStorage.getItem('sa-briefing-date') !== today) {
-        axios.get('/briefing', { headers: { Authorization: `Bearer ${token}` } })
-          .then(r => {
-            if ((r.data.briefing?.ueberfaellige_todos || []).length > 0) setShowDailyBriefing(true);
-            else localStorage.setItem('sa-briefing-date', today);
-          })
-          .catch(() => {});
+      if (localStorage.getItem('sa-briefing-day') !== today) {
+        setShowDailyBriefing(true);
       }
 
     } catch (err) {
@@ -268,7 +262,7 @@ const SuperAdminDashboard = () => {
   };
 
   const closeBriefing = () => {
-    localStorage.setItem('sa-briefing-date', new Date().toDateString());
+    localStorage.setItem('sa-briefing-day', new Date().toDateString());
     setShowDailyBriefing(false);
   };
 
