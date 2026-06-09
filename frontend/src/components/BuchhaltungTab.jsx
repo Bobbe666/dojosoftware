@@ -221,7 +221,6 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   // BWA States
   const [bwaData, setBwaData] = useState(null);
   const [bwaLoading, setBwaLoading] = useState(false);
-  const [bwaJahr, setBwaJahr] = useState(new Date().getFullYear());
 
   // Altersliste States
   const [altersliste, setAltersliste] = useState(null);
@@ -1792,7 +1791,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     try {
       const res = await axios.get('/buchhaltung/bwa', {
         headers: { Authorization: `Bearer ${token}` },
-        params: { jahr: bwaJahr, organisation: selectedOrg !== 'alle' ? selectedOrg : undefined }
+        params: { jahr: selectedJahr, organisation: selectedOrg !== 'alle' ? selectedOrg : undefined }
       });
       setBwaData(res.data);
     } catch (err) {
@@ -1800,7 +1799,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     } finally {
       setBwaLoading(false);
     }
-  }, [token, bwaJahr, selectedOrg]);
+  }, [token, selectedJahr, selectedOrg]);
 
   // Altersliste laden
   const loadAltersliste = useCallback(async () => {
@@ -2041,8 +2040,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
             loading={loading}
             bwaData={bwaData}
             bwaLoading={bwaLoading}
-            bwaJahr={bwaJahr}
-            setBwaJahr={setBwaJahr}
+            bwaJahr={selectedJahr}
+            setBwaJahr={setSelectedJahr}
             jahre={jahre}
             loadBwa={loadBwa}
             formatCurrency={formatCurrency}
