@@ -1,7 +1,7 @@
 // =====================================================================================
 // BUSINESSPLAN ROUTES — Finanz-/Liquiditätsplanung, Businessplan-PDF & Ziele-Board
 // =====================================================================================
-// Orientiert an der Finanzplanungs-Systematik des Hans-Lindner-Instituts.
+// Klassische Gründer-/Unternehmens-Finanzplanung (Investition, Rentabilität, Liquidität).
 //
 //   GET  /api/businessplan/plaene                 Liste der Pläne (Dojo)
 //   POST /api/businessplan/plaene                 Plan anlegen
@@ -30,7 +30,7 @@ const pool = db.promise();
 const logger = require('../utils/logger');
 const { authenticateToken } = require('../middleware/auth');
 const { requireFeature } = require('../middleware/featureAccess');
-const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 
 // Auth + Enterprise-Feature-Gate für alle Businessplan-Routen.
 // Self-Auth, da der Auto-Route-Loader (server.js) ohne authenticateToken mountet.
@@ -90,7 +90,7 @@ function computeAuswertung(plan, pos) {
   const startLiq  = num(a.startLiquiditaet);
   const wachsUmsatz = [0, num(a.umsatzWachstumJ2), num(a.umsatzWachstumJ3)];   // %
   const wachsKosten = [0, num(a.kostenWachstumJ2), num(a.kostenWachstumJ3)];   // %
-  // Hans-Lindner: weitere Erträge/Aufwendungen + Liquiditäts-Parameter
+  // Weitere Erträge/Aufwendungen + Liquiditäts-Parameter
   const sonstErtragMon    = num(a.sonstigeErtraegeMonat);   // sonstige betriebl. Erträge / Monat
   const zinsertraegeJahr  = num(a.zinsertraegeJahr);        // Zinserträge / Jahr
   const neutralErtragJahr = num(a.neutraleErtraegeJahr);    // sonstige neutrale Erträge / Jahr
@@ -99,55 +99,78 @@ function computeAuswertung(plan, pos) {
   const ustSatz           = (a.umsatzsteuerProzent != null ? num(a.umsatzsteuerProzent) : 19) / 100;
   const zahlungsziel      = Math.max(0, Math.min(6, num(a.zahlungszielMonate))); // Umsatz-Eingang nach n Monaten
 
-  // --- Umsatz (Monat & Jahr) ---
-  const umsatzMonat = pos.umsatz.reduce((s, u) => s + num(u.menge_monatlich) * num(u.preis_einheit), 0);
-
-  // --- Kosten je Kategorie (monatlich) ---
-  const katSumme = (kat) => pos.kosten
-    .filter(k => k.kategorie === kat)
-    .reduce((s, k) => {
-      let betrag = num(k.betrag_monatlich);
-      if (kat === 'personal' && (k.ist_brutto_personal === 1 || k.ist_brutto_personal === true)) {
-        betrag = betrag * (1 + sozialP / 100);
-      }
-      return s + betrag;
-    }, 0);
-
-  const kostenMonat = {
-    material:        katSumme('material'),
-    fremdleistung:   katSumme('fremdleistung'),
-    personal:        katSumme('personal'),
-    raumkosten:      katSumme('raumkosten'),
-    versicherungen:  katSumme('versicherungen'),
-    kfz:             katSumme('kfz'),
-    werbung:         katSumme('werbung'),
-    reparatur:       katSumme('reparatur'),
-    warenabgabe:     katSumme('warenabgabe'),
-    sonstige_steuern: katSumme('sonstige_steuern'),
-    sonstige:        katSumme('sonstige'),
+  // Sozialkosten-Satz je Personalart (Aufschlag auf AN-Brutto)
+  const sozialFor = (art) => {
+    if (art === 'geringfuegig') return (a.sozialGeringfuegigProzent != null ? num(a.sozialGeringfuegigProzent) : 28);
+    if (art === 'sv_befreit')   return (a.sozialBefreitProzent != null ? num(a.sozialBefreitProzent) : 0);
+    return (a.sozialSvPflichtigProzent != null ? num(a.sozialSvPflichtigProzent) : sozialP);
   };
+  // Monatswerte einer Position: JSON-Array[12] überschreibt den Konstantwert
+  const monatsArr = (row, constField, arrField) => {
+    const arr = Array.isArray(row[arrField]) ? row[arrField] : null;
+    const out = [];
+    for (let m = 0; m < 12; m++) out.push(arr && arr[m] != null && arr[m] !== '' ? num(arr[m]) : num(row[constField]));
+    return out;
+  };
+  const leer12 = () => Array(12).fill(0);
+  const sumArr = (arr) => arr.reduce((s, v) => s + v, 0);
 
-  // --- Abschreibungen (AfA, jährlich) ---
+  // --- Umsatz je Monat (Menge × Preis, Menge ggf. monatsgenau) ---
+  // Zusätzlich Mitgliederentwicklung aus Positionen mit Einheit „Mitglied" (zentrale Planungsgröße).
+  const umsatzArr = leer12();
+  const mitgliederArr = leer12();
+  pos.umsatz.forEach(u => {
+    const mengen = monatsArr(u, 'menge_monatlich', 'mengen_monate');
+    for (let m = 0; m < 12; m++) umsatzArr[m] += mengen[m] * num(u.preis_einheit);
+    if (String(u.einheit || '').toLowerCase().startsWith('mitglied')) {
+      for (let m = 0; m < 12; m++) mitgliederArr[m] += mengen[m];
+    }
+  });
+  const umsatzJahrBasis = sumArr(umsatzArr);
+  const hatMitglieder = mitgliederArr.some(v => v > 0);
+
+  // --- Kosten je Kategorie je Monat (Beträge ggf. monatsgenau, Personal mit Sozialaufschlag) ---
+  const KOSTEN_KATS = ['material', 'fremdleistung', 'personal', 'raumkosten', 'versicherungen',
+    'kfz', 'werbung', 'warenabgabe', 'reparatur', 'sonstige_steuern', 'sonstige'];
+  const kostenArr = {}; KOSTEN_KATS.forEach(k => { kostenArr[k] = leer12(); });
+  pos.kosten.forEach(k => {
+    const kat = KOSTEN_KATS.includes(k.kategorie) ? k.kategorie : 'sonstige';
+    const betr = monatsArr(k, 'betrag_monatlich', 'betraege_monate');
+    const istBrutto = (k.ist_brutto_personal === 1 || k.ist_brutto_personal === true);
+    const faktor = (kat === 'personal' && istBrutto) ? (1 + sozialFor(k.personalart) / 100) : 1;
+    for (let m = 0; m < 12; m++) kostenArr[kat][m] += betr[m] * faktor;
+  });
+  const kostenJahr = {}; KOSTEN_KATS.forEach(k => { kostenJahr[k] = sumArr(kostenArr[k]); });
+
+  // --- Privatentnahmen je Monat ---
+  const privatArr = leer12();
+  pos.privatentnahmen.forEach(p => {
+    const betr = monatsArr(p, 'betrag_monatlich', 'betraege_monate');
+    for (let m = 0; m < 12; m++) privatArr[m] += betr[m];
+  });
+  const privatJahr = sumArr(privatArr);
+
+  // --- Abschreibungen (AfA, jährlich): AfA-Satz % bevorzugt, sonst Nutzungsdauer ---
   const afaJahr = pos.investitionen.reduce((s, i) => {
-    const dauer = num(i.nutzungsdauer_jahre);
-    return dauer > 0 ? s + num(i.betrag) / dauer : s;
+    const satz = num(i.afa_satz_prozent), nd = num(i.nutzungsdauer_jahre);
+    if (satz > 0) return s + num(i.betrag) * satz / 100;
+    return nd > 0 ? s + num(i.betrag) / nd : s;
   }, 0);
   const investitionGesamt = pos.investitionen.reduce((s, i) => s + num(i.betrag), 0);
 
   // --- Finanzierung & Kapitaldienst ---
   const finanzierungGesamt = pos.finanzierung.reduce((s, f) => s + num(f.betrag), 0);
+  const istDarlehen = (f) => ['darlehen', 'betriebsmittelkredit', 'kontokorrent'].includes(f.art);
   const eigenkapital = pos.finanzierung
     .filter(f => ['eigenkapital', 'sacheinlage', 'beteiligung'].includes(f.art))
     .reduce((s, f) => s + num(f.betrag), 0);
-  const darlehen = pos.finanzierung.filter(f => ['darlehen', 'betriebsmittelkredit', 'kontokorrent'].includes(f.art));
+  const darlehen = pos.finanzierung.filter(istDarlehen);
+  const startFinanzierung = pos.finanzierung.filter(f => !istDarlehen(f)).reduce((s, f) => s + num(f.betrag), 0);
   const zinsenJahr = darlehen.reduce((s, f) => s + num(f.betrag) * num(f.zinssatz_prozent) / 100, 0);
   const tilgungJahr = darlehen.reduce((s, f) => {
-    const jahre = num(f.laufzeit_monate) / 12;
-    return jahre > 0 ? s + num(f.betrag) / jahre : s;
+    const tilgMonate = Math.max(1, num(f.laufzeit_monate) - num(f.tilgungsfrei_monate));
+    return num(f.laufzeit_monate) > 0 ? s + num(f.betrag) / (tilgMonate / 12) : s;
   }, 0);
-
-  // --- Privatentnahmen (jährlich) ---
-  const privatJahr = pos.privatentnahmen.reduce((s, p) => s + num(p.betrag_monatlich), 0) * 12;
 
   // --- Rentabilitätsrechnung für ein Jahr (mit Wachstumsfaktoren) ---
   function rentabilitaet(jahrIdx) {
@@ -155,24 +178,24 @@ function computeAuswertung(plan, pos) {
     let umsatzFaktor = 1, kostenFaktor = 1;
     for (let j = 1; j <= jahrIdx; j++) { umsatzFaktor *= (1 + wachsUmsatz[j] / 100); kostenFaktor *= (1 + wachsKosten[j] / 100); }
 
-    const umsatzJahr   = umsatzMonat * 12 * umsatzFaktor;
+    const umsatzJahr   = umsatzJahrBasis * umsatzFaktor;
     const erloesSchm   = umsatzJahr * erlSchmP / 100;
     const gesamtleistung = umsatzJahr - erloesSchm;
-    const material     = kostenMonat.material * 12 * kostenFaktor;
-    const fremdl       = kostenMonat.fremdleistung * 12 * kostenFaktor;
+    const material     = kostenJahr.material * kostenFaktor;
+    const fremdl       = kostenJahr.fremdleistung * kostenFaktor;
     const rohertrag    = gesamtleistung - material - fremdl;
     const sonstErtraege = sonstErtragMon * 12 * umsatzFaktor;        // sonstige betriebl. Erträge
     const betrieblicherRohertrag = rohertrag + sonstErtraege;
 
-    const personal     = kostenMonat.personal * 12 * kostenFaktor;
-    const raumkosten   = kostenMonat.raumkosten * 12 * kostenFaktor;
-    const versicherungen = kostenMonat.versicherungen * 12 * kostenFaktor;
-    const kfz          = kostenMonat.kfz * 12 * kostenFaktor;
-    const werbung      = kostenMonat.werbung * 12 * kostenFaktor;
-    const warenabgabe  = kostenMonat.warenabgabe * 12 * kostenFaktor;
-    const reparatur    = kostenMonat.reparatur * 12 * kostenFaktor;
-    const sonstSteuern = kostenMonat.sonstige_steuern * 12 * kostenFaktor;
-    const sonstige     = kostenMonat.sonstige * 12 * kostenFaktor;
+    const personal     = kostenJahr.personal * kostenFaktor;
+    const raumkosten   = kostenJahr.raumkosten * kostenFaktor;
+    const versicherungen = kostenJahr.versicherungen * kostenFaktor;
+    const kfz          = kostenJahr.kfz * kostenFaktor;
+    const werbung      = kostenJahr.werbung * kostenFaktor;
+    const warenabgabe  = kostenJahr.warenabgabe * kostenFaktor;
+    const reparatur    = kostenJahr.reparatur * kostenFaktor;
+    const sonstSteuern = kostenJahr.sonstige_steuern * kostenFaktor;
+    const sonstige     = kostenJahr.sonstige * kostenFaktor;
     const abschreibung = afaJahr; // AfA wächst nicht mit Umsatz
 
     const betriebskosten = personal + raumkosten + versicherungen + kfz + werbung + warenabgabe + reparatur + sonstSteuern + sonstige + abschreibung;
@@ -224,48 +247,57 @@ function computeAuswertung(plan, pos) {
   const j1 = dreiJahre[0];
 
   // --- Monatliche Liquiditätsplanung (Jahr 1) ---
-  // Modelliert nach Hans-Lindner inkl. Umsatzsteuer-Zahllast (Folgemonat) und
+  // Modelliert inkl. Umsatzsteuer-Zahllast (Folgemonat) und
   // Zahlungsziel (Umsatz-Eingang verzögert). Beträge brutto, Vorsteuer separat.
   const monateLiq = [];
   const MONATE_KURZ = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-  const monBetriebskosten = (kostenMonat.material + kostenMonat.fremdleistung + kostenMonat.personal +
-    kostenMonat.raumkosten + kostenMonat.versicherungen + kostenMonat.kfz + kostenMonat.werbung +
-    kostenMonat.warenabgabe + kostenMonat.reparatur + kostenMonat.sonstige_steuern + kostenMonat.sonstige);
   // Vorsteuer-fähige (USt-belastete) Kostenarten
-  const monVatableKosten = kostenMonat.material + kostenMonat.fremdleistung + kostenMonat.warenabgabe +
-    kostenMonat.kfz + kostenMonat.werbung + kostenMonat.reparatur + kostenMonat.sonstige;
-  const monZins = zinsenJahr / 12;
-  const monTilgung = tilgungJahr / 12;
-  const monPrivat = privatJahr / 12;
-  const monSteuern = j1.steuern / 12;
+  const VATABLE = ['material', 'fremdleistung', 'warenabgabe', 'kfz', 'werbung', 'reparatur', 'sonstige'];
+  const monSteuern = j1.steuern / 12;   // ergebnisabh. Steuern gleichmäßig verteilt
 
-  // Investitionen fallen im jeweiligen Anschaffungsmonat an
-  const investNachMonat = {};
+  // Investitionen je Anschaffungsmonat
+  const investNachMonat = leer12();
   pos.investitionen.forEach(i => {
     const m = Math.min(12, Math.max(1, num(i.anschaffung_monat) || 1));
-    investNachMonat[m] = (investNachMonat[m] || 0) + num(i.betrag);
+    investNachMonat[m - 1] += num(i.betrag);
+  });
+  // Darlehensauszahlung, Zins & Tilgung je Monat (mit Auszahlmonat + tilgungsfreier Zeit)
+  const darlehenEinzahlung = leer12(), zinsArr = leer12(), tilgArr = leer12();
+  darlehen.forEach(f => {
+    const betrag = num(f.betrag), zMon = num(f.zinssatz_prozent) / 100 / 12;
+    const ausz = Math.min(12, Math.max(1, num(f.auszahlung_monat) || 1));
+    const lf = num(f.laufzeit_monate), tf = num(f.tilgungsfrei_monate);
+    const tilgMonate = Math.max(1, lf - tf);
+    const tilgRate = lf > 0 ? betrag / tilgMonate : 0;
+    darlehenEinzahlung[ausz - 1] += betrag;
+    for (let m = 0; m < 12; m++) {
+      const monNr = m + 1;
+      if (monNr >= ausz) zinsArr[m] += betrag * zMon;                 // Zinsen ab Auszahlung
+      if (lf > 0 && monNr >= ausz + tf && monNr < ausz + tf + tilgMonate) tilgArr[m] += tilgRate;
+    }
   });
 
-  // Startsaldo: vorhandene Liquidität + komplette Mittelherkunft (EK + Darlehen) zu Beginn;
-  // Investitionen fließen im jeweiligen Anschaffungsmonat ab.
-  let saldo = startLiq + finanzierungGesamt;
+  // Startsaldo: vorhandene Liquidität + Eigenmittel/Förderung (Darlehen fließen im Auszahlmonat zu)
+  let saldo = startLiq + startFinanzierung;
   let ustZahllastVormonat = 0;  // USt-Zahllast wird im Folgemonat ans Finanzamt abgeführt
-  for (let i = 0; i < 12; i++) {
-    const investMonat  = investNachMonat[i + 1] || 0;
-    // Umsatz-Eingang erst nach Zahlungsziel (vorher 0)
-    const umsatzEingang = (i >= zahlungsziel) ? umsatzMonat : 0;
-    const ustEingang    = umsatzEingang * ustSatz;                 // vereinnahmte USt
-    const vorsteuer     = (monVatableKosten + investMonat) * ustSatz; // gezahlte Vorsteuer
-    const ustZahllast   = ustEingang - vorsteuer;                  // USt - VSt (kann negativ sein)
+  for (let m = 0; m < 12; m++) {
+    const investMonat  = investNachMonat[m];
+    const betriebskostenMonat = KOSTEN_KATS.reduce((s, k) => s + kostenArr[k][m], 0);
+    const vatableMonat = VATABLE.reduce((s, k) => s + kostenArr[k][m], 0);
+    // Umsatz-Eingang nach Zahlungsziel verzögert
+    const umsatzEingang = (m - zahlungsziel >= 0) ? umsatzArr[m - zahlungsziel] : 0;
+    const ustEingang    = umsatzEingang * ustSatz;
+    const vorsteuer     = (vatableMonat + investMonat) * ustSatz;
+    const ustZahllast   = ustEingang - vorsteuer;
 
-    const einzahlungen = umsatzEingang + ustEingang + sonstErtragMon + privateinlMon;
-    const auszahlungen = monBetriebskosten + vorsteuer + monZins + monTilgung + monPrivat +
+    const einzahlungen = umsatzEingang + ustEingang + sonstErtragMon + privateinlMon + darlehenEinzahlung[m];
+    const auszahlungen = betriebskostenMonat + vorsteuer + zinsArr[m] + tilgArr[m] + privatArr[m] +
       monSteuern + investMonat + Math.max(0, ustZahllastVormonat);
     const ueberschuss = einzahlungen - auszahlungen;
     saldo += ueberschuss;
     ustZahllastVormonat = ustZahllast;
     monateLiq.push({
-      monat: i + 1, label: MONATE_KURZ[i],
+      monat: m + 1, label: MONATE_KURZ[m],
       einzahlungen: round2(einzahlungen),
       auszahlungen: round2(auszahlungen),
       umsatzsteuer: round2(Math.max(0, ustZahllast)),
@@ -285,7 +317,7 @@ function computeAuswertung(plan, pos) {
 
   return {
     kennzahlen: {
-      umsatzMonat: round2(umsatzMonat),
+      umsatzMonat: round2(umsatzJahrBasis / 12),
       umsatzJahr: j1.umsatzerloese,
       betriebsergebnisJahr: j1.betriebsergebnis,
       cashflowJahr: j1.cashflow,
@@ -296,10 +328,14 @@ function computeAuswertung(plan, pos) {
       liquiditaetsergebnisJahr: j1.liquiditaetsergebnis,
       breakEvenMonat: monateLiq.findIndex(m => m.saldo >= 0) + 1 || null,
       tiefsterSaldo: round2(Math.min(...monateLiq.map(m => m.saldo))),
+      mitgliederStart: hatMitglieder ? Math.round(mitgliederArr[0]) : null,
+      mitgliederEnde: hatMitglieder ? Math.round(mitgliederArr[11]) : null,
+      mitgliederMax: hatMitglieder ? Math.round(Math.max(...mitgliederArr)) : null,
     },
     rentabilitaet: j1,
     dreiJahresPlan: dreiJahre,
     liquiditaet: monateLiq,
+    mitgliederVerlauf: hatMitglieder ? mitgliederArr.map(v => Math.round(v)) : null,
     mittelbilanz,
   };
 }
@@ -346,6 +382,140 @@ router.get('/ist-kennzahlen', async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════════
+// BUCHHALTUNGS-IMPORT (EÜR/BWA) — Vorbefüllung & Aktualisieren
+// ════════════════════════════════════════════════════════════════════════════════
+const EINNAHME_LABEL = {
+  Beitrag: 'Mitgliedsbeiträge', Rechnung: 'Rechnungen', Verkauf: 'Verkäufe',
+  Beleg: 'sonstige Einnahmen', Bank: 'Bank-Einnahmen', Kasse: 'Kasseneinnahmen',
+};
+const KOSTEN_LABEL = {
+  material: 'Material/Wareneinsatz', fremdleistung: 'Fremdleistungen', personal: 'Personal',
+  raumkosten: 'Raumkosten', versicherungen: 'Versicherungen/Beiträge', kfz: 'Kfz-Kosten',
+  werbung: 'Werbe-/Reisekosten', warenabgabe: 'Kosten der Warenabgabe', reparatur: 'Reparatur/Instandhaltung',
+  sonstige_steuern: 'sonstige Steuern', sonstige: 'sonstige Aufwendungen',
+};
+// EÜR/BWA-Ausgabenkategorie → Businessplan-Kostenart
+function mapAusgabeKat(k) {
+  const s = String(k || '').toLowerCase();
+  if (/waren|material|rhb/.test(s)) return 'material';
+  if (/fremdleist/.test(s)) return 'fremdleistung';
+  if (/personal|lohn|gehalt|sozial/.test(s)) return 'personal';
+  if (/raum|miete|pacht|nebenkost/.test(s)) return 'raumkosten';
+  if (/versicher|beitrag|beitr/.test(s)) return 'versicherungen';
+  if (/kfz|fahrzeug|auto/.test(s)) return 'kfz';
+  if (/werb|marketing|reise/.test(s)) return 'werbung';
+  if (/reparatur|instandhalt|wartung/.test(s)) return 'reparatur';
+  if (/steuer/.test(s)) return 'sonstige_steuern';
+  return 'sonstige';
+}
+
+// Holt Einnahmen/Ausgaben der letzten 12 Monate aus den EÜR-Views und baut
+// monatsgenaue Umsatz- und Kostenpositionen (Profil nach Kalendermonat Jan–Dez).
+async function pullBuchhaltung(quelleDojoId) {
+  const round2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
+  const [einn] = await pool.query(
+    `SELECT quelle, monat, COUNT(*) AS anzahl, SUM(betrag_brutto) AS summe FROM v_euer_einnahmen
+     WHERE dojo_id = ? AND datum >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+     GROUP BY quelle, monat`, [quelleDojoId]);
+  const [ausg] = await pool.query(
+    `SELECT kategorie, monat, SUM(betrag_brutto) AS summe FROM v_euer_ausgaben
+     WHERE dojo_id = ? AND datum >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+       AND kategorie NOT IN ('privateinlage','privatentnahme','anlagevermögen','abschreibungen')
+     GROUP BY kategorie, monat`, [quelleDojoId]);
+  const umsatzLines = [];
+
+  // 1) Mitgliedsbeiträge aufgeschlüsselt nach Tarifgruppe (Alter) × Laufzeit aus AKTIVEN Verträgen.
+  //    Mitgliederzahl je Gruppe = Menge, Ø-Monatsbeitrag = Preis (vertragsindividuell, sonst Tarifpreis).
+  const [vertr] = await pool.query(
+    `SELECT COALESCE(NULLIF(TRIM(t.altersgruppe), ''), 'Mitglieder') AS gruppe,
+            COALESCE(t.duration_months, 0) AS laufzeit,
+            COUNT(DISTINCT v.mitglied_id) AS mitglieder,
+            AVG(COALESCE(NULLIF(v.monatsbeitrag,0), NULLIF(v.monatlicher_beitrag,0), t.price_cents/100)) AS avg_beitrag
+     FROM vertraege v JOIN tarife t ON t.id = v.tarif_id
+     WHERE v.dojo_id = ? AND v.status IN ('aktiv','active')
+     GROUP BY gruppe, laufzeit HAVING mitglieder > 0
+     ORDER BY mitglieder DESC`, [quelleDojoId]);
+  vertr.forEach(g => {
+    const lf = Number(g.laufzeit) > 0 ? ` ${g.laufzeit}M` : '';
+    umsatzLines.push({
+      bezeichnung: `Beitrag ${g.gruppe}${lf}`, einheit: 'Mitglied',
+      preis_einheit: round2(g.avg_beitrag), menge_monatlich: Number(g.mitglieder) || 0,
+      mengen_monate: null,
+    });
+  });
+
+  // 2) Aufnahmegebühr aus Verträgen der letzten 12 Monate (monatsgenau, Menge = neue Verträge)
+  const [aufn] = await pool.query(
+    `SELECT MONTH(vertragsbeginn) AS monat, COUNT(*) AS anzahl, SUM(aufnahmegebuehr_cents)/100 AS summe
+     FROM vertraege WHERE dojo_id = ? AND aufnahmegebuehr_cents > 0
+       AND vertragsbeginn >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+     GROUP BY MONTH(vertragsbeginn)`, [quelleDojoId]);
+  if (aufn.length) {
+    const cnt = Array(12).fill(0); let sum = 0, total = 0;
+    aufn.forEach(r => { cnt[(r.monat || 1) - 1] = Number(r.anzahl) || 0; sum += Number(r.summe) || 0; total += Number(r.anzahl) || 0; });
+    umsatzLines.push({
+      bezeichnung: 'Aufnahmegebühr', einheit: 'Aufnahme',
+      preis_einheit: total > 0 ? round2(sum / total) : 0, menge_monatlich: Math.round(total / 12), mengen_monate: cnt,
+    });
+  }
+
+  // 2) Übrige Einnahmequellen als Anzahl/Monat × Ø-Wert (statt Pauschalpreis 1)
+  const EINHEIT = { Rechnung: 'Rechnung', Verkauf: 'Verkauf', Beleg: 'Beleg', Bank: 'Buchung', Kasse: 'Buchung' };
+  const byQ = {};
+  einn.forEach(r => {
+    if (r.quelle === 'Beitrag') return;
+    const o = byQ[r.quelle] || (byQ[r.quelle] = { count: Array(12).fill(0), sum: 0, total: 0 });
+    o.count[(r.monat || 1) - 1] += Number(r.anzahl) || 0;
+    o.sum += Number(r.summe) || 0;
+    o.total += Number(r.anzahl) || 0;
+  });
+  Object.entries(byQ).forEach(([q, o]) => {
+    umsatzLines.push({
+      bezeichnung: EINNAHME_LABEL[q] || q,
+      einheit: EINHEIT[q] || 'Stück',
+      preis_einheit: o.total > 0 ? round2(o.sum / o.total) : 0,   // Ø-Wert je Buchung
+      menge_monatlich: Math.round(o.total / 12),
+      mengen_monate: o.count.map(v => Math.round(v)),
+    });
+  });
+
+  const kostenByKat = {};
+  ausg.forEach(r => {
+    const kat = mapAusgabeKat(r.kategorie);
+    const arr = kostenByKat[kat] || (kostenByKat[kat] = Array(12).fill(0));
+    arr[(r.monat || 1) - 1] += Number(r.summe) || 0;
+  });
+  const kostenLines = Object.entries(kostenByKat).map(([kat, arr]) => ({
+    kategorie: kat, bezeichnung: KOSTEN_LABEL[kat] || 'aus Buchhaltung',
+    betrag_monatlich: round2(arr.reduce((s, v) => s + v, 0) / 12),
+    betraege_monate: arr.map(round2),
+  }));
+
+  return { umsatzLines, kostenLines };
+}
+
+// Ersetzt die importierten (aus_buchhaltung=1) Positionen eines Plans frisch aus der Buchhaltung.
+async function importBuchhaltung(planDojoId, planId, quelleDojoId) {
+  const { umsatzLines, kostenLines } = await pullBuchhaltung(quelleDojoId);
+  await pool.query('DELETE FROM businessplan_umsatz WHERE plan_id = ? AND aus_buchhaltung = 1', [planId]);
+  await pool.query('DELETE FROM businessplan_kosten WHERE plan_id = ? AND aus_buchhaltung = 1', [planId]);
+  for (const u of umsatzLines) {
+    await pool.query(
+      `INSERT INTO businessplan_umsatz (dojo_id, plan_id, bezeichnung, einheit, menge_monatlich, preis_einheit, mengen_monate, aus_buchhaltung)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+      [planDojoId, planId, u.bezeichnung, u.einheit, u.menge_monatlich, u.preis_einheit,
+       Array.isArray(u.mengen_monate) ? JSON.stringify(u.mengen_monate) : null]);
+  }
+  for (const k of kostenLines) {
+    await pool.query(
+      `INSERT INTO businessplan_kosten (dojo_id, plan_id, kategorie, bezeichnung, betrag_monatlich, betraege_monate, aus_buchhaltung)
+       VALUES (?, ?, ?, ?, ?, ?, 1)`,
+      [planDojoId, planId, k.kategorie, k.bezeichnung, k.betrag_monatlich, JSON.stringify(k.betraege_monate)]);
+  }
+  return { umsatz: umsatzLines.length, kosten: kostenLines.length };
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
 // PLÄNE (CRUD)
 // ════════════════════════════════════════════════════════════════════════════════
 router.get('/plaene', async (req, res) => {
@@ -382,19 +552,22 @@ router.post('/plaene', async (req, res) => {
   try {
     const dojoId = getSecureDojoId(req);
     if (!dojoId) return res.status(400).json({ error: 'Bitte ein Dojo auswählen (dojo_id fehlt)' });
-    const { titel, firmenname, rechtsform, planungsjahr, annahmen, dokument_texte, status, ausIst } = req.body;
+    const { titel, firmenname, rechtsform, planungsjahr, annahmen, dokument_texte, status, quelle, quelleDojoId } = req.body;
     const jahr = parseInt(planungsjahr, 10) || new Date().getFullYear();
 
-    // Vorbefüllung aus Ist-Daten (so viel wie möglich übernehmen)
+    // Datenquelle: 'euer' | 'bwa' = aus Buchhaltung vorbefüllen, sonst leerer Plan.
+    // Quell-Dojo: Super-Admin darf eine andere Organisation wählen, sonst eigenes Dojo.
+    const ausBuchhaltung = (quelle === 'euer' || quelle === 'bwa');
+    const srcDojo = (isSuperAdmin(req) && quelleDojoId) ? parseInt(quelleDojoId, 10) : dojoId;
+
     let initialAnnahmen = annahmen || null;
-    let ist = null;
-    if (ausIst) {
-      ist = await getIstKennzahlen(dojoId);
+    if (ausBuchhaltung) {
       initialAnnahmen = {
-        sozialkostenProzent: 24, steuersatzProzent: 30, erloesschmaelerungProzent: 0,
-        startLiquiditaet: 0,
+        sozialSvPflichtigProzent: 24, sozialGeringfuegigProzent: 28, sozialBefreitProzent: 0,
+        steuersatzProzent: 30, erloesschmaelerungProzent: 0, umsatzsteuerProzent: 19, startLiquiditaet: 0,
         umsatzWachstumJ2: 5, umsatzWachstumJ3: 5, kostenWachstumJ2: 3, kostenWachstumJ3: 3,
         ...(annahmen || {}),
+        datenquelle: { typ: quelle, dojoId: srcDojo },   // für späteres „Aktualisieren"
       };
     }
 
@@ -408,15 +581,20 @@ router.post('/plaene', async (req, res) => {
 
     const planId = r.insertId;
 
-    // Aus Ist: Umsatzposition Mitgliedsbeiträge (Menge = aktive Mitglieder × Ø-Beitrag)
-    if (ausIst && ist && ist.aktuelleMitglieder > 0) {
-      await pool.query(
-        `INSERT INTO businessplan_umsatz (dojo_id, plan_id, bezeichnung, einheit, menge_monatlich, preis_einheit, sort_order)
-         VALUES (?, ?, 'Mitgliedsbeiträge', 'Mitglied', ?, ?, 0)`,
-        [dojoId, planId, ist.aktuelleMitglieder, ist.durchschnittsbeitrag]);
+    let importiert = null;
+    if (ausBuchhaltung) {
+      try { importiert = await importBuchhaltung(dojoId, planId, srcDojo); }
+      catch (e) { logger.error('[Businessplan] Buchhaltungs-Import Fehler:', { error: e }); }
+      // Startpaket ist nicht als Buchung erfasst → leere manuelle Zeile zum Ausfüllen
+      // (aus_buchhaltung=0 → bleibt beim „Aktualisieren" erhalten)
+      try {
+        await pool.query(
+          `INSERT INTO businessplan_umsatz (dojo_id, plan_id, bezeichnung, einheit, menge_monatlich, preis_einheit, sort_order, aus_buchhaltung)
+           VALUES (?, ?, 'Startpaket', 'Paket', 0, 0, 99, 0)`, [dojoId, planId]);
+      } catch (e) { /* optional */ }
     }
 
-    res.status(201).json({ id: planId, uebernommen: ausIst ? ist : null });
+    res.status(201).json({ id: planId, importiert });
   } catch (err) {
     logger.error('[Businessplan] Plan anlegen Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler beim Anlegen des Plans' });
@@ -481,32 +659,53 @@ router.get('/plaene/:id/auswertung', async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════════
 // GENERISCHES CRUD für Positions-Tabellen
 // ════════════════════════════════════════════════════════════════════════════════
+// Aktualisiert die aus der Buchhaltung importierten Positionen (Daten nachholen).
+router.post('/plaene/:id/sync', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Bitte ein Dojo auswählen (dojo_id fehlt)' });
+    const plan = await loadPlan(req.params.id, dojoId);
+    if (!plan) return res.status(404).json({ error: 'Plan nicht gefunden' });
+    const ann = parseJson(plan.annahmen, {});
+    const q = ann.datenquelle;
+    if (!q || !q.dojoId) return res.status(400).json({ error: 'Für diesen Plan ist keine Buchhaltungs-Quelle hinterlegt.' });
+    const importiert = await importBuchhaltung(plan.dojo_id, plan.id, q.dojoId);
+    res.json({ success: true, ...importiert });
+  } catch (err) {
+    logger.error('[Businessplan] Sync Fehler:', { error: err });
+    res.status(500).json({ error: 'Fehler beim Aktualisieren aus der Buchhaltung' });
+  }
+});
+
 const RESOURCES = {
   investitionen: {
     table: 'businessplan_investitionen',
-    fields: ['kategorie', 'bezeichnung', 'betrag', 'nutzungsdauer_jahre', 'anschaffung_monat', 'sort_order'],
-    nums: ['betrag', 'nutzungsdauer_jahre', 'anschaffung_monat', 'sort_order'],
+    fields: ['kategorie', 'bezeichnung', 'betrag', 'nutzungsdauer_jahre', 'afa_satz_prozent', 'restbuchwert', 'anschaffung_monat', 'sort_order'],
+    nums: ['betrag', 'nutzungsdauer_jahre', 'afa_satz_prozent', 'restbuchwert', 'anschaffung_monat', 'sort_order'],
   },
   finanzierung: {
     table: 'businessplan_finanzierung',
-    fields: ['art', 'bezeichnung', 'betrag', 'zinssatz_prozent', 'laufzeit_monate', 'tilgungsfrei_monate', 'sort_order'],
-    nums: ['betrag', 'zinssatz_prozent', 'laufzeit_monate', 'tilgungsfrei_monate', 'sort_order'],
+    fields: ['art', 'bezeichnung', 'betrag', 'zinssatz_prozent', 'laufzeit_monate', 'tilgungsfrei_monate', 'auszahlung_monat', 'sort_order'],
+    nums: ['betrag', 'zinssatz_prozent', 'laufzeit_monate', 'tilgungsfrei_monate', 'auszahlung_monat', 'sort_order'],
   },
   umsatz: {
     table: 'businessplan_umsatz',
-    fields: ['bezeichnung', 'einheit', 'menge_monatlich', 'preis_einheit', 'sort_order'],
+    fields: ['bezeichnung', 'einheit', 'menge_monatlich', 'preis_einheit', 'mengen_monate', 'sort_order'],
     nums: ['menge_monatlich', 'preis_einheit', 'sort_order'],
+    jsons: ['mengen_monate'],
   },
   kosten: {
     table: 'businessplan_kosten',
-    fields: ['kategorie', 'bezeichnung', 'betrag_monatlich', 'ist_brutto_personal', 'sort_order'],
+    fields: ['kategorie', 'bezeichnung', 'betrag_monatlich', 'betraege_monate', 'ist_brutto_personal', 'personalart', 'funktion', 'sort_order'],
     nums: ['betrag_monatlich', 'sort_order'],
     bools: ['ist_brutto_personal'],
+    jsons: ['betraege_monate'],
   },
   privatentnahmen: {
     table: 'businessplan_privatentnahmen',
-    fields: ['kategorie', 'bezeichnung', 'betrag_monatlich', 'sort_order'],
+    fields: ['kategorie', 'bezeichnung', 'betrag_monatlich', 'betraege_monate', 'sort_order'],
     nums: ['betrag_monatlich', 'sort_order'],
+    jsons: ['betraege_monate'],
   },
 };
 
@@ -516,6 +715,7 @@ function coerce(cfg, body) {
     let v = body[f];
     if (cfg.nums && cfg.nums.includes(f)) v = (v === '' || v == null) ? 0 : Number(v) || 0;
     else if (cfg.bools && cfg.bools.includes(f)) v = (v === true || v === 1 || v === '1') ? 1 : 0;
+    else if (cfg.jsons && cfg.jsons.includes(f)) v = (v == null) ? null : JSON.stringify(v);
     else v = v ?? null;
     out[f] = v;
   }

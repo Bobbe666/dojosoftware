@@ -2,7 +2,7 @@
  * Businessplan PDF Template
  * =========================
  * Erzeugt einen klassischen Businessplan als druckbares HTML (Puppeteer → PDF),
- * orientiert an der Hans-Lindner-Systematik:
+ * Abschnitte (klassische Finanzplanungs-Systematik):
  *   Deckblatt · Zusammenfassung · Gründerprofil · Markt · Angebot · Marketing · SWOT
  *   · Investitions-/Finanzierungsplan · Rentabilitätsvorschau · 3-Jahres-Plan
  *   · Liquiditätsplan · Ziele & Meilensteine.

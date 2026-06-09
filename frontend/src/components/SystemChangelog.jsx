@@ -31,12 +31,35 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.44',
+    date: '2026-06-09',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Businessplan: geführter Wizard, monatsgenaue Eingabe & Buchhaltungs-Anbindung',
+    description: 'Großer Ausbau des Businessplan-Moduls: kompletter Umbau zu einem geführten Schritt-für-Schritt-Wizard mit neuem Design und Diagrammen. Eingabe jetzt monatsgenau (12 Spalten je Position), Detailfelder für AfA (Satz/Restbuchwert), Personal (Art/Funktion, Sozialsätze je Gruppe) und Kapitaldienst (Auszahlmonat, tilgungsfreie Zeit). Beim Anlegen wählbar: Datenquelle EÜR/BWA + Organisation. Vorbefüllung übernimmt Einnahmen & Ausgaben (nach Kategorie) der letzten 12 Monate — Mitgliedsbeiträge aufgeschlüsselt nach Tarifgruppe (Schüler/Erwachsene/Kinder) × Laufzeit, plus Aufnahmegebühr und Startpaket-Platzhalter. Neuer „Aus Buchhaltung aktualisieren"-Button holt Daten nach, ohne manuelle Positionen zu überschreiben.',
+    highlights: [
+      '🧭 Geführter Wizard (9 Schritte) statt Tabs, neues Design + Liquiditäts-/Mitglieder-Diagramme',
+      '📅 Eingabe pro Monat für Umsatz, Kosten, Personal, Privatentnahmen',
+      '📒 Vorbefüllung aus EÜR/BWA inkl. Organisationswahl; Mitgliedsbeiträge nach Tarif (Alter × Laufzeit)',
+      '🔄 „Aus Buchhaltung aktualisieren" — importierte Positionen werden neu gezogen, manuelle bleiben',
+    ],
+    details: 'Migrationen 198 (monatsgenaue JSON-Werte + AfA/Personal/Kapitaldienst-Felder) und 199 (aus_buchhaltung-Flag). businessplan.js: pro-Monat-Engine, pullBuchhaltung/importBuchhaltung aus v_euer-Views + vertraege/tarife, POST /plaene/:id/sync. Frontend BusinessplanDashboard.jsx als Wizard neu aufgebaut.',
+    files: [
+      'backend/migrations/198_businessplan_detail.sql',
+      'backend/migrations/199_businessplan_quelle.sql',
+      'backend/routes/businessplan.js',
+      'backend/utils/businessplanPdfTemplate.js',
+      'frontend/src/components/BusinessplanDashboard.jsx',
+      'frontend/src/components/BusinessplanDashboard.css',
+    ],
+  },
+  {
     version: '3.0.43',
     date: '2026-06-09',
     type: 'feature',
     zielgruppe: 'intern',
     title: 'Neues Enterprise-Modul: Businessplan & Finanzplanung',
-    description: 'Vollständiges Businessplan-Modul orientiert an der Hans-Lindner-Systematik: Investitions-/Finanzierungsplan (mit Mittelbilanz-Check), Umsatz- und Kostenplanung, AfA, Kapitaldienst, Privatentnahmen, automatische Rentabilitätsvorschau, 3-Jahres-Planung und monatlicher Liquiditätsplan. Dazu ein generierbares Businessplan-PDF (für Bank/Förderung) und ein strategisches Ziele-Board mit KPIs. Beim Anlegen wählbar: aus vorhandenen Ist-Daten vorbefüllen oder komplett neu. Ein „Noch auszufüllen"-Hinweis zeigt leere Bereiche.',
+    description: 'Vollständiges Businessplan-Modul mit klassischer Finanzplanung: Investitions-/Finanzierungsplan (mit Mittelbilanz-Check), Umsatz- und Kostenplanung, AfA, Kapitaldienst, Privatentnahmen, automatische Rentabilitätsvorschau, 3-Jahres-Planung und monatlicher Liquiditätsplan. Dazu ein generierbares Businessplan-PDF (für Bank/Förderung) und ein strategisches Ziele-Board mit KPIs. Beim Anlegen wählbar: aus vorhandenen Ist-Daten vorbefüllen oder komplett neu. Ein „Noch auszufüllen"-Hinweis zeigt leere Bereiche.',
     highlights: [
       '📈 Neuer Tab „Businessplan" (Enterprise) mit Übersicht, Finanzplanung, Dokument & Ziele-Board',
       '🧮 Engine: Rentabilität, 3-Jahres-Plan, Liquidität, Investitions-/Finanzierungs-Bilanz',

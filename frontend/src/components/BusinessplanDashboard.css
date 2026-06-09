@@ -93,3 +93,66 @@ select.bp-input { -webkit-appearance: none; }
 .bp-upgrade .icon { font-size: 3rem; }
 .bp-upgrade h3 { font-size: 1.4rem; margin: .8rem 0 .5rem; }
 .bp-upgrade p { color: var(--text-secondary, #9a9ab0); max-width: 480px; margin: 0 auto 1.25rem; line-height: 1.6; }
+
+/* ── Wizard ─────────────────────────────────────────────────────────────── */
+.bp-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.bp-head h2 { margin: 0; font-size: 1.5rem; }
+
+.bp-stepper { display: flex; gap: .35rem; flex-wrap: wrap; margin-bottom: 1.5rem; padding-bottom: .25rem; }
+.bp-stepitem { display: flex; align-items: center; gap: .5rem; background: var(--bg-card, #1a1a2e); border: 1px solid var(--border-color, #2c2c40);
+  border-radius: 30px; padding: .4rem .8rem .4rem .45rem; cursor: pointer; color: var(--text-secondary, #9a9ab0); font-size: .8rem; transition: all .15s; }
+.bp-stepitem .dot { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,255,255,.06); font-size: .75rem; font-weight: 700; flex-shrink: 0; }
+.bp-stepitem:hover { border-color: var(--accent, #e0701a); color: var(--text-primary, #e8e8f0); }
+.bp-stepitem.active { background: var(--accent, #e0701a); color: #fff; border-color: var(--accent, #e0701a); box-shadow: 0 4px 14px rgba(224,112,26,.3); }
+.bp-stepitem.active .dot { background: rgba(255,255,255,.25); }
+.bp-stepitem.done { color: #2ecc71; border-color: rgba(46,204,113,.4); }
+.bp-stepitem.done .dot { background: rgba(46,204,113,.18); color: #2ecc71; }
+
+.bp-step { min-height: 200px; }
+.bp-hint { color: var(--text-secondary, #9a9ab0); font-size: .82rem; margin: -.4rem 0 1rem; line-height: 1.5; }
+
+.bp-nav-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.5rem;
+  padding-top: 1.25rem; border-top: 1px solid var(--border-color, #2c2c40); }
+.bp-nav-mid { flex: 1; text-align: center; }
+
+.bp-tablewrap { overflow-x: auto; }
+.bp-td-empty { color: var(--text-secondary, #9a9ab0); padding: .8rem .5rem; font-style: italic; }
+.bp-table.compact td { padding: .25rem .5rem; font-size: .82rem; }
+
+.bp-cal-btn { background: none; border: 1px solid var(--border-color, #34344a); border-radius: 6px; cursor: pointer; padding: .2rem .35rem; font-size: .85rem; opacity: .6; }
+.bp-cal-btn.on { opacity: 1; border-color: var(--accent, #e0701a); background: rgba(224,112,26,.12); }
+.bp-cal-btn:hover { opacity: 1; }
+
+.bp-monthrow td { background: rgba(255,255,255,.02); }
+.bp-months { display: grid; grid-template-columns: repeat(6, 1fr); gap: .5rem; padding: .5rem .25rem; align-items: end; }
+@media (max-width: 700px) { .bp-months { grid-template-columns: repeat(3, 1fr); } }
+.bp-month { display: flex; flex-direction: column; font-size: .68rem; color: var(--text-secondary, #9a9ab0); gap: .15rem; }
+.bp-month .bp-input { background: var(--bg-input, #1f1f33); border: 1px solid var(--border-color, #34344a); padding: .3rem; }
+.bp-months .bp-btn.sm { grid-column: span 6; justify-self: start; }
+@media (max-width: 700px) { .bp-months .bp-btn.sm { grid-column: span 3; } }
+
+.bp-summe { display: flex; justify-content: space-between; align-items: center; margin-top: .75rem; padding: .6rem .9rem;
+  background: rgba(255,255,255,.03); border-radius: 8px; font-size: .9rem; }
+.bp-summe strong { font-size: 1.05rem; }
+
+.bp-btn.sm { padding: .3rem .7rem; font-size: .78rem; }
+.bp-btn.ghost.sm { padding: .25rem .6rem; }
+.bp-btn.ghost.danger { border-color: rgba(231,76,60,.4); color: #e74c3c; }
+.bp-btn.ghost.danger:hover { background: rgba(231,76,60,.1); }
+.bp-card h3 .bp-btn { float: right; }
+
+/* ── Liquiditätskurve ──────────────────────────────────────────────────── */
+.bp-chart { width: 100%; }
+.bp-chart-line { stroke: var(--accent, #e0701a); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.bp-chart-zero { stroke: rgba(255,255,255,.18); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.bp-chart-dot { fill: var(--accent, #e0701a); }
+.bp-chart-dot.neg { fill: #e74c3c; }
+.bp-chart-x { display: flex; justify-content: space-between; font-size: .65rem; color: var(--text-secondary, #9a9ab0); margin-top: .25rem; }
+
+/* ── Mitglieder-Balken ─────────────────────────────────────────────────── */
+.bp-membars { display: flex; align-items: flex-end; gap: 6px; height: 130px; padding-top: .5rem; }
+.bp-membar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: .2rem; height: 100%; }
+.bp-membar .bar { width: 70%; max-width: 34px; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, var(--accent, #e0701a), rgba(224,112,26,.45)); }
+.bp-membar .num { font-size: .68rem; font-weight: 700; color: var(--text-primary, #e8e8f0); }
+.bp-membar .mon { font-size: .62rem; color: var(--text-secondary, #9a9ab0); }

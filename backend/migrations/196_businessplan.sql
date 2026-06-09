@@ -1,6 +1,6 @@
 -- Migration 196: Businessplan-Modul (Enterprise Feature)
 -- ============================================================================
--- Orientiert an der Finanzplanungs-Systematik des Hans-Lindner-Instituts
+-- Klassische Finanzplanungs-Systematik
 -- (Investitions-/Finanzierungsplan, AfA, Umsatz-/Mengenplanung, Kostenarten der
 -- Rentabilitätsrechnung, Kapitaldienst, Privatentnahmen, Liquidität, 3-Jahres-Plan)
 -- erweitert um ein strategisches Ziele-Board und einen PDF-Dokument-Generator.
