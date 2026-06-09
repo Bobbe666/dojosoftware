@@ -1098,6 +1098,12 @@ const buildOrgFilter = (req, organisation) => {
   if (req.buchhaltungDojoId !== null && req.buchhaltungDojoId !== undefined) {
     return { sql: 'AND dojo_id = ?', params: [req.buchhaltungDojoId] };
   }
+  // Super-Admin: expliziten dojo_id-Query-Param respektieren (z.B. Finanzen-App-Scope),
+  // sonst tauchen sonst ALLE Dojos/Subdomains auf.
+  const qDojoId = parseInt(req.query.dojo_id);
+  if (qDojoId) {
+    return { sql: 'AND dojo_id = ?', params: [qDojoId] };
+  }
   if (organisation && organisation !== 'alle') {
     const orgDojoId = ORG_TO_DOJO_ID[organisation];
     if (orgDojoId) {
@@ -1707,7 +1713,7 @@ router.get('/belege/duplikat-check', requireBuchhaltungAccess, (req, res) => {
   if (isNaN(betragNum)) return res.json({ duplikate: [] });
 
   const _orgFilter = buildOrgFilter(req, req.query.organisation);
-  let where = 'beleg_datum = ? AND ABS(betrag_brutto - ?) < 0.02 AND storniert = FALSE';
+  let where = 'beleg_datum = ? AND ABS(betrag_brutto - ?) < 0.02 AND storniert = FALSE AND (privat = 0 OR privat IS NULL)';
   const params = [datum, betragNum];
 
   if (_orgFilter.sql) { where += ' ' + _orgFilter.sql; params.push(..._orgFilter.params); }
@@ -1736,10 +1742,18 @@ router.get('/belege', requireBuchhaltungAccess, (req, res) => {
   let whereClause = '1=1';
   const params = [];
 
-  const _orgFilter = buildOrgFilter(req, organisation);
-  if (_orgFilter.sql) {
-    whereClause += ' ' + _orgFilter.sql;
-    params.push(..._orgFilter.params);
+  if (req.query.privat === '1') {
+    // Privat-Ansicht: nur eigene private Belege (kontoübergreifend), unabhängig von Org-Filter
+    whereClause += ' AND privat = 1 AND privat_benutzer_id = ?';
+    params.push(req.user?.id || 0);
+  } else {
+    // Betriebliche Ansicht: private Belege ausblenden + nach Org/Dojo filtern
+    whereClause += ' AND (privat = 0 OR privat IS NULL)';
+    const _orgFilter = buildOrgFilter(req, organisation);
+    if (_orgFilter.sql) {
+      whereClause += ' ' + _orgFilter.sql;
+      params.push(..._orgFilter.params);
+    }
   }
 
   if (jahr) {
@@ -1766,6 +1780,7 @@ router.get('/belege', requireBuchhaltungAccess, (req, res) => {
     SELECT
       beleg_id,
       beleg_nummer,
+      dojo_id,
       organisation_name,
       buchungsart,
       beleg_datum,
@@ -1783,6 +1798,8 @@ router.get('/belege', requireBuchhaltungAccess, (req, res) => {
       storniert,
       review_needed,
       review_kommentar,
+      privat,
+      privat_benutzer_id,
       erstellt_am,
       geaendert_am
     FROM buchhaltung_belege
@@ -2029,6 +2046,37 @@ router.patch('/belege/:id/review', requireBuchhaltungAccess, (req, res) => {
       (err2) => {
         if (err2) return res.status(500).json({ message: 'Fehler beim Speichern' });
         res.json({ ok: true });
+      }
+    );
+  });
+});
+
+// ===================================================================
+// 🔒 PATCH /api/buchhaltung/belege/:id/privat - Beleg nach privat verschieben / zurückholen
+//    privat=1 → raus aus betrieblicher EÜR, nur für den markierenden Account sichtbar
+// ===================================================================
+router.patch('/belege/:id/privat', requireBuchhaltungAccess, (req, res) => {
+  const belegId = req.params.id;
+  const setPrivat = req.body.privat === true || req.body.privat === 1 || req.body.privat === '1';
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ message: 'Kein Benutzer' });
+
+  db.query('SELECT dojo_id, privat, privat_benutzer_id, festgeschrieben FROM buchhaltung_belege WHERE beleg_id = ?', [belegId], (err, rows) => {
+    if (err || rows.length === 0) return res.status(404).json({ message: 'Beleg nicht gefunden' });
+    const beleg = rows[0];
+    // Dojo-Admin darf nur eigene Dojo-Belege anfassen
+    if (!checkDojoOwnership(req, res, beleg.dojo_id)) return;
+    if (beleg.festgeschrieben) return res.status(409).json({ message: 'Beleg ist festgeschrieben und kann nicht verschoben werden' });
+    // Aus privat zurückholen darf nur der Eigentümer-Account
+    if (!setPrivat && beleg.privat && beleg.privat_benutzer_id && beleg.privat_benutzer_id !== userId) {
+      return res.status(403).json({ message: 'Nur der eigene Account kann diesen privaten Beleg zurückholen' });
+    }
+    db.query(
+      'UPDATE buchhaltung_belege SET privat = ?, privat_benutzer_id = ? WHERE beleg_id = ?',
+      [setPrivat ? 1 : 0, setPrivat ? userId : null, belegId],
+      (err2) => {
+        if (err2) return res.status(500).json({ message: 'Fehler beim Speichern' });
+        res.json({ ok: true, privat: setPrivat });
       }
     );
   });
