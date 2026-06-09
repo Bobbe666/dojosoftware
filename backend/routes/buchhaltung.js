@@ -1542,10 +1542,10 @@ const ocrUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)) {
+    if (['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'].includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Nur Bilder erlaubt (JPG, PNG, WEBP)'));
+      cb(new Error('Nur Bilder oder PDF erlaubt (JPG, PNG, WEBP, PDF)'));
     }
   }
 });
@@ -1560,6 +1560,11 @@ router.post('/belege/ocr', requireBuchhaltungAccess, ocrUpload.single('bild'), a
     const anthropic = new Anthropic({ apiKey });
     const base64 = req.file.buffer.toString('base64');
     const mediaType = req.file.mimetype;
+    const isPdf = mediaType === 'application/pdf';
+    // PDF → document-Block, Bild → image-Block (beide Modelle unterstützen PDF nativ)
+    const dokumentBlock = isPdf
+      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
+      : { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } };
 
     // Modelle in Reihenfolge: neues zuerst, Fallback bei Überlastung (529)
     const ocrModels = ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6'];
@@ -1572,7 +1577,7 @@ router.post('/belege/ocr', requireBuchhaltungAccess, ocrUpload.single('bild'), a
           messages: [{
             role: 'user',
             content: [
-              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+              dokumentBlock,
               {
                 type: 'text',
                 text: `Analysiere diesen Kassenbon oder Beleg für die deutsche Buchhaltung (EÜR).
