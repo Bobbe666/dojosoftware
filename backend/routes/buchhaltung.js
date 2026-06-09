@@ -462,7 +462,9 @@ const AUTO_KATEGORISIERUNG_REGELN = [
 
   // ---- Bankgebühren ----
   { kategorie: 'Kontoführungsgebühren', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
-    keywords: ['kontoführungsgebühr', 'kontoführung', 'bankgebühr', 'gebühr konto', 'entgelt konto', 'jahresgebühr karte', 'kartengebühr', 'kontogebühr', 'buchungsgebühr', 'überweisungsgebühr', 'serviceentgelt', 'kreditkartengebühr'] },
+    keywords: ['kontoführungsgebühr', 'kontoführung', 'bankgebühr', 'gebühr konto', 'entgelt konto', 'jahresgebühr karte', 'kartengebühr', 'kontogebühr', 'buchungsgebühr', 'überweisungsgebühr', 'serviceentgelt', 'kreditkartengebühr',
+      // Fyrst / Deutsche Bank — periodischer Kontoabschluss / Entgelte
+      'abschlussposten', 'saldo der abschlussposten', 'rechnungsabschluss', 'kontoabschluss', 'entgeltabrechnung', 'abrechnung entgelte'] },
 
   // ---- Steuerzahlungen / Finanzamt ----
   { kategorie: 'Steuerzahlungen / Finanzamt', typ: 'ausgabe', euer_typ: 'steuerzahlung',
