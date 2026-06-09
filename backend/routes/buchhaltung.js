@@ -6174,7 +6174,7 @@ router.get('/offene-posten', requireFeature('buchhaltung'), requireBuchhaltungAc
       SELECT
         r.rechnung_id,
         r.rechnungsnummer,
-        r.gesamtbetrag AS betrag,
+        COALESCE(r.brutto_betrag, r.betrag) AS betrag,
         r.erstellt_am AS beleg_datum,
         r.faellig_am AS faelligkeitsdatum,
         m.vorname, m.nachname,
