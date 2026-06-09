@@ -700,12 +700,82 @@ const parseExcelRow = (row, headers) => {
 // 🏦 MT940 PARSER (SWIFT-Standard)
 // ===================================================================
 
+// Fyrst-Kontoauszüge: Datum steht zweizeilig (DD.MM. in Zeile 1, JJJJ in Zeile 2),
+// Beträge stehen mit Vorzeichen in den Soll/Haben-Spalten.
+const parseFyrstPdfLines = (rawLines) => {
+  const amountRe = /([+-])?\s*((?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})\s*([+-])?\s*$/;
+  const dayMonthRe = /^\s*(\d{2})\.(\d{2})\.\s+(?:(\d{2})\.(\d{2})\.\s+)?(.*)$/;
+  const yearRe = /^\s*(\d{4})\b/;
+  const transaktionen = [];
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = (rawLines[i] || '').replace(/\s+$/, '');
+    const dm = line.match(dayMonthRe);
+    if (!dm) continue;
+    const am = line.match(amountRe);
+    if (!am) continue;
+
+    // Jahr steht in der Folgezeile (unter Tag.Monat)
+    const next = rawLines[i + 1] || '';
+    const ym = next.match(yearRe);
+    if (!ym) continue;
+    const year = ym[1];
+
+    const buchungsdatum = `${year}-${dm[2]}-${dm[1]}`;
+    let valutadatum = buchungsdatum;
+    if (dm[3] && dm[4]) {
+      const parts = next.trim().split(/\s+/);
+      const vYear = /^\d{4}$/.test(parts[1] || '') ? parts[1] : year;
+      valutadatum = `${vYear}-${dm[4]}-${dm[3]}`;
+    }
+
+    const sign = (am[1] === '-' || am[3] === '-') ? -1 : 1;
+    const betrag = sign * parseFloat(am[2].replace(/\./g, '').replace(',', '.'));
+    if (!betrag) continue;
+
+    const desc1 = dm[5].replace(amountRe, '').replace(/Verwendungszweck\/?\s*Kundenreferenz/i, '').trim();
+    const desc2 = next.replace(yearRe, '').replace(/^\s*\d{4}\s+/, '').trim();
+    const verwendungszweck = [desc1, desc2].filter(Boolean).join(' ').replace(/\s{2,}/g, ' ').trim().slice(0, 500);
+
+    transaktionen.push({
+      buchungsdatum,
+      valutadatum,
+      betrag,
+      waehrung: 'EUR',
+      verwendungszweck: verwendungszweck || 'Buchung',
+      auftraggeber_empfaenger: '',
+      buchungsart: betrag >= 0 ? 'Einnahme' : 'Ausgabe',
+      iban: '',
+      bic: ''
+    });
+  }
+  return transaktionen;
+};
+
 const parsePDFContent = async (filePath) => {
   try {
-    const { execSync } = require('child_process');
-    const rawText = execSync(`pdftotext -layout "${filePath}" -`, { encoding: 'utf-8', timeout: 30000 });
-    const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+    // WICHTIG: execFile (async) statt execSync — blockiert sonst den gesamten Node-Prozess
+    // und legt während des Parsens die ganze API lahm (502 auf allen Endpunkten).
+    const { execFile } = require('child_process');
+    const rawText = await new Promise((resolve, reject) => {
+      execFile(
+        'pdftotext',
+        ['-layout', filePath, '-'],
+        { encoding: 'utf-8', timeout: 30000, maxBuffer: 25 * 1024 * 1024 },
+        (err, stdout) => (err ? reject(err) : resolve(stdout))
+      );
+    });
 
+    // Fyrst-spezifisches Layout (zweizeiliges Datum) zuerst versuchen
+    if (/FYRST|www\.fyrst\.de/i.test(rawText)) {
+      const fyrst = parseFyrstPdfLines(rawText.split('\n'));
+      if (fyrst.length > 0) {
+        return { transaktionen: fyrst, bank: 'FYRST (PDF)', format: 'pdf' };
+      }
+    }
+
+    // Generischer Fallback: Datum + Betrag auf derselben Zeile
+    const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
     const transaktionen = [];
     const dateRegex = /\b(\d{2})\.(\d{2})\.(\d{2,4})\b/;
     const amountRegex = /([+-]?\s*\d{1,3}(?:\.\d{3})*,\d{2}\s*[+-]?)/;
@@ -746,7 +816,7 @@ const parsePDFContent = async (filePath) => {
     }
 
     if (transaktionen.length === 0) {
-      return { error: 'Keine Buchungen im PDF erkannt. Bitte laden Sie den Kontoauszug als CSV aus dem Online-Banking herunter.' };
+      return { error: 'Keine Buchungen im PDF erkannt. Bitte laden Sie den Kontoauszug als CSV oder camt-XML aus dem Online-Banking herunter.' };
     }
 
     return { transaktionen, bank: 'PDF-Import', format: 'pdf' };
