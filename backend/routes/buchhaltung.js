@@ -1507,7 +1507,7 @@ setInterval(() => {
   for (const [t, e] of shareStore) if (e.expires < now) shareStore.delete(t);
 }, 60000);
 
-const shareUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
+const shareUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 32 * 1024 * 1024 } }); // 32 MB (Claudes PDF-Maximum)
 
 router.post('/share-upload', shareUpload.single('bild'), (req, res) => {
   const secret = req.query.secret || req.headers['x-share-secret'];
@@ -1540,7 +1540,7 @@ router.get('/share-token/:token', requireBuchhaltungAccess, (req, res) => {
 // ===================================================================
 const ocrUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 32 * 1024 * 1024 }, // 32 MB = Claudes PDF-Maximum
   fileFilter: (req, file, cb) => {
     if (['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'].includes(file.mimetype)) {
       cb(null, true);
