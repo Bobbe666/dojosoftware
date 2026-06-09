@@ -3,7 +3,7 @@ import { FileText, Receipt, Upload, Plus, Edit, Trash2, Lock, Camera } from 'luc
 
 // Ausgelagert aus BuchhaltungTab.jsx (Belege-Tab). Quick-Capture-Modal bleibt im Parent.
 const BuchhaltungBelegeTab = ({
-  belege, belegeTotal, belegePage, setBelegePage,
+  belege, belegeTotal, belegePage, setBelegePage, belegeLimit,
   showBelegModal, setShowBelegModal, editingBeleg, setEditingBeleg,
   showUploadModal, setShowUploadModal, uploadBelegId, setUploadBelegId,
   openQuickCapture, stornoBeleg, festschreibenBeleg, resetBelegForm, editBeleg,

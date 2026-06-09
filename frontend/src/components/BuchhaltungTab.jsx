@@ -2068,7 +2068,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
         {/* ==================== BELEGERFASSUNG ==================== */}
         {activeSubTab === 'belege' && (
           <BuchhaltungBelegeTab
-            belege={belege} belegeTotal={belegeTotal} belegePage={belegePage} setBelegePage={setBelegePage}
+            belege={belege} belegeTotal={belegeTotal} belegePage={belegePage} setBelegePage={setBelegePage} belegeLimit={belegeLimit}
             showBelegModal={showBelegModal} setShowBelegModal={setShowBelegModal}
             editingBeleg={editingBeleg} setEditingBeleg={setEditingBeleg}
             showUploadModal={showUploadModal} setShowUploadModal={setShowUploadModal}
