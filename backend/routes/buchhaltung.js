@@ -4371,9 +4371,10 @@ router.get('/bank-import/steuerauswertung', requireFeature('kontoauszug'), requi
  */
 router.post('/bank-import/euer-uebertragen', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
   try {
-    const { jahr = new Date().getFullYear(), nur_vorschau = false } = req.body;
-    const dojoId = req.buchhaltungDojoId;
-    if (!dojoId) return res.status(400).json({ message: 'Dojo-ID erforderlich' });
+    const { jahr = new Date().getFullYear(), nur_vorschau = false, organisation } = req.body;
+    const _orgMap = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
+    const dojoId = req.buchhaltungDojoId || _orgMap[organisation] || null;
+    if (!dojoId) return res.status(400).json({ message: (!organisation || organisation === 'alle') ? "Bitte zuerst eine konkrete Organisation auswählen (nicht 'Alle')." : 'Dojo-ID erforderlich' });
 
     const pool = db.promise();
     const dojoFilter = 'AND t.dojo_id = ?';

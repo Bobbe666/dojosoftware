@@ -1180,7 +1180,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     try {
       const res = await axios.post('/buchhaltung/bank-import/euer-uebertragen', {
         jahr: selectedJahr,
-        nur_vorschau: nurVorschau
+        nur_vorschau: nurVorschau,
+        organisation: selectedOrg !== 'alle' ? selectedOrg : undefined
       }, { headers: { Authorization: `Bearer ${token}` } });
       if (nurVorschau) {
         alert(`Vorschau: ${res.data.anzahl} Transaktionen bereit zur Übertragung.\nEinnahmen: ${formatCurrency(res.data.summe_einnahmen)}\nAusgaben: ${formatCurrency(res.data.summe_ausgaben)}`);
