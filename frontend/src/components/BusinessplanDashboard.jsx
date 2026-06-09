@@ -660,6 +660,21 @@ function AuswertungStep({ auswertung, ziele, onAddZiel, onZielStatus, onDeleteZi
         <div className="bp-card">
           <h3>Mitgliederentwicklung {drei[0]?.jahr || ''}</h3>
           <MemberBars data={auswertung.mitgliederVerlauf} />
+          {Array.isArray(auswertung.mitgliederGruppen) && auswertung.mitgliederGruppen.length > 0 && (
+            <div className="bp-tablewrap" style={{ marginTop: '1rem' }}>
+              <table className="bp-table compact">
+                <thead><tr><th>Tarifgruppe</th>{MONATE.map((m, i) => <th key={i} className="r">{m}</th>)}</tr></thead>
+                <tbody>
+                  {auswertung.mitgliederGruppen.map((g, gi) => (
+                    <tr key={gi}>
+                      <td>{g.bezeichnung}</td>
+                      {g.verlauf.map((v, vi) => <td key={vi} className="r">{fmtNum(v)}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -817,12 +832,12 @@ function CreatePlanModal({ onClose, onCreate, withDojo, dojos, dojoId }) {
           <p className="bp-sub" style={{ marginTop: '-.5rem', marginBottom: '1rem' }}>Woraus sollen die Daten kommen?</p>
 
           <label style={choiceStyle(quelle === 'euer')} onClick={() => setQuelle('euer')}>
-            <strong>📒 Aus EÜR</strong>
-            <div className="bp-sub">Einnahmen & Ausgaben (nach Kategorie) der letzten 12 Monate aus der Einnahmen-Überschuss-Rechnung — monatsgenau.</div>
+            <strong>📒 Aus EÜR (Zufluss/Ist)</strong>
+            <div className="bp-sub">Tatsächlich gezahlte Beiträge je Zahlungsmonat (Kassensicht) + Ausgaben nach Kategorie — monatsgenau.</div>
           </label>
           <label style={choiceStyle(quelle === 'bwa')} onClick={() => setQuelle('bwa')}>
-            <strong>📈 Aus BWA</strong>
-            <div className="bp-sub">Betriebswirtschaftliche Auswertung der letzten 12 Monate (Umsatz, Material, Personal, Raum, Sonstiges) — monatsgenau.</div>
+            <strong>📈 Aus BWA (periodengerecht)</strong>
+            <div className="bp-sub">Mitgliederbestand je Tarifgruppe (Schüler/Erwachsene/Kinder × Laufzeit) aus den Vertragslaufzeiten — zeigt die echte monatliche Entwicklung.</div>
           </label>
           <label style={choiceStyle(quelle === 'manuell')} onClick={() => setQuelle('manuell')}>
             <strong>📝 Selbst eingeben</strong>

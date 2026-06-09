@@ -128,6 +128,11 @@ function computeAuswertung(plan, pos) {
   });
   const umsatzJahrBasis = sumArr(umsatzArr);
   const hatMitglieder = mitgliederArr.some(v => v > 0);
+  // Mitgliederentwicklung je Tarifgruppe (Positionen mit Einheit „Mitglied" und Monatswerten)
+  const mitgliederGruppen = pos.umsatz
+    .filter(u => String(u.einheit || '').toLowerCase().startsWith('mitglied') && Array.isArray(u.mengen_monate))
+    .map(u => ({ bezeichnung: u.bezeichnung, verlauf: u.mengen_monate.map(v => Math.round(num(v))) }))
+    .filter(g => g.verlauf.some(v => v > 0));
 
   // --- Kosten je Kategorie je Monat (Beträge ggf. monatsgenau, Personal mit Sozialaufschlag) ---
   const KOSTEN_KATS = ['material', 'fremdleistung', 'personal', 'raumkosten', 'versicherungen',
@@ -336,6 +341,7 @@ function computeAuswertung(plan, pos) {
     dreiJahresPlan: dreiJahre,
     liquiditaet: monateLiq,
     mitgliederVerlauf: hatMitglieder ? mitgliederArr.map(v => Math.round(v)) : null,
+    mitgliederGruppen: mitgliederGruppen.length ? mitgliederGruppen : null,
     mittelbilanz,
   };
 }
@@ -411,7 +417,7 @@ function mapAusgabeKat(k) {
 
 // Holt Einnahmen/Ausgaben der letzten 12 Monate aus den EÜR-Views und baut
 // monatsgenaue Umsatz- und Kostenpositionen (Profil nach Kalendermonat Jan–Dez).
-async function pullBuchhaltung(quelleDojoId) {
+async function pullBuchhaltung(quelleDojoId, quelle = 'euer') {
   const round2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
   const [einn] = await pool.query(
     `SELECT quelle, monat, COUNT(*) AS anzahl, SUM(betrag_brutto) AS summe FROM v_euer_einnahmen
@@ -424,27 +430,68 @@ async function pullBuchhaltung(quelleDojoId) {
      GROUP BY kategorie, monat`, [quelleDojoId]);
   const umsatzLines = [];
 
-  // 1) Mitgliedsbeiträge aufgeschlüsselt nach Tarifgruppe (Alter) × Laufzeit aus AKTIVEN Verträgen.
-  //    Mitgliederzahl je Gruppe = Menge, Ø-Monatsbeitrag = Preis (vertragsindividuell, sonst Tarifpreis).
-  const [vertr] = await pool.query(
-    `SELECT COALESCE(NULLIF(TRIM(t.altersgruppe), ''), 'Mitglieder') AS gruppe,
-            COALESCE(t.duration_months, 0) AS laufzeit,
-            COUNT(DISTINCT v.mitglied_id) AS mitglieder,
-            AVG(COALESCE(NULLIF(v.monatsbeitrag,0), NULLIF(v.monatlicher_beitrag,0), t.price_cents/100)) AS avg_beitrag
-     FROM vertraege v JOIN tarife t ON t.id = v.tarif_id
-     WHERE v.dojo_id = ? AND v.status IN ('aktiv','active')
-     GROUP BY gruppe, laufzeit HAVING mitglieder > 0
-     ORDER BY mitglieder DESC`, [quelleDojoId]);
-  vertr.forEach(g => {
-    const lf = Number(g.laufzeit) > 0 ? ` ${g.laufzeit}M` : '';
-    umsatzLines.push({
-      bezeichnung: `Beitrag ${g.gruppe}${lf}`, einheit: 'Mitglied',
-      preis_einheit: round2(g.avg_beitrag), menge_monatlich: Number(g.mitglieder) || 0,
-      mengen_monate: null,
-    });
-  });
+  // Referenz-Monatsenden der letzten 12 Monate (für Bestandsentwicklung); Array-Index = Kalendermonat
+  const heute = new Date();
+  const refDates = [], refIdx = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(heute.getFullYear(), heute.getMonth() - i + 1, 0);
+    refDates.push(d); refIdx.push(d.getMonth());
+  }
 
-  // 2) Aufnahmegebühr aus Verträgen der letzten 12 Monate (monatsgenau, Menge = neue Verträge)
+  if (quelle === 'bwa') {
+    // ── BWA (periodengerecht / Abgrenzung): Mitgliedsbeiträge je Tarifgruppe × Laufzeit.
+    //    Monatlicher Mitgliederbestand aus Vertragslaufzeiten (Soll, unabhängig vom Zahlungseingang).
+    const [contracts] = await pool.query(
+      `SELECT COALESCE(NULLIF(TRIM(t.altersgruppe), ''), 'Mitglieder') AS gruppe,
+              COALESCE(t.duration_months, 0) AS laufzeit, v.vertragsbeginn AS beginn,
+              COALESCE(v.vertragsende, v.kuendigungsdatum) AS ende,
+              COALESCE(NULLIF(v.monatsbeitrag,0), NULLIF(v.monatlicher_beitrag,0), t.price_cents/100) AS beitrag
+       FROM vertraege v JOIN tarife t ON t.id = v.tarif_id
+       WHERE v.dojo_id = ? AND v.vertragsbeginn IS NOT NULL`, [quelleDojoId]);
+    const groups = {};
+    contracts.forEach(c => {
+      const lf = Number(c.laufzeit) > 0 ? ` ${c.laufzeit}M` : '';
+      const name = `Beitrag ${c.gruppe}${lf}`;
+      const g = groups[name] || (groups[name] = { mengen: Array(12).fill(0), bSum: 0, bCnt: 0 });
+      const beginn = c.beginn ? new Date(c.beginn) : null;
+      const ende = c.ende ? new Date(c.ende) : null;
+      refDates.forEach((rd, i) => {
+        if (beginn && beginn <= rd && (!ende || ende >= rd)) g.mengen[refIdx[i]] += 1;
+      });
+      const b = Number(c.beitrag) || 0;
+      if (b > 0) { g.bSum += b; g.bCnt += 1; }
+    });
+    Object.entries(groups)
+      .sort((a, b) => Math.max(...b[1].mengen) - Math.max(...a[1].mengen))
+      .forEach(([name, g]) => {
+        if (g.mengen.some(v => v > 0)) {
+          umsatzLines.push({
+            bezeichnung: name, einheit: 'Mitglied',
+            preis_einheit: g.bCnt > 0 ? round2(g.bSum / g.bCnt) : 0,
+            menge_monatlich: Math.round(g.mengen.reduce((s, v) => s + v, 0) / 12),
+            mengen_monate: g.mengen.map(v => Math.round(v)),
+          });
+        }
+      });
+  } else {
+    // ── EÜR (Zufluss / Ist): tatsächlich gezahlte Mitgliedsbeiträge je Zahlungsmonat (Kasse).
+    const [beit] = await pool.query(
+      `SELECT MONTH(zahlungsdatum) AS monat, COUNT(DISTINCT mitglied_id) AS mitglieder, SUM(betrag) AS summe
+       FROM beitraege WHERE dojo_id = ? AND bezahlt = 1 AND art = 'mitgliedsbeitrag'
+         AND zahlungsdatum >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+       GROUP BY MONTH(zahlungsdatum)`, [quelleDojoId]);
+    if (beit.length) {
+      const mengen = Array(12).fill(0); let sum = 0, mm = 0;
+      beit.forEach(r => { mengen[(r.monat || 1) - 1] = Number(r.mitglieder) || 0; sum += Number(r.summe) || 0; mm += Number(r.mitglieder) || 0; });
+      umsatzLines.push({
+        bezeichnung: 'Mitgliedsbeiträge (Zufluss)', einheit: 'Mitglied',
+        preis_einheit: mm > 0 ? round2(sum / mm) : 0,
+        menge_monatlich: Math.round(mm / (beit.length || 1)), mengen_monate: mengen,
+      });
+    }
+  }
+
+  // Aufnahmegebühr aus Verträgen der letzten 12 Monate (monatsgenau, Menge = neue Verträge)
   const [aufn] = await pool.query(
     `SELECT MONTH(vertragsbeginn) AS monat, COUNT(*) AS anzahl, SUM(aufnahmegebuehr_cents)/100 AS summe
      FROM vertraege WHERE dojo_id = ? AND aufnahmegebuehr_cents > 0
@@ -495,8 +542,8 @@ async function pullBuchhaltung(quelleDojoId) {
 }
 
 // Ersetzt die importierten (aus_buchhaltung=1) Positionen eines Plans frisch aus der Buchhaltung.
-async function importBuchhaltung(planDojoId, planId, quelleDojoId) {
-  const { umsatzLines, kostenLines } = await pullBuchhaltung(quelleDojoId);
+async function importBuchhaltung(planDojoId, planId, quelleDojoId, quelle = 'euer') {
+  const { umsatzLines, kostenLines } = await pullBuchhaltung(quelleDojoId, quelle);
   await pool.query('DELETE FROM businessplan_umsatz WHERE plan_id = ? AND aus_buchhaltung = 1', [planId]);
   await pool.query('DELETE FROM businessplan_kosten WHERE plan_id = ? AND aus_buchhaltung = 1', [planId]);
   for (const u of umsatzLines) {
@@ -583,7 +630,7 @@ router.post('/plaene', async (req, res) => {
 
     let importiert = null;
     if (ausBuchhaltung) {
-      try { importiert = await importBuchhaltung(dojoId, planId, srcDojo); }
+      try { importiert = await importBuchhaltung(dojoId, planId, srcDojo, quelle); }
       catch (e) { logger.error('[Businessplan] Buchhaltungs-Import Fehler:', { error: e }); }
       // Startpaket ist nicht als Buchung erfasst → leere manuelle Zeile zum Ausfüllen
       // (aus_buchhaltung=0 → bleibt beim „Aktualisieren" erhalten)
@@ -669,7 +716,7 @@ router.post('/plaene/:id/sync', async (req, res) => {
     const ann = parseJson(plan.annahmen, {});
     const q = ann.datenquelle;
     if (!q || !q.dojoId) return res.status(400).json({ error: 'Für diesen Plan ist keine Buchhaltungs-Quelle hinterlegt.' });
-    const importiert = await importBuchhaltung(plan.dojo_id, plan.id, q.dojoId);
+    const importiert = await importBuchhaltung(plan.dojo_id, plan.id, q.dojoId, q.typ || 'euer');
     res.json({ success: true, ...importiert });
   } catch (err) {
     logger.error('[Businessplan] Sync Fehler:', { error: err });

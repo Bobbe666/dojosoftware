@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.45',
+    date: '2026-06-09',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Businessplan: Mitgliederentwicklung je Tarifgruppe + echte EÜR/BWA-Abgrenzung',
+    description: 'Die Datenquelle EÜR und BWA unterscheiden sich jetzt fachlich korrekt: EÜR = Zufluss (tatsächlich gezahlte Beiträge je Zahlungsmonat, Kassensicht); BWA = periodengerecht (Soll-Mitgliederbestand je Tarifgruppe aus den Vertragslaufzeiten). In der Auswertung zeigt die Mitglieder-Karte zusätzlich die monatliche Entwicklung je Tarifgruppe (Schüler/Erwachsene/Kinder × Laufzeit) als Tabelle.',
+    highlights: [
+      '📈 Mitgliederentwicklung je Tarifgruppe als Monatsverlauf (Jan–Dez) in der Auswertung',
+      '📒 EÜR = Zufluss/Ist (gezahlte Beiträge je Monat)',
+      '🗓️ BWA = periodengerecht (Bestand aus Vertragslaufzeiten, unabhängig vom Zahlungseingang)',
+    ],
+    details: 'businessplan.js: pullBuchhaltung(quelle) verzweigt Beitrags-Quelle (vertraege-Laufzeiten vs beitraege-Zahlungen); computeAuswertung liefert mitgliederGruppen (Verlauf je Gruppe).',
+    files: ['backend/routes/businessplan.js', 'frontend/src/components/BusinessplanDashboard.jsx'],
+  },
+  {
     version: '3.0.44',
     date: '2026-06-09',
     type: 'feature',
