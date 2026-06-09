@@ -47,6 +47,7 @@ function requireFeature(featureName) {
                 s.feature_verkauf, s.feature_buchfuehrung,
                 s.feature_events, s.feature_multidojo, s.feature_api,
                 s.feature_kontoauszug, s.feature_social_media, s.feature_training, s.feature_todos,
+                s.feature_businessplan,
                 s.trial_ends_at, s.subscription_ends_at,
                 d.dojoname as dojo_name, d.subdomain
          FROM dojo_subscriptions s
@@ -109,6 +110,7 @@ function requireFeature(featureName) {
         training:         'feature_training',
         todos:            'feature_todos',
         support:          'feature_support',
+        businessplan:     'feature_businessplan',
       };
 
       const featureColumn = featureColumnMap[featureName];
@@ -273,6 +275,7 @@ async function syncPlanFeatures(dojoId, planName, { updatePlanType = true } = {}
       bank_import:      'feature_kontoauszug',
       messenger:        'feature_messenger',
       homepage_builder: 'feature_homepage_builder',
+      businessplan:     'feature_businessplan',
     };
 
     // Trial = alle Features freischalten (volle Testphase)

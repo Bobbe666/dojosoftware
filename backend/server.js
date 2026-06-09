@@ -2684,6 +2684,9 @@ try {
   logger.error('Fehler beim Laden der Route', { route: 'training', error: error.message });
 }
 
+// BUSINESSPLAN (Enterprise): wird über den Auto-Route-Loader gemountet
+// (routes/businessplan.js authentifiziert sich selbst via router.use(authenticateToken)).
+
 // ELTERN-ZUGANG
 try {
   const elternZugangRouter = require(path.join(__dirname, 'routes', 'elternZugang.js'));

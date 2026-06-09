@@ -31,6 +31,32 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.43',
+    date: '2026-06-09',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Neues Enterprise-Modul: Businessplan & Finanzplanung',
+    description: 'Vollständiges Businessplan-Modul orientiert an der Hans-Lindner-Systematik: Investitions-/Finanzierungsplan (mit Mittelbilanz-Check), Umsatz- und Kostenplanung, AfA, Kapitaldienst, Privatentnahmen, automatische Rentabilitätsvorschau, 3-Jahres-Planung und monatlicher Liquiditätsplan. Dazu ein generierbares Businessplan-PDF (für Bank/Förderung) und ein strategisches Ziele-Board mit KPIs. Beim Anlegen wählbar: aus vorhandenen Ist-Daten vorbefüllen oder komplett neu. Ein „Noch auszufüllen"-Hinweis zeigt leere Bereiche.',
+    highlights: [
+      '📈 Neuer Tab „Businessplan" (Enterprise) mit Übersicht, Finanzplanung, Dokument & Ziele-Board',
+      '🧮 Engine: Rentabilität, 3-Jahres-Plan, Liquidität, Investitions-/Finanzierungs-Bilanz',
+      '🗂️ Vorbefüllung aus Ist-Daten (aktive Mitglieder × Ø-Beitrag als Umsatzbasis)',
+      '📄 PDF-Export des kompletten Businessplans',
+    ],
+    details: 'Migration 196 (feature_businessplan + Tabellen businessplan_plaene/investitionen/finanzierung/umsatz/kosten/privatentnahmen/ziele/meilensteine/dokumente). Backend: routes/businessplan.js (requireFeature(\'businessplan\'), getSecureDojoId, generisches Positions-CRUD, computeAuswertung), utils/businessplanPdfTemplate.js. Frontend: BusinessplanDashboard.jsx + .css, eingebunden in Dashboard.jsx. Feature-Gating in featureAccess.js + subscription.js.',
+    files: [
+      'backend/migrations/196_businessplan.sql',
+      'backend/routes/businessplan.js',
+      'backend/utils/businessplanPdfTemplate.js',
+      'backend/server.js',
+      'backend/middleware/featureAccess.js',
+      'backend/routes/subscription.js',
+      'frontend/src/components/BusinessplanDashboard.jsx',
+      'frontend/src/components/BusinessplanDashboard.css',
+      'frontend/src/components/Dashboard.jsx',
+    ],
+  },
+  {
     version: '3.0.42',
     date: '2026-06-08',
     type: 'fix',

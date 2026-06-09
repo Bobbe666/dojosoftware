@@ -49,6 +49,7 @@ import ChangelogPopup from './ChangelogPopup';
 import TrainingDashboard from './TrainingDashboard';
 import CommunityBoard from './CommunityBoard';
 import TodoPanel from './TodoPanel';
+import BusinessplanDashboard from './BusinessplanDashboard';
 
 // Changelog-Modal (Klick auf Versionsnummer) — per Portal in document.body,
 // damit position:fixed nicht von transformierten Eltern (Header) eingefangen wird
@@ -337,6 +338,7 @@ function Dashboard() {
     { id: 'events', label: t('tabs.events'), icon: '📅' },
     { id: 'training', label: 'Training', icon: '⏱' },
     { id: 'todos', label: 'To Do', icon: '✅' },
+    { id: 'businessplan', label: 'Businessplan', icon: '📈' },
     { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
     { id: 'community', label: 'Community', icon: '🏘️' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
@@ -1736,6 +1738,11 @@ function Dashboard() {
                       {/* ⏱ Training Timer Tab (Enterprise) */}
                       {activeTab === 'training' && (
                         <TrainingDashboard />
+                      )}
+
+                      {/* 📈 Businessplan Tab (Enterprise) — Gate erfolgt in der Komponente */}
+                      {activeTab === 'businessplan' && (
+                        <BusinessplanDashboard />
                       )}
 
                       {/* ✅ To-Do Tab (Enterprise) */}
