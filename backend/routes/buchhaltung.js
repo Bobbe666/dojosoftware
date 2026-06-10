@@ -1566,8 +1566,13 @@ router.post('/belege/ocr', requireBuchhaltungAccess, ocrUpload.single('bild'), a
       ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
       : { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } };
 
-    // Modelle in Reihenfolge: neues zuerst, Fallback bei Überlastung (529)
-    const ocrModels = ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6'];
+    // Modellreihenfolge: PDFs (oft dichte/lange/gedrehte Scans) → Sonnet primär,
+    // weil Haiku bei solchen Belegen halluziniert (still falsche Daten, kein Fehler →
+    // 529-Fallback greift nicht). Einfache Foto-Quittungen: Haiku primär (schnell/günstig).
+    // Fallback auf das jeweils andere Modell bei Überlastung (529).
+    const ocrModels = isPdf
+      ? ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001']
+      : ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6'];
     let response, lastOcrError;
     for (const model of ocrModels) {
       try {
