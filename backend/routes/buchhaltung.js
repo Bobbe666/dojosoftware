@@ -2322,6 +2322,74 @@ router.post('/belege/:id/stornieren', requireBuchhaltungAccess, (req, res) => {
 });
 
 // ===================================================================
+// 🗑️ DELETE /api/buchhaltung/belege/:id - Beleg endgültig löschen
+//    Entfernt den Beleg aus buchhaltung_belege → damit automatisch aus der
+//    EÜR (v_euer_einnahmen/ausgaben lesen direkt aus dieser Tabelle).
+//    Löscht die hinterlegte Datei, löst den Bank-Abgleich (FK), und blockt
+//    festgeschriebene bzw. mit Anlagevermögen verknüpfte Belege.
+// ===================================================================
+router.delete('/belege/:id', requireBuchhaltungAccess, (req, res) => {
+  const belegId = req.params.id;
+  const dojoGuard = req.buchhaltungDojoId ?? null;
+
+  db.query(
+    'SELECT festgeschrieben, datei_pfad FROM buchhaltung_belege WHERE beleg_id = ? AND (? IS NULL OR dojo_id = ?)',
+    [belegId, dojoGuard, dojoGuard],
+    (err, rows) => {
+      if (err) {
+        console.error('Beleg-Löschen Lesefehler:', err);
+        return res.status(500).json({ message: 'Fehler beim Löschen' });
+      }
+      if (rows.length === 0) {
+        return res.status(404).json({ message: 'Beleg nicht gefunden' });
+      }
+      if (rows[0].festgeschrieben) {
+        return res.status(403).json({ message: 'Festgeschriebene Belege können nicht gelöscht werden — bitte stornieren.' });
+      }
+      const dateiPfad = rows[0].datei_pfad;
+
+      // Anlagevermögen-Verknüpfung: Beleg darf kein Anlagegut verwaisen lassen
+      db.query('SELECT COUNT(*) AS n FROM anlage_register WHERE beleg_id = ?', [belegId], (errA, rA) => {
+        if (!errA && rA && rA[0].n > 0) {
+          return res.status(409).json({ message: 'Beleg ist mit dem Anlagevermögen verknüpft und kann nicht gelöscht werden.' });
+        }
+
+        // Bank-Abgleich lösen (FK bank_transaktionen.beleg_id) — Bank-Transaktion bleibt erhalten
+        db.query('UPDATE bank_transaktionen SET beleg_id = NULL WHERE beleg_id = ?', [belegId], (errB) => {
+          if (errB) {
+            console.error('Beleg-Löschen Bank-Unlink-Fehler:', errB);
+            return res.status(500).json({ message: 'Fehler beim Lösen der Bank-Verknüpfung' });
+          }
+
+          db.query(
+            'DELETE FROM buchhaltung_belege WHERE beleg_id = ? AND (? IS NULL OR dojo_id = ?)',
+            [belegId, dojoGuard, dojoGuard],
+            async (errD, result) => {
+              if (errD) {
+                console.error('Beleg-Löschen DELETE-Fehler:', errD);
+                return res.status(500).json({ message: 'Fehler beim Löschen' });
+              }
+              if (result.affectedRows === 0) {
+                return res.status(404).json({ message: 'Beleg nicht gefunden' });
+              }
+
+              // Datei von der Platte entfernen
+              if (dateiPfad) {
+                try { if (fs.existsSync(dateiPfad)) fs.unlinkSync(dateiPfad); }
+                catch (e) { console.error('Beleg-Datei löschen fehlgeschlagen:', e.message); }
+              }
+
+              await logAudit(belegId, 'geloescht', null, null, req.user?.id || 1, req.user?.username);
+              res.json({ message: 'Beleg gelöscht' });
+            }
+          );
+        });
+      });
+    }
+  );
+});
+
+// ===================================================================
 // 📈 GET /api/buchhaltung/einnahmen-auto - Automatische Einnahmen
 // ===================================================================
 router.get('/einnahmen-auto', requireBuchhaltungAccess, (req, res) => {
