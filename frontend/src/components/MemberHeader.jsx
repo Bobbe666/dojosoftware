@@ -12,6 +12,15 @@ import '../styles/MemberHeader.css';
 import LanguageSwitcher from './LanguageSwitcher';
 import MobileBottomNav from './MobileBottomNav.jsx';
 
+// Username (z. B. "sam.schreiner") als sauberen Namen darstellen ("Sam Schreiner"),
+// falls kein echter Mitgliedsname geladen werden konnte.
+const prettyName = (u) => {
+  if (!u) return 'Mitglied';
+  const parts = String(u).split(/[._\s]+/).filter(Boolean);
+  if (!parts.length) return 'Mitglied';
+  return parts.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+};
+
 const MemberHeader = () => {
   const { t } = useTranslation('member');
   const navigate = useNavigate();
@@ -38,15 +47,15 @@ const MemberHeader = () => {
             const data = await response.json();
             const member = data.data || data;
             const fullName = `${member.vorname || ''} ${member.nachname || ''}`.trim();
-            setUserDisplayName(fullName || user.username || 'Mitglied');
+            setUserDisplayName(fullName || prettyName(user.username));
           } else {
-            setUserDisplayName(user.username || 'Mitglied');
+            setUserDisplayName(prettyName(user.username));
           }
         } catch (err) {
-          setUserDisplayName(user.username || 'Mitglied');
+          setUserDisplayName(prettyName(user.username));
         }
       } else if (user?.username) {
-        setUserDisplayName(user.username);
+        setUserDisplayName(prettyName(user.username));
       }
     };
 

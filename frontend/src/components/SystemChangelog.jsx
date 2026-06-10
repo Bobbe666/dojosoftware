@@ -31,6 +31,19 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.50',
+    date: '2026-06-10',
+    type: 'bugfix',
+    zielgruppe: 'intern',
+    title: 'Member-App: Namensanzeige-Fallback sauber formatiert',
+    description: 'Wenn der echte Mitgliedsname (Vorname/Nachname) gerade nicht geladen werden konnte (z. B. kurzer Server-Blip beim Deploy), wurde im Header/Dashboard der rohe Login-Username angezeigt (z. B. "sam.schreiner" → "Sam. Schreiner"). Der Fallback formatiert den Username jetzt sauber (Punkt/Unterstrich → Leerzeichen, großgeschrieben) → "Sam Schreiner".',
+    highlights: [
+      '👤 Sauberer Anzeigename auch im Fallback (keine "x.y"-Usernamen mehr)',
+    ],
+    details: 'MemberHeader.jsx: prettyName() für Username-Fallback; MemberDashboard.jsx: gleicher Fallback inline.',
+    files: ['frontend/src/components/MemberHeader.jsx', 'frontend/src/components/MemberDashboard.jsx'],
+  },
+  {
     version: '3.0.49',
     date: '2026-06-10',
     type: 'improvement',

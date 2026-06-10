@@ -1484,7 +1484,7 @@ const MemberDashboard = () => {
             <div className="member-welcome-row">
               <span className="member-welcome-kanji">歓迎</span>
               <h1 className="member-welcome-title">
-                {memberData ? `${memberData.vorname} ${memberData.nachname}` : user?.username || 'Mitglied'}
+                {memberData ? `${memberData.vorname} ${memberData.nachname}` : (user?.username ? String(user.username).split(/[._\s]+/).filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') : 'Mitglied')}
               </h1>
               <span className="member-welcome-kanji">歓迎</span>
             </div>
