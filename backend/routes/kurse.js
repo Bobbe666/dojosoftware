@@ -3,9 +3,10 @@ const db = require("../db");
 const logger = require("../utils/logger");
 
 const router = express.Router();
+const { cacheGet } = require('../utils/simpleCache');
 
 // Alle Kurse abrufen
-router.get("/", (req, res) => {
+router.get("/", cacheGet(120000), (req, res) => {
     // Basis: dojo_id aus JWT/Tenant-Middleware
     let dojoId = req.tenant?.dojo_id || req.dojo_id;
     // Super-Admin kann über Query-Param ein spezifisches Dojo filtern

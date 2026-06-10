@@ -5,6 +5,7 @@ const logger = require('../utils/logger');
 const { JWT_SECRET } = require('../middleware/auth');
 const auditLog = require('../services/auditLogService');
 const { sanitizeStrings } = require('../middleware/validation');
+const { cacheGet } = require('../utils/simpleCache');
 const {
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
@@ -1347,7 +1348,7 @@ router.get('/my-dojo', authenticateToken, async (req, res) => {
 // ===================================================================
 
 // GET /api/auth/family-members — alle Mitglieder der Familie zurückgeben
-router.get('/family-members', authenticateToken, async (req, res) => {
+router.get('/family-members', authenticateToken, cacheGet(60000, (req) => `/family-members::${req.user?.id ?? req.user?.email ?? 'anon'}`), async (req, res) => {
   try {
     const email = req.user.email;
     if (!email) return res.status(400).json({ success: false, error: 'Keine Email im Token' });
