@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.49',
+    date: '2026-06-10',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Prüfungskandidaten: Sortierung nach Status-Blöcken (A–Z innerhalb)',
+    description: 'Die Kandidatenliste je Stil ist jetzt in drei Blöcke gegliedert — oben die Berechtigten, darunter die bereits Zugelassenen, ganz unten die noch nicht Berechtigten/Zugelassenen. Innerhalb jedes Blocks wird wie gewohnt alphabetisch (A–Z) sortiert; Spalten-Sortierung wirkt weiterhin innerhalb der Blöcke.',
+    highlights: [
+      '⬆️ Berechtigte oben, dann Zugelassene, dann der Rest',
+      '🔤 Innerhalb jedes Blocks A–Z (Name)',
+    ],
+    details: 'PruefungsKandidatenTab.jsx: Standard-Sortierung A–Z (Name) wenn keine Spalte aktiv; stabile Block-Sortierung tierOf (berechtigt=0, zugelassen=1, sonst=2).',
+    files: ['frontend/src/components/PruefungsKandidatenTab.jsx'],
+  },
+  {
     version: '3.0.48',
     date: '2026-06-10',
     type: 'improvement',

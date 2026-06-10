@@ -55,9 +55,13 @@ const PruefungsKandidatenTab = ({
           );
         }
 
-        // Sortierung anwenden
+        // Sortierung anwenden — bei aktiver Spalten-Sortierung diese, sonst Standard A–Z (Name)
         if (sortConfig.key) {
           filteredKandidaten = applySorting(filteredKandidaten, sortConfig.key, sortConfig.direction);
+        } else {
+          filteredKandidaten = [...filteredKandidaten].sort((a, b) =>
+            `${a.nachname || ''} ${a.vorname || ''}`.localeCompare(`${b.nachname || ''} ${b.vorname || ''}`, 'de', { sensitivity: 'base' })
+          );
         }
 
         return (
@@ -236,7 +240,10 @@ const PruefungsKandidatenTab = ({
                   const isOpen = !!openZugGroups[groupKey];
                   const berechtigtCount = group.candidates.filter(k => k.berechtigt && !k.bereits_zugelassen).length;
                   const zugelassenCount = group.candidates.filter(k => k.bereits_zugelassen).length;
-                  const groupCandidates = group.candidates;
+                  // Reihenfolge: 0 = berechtigt (oben), 1 = zugelassen, 2 = nicht berechtigt/nicht zugelassen.
+                  // Stabile Sortierung erhält das A–Z (bzw. die Spalten-Sortierung) innerhalb jedes Blocks.
+                  const tierOf = (k) => k.bereits_zugelassen ? 1 : (k.berechtigt ? 0 : 2);
+                  const groupCandidates = [...group.candidates].sort((a, b) => tierOf(a) - tierOf(b));
 
                   return (
                     <div key={groupKey} className="pv3-group-section">
