@@ -7,20 +7,14 @@ const fs = require('fs');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const { generateVereinbarungPdf, generateInfoblattPdf } = require('../utils/trainerPdfGenerator');
 const { hashPassword } = require('../services/passwordService');
+const { cacheGet } = require('../utils/simpleCache');
 
 const DOKUMENTE_DIR = path.join(__dirname, '../../generated_documents/trainer');
 if (!fs.existsSync(DOKUMENTE_DIR)) fs.mkdirSync(DOKUMENTE_DIR, { recursive: true });
 
 // Alle Trainer abrufen (inkl. Mehrfachzuordnung der Stile)
-router.get("/", (req, res) => {
+router.get("/", cacheGet(60000), (req, res) => {
     const dojoId = req.user?.dojo_id || req.dojo_id;
-
-    // Debug logging
-    logger.info('Trainer GET Request:', {
-        user: req.user,
-        dojo_id: req.dojo_id,
-        calculated_dojoId: dojoId
-    });
 
     // Super-Admin (dojo_id = null): Kann Trainer aller zentral verwalteten Dojos sehen
     // Normaler Admin: Muss dojo_id haben

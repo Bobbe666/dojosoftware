@@ -8,6 +8,7 @@ const fs = require('fs');
 const multer = require('multer');
 const { authenticateToken } = require('../middleware/auth');
 const { getSecureDojoId } = require('../utils/dojo-filter-helper');
+const { cacheGet } = require('../utils/simpleCache');
 
 // Multer-Konfiguration für News-Bilder
 const newsUploadDir = path.join(__dirname, '../uploads/news');
@@ -88,7 +89,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // GET /api/news/public - Veröffentlichte News für Member
-router.get('/public', authenticateToken, async (req, res) => {
+router.get('/public', authenticateToken, cacheGet(60000), async (req, res) => {
   try {
     const userDojoId = req.user.dojo_id;
     let whereClause;

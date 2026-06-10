@@ -1,9 +1,10 @@
 const express = require("express");
 const db = require("../db");
 const router = express.Router();
+const { cacheGet } = require('../utils/simpleCache');
 
 // Alle Gruppen abrufen
-router.get("/", (req, res) => {
+router.get("/", cacheGet(120000), (req, res) => {
   const query = "SELECT gruppen_id, name, reihenfolge FROM gruppen ORDER BY reihenfolge ASC, name ASC";
   db.query(query, (err, results) => {
     if (err) {

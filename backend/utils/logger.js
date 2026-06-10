@@ -143,11 +143,10 @@ function writeToFile(level, message, meta = {}) {
 
     const logEntry = formatFileMessage(level, message, meta) + '\n';
 
-    // Schreibe in level-spezifische Datei
-    fs.appendFileSync(logFile, logEntry);
-
-    // Schreibe in all.log
-    fs.appendFileSync(allLogFile, logEntry);
+    // Asynchron schreiben — synchrones appendFileSync blockierte unter Last den
+    // Event-Loop (2 Schreibvorgänge pro Log-Zeile im Hot-Path).
+    fs.appendFile(logFile, logEntry, () => {});
+    fs.appendFile(allLogFile, logEntry, () => {});
 }
 
 /**
@@ -179,6 +178,10 @@ function log(level, message, meta = {}) {
             default:
                 console.log(consoleMsg);
         }
+    } else if (level === 'error' || level === 'warn') {
+        // In Production error/warn ZUSÄTZLICH nach stderr — sonst sind Crashes
+        // im PM2-Errorlog unsichtbar (waren bisher nur in backend/logs/).
+        try { process.stderr.write(formatFileMessage(level, message, safeMeta) + '\n'); } catch { /* ignore */ }
     }
 
     // Immer in File schreiben (außer in Tests)

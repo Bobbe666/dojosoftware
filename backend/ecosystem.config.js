@@ -12,12 +12,15 @@ module.exports = {
   apps: [{
     name: 'dojosoftware-backend',
     script: 'server.js',
-    cwd: '/var/www/dojosoftware/backend',
+    cwd: '/var/www/dojosoftware-source/backend',  // korrigiert: tatsächlicher Deploy-Pfad
 
     // Prozess-Einstellungen
     instances: 1,
     exec_mode: 'fork',
     watch: false,
+
+    // V8-Heap-Limit, damit GC greift BEVOR PM2 den Prozess killt
+    node_args: '--max-old-space-size=1536',
 
     // Automatischer Restart bei Absturz
     autorestart: true,
@@ -28,8 +31,9 @@ module.exports = {
     // Exponentielles Backoff bei wiederholten Crashes
     exp_backoff_restart_delay: 1000,  // Startet bei 1s, verdoppelt sich
 
-    // Memory-Limit (Neustart bei 500MB)
-    max_memory_restart: '500M',
+    // Memory-Limit (Neustart bei 1,8 GB — vorher 500M, das löste unter Last
+    // saubere Restarts aus). Mit node_args-Heap-Limit greift V8-GC vorher.
+    max_memory_restart: '1800M',
 
     // Logs
     error_file: '/var/log/pm2/dojosoftware-error.log',

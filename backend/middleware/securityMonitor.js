@@ -101,10 +101,17 @@ const securityMonitorMiddleware = async (req, res, next) => {
     }
 
     // 2. Prüfe auf SQL-Injection
+    // Große Bodies (Bild-/PDF-Uploads, Base64-Bestellungen) NICHT regex-scannen —
+    // JSON.stringify + Regexes über MB-Bodies blockierten den Event-Loop.
+    const contentLength = parseInt(req.headers['content-length'] || '0', 10);
+    const SCAN_BODY_MAX = 256 * 1024; // 256 KB
+    const skipBodyScan = contentLength > SCAN_BODY_MAX;
     // pdfHtml wird ausgeschlossen — enthält legitimes HTML/CSS das False-Positives auslöst
-    const bodyWithoutHtml = req.body && req.body.pdfHtml
-      ? { ...req.body, pdfHtml: '[HTML_EXCLUDED]' }
-      : req.body;
+    const bodyWithoutHtml = skipBodyScan
+      ? '[BODY_TOO_LARGE_SKIPPED]'
+      : (req.body && req.body.pdfHtml
+          ? { ...req.body, pdfHtml: '[HTML_EXCLUDED]' }
+          : req.body);
     const allInput = {
       query: req.query,
       body: bodyWithoutHtml,

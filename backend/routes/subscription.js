@@ -4,6 +4,7 @@ const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { syncPlanFeatures } = require('../middleware/featureAccess');
+const { cacheGet } = require('../utils/simpleCache');
 
 /**
  * Subscription Management Routes
@@ -263,7 +264,7 @@ router.use(authenticateToken);
 // ============================================
 // 1. GET CURRENT SUBSCRIPTION
 // ============================================
-router.get('/current', async (req, res) => {
+router.get('/current', cacheGet(60000), async (req, res) => {
   try {
     const dojoId = req.user.dojo_id;
     const userId = req.user?.id || req.user?.user_id;

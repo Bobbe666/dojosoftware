@@ -2603,6 +2603,9 @@ const HOST = '127.0.0.1'; // Listen only on localhost (behind nginx)
 
 const httpServer = 
 app.listen(PORT, HOST, () => {
+  // PM2 wait_ready: Signal senden, dass der Server lauscht (sonst killt PM2
+  // nach listen_timeout und es entsteht eine Restart-Schleife).
+  if (process.send) { try { process.send('ready'); } catch { /* nicht unter PM2 */ } }
   logger.success('Server gestartet', {
     port: PORT,
     host: HOST,

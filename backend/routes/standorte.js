@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { cacheGet } = require('../utils/simpleCache');
 
 // Secure helper - now uses getSecureDojoId from middleware
 const getDojoId = (req) => {
@@ -12,7 +13,7 @@ const getDojoId = (req) => {
 // ===================================================================
 // GET /api/standorte - Alle Standorte des aktiven Dojos
 // ===================================================================
-router.get('/', (req, res) => {
+router.get('/', cacheGet(120000), (req, res) => {
   // Get dojo_id from multiple sources (tenant, user, or query)
   const dojoId = req.tenant?.dojo_id || req.user?.dojo_id || req.query.dojo_id;
 

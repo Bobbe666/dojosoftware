@@ -12,6 +12,8 @@ const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
+const { cacheGet } = require('../utils/simpleCache');
+
 const router = express.Router();
 const pool = db.promise();
 
@@ -54,7 +56,7 @@ router.get('/public', async (req, res) => {
 });
 
 // ── Theme des aktiven Dojos laden ──
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, cacheGet(120000), async (req, res) => {
   try {
     const dojoId = getSecureDojoId(req);
     if (!dojoId) return res.json({ success: true, theme: null }); // Super-Admin ohne Dojo-Wahl

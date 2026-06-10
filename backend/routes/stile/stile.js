@@ -5,6 +5,7 @@
 const express = require('express');
 const logger = require('../../utils/logger');
 const db = require('../../db');
+const { cacheGet } = require('../../utils/simpleCache');
 const router = express.Router();
 
 // GET /test - Test-Endpunkt
@@ -18,7 +19,7 @@ router.get('/test', (req, res) => {
 });
 
 // GET / - Alle Stile mit Graduierungen
-router.get('/', (req, res) => {
+router.get('/', cacheGet(120000), (req, res) => {
   db.getConnection((err, connection) => {
     if (err) {
       logger.error('DB-Verbindungsfehler:', { error: err });
