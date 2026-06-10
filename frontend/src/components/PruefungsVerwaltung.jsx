@@ -2457,11 +2457,34 @@ const PruefungsVerwaltung = () => {
         <div className="pv3-page-header-row">
           <span className="pv3-header-icon">🎓</span>
           <h1 className="pv3-header-title">Prüfungsverwaltung</h1>
-          <button className="ds-btn ds-btn--ghost" style={{ marginLeft: 'auto', height: '34px', fontSize: '0.8rem' }}
-            onClick={() => navigate('/dashboard/auswertungen?tab=training&sub=belts')}
-            title="Gürtel-Statistik öffnen">
-            🥋 Gürtel-Statistik
-          </button>
+          <div className="pv3-header-controls">
+            <select
+              value={selectedStil}
+              onChange={(e) => setSelectedStil(e.target.value)}
+              className="form-select pv3-select-short"
+            >
+              <option value="all">Alle Stile</option>
+              {stile.map(stil => (
+                <option key={stil.stil_id} value={stil.stil_id}>{stil.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                if (activeTab === 'termine') fetchPruefungstermine();
+                else if (activeTab === 'kandidaten') { fetchKandidaten(); fetchPruefungstermine(); }
+                else if (activeTab === 'zugelassen') fetchZugelassenePruefungen();
+                else if (activeTab === 'abgeschlossen') fetchAbgeschlossenePruefungen();
+                else if (activeTab === 'statistiken') { fetchStatistiken(); fetchTechnikStats(); fetchErwStats(); }
+              }}
+              className="pv3-toolbar-icon-btn"
+              title="Aktualisieren"
+            >🔄</button>
+            <button
+              className="pv3-toolbar-btn"
+              onClick={() => navigate('/dashboard/auswertungen?tab=training&sub=belts')}
+              title="Gürtel-Statistik öffnen"
+            >🥋 Gürtel-Statistik</button>
+          </div>
         </div>
 
         <div className="pv3-tabs-row">
@@ -2506,33 +2529,6 @@ const PruefungsVerwaltung = () => {
           >
             <CalendarDays size={16} />
             Kalender
-          </button>
-        </div>
-
-        <div className="pv3-header-controls">
-          <select
-            value={selectedStil}
-            onChange={(e) => setSelectedStil(e.target.value)}
-            className="form-select pv3-select-short"
-          >
-            <option value="all">Alle Stile</option>
-            {stile.map(stil => (
-              <option key={stil.stil_id} value={stil.stil_id}>
-                {stil.name}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => {
-              if (activeTab === 'termine') fetchPruefungstermine();
-              else if (activeTab === 'zugelassen') fetchZugelassenePruefungen();
-              else if (activeTab === 'abgeschlossen') fetchAbgeschlossenePruefungen();
-              else if (activeTab === 'statistiken') { fetchStatistiken(); fetchTechnikStats(); fetchErwStats(); }
-            }}
-            className="logout-button pv3-btn-refresh pv3-btn-icon-only"
-            title="Aktualisieren"
-          >
-            🔄
           </button>
         </div>
       </div>

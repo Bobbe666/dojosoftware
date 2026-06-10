@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.48',
+    date: '2026-06-10',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Prüfungsverwaltung: aufgeräumte, einheitliche Kopfleiste',
+    description: 'Die Kopfleiste wurde vereinheitlicht: Titel links, alle Steuerungen (Stil-Filter, Aktualisieren, Gürtel-Statistik) rechts in einer Zeile gruppiert, darunter die Tabs als gleichmäßige Reihe statt umbrechend/verstreut.',
+    highlights: [
+      '🧭 Tabs in einer gleichmäßigen Reihe (kein Umbruch mehr)',
+      '🎛️ Stil-Filter + Aktualisieren + Gürtel-Statistik einheitlich rechts gruppiert',
+    ],
+    details: 'PruefungsVerwaltung.jsx: Controls in die Titelzeile verschoben; PruefungsVerwaltung.css: pv3-top-bar vertikal, einheitliche pv3-toolbar-btn/-icon-btn, Tabs flex:1 nowrap.',
+    files: ['frontend/src/components/PruefungsVerwaltung.jsx', 'frontend/src/styles/PruefungsVerwaltung.css'],
+  },
+  {
     version: '3.0.47',
     date: '2026-06-10',
     type: 'feature',
