@@ -31,6 +31,36 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.47',
+    date: '2026-06-10',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Prüfungen: Zahlungsart vom Termin übernehmen + Lastschrift erst nach Zusage',
+    description: 'Die bei der Termin-Erstellung gewählte Zahlungsart (Rechnung/Lastschrift) wird jetzt am Termin gespeichert und bei der Zulassung automatisch übernommen — der Zahlungsart-Schritt im Zulassungs-Modal entfällt, wenn der Termin sie schon kennt. Außerdem: Rechnung & SEPA-Lastschrift entstehen NICHT mehr schon bei der Zulassung, sondern erst wenn das Mitglied die Teilnahme mit „Ja, ich komme" bestätigt — so wird nie vor der Zusage abgebucht, und bei „komme nicht" entsteht keine Forderung.',
+    highlights: [
+      '💳 Zahlungsart wird am Prüfungstermin gespeichert & bei Zulassung übernommen (keine Doppel-Abfrage)',
+      '🔒 Lastschrift/Rechnung erst nach Teilnahme-Zusage des Mitglieds — kein Einzug vor Bestätigung',
+      '🧹 Bei „komme nicht" entsteht keine Prüfungsgebühr-Forderung mehr',
+    ],
+    details: 'Migration 201 (zahlungsart in pruefungstermin_vorlagen); termine.js create/update; kandidaten.js: createRechnungBeiZusage() idempotent im /antwort-Endpoint statt beim Zulassen; PruefungsVerwaltung.jsx: Modal überspringt Zahlungsart-Schritt.',
+    files: ['backend/routes/pruefungen/kandidaten.js', 'backend/routes/pruefungen/termine.js', 'backend/migrations/201_pruefungstermin_zahlungsart.sql', 'frontend/src/components/PruefungsVerwaltung.jsx'],
+  },
+  {
+    version: '3.0.46',
+    date: '2026-06-10',
+    type: 'bugfix',
+    zielgruppe: 'intern',
+    title: 'Prüfungen: Ausnahme-Zulassung findet den kommenden Termin wieder',
+    description: 'Die Ausnahme-Zulassung (Kandidaten ohne zeitliche Voraussetzungen) brach beim Klick still ab, wenn man nicht vorher den Prüfungstermine-Tab geöffnet hatte. Ursache: openTerminAuswahl filterte nur die im Speicher gehaltene Termin-Liste, die im Kandidaten-Tab nicht geladen wird. Jetzt holt openTerminAuswahl die Termine — wie der normale Zulassungs-Weg — bei Bedarf frisch vom Server.',
+    highlights: [
+      '🛠️ Ausnahme-Zulassung öffnet das Termin-Modal wieder zuverlässig',
+      '🔄 Termine werden im Kandidaten-Tab mitgeladen + bei Bedarf frisch per API geholt',
+      '🧭 stil_id-Vergleich robust (Typ-tolerant)',
+    ],
+    details: 'PruefungsVerwaltung.jsx: openTerminAuswahl async + API-Fallback GET /pruefungen/termine?stil_id=&dojo_id=; Kandidaten-Tab lädt zusätzlich fetchPruefungstermine().',
+    files: ['frontend/src/components/PruefungsVerwaltung.jsx'],
+  },
+  {
     version: '3.0.45',
     date: '2026-06-09',
     type: 'feature',

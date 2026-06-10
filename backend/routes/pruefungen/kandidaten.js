@@ -178,6 +178,62 @@ async function createPruefungsRechnung(mitglied_id, pruefungsgebuehr, pruefungsd
   return rechnungId;
 }
 
+// Erstellt Rechnung + (bei Lastschrift) Beitrag für eine Prüfung — ERST wenn das
+// Mitglied die Teilnahme zusagt ("kommt"). Idempotent: legt nichts an, wenn schon
+// eine gebuehr_rechnung_id existiert. Wird aus dem Antwort-Endpoint aufgerufen,
+// damit NIE vor der Zusage abgebucht wird.
+async function createRechnungBeiZusage(pruefungId) {
+  const pool = db.promise();
+  const [[p]] = await pool.query(
+    `SELECT pruefung_id, mitglied_id, stil_id, dojo_id, pruefungsdatum,
+            pruefungsgebuehr, zahlungsart, gebuehr_auto_verrechnen, gebuehr_rechnung_id
+     FROM pruefungen WHERE pruefung_id = ? LIMIT 1`,
+    [pruefungId]
+  );
+  if (!p) return;
+  if (p.gebuehr_rechnung_id) return; // schon erstellt → idempotent, kein Doppel-Einzug
+  const gebuehr = parseFloat(p.pruefungsgebuehr);
+  if (!gebuehr || gebuehr <= 0) return;
+
+  const datumStr = (p.pruefungsdatum instanceof Date)
+    ? p.pruefungsdatum.toISOString().split('T')[0]
+    : String(p.pruefungsdatum).split('T')[0];
+
+  // Rechnung nötig? explizite zahlungsart (rechnung/lastschrift) ODER Termin-Auto-Verrechnung
+  const sollRechnung = (p.zahlungsart === 'rechnung' || p.zahlungsart === 'lastschrift');
+  let effektiv = sollRechnung ? 1 : p.gebuehr_auto_verrechnen;
+  if (!sollRechnung && (effektiv === null || effektiv === undefined)) {
+    const [[termin]] = await pool.query(
+      `SELECT gebuehr_auto_verrechnen FROM pruefungstermin_vorlagen
+       WHERE pruefungsdatum = ? AND stil_id = ? AND dojo_id = ? LIMIT 1`,
+      [datumStr, p.stil_id, p.dojo_id]
+    );
+    effektiv = termin?.gebuehr_auto_verrechnen ?? 0;
+  }
+  if (effektiv !== 1) return;
+
+  const [[stilRow]] = await pool.query('SELECT name FROM stile WHERE stil_id = ? LIMIT 1', [p.stil_id]);
+  const rechnungId = await createPruefungsRechnung(
+    p.mitglied_id, gebuehr, datumStr, stilRow?.name || '', p.dojo_id, p.zahlungsart || 'lastschrift'
+  );
+  await pool.query('UPDATE pruefungen SET gebuehr_rechnung_id = ? WHERE pruefung_id = ?', [rechnungId, pruefungId]);
+  logger.info('Prüfungsrechnung bei Teilnahme-Zusage erstellt', { pruefungId, rechnungId, betrag: gebuehr, zahlungsart: p.zahlungsart });
+
+  // Bei Lastschrift: SEPA-Zustimmungs-Notification
+  if (p.zahlungsart === 'lastschrift') {
+    const [[m]] = await pool.query('SELECT email FROM mitglieder WHERE mitglied_id = ? LIMIT 1', [p.mitglied_id]);
+    if (m?.email) {
+      const messageLS = `Die Pruefungsgebuehr von ${gebuehr.toFixed(2)} EUR wird per Lastschrift von deinem Konto abgebucht. Bist du damit einverstanden?`;
+      const metaLS = JSON.stringify({ type: 'pruefung_lastschrift', pruefung_id: pruefungId, betrag: gebuehr });
+      await pool.query(
+        `INSERT INTO notifications (type, recipient, subject, message, status, requires_confirmation, metadata, created_at)
+         VALUES ('push', ?, 'SEPA-Lastschrift Pruefungsgebuehr', ?, 'unread', 1, ?, NOW())`,
+        [m.email, messageLS, metaLS]
+      );
+    }
+  }
+}
+
 // POST /kandidaten/:mitglied_id/zulassen - Mitglied für Prüfung zulassen
 router.post('/:mitglied_id/zulassen', (req, res) => {
   const mitglied_id = parseInt(req.params.mitglied_id);
@@ -250,39 +306,10 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
         const pruefungId = result.insertId;
         res.status(201).json({ success: true, message: 'Mitglied erfolgreich zur Prüfung zugelassen', pruefung_id: pruefungId, mitglied_id });
 
-        // Auto-Rechnung: direkt aus zahlungsart ableiten (rechnung oder lastschrift → immer Rechnung)
-        (async () => {
-          try {
-            const sollRechnung = (zahlungsart === 'rechnung' || zahlungsart === 'lastschrift') && finaleGebuehr && finaleGebuehr > 0;
-
-            // Fallback auf altes gebuehr_auto_verrechnen-Feld wenn zahlungsart nicht gesetzt
-            let effektiv = sollRechnung ? 1 : autoVerrechnenValue;
-            if (!sollRechnung && effektiv === null) {
-              const pool = db.promise();
-              const [[termin]] = await pool.query(
-                `SELECT ptv.gebuehr_auto_verrechnen FROM pruefungstermin_vorlagen ptv
-                 WHERE ptv.pruefungsdatum = ? AND ptv.stil_id = ? AND ptv.dojo_id = ? LIMIT 1`,
-                [finalPruefungsdatum, stil_id, dojo_id]
-              );
-              effektiv = termin?.gebuehr_auto_verrechnen ?? 0;
-            }
-
-            if (effektiv === 1 && finaleGebuehr && finaleGebuehr > 0) {
-              const pool = db.promise();
-              const [[existingPruefung]] = await pool.query('SELECT gebuehr_rechnung_id FROM pruefungen WHERE pruefung_id = ?', [pruefungId]);
-              if (existingPruefung?.gebuehr_rechnung_id) {
-                logger.warn('Auto-Rechnung übersprungen — bereits vorhanden', { pruefungId, rechnung_id: existingPruefung.gebuehr_rechnung_id });
-              } else {
-                const [[stilRow]] = await pool.query('SELECT name FROM stile WHERE stil_id = ? LIMIT 1', [stil_id]);
-                const rechnungId = await createPruefungsRechnung(mitglied_id, finaleGebuehr, finalPruefungsdatum, stilRow?.name || '', dojo_id, zahlungsart || 'lastschrift');
-                await pool.query('UPDATE pruefungen SET gebuehr_rechnung_id = ? WHERE pruefung_id = ?', [rechnungId, pruefungId]);
-                logger.info('Auto-Rechnung für Prüfungsgebühr erstellt', { pruefungId, rechnungId, mitglied_id, betrag: finaleGebuehr, zahlungsart });
-              }
-            }
-          } catch (autoErr) {
-            logger.error('Fehler beim automatischen Erstellen der Prüfungsrechnung:', { error: autoErr.message });
-          }
-        })();
+        // WICHTIG: Rechnung/Lastschrift werden hier NICHT mehr erstellt.
+        // Sie entstehen erst, wenn das Mitglied die Teilnahme zusagt ("kommt")
+        // → createRechnungBeiZusage() im /antwort-Endpoint. So wird nie vor der
+        // Zusage abgebucht und bei "kommt nicht" entsteht keine Forderung.
 
         // Notification + Push (fire and forget)
         db.query('SELECT email, vorname, nachname FROM mitglieder WHERE mitglied_id = ? LIMIT 1', [mitglied_id], (emailErr, emailRows) => {
@@ -305,18 +332,8 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
             () => {}
           );
 
-          // 2. Falls Lastschrift: separate Zustimmungs-Notification
-          if (zahlungsart === 'lastschrift' && pruefungsgebuehr) {
-            const subjectLS = 'SEPA-Lastschrift Pruefungsgebuehr';
-            const messageLS = `Die Pruefungsgebuehr von ${Number(pruefungsgebuehr).toFixed(2)} EUR wird per Lastschrift von deinem Konto abgebucht. Bist du damit einverstanden?`;
-            const metaLS = JSON.stringify({ type: 'pruefung_lastschrift', pruefung_id: pruefungId, betrag: pruefungsgebuehr });
-            db.query(
-              `INSERT INTO notifications (type, recipient, subject, message, status, requires_confirmation, metadata, created_at)
-               VALUES ('push', ?, ?, ?, 'unread', 1, ?, NOW())`,
-              [email, subjectLS, messageLS, metaLS],
-              () => {}
-            );
-          }
+          // Hinweis: Die SEPA-Lastschrift-Zustimmung wird erst nach der Teilnahme-Zusage
+          // verschickt (createRechnungBeiZusage), nicht schon bei der Zulassung.
 
           sendPushToMitglied(mitglied_id, subject, message, '/member/dashboard', { type: 'pruefung_zulassung' })
             .catch(() => {});
@@ -458,6 +475,14 @@ router.post('/antwort', (req, res) => {
           [notification_id], () => {}
         );
       }
+
+      // Erst bei Zusage ("kommt") Rechnung/Lastschrift erstellen — vorher wird nichts abgebucht.
+      if (antwort === 'kommt') {
+        createRechnungBeiZusage(pruefung_id).catch(e =>
+          logger.error('Fehler beim Erstellen der Prüfungsrechnung bei Zusage:', { error: e.message, pruefung_id })
+        );
+      }
+
       res.json({ success: true });
     }
   );

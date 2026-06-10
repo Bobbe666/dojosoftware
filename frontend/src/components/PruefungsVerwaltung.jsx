@@ -331,6 +331,7 @@ const PruefungsVerwaltung = () => {
       fetchPruefungstermine();
     } else if (activeTab === 'kandidaten') {
       fetchKandidaten();
+      fetchPruefungstermine(); // WICHTIG: Termine-Liste laden, damit die Ausnahme-Zulassung (openTerminAuswahl) den kommenden Termin findet — sonst bricht das Modal still ab
     } else if (activeTab === 'zugelassen') {
       fetchZugelassenePruefungen();
     } else if (activeTab === 'abgeschlossen') {
@@ -635,6 +636,7 @@ const PruefungsVerwaltung = () => {
           anmeldefrist: termin.anmeldefrist ? termin.anmeldefrist.split('T')[0] : null,
           bemerkungen: termin.bemerkungen,
           teilnahmebedingungen: termin.teilnahmebedingungen,
+          zahlungsart: termin.zahlungsart || null,
           oeffentlich: termin.oeffentlich ? true : false
         };
       });
@@ -1104,18 +1106,55 @@ const PruefungsVerwaltung = () => {
   };
 
   // Termin-Auswahl Modal öffnen (beim Zulassen)
-  const openTerminAuswahl = (kandidat, isAusnahme = false) => {
+  const openTerminAuswahl = async (kandidat, isAusnahme = false) => {
     const heute = new Date();
     heute.setHours(0, 0, 0, 0);
-    const verfuegbareTermine = pruefungstermine.filter(t => {
-      if (t.stil_id !== kandidat.stil_id) return false;
-      const terminDatum = new Date(t.datum);
-      terminDatum.setHours(0, 0, 0, 0);
-      return terminDatum >= heute;
-    });
+    const istZukunft = (datumStr) => {
+      const d = new Date(datumStr);
+      d.setHours(0, 0, 0, 0);
+      return d >= heute;
+    };
+
+    // 1) Schnellweg: bereits im Speicher geladene Termine (stil_id robust als String vergleichen)
+    let verfuegbareTermine = (pruefungstermine || []).filter(t =>
+      String(t.stil_id) === String(kandidat.stil_id) && istZukunft(t.datum)
+    );
+
+    // 2) Fallback wie der normale Zulassungs-Weg: Termine FRISCH vom Server holen.
+    //    Bisher hing openTerminAuswahl allein an der Speicher-Liste, die im
+    //    Kandidaten-Tab nicht geladen wird → das Ausnahme-Modal fand nie einen Termin.
+    if (verfuegbareTermine.length === 0) {
+      try {
+        const dojoId = kandidat.dojo_id || activeDojo?.id;
+        const res = await fetch(
+          `${API_BASE_URL}/pruefungen/termine?stil_id=${kandidat.stil_id}${dojoId ? `&dojo_id=${dojoId}` : ''}`,
+          { headers: { 'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}` } }
+        );
+        const data = await res.json();
+        verfuegbareTermine = (data.termine || [])
+          .filter(t => istZukunft(t.pruefungsdatum))
+          .map(t => ({
+            datum: String(t.pruefungsdatum).split('T')[0],
+            zeit: t.pruefungszeit || 'Nicht festgelegt',
+            ort: t.pruefungsort || 'Nicht festgelegt',
+            stil_id: t.stil_id,
+            vorlageData: {
+              termin_id: t.termin_id,
+              pruefungsgebuehr: t.pruefungsgebuehr,
+              anmeldefrist: t.anmeldefrist,
+              bemerkungen: t.bemerkungen,
+              teilnahmebedingungen: t.teilnahmebedingungen,
+              zahlungsart: t.zahlungsart || null,
+            },
+          }));
+      } catch (e) {
+        // Netzwerkfehler → unten als „kein Termin" behandelt
+      }
+    }
 
     if (verfuegbareTermine.length === 0) {
       setError(`Kein zukünftiger Prüfungstermin für ${kandidat.stil_name} gefunden. Bitte legen Sie zuerst einen Termin an.`);
+      setTimeout(() => setError(''), 5000);
       return;
     }
 
@@ -1124,13 +1163,23 @@ const PruefungsVerwaltung = () => {
 
   // Termin im Modal ausgewählt
   const handleTerminAuswahlSelected = (termin) => {
-    // Schritt 1 → 2: Termin merken, Zahlungsart abfragen
+    // Wenn der Termin bereits eine Zahlungsart hat (bei der Termin-Erstellung gewählt),
+    // den Zahlungsart-Schritt überspringen und direkt damit zulassen — nicht erneut fragen.
+    const za = termin.vorlageData?.zahlungsart || termin.zahlungsart;
+    if (za === 'bar' || za === 'rechnung' || za === 'lastschrift') {
+      setTerminAuswahlModal(prev => ({ ...prev, selectedTermin: termin }));
+      handleZahlungsartAuswahlSelected(za, termin);
+      return;
+    }
+    // Sonst: Schritt 1 → 2: Termin merken, Zahlungsart abfragen
     setTerminAuswahlModal(prev => ({ ...prev, step: 2, selectedTermin: termin }));
   };
 
-  const handleZahlungsartAuswahlSelected = async (zahlungsart) => {
-    const { kandidat, selectedTermin: termin } = terminAuswahlModal;
+  const handleZahlungsartAuswahlSelected = async (zahlungsart, terminArg = null) => {
+    const kandidat = terminAuswahlModal.kandidat;
+    const termin = terminArg || terminAuswahlModal.selectedTermin;
     setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null });
+    if (!kandidat || !termin) return;
 
     const customDaten = {
       pruefungsdatum: termin.datum,
@@ -1756,6 +1805,7 @@ const PruefungsVerwaltung = () => {
       oeffentlich: neuerTermin.oeffentlich ? 1 : 0,
       oeffentlich_vib: neuerTermin.oeffentlich_vib ? 1 : 0,
       gebuehr_auto_verrechnen: neuerTermin.gebuehr_auto_verrechnen ? 1 : 0,
+      zahlungsart: neuerTermin.zahlungsart || null,
       dojo_id: activeDojo.id
     };
 
@@ -1826,6 +1876,7 @@ const PruefungsVerwaltung = () => {
       oeffentlich: termin.vorlageData?.oeffentlich ? true : false,
       oeffentlich_vib: termin.vorlageData?.oeffentlich_vib ? true : false,
       gebuehr_auto_verrechnen: termin.vorlageData?.gebuehr_auto_verrechnen ? true : false,
+      zahlungsart: termin.vorlageData?.zahlungsart || '',
       verlegungsgrund: ''
     });
     setShowEditTerminModal(true);
@@ -1921,6 +1972,7 @@ const PruefungsVerwaltung = () => {
           oeffentlich: editTermin.oeffentlich ? 1 : 0,
           oeffentlich_vib: editTermin.oeffentlich_vib ? 1 : 0,
           gebuehr_auto_verrechnen: editTermin.gebuehr_auto_verrechnen ? 1 : 0,
+          zahlungsart: editTermin.zahlungsart || null,
           verlegungsgrund: editTermin.verlegungsgrund || null
         })
       });
