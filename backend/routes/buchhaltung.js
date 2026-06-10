@@ -2379,7 +2379,12 @@ router.delete('/belege/:id', requireBuchhaltungAccess, (req, res) => {
                 catch (e) { console.error('Beleg-Datei löschen fehlgeschlagen:', e.message); }
               }
 
-              await logAudit(belegId, 'geloescht', null, null, req.user?.id || 1, req.user?.username);
+              // Audit-Log ist sekundär — darf das Löschen niemals blockieren
+              try {
+                await logAudit(belegId, 'geloescht', null, null, req.user?.id || 1, req.user?.username);
+              } catch (e) {
+                console.error('Audit-Log (geloescht) fehlgeschlagen:', e.message);
+              }
               res.json({ message: 'Beleg gelöscht' });
             }
           );
