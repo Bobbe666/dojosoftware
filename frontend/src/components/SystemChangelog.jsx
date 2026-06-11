@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.51',
+    date: '2026-06-11',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Auto-Retry bei kurzen Server-Blips (Deploy-Neustarts)',
+    description: 'Wenn das Backend kurz nicht erreichbar ist (z. B. während eines Deploy-Neustarts), wiederholt die App fehlgeschlagene Requests automatisch (bis zu 2×, 600ms/1500ms Backoff), statt mit leeren Daten / „Server down" stehen zu bleiben. Greift nur bei transienten Fehlern (Netzwerkfehler / 502 / 503) — sicher auch für Schreib-Requests, da diese den Server gar nicht erst erreicht haben.',
+    highlights: [
+      '🔄 Lade-Fetches überstehen kurze Neustart-Fenster automatisch',
+      '🛡️ Keine leere Member-App / kein „Server down" mehr bei Mini-Blips',
+      '✅ Sicher: nur transiente Fehler, kein Doppel-Auslösen von Schreib-Aktionen',
+    ],
+    details: 'utils/fetchWithAuth.js: Retry-Schleife um den fetch (Netzwerkfehler/502/503).',
+    files: ['frontend/src/utils/fetchWithAuth.js'],
+  },
+  {
     version: '3.0.50',
     date: '2026-06-10',
     type: 'bugfix',

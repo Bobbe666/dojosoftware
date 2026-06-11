@@ -208,20 +208,36 @@ export const fetchWithAuth = async (url, options = {}) => {
     }
   }
 
-  // Führe fetch aus mit credentials: 'include' (Session-Cookies)
+  // Führe fetch aus mit credentials: 'include' (Session-Cookies).
+  // Auto-Retry bei transienten Server-Blips (z. B. Deploy-Neustart): Netzwerkfehler oder 502/503.
+  // Sicher auch für Schreib-Requests: 502/503 bedeutet, das Backend war NICHT erreichbar →
+  // der Request wurde nicht verarbeitet, ein erneuter Versuch kann nichts doppelt auslösen.
+  const RETRY_DELAYS = [600, 1500]; // bis zu 2 Wiederholungen mit Backoff
   let response;
-  try {
-    response = await fetch(url, {
-      ...options,
-      headers,
-      credentials: 'include', // WICHTIG: Session-Cookies automatisch senden
-    });
-  } catch (networkError) {
-    // Netzwerkfehler = Server nicht erreichbar (Wartung/Neustart)
-    window.dispatchEvent(new CustomEvent('server:maintenance', {
-      detail: { status: 0, url, error: networkError.message }
-    }));
-    throw networkError;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include', // WICHTIG: Session-Cookies automatisch senden
+      });
+    } catch (networkError) {
+      if (attempt < RETRY_DELAYS.length) {
+        await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+        continue;
+      }
+      // Netzwerkfehler nach allen Versuchen = Server nicht erreichbar (Wartung/Neustart)
+      window.dispatchEvent(new CustomEvent('server:maintenance', {
+        detail: { status: 0, url, error: networkError.message }
+      }));
+      throw networkError;
+    }
+    // Transienter Server-Blip → kurz warten und erneut versuchen
+    if ((response.status === 502 || response.status === 503) && attempt < RETRY_DELAYS.length) {
+      await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+      continue;
+    }
+    break;
   }
 
   // 401 Unauthorized - Automatischer Logout
