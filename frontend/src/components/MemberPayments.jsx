@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CreditCard, CheckCircle, AlertTriangle, Clock, Euro, FileText,
-  Trash2, Plus, Loader2, Shield, History, AlertCircle
+  Trash2, Plus, Loader2, Shield, History, AlertCircle, Download, Receipt
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
@@ -30,6 +30,15 @@ const MemberPayments = () => {
   const [deletingPm, setDeletingPm] = useState(null);
   const [activeTab, setActiveTab] = useState('offen');
   const [naechste, setNaechste] = useState(null); // Zusammensetzung nächste Abbuchung
+
+  // --- Quittungen (Self-Service-PDF, on-the-fly, nichts gespeichert) ---
+  const [qJahr, setQJahr] = useState(new Date().getFullYear());
+  const [qUmfang, setQUmfang] = useState('beitraege'); // 'beitraege' | 'alle'
+  const [qJahre, setQJahre] = useState([]);
+  const [qPosten, setQPosten] = useState([]);
+  const [qSumme, setQSumme] = useState(0);
+  const [qLoading, setQLoading] = useState(false);
+  const [qDownloading, setQDownloading] = useState(null); // null | 'gesamt' | `${typ}-${id}`
 
   const loadData = useCallback(async () => {
     if (!user?.mitglied_id) return;
@@ -88,6 +97,60 @@ const MemberPayments = () => {
   useEffect(() => {
     if (activeTab === 'historie') loadHistory();
   }, [activeTab, loadHistory]);
+
+  // Quittungs-Posten laden (eigene bezahlte Posten je Jahr + Umfang)
+  const loadQuittungen = useCallback(async () => {
+    if (!user?.mitglied_id) return;
+    setQLoading(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/quittungen/posten?jahr=${qJahr}&umfang=${qUmfang}`);
+      if (res.ok) {
+        const d = await res.json();
+        if (d?.success) {
+          setQPosten(d.posten || []);
+          setQSumme(d.summe || 0);
+          if (Array.isArray(d.jahre) && d.jahre.length) {
+            setQJahre(d.jahre);
+            if (!d.jahre.includes(qJahr)) setQJahr(d.jahre[0]);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Fehler beim Laden der Quittungs-Posten:', e);
+    } finally {
+      setQLoading(false);
+    }
+  }, [user?.mitglied_id, qJahr, qUmfang]);
+
+  useEffect(() => {
+    if (activeTab === 'quittungen') loadQuittungen();
+  }, [activeTab, loadQuittungen]);
+
+  // PDF on-the-fly holen (mit Auth) und als Download anstoßen — nichts wird gespeichert
+  const downloadQuittung = async (params, kennung, dateiname) => {
+    setQDownloading(kennung);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/quittungen/pdf?${params}`);
+      if (!res.ok) {
+        alert('Für den gewählten Zeitraum wurde keine bezahlte Position gefunden.');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = dateiname;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    } catch (e) {
+      console.error('Quittung-Download fehlgeschlagen:', e);
+      alert('Quittung konnte nicht erstellt werden. Bitte später erneut versuchen.');
+    } finally {
+      setQDownloading(null);
+    }
+  };
 
   const handleDeleteCard = async (pmId) => {
     if (!window.confirm('Zahlungsmethode wirklich entfernen?')) return;
@@ -217,7 +280,8 @@ const MemberPayments = () => {
               { key: 'offen', label: 'Offene Posten', badge: offeneRechnungen.length, warn: true },
               { key: 'vertraege', label: 'Verträge', badge: aktiveVertraege.length },
               { key: 'karten', label: 'Zahlungsmethoden', badge: null },
-              { key: 'historie', label: 'Historie', badge: null }
+              { key: 'historie', label: 'Historie', badge: null },
+              { key: 'quittungen', label: 'Quittungen', badge: null }
             ].map(tab => (
               <button
                 key={tab.key}
@@ -414,10 +478,127 @@ const MemberPayments = () => {
             </div>
           )}
 
+          {/* Tab: Quittungen (Self-Service PDF) */}
+          {activeTab === 'quittungen' && (
+            <div className="mp-section">
+              <h2 className="mp-section-title">Quittung erstellen</h2>
+              <div className="mp-security-note">
+                <Receipt size={14} />
+                <span>
+                  Erstelle dir jederzeit selbst eine Quittung über deine <strong>bereits bezahlten</strong> Beträge.
+                  Die PDF wird live erzeugt und sofort heruntergeladen – es wird nichts gespeichert.
+                </span>
+              </div>
+
+              {/* Auswahl: Jahr + Umfang */}
+              <div className="mp-q-controls">
+                <div className="mp-q-field">
+                  <label className="mp-stat-label">Jahr</label>
+                  <select
+                    className="mp-q-select"
+                    value={qJahr}
+                    onChange={(e) => setQJahr(parseInt(e.target.value, 10))}
+                  >
+                    {(qJahre.length ? qJahre : [qJahr]).map(j => (
+                      <option key={j} value={j}>{j}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mp-q-field">
+                  <label className="mp-stat-label">Umfang</label>
+                  <div className="mp-q-toggle">
+                    <button
+                      className={`mp-q-toggle-btn${qUmfang === 'beitraege' ? ' is-active' : ''}`}
+                      onClick={() => setQUmfang('beitraege')}
+                    >
+                      Nur Monatsbeiträge
+                    </button>
+                    <button
+                      className={`mp-q-toggle-btn${qUmfang === 'alle' ? ' is-active' : ''}`}
+                      onClick={() => setQUmfang('alle')}
+                    >
+                      Alle bezahlten Posten
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {qLoading ? (
+                <div className="mp-loading-wrapper"><Loader2 className="mp-spin" size={28} /><p>Lade bezahlte Posten…</p></div>
+              ) : qPosten.length === 0 ? (
+                <div className="mp-empty-state">
+                  <Receipt size={48} className="mp-empty-icon" />
+                  <h3>Keine bezahlten Posten</h3>
+                  <p className="u-text-secondary">Für {qJahr} wurden keine bezahlten {qUmfang === 'alle' ? 'Posten' : 'Monatsbeiträge'} gefunden.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Gesamtquittung */}
+                  <div className="mp-q-summary">
+                    <div>
+                      <div className="mp-q-summary-label">Gesamtquittung {qJahr}</div>
+                      <div className="mp-q-summary-sub">{qPosten.length} Position{qPosten.length === 1 ? '' : 'en'} · {formatCurrency(qSumme)}</div>
+                    </div>
+                    <button
+                      className="mp-pay-btn"
+                      disabled={qDownloading === 'gesamt'}
+                      onClick={() => downloadQuittung(`jahr=${qJahr}&umfang=${qUmfang}`, 'gesamt', `Quittung_${qJahr}.pdf`)}
+                    >
+                      {qDownloading === 'gesamt' ? <Loader2 className="mp-spin" size={14} /> : <Download size={14} />}
+                      Gesamtquittung PDF
+                    </button>
+                  </div>
+
+                  {/* Einzelne Posten */}
+                  <div className="mp-q-list">
+                    {qPosten.map(p => {
+                      const kennung = `${p.typ}-${p.id}`;
+                      return (
+                        <div key={kennung} className="mp-q-item">
+                          <div className="mp-q-item-info">
+                            <div className="mp-q-item-desc">{p.bezeichnung}</div>
+                            <div className="mp-q-item-meta">{p.datum}{p.zahlungsart ? ` · ${p.zahlungsart}` : ''}</div>
+                          </div>
+                          <div className="mp-q-item-amount">{formatCurrency(p.betrag)}</div>
+                          <button
+                            className="mp-q-item-btn"
+                            disabled={qDownloading === kennung}
+                            title="Einzelquittung als PDF"
+                            onClick={() => downloadQuittung(`typ=${p.typ}&id=${p.id}&umfang=${qUmfang}`, kennung, `Quittung_${p.datum.replace(/\./g, '-')}.pdf`)}
+                          >
+                            {qDownloading === kennung ? <Loader2 className="mp-spin" size={15} /> : <Download size={15} />}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
       <style>{`
         .mp-spin { animation: mpspin 1s linear infinite; }
+        .mp-q-controls { display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 1rem 0 1.25rem; }
+        .mp-q-field { display: flex; flex-direction: column; gap: 0.4rem; }
+        .mp-q-select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: var(--text-primary, #e2e8f0); border-radius: 10px; padding: 0.55rem 0.9rem; font-size: 0.95rem; min-width: 110px; }
+        .mp-q-toggle { display: inline-flex; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; gap: 3px; }
+        .mp-q-toggle-btn { background: transparent; border: none; color: var(--text-muted, #94a3b8); padding: 0.5rem 0.95rem; border-radius: 8px; font-size: 0.88rem; cursor: pointer; transition: all .15s; white-space: nowrap; }
+        .mp-q-toggle-btn.is-active { background: var(--accent, #f97316); color: #fff; font-weight: 600; }
+        .mp-q-summary { display: flex; justify-content: space-between; align-items: center; gap: 1rem; background: linear-gradient(135deg, rgba(249,115,22,0.14), rgba(249,115,22,0.05)); border: 1px solid rgba(249,115,22,0.25); border-radius: 14px; padding: 1rem 1.15rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .mp-q-summary-label { font-weight: 700; font-size: 1.02rem; color: var(--text-primary, #e2e8f0); }
+        .mp-q-summary-sub { font-size: 0.85rem; color: var(--text-muted, #94a3b8); margin-top: 2px; }
+        .mp-q-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .mp-q-item { display: flex; align-items: center; gap: 0.85rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 0.7rem 0.9rem; }
+        .mp-q-item-info { flex: 1; min-width: 0; }
+        .mp-q-item-desc { font-weight: 600; font-size: 0.92rem; color: var(--text-primary, #e2e8f0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mp-q-item-meta { font-size: 0.78rem; color: var(--text-muted, #94a3b8); margin-top: 2px; }
+        .mp-q-item-amount { font-weight: 700; white-space: nowrap; color: var(--text-primary, #e2e8f0); }
+        .mp-q-item-btn { background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3); color: var(--accent, #f97316); border-radius: 9px; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all .15s; }
+        .mp-q-item-btn:hover:not(:disabled) { background: rgba(249,115,22,0.28); }
+        .mp-q-item-btn:disabled { opacity: 0.6; cursor: default; }
         @keyframes mpspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
     </div>

@@ -33,7 +33,13 @@ router.get('/meine', authenticateToken, async (req, res) => {
     const mitglied_id = req.user.mitglied_id;
     if (!mitglied_id) return res.status(403).json({ success: false, error: 'Nur für Mitglieder' });
     const [rows] = await pool.query(
-      "SELECT * FROM abwesenheiten WHERE mitglied_id = ? AND COALESCE(datum_bis, datum) >= CURDATE() ORDER BY datum ASC",
+      `SELECT id, mitglied_id, dojo_id,
+              DATE_FORMAT(datum, '%Y-%m-%d') AS datum,
+              DATE_FORMAT(datum_bis, '%Y-%m-%d') AS datum_bis,
+              art, notiz, gemeldet_um
+         FROM abwesenheiten
+        WHERE mitglied_id = ? AND COALESCE(datum_bis, datum) >= CURDATE()
+        ORDER BY datum ASC`,
       [mitglied_id]
     );
     res.json({ success: true, abwesenheiten: rows });
@@ -66,8 +72,10 @@ router.get('/heute', authenticateToken, async (req, res) => {
     const dojo_id = getSecureDojoId(req);
     if (!dojo_id) return res.status(403).json({ success: false, error: 'Kein Dojo' });
     const [rows] = await pool.query(
-      `SELECT a.id, a.mitglied_id, a.art, a.notiz, a.datum, a.datum_bis, a.gemeldet_um,
-              m.vorname, m.nachname
+      `SELECT a.id, a.mitglied_id, a.art, a.notiz,
+              DATE_FORMAT(a.datum, '%Y-%m-%d') AS datum,
+              DATE_FORMAT(a.datum_bis, '%Y-%m-%d') AS datum_bis,
+              a.gemeldet_um, m.vorname, m.nachname
        FROM abwesenheiten a
        JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
        WHERE a.dojo_id = ? AND CURDATE() BETWEEN a.datum AND COALESCE(a.datum_bis, a.datum)
@@ -85,11 +93,14 @@ router.get('/admin', authenticateToken, async (req, res) => {
   try {
     const dojo_id = getSecureDojoId(req);
     if (!dojo_id) return res.status(403).json({ success: false, error: 'Kein Dojo' });
-    const today = new Date().toISOString().slice(0, 10);
+    const [[{ today }]] = await pool.query("SELECT DATE_FORMAT(CURDATE(), '%Y-%m-%d') AS today");
     const { von = today, bis } = req.query;
     const dateBis = bis || von;
     const [rows] = await pool.query(
-      `SELECT a.*, COALESCE(m.vorname, '?') AS vorname, COALESCE(m.nachname, '') AS nachname, m.email
+      `SELECT a.id, a.mitglied_id, a.dojo_id, a.art, a.notiz, a.gemeldet_um,
+              DATE_FORMAT(a.datum, '%Y-%m-%d') AS datum,
+              DATE_FORMAT(a.datum_bis, '%Y-%m-%d') AS datum_bis,
+              COALESCE(m.vorname, '?') AS vorname, COALESCE(m.nachname, '') AS nachname, m.email
        FROM abwesenheiten a
        LEFT JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
        WHERE a.dojo_id = ? AND a.datum <= ? AND COALESCE(a.datum_bis, a.datum) >= ?

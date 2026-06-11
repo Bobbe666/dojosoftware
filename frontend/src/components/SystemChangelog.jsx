@@ -31,6 +31,34 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.56',
+    date: '2026-06-11',
+    type: 'bugfix',
+    zielgruppe: 'allgemein',
+    title: 'Abwesenheit: Datum „Heute" wurde um einen Tag zurückgesetzt',
+    description: 'Beim Abmelden (Abwesenheit/krank/Urlaub) wurde das Heute-Datum durch eine UTC-Umrechnung um einen Tag zu früh angezeigt bzw. gespeichert. Datumswerte werden jetzt durchgängig als lokale Tagesdaten behandelt (Backend liefert YYYY-MM-DD direkt), sodass „Heute" auch wirklich heute ist.',
+    highlights: [
+      '🗓️ Abwesenheit „Heute" zeigt/speichert jetzt das korrekte Datum (kein -1 Tag mehr)',
+    ],
+    details: 'Ursache: toISOString() (UTC) im Frontend + DATE-Spalte → UTC-Timestamp im JSON. Fix: routes/abwesenheiten.js liefert datum/datum_bis via DATE_FORMAT als YYYY-MM-DD; AbwesenheitWidget.jsx nutzt lokale Datums-Helper statt toISOString.',
+    files: ['backend/routes/abwesenheiten.js', 'frontend/src/components/AbwesenheitWidget.jsx'],
+  },
+  {
+    version: '3.0.55',
+    date: '2026-06-11',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Mitglieder-App: Quittungen selbst als PDF ziehen',
+    description: 'Mitglieder können sich für ihre bereits bezahlten Beiträge jederzeit selbst eine Quittung als PDF erstellen und herunterladen. Sie wählen dabei das Jahr und den Umfang (nur Monatsbeiträge oder alle bezahlten Posten) sowie eine Gesamtquittung oder eine Einzelquittung pro Zahlung. Die PDF wird live erzeugt und nicht bei uns gespeichert.',
+    highlights: [
+      '🧾 Self-Service-Quittung für bezahlte Beiträge – Jahr + Umfang frei wählbar',
+      '📄 Gesamtquittung oder Einzelquittung je Zahlung',
+      '🔒 On-the-fly erzeugt, nichts gespeichert; nur eigene Posten (Multi-Tenant-sicher)',
+    ],
+    details: 'Neuer Tab „Quittungen" unter Meine Beiträge & Zahlungen. Backend routes/quittungen.js (GET /api/quittungen/posten + /pdf, Puppeteer, authenticateToken → nur req.user.mitglied_id). Zeitzonen-sicher via DATE_FORMAT.',
+    files: ['backend/routes/quittungen.js', 'frontend/src/components/MemberPayments.jsx'],
+  },
+  {
     version: '3.0.54',
     date: '2026-06-11',
     type: 'system',

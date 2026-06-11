@@ -11,15 +11,19 @@ const ART_LABELS = {
   sonstiges: { label: 'Sonstiges', emoji: '📝', color: '#8b5cf6' },
 };
 
+// WICHTIG: toISOString() rechnet in UTC um → in DE (UTC+1/+2) verschiebt sich das Datum
+// um -1 Tag. Daher durchgängig LOKALE Datums-Strings bilden (kein toISOString).
+const pad2 = (n) => String(n).padStart(2, '0');
+const toLocalISO = (dt) => `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
 const fmtDate = (d) => {
   if (!d) return '';
-  const s = d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
+  const s = d instanceof Date ? toLocalISO(d) : String(d).slice(0, 10);
   return new Date(s + 'T00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
 };
-const todayStr = () => new Date().toISOString().slice(0, 10);
-const addDays = (d, n) => { const dt = new Date(d + 'T00:00'); dt.setDate(dt.getDate() + n); return dt.toISOString().slice(0, 10); };
-const endOfWeek = (d) => { const dt = new Date(d + 'T00:00'); const day = dt.getDay(); const diff = day === 0 ? 0 : 7 - day; dt.setDate(dt.getDate() + diff); return dt.toISOString().slice(0, 10); };
-const nextMonday = (d) => { const dt = new Date(d + 'T00:00'); const day = dt.getDay(); dt.setDate(dt.getDate() + (day === 1 ? 7 : (8 - day) % 7)); return dt.toISOString().slice(0, 10); };
+const todayStr = () => toLocalISO(new Date());
+const addDays = (d, n) => { const dt = new Date(d + 'T00:00'); dt.setDate(dt.getDate() + n); return toLocalISO(dt); };
+const endOfWeek = (d) => { const dt = new Date(d + 'T00:00'); const day = dt.getDay(); const diff = day === 0 ? 0 : 7 - day; dt.setDate(dt.getDate() + diff); return toLocalISO(dt); };
+const nextMonday = (d) => { const dt = new Date(d + 'T00:00'); const day = dt.getDay(); dt.setDate(dt.getDate() + (day === 1 ? 7 : (8 - day) % 7)); return toLocalISO(dt); };
 
 function AbwesenheitWidget() {
   const [abwesenheiten, setAbwesenheiten] = useState([]);
