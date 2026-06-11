@@ -213,25 +213,37 @@ export const fetchWithAuth = async (url, options = {}) => {
   // Sicher auch für Schreib-Requests: 502/503 bedeutet, das Backend war NICHT erreichbar →
   // der Request wurde nicht verarbeitet, ein erneuter Versuch kann nichts doppelt auslösen.
   const RETRY_DELAYS = [600, 1500]; // bis zu 2 Wiederholungen mit Backoff
+  // Timeout pro Versuch: hängende Requests dürfen die App nicht einfrieren.
+  // GET (Laden) kurz, Schreib-/Upload-Requests großzügig (PDF/OCR/Datei).
+  const TIMEOUT_MS = method === 'GET' ? 15000 : 60000;
   let response;
   for (let attempt = 0; ; attempt++) {
+    // Eigenes Timeout nur, wenn der Aufrufer kein eigenes AbortSignal mitgibt
+    const useTimeout = !options.signal;
+    const controller = useTimeout ? new AbortController() : null;
+    const timeoutId = useTimeout ? setTimeout(() => controller.abort(), TIMEOUT_MS) : null;
     try {
       response = await fetch(url, {
         ...options,
         headers,
         credentials: 'include', // WICHTIG: Session-Cookies automatisch senden
+        signal: options.signal || controller?.signal,
       });
     } catch (networkError) {
-      if (attempt < RETRY_DELAYS.length) {
+      if (timeoutId) clearTimeout(timeoutId);
+      // Netzwerkfehler ODER Timeout (AbortError) → transient: erneut versuchen
+      const aborted = options.signal && options.signal.aborted; // vom Aufrufer abgebrochen → nicht retryen
+      if (!aborted && attempt < RETRY_DELAYS.length) {
         await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
         continue;
       }
-      // Netzwerkfehler nach allen Versuchen = Server nicht erreichbar (Wartung/Neustart)
+      // Nach allen Versuchen = Server nicht erreichbar (Wartung/Neustart/Timeout)
       window.dispatchEvent(new CustomEvent('server:maintenance', {
         detail: { status: 0, url, error: networkError.message }
       }));
       throw networkError;
     }
+    if (timeoutId) clearTimeout(timeoutId);
     // Transienter Server-Blip → kurz warten und erneut versuchen
     if ((response.status === 502 || response.status === 503) && attempt < RETRY_DELAYS.length) {
       await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));

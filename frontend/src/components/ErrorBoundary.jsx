@@ -12,7 +12,8 @@ class ErrorBoundary extends React.Component {
       hasError: false,
       error: null,
       errorInfo: null,
-      eventId: null
+      eventId: null,
+      autoReloading: false
     };
   }
 
@@ -37,6 +38,27 @@ class ErrorBoundary extends React.Component {
 
     // Optional: Error an Backend senden
     this.reportError(error, errorInfo);
+
+    // Selbstheilung: bei einem Crash EINMAL automatisch neu laden (heilt transiente
+    // Fehler & veraltete Chunks). Zeit-Guard verhindert Reload-Loops bei dauerhaften
+    // Fehlern: nur, wenn das letzte Auto-Reload > 60s her ist.
+    try {
+      const KEY = 'eb_auto_reload_at';
+      const last = parseInt(sessionStorage.getItem(KEY) || '0', 10);
+      const now = Date.now();
+      if (!last || now - last > 60000) {
+        sessionStorage.setItem(KEY, String(now));
+        this.setState({ autoReloading: true });
+        setTimeout(() => {
+          // Cache-Bust beim Selbst-Reload (falls Crash durch veralteten Chunk)
+          const u = new URL(window.location.href);
+          u.searchParams.set('_v', String(Date.now()));
+          window.location.replace(u.toString());
+        }, 1200);
+      }
+    } catch (e) {
+      // sessionStorage evtl. blockiert (privater Modus) → dann nur manueller Reload
+    }
   }
 
   reportError = async (error, errorInfo) => {
@@ -80,6 +102,22 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       const isDev = import.meta.env.DEV;
+
+      // Selbstheilung läuft → ruhige Lade-Anzeige, gleich kommt der Auto-Reload
+      if (this.state.autoReloading) {
+        return (
+          <div style={styles.container}>
+            <div style={{ ...styles.card, maxWidth: '420px' }}>
+              <div style={{ ...styles.iconContainer, marginBottom: '20px' }}>
+                <RefreshCw size={48} color="#fbbf24" style={{ animation: 'eb-spin 1s linear infinite' }} />
+              </div>
+              <h1 style={{ ...styles.title, fontSize: '22px' }}>Einen Moment …</h1>
+              <p style={styles.message}>Die App wird automatisch neu geladen.</p>
+              <style>{`@keyframes eb-spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          </div>
+        );
+      }
 
       return (
         <div style={styles.container}>

@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.53',
+    date: '2026-06-11',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Member-App robuster: Fetch-Timeout + Selbstheilung bei Crash',
+    description: 'Zwei Stabilitäts-Maßnahmen, damit die App nicht mehr „hängt" oder weiß bleibt: (1) Jeder Request bekommt ein Timeout (Laden 15s, Uploads 60s) + Auto-Retry — hängende Requests frieren die App nicht mehr ein. (2) Stürzt eine Komponente ab, lädt die App automatisch EINMAL neu (mit Cache-Bust, Loop-geschützt) statt eine leere/weiße Seite zu zeigen.',
+    highlights: [
+      '⏱️ Fetch-Timeout (15s GET / 60s Upload) → kein endloses „lädt …" mehr',
+      '🔁 Auto-Retry bei transienten Fehlern (Netzwerk/502/503)',
+      '🛟 Selbstheilung: Auto-Reload bei Crash (Cache-Bust, max. 1×/60s)',
+    ],
+    details: 'utils/fetchWithAuth.js: AbortController-Timeout je Versuch; components/ErrorBoundary.jsx: einmaliger Auto-Reload (sessionStorage-Zeit-Guard) + ruhige Lade-Anzeige.',
+    files: ['frontend/src/utils/fetchWithAuth.js', 'frontend/src/components/ErrorBoundary.jsx'],
+  },
+  {
     version: '3.0.52',
     date: '2026-06-11',
     type: 'feature',
