@@ -31,6 +31,19 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.54',
+    date: '2026-06-11',
+    type: 'system',
+    zielgruppe: 'intern',
+    title: 'Member-App: Performance-Telemetrie (Diagnose langsamer Geräte)',
+    description: 'Schlanker Beacon beim App-Start erfasst Ladezeit + Gerät (RAM/CPU) + Netzqualität (effectiveType/downlink/rtt) je Mitglied, um gezielt herauszufinden, welche Mitglieder/Geräte/Netze langsam sind („bei manchen langsam, bei mir nicht"). Fire-and-forget, beeinflusst die App nicht. Tabelle member_perf_log.',
+    highlights: [
+      '📊 Echte Lade-Messwerte pro Mitglied/Gerät/Netz → gezielte Optimierung statt raten',
+    ],
+    details: 'routes/perf.js (POST /api/perf/member-load), Migration 202 (member_perf_log), MemberDashboard.jsx Beacon nach memberData.',
+    files: ['backend/routes/perf.js', 'backend/migrations/202_member_perf_log.sql', 'frontend/src/components/MemberDashboard.jsx'],
+  },
+  {
     version: '3.0.53',
     date: '2026-06-11',
     type: 'improvement',

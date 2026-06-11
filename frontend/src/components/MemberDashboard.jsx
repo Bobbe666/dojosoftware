@@ -997,6 +997,29 @@ const MemberDashboard = () => {
         setAttendanceHistory(attendanceData);
         setPaymentHistory(paymentsData);
 
+        // Telemetrie: Ladezeit + Gerät + Netzqualität erfassen, um langsame Geräte/Netze
+        // zu finden ("bei manchen Mitgliedern langsam"). Fire-and-forget, darf nie stören.
+        try {
+          const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+          const conn = navigator.connection || {};
+          fetchWithAuth(`${config.apiBaseUrl}/perf/member-load`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              load_ms: Math.round(performance.now()),
+              ttfb_ms: Math.round(nav.responseStart || 0),
+              dom_ms: Math.round(nav.domContentLoadedEventEnd || 0),
+              conn_type: conn.effectiveType || null,
+              downlink: conn.downlink ?? null,
+              rtt: conn.rtt ?? null,
+              device_memory: navigator.deviceMemory ?? null,
+              hw_concurrency: navigator.hardwareConcurrency ?? null,
+              viewport: `${window.innerWidth}x${window.innerHeight}`,
+              user_agent: navigator.userAgent,
+            }),
+          }).catch(() => {});
+        } catch (e) { /* Telemetrie darf nie stören */ }
+
         // Kritische nachgelagerte Loads parallel ausführen (Dashboard-Kerninhalt)
         await Promise.all([
           loadMemberStyles(memberData.mitglied_id),
