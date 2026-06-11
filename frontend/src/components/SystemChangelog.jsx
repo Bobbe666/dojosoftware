@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.52',
+    date: '2026-06-11',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Kickboxanzug-Bestellvorlage + Bestellungen-Tab vereinheitlicht',
+    description: 'Neue Bestellvorlage für Kickboxanzüge (analog zur Gi-Vorlage): Oberteil + Hose, Hersteller-Sizechart (A–E, 100–150 cm + S–XXL) vorbefüllt, Produktbild-Upload, Stickerei/Branding inkl. „Innenseite Jacke", Material inkl. Polyester (ohne Webart/Unzen). Der Bestelltab heißt jetzt allgemein „Dojo-Bestellungen" mit Spalte „Art" (Gi/T-Shirt/Kickbox).',
+    highlights: [
+      '🥊 „+ Neue Kickbox-Bestellung" mit 1:1-Sizechart, Produktbild-Upload & PDF',
+      '📦 „Dojo-Bestellungen" (allgemein) + Spalte „Art" zeigt den Bestelltyp',
+    ],
+    details: 'KickboxBestellvorlage.jsx (neu, _typ:kickbox), BestellungenTab.jsx (Button/Overlay/Art-Spalte/Umbenennung), giBestellungen.js (bestell_typ kickbox/tshirt).',
+    files: ['frontend/src/components/KickboxBestellvorlage.jsx', 'frontend/src/components/BestellungenTab.jsx', 'backend/routes/giBestellungen.js'],
+  },
+  {
     version: '3.0.51',
     date: '2026-06-11',
     type: 'improvement',

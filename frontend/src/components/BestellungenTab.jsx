@@ -10,6 +10,7 @@ import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import GiBestellvorlage, { buildPdfHtml } from './GiBestellvorlage';
 import TShirtBestellvorlage, { buildTShirtPdf } from './TShirtBestellvorlage';
+import KickboxBestellvorlage, { buildKickboxPdf } from './KickboxBestellvorlage';
 import { useDojoContext } from '../context/DojoContext';
 import '../styles/BestellungenTab.css';
 
@@ -31,10 +32,12 @@ const BestellungenTab = () => {
   const [dojoLoading, setDojoLoading] = useState(false);
   const [giOverlay, setGiOverlay] = useState(null); // { vorlage, editingId, formdata }
   const [tsOverlay, setTsOverlay] = useState(null); // T-Shirt-Bestellvorlage Overlay
+  const [ksOverlay, setKsOverlay] = useState(null); // Kickboxanzug-Bestellvorlage Overlay
   const [filterDojoId, setFilterDojoId] = useState(null); // null = aus activeDojo
   const [pdfDownloading, setPdfDownloading] = useState(null); // bestellung_id während PDF-Download läuft
   const [neuLoading, setNeuLoading] = useState(false);
   const [neuTsLoading, setNeuTsLoading] = useState(false);
+  const [neuKsLoading, setNeuKsLoading] = useState(false);
 
   const [lowStockItems, setLowStockItems] = useState([]);
   const [bestellungen, setBestellungen] = useState([]);
@@ -206,8 +209,35 @@ const BestellungenTab = () => {
     }
   };
 
+  // Neue Kickboxanzug-Bestellung starten. Sucht (optional) eine Vorlage mit
+  // typ/name 'kickbox'; funktioniert aber auch ohne Vorlage (vorlage=null).
+  const neueKickboxBestellung = async () => {
+    const djId = filterDojoId || activeDojo?.id;
+    if (!djId) { setDojoFehler('Bitte ein Dojo auswählen'); return; }
+    setDojoFehler('');
+    setNeuKsLoading(true);
+    try {
+      let vorlage = null;
+      try {
+        const res = await axios.get(`/bestellvorlagen?dojo_id=${djId}`);
+        const vorlagen = res.data?.data || [];
+        vorlage = vorlagen.find(v =>
+          (v.typ || '').toLowerCase().includes('kickbox') ||
+          (v.name || '').toLowerCase().includes('kickbox')
+        ) || null;
+      } catch { /* Vorlage optional */ }
+      setKsOverlay({ vorlage, editingId: null, formdata: null, dojoId: djId });
+    } catch (e) {
+      setDojoFehler(e?.response?.data?.message || e?.message || 'Fehler beim Öffnen der Kickbox-Vorlage');
+    } finally {
+      setNeuKsLoading(false);
+    }
+  };
+
   // True, wenn die Bestellung eine T-Shirt-Bestellung ist (formdata._typ)
   const istTShirt = (fd) => !!(fd && fd._typ === 'tshirt');
+  // True, wenn die Bestellung eine Kickboxanzug-Bestellung ist (formdata._typ)
+  const istKickbox = (fd) => !!(fd && fd._typ === 'kickbox');
 
   useEffect(() => {
     if (activeSubTab === 'dojo') {
@@ -248,7 +278,9 @@ const BestellungenTab = () => {
 
     const html = istTShirt(formdata)
       ? buildTShirtPdf(formdata, b.bestellung_id)
-      : buildPdfHtml(formdata, window.location.origin, eingebetteteDateien, b.bestellung_id);
+      : istKickbox(formdata)
+        ? buildKickboxPdf(formdata, window.location.origin, eingebetteteDateien, b.bestellung_id)
+        : buildPdfHtml(formdata, window.location.origin, eingebetteteDateien, b.bestellung_id);
     return { html, djId };
   };
 
@@ -331,6 +363,8 @@ const BestellungenTab = () => {
       }
       if (istTShirt(formdata)) {
         setTsOverlay({ vorlage, editingId: b.bestellung_id, formdata, dojoId: b.dojo_id });
+      } else if (istKickbox(formdata)) {
+        setKsOverlay({ vorlage, editingId: b.bestellung_id, formdata, dojoId: b.dojo_id });
       } else {
         setGiOverlay({ vorlage, editingId: b.bestellung_id, formdata, dojoId: b.dojo_id });
       }
@@ -676,6 +710,19 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
         </div>
       )}
 
+      {/* Kickboxanzug-Bestellvorlage Overlay */}
+      {ksOverlay && (
+        <div style={{ position: 'absolute', inset: 0, background: 'var(--bg-main,#0f0f1a)', zIndex: 20, overflowY: 'auto', padding: '1.25rem', borderRadius: 'inherit' }}>
+          <KickboxBestellvorlage
+            vorlage={ksOverlay.vorlage}
+            initEditingId={ksOverlay.editingId}
+            initFormdata={ksOverlay.formdata}
+            overrideDojoId={ksOverlay.dojoId || filterDojoId || null}
+            onClose={() => { setKsOverlay(null); loadDojoBestellungen(); }}
+          />
+        </div>
+      )}
+
       {/* Sub-Tab Switcher */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.75rem' }}>
         <button
@@ -693,14 +740,14 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
             color: activeSubTab === 'dojo' ? 'rgba(212,175,55,1)' : 'rgba(255,255,255,0.5)',
             borderBottom: activeSubTab === 'dojo' ? '2px solid rgba(212,175,55,0.7)' : '2px solid transparent',
           }}
-        >Dojo-Bestellungen (GI)</button>
+        >Dojo-Bestellungen</button>
       </div>
 
       {/* ── DOJO-BESTELLUNGEN TAB ── */}
       {activeSubTab === 'dojo' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ds-text)' }}>Dojo-Bestellungen (Karate-Gi)</h2>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ds-text)' }}>Dojo-Bestellungen</h2>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               {dojos && dojos.length > 1 && (
                 <select
@@ -727,6 +774,9 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
               <button onClick={neueTShirtBestellung} disabled={neuTsLoading} style={{ padding: '0.3rem 0.9rem', background: 'rgba(255,255,255,0.07)', border: '1px solid var(--ds-accent, #d4af37)', borderRadius: '6px', color: 'var(--ds-accent, #d4af37)', fontSize: '0.8rem', fontWeight: 700, cursor: neuTsLoading ? 'wait' : 'pointer', opacity: neuTsLoading ? 0.6 : 1 }}>
                 {neuTsLoading ? 'Lädt…' : '+ Neue T-Shirt-Bestellung'}
               </button>
+              <button onClick={neueKickboxBestellung} disabled={neuKsLoading} style={{ padding: '0.3rem 0.9rem', background: 'rgba(255,255,255,0.07)', border: '1px solid var(--ds-accent, #d4af37)', borderRadius: '6px', color: 'var(--ds-accent, #d4af37)', fontSize: '0.8rem', fontWeight: 700, cursor: neuKsLoading ? 'wait' : 'pointer', opacity: neuKsLoading ? 0.6 : 1 }}>
+                {neuKsLoading ? 'Lädt…' : '+ Neue Kickbox-Bestellung'}
+              </button>
             </div>
           </div>
           {dojoFehler && (
@@ -752,7 +802,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                     Dojo auswählen
                   </div>
                   <div style={{ fontSize: '0.77rem', color: 'var(--ds-text-faint)', lineHeight: 1.4 }}>
-                    Wähle ein Dojo aus der Liste oben, um die zugehörigen GI-Bestellungen zu laden.
+                    Wähle ein Dojo aus der Liste oben, um die zugehörigen Bestellungen zu laden.
                   </div>
                 </div>
               </div>
@@ -775,7 +825,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
             <div style={{ color: 'var(--ds-text-faint)', fontSize: '0.85rem', padding: '1rem 0' }}>Lädt…</div>
           ) : dojoBestellungen.length === 0 ? (
             <div style={{ color: 'var(--ds-text-faint)', fontSize: '0.85rem', padding: '1rem 0' }}>
-              Noch keine Dojo-Bestellungen. Bestellungen werden beim PDF-Generieren in der GI-Bestellvorlage gespeichert.
+              Noch keine Dojo-Bestellungen. Bestellungen werden beim PDF-Generieren in der jeweiligen Bestellvorlage gespeichert.
             </div>
           ) : (
             <div className="bestellungen-table-container">
@@ -783,7 +833,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Vorlage</th>
+                    <th>Art</th>
                     <th>Lieferant</th>
                     <th>Bestelldatum</th>
                     <th>Lieferdatum</th>
@@ -799,7 +849,7 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                         #{String(b.bestellung_id).padStart(4, '0')}
                       </td>
                       <td style={{ color: 'var(--ds-text-secondary)', fontSize: '0.8rem' }}>
-                        {b.vorlage_id ? `Vorlage #${b.vorlage_id}` : '—'}
+                        {b.bestell_typ === 'tshirt' ? 'T-Shirt-Bestellung' : b.bestell_typ === 'kickbox' ? 'Kickbox-Bestellung' : 'Gi-Bestellung'}
                       </td>
                       <td>{b.lieferant_name || b.lieferant_firmenname || '—'}</td>
                       <td style={{ color: 'var(--ds-text-secondary)', fontSize: '0.8rem' }}>{b.bestelldatum || '—'}</td>

@@ -18,6 +18,11 @@ router.get('/', (req, res) => {
   const sql = `
     SELECT b.bestellung_id, b.dojo_id, b.vorlage_id, b.lieferant_id, b.lieferant_name,
            b.bestelldatum, b.lieferdatum, b.status, b.erstellt_am,
+           CASE
+             WHEN REPLACE(b.formdata, ' ', '') LIKE '%"_typ":"kickbox"%' THEN 'kickbox'
+             WHEN REPLACE(b.formdata, ' ', '') LIKE '%"_typ":"tshirt"%' THEN 'tshirt'
+             ELSE 'gi'
+           END AS bestell_typ,
            l.firmenname AS lieferant_firmenname
     FROM gi_bestellungen b
     LEFT JOIN lieferanten l ON b.lieferant_id = l.lieferant_id
