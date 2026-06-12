@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.57',
+    date: '2026-06-12',
+    type: 'system',
+    zielgruppe: 'intern',
+    title: 'Backend-Absturzsicherung + Member-App überbrückt Restarts',
+    description: 'Maßnahmenpaket gegen die wiederkehrenden 502-Aussetzer („App geht nicht"). Ursache identifiziert: Der laufende Backend-Prozess lief OHNE die getunte ecosystem.config.js (kein V8-Heap-Limit, max_memory_restart auf 2 GB statt 1800M) → Speicher konnte unkontrolliert wachsen bis zum harten PM2-Restart, ohne Fehler-Log. Jetzt: Prozess läuft via ecosystem.config.js (Heap-Cap 1536M, Restart bei 1800M, Exp-Backoff), Crash-Diagnose schreibt Signal/Exit-Code/Speicher vor dem Sterben in dojosoftware-crash.log, Graceful Shutdown bei SIGTERM, Memory-Watchdog warnt ab 1400 MB. Frontend: Mitglieder-App überbrückt einen Backend-Neustart bei Ladevorgängen jetzt ~14s transparent (GET-Retry mit Backoff) statt sofort Fehler zu zeigen.',
+    highlights: [
+      '🛡️ Backend läuft endlich mit Heap-Limit + sauberem Memory-Restart (war nie aktiv)',
+      '🔎 Crash-Diagnose-Log: Absturzursache wird belegt statt geraten',
+      '🔁 Member-App überbrückt Deploy-/Restart-Blips ~14s transparent (kein „App geht nicht" mehr)',
+    ],
+    details: 'server.js: crashLine() → /var/log/pm2/dojosoftware-crash.log, gracefulShutdown (SIGTERM/SIGINT/SIGHUP), Memory-Watchdog 30s/1400M. PM2 via pm2 delete + start ecosystem.config.js + pm2 save (node_args --max-old-space-size=1536, max_memory_restart 1800M). fetchWithAuth.js: GET-Retry [600,1200,2500,4000,6000].',
+    files: ['backend/server.js', 'backend/ecosystem.config.js', 'frontend/src/utils/fetchWithAuth.js'],
+  },
+  {
     version: '3.0.56',
     date: '2026-06-11',
     type: 'bugfix',

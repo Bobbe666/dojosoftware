@@ -2862,4 +2862,65 @@ process.on('uncaughtException', (err) => {
     message: err.message,
     stack: err.stack
   });
+  crashLine('uncaughtException', { message: err.message, stack: (err.stack || '').slice(0, 600) });
 });
+
+// ============================================================================
+// ABSTURZ-DIAGNOSE + GRACEFUL SHUTDOWN
+// Hintergrund: Der Prozess startete bisher wiederholt neu mit „exit 0 + leerem
+// Errorlog" — ohne erkennbare Ursache. uncaughtException/unhandledRejection
+// killen den Prozess NICHT (siehe oben), also kommen die Restarts von außen:
+// mit höchster Wahrscheinlichkeit PM2 max_memory_restart (1800M) bei einem
+// Memory-Spike. Diese Diagnose schreibt VOR dem Sterben Signal/Code/Speicher in
+// eine eigene Datei — damit die Ursache endlich belegbar ist statt geraten.
+// ============================================================================
+const CRASH_LOG = process.env.CRASH_LOG || '/var/log/pm2/dojosoftware-crash.log';
+function crashLine(tag, extra = {}) {
+  try {
+    const m = process.memoryUsage();
+    const line = JSON.stringify({
+      t: new Date().toISOString(),
+      tag,
+      rss_mb: Math.round(m.rss / 1048576),
+      heap_mb: Math.round(m.heapUsed / 1048576),
+      ext_mb: Math.round((m.external || 0) / 1048576),
+      uptime_s: Math.round(process.uptime()),
+      ...extra,
+    }) + '\n';
+    require('fs').appendFileSync(CRASH_LOG, line);
+  } catch { /* Shutdown niemals blockieren */ }
+}
+
+let _shuttingDown = false;
+function gracefulShutdown(signal) {
+  if (_shuttingDown) return;
+  _shuttingDown = true;
+  crashLine('signal', { signal });
+  logger.warn('Shutdown-Signal empfangen — fahre sauber herunter', { signal });
+  try {
+    httpServer.close(() => process.exit(0));
+  } catch {
+    process.exit(0);
+  }
+  // Notausstieg, falls offene Verbindungen httpServer.close blockieren
+  setTimeout(() => process.exit(0), 8000).unref();
+}
+['SIGTERM', 'SIGINT', 'SIGHUP'].forEach((sig) => process.on(sig, () => gracefulShutdown(sig)));
+process.on('exit', (code) => crashLine('exit', { code }));
+process.on('unhandledRejection', (reason) => {
+  crashLine('unhandledRejection', { reason: reason?.message || String(reason) });
+});
+
+// Memory-Watchdog: warnt FRÜH (ab 1400 MB), bevor PM2 bei 1800 MB hart neustartet.
+// So lässt sich ein Speicheranstieg mit einem späteren Restart korrelieren.
+let _memPeakMb = 0;
+setInterval(() => {
+  try {
+    const rssMb = Math.round(process.memoryUsage().rss / 1048576);
+    if (rssMb > _memPeakMb) _memPeakMb = rssMb;
+    if (rssMb >= 1400) {
+      logger.warn('Hoher Speicherverbrauch — naht PM2-Limit (1800M)', { rss_mb: rssMb, peak_mb: _memPeakMb });
+      crashLine('mem-high', { rss_mb: rssMb, peak_mb: _memPeakMb });
+    }
+  } catch { /* ignore */ }
+}, 30000).unref();

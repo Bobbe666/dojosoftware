@@ -212,7 +212,11 @@ export const fetchWithAuth = async (url, options = {}) => {
   // Auto-Retry bei transienten Server-Blips (z. B. Deploy-Neustart): Netzwerkfehler oder 502/503.
   // Sicher auch für Schreib-Requests: 502/503 bedeutet, das Backend war NICHT erreichbar →
   // der Request wurde nicht verarbeitet, ein erneuter Versuch kann nichts doppelt auslösen.
-  const RETRY_DELAYS = [600, 1500]; // bis zu 2 Wiederholungen mit Backoff
+  // GET (idempotent, Laden) wird länger überbrückt: ein Backend-Neustart dauert ~5–15s,
+  // damit Mitglieder während eines Deploys/Restarts NICHT „App geht nicht" sehen, sondern
+  // der Ladevorgang im Hintergrund weiterversucht (~14s). Schreib-Requests bleiben bewusst
+  // konservativ (max. 2 Versuche) — kein Risiko einer Doppel-Auslösung.
+  const RETRY_DELAYS = method === 'GET' ? [600, 1200, 2500, 4000, 6000] : [600, 1500];
   // Timeout pro Versuch: hängende Requests dürfen die App nicht einfrieren.
   // GET (Laden) kurz, Schreib-/Upload-Requests großzügig (PDF/OCR/Datei).
   const TIMEOUT_MS = method === 'GET' ? 15000 : 60000;
