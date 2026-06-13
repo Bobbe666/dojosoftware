@@ -41,7 +41,7 @@ const PasswordReset = () => {
   const [error, setError] = useState('');
 
   const passwordIsValid = (pwd) =>
-    /\d/.test(pwd) && /[!@#$%^&*(),.?":{}|<>_+\-=/\\\[\];'`~]/.test(pwd) && pwd.length >= 8;
+    /\d/.test(pwd) && /[!@#$%^&*(),.?":{}|<>_+\-=/\\\[\];'`~]/.test(pwd) && pwd.length >= 12;
 
   // Schritt 1: E-Mail abschicken
   const handleRequestReset = async (e) => {
@@ -64,7 +64,7 @@ const PasswordReset = () => {
     e.preventDefault();
     setError('');
     if (!passwordIsValid(newPassword))
-      return setError('Passwort muss mind. 8 Zeichen, 1 Zahl und 1 Sonderzeichen enthalten.');
+      return setError('Passwort muss mind. 12 Zeichen, 1 Zahl und 1 Sonderzeichen enthalten.');
     if (newPassword !== confirmPassword)
       return setError('Passwörter stimmen nicht überein.');
     setLoading(true);
@@ -86,7 +86,7 @@ const PasswordReset = () => {
     if (!loginField.trim()) return setError('Bitte E-Mail oder Benutzername eingeben.');
     if (!securityAnswer.trim()) return setError('Bitte die Antwort eingeben.');
     if (!passwordIsValid(newPassword))
-      return setError('Passwort muss mind. 8 Zeichen, 1 Zahl und 1 Sonderzeichen enthalten.');
+      return setError('Passwort muss mind. 12 Zeichen, 1 Zahl und 1 Sonderzeichen enthalten.');
     if (newPassword !== confirmPassword)
       return setError('Passwörter stimmen nicht überein.');
     setLoading(true);
@@ -203,7 +203,7 @@ const PasswordReset = () => {
                   {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              <small className="input-hint">Mind. 8 Zeichen, 1 Zahl, 1 Sonderzeichen.</small>
+              <small className="input-hint">Mind. 12 Zeichen, 1 Zahl, 1 Sonderzeichen.</small>
             </div>
             <div className="form-group">
               <label className="form-label"><div className="label-content"><Lock size={16} className="label-icon" /><span>Passwort bestätigen</span></div></label>
@@ -267,7 +267,7 @@ const PasswordReset = () => {
                   {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              <small className="input-hint">Mind. 8 Zeichen, 1 Zahl, 1 Sonderzeichen.</small>
+              <small className="input-hint">Mind. 12 Zeichen, 1 Zahl, 1 Sonderzeichen.</small>
             </div>
             <div className="form-group">
               <label className="form-label">
