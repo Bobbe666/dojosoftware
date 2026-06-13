@@ -46,6 +46,15 @@ const AvatarCircle = ({ vorname, nachname, fotoPfad, size = 80 }) => {
 }
 
 // ── Sektion-Karte ────────────────────────────────────────────────────
+// Muss zur Liste in MemberSecurityTab.jsx / PasswordReset.jsx passen
+const SECURITY_QUESTIONS = [
+  'Wie lautet der Mädchen- oder Jungenname Ihrer Mutter?',
+  'Wie heißt Ihr erstes Haustier?',
+  'In welcher Stadt wurden Sie geboren?',
+  'Wie lautet der Name Ihrer Grundschule?',
+  'Wie lautet der zweite Vorname Ihres Vaters?',
+]
+
 const Section = ({ title, icon, children, action }) => (
   <div className="mp-section">
     <div className="mp-section-header">
@@ -107,6 +116,10 @@ const MemberProfilePage = () => {
   const [editNotfall, setEditNotfall]   = useState(false)
   const [contactDraft, setContactDraft] = useState({})
   const [pwForm, setPwForm]             = useState({ old: '', neu: '', confirm: '' })
+  const [editSecQ, setEditSecQ]         = useState(false)
+  const [secQ, setSecQ]                 = useState(SECURITY_QUESTIONS[0])
+  const [secA, setSecA]                 = useState('')
+  const [hasSecQ, setHasSecQ]           = useState(true) // true = nicht auffordern, bis geladen
   const [notfallDraft, setNotfallDraft] = useState({
     notfallkontakt_name: '', notfallkontakt_telefon: '', notfallkontakt_verhaeltnis: '',
     allergien: '', medizinische_hinweise: ''
@@ -271,7 +284,7 @@ const MemberProfilePage = () => {
   // ── Passwort ändern ──────────────────────────────────────────────
   const savePassword = async () => {
     if (pwForm.neu !== pwForm.confirm) { showToast('Passwörter stimmen nicht überein', 'error'); return }
-    if (pwForm.neu.length < 8) { showToast('Mindestens 8 Zeichen', 'error'); return }
+    if (pwForm.neu.length < 12) { showToast('Mindestens 12 Zeichen', 'error'); return }
     setSaving(true)
     try {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/auth/change-password`, {
@@ -289,6 +302,34 @@ const MemberProfilePage = () => {
       setSaving(false)
     }
   }
+
+  // ── Sicherheitsfrage festlegen (E-Mail-unabhängiger Passwort-Reset) ──
+  const saveSecurityQuestion = async () => {
+    if (!secA.trim()) { showToast('Bitte eine Antwort eingeben', 'error'); return }
+    setSaving(true)
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/auth/security`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ securityQuestion: secQ, securityAnswer: secA.trim() }),
+      })
+      if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.message || 'Fehler') }
+      setEditSecQ(false); setSecA(''); setHasSecQ(true)
+      showToast('Sicherheitsfrage gespeichert ✓')
+    } catch (err) {
+      showToast(err.message || 'Fehler beim Speichern', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Status laden: hat das Mitglied schon eine Sicherheitsfrage?
+  useEffect(() => {
+    fetchWithAuth(`${config.apiBaseUrl}/auth/security/status`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && typeof d.hasSecurityQuestion === 'boolean') setHasSecQ(d.hasSecurityQuestion) })
+      .catch(() => {})
+  }, [])
 
   // ── Foto hochladen ───────────────────────────────────────────────
   const handleFotoUpload = async (e) => {
@@ -623,6 +664,34 @@ const MemberProfilePage = () => {
               </div>
             )
           }
+
+          {/* Sicherheitsfrage — E-Mail-unabhängiger Passwort-Reset */}
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            {!editSecQ ? (
+              <Row label="Sicherheitsfrage">
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  {hasSecQ
+                    ? <span style={{ color: '#4ade80' }}>Gesetzt ✓</span>
+                    : <span style={{ color: '#f59e0b' }}>Nicht gesetzt</span>}
+                  <button className="mp-edit-btn" onClick={() => setEditSecQ(true)}>{hasSecQ ? 'Ändern' : 'Jetzt festlegen'}</button>
+                </span>
+              </Row>
+            ) : (
+              <div className="mp-edit-form">
+                <p className="mp-empty mp-empty--mb">Damit kannst du dein Passwort auch <strong>ohne E-Mail</strong> zurücksetzen.</p>
+                <label style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: 4 }}>Frage</label>
+                <select value={secQ} onChange={e => setSecQ(e.target.value)}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: 8, background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.12)', marginBottom: '0.75rem' }}>
+                  {SECURITY_QUESTIONS.map(q => <option key={q} value={q} style={{ background: '#1a1a2e' }}>{q}</option>)}
+                </select>
+                <EditField label="Deine Antwort" value={secA} onChange={setSecA} />
+                <div className="mp-edit-actions">
+                  <button className="mp-btn mp-btn--outline" onClick={() => { setEditSecQ(false); setSecA('') }}>Abbrechen</button>
+                  <button className="mp-btn mp-btn--primary" onClick={saveSecurityQuestion} disabled={saving}>{saving ? 'Speichert…' : 'Speichern'}</button>
+                </div>
+              </div>
+            )}
+          </div>
         </Section>
 
         {/* ── Benachrichtigungen ───────────────────────────────── */}

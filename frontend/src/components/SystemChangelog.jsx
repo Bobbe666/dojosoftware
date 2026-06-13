@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.59',
+    date: '2026-06-13',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Mitglieder können ihre Sicherheitsfrage selbst festlegen',
+    description: 'In der Mitglieder-App unter Profil → Sicherheit kann nun jeder selbst eine Sicherheitsfrage hinterlegen (vorher nur durch den Admin). Damit wird der E-Mail-unabhängige Passwort-Reset für alle nutzbar. Ist noch keine Frage gesetzt, wird das deutlich angezeigt („Nicht gesetzt — Jetzt festlegen"). Außerdem: Passwort-Mindestlänge in der App auf 12 Zeichen korrigiert (passte vorher nicht zur Server-Vorgabe).',
+    highlights: [
+      '🔑 Sicherheitsfrage selbst setzen (Profil → Sicherheit) → Passwort-Reset ohne E-Mail möglich',
+      '⚠️ Sichtbarer Hinweis, wenn keine Frage hinterlegt ist',
+    ],
+    details: 'MemberProfilePage.jsx: Sicherheitsfrage-Abschnitt (GET /auth/security/status, POST /auth/security), Passwort-Mindestlänge 8→12 angeglichen.',
+    files: ['frontend/src/components/MemberProfilePage.jsx'],
+  },
+  {
     version: '3.0.58',
     date: '2026-06-13',
     type: 'feature',
