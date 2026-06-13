@@ -2923,20 +2923,35 @@ function gracefulShutdown(signal) {
   if (_shuttingDown) return;
   _shuttingDown = true;
   crashLine('signal', { signal });
-  logger.warn('Shutdown-Signal empfangen — fahre sauber herunter', { signal });
-  try {
-    httpServer.close(() => process.exit(0));
-  } catch {
-    process.exit(0);
-  }
-  // Notausstieg, falls offene Verbindungen httpServer.close blockieren
-  setTimeout(() => process.exit(0), 8000).unref();
+  logger.warn('Shutdown-Signal empfangen — beende', { signal });
+  try { httpServer.close(); } catch { /* egal */ }
+  // GARANTIERTER Exit (NICHT unref): offene socket.io-Verbindungen dürfen den
+  // Shutdown nicht blockieren und keinen Zombie hinterlassen.
+  setTimeout(() => process.exit(0), 2000);
 }
-['SIGTERM', 'SIGINT', 'SIGHUP'].forEach((sig) => process.on(sig, () => gracefulShutdown(sig)));
+// SIGHUP NICHT behandeln — kann von Terminal/Logrotate kommen und darf den
+// Server nicht herunterfahren (mögliche stille Ausfall-Ursache).
+['SIGTERM', 'SIGINT'].forEach((sig) => process.on(sig, () => gracefulShutdown(sig)));
 process.on('exit', (code) => crashLine('exit', { code }));
 process.on('unhandledRejection', (reason) => {
   crashLine('unhandledRejection', { reason: reason?.message || String(reason) });
 });
+
+// HTTP-LISTENER-ÜBERWACHUNG (Anti-Zombie): Wenn der Listener auf :5001 stirbt,
+// der Prozess aber weiterläuft (nimmt keine Verbindungen mehr an → „offline",
+// aber PM2 zeigt online), loggen wir die Ursache und beenden sauber, damit PM2
+// SOFORT neu startet — statt minutenlang offline zu bleiben.
+httpServer.on('close', () => { if (!_shuttingDown) crashLine('http-close', { note: 'HTTP-Listener wurde geschlossen' }); });
+httpServer.on('error', (e) => crashLine('http-error', { code: e?.code, msg: e?.message }));
+setInterval(() => {
+  try {
+    if (!_shuttingDown && httpServer && httpServer.listening === false) {
+      crashLine('listener-dead', { note: 'Port 5001 lauscht nicht mehr — beende für PM2-Neustart' });
+      logger.error('HTTP-Listener tot — beende für sauberen PM2-Neustart');
+      setTimeout(() => process.exit(1), 500);
+    }
+  } catch { /* ignore */ }
+}, 20000).unref();
 
 // Memory-Watchdog: warnt FRÜH (ab 1400 MB), bevor PM2 bei 1800 MB hart neustartet.
 // So lässt sich ein Speicheranstieg mit einem späteren Restart korrelieren.
