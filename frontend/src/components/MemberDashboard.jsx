@@ -7,6 +7,7 @@ import {
   User,
   Calendar,
   CreditCard,
+  FileText,
   BarChart3,
   Clock,
   Award,
@@ -1921,6 +1922,10 @@ const MemberDashboard = () => {
         <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/payments')}>
           <CreditCard size={24} />
           <span className="cta-tile-nav-label">{t('navigation.myPayments')}</span>
+        </div>
+        <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/payments?tab=quittungen')}>
+          <FileText size={24} />
+          <span className="cta-tile-nav-label">{t('navigation.myReceipts')}</span>
         </div>
         <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/stats')}>
           <BarChart3 size={24} />

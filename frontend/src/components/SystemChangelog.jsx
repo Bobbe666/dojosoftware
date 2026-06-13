@@ -31,6 +31,19 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.61',
+    date: '2026-06-13',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Quittungen leichter auffindbar (eigene Kachel im Mitglieder-Dashboard)',
+    description: 'Die Quittungs-Funktion war als 5. Tab unter „Meine Beiträge" versteckt — Mitglieder fanden sie nicht. Jetzt gibt es auf dem Mitglieder-Dashboard eine eigene Kachel „Quittungen", die direkt den Quittungen-Bereich öffnet (Deep-Link ?tab=quittungen).',
+    highlights: [
+      '🧾 Eigene „Quittungen"-Kachel auf dem Dashboard → direkt zum PDF-Quittungsbereich',
+    ],
+    details: 'MemberDashboard.jsx: neue CTA-Kachel (FileText) → /member/payments?tab=quittungen. MemberPayments.jsx: liest ?tab= (useSearchParams) und öffnet den passenden Tab. i18n navigation.myReceipts (de/en/it).',
+    files: ['frontend/src/components/MemberDashboard.jsx', 'frontend/src/components/MemberPayments.jsx', 'frontend/src/locales/*/member.json'],
+  },
+  {
     version: '3.0.60',
     date: '2026-06-13',
     type: 'system',

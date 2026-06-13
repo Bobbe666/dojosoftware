@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   CreditCard, CheckCircle, AlertTriangle, Clock, Euro, FileText,
   Trash2, Plus, Loader2, Shield, History, AlertCircle, Download, Receipt
@@ -28,7 +28,10 @@ const MemberPayments = () => {
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingPm, setDeletingPm] = useState(null);
-  const [activeTab, setActiveTab] = useState('offen');
+  const [searchParams] = useSearchParams();
+  const VALID_TABS = ['offen', 'vertraege', 'karten', 'historie', 'quittungen'];
+  const initialTab = VALID_TABS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'offen';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [naechste, setNaechste] = useState(null); // Zusammensetzung nächste Abbuchung
 
   // --- Quittungen (Self-Service-PDF, on-the-fly, nichts gespeichert) ---
