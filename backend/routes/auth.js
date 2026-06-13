@@ -743,6 +743,21 @@ router.post('/security', authenticateHybrid, async (req, res) => {
   }
 });
 
+// GET /auth/security/status — hat der eingeloggte Nutzer eine Sicherheitsfrage hinterlegt?
+// Dient der Aufforderung in der App, eine Frage zu setzen (E-Mail-unabhängiger Reset-Notnagel).
+router.get('/security/status', authenticateHybrid, async (req, res) => {
+  try {
+    const [[row]] = await db.promise().query(
+      'SELECT security_question FROM users WHERE id = ? LIMIT 1',
+      [req.user.id]
+    );
+    // Kein users-Datensatz (z. B. admin_users) → nicht auffordern
+    res.json({ hasSecurityQuestion: !row || !!row.security_question });
+  } catch (error) {
+    res.json({ hasSecurityQuestion: true });
+  }
+});
+
 // ===================================================================
 // PASSWORT ZURÜCKSETZEN (öffentlich, mit Sicherheitsfrage)
 // ===================================================================
@@ -793,7 +808,8 @@ router.post('/reset-password', passwordResetLimiter, async (req, res) => {
         ...clientInfo,
         extra: { reason: 'password_reset_wrong_answer' }
       });
-      return res.status(401).json({ message: 'Sicherheitsantwort falsch' });
+      // Generische Meldung (verhindert Account-/Frage-Enumeration)
+      return res.status(401).json({ message: 'Ungültige Angaben' });
     }
 
     // Hash with Argon2

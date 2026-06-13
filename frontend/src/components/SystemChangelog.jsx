@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.58',
+    date: '2026-06-13',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Passwort vergessen: zusätzlich per Sicherheitsfrage (ohne E-Mail)',
+    description: 'Die Passwort-zurücksetzen-Seite bietet jetzt zwei Wege: per E-Mail-Link (wie bisher) ODER per Sicherheitsfrage — letzteres funktioniert komplett ohne E-Mail-Versand. So können Nutzer ihr Passwort auch dann zurücksetzen, wenn der Mailversand gestört ist. Voraussetzung: eine hinterlegte Sicherheitsfrage. (Hinweis: die meisten Nutzer haben noch keine gesetzt — das member-seitige Setzen + die Aufforderung dazu folgt als nächster Schritt.)',
+    highlights: [
+      '🔐 Passwort-Reset per Sicherheitsfrage als E-Mail-unabhängiger Notnagel',
+      '🛡️ Enumeration-Schutz verbessert (generische Fehlermeldung bei falscher Antwort)',
+    ],
+    details: 'PasswordReset.jsx: Umschalter E-Mail/Sicherheitsfrage → /auth/reset-password (loginField + Frage + Antwort + neues Passwort). Backend: GET /auth/security/status (für künftige Aufforderung), /auth/reset-password gibt bei falscher Antwort jetzt generische Meldung.',
+    files: ['frontend/src/components/PasswordReset.jsx', 'backend/routes/auth.js'],
+  },
+  {
     version: '3.0.57',
     date: '2026-06-12',
     type: 'system',
