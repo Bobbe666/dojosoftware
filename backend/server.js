@@ -39,6 +39,33 @@ const logger = require("./utils/logger");
 
 const app = express();
 
+// ============================================================================
+// DIAGNOSE: langsame Anfragen + Event-Loop-Blockaden protokollieren.
+// Hintergrund: Die wiederkehrenden Ausfälle sind KEIN Speicher-/Crash-Problem
+// (Crash-Log zeigt nur ~160 MB), sondern ein BLOCKIERTER Event-Loop — eine
+// synchrone Operation friert den Single-Process ~60s ein (HTTP 000, SIGINT
+// kann nicht mehr verarbeitet werden). Diese Instrumentierung benennt den
+// verursachenden Endpunkt im Crash-Log (crashLine ist unten als Funktion
+// deklariert und damit hier bereits aufrufbar).
+const _inflight = new Map(); // id -> { m, p, t }
+let _reqSeq = 0;
+const SLOW_REQ_MS = 2000;
+app.use((req, res, next) => {
+  const id = ++_reqSeq;
+  const start = Date.now();
+  _inflight.set(id, { m: req.method, p: (req.originalUrl || req.url || '').slice(0, 140), t: start });
+  const done = () => {
+    _inflight.delete(id);
+    const ms = Date.now() - start;
+    if (ms >= SLOW_REQ_MS && typeof crashLine === 'function') {
+      crashLine('slow-req', { ms, m: req.method, p: (req.originalUrl || req.url || '').slice(0, 140), status: res.statusCode });
+    }
+  };
+  res.on('finish', done);
+  res.on('close', done);
+  next();
+});
+
 // Trust proxy - wichtig für Nginx/Apache Proxy-Setups
 // 1 = trust first proxy only (Nginx), not any upstream proxies
 app.set('trust proxy', 1);
@@ -2924,3 +2951,42 @@ setInterval(() => {
     }
   } catch { /* ignore */ }
 }, 30000).unref();
+
+// Event-Loop-Lag-Detektor: misst, ob der Loop blockiert war. Das Intervall
+// feuert NACH der Blockade verspätet — die Verspätung = Block-Dauer. Wir loggen
+// dann die Anfragen, die in dem Moment „in der Mache" waren (= Verdächtige).
+let _lastTick = Date.now();
+const LOOP_TICK_MS = 1000;
+const LOOP_BLOCK_MS = 3000; // ab 3s Verspätung gilt der Loop als blockiert
+setInterval(() => {
+  try {
+    const now = Date.now();
+    const lag = now - _lastTick - LOOP_TICK_MS;
+    _lastTick = now;
+    if (lag >= LOOP_BLOCK_MS) {
+      const stuck = [..._inflight.values()]
+        .sort((a, b) => a.t - b.t)
+        .slice(0, 12)
+        .map((r) => `${r.m} ${r.p} (${Math.round((now - r.t) / 1000)}s)`);
+      logger.warn('Event-Loop blockiert', { lag_ms: lag, inflight: stuck });
+      crashLine('loop-block', { lag_ms: lag, inflight: stuck });
+    }
+  } catch { /* ignore */ }
+}, LOOP_TICK_MS).unref();
+
+// Crash-Log-Retention: Einträge älter als 72h entfernen (deckt die 48h-Auswertung
+// mit Puffer ab). Läuft stündlich; Ereignisse sind selten, daher sehr günstig.
+function trimCrashLog() {
+  try {
+    const fsx = require('fs');
+    if (!fsx.existsSync(CRASH_LOG)) return;
+    const cutoff = Date.now() - 72 * 3600 * 1000;
+    const kept = fsx.readFileSync(CRASH_LOG, 'utf8').split('\n').filter((l) => {
+      if (!l.trim()) return false;
+      try { return new Date(JSON.parse(l).t).getTime() >= cutoff; } catch { return false; }
+    });
+    fsx.writeFileSync(CRASH_LOG, kept.join('\n') + (kept.length ? '\n' : ''));
+  } catch { /* ignore */ }
+}
+setTimeout(trimCrashLog, 15000).unref();
+setInterval(trimCrashLog, 3600 * 1000).unref();
