@@ -2937,21 +2937,87 @@ process.on('unhandledRejection', (reason) => {
   crashLine('unhandledRejection', { reason: reason?.message || String(reason) });
 });
 
+// Live-Verbindungszähler (für Heartbeat + Snapshots)
+let _httpConns = 0;
+httpServer.on('connection', (s) => { _httpConns++; s.on('close', () => { _httpConns -= 1; }); });
+
+// Offene File-Descriptors zählen (Leak-Erkennung)
+function fdCount() { try { return require('fs').readdirSync('/proc/self/fd').length; } catch { return -1; } }
+// Kompletter Prozess-Zustand für die Diagnose
+function procState() {
+  const m = process.memoryUsage();
+  return {
+    rss_mb: Math.round(m.rss / 1048576),
+    heap_mb: Math.round(m.heapUsed / 1048576),
+    ext_mb: Math.round((m.external || 0) / 1048576),
+    fds: fdCount(),
+    conns: _httpConns,
+    handles: process._getActiveHandles ? process._getActiveHandles().length : -1,
+    reqs: process._getActiveRequests ? process._getActiveRequests().length : -1,
+    listening: httpServer.listening,
+    uptime_s: Math.round(process.uptime()),
+  };
+}
+// Vollständigen Node-Diagnosereport schreiben (Stacktraces ALLER Handles, FDs,
+// libuv-Zustand, Heap) — das ist die „Black Box" beim Listener-Tod.
+function writeNodeReport(tag) {
+  try {
+    if (process.report && typeof process.report.writeReport === 'function') {
+      const f = `/var/log/pm2/dojo-report-${tag}-${Date.now()}.json`;
+      process.report.writeReport(f);
+      return f;
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 // HTTP-LISTENER-ÜBERWACHUNG (Anti-Zombie): Wenn der Listener auf :5001 stirbt,
 // der Prozess aber weiterläuft (nimmt keine Verbindungen mehr an → „offline",
-// aber PM2 zeigt online), loggen wir die Ursache und beenden sauber, damit PM2
-// SOFORT neu startet — statt minutenlang offline zu bleiben.
-httpServer.on('close', () => { if (!_shuttingDown) crashLine('http-close', { note: 'HTTP-Listener wurde geschlossen' }); });
-httpServer.on('error', (e) => crashLine('http-error', { code: e?.code, msg: e?.message }));
+// aber PM2 zeigt online), loggen wir Ursache + vollen Zustand + Node-Report und
+// beenden sauber, damit PM2 SOFORT neu startet — statt minutenlang offline.
+httpServer.on('close', () => { if (!_shuttingDown) { const f = writeNodeReport('http-close'); crashLine('http-close', { note: 'HTTP-Listener geschlossen', report: f, ...procState() }); } });
+httpServer.on('error', (e) => { const f = writeNodeReport('http-error'); crashLine('http-error', { code: e?.code, msg: e?.message, report: f, ...procState() }); });
 setInterval(() => {
   try {
     if (!_shuttingDown && httpServer && httpServer.listening === false) {
-      crashLine('listener-dead', { note: 'Port 5001 lauscht nicht mehr — beende für PM2-Neustart' });
+      const f = writeNodeReport('listener-dead');
+      crashLine('listener-dead', { note: 'Port 5001 lauscht nicht mehr — Neustart', report: f, ...procState() });
       logger.error('HTTP-Listener tot — beende für sauberen PM2-Neustart');
       setTimeout(() => process.exit(1), 500);
     }
   } catch { /* ignore */ }
 }, 20000).unref();
+
+// HEARTBEAT alle 60s: Prozess-Zustand in EIGENES Log → zeigt den Trend VOR einem
+// Ausfall (FD-/Verbindungs-Leck, Speicheranstieg, Event-Loop-Lag).
+const HEARTBEAT_LOG = process.env.HEARTBEAT_LOG || '/var/log/pm2/dojosoftware-heartbeat.log';
+let _hbTick = Date.now();
+setInterval(() => {
+  try {
+    const now = Date.now();
+    const lag = Math.max(0, now - _hbTick - 60000); _hbTick = now;
+    const st = procState();
+    require('fs').appendFileSync(HEARTBEAT_LOG, JSON.stringify({ t: new Date().toISOString(), ...st, lag_ms: lag }) + '\n');
+    // Auffälligkeiten zusätzlich ins Crash-Log (damit sie im Monitor auftauchen)
+    if (st.conns > 200 || (st.fds > 800) || lag > 3000) crashLine('hb-warn', { ...st, lag_ms: lag });
+  } catch { /* ignore */ }
+}, 60000).unref();
+
+// Heartbeat-Log auf 72h begrenzen (stündlich)
+function trimHeartbeat() {
+  try {
+    const fsx = require('fs');
+    if (!fsx.existsSync(HEARTBEAT_LOG)) return;
+    const cutoff = Date.now() - 72 * 3600 * 1000;
+    const kept = fsx.readFileSync(HEARTBEAT_LOG, 'utf8').split('\n').filter((l) => {
+      if (!l.trim()) return false;
+      try { return new Date(JSON.parse(l).t).getTime() >= cutoff; } catch { return false; }
+    });
+    fsx.writeFileSync(HEARTBEAT_LOG, kept.join('\n') + (kept.length ? '\n' : ''));
+  } catch { /* ignore */ }
+}
+setTimeout(trimHeartbeat, 25000).unref();
+setInterval(trimHeartbeat, 3600 * 1000).unref();
 
 // Memory-Watchdog: warnt FRÜH (ab 1400 MB), bevor PM2 bei 1800 MB hart neustartet.
 // So lässt sich ein Speicheranstieg mit einem späteren Restart korrelieren.
