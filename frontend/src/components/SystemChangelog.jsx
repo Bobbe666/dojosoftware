@@ -31,6 +31,19 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.60',
+    date: '2026-06-13',
+    type: 'system',
+    zielgruppe: 'intern',
+    title: 'Passwort vergessen: auch für Admin-Accounts (admin_users)',
+    description: 'Der Passwort-vergessen-Flow deckt jetzt auch die admin_users-Accounts ab (eigenes Login-System, hatte bisher gar keinen Reset). forgot-password prüft zuerst users, dann admin_users; reset-password-token erkennt admin_users-Tokens am Präfix „a_" und nutzt deren reset_token/reset_token_ablauf-Spalten. Tote/fehlerhafte api.js-Funktion resetPassword entfernt.',
+    highlights: [
+      '🔓 Admin-Accounts (admin_users) können ihr Passwort jetzt auch zurücksetzen (sobald Mailversand läuft)',
+    ],
+    details: 'auth.js: forgot-password + reset-password-token um admin_users-Zweig erweitert (Token-Präfix a_, argon2id). Greift voll, sobald der Mailversand (Brevo) wieder läuft.',
+    files: ['backend/routes/auth.js', 'frontend/src/services/api.js'],
+  },
+  {
     version: '3.0.59',
     date: '2026-06-13',
     type: 'feature',

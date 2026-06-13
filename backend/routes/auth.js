@@ -1447,26 +1447,11 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
 
   try {
     const pool = db.promise();
-    const [[user]] = await pool.query(
-      'SELECT id, email, dojo_id FROM users WHERE email = ? AND role IN ("member","admin","eingeschraenkt") LIMIT 1',
-      [email.trim().toLowerCase()]
-    );
-
-    // Immer OK zurückgeben (verhindert User-Enumeration)
-    if (!user) return res.json({ success: true });
-
-    // Alten Token löschen + neuen generieren
-    await pool.query('DELETE FROM password_reset_tokens WHERE user_id = ?', [user.id]);
-    const token = crypto.randomBytes(32).toString('hex');
-    await pool.query(
-      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))',
-      [user.id, token]
-    );
-
+    const cleanEmail = email.trim().toLowerCase();
     const origin = req.headers.origin || `https://${req.get('host')}`;
-    const resetUrl = `${origin}/password-reset?token=${token}`;
-
-    const html = `
+    const sendReset = async (to, dojoId, token) => {
+      const resetUrl = `${origin}/password-reset?token=${token}`;
+      const html = `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#1a1a2e;color:#e2e8f0;padding:32px;border-radius:12px">
         <h2 style="color:#f97316;margin-bottom:8px">Passwort zurücksetzen</h2>
         <p>Du hast eine Anfrage zum Zurücksetzen deines Passworts gestellt.</p>
@@ -1477,13 +1462,41 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
         <p style="font-size:13px;color:#94a3b8">Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.</p>
         <p style="font-size:12px;color:#64748b;margin-top:16px">Link: ${resetUrl}</p>
       </div>`;
+      await sendEmailForDojo(dojoId || 3, { to, subject: 'Passwort zurücksetzen', html });
+    };
 
-    await sendEmailForDojo(user.dojo_id || 3, {
-      to: user.email,
-      subject: 'Passwort zurücksetzen',
-      html,
-    });
+    // 1) Normale Nutzer (users-Tabelle, password_reset_tokens)
+    const [[user]] = await pool.query(
+      'SELECT id, email, dojo_id FROM users WHERE email = ? AND role IN ("member","admin","eingeschraenkt") LIMIT 1',
+      [cleanEmail]
+    );
+    if (user) {
+      await pool.query('DELETE FROM password_reset_tokens WHERE user_id = ?', [user.id]);
+      const token = crypto.randomBytes(32).toString('hex');
+      await pool.query(
+        'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))',
+        [user.id, token]
+      );
+      await sendReset(user.email, user.dojo_id, token);
+      return res.json({ success: true });
+    }
 
+    // 2) Admin-Accounts (admin_users — eigenes Login-System mit eigener reset_token-Spalte).
+    //    Token-Präfix "a_" kennzeichnet admin_users-Tokens für reset-password-token.
+    const [[adminU]] = await pool.query(
+      'SELECT id, email, dojo_id FROM admin_users WHERE email = ? LIMIT 1',
+      [cleanEmail]
+    );
+    if (adminU) {
+      const token = 'a_' + crypto.randomBytes(32).toString('hex');
+      await pool.query(
+        'UPDATE admin_users SET reset_token = ?, reset_token_ablauf = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?',
+        [token, adminU.id]
+      );
+      await sendReset(adminU.email, adminU.dojo_id, token);
+    }
+
+    // Immer OK zurückgeben (verhindert User-Enumeration)
     res.json({ success: true });
   } catch (err) {
     logger.error('forgot-password Fehler', { error: err.message });
@@ -1501,6 +1514,22 @@ router.post('/reset-password-token', async (req, res) => {
 
   try {
     const pool = db.promise();
+
+    // admin_users-Token (Präfix "a_") → eigene reset_token-Spalte
+    if (token.startsWith('a_')) {
+      const [[arow]] = await pool.query(
+        'SELECT id FROM admin_users WHERE reset_token = ? AND reset_token_ablauf > NOW() LIMIT 1',
+        [token]
+      );
+      if (!arow) return res.status(400).json({ message: 'Link ungültig oder abgelaufen. Bitte fordere einen neuen an.' });
+      const newHash = await hashPassword(newPassword);
+      await pool.query(
+        "UPDATE admin_users SET password = ?, password_algorithm = 'argon2id', password_changed_at = NOW(), reset_token = NULL, reset_token_ablauf = NULL WHERE id = ?",
+        [newHash, arow.id]
+      );
+      return res.json({ success: true, message: 'Passwort erfolgreich zurückgesetzt.' });
+    }
+
     const [[row]] = await pool.query(
       'SELECT user_id FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > NOW()',
       [token]

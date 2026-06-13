@@ -119,7 +119,6 @@ const api = {
     login: (credentials) => apiClient.post('/auth/login', credentials),
     tokenLogin: (token) => apiClient.post('/auth/token-login', { token }),
     logout: () => apiClient.post('/auth/logout'),
-    resetPassword: (email) => apiClient.post('/auth/reset-password', { email }),
     changePassword: (data) => apiClient.post('/auth/change-password', data),
   },
 
