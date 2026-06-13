@@ -3019,6 +3019,62 @@ function trimHeartbeat() {
 setTimeout(trimHeartbeat, 25000).unref();
 setInterval(trimHeartbeat, 3600 * 1000).unref();
 
+// ============================================================================
+// EVENT-LOOP-FREEZE-MONITOR (Worker-Thread — läuft AUSSERHALB des Main-Threads)
+// Fängt genau den bisher unsichtbaren Fall: ein harter Event-Loop-Block (z.B.
+// synchrone Operation in einem Endpoint), bei dem ALLE Main-Thread-Timer
+// einfrieren und der Healthcheck per SIGKILL killt → keine Spur. Der Worker
+// erkennt den eingefrorenen Main-Thread an einem veralteten Zeitstempel
+// (SharedArrayBuffer) und protokolliert die in-flight Requests zum Freeze-
+// Zeitpunkt → benennt den verursachenden Endpunkt.
+try {
+  const { Worker } = require('worker_threads');
+  const monitorSab = new SharedArrayBuffer(2060);
+  const _tsView = new Float64Array(monitorSab, 0, 1);
+  const _lenView = new Int32Array(monitorSab, 8, 1);
+  const _bufView = new Uint8Array(monitorSab, 12, 2048);
+  _tsView[0] = Date.now();
+  // Main-Thread: alle 250ms Lebenszeichen + aktuelle in-flight Requests in den SAB.
+  // Friert der Loop ein, bleibt der letzte Stand stehen = die Requests beim Freeze.
+  setInterval(() => {
+    _tsView[0] = Date.now();
+    try {
+      const now = Date.now();
+      const arr = [..._inflight.values()].map((r) => `${r.m} ${r.p} (${Math.round((now - r.t) / 1000)}s)`);
+      const b = Buffer.from(JSON.stringify(arr).slice(0, 2047), 'utf8');
+      _lenView[0] = b.length;
+      _bufView.set(b.subarray(0, 2048));
+    } catch { /* ignore */ }
+  }, 250).unref();
+
+  const workerCode = `
+    const { workerData } = require('worker_threads');
+    const fs = require('fs');
+    const sab = workerData.sab;
+    const tsView = new Float64Array(sab, 0, 1);
+    const lenView = new Int32Array(sab, 8, 1);
+    const bufView = new Uint8Array(sab, 12, 2048);
+    let firedFor = 0;
+    setInterval(() => {
+      const last = tsView[0];
+      const frozen = Date.now() - last;
+      if (frozen > 5000 && last !== firedFor) {
+        firedFor = last;
+        let inflight = '?';
+        try { inflight = Buffer.from(bufView.subarray(0, lenView[0])).toString('utf8'); } catch (e) {}
+        const line = JSON.stringify({ t: new Date().toISOString(), tag: 'event-loop-frozen', frozen_ms: frozen, inflight }) + '\\n';
+        try { fs.appendFileSync(workerData.crashLog, line); } catch (e) {}
+      }
+    }, 1000);
+  `;
+  const _monWorker = new Worker(workerCode, { eval: true, workerData: { sab: monitorSab, crashLog: CRASH_LOG } });
+  _monWorker.unref();
+  _monWorker.on('error', (e) => { try { logger.error('Freeze-Monitor-Worker Fehler', { error: e.message }); } catch { /* */ } });
+  logger.success('Event-Loop-Freeze-Monitor (Worker-Thread) aktiv');
+} catch (e) {
+  try { logger.warn('Freeze-Monitor konnte nicht gestartet werden', { error: e.message }); } catch { /* */ }
+}
+
 // Memory-Watchdog: warnt FRÜH (ab 1400 MB), bevor PM2 bei 1800 MB hart neustartet.
 // So lässt sich ein Speicheranstieg mit einem späteren Restart korrelieren.
 let _memPeakMb = 0;
