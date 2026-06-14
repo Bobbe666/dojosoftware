@@ -82,14 +82,38 @@ router.get('/posten', async (req, res) => {
   }
 });
 
-// Puppeteer warm halten (Launch dauert 1–3s) — Lazy-Init, bei Crash neu
+// Puppeteer warm halten (Launch dauert 1–3s) — Lazy-Init, bei Crash neu.
+// Launch ist serialisiert (_pdfLaunching), damit nicht mehrere gleichzeitige
+// Requests parallel je einen Browser-Kaltstart anstoßen (CPU-Spike → Event-Loop-Freeze).
 let _pdfBrowser = null;
+let _pdfLaunching = null;
 async function getPdfBrowser() {
-  const puppeteer = require('puppeteer');
   if (_pdfBrowser && _pdfBrowser.connected) return _pdfBrowser;
-  _pdfBrowser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] });
-  return _pdfBrowser;
+  if (_pdfLaunching) return _pdfLaunching;          // bereits ein Launch unterwegs → mitnutzen
+  const puppeteer = require('puppeteer');
+  _pdfLaunching = puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] })
+    .then(b => { _pdfBrowser = b; _pdfLaunching = null; return b; })
+    .catch(e => { _pdfLaunching = null; throw e; });
+  return _pdfLaunching;
 }
+
+// Concurrency-Begrenzung: max. 2 PDFs gleichzeitig rendern, Rest wartet in Queue.
+// Verhindert, dass viele parallele Quittungs-Downloads den Server überlasten.
+let _pdfActive = 0;
+const _pdfQueue = [];
+const MAX_PDF_CONCURRENT = 2;
+function acquirePdfSlot() {
+  if (_pdfActive < MAX_PDF_CONCURRENT) { _pdfActive++; return Promise.resolve(); }
+  return new Promise(resolve => _pdfQueue.push(resolve));
+}
+function releasePdfSlot() {
+  const next = _pdfQueue.shift();
+  if (next) next(); else _pdfActive--;
+}
+
+// Browser nach Serverstart vorwärmen (non-blocking, nach dem kritischen Start-Burst),
+// damit das ERSTE PDF nach einem (Neu-)Start nicht den 1–3s-Kaltstart trägt.
+setTimeout(() => { getPdfBrowser().catch(() => {}); }, 12000);
 
 function buildQuittungHtml({ dojo, mitglied, posten, jahr, umfang, einzel, summe }) {
   const heute = dmy(new Date());
@@ -164,11 +188,13 @@ router.get('/pdf', async (req, res) => {
     const summe = posten.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
 
     const html = buildQuittungHtml({ dojo: dojo || {}, mitglied, posten, jahr, umfang, einzel, summe });
+    await acquirePdfSlot();                 // max. 2 PDFs gleichzeitig (Überlast-Schutz)
     const browser = await getPdfBrowser();
     const page = await browser.newPage();
     try {
-      // data:-URL goto = zuverlässiger UTF-8-Fix für Puppeteer (Umlaute)
-      await page.goto('data:text/html;charset=UTF-8,' + encodeURIComponent(html), { waitUntil: 'load', timeout: 30000 });
+      // data:-URL goto = zuverlässiger UTF-8-Fix für Puppeteer (Umlaute).
+      // domcontentloaded statt load: reines HTML ohne externe Assets → schneller fertig.
+      await page.goto('data:text/html;charset=UTF-8,' + encodeURIComponent(html), { waitUntil: 'domcontentloaded', timeout: 30000 });
       const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '0', bottom: '0', left: '0', right: '0' } });
       const fname = einzel ? `Quittung_${dmy(posten[0].datum).replace(/\./g, '-')}` : `Quittung_${jahr}`;
       res.setHeader('Content-Type', 'application/pdf');
@@ -177,6 +203,7 @@ router.get('/pdf', async (req, res) => {
       res.send(Buffer.from(pdf));
     } finally {
       await page.close().catch(() => {});
+      releasePdfSlot();
     }
   } catch (e) {
     logger.error('Quittung /pdf Fehler:', { error: e.message });
