@@ -21,7 +21,7 @@ const PUBLIC_URL = process.env.DOJO_PUBLIC_URL || 'https://dojo.tda-intl.org';
 // Zentrale Banner-Verwaltung: ein manifest.json (gepflegt vom Super-Admin-Dashboard)
 // sagt, welche (app, anlass) ein Banner haben. Liegt im Dojo-uploads und wird von
 // allen drei Apps gelesen. Fehlt es → kein Banner (kein broken-image).
-const MANIFEST_PATH = process.env.MAIL_BANNER_MANIFEST || '/var/www/dojosoftware/backend/uploads/mail-banners/manifest.json';
+const MANIFEST_PATH = process.env.MAIL_BANNER_MANIFEST || '/var/www/dojosoftware-source/backend/uploads/mail-banners/manifest.json';
 let _bm = { t: 0, v: {} };
 function bannerUrlFor(app, anlass) {
   try {
