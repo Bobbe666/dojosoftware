@@ -6,6 +6,16 @@
 const db = require('../db');
 const logger = require('../utils/logger');
 const { sendEmailForDojo } = require('./emailService');
+const { renderEmail, getDojoMailTheme } = require('./emailLayout');
+
+// Bettet das (aus DB-Template gerenderte) Inhalts-HTML ins zentrale Layout ein:
+// Dojo-Branding-Header + Banner + Footer. Hebt die Alt-Headline-Farbe (#FFD700,
+// auf hellem Body unleserlich) auf die Theme-Farbe. Ändert keine DB-Daten.
+async function wrapEventHtml(innerHtml, event) {
+  const theme = await getDojoMailTheme({ dojoId: event?.dojo_id, dojoname: event?.dojoname });
+  const body = String(innerHtml || '').replace(/color:\s*#FFD700/gi, 'color:' + theme.primary);
+  return renderEmail({ theme, anlass: 'allgemein', titel: theme.dojoName || event?.dojoname || 'Dojo', bodyHtml: body });
+}
 
 /**
  * Hole ein Email-Template aus der Datenbank
@@ -171,7 +181,7 @@ async function sendRegistrationEmail(eventId, mitgliedId, zahlungslink = null) {
     };
 
     const subject = replaceTemplateVariables(template.subject, data);
-    const html = replaceTemplateVariables(template.html_content, data);
+    const html = await wrapEventHtml(replaceTemplateVariables(template.html_content, data), event);
     const text = replaceTemplateVariables(template.text_content, data);
 
     const result = await sendEmailForDojo({
@@ -216,7 +226,7 @@ async function sendPaymentConfirmationEmail(eventId, mitgliedId, betrag) {
     };
 
     const subject = replaceTemplateVariables(template.subject, data);
-    const html = replaceTemplateVariables(template.html_content, data);
+    const html = await wrapEventHtml(replaceTemplateVariables(template.html_content, data), event);
     const text = replaceTemplateVariables(template.text_content, data);
 
     const result = await sendEmailForDojo({
@@ -282,7 +292,7 @@ async function sendEventChangeNotification(eventId, aenderungen) {
         };
 
         const subject = replaceTemplateVariables(template.subject, data);
-        const html = replaceTemplateVariables(template.html_content, data);
+        const html = await wrapEventHtml(replaceTemplateVariables(template.html_content, data), event);
         const text = replaceTemplateVariables(template.text_content, data);
 
         await sendEmailForDojo({
@@ -334,7 +344,7 @@ async function sendEventCancellationNotification(eventId, grund = null) {
         };
 
         const subject = replaceTemplateVariables(template.subject, data);
-        const html = replaceTemplateVariables(template.html_content, data);
+        const html = await wrapEventHtml(replaceTemplateVariables(template.html_content, data), event);
         const text = replaceTemplateVariables(template.text_content, data);
 
         await sendEmailForDojo({
@@ -386,7 +396,7 @@ async function sendEventReminderEmail(eventId, mitgliedId, tageVorher) {
     };
 
     const subject = replaceTemplateVariables(template.subject, data);
-    const html = replaceTemplateVariables(template.html_content, data);
+    const html = await wrapEventHtml(replaceTemplateVariables(template.html_content, data), event);
     const text = replaceTemplateVariables(template.text_content, data);
 
     const result = await sendEmailForDojo({
@@ -437,7 +447,7 @@ async function sendWaitlistEmail(eventId, mitgliedId, position) {
     };
 
     const subject = replaceTemplateVariables(template.subject, data);
-    const html = replaceTemplateVariables(template.html_content, data);
+    const html = await wrapEventHtml(replaceTemplateVariables(template.html_content, data), event);
     const text = replaceTemplateVariables(template.text_content, data);
 
     const result = await sendEmailForDojo({
@@ -481,7 +491,7 @@ async function sendPromotedFromWaitlistEmail(eventId, mitgliedId, zahlungslink =
     };
 
     const subject = replaceTemplateVariables(template.subject, data);
-    const html = replaceTemplateVariables(template.html_content, data);
+    const html = await wrapEventHtml(replaceTemplateVariables(template.html_content, data), event);
     const text = replaceTemplateVariables(template.text_content, data);
 
     const result = await sendEmailForDojo({
