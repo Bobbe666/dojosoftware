@@ -2845,11 +2845,8 @@ try {
   const dojoThemeRouter = require('./routes/dojo-theme');
   app.use('/api/dojo-theme', dojoThemeRouter);
   logger.success('Route gemountet', { path: '/api/dojo-theme' });
-
-  // Zentrale Mail-Banner-Verwaltung (Super-Admin, alle Apps)
-  const mailBannersRouter = require('./routes/mailBanners');
-  app.use('/api/mail-banners', mailBannersRouter);
-  logger.success('Route gemountet', { path: '/api/mail-banners' });
+  // Hinweis: mail-banners.js wird vom Auto-Route-Loader (oben) automatisch
+  // unter /api/mail-banners gemountet — kein manueller Mount nötig.
 
   // ── Subdomain-Routing für *.dojo-pages.de ────────────────────────────────
   // Nginx sendet alle *.dojo-pages.de Anfragen an diesen Backend-Port.
