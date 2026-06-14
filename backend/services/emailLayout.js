@@ -130,6 +130,15 @@ function renderEmail(o = {}) {
     ? `<tr><td class="pad" align="center" style="padding:4px 32px 26px;">${button(o.cta, theme)}</td></tr>`
     : '';
 
+  // Bei vorhandenem Banner den dunklen Marken-Header weglassen (Banner ist der Hero),
+  // nur ein schlanker Untertitel-Streifen auf hellem Grund.
+  const headerRow = bannerUrl
+    ? (subtitel ? `<tr><td class="pad" align="center" style="padding:18px 32px 0;font-family:Arial,Helvetica,sans-serif;"><div style="font-size:13px;font-weight:600;letter-spacing:.04em;color:${theme.primary};">${subtitel}</div></td></tr>` : '')
+    : `<tr><td align="center" style="background:${theme.primary};background:linear-gradient(135deg,${theme.primary} 0%,${theme.primary2} 100%);padding:30px 32px;font-family:Arial,Helvetica,sans-serif;">
+      ${headerInner}
+      ${subtitel ? `<div style="font-size:13px;color:rgba(255,255,255,.82);margin-top:8px;">${subtitel}</div>` : ''}
+    </td></tr>`;
+
   return `<!DOCTYPE html>
 <html lang="de" xmlns="http://www.w3.org/1999/xhtml"><head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -150,11 +159,7 @@ function renderEmail(o = {}) {
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${subtitel || titel}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:22px 12px;">
   <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:600px;max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(15,23,42,.12);">
-    ${bannerRow}
-    <tr><td align="center" style="background:${theme.primary};background:linear-gradient(135deg,${theme.primary} 0%,${theme.primary2} 100%);padding:30px 32px;font-family:Arial,Helvetica,sans-serif;">
-      ${headerInner}
-      ${subtitel ? `<div style="font-size:13px;color:rgba(255,255,255,.82);margin-top:8px;">${subtitel}</div>` : ''}
-    </td></tr>
+    ${bannerRow}${headerRow}
     <tr><td class="b pad" style="padding:26px 32px;font-family:Arial,Helvetica,sans-serif;color:#475569;line-height:1.6;font-size:14px;">${body}</td></tr>
     ${ctaRow}
     <tr><td class="pad" align="center" style="background:#f8fafc;padding:18px 32px;border-top:1px solid #eef2f7;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#94a3b8;line-height:1.6;">
