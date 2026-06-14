@@ -6,6 +6,7 @@ const validator = require('validator');
 const db = require('../db');
 const logger = require('../utils/logger');
 const { decrypt, isEncrypted } = require('../utils/encryption');
+const { renderEmail, getDojoMailTheme } = require('./emailLayout');
 
 /**
  * SECURITY: Entschlüsselt Passwort wenn nötig
@@ -416,55 +417,23 @@ const sendVertragEmail = async (data) => {
 
   const subject = `Ihr Mitgliedschaftsvertrag - ${dojoname}`;
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: #FFD700; margin: 0;">Willkommen bei ${dojoname}!</h1>
-      </div>
-
-      <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-        <p style="font-size: 16px; color: #333;">Sehr geehrte/r ${vorname} ${nachname},</p>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          vielen Dank für Ihre Anmeldung bei ${dojoname}. Wir freuen uns, Sie als neues Mitglied begrüßen zu dürfen!
-        </p>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          Im Anhang finden Sie Ihre Vertragsunterlagen:
-        </p>
-
-        <ul style="font-size: 14px; color: #555; line-height: 1.8;">
-          <li>Mitgliedschaftsvertrag (Vertragsnummer: <strong>${vertragsnummer}</strong>)</li>
-          <li>Allgemeine Geschäftsbedingungen (AGB)</li>
-          <li>Datenschutzerklärung</li>
-          <li>Weitere relevante Dokumente</li>
-        </ul>
-
-        <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
-          <p style="margin: 0; font-size: 14px; color: #1e40af;">
-            <strong>Wichtig:</strong> Bitte bewahren Sie diese Unterlagen sorgfältig auf.
-            Sie dienen als Nachweis Ihrer Mitgliedschaft und enthalten wichtige Informationen
-            zu Ihren Rechten und Pflichten.
-          </p>
-        </div>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          Bei Fragen stehen wir Ihnen jederzeit gerne zur Verfügung.
-        </p>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          Mit freundlichen Grüßen<br>
-          <strong>Ihr ${dojoname} Team</strong>
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-
-        <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-          Diese E-Mail wurde automatisch generiert. Bitte antworten Sie nicht direkt auf diese Nachricht.
-        </p>
-      </div>
-    </div>
-  `;
+  const theme = await getDojoMailTheme({ dojoname });
+  const html = renderEmail({
+    theme, anlass: 'begruessung', titel: dojoname, subtitel: 'Ihr Mitgliedschaftsvertrag',
+    bodyHtml: `
+      <p style="font-size:16px;color:#1e293b;margin:0 0 16px;">Sehr geehrte/r ${vorname} ${nachname},</p>
+      <p style="margin:0 0 14px;">vielen Dank für Ihre Anmeldung bei <strong>${dojoname}</strong>. Wir freuen uns, Sie als neues Mitglied begrüßen zu dürfen!</p>
+      <p style="margin:0 0 8px;">Im Anhang finden Sie Ihre Vertragsunterlagen:</p>
+      <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+        <li>Mitgliedschaftsvertrag (Vertragsnummer: <strong>${vertragsnummer}</strong>)</li>
+        <li>Allgemeine Geschäftsbedingungen (AGB)</li>
+        <li>Datenschutzerklärung</li>
+        <li>Weitere relevante Dokumente</li>
+      </ul>
+      <div class="box"><p><strong>Wichtig:</strong> Bitte bewahren Sie diese Unterlagen sorgfältig auf. Sie dienen als Nachweis Ihrer Mitgliedschaft und enthalten wichtige Informationen zu Ihren Rechten und Pflichten.</p></div>
+      <p style="margin:14px 0 0;">Bei Fragen stehen wir Ihnen jederzeit gerne zur Verfügung.</p>
+      <p style="margin:14px 0 0;">Mit freundlichen Grüßen<br><strong>Ihr ${dojoname} Team</strong></p>`,
+  });
 
   const text = `
 Sehr geehrte/r ${vorname} ${nachname},
@@ -539,48 +508,21 @@ const sendBadgeEmail = async (data) => {
   const iconEmoji = iconEmojis[badgeIcon] || '🏅';
   const subject = `${iconEmoji} Herzlichen Glückwunsch! Neue Auszeichnung erhalten - ${dojoname || 'Dojo'}`;
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: #FFD700; margin: 0;">🎉 Herzlichen Glückwunsch!</h1>
-        <p style="color: rgba(255,255,255,0.8); margin-top: 10px;">Du hast eine neue Auszeichnung erhalten!</p>
+  const theme = await getDojoMailTheme({ dojoname });
+  const badgeColor = badgeFarbe || theme.accent || '#FFD700';
+  const html = renderEmail({
+    theme, anlass: 'allgemein', titel: dojoname || 'Dojo', subtitel: '🎉 Neue Auszeichnung erhalten!',
+    bodyHtml: `
+      <p style="font-size:16px;color:#1e293b;margin:0 0 14px;">Hallo ${vorname},</p>
+      <p style="margin:0;">wir freuen uns, dir mitzuteilen, dass du eine neue Auszeichnung erhalten hast!</p>
+      <div style="text-align:center;margin:26px 0;">
+        <div style="display:inline-block;background:${badgeColor}22;border:3px solid ${badgeColor};border-radius:50%;width:80px;height:80px;line-height:80px;font-size:40px;">${iconEmoji}</div>
+        <h2 style="color:${badgeColor};margin:18px 0 8px;font-size:23px;">${badgeName}</h2>
+        ${badgeBeschreibung ? `<p style="font-size:14px;color:#64748b;margin:0;">${badgeBeschreibung}</p>` : ''}
       </div>
-
-      <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-        <p style="font-size: 16px; color: #333;">Hallo ${vorname},</p>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          wir freuen uns, dir mitzuteilen, dass du eine neue Auszeichnung erhalten hast!
-        </p>
-
-        <div style="text-align: center; margin: 30px 0;">
-          <div style="display: inline-block; background: linear-gradient(135deg, ${badgeFarbe || '#FFD700'}40, ${badgeFarbe || '#FFD700'}20); border: 3px solid ${badgeFarbe || '#FFD700'}; border-radius: 50%; width: 80px; height: 80px; line-height: 80px; font-size: 40px; box-shadow: 0 4px 20px ${badgeFarbe || '#FFD700'}60;">
-            ${iconEmoji}
-          </div>
-          <h2 style="color: ${badgeFarbe || '#FFD700'}; margin: 20px 0 10px 0; font-size: 24px;">${badgeName}</h2>
-          ${badgeBeschreibung ? `<p style="font-size: 14px; color: #666; margin: 0;">${badgeBeschreibung}</p>` : ''}
-        </div>
-
-        <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
-          <p style="margin: 0; font-size: 14px; color: #1e40af;">
-            <strong>Weiter so!</strong> Dein Engagement und deine Fortschritte werden belohnt.
-            Besuche dein Profil, um alle deine Auszeichnungen zu sehen.
-          </p>
-        </div>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          Mit sportlichen Grüßen<br>
-          <strong>Dein ${dojoname || 'Dojo'} Team</strong>
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-
-        <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-          Diese E-Mail wurde automatisch generiert. Bitte antworte nicht direkt auf diese Nachricht.
-        </p>
-      </div>
-    </div>
-  `;
+      <div class="box"><p><strong>Weiter so!</strong> Dein Engagement und deine Fortschritte werden belohnt. Besuche dein Profil, um alle deine Auszeichnungen zu sehen.</p></div>
+      <p style="margin:14px 0 0;">Mit sportlichen Grüßen<br><strong>Dein ${dojoname || 'Dojo'} Team</strong></p>`,
+  });
 
   const text = `
 Hallo ${vorname},
@@ -623,60 +565,24 @@ const sendProbetrainingAnfrageEmail = async (data) => {
     </tr>
   ` : '';
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: #ffffff; margin: 0;">🥋 Neue Probetraining-Anfrage!</h1>
-        <p style="color: rgba(255,255,255,0.9); margin-top: 10px;">${dojoName}</p>
-      </div>
-
-      <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-        <p style="font-size: 16px; color: #333;">Es liegt eine neue Probetraining-Anfrage vor:</p>
-
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; color: #666; width: 140px;">Name:</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>${interessent.vorname} ${interessent.nachname}</strong></td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">E-Mail:</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;"><a href="mailto:${interessent.email}">${interessent.email}</a></td>
-          </tr>
-          ${interessent.telefon ? `
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Telefon:</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;"><a href="tel:${interessent.telefon}">${interessent.telefon}</a></td>
-          </tr>
-          ` : ''}
-          ${kursInfo}
-          ${wunschdatum ? `
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Wunschdatum:</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">${new Date(wunschdatum).toLocaleDateString('de-DE')}</td>
-          </tr>
-          ` : ''}
-        </table>
-
-        ${nachricht ? `
-        <div style="background: #f8f9fa; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0;">
-          <p style="margin: 0 0 5px 0; font-size: 12px; color: #666; text-transform: uppercase;">Nachricht:</p>
-          <p style="margin: 0; font-size: 14px; color: #333;">${nachricht}</p>
-        </div>
-        ` : ''}
-
-        <div style="background: #fef3c7; border-radius: 8px; padding: 15px; margin: 20px 0;">
-          <p style="margin: 0; font-size: 14px; color: #92400e;">
-            <strong>⏰ Bitte kontaktieren Sie den Interessenten zeitnah!</strong><br>
-            Die Anfrage wurde in der Interessentenliste gespeichert.
-          </p>
-        </div>
-
-        <p style="font-size: 12px; color: #999; margin-top: 30px; text-align: center;">
-          Diese E-Mail wurde automatisch generiert von DojoSoftware.
-        </p>
-      </div>
-    </div>
-  `;
+  const theme = await getDojoMailTheme({ dojoname: dojoName });
+  const td = 'padding:8px;border-bottom:1px solid #eef2f7;';
+  const tdl = td + 'color:#64748b;width:140px;';
+  const html = renderEmail({
+    theme, anlass: 'allgemein', titel: dojoName, subtitel: '🥋 Neue Probetraining-Anfrage',
+    footerNote: 'Automatisch generiert vom TDA Dojo-Verwaltungssystem.',
+    bodyHtml: `
+      <p style="font-size:16px;color:#1e293b;margin:0 0 14px;">Es liegt eine neue Probetraining-Anfrage vor:</p>
+      <table role="presentation" width="100%" style="border-collapse:collapse;margin:14px 0;">
+        <tr><td style="${tdl}">Name:</td><td style="${td}"><strong>${interessent.vorname} ${interessent.nachname}</strong></td></tr>
+        <tr><td style="${tdl}">E-Mail:</td><td style="${td}"><a href="mailto:${interessent.email}">${interessent.email}</a></td></tr>
+        ${interessent.telefon ? `<tr><td style="${tdl}">Telefon:</td><td style="${td}"><a href="tel:${interessent.telefon}">${interessent.telefon}</a></td></tr>` : ''}
+        ${kursInfo}
+        ${wunschdatum ? `<tr><td style="${tdl}">Wunschdatum:</td><td style="${td}">${new Date(wunschdatum).toLocaleDateString('de-DE')}</td></tr>` : ''}
+      </table>
+      ${nachricht ? `<div class="box"><p style="margin:0 0 5px;font-size:12px;color:#64748b;text-transform:uppercase;">Nachricht:</p><p style="margin:0;">${nachricht}</p></div>` : ''}
+      <div style="background:#fef3c7;border-radius:8px;padding:14px 16px;margin:18px 0;"><p style="margin:0;font-size:14px;color:#92400e;"><strong>⏰ Bitte kontaktieren Sie den Interessenten zeitnah!</strong><br>Die Anfrage wurde in der Interessentenliste gespeichert.</p></div>`,
+  });
 
   const text = `
 Neue Probetraining-Anfrage bei ${dojoName}
@@ -708,61 +614,18 @@ const sendProbetrainingBestaetigung = async (data) => {
 
   const subject = `✅ Ihre Probetraining-Anfrage bei ${dojoName}`;
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: #FFD700; margin: 0;">🥋 Vielen Dank für Ihre Anfrage!</h1>
-        <p style="color: rgba(255,255,255,0.8); margin-top: 10px;">${dojoName}</p>
-      </div>
-
-      <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-        <p style="font-size: 16px; color: #333;">Hallo ${vorname},</p>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          vielen Dank für Ihr Interesse an einem Probetraining bei uns!
-          Wir haben Ihre Anfrage erhalten und werden uns in Kürze bei Ihnen melden.
-        </p>
-
-        ${kurs ? `
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0;">
-          <p style="margin: 0 0 10px 0; font-size: 14px; color: #166534;"><strong>Ihr gewünschter Kurs:</strong></p>
-          <p style="margin: 0; font-size: 16px; color: #15803d;">
-            ${kurs.name}<br>
-            <span style="font-size: 14px; color: #166534;">${kurs.wochentag}, ${kurs.start_zeit} - ${kurs.end_zeit}</span>
-          </p>
-        </div>
-        ` : ''}
-
-        ${wunschdatum ? `
-        <p style="font-size: 14px; color: #555;">
-          <strong>Ihr Wunschtermin:</strong> ${new Date(wunschdatum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
-        ` : ''}
-
-        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
-          <p style="margin: 0; font-size: 14px; color: #1e40af;">
-            <strong>Was Sie mitbringen sollten:</strong><br>
-            • Bequeme Sportkleidung<br>
-            • Etwas zu trinken<br>
-            • Gute Laune! 😊
-          </p>
-        </div>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          Wir freuen uns auf Sie!<br><br>
-          Mit sportlichen Grüßen<br>
-          <strong>Ihr Team von ${dojoName}</strong>
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-
-        <p style="font-size: 12px; color: #999; text-align: center;">
-          Diese E-Mail wurde automatisch versendet.<br>
-          Bei Fragen antworten Sie einfach auf diese E-Mail.
-        </p>
-      </div>
-    </div>
-  `;
+  const theme = await getDojoMailTheme({ dojoname: dojoName });
+  const html = renderEmail({
+    theme, anlass: 'begruessung', titel: dojoName, subtitel: '🥋 Vielen Dank für Ihre Anfrage!',
+    footerNote: 'Bei Fragen antworten Sie einfach auf diese E-Mail.',
+    bodyHtml: `
+      <p style="font-size:16px;color:#1e293b;margin:0 0 14px;">Hallo ${vorname},</p>
+      <p style="margin:0;">vielen Dank für Ihr Interesse an einem Probetraining bei uns! Wir haben Ihre Anfrage erhalten und melden uns in Kürze bei Ihnen.</p>
+      ${kurs ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px 20px;margin:18px 0;"><p style="margin:0 0 8px;font-size:14px;color:#166534;"><strong>Ihr gewünschter Kurs:</strong></p><p style="margin:0;font-size:16px;color:#15803d;">${kurs.name}<br><span style="font-size:14px;color:#166534;">${kurs.wochentag}, ${kurs.start_zeit} - ${kurs.end_zeit}</span></p></div>` : ''}
+      ${wunschdatum ? `<p style="margin:14px 0 0;"><strong>Ihr Wunschtermin:</strong> ${new Date(wunschdatum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>` : ''}
+      <div class="box"><p><strong>Was Sie mitbringen sollten:</strong><br>• Bequeme Sportkleidung<br>• Etwas zu trinken<br>• Gute Laune! 😊</p></div>
+      <p style="margin:14px 0 0;">Wir freuen uns auf Sie!<br><br>Mit sportlichen Grüßen<br><strong>Ihr Team von ${dojoName}</strong></p>`,
+  });
 
   const text = `
 Hallo ${vorname},
@@ -805,105 +668,41 @@ const sendPruefungsAnmeldungBestaetigung = async (anmeldung, termin) => {
 
   const subject = `✅ Prüfungsanmeldung bestätigt – ${termin.stil_name} am ${pruefungsdatum}`;
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: #FFD700; margin: 0;">🥋 Prüfungsanmeldung bestätigt</h1>
-        <p style="color: rgba(255,255,255,0.8); margin-top: 10px;">${termin.dojoname}</p>
+  const theme = await getDojoMailTheme({ dojoname: termin.dojoname });
+  const dtd  = 'padding:4px 0;color:#475569;width:45%;';
+  const dtdv = 'padding:4px 0;font-weight:bold;color:#1e293b;';
+  const html = renderEmail({
+    theme, anlass: 'allgemein', titel: termin.dojoname, subtitel: '🥋 Prüfungsanmeldung bestätigt',
+    footerNote: 'Bei Fragen antworten Sie einfach auf diese E-Mail.',
+    bodyHtml: `
+      <p style="font-size:16px;color:#1e293b;margin:0 0 14px;">Hallo ${vorname} ${nachname},</p>
+      <p style="margin:0;">Ihre Anmeldung zur Prüfung wurde erfolgreich registriert. Wir freuen uns, Sie zu diesem Termin begrüßen zu dürfen.</p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px 20px;margin:18px 0;">
+        <p style="margin:0 0 10px;font-size:14px;color:#166534;"><strong>Ihre Prüfungsdetails:</strong></p>
+        <table role="presentation" width="100%" style="font-size:14px;border-collapse:collapse;">
+          <tr><td style="${dtd}">Kampfkunst-Stil:</td><td style="${dtdv}">${termin.stil_name}</td></tr>
+          <tr><td style="${dtd}">Datum:</td><td style="${dtdv}">${pruefungsdatum}</td></tr>
+          ${termin.pruefungszeit ? `<tr><td style="${dtd}">Uhrzeit:</td><td style="${dtdv}">${termin.pruefungszeit} Uhr</td></tr>` : ''}
+          ${termin.pruefungsort ? `<tr><td style="${dtd}">Ort:</td><td style="${dtdv}">${termin.pruefungsort}</td></tr>` : ''}
+          ${aktueller_gurt ? `<tr><td style="${dtd}">Aktueller Gurt:</td><td style="padding:4px 0;">${aktueller_gurt}</td></tr>` : ''}
+          ${angestrebter_gurt ? `<tr><td style="${dtd}">Angestrebter Gurt:</td><td style="padding:4px 0;">${angestrebter_gurt}</td></tr>` : ''}
+          ${verein ? `<tr><td style="${dtd}">Verein/Dojo:</td><td style="padding:4px 0;">${verein}</td></tr>` : ''}
+          ${termin.pruefungsgebuehr ? `<tr><td style="${dtd}">Prüfungsgebühr:</td><td style="${dtdv}">${termin.pruefungsgebuehr} €</td></tr>` : ''}
+        </table>
       </div>
-
-      <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-        <p style="font-size: 16px; color: #333;">Hallo ${vorname} ${nachname},</p>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          Ihre Anmeldung zur Prüfung wurde erfolgreich registriert. Wir freuen uns, Sie zu diesem Termin begrüßen zu dürfen.
-        </p>
-
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0;">
-          <p style="margin: 0 0 12px 0; font-size: 14px; color: #166534;"><strong>Ihre Prüfungsdetails:</strong></p>
-          <table style="width: 100%; font-size: 14px; color: #333; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 4px 0; color: #555; width: 45%;">Kampfkunst-Stil:</td>
-              <td style="padding: 4px 0; font-weight: bold;">${termin.stil_name}</td>
-            </tr>
-            <tr>
-              <td style="padding: 4px 0; color: #555;">Datum:</td>
-              <td style="padding: 4px 0; font-weight: bold;">${pruefungsdatum}</td>
-            </tr>
-            ${termin.pruefungszeit ? `
-            <tr>
-              <td style="padding: 4px 0; color: #555;">Uhrzeit:</td>
-              <td style="padding: 4px 0; font-weight: bold;">${termin.pruefungszeit} Uhr</td>
-            </tr>
-            ` : ''}
-            ${termin.pruefungsort ? `
-            <tr>
-              <td style="padding: 4px 0; color: #555;">Ort:</td>
-              <td style="padding: 4px 0; font-weight: bold;">${termin.pruefungsort}</td>
-            </tr>
-            ` : ''}
-            ${aktueller_gurt ? `
-            <tr>
-              <td style="padding: 4px 0; color: #555;">Aktueller Gurt:</td>
-              <td style="padding: 4px 0;">${aktueller_gurt}</td>
-            </tr>
-            ` : ''}
-            ${angestrebter_gurt ? `
-            <tr>
-              <td style="padding: 4px 0; color: #555;">Angestrebter Gurt:</td>
-              <td style="padding: 4px 0;">${angestrebter_gurt}</td>
-            </tr>
-            ` : ''}
-            ${verein ? `
-            <tr>
-              <td style="padding: 4px 0; color: #555;">Verein/Dojo:</td>
-              <td style="padding: 4px 0;">${verein}</td>
-            </tr>
-            ` : ''}
-            ${termin.pruefungsgebuehr ? `
-            <tr>
-              <td style="padding: 4px 0; color: #555;">Prüfungsgebühr:</td>
-              <td style="padding: 4px 0; font-weight: bold;">${termin.pruefungsgebuehr} €</td>
-            </tr>
-            ` : ''}
-          </table>
-        </div>
-
-        ${termin.teilnahmebedingungen ? `
-        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
-          <p style="margin: 0 0 8px 0; font-size: 14px; color: #1e40af;"><strong>Teilnahmebedingungen:</strong></p>
-          <p style="margin: 0; font-size: 13px; color: #1e40af; white-space: pre-line;">${termin.teilnahmebedingungen}</p>
-        </div>
-        ` : ''}
-
-        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 18px; margin: 20px 0;">
-          <p style="margin: 0 0 8px 0; font-size: 14px; color: #92400e;"><strong>📋 Wichtiger Hinweis zur Stornierung</strong></p>
-          <p style="margin: 0; font-size: 13px; color: #78350f; line-height: 1.6;">
-            Wir freuen uns sehr auf deine Prüfung und wünschen dir schon jetzt ganz viel Erfolg! 🎉<br><br>
-            Damit du bestens vorbereitet bist: Solltest du deinen Termin nicht wahrnehmen können, bitten wir dich, dich so früh wie möglich bei uns abzumelden.<br><br>
-            <strong>Eine kostenfreie Abmeldung ist bis 7 Tage vor der Prüfung möglich.</strong><br><br>
-            Ab diesem Zeitpunkt laufen alle Vorbereitungen auf Hochtouren — deine Urkunde wird gedruckt, Prüfer sind fest eingeplant und die gesamte Veranstaltungsorganisation steht. Dieser Aufwand ist dann bereits entstanden und kann leider nicht mehr rückgängig gemacht werden.
-            Daher bleibt die Prüfungsgebühr bei einer Abmeldung innerhalb dieser Frist in voller Höhe fällig – auch im Krankheitsfall oder bei sonstiger Verhinderung.<br><br>
-            Wir bitten herzlich um dein Verständnis und freuen uns darauf, dich am Prüfungstag zu sehen! 🥋
-          </p>
-        </div>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          Bei Fragen wende dich gerne direkt an ${termin.dojoname}.<br><br>
-          Wir drücken dir die Daumen – du schaffst das!<br><br>
-          Mit sportlichen Grüßen<br>
-          <strong>${termin.dojoname}</strong>
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-
-        <p style="font-size: 12px; color: #999; text-align: center;">
-          Diese E-Mail wurde automatisch versendet.<br>
-          Bei Fragen antworten Sie einfach auf diese E-Mail.
+      ${termin.teilnahmebedingungen ? `<div class="box"><p style="margin:0 0 8px;font-size:14px;color:#1e40af;"><strong>Teilnahmebedingungen:</strong></p><p style="margin:0;font-size:13px;color:#1e40af;white-space:pre-line;">${termin.teilnahmebedingungen}</p></div>` : ''}
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:18px;margin:18px 0;">
+        <p style="margin:0 0 8px;font-size:14px;color:#92400e;"><strong>📋 Wichtiger Hinweis zur Stornierung</strong></p>
+        <p style="margin:0;font-size:13px;color:#78350f;line-height:1.6;">
+          Wir freuen uns sehr auf deine Prüfung und wünschen dir schon jetzt ganz viel Erfolg! 🎉<br><br>
+          Solltest du deinen Termin nicht wahrnehmen können, bitten wir dich, dich so früh wie möglich abzumelden.<br><br>
+          <strong>Eine kostenfreie Abmeldung ist bis 7 Tage vor der Prüfung möglich.</strong><br><br>
+          Ab diesem Zeitpunkt laufen alle Vorbereitungen auf Hochtouren — Urkunde, Prüferplanung und Organisation. Dieser Aufwand ist bereits entstanden, daher bleibt die Prüfungsgebühr bei einer Abmeldung innerhalb dieser Frist in voller Höhe fällig – auch im Krankheitsfall.<br><br>
+          Wir bitten herzlich um dein Verständnis und freuen uns darauf, dich am Prüfungstag zu sehen! 🥋
         </p>
       </div>
-    </div>
-  `;
+      <p style="margin:14px 0 0;">Bei Fragen wende dich gerne direkt an ${termin.dojoname}.<br><br>Wir drücken dir die Daumen – du schaffst das!<br><br>Mit sportlichen Grüßen<br><strong>${termin.dojoname}</strong></p>`,
+  });
 
   const text = `
 Hallo ${vorname} ${nachname},
@@ -947,80 +746,31 @@ const sendPruefungsAnmeldungAdminNotification = async (anmeldung, termin) => {
 
   const subject = `🥋 Neue externe Prüfungsanmeldung: ${vorname} ${nachname}`;
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: #FFD700; margin: 0;">🥋 Neue Prüfungsanmeldung</h1>
-        <p style="color: rgba(255,255,255,0.8); margin-top: 10px;">${termin.dojoname}</p>
+  const theme = await getDojoMailTheme({ dojoname: termin.dojoname });
+  const atd = 'padding:5px 0;color:#475569;width:45%;';
+  const html = renderEmail({
+    theme, anlass: 'allgemein', titel: termin.dojoname, subtitel: '🥋 Neue Prüfungsanmeldung',
+    footerNote: 'Automatisch versendet durch das TDA Dojo-Verwaltungssystem.',
+    bodyHtml: `
+      <p style="font-size:15px;color:#1e293b;margin:0 0 14px;">Es gibt eine neue externe Anmeldung für Ihre Prüfung:</p>
+      <div style="background:#fef9e7;border:1px solid #fde68a;border-radius:8px;padding:16px 20px;margin:16px 0;">
+        <p style="margin:0 0 8px;font-size:14px;color:#92400e;"><strong>Prüfungstermin:</strong></p>
+        <p style="margin:0;font-size:15px;color:#78350f;font-weight:bold;">${termin.stil_name} – ${pruefungsdatum}${termin.pruefungsort ? ` | ${termin.pruefungsort}` : ''}</p>
       </div>
-
-      <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-        <p style="font-size: 15px; color: #333;">Es gibt eine neue externe Anmeldung für Ihre Prüfung:</p>
-
-        <div style="background: #fef9e7; border: 1px solid #fde68a; border-radius: 8px; padding: 20px; margin: 20px 0;">
-          <p style="margin: 0 0 12px 0; font-size: 14px; color: #92400e;"><strong>Prüfungstermin:</strong></p>
-          <p style="margin: 0; font-size: 15px; color: #78350f; font-weight: bold;">
-            ${termin.stil_name} – ${pruefungsdatum}
-            ${termin.pruefungsort ? ` | ${termin.pruefungsort}` : ''}
-          </p>
-        </div>
-
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
-          <p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;"><strong>Angaben des Teilnehmers:</strong></p>
-          <table style="width: 100%; font-size: 14px; color: #333; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 5px 0; color: #555; width: 45%;">Name:</td>
-              <td style="padding: 5px 0; font-weight: bold;">${vorname} ${nachname}</td>
-            </tr>
-            <tr>
-              <td style="padding: 5px 0; color: #555;">E-Mail:</td>
-              <td style="padding: 5px 0;"><a href="mailto:${email}">${email}</a></td>
-            </tr>
-            ${telefon ? `
-            <tr>
-              <td style="padding: 5px 0; color: #555;">Telefon:</td>
-              <td style="padding: 5px 0;">${telefon}</td>
-            </tr>
-            ` : ''}
-            ${verein ? `
-            <tr>
-              <td style="padding: 5px 0; color: #555;">Verein/Dojo:</td>
-              <td style="padding: 5px 0;">${verein}</td>
-            </tr>
-            ` : ''}
-            ${aktueller_gurt ? `
-            <tr>
-              <td style="padding: 5px 0; color: #555;">Aktueller Gurt:</td>
-              <td style="padding: 5px 0;">${aktueller_gurt}</td>
-            </tr>
-            ` : ''}
-            ${angestrebter_gurt ? `
-            <tr>
-              <td style="padding: 5px 0; color: #555;">Angestrebter Gurt:</td>
-              <td style="padding: 5px 0;">${angestrebter_gurt}</td>
-            </tr>
-            ` : ''}
-            ${bemerkungen ? `
-            <tr>
-              <td style="padding: 5px 0; color: #555; vertical-align: top;">Bemerkungen:</td>
-              <td style="padding: 5px 0;">${bemerkungen}</td>
-            </tr>
-            ` : ''}
-          </table>
-        </div>
-
-        <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          Die Anmeldung ist im Dojo-Admin unter Prüfungen → Termine → Externe Anmeldungen einsehbar.
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-
-        <p style="font-size: 12px; color: #999; text-align: center;">
-          Diese E-Mail wurde automatisch durch das TDA Dojo-Verwaltungssystem versendet.
-        </p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:18px 20px;margin:16px 0;">
+        <p style="margin:0 0 10px;font-size:14px;color:#475569;"><strong>Angaben des Teilnehmers:</strong></p>
+        <table role="presentation" width="100%" style="font-size:14px;border-collapse:collapse;">
+          <tr><td style="${atd}">Name:</td><td style="padding:5px 0;font-weight:bold;color:#1e293b;">${vorname} ${nachname}</td></tr>
+          <tr><td style="${atd}">E-Mail:</td><td style="padding:5px 0;"><a href="mailto:${email}">${email}</a></td></tr>
+          ${telefon ? `<tr><td style="${atd}">Telefon:</td><td style="padding:5px 0;">${telefon}</td></tr>` : ''}
+          ${verein ? `<tr><td style="${atd}">Verein/Dojo:</td><td style="padding:5px 0;">${verein}</td></tr>` : ''}
+          ${aktueller_gurt ? `<tr><td style="${atd}">Aktueller Gurt:</td><td style="padding:5px 0;">${aktueller_gurt}</td></tr>` : ''}
+          ${angestrebter_gurt ? `<tr><td style="${atd}">Angestrebter Gurt:</td><td style="padding:5px 0;">${angestrebter_gurt}</td></tr>` : ''}
+          ${bemerkungen ? `<tr><td style="${atd}vertical-align:top;">Bemerkungen:</td><td style="padding:5px 0;">${bemerkungen}</td></tr>` : ''}
+        </table>
       </div>
-    </div>
-  `;
+      <p style="margin:14px 0 0;">Die Anmeldung ist im Dojo-Admin unter Prüfungen → Termine → Externe Anmeldungen einsehbar.</p>`,
+  });
 
   const text = `
 Neue externe Prüfungsanmeldung

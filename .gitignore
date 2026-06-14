@@ -65,3 +65,4 @@ coverage/
 # Lokale Lastschrift-Analyse-Exports (Mitglieder-Finanzdaten — niemals committen)
 abbuchungen_*.tsv
 stripe_processing_*.csv
+email-previews/
