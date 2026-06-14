@@ -23,9 +23,14 @@ const PUBLIC_URL = process.env.DOJO_PUBLIC_URL || 'https://dojo.tda-intl.org';
 // allen drei Apps gelesen. Fehlt es → kein Banner (kein broken-image).
 const MANIFEST_PATH = process.env.MAIL_BANNER_MANIFEST || '/var/www/dojosoftware-source/backend/uploads/mail-banners/manifest.json';
 let _bm = { t: 0, v: {} };
-function bannerUrlFor(app, anlass) {
+// Dojo-eigenes Banner (dojoId>0) hat Vorrang, sonst app-weites Default-Banner.
+function bannerUrlFor(app, anlass, dojoId) {
   try {
     if (Date.now() - _bm.t > 60000) { _bm = { t: Date.now(), v: JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8')) }; }
+    if (dojoId > 0) {
+      const own = _bm.v[`${app}-${anlass}-d${dojoId}`];
+      if (own) return own.url;
+    }
     const e = _bm.v[`${app}-${anlass}`];
     return e ? e.url : null;
   } catch { return null; }
@@ -38,6 +43,7 @@ const DEFAULT_THEME = {
   accent2:  '#FFD700',
   logoUrl:  null,
   dojoName: null,
+  dojoId:   0,
   publicUrl: PUBLIC_URL,
 };
 
@@ -46,7 +52,7 @@ const _themeCache = new Map(); // key → { t, v }
 // Lädt das Mail-Theme eines Dojos aus der dojo-Tabelle. dojoId hat Vorrang,
 // sonst Lookup per dojoname. Fällt immer sauber auf DEFAULT_THEME zurück.
 async function getDojoMailTheme(opts = {}) {
-  const base = { ...DEFAULT_THEME, dojoName: opts.dojoname || null };
+  const base = { ...DEFAULT_THEME, dojoName: opts.dojoname || null, dojoId: opts.dojoId || 0 };
   const key = opts.dojoId ? ('id:' + opts.dojoId) : (opts.dojoname ? ('n:' + opts.dojoname) : null);
   if (!key) return base;
   const cached = _themeCache.get(key);
@@ -55,9 +61,9 @@ async function getDojoMailTheme(opts = {}) {
     const pool = db.promise();
     let row;
     if (opts.dojoId) {
-      [[row]] = await pool.query('SELECT dojoname, logo_url, theme_farbe, farbe FROM dojo WHERE id = ? LIMIT 1', [opts.dojoId]);
+      [[row]] = await pool.query('SELECT id, dojoname, logo_url, theme_farbe, farbe FROM dojo WHERE id = ? LIMIT 1', [opts.dojoId]);
     } else {
-      [[row]] = await pool.query('SELECT dojoname, logo_url, theme_farbe, farbe FROM dojo WHERE dojoname = ? LIMIT 1', [opts.dojoname]);
+      [[row]] = await pool.query('SELECT id, dojoname, logo_url, theme_farbe, farbe FROM dojo WHERE dojoname = ? LIMIT 1', [opts.dojoname]);
     }
     let theme = base;
     if (row) {
@@ -65,6 +71,7 @@ async function getDojoMailTheme(opts = {}) {
       if (logo && !/^https?:\/\//i.test(logo)) logo = PUBLIC_URL + (logo.startsWith('/') ? '' : '/') + logo;
       theme = {
         ...base,
+        dojoId:   row.id || base.dojoId,
         dojoName: row.dojoname || base.dojoName,
         logoUrl:  logo,
         accent:   row.theme_farbe || base.accent,
@@ -116,7 +123,7 @@ function renderEmail(o = {}) {
   const footerNote = o.footerNote || '';
   const bannerUrl = o.showBanner === false
     ? null
-    : (o.bannerUrl || bannerUrlFor('dojo', anlass));
+    : (o.bannerUrl || bannerUrlFor('dojo', anlass, theme.dojoId));
 
   const bannerRow = bannerUrl
     ? `<tr><td style="padding:0;font-size:0;line-height:0;"><img src="${bannerUrl}" width="600" alt="${titel}" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;text-decoration:none;"/></td></tr>`
