@@ -14,17 +14,22 @@
 // =============================================================================
 
 const db = require('../db');
+const fs = require('fs');
 
 const PUBLIC_URL = process.env.DOJO_PUBLIC_URL || 'https://dojo.tda-intl.org';
-// Anlass-Banner erst aktiv, wenn die Dateien hochgeladen sind (sonst broken-image).
-// Aktivieren: DOJO_MAIL_BANNERS=1 in der .env + pm2 restart.
-const BANNERS_ENABLED = process.env.DOJO_MAIL_BANNERS === '1';
-const MAIL_BANNERS = {
-  einladung:   '/banners/mail/banner-einladung.png',
-  begruessung: '/banners/mail/banner-begruessung.png',
-  rechnung:    '/banners/mail/banner-rechnung.png',
-  allgemein:   '/banners/mail/banner-allgemein.png',
-};
+
+// Zentrale Banner-Verwaltung: ein manifest.json (gepflegt vom Super-Admin-Dashboard)
+// sagt, welche (app, anlass) ein Banner haben. Liegt im Dojo-uploads und wird von
+// allen drei Apps gelesen. Fehlt es → kein Banner (kein broken-image).
+const MANIFEST_PATH = process.env.MAIL_BANNER_MANIFEST || '/var/www/dojosoftware/backend/uploads/mail-banners/manifest.json';
+let _bm = { t: 0, v: {} };
+function bannerUrlFor(app, anlass) {
+  try {
+    if (Date.now() - _bm.t > 60000) { _bm = { t: Date.now(), v: JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8')) }; }
+    const e = _bm.v[`${app}-${anlass}`];
+    return e ? e.url : null;
+  } catch { return null; }
+}
 
 const DEFAULT_THEME = {
   primary:  '#1e293b',   // Header-Gradient dunkel
@@ -111,7 +116,7 @@ function renderEmail(o = {}) {
   const footerNote = o.footerNote || '';
   const bannerUrl = o.showBanner === false
     ? null
-    : (o.bannerUrl || (BANNERS_ENABLED ? (theme.publicUrl + (MAIL_BANNERS[anlass] || MAIL_BANNERS.allgemein)) : null));
+    : (o.bannerUrl || bannerUrlFor('dojo', anlass));
 
   const bannerRow = bannerUrl
     ? `<tr><td style="padding:0;font-size:0;line-height:0;"><img src="${bannerUrl}" width="600" alt="${titel}" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;text-decoration:none;"/></td></tr>`

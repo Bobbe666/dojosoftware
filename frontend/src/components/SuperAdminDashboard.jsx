@@ -64,6 +64,7 @@ import EventSoftwareSection from './EventSoftwareSection';
 import AcademySection from './AcademySection';
 import HofLiveSection from './HofLiveSection';
 import DailyBriefing from './DailyBriefing';
+import MailBannerVerwaltung from './MailBannerVerwaltung';
 import ShopBestellungen from './ShopBestellungen';
 import CommandPalette from './CommandPalette';
 
@@ -1536,6 +1537,10 @@ const SuperAdminDashboard = () => {
                   </button>
                 </div>
               </div>
+            )}
+
+            {subActiveTab.system === 'email' && (
+              <MailBannerVerwaltung />
             )}
 
             {subActiveTab.system === 'passwoerter' && (
