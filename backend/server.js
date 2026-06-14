@@ -50,12 +50,38 @@ const app = express();
 const _inflight = new Map(); // id -> { m, p, t }
 let _reqSeq = 0;
 const SLOW_REQ_MS = 2000;
+
+// Freeze-Monitor-SharedArrayBuffer FRÜH anlegen, damit die Middleware bei JEDEM
+// Request-Start synchron die in-flight-Liste hineinschreibt. (Vorher nur alle
+// 250ms im Beat → ein sofort blockierender Endpunkt wurde verpasst = leere
+// inflight im event-loop-frozen-Log.) Der Worker-Thread (unten) liest denselben SAB.
+let _monSab = null, _monTs = null, _monLen = null, _monBuf = null;
+try {
+  _monSab = new SharedArrayBuffer(2060);
+  _monTs = new Float64Array(_monSab, 0, 1);
+  _monLen = new Int32Array(_monSab, 8, 1);
+  _monBuf = new Uint8Array(_monSab, 12, 2048);
+  _monTs[0] = Date.now();
+} catch { /* SAB nicht verfügbar */ }
+function _writeInflightSab() {
+  if (!_monBuf) return;
+  try {
+    const now = Date.now();
+    const arr = [..._inflight.values()].map((r) => `${r.m} ${r.p} (${Math.round((now - r.t) / 1000)}s)`);
+    const b = Buffer.from(JSON.stringify(arr).slice(0, 2047), 'utf8');
+    _monLen[0] = b.length;
+    _monBuf.set(b.subarray(0, 2048));
+  } catch { /* ignore */ }
+}
+
 app.use((req, res, next) => {
   const id = ++_reqSeq;
   const start = Date.now();
   _inflight.set(id, { m: req.method, p: (req.originalUrl || req.url || '').slice(0, 140), t: start });
+  _writeInflightSab(); // synchron bei JEDEM Request-Start → fängt auch sofort blockierende Endpunkte
   const done = () => {
     _inflight.delete(id);
+    _writeInflightSab();
     const ms = Date.now() - start;
     if (ms >= SLOW_REQ_MS && typeof crashLine === 'function') {
       crashLine('slow-req', { ms, m: req.method, p: (req.originalUrl || req.url || '').slice(0, 140), status: res.statusCode });
@@ -3028,23 +3054,14 @@ setInterval(trimHeartbeat, 3600 * 1000).unref();
 // (SharedArrayBuffer) und protokolliert die in-flight Requests zum Freeze-
 // Zeitpunkt → benennt den verursachenden Endpunkt.
 try {
+  if (!_monSab) throw new Error('SharedArrayBuffer nicht verfügbar');
   const { Worker } = require('worker_threads');
-  const monitorSab = new SharedArrayBuffer(2060);
-  const _tsView = new Float64Array(monitorSab, 0, 1);
-  const _lenView = new Int32Array(monitorSab, 8, 1);
-  const _bufView = new Uint8Array(monitorSab, 12, 2048);
-  _tsView[0] = Date.now();
-  // Main-Thread: alle 250ms Lebenszeichen + aktuelle in-flight Requests in den SAB.
-  // Friert der Loop ein, bleibt der letzte Stand stehen = die Requests beim Freeze.
+  // SAB wird oben (vor der Middleware) angelegt; Middleware schreibt in-flight
+  // synchron bei jedem Request-Start hinein. Hier zusätzlich alle 250ms ein
+  // Lebenszeichen (Zeitstempel) + Aktualisierung (für Requests ohne finish-Event).
   setInterval(() => {
-    _tsView[0] = Date.now();
-    try {
-      const now = Date.now();
-      const arr = [..._inflight.values()].map((r) => `${r.m} ${r.p} (${Math.round((now - r.t) / 1000)}s)`);
-      const b = Buffer.from(JSON.stringify(arr).slice(0, 2047), 'utf8');
-      _lenView[0] = b.length;
-      _bufView.set(b.subarray(0, 2048));
-    } catch { /* ignore */ }
+    _monTs[0] = Date.now();
+    _writeInflightSab();
   }, 250).unref();
 
   const workerCode = `
@@ -3067,7 +3084,7 @@ try {
       }
     }, 1000);
   `;
-  const _monWorker = new Worker(workerCode, { eval: true, workerData: { sab: monitorSab, crashLog: CRASH_LOG } });
+  const _monWorker = new Worker(workerCode, { eval: true, workerData: { sab: _monSab, crashLog: CRASH_LOG } });
   _monWorker.unref();
   _monWorker.on('error', (e) => { try { logger.error('Freeze-Monitor-Worker Fehler', { error: e.message }); } catch { /* */ } });
   logger.success('Event-Loop-Freeze-Monitor (Worker-Thread) aktiv');
