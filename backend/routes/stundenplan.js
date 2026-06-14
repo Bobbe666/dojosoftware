@@ -288,11 +288,18 @@ router.get("/member/:mitglied_id/termine", async (req, res) => {
     for (const kurs of stundenplanRows) {
       const targetDayNumber = dayNameToNumber[kurs.tag];
 
+      // KRITISCH: Ungültiger/leerer Wochentag (z.B. "-", Tippfehler, NULL) →
+      // targetDayNumber ist undefined. Ohne diesen Guard läuft die while-Schleife
+      // unten ENDLOS (getDay() ist nie undefined) und friert den Event-Loop ein
+      // → der ganze Single-Process hängt (HTTP 000). Solche Kurse überspringen.
+      if (targetDayNumber === undefined) continue;
+
       // Finde alle Daten für diesen Wochentag in den nächsten 4 Wochen
       let currentDate = new Date(today);
 
-      // Gehe zum nächsten Vorkommen des Wochentags
-      while (currentDate.getDay() !== targetDayNumber) {
+      // Gehe zum nächsten Vorkommen des Wochentags (max. 7 Schritte — Sicherheitsnetz)
+      let _guard = 0;
+      while (currentDate.getDay() !== targetDayNumber && _guard++ < 8) {
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
