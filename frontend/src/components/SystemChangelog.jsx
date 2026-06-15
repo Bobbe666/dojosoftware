@@ -31,6 +31,19 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.63',
+    date: '2026-06-15',
+    type: 'bugfix',
+    zielgruppe: 'intern',
+    title: 'Gürtelprüfungs-Popup im Mitglieder-Dashboard erschien nicht (Crash behoben)',
+    description: 'Im Mitglieder-Dashboard konnte das Prüfungs-Einladungs-Popup ausbleiben und die Prüfungs-Kachel verschwinden: Der Setter setApprovedExams unterstützte keine funktionalen Updates, wurde aber so aufgerufen (prev => prev.map) → approved wurde zur Funktion statt Array → „approvedExams.map is not a function" beim Render. Jetzt functional-update-fähig + Array-Sicherheitsgurt.',
+    highlights: [
+      '🥋 Prüfungs-Einladung wird wieder zuverlässig als Popup angezeigt (für gemeldete Mitglieder)',
+    ],
+    details: 'MemberDashboard.jsx: setApprovedExams unterstützt nun typeof val === "function" (functional update gegen prev.approved); approvedExams = Array.isArray(examData.approved) ? … : []. Crash war in der md-exam-card-purple-Render-Liste (app.tda-vib.de/member/dashboard).',
+    files: ['frontend/src/components/MemberDashboard.jsx'],
+  },
+  {
     version: '3.0.62',
     date: '2026-06-15',
     type: 'feature',

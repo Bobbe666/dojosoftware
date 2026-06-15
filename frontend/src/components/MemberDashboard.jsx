@@ -338,7 +338,7 @@ const MemberDashboard = () => {
   const stile = styleData.stile;
   const stileLoading = styleData.loading;
   const nextExam = examData.nextExam;
-  const approvedExams = examData.approved;
+  const approvedExams = Array.isArray(examData.approved) ? examData.approved : [];
   const examResults = examData.results;
   const selectedExam = examData.selected;
   const acceptedConditions = examData.acceptedConditions;
@@ -357,7 +357,7 @@ const MemberDashboard = () => {
   const setStile = useCallback((val) => setStyleData(prev => ({ ...prev, stile: val })), []);
   const setStileLoading = useCallback((val) => setStyleData(prev => ({ ...prev, loading: val })), []);
   const setNextExam = useCallback((val) => setExamData(prev => ({ ...prev, nextExam: val })), []);
-  const setApprovedExams = useCallback((val) => setExamData(prev => ({ ...prev, approved: val })), []);
+  const setApprovedExams = useCallback((val) => setExamData(prev => ({ ...prev, approved: typeof val === 'function' ? val(Array.isArray(prev.approved) ? prev.approved : []) : val })), []);
   const setExamResults = useCallback((val) => setExamData(prev => ({ ...prev, results: val })), []);
   const setSelectedExam = useCallback((val) => setExamData(prev => ({ ...prev, selected: val })), []);
   const setAcceptedConditions = useCallback((val) => setExamData(prev => ({ ...prev, acceptedConditions: val })), []);
