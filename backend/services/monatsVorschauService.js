@@ -127,4 +127,86 @@ async function sendMonatsVorschau({ to = STEFFI_EMAIL } = {}) {
   return { success: true, to, monatName, anzahl, response: info.response };
 }
 
-module.exports = { buildMonatsVorschau, sendMonatsVorschau, naechsterMonatRange, spruchFuer, STEFFI_EMAIL };
+// Versandtag = genau 1 Woche vor Monatsende (letzter Tag − 7).
+function istVersandTagMonatsvorschau(ref = new Date()) {
+  const lastDay = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate();
+  return ref.getDate() === (lastDay - 7);
+}
+
+// ── „Neu im Kalender" — täglicher Check auf neu hinzugekommene Termine ──────
+const db = require('../db');
+
+async function ensureSeenTable() {
+  await db.promise().query(`
+    CREATE TABLE IF NOT EXISTS steffi_kalender_seen (
+      event_key VARCHAR(120) PRIMARY KEY,
+      gesehen_am DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `).catch(() => {});
+}
+
+function buildNeueEventsMail(neue, ref = new Date()) {
+  const C = { rose: '#e11d48', soft: '#fb7185', bg: '#fff5f7', text: '#3f3f46', muted: '#71717a' };
+  const rows = neue.map(e => {
+    const label = (TYP_LABEL[e.typ] || '📌');
+    const ort = e.ort ? ` · ${e.ort}` : '';
+    return `<tr><td style="padding:10px 14px;border-bottom:1px solid #fde4ea;">
+      <div style="font-size:11px;color:${C.muted};">${label} · ${fmtDatum(e.datum)}</div>
+      <div style="font-weight:600;color:${C.text};font-size:15px;">${e.titel || '—'}${ort}</div></td></tr>`;
+  }).join('');
+  const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:${C.bg};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.bg}"><tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="width:600px;max-width:600px;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(225,29,72,.12);">
+    <tr><td align="center" style="background:linear-gradient(135deg,${C.rose},${C.soft});padding:26px 32px;font-family:Georgia,serif;">
+      <div style="font-size:30px;">💕</div>
+      <div style="font-size:22px;color:#fff;font-weight:bold;margin-top:6px;">Neu in unserem Kalender</div>
+    </td></tr>
+    <tr><td style="padding:22px 28px 6px;font-family:Arial,Helvetica,sans-serif;">
+      <p style="color:${C.text};margin:0 0 12px;">Hallo mein Schatz, es ist etwas Neues dazugekommen:</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
+    </td></tr>
+    <tr><td align="center" style="padding:18px 32px 28px;font-family:Georgia,serif;">
+      <div style="font-style:italic;color:${C.rose};margin-bottom:8px;">„${spruchFuer(ref)}"</div>
+      <div style="font-size:15px;color:${C.text};">In Liebe, dein Sascha 😘</div>
+      <div style="font-size:20px;margin-top:8px;">❤️ 💋</div>
+    </td></tr>
+  </table>
+</td></tr></table></body></html>`;
+  return { subject: `💕 Neu im Kalender (${neue.length})`, html };
+}
+
+// Vergleicht aktuelle Termine (heute … Ende kommender Monat) mit gesehenen IDs,
+// schickt bei Neuzugängen eine kurze „Neu im Kalender"-Mail. Erster Lauf: nur merken.
+async function pruefeUndSendeNeueEvents({ to = STEFFI_EMAIL } = {}) {
+  await ensureSeenTable();
+  const heute = new Date();
+  const von = toLocalDate(heute);
+  const bis = toLocalDate(new Date(heute.getFullYear(), heute.getMonth() + 2, 0));
+  let events = [];
+  try { ({ events } = await collectKalenderEintraege(von, bis)); } catch { return { neu: 0, fehler: true }; }
+
+  const [seenRows] = await db.promise().query('SELECT event_key FROM steffi_kalender_seen');
+  const seen = new Set(seenRows.map(r => r.event_key));
+  const ersterLauf = seen.size === 0;
+  const neue = events.filter(e => e.id && !seen.has(e.id));
+
+  for (const e of neue) {
+    await db.promise().query('INSERT IGNORE INTO steffi_kalender_seen (event_key) VALUES (?)', [e.id]).catch(() => {});
+  }
+
+  if (neue.length && !ersterLauf) {
+    const { subject, html } = buildNeueEventsMail(neue, heute);
+    const t = nodemailer.createTransport({
+      host: process.env.SMTP_HOST, port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }, tls: { rejectUnauthorized: false },
+    });
+    const from = process.env.EMAIL_FROM || process.env.SMTP_FROM || 'info@tda-intl.com';
+    await t.sendMail({ from: `"Sascha ❤️" <${from}>`, to, subject, html });
+    logger.info?.('[monatsVorschau] Neu-Mail gesendet', { to, neu: neue.length });
+  }
+  return { neu: ersterLauf ? 0 : neue.length, ersterLauf, geprueft: events.length };
+}
+
+module.exports = { buildMonatsVorschau, sendMonatsVorschau, naechsterMonatRange, spruchFuer, istVersandTagMonatsvorschau, pruefeUndSendeNeueEvents, STEFFI_EMAIL };

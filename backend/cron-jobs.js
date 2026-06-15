@@ -545,6 +545,38 @@ function initCronJobs() {
     }
   });
 
+  // ── Monats-Vorschau für Steffi 💕 ─────────────────────────────────────────
+  // Täglich 8:00 prüfen; sendet NUR am Versandtag (1 Woche vor Monatsende)
+  // die Vorschau für den kommenden Monat an Steffi.
+  cron.schedule('0 8 * * *', async () => {
+    const t0 = Date.now();
+    try {
+      const { istVersandTagMonatsvorschau, sendMonatsVorschau } = require('./services/monatsVorschauService');
+      if (!istVersandTagMonatsvorschau(new Date())) return;
+      const r = await sendMonatsVorschau();
+      logger.success(`💕 Monats-Vorschau an Steffi gesendet (${r.monatName}, ${r.anzahl} Termine)`);
+      await recordCronRun('steffi_monatsvorschau', { erfolg: true, info: `${r.monatName}: ${r.anzahl} Termine`, dauerMs: Date.now() - t0 });
+    } catch (error) {
+      logger.error('❌ Steffi Monats-Vorschau Cron Fehler', { error: error.message });
+      await recordCronRun('steffi_monatsvorschau', { erfolg: false, info: error.message, dauerMs: Date.now() - t0 });
+    }
+  });
+
+  // ── „Neu im Kalender" für Steffi 💕 ───────────────────────────────────────
+  // Täglich 8:05 — meldet neu hinzugekommene Termine (Events/Turniere/HOF/Prüfungen).
+  cron.schedule('5 8 * * *', async () => {
+    const t0 = Date.now();
+    try {
+      const { pruefeUndSendeNeueEvents } = require('./services/monatsVorschauService');
+      const r = await pruefeUndSendeNeueEvents();
+      if (r.neu > 0) logger.success(`💕 Steffi: ${r.neu} neue Termine gemeldet`);
+      await recordCronRun('steffi_neue_events', { erfolg: !r.fehler, info: r.ersterLauf ? 'Erstlauf (nur gemerkt)' : `${r.neu} neu`, dauerMs: Date.now() - t0 });
+    } catch (error) {
+      logger.error('❌ Steffi Neue-Events Cron Fehler', { error: error.message });
+      await recordCronRun('steffi_neue_events', { erfolg: false, info: error.message, dauerMs: Date.now() - t0 });
+    }
+  });
+
   // ── Auto-Lastschrift Artikelverkäufe ──────────────────────────────────────
   // Täglich um 00:05 Uhr — zieht offene Lastschrift-Verkäufe automatisch ein
   cron.schedule('5 0 * * *', async () => {
