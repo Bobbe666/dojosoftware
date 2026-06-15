@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.65',
+    date: '2026-06-15',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Businessplan: Kosten-Abgrenzung bei EÜR vs BWA',
+    description: 'Die Datenquelle wirkt sich jetzt auch auf die Ausgaben aus: Bei EÜR werden die Kosten wie tatsächlich bezahlt (monatsgenau, mit Zahlungszeitpunkten) übernommen; bei BWA periodengerecht geglättet (Jahreswert ÷ 12 gleichmäßig je Monat). Das macht den Liquiditätsplan bei EÜR realistisch schwankend und das BWA-Ergebnis periodengerecht.',
+    highlights: [
+      '📒 EÜR: Ausgaben wie bezahlt (monatsgenaue Zahlungszeitpunkte)',
+      '🗓️ BWA: Ausgaben periodengerecht geglättet (Jahr ÷ 12)',
+    ],
+    details: 'businessplan.js: pullBuchhaltung verzweigt die Kosten-Monatswerte je Quelle (EÜR=Ist-Profil, BWA=null→konstanter Monatswert).',
+    files: ['backend/routes/businessplan.js', 'frontend/src/components/BusinessplanDashboard.jsx'],
+  },
+  {
     version: '3.0.64',
     date: '2026-06-15',
     type: 'feature',

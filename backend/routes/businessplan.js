@@ -532,10 +532,11 @@ async function pullBuchhaltung(quelleDojoId, quelle = 'euer') {
     const arr = kostenByKat[kat] || (kostenByKat[kat] = Array(12).fill(0));
     arr[(r.monat || 1) - 1] += Number(r.summe) || 0;
   });
+  // EÜR: Ausgaben wie bezahlt (monatsgenau). BWA: periodengerecht geglättet (Jahr ÷ 12 konstant).
   const kostenLines = Object.entries(kostenByKat).map(([kat, arr]) => ({
     kategorie: kat, bezeichnung: KOSTEN_LABEL[kat] || 'aus Buchhaltung',
     betrag_monatlich: round2(arr.reduce((s, v) => s + v, 0) / 12),
-    betraege_monate: arr.map(round2),
+    betraege_monate: quelle === 'bwa' ? null : arr.map(round2),
   }));
 
   return { umsatzLines, kostenLines };
@@ -557,7 +558,8 @@ async function importBuchhaltung(planDojoId, planId, quelleDojoId, quelle = 'eue
     await pool.query(
       `INSERT INTO businessplan_kosten (dojo_id, plan_id, kategorie, bezeichnung, betrag_monatlich, betraege_monate, aus_buchhaltung)
        VALUES (?, ?, ?, ?, ?, ?, 1)`,
-      [planDojoId, planId, k.kategorie, k.bezeichnung, k.betrag_monatlich, JSON.stringify(k.betraege_monate)]);
+      [planDojoId, planId, k.kategorie, k.bezeichnung, k.betrag_monatlich,
+       Array.isArray(k.betraege_monate) ? JSON.stringify(k.betraege_monate) : null]);
   }
   return { umsatz: umsatzLines.length, kosten: kostenLines.length };
 }

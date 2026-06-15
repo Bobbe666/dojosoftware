@@ -837,7 +837,7 @@ function CreatePlanModal({ onClose, onCreate, withDojo, dojos, dojoId }) {
           </label>
           <label style={choiceStyle(quelle === 'bwa')} onClick={() => setQuelle('bwa')}>
             <strong>📈 Aus BWA (periodengerecht)</strong>
-            <div className="bp-sub">Mitgliederbestand je Tarifgruppe (Schüler/Erwachsene/Kinder × Laufzeit) aus den Vertragslaufzeiten — zeigt die echte monatliche Entwicklung.</div>
+            <div className="bp-sub">Mitgliederbestand je Tarifgruppe (Schüler/Erwachsene/Kinder × Laufzeit) aus den Vertragslaufzeiten; Ausgaben periodengerecht geglättet (Jahr ÷ 12). Zeigt die echte monatliche Entwicklung.</div>
           </label>
           <label style={choiceStyle(quelle === 'manuell')} onClick={() => setQuelle('manuell')}>
             <strong>📝 Selbst eingeben</strong>
