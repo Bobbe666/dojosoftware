@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.62',
+    date: '2026-06-15',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Einheitliches E-Mail-Design + zentrale Banner-Verwaltung (HOF, Dojo, Events)',
+    description: 'Alle drei Systeme (Hall of Fame, Dojosoftware, TDA Events) haben jetzt ein einheitliches, Outlook-robustes (tabellen-basiertes) E-Mail-Layout über einen zentralen renderEmail(). HOF/Events zweisprachig (DE/EN), Dojosoftware deutsch mit White-Label pro Dojo (Logo/Farbe). Neu im Super-Admin (System → E-Mail): zentrale Mail-Banner-Verwaltung — pro App und Anlass (Einladung/Begrüßung/Rechnung/Allgemein) ein Banner hochladen; eigene Banner pro Dojo sind ein Enterprise-Feature. Versand läuft über Brevo (info@tda-intl.com).',
+    highlights: [
+      '✉️ Einheitliches, Outlook-festes Mail-Design in allen Apps (Banner-Kopf je Anlass)',
+      '🖼️ Banner zentral verwaltbar (Super-Admin → System → E-Mail)',
+      '🏢 Eigene Mail-Banner pro Dojo = Enterprise-Feature (sonst TDA-Standard)',
+    ],
+    details: 'Neuer services/emailLayout.js (renderEmail + getDojoMailTheme, White-Label aus dojo-Tabelle) in Dojo + HOF; TDA Events: renderEmail/bilingual in emailService.js, baseHtml als Kompat-Wrapper. Alle Sendestellen + emailTemplates.js/eventEmailService.js umgestellt. routes/mail-banners.js (Auto-Loader → /api/mail-banners, Super-Admin-only): Tabelle mail_banner (app, anlass, dojo_id), Upload nach uploads/mail-banners/ → zentrale URL, manifest.json von allen App-Renderern gelesen (60s-Cache). dojo_id>0 nur Enterprise/Trial (dojoMayBrand). Text-Header wird bei vorhandenem Banner ausgeblendet.',
+    files: ['backend/routes/mail-banners.js', 'backend/services/emailLayout.js', 'backend/services/emailService.js', 'backend/services/emailTemplates.js', 'backend/services/eventEmailService.js', 'frontend/src/components/MailBannerVerwaltung.jsx', 'frontend/src/components/SuperAdminDashboard.jsx'],
+  },
+  {
     version: '3.0.61',
     date: '2026-06-13',
     type: 'improvement',
