@@ -4882,6 +4882,63 @@ const KATEGORIE_SKR_MAP = {
 };
 
 // ===================================================================
+// Ausgaben eines Jahres periodengerecht (beleg-genau) je Monat & Kategorie:
+// Belege mit Leistungszeitraum werden pro rata über die Monate verteilt (nur Anteil im Jahr),
+// sonst nach Belegdatum; Bank-/Kassen-Ausgaben nach Buchungsmonat; AfA gleichmäßig auf 12 Monate.
+async function bwaAusgabenAbgegrenzt(pool, orgFilter, jahr) {
+  const acc = {};
+  const add = (monat, kat, betrag) => { const k = monat + '|' + (kat || 'sonstige_kosten'); acc[k] = (acc[k] || 0) + betrag; };
+  const orgFilterKasse = orgFilter.includes('dojo_id') ? orgFilter.replace(/dojo_id/g, 'COALESCE(dojo_id,1)') : '';
+
+  const [belege] = await pool.query(
+    `SELECT kategorie, ROUND(betrag_brutto * (1 - COALESCE(privatanteil_prozent,0)/100), 2) AS betrag,
+            beleg_datum, leistung_von, leistung_bis
+     FROM buchhaltung_belege
+     WHERE buchungsart = 'ausgabe' AND COALESCE(storniert,0) = 0 AND COALESCE(privat,0) = 0
+       AND kategorie NOT IN ('privateinlage','privatentnahme','anlagevermögen') ${orgFilter}`);
+  belege.forEach(b => {
+    const betrag = Number(b.betrag) || 0; if (!betrag) return;
+    const von = b.leistung_von ? new Date(b.leistung_von) : null;
+    const bis = b.leistung_bis ? new Date(b.leistung_bis) : null;
+    if (von && bis && bis >= von) {
+      const monate = []; let y = von.getFullYear(), mo = von.getMonth();
+      const ey = bis.getFullYear(), em = bis.getMonth();
+      while (y < ey || (y === ey && mo <= em)) { monate.push({ y, mo }); mo++; if (mo > 11) { mo = 0; y++; } if (monate.length > 120) break; }
+      const per = betrag / monate.length;
+      monate.forEach(({ y, mo }) => { if (y === jahr) add(mo + 1, b.kategorie, per); });
+    } else {
+      const d = new Date(b.beleg_datum);
+      if (d.getFullYear() === jahr) add(d.getMonth() + 1, b.kategorie, betrag);
+    }
+  });
+
+  const [bank] = await pool.query(
+    `SELECT COALESCE(kategorie,'sonstige_kosten') AS kategorie, ABS(betrag) AS betrag, MONTH(buchungsdatum) AS monat
+     FROM bank_transaktionen
+     WHERE betrag < 0 AND status = 'zugeordnet' AND beleg_id IS NULL
+       AND (match_typ IS NULL OR match_typ NOT IN ('rechnung','beitrag','verkauf'))
+       AND kategorie NOT IN ('privateinlage','privatentnahme','betriebseinnahmen')
+       AND YEAR(buchungsdatum) = ? ${orgFilter}`, [jahr]);
+  bank.forEach(r => add(Number(r.monat), r.kategorie, Number(r.betrag) || 0));
+
+  const [kasse] = await pool.query(
+    `SELECT betrag_cent/100 AS betrag, MONTH(geschaeft_datum) AS monat
+     FROM kassenbuch WHERE bewegungsart = 'ausgabe' AND YEAR(geschaeft_datum) = ? ${orgFilterKasse}`, [jahr]);
+  kasse.forEach(r => add(Number(r.monat), 'sonstige_kosten', Number(r.betrag) || 0));
+
+  const [afa] = await pool.query(
+    `SELECT COALESCE(SUM(ap.afa_betrag),0) AS summe
+     FROM afa_positionen ap JOIN anlage_register ar ON ar.anlage_id = ap.anlage_id
+     WHERE ap.afa_jahr = ? AND ar.aktiv = 1 ${orgFilter.replace(/dojo_id/g, 'ap.dojo_id')}`, [jahr]);
+  const afaJahr = Number(afa[0]?.summe || 0);
+  if (afaJahr) { for (let m = 1; m <= 12; m++) add(m, 'abschreibungen', afaJahr / 12); }
+
+  return Object.entries(acc).map(([k, summe]) => {
+    const [monat, kategorie] = k.split('|');
+    return { monat: Number(monat), kategorie, summe: Math.round(summe * 100) / 100 };
+  });
+}
+
 // 📊 GET /api/buchhaltung/bwa - Betriebswirtschaftliche Auswertung
 // ===================================================================
 router.get('/bwa', requireBuchhaltungAccess, async (req, res) => {
@@ -4901,25 +4958,18 @@ router.get('/bwa', requireBuchhaltungAccess, async (req, res) => {
        GROUP BY monat, kategorie ORDER BY monat`,
       [currentYear]
     );
-    const [ausgaben] = await pool.query(
-      `SELECT monat, ROUND(SUM(betrag_brutto), 2) AS summe, kategorie
-       FROM v_euer_ausgaben WHERE jahr = ? ${orgFilter}
-         AND kategorie NOT IN ('privateinlage','privatentnahme','anlagevermögen')
-       GROUP BY monat, kategorie ORDER BY monat`,
-      [currentYear]
-    );
+    // Ausgaben periodengerecht (beleg-genau) statt nach Zahlungsmonat
+    const ausgaben = await bwaAusgabenAbgegrenzt(pool, orgFilter, currentYear);
     const [vjEinnahmen] = await pool.query(
       `SELECT monat, ROUND(SUM(betrag_brutto), 2) AS summe
        FROM v_euer_einnahmen WHERE jahr = ? ${orgFilter} GROUP BY monat`,
       [vorjahr]
     );
-    const [vjAusgaben] = await pool.query(
-      `SELECT monat, ROUND(SUM(betrag_brutto), 2) AS summe
-       FROM v_euer_ausgaben WHERE jahr = ? ${orgFilter}
-         AND kategorie NOT IN ('privateinlage','privatentnahme','anlagevermögen')
-       GROUP BY monat`,
-      [vorjahr]
-    );
+    const vjAusgabenRows = await bwaAusgabenAbgegrenzt(pool, orgFilter, vorjahr);
+    const vjAusgaben = Array.from({ length: 12 }, (_, i) => ({
+      monat: i + 1,
+      summe: vjAusgabenRows.filter(r => r.monat === i + 1).reduce((s, r) => s + r.summe, 0),
+    }));
 
     const MONATE = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 

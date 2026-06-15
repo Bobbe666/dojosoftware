@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.67',
+    date: '2026-06-15',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'BWA-Report: beleg-genaue Periodenabgrenzung',
+    description: 'Die BWA (Buchhaltung → Auswertung) rechnet jetzt periodengerecht: Belege mit Leistungszeitraum werden pro rata über die Monate verteilt (z. B. eine im Januar bezahlte Jahresmiete erscheint als 1/12 pro Monat statt als Klotz im Januar), Bank-/Kassen-Ausgaben nach Buchungsmonat, AfA gleichmäßig über 12 Monate. Gilt für laufendes Jahr und Vorjahresvergleich. Jahressummen bleiben unverändert, nur die monatliche Verteilung ist realistischer.',
+    highlights: [
+      '🗓️ Belege mit Leistungszeitraum werden in der BWA periodengerecht verteilt',
+      '📉 AfA gleichmäßig über 12 Monate statt komplett im Januar',
+      '↔️ Auch im Vorjahresvergleich konsistent',
+    ],
+    details: 'buchhaltung.js: neuer Helfer bwaAusgabenAbgegrenzt (Belege pro rata über leistung_von/bis, sonst Belegdatum; Bank/Kasse nach Buchungsmonat; AfA /12). BWA-Endpunkt nutzt ihn für currentYear + vorjahr.',
+    files: ['backend/routes/buchhaltung.js'],
+  },
+  {
     version: '3.0.66',
     date: '2026-06-15',
     type: 'feature',
