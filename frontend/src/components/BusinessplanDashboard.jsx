@@ -530,12 +530,25 @@ function Summe({ label, value }) {
 function Mittelbilanz({ mb }) {
   if (!mb) return null;
   const ok = Math.abs(mb.differenz || 0) < 1;
+  const empf = Number(mb.betriebsmittelEmpfehlung) || 0;
+  const betriebsmittel = Number(mb.betriebsmittel) || 0;
   return (
-    <div className={'bp-balance ' + (ok ? 'ok' : 'warn')} style={{ marginTop: '.75rem' }}>
-      {ok
-        ? `✓ Mittelverwendung (${fmtEur(mb.mittelverwendung)}) = Mittelherkunft (${fmtEur(mb.mittelherkunft)}) · EK-Quote ${mb.eigenkapitalquote || 0} %`
-        : `⚠ Differenz: ${fmtEur(mb.differenz)} (${(mb.differenz || 0) > 0 ? 'Überdeckung' : 'Unterdeckung – noch nicht voll finanziert'}) · EK-Quote ${mb.eigenkapitalquote || 0} %`}
-    </div>
+    <>
+      <div className="bp-summe" style={{ marginTop: '.75rem' }}>
+        <span>Mittelverwendung: Investitionen {fmtEur(mb.investitionen)} + Betriebsmittel {fmtEur(betriebsmittel)}</span>
+        <strong>{fmtEur(mb.mittelverwendung)}</strong>
+      </div>
+      <div className={'bp-balance ' + (ok ? 'ok' : 'warn')} style={{ marginTop: '.5rem' }}>
+        {ok
+          ? `✓ Mittelverwendung (${fmtEur(mb.mittelverwendung)}) = Mittelherkunft (${fmtEur(mb.mittelherkunft)}) · EK-Quote ${mb.eigenkapitalquote || 0} %`
+          : `⚠ Differenz: ${fmtEur(mb.differenz)} (${(mb.differenz || 0) > 0 ? 'Überdeckung' : 'Unterdeckung – noch nicht voll finanziert'}) · EK-Quote ${mb.eigenkapitalquote || 0} %`}
+      </div>
+      {empf > betriebsmittel + 1 && (
+        <p className="bp-sub" style={{ marginTop: '.4rem' }}>
+          💡 Tipp: Tiefster Liquiditätsengpass ≈ {fmtEur(empf)} — so viel Betriebsmittelbedarf solltest du mindestens einplanen (Stammdaten).
+        </p>
+      )}
+    </>
   );
 }
 
@@ -551,6 +564,7 @@ function StartStep({ plan, setAnnahme, savePlanPatch }) {
     ['umsatzsteuerProzent', 'Umsatzsteuer %', 19],
     ['zahlungszielMonate', 'Zahlungsziel Kunden (Mon.)', 0],
     ['startLiquiditaet', 'Start-Liquidität €', 0],
+    ['betriebsmittelbedarf', 'Betriebsmittelbedarf €', 0],
     ['sonstigeErtraegeMonat', 'Sonst. betr. Erträge €/Mon.', 0],
     ['zinsertraegeJahr', 'Zinserträge €/Jahr', 0],
     ['neutraleErtraegeJahr', 'Neutrale Erträge €/Jahr', 0],

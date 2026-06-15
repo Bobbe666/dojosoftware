@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.68',
+    date: '2026-06-15',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Businessplan: Betriebsmittelbedarf in der Mittelbilanz',
+    description: 'Die Mittelbilanz (Investitions-/Finanzierungsplan) berücksichtigt jetzt den Betriebsmittelbedarf (Working Capital): Mittelverwendung = Investitionen + Betriebsmittel, geprüft gegen die Mittelherkunft. Neues Eingabefeld in den Stammdaten. Ein Auto-Tipp empfiehlt den Mindest-Betriebsmittelbedarf anhand des tiefsten Liquiditätsengpasses. Auch im PDF als eigene Position der Mittelverwendung.',
+    highlights: [
+      '💶 Mittelverwendung = Investitionen + Betriebsmittelbedarf',
+      '💡 Auto-Tipp: empfohlener Betriebsmittelbedarf = tiefster Liquiditätsengpass',
+      '📄 Betriebsmittel-Zeile auch im Businessplan-PDF',
+    ],
+    details: 'businessplan.js: mittelbilanz um betriebsmittel/investitionen/betriebsmittelEmpfehlung erweitert (annahmen.betriebsmittelbedarf). Frontend: Stammdaten-Feld + Mittelbilanz-Anzeige. PDF-Template: Betriebsmittel-Position.',
+    files: ['backend/routes/businessplan.js', 'backend/utils/businessplanPdfTemplate.js', 'frontend/src/components/BusinessplanDashboard.jsx'],
+  },
+  {
     version: '3.0.67',
     date: '2026-06-15',
     type: 'feature',

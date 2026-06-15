@@ -154,9 +154,9 @@ module.exports = function generateBusinessplanPdfHTML(data) {
   <h2>7. Investitions- & Finanzierungsplan</h2>
   <div class="two">
     <div>
-      <h3>Mittelverwendung (Investitionen)</h3>
+      <h3>Mittelverwendung</h3>
       <table><thead><tr><th>Kategorie</th><th>Position</th><th class="r">ND</th><th class="r">Betrag</th></tr></thead>
-      <tbody>${invRows}</tbody>
+      <tbody>${invRows}${(Number(mb.betriebsmittel) || 0) > 0 ? `<tr><td>Betriebsmittel</td><td>Betriebsmittelbedarf (Working Capital)</td><td class="r">–</td><td class="r">${eur(mb.betriebsmittel)}</td></tr>` : ''}</tbody>
       <tfoot><tr><td colspan="3">Gesamt</td><td class="r">${eur(mb.mittelverwendung)}</td></tr></tfoot></table>
     </div>
     <div>

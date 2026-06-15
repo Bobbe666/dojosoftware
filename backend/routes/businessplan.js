@@ -312,12 +312,20 @@ function computeAuswertung(plan, pos) {
   }
 
   // --- Mittelverwendung / Mittelherkunft (Bilanzcheck) ---
+  // Mittelverwendung = Investitionen + Betriebsmittelbedarf (Working Capital bis Break-Even).
+  // Empfehlung für den Betriebsmittelbedarf = tiefster Liquiditätsengpass im Jahr.
+  const betriebsmittel = num(a.betriebsmittelbedarf);
+  const tiefsterSaldoLiq = monateLiq.length ? Math.min(...monateLiq.map(m => m.saldo)) : 0;
+  const mittelverwendung = investitionGesamt + betriebsmittel;
   const mittelbilanz = {
-    mittelverwendung: round2(investitionGesamt),
+    investitionen: round2(investitionGesamt),
+    betriebsmittel: round2(betriebsmittel),
+    mittelverwendung: round2(mittelverwendung),
     mittelherkunft: round2(finanzierungGesamt),
-    differenz: round2(finanzierungGesamt - investitionGesamt),
+    differenz: round2(finanzierungGesamt - mittelverwendung),
     eigenkapital: round2(eigenkapital),
     eigenkapitalquote: finanzierungGesamt > 0 ? round2(eigenkapital / finanzierungGesamt * 100) : 0,
+    betriebsmittelEmpfehlung: round2(Math.max(0, -tiefsterSaldoLiq)),
   };
 
   return {
