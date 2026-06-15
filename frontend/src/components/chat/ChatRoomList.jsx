@@ -3,7 +3,7 @@
 // =====================================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { MessageCircle, Users, Megaphone, Search, UserPlus, UsersRound } from 'lucide-react';
+import { MessageCircle, Users, Megaphone, Search, UserPlus, UsersRound, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useDojoContext } from '../../context/DojoContext.jsx';
 import { useChatContext } from '../../context/ChatContext.jsx';
@@ -13,6 +13,13 @@ const STATUS_TABS = [
   { key: 'active',   label: 'Aktiv',       color: '#22c55e' },
   { key: 'archived', label: 'Archiviert',   color: '#f59e0b' },
   { key: 'closed',   label: 'Geschlossen',  color: '#64748b' },
+];
+
+// Einklappbare Gruppen der Raumliste. Reihenfolge = Anzeige-Reihenfolge.
+const ROOM_GROUPS = [
+  { key: 'kurs',     label: 'Kurs-Chats',        icon: '📚', match: (r) => r.type === 'group' || r.type === 'announcement' },
+  { key: 'direkt',   label: 'Direktnachrichten', icon: '💬', match: (r) => r.type === 'direct' && (r.source || 'internal') === 'internal' },
+  { key: 'besucher', label: 'Besucher',          icon: '👋', match: (r) => r.source && r.source !== 'internal' },
 ];
 
 const StatusDot = ({ status }) => {
@@ -48,6 +55,9 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom, refreshVersion }) => {
   const [showNewRoom, setShowNewRoom] = useState(null); // null | 'direct' | 'group'
   const [filter, setFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
+  const [collapsedGroups, setCollapsedGroups] = useState({}); // { [groupKey]: true=eingeklappt }
+
+  const toggleGroup = (key) => setCollapsedGroups(prev => ({ ...prev, [key]: !prev[key] }));
 
   const dojoId = activeDojo?.id || user?.dojo_id;
 
@@ -169,6 +179,35 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom, refreshVersion }) => {
     !filter || (r.name || '').toLowerCase().includes(filter.toLowerCase())
   );
 
+  const renderRoom = (room) => (
+    <button
+      key={room.id}
+      className={`chat-room-item ${room.id === activeRoomId ? 'chat-room-item--active' : ''} ${room.unread_count > 0 ? 'chat-room-item--unread' : ''}`}
+      onClick={() => handleSelectRoom(room)}
+    >
+      <RoomAvatar room={room} />
+      <div className="chat-room-item-content">
+        <div className="chat-room-item-top">
+          <span className="chat-room-item-name">
+            {room.name || 'Chat'}
+            {room.status !== 'active' && <StatusDot status={room.status} />}
+          </span>
+          <span className="chat-room-item-time">{formatTime(room.last_message_at)}</span>
+        </div>
+        <div className="chat-room-item-bottom">
+          <span className="chat-room-item-preview">
+            {room.last_message
+              ? (room.last_message.length > 45 ? room.last_message.substring(0, 45) + '…' : room.last_message)
+              : 'Noch keine Nachrichten'}
+          </span>
+          {room.unread_count > 0 && (
+            <span className="chat-badge">{room.unread_count > 99 ? '99+' : room.unread_count}</span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+
   return (
     <div className="chat-room-list">
       {/* Header */}
@@ -241,36 +280,28 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom, refreshVersion }) => {
           </div>
         )}
 
-        {filteredRooms.map(room => (
-          <button
-            key={room.id}
-            className={`chat-room-item ${room.id === activeRoomId ? 'chat-room-item--active' : ''} ${room.unread_count > 0 ? 'chat-room-item--unread' : ''}`}
-            onClick={() => handleSelectRoom(room)}
-          >
-            <RoomAvatar room={room} />
-            <div className="chat-room-item-content">
-              <div className="chat-room-item-top">
-                <span className="chat-room-item-name">
-                  {room.name || 'Chat'}
-                  {room.status !== 'active' && <StatusDot status={room.status} />}
-                </span>
-                <span className="chat-room-item-time">{formatTime(room.last_message_at)}</span>
-              </div>
-              <div className="chat-room-item-bottom">
-                <span className="chat-room-item-preview">
-                  {room.last_message
-                    ? (room.last_message.length > 45
-                        ? room.last_message.substring(0, 45) + '…'
-                        : room.last_message)
-                    : 'Noch keine Nachrichten'}
-                </span>
-                {room.unread_count > 0 && (
-                  <span className="chat-badge">{room.unread_count > 99 ? '99+' : room.unread_count}</span>
-                )}
-              </div>
+        {!isLoading && filteredRooms.length > 0 && ROOM_GROUPS.map(group => {
+          const groupRooms = filteredRooms.filter(group.match);
+          if (groupRooms.length === 0) return null;
+          const isCollapsed = collapsedGroups[group.key];
+          const groupUnread = groupRooms.reduce((s, r) => s + (r.unread_count || 0), 0);
+          return (
+            <div key={group.key} className="chat-room-group">
+              <button
+                className="chat-room-group-header"
+                onClick={() => toggleGroup(group.key)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '8px 12px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary, #94a3b8)', fontSize: 12, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase' }}
+              >
+                {isCollapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
+                <span>{group.icon}</span>
+                <span style={{ flex: 1, textAlign: 'left' }}>{group.label}</span>
+                <span style={{ opacity: .7, fontWeight: 500 }}>{groupRooms.length}</span>
+                {groupUnread > 0 && <span className="chat-badge">{groupUnread > 99 ? '99+' : groupUnread}</span>}
+              </button>
+              {!isCollapsed && groupRooms.map(room => renderRoom(room))}
             </div>
-          </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* Neuer Raum Modal */}
