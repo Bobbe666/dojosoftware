@@ -227,9 +227,14 @@ let csrfMiddleware = null;
 let generateCsrfToken = null;
 
 try {
-  const { doubleCsrfProtection, generateToken } = doubleCsrf(csrfConfig);
-  csrfMiddleware = doubleCsrfProtection;
-  generateCsrfToken = generateToken;
+  const csrf = doubleCsrf(csrfConfig);
+  csrfMiddleware = csrf.doubleCsrfProtection;
+  // csrf-csrf v4 benennt die Funktion generateCsrfToken (v2/v3 hieß sie generateToken).
+  // Beide Namen abdecken, damit ein Paket-Update das CSRF-Token nicht still bricht.
+  generateCsrfToken = csrf.generateCsrfToken || csrf.generateToken;
+  if (typeof generateCsrfToken !== 'function') {
+    throw new Error('Keine generateCsrfToken/generateToken-Funktion in csrf-csrf gefunden');
+  }
 } catch (error) {
   console.warn('⚠️ [Security] CSRF protection initialization failed:', error.message);
   // Fallback: No-op middleware
