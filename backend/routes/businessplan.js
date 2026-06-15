@@ -415,8 +415,65 @@ function mapAusgabeKat(k) {
   return 'sonstige';
 }
 
-// Holt Einnahmen/Ausgaben der letzten 12 Monate aus den EÜR-Views und baut
-// monatsgenaue Umsatz- und Kostenpositionen (Profil nach Kalendermonat Jan–Dez).
+// Kalendermonats-Indizes (0–11) für jeden Monat im Zeitraum [von, bis].
+function monateImZeitraum(von, bis) {
+  const out = [];
+  let y = von.getFullYear(), m = von.getMonth();
+  const ey = bis.getFullYear(), em = bis.getMonth();
+  while ((y < ey) || (y === ey && m <= em)) {
+    out.push(m); m++; if (m > 11) { m = 0; y++; }
+    if (out.length > 120) break;
+  }
+  return out;
+}
+
+// BWA-Kosten je Kategorie als 12-Monats-Profil, periodengerecht abgegrenzt:
+// Belege mit Leistungszeitraum werden pro rata über die Monate verteilt (sonst Belegdatum);
+// Bank-/Kassen-Ausgaben (ohne Zeitraum) nach Buchungsmonat. Spiegelt die EÜR-Ausgabenzweige.
+async function pullBwaKostenByKat(dojoId) {
+  const kostenByKat = {};
+  const add = (rawKat, monatIdx, betrag) => {
+    const kat = mapAusgabeKat(rawKat);
+    const arr = kostenByKat[kat] || (kostenByKat[kat] = Array(12).fill(0));
+    arr[monatIdx] += betrag;
+  };
+  const [belege] = await pool.query(
+    `SELECT kategorie, ROUND(betrag_brutto * (1 - COALESCE(privatanteil_prozent,0)/100), 2) AS betrag,
+            beleg_datum, leistung_von, leistung_bis
+     FROM buchhaltung_belege
+     WHERE dojo_id = ? AND buchungsart = 'ausgabe' AND COALESCE(storniert,0) = 0 AND COALESCE(privat,0) = 0
+       AND kategorie NOT IN ('privateinlage','privatentnahme','anlagevermögen')
+       AND COALESCE(leistung_bis, beleg_datum) >= DATE_SUB(NOW(), INTERVAL 12 MONTH)`, [dojoId]);
+  belege.forEach(b => {
+    const betrag = Number(b.betrag) || 0; if (!betrag) return;
+    const von = b.leistung_von ? new Date(b.leistung_von) : null;
+    const bis = b.leistung_bis ? new Date(b.leistung_bis) : null;
+    if (von && bis && bis >= von) {
+      const monate = monateImZeitraum(von, bis);
+      const per = betrag / monate.length;
+      monate.forEach(mi => add(b.kategorie, mi, per));
+    } else {
+      add(b.kategorie, new Date(b.beleg_datum).getMonth(), betrag);
+    }
+  });
+  const [bank] = await pool.query(
+    `SELECT COALESCE(kategorie,'sonstige_kosten') AS kategorie, ABS(betrag) AS betrag, buchungsdatum
+     FROM bank_transaktionen
+     WHERE dojo_id = ? AND betrag < 0 AND status = 'zugeordnet' AND beleg_id IS NULL
+       AND (match_typ IS NULL OR match_typ NOT IN ('rechnung','beitrag','verkauf'))
+       AND kategorie NOT IN ('privateinlage','privatentnahme','betriebseinnahmen')
+       AND buchungsdatum >= DATE_SUB(NOW(), INTERVAL 12 MONTH)`, [dojoId]);
+  bank.forEach(b => add(b.kategorie, new Date(b.buchungsdatum).getMonth(), Number(b.betrag) || 0));
+  const [kasse] = await pool.query(
+    `SELECT betrag_cent/100 AS betrag, geschaeft_datum
+     FROM kassenbuch WHERE COALESCE(dojo_id,1) = ? AND bewegungsart = 'ausgabe'
+       AND geschaeft_datum >= DATE_SUB(NOW(), INTERVAL 12 MONTH)`, [dojoId]);
+  kasse.forEach(k => add('sonstige_kosten', new Date(k.geschaeft_datum).getMonth(), Number(k.betrag) || 0));
+  return kostenByKat;
+}
+
+// Holt Einnahmen/Ausgaben der letzten 12 Monate und baut monatsgenaue Positionen
+// (Profil nach Kalendermonat Jan–Dez). EÜR = Zufluss/Zahlung; BWA = periodengerechte Abgrenzung.
 async function pullBuchhaltung(quelleDojoId, quelle = 'euer') {
   const round2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
   const [einn] = await pool.query(
@@ -526,17 +583,24 @@ async function pullBuchhaltung(quelleDojoId, quelle = 'euer') {
     });
   });
 
-  const kostenByKat = {};
-  ausg.forEach(r => {
-    const kat = mapAusgabeKat(r.kategorie);
-    const arr = kostenByKat[kat] || (kostenByKat[kat] = Array(12).fill(0));
-    arr[(r.monat || 1) - 1] += Number(r.summe) || 0;
-  });
-  // EÜR: Ausgaben wie bezahlt (monatsgenau). BWA: periodengerecht geglättet (Jahr ÷ 12 konstant).
+  // Kostenquelle je Modus:
+  //  EÜR = Ausgaben wie bezahlt (Zahlungsmonat, aus EÜR-Views).
+  //  BWA = periodengerecht abgegrenzt (Belege pro rata über Leistungszeitraum, beleg-genau).
+  let kostenByKat;
+  if (quelle === 'bwa') {
+    kostenByKat = await pullBwaKostenByKat(quelleDojoId);
+  } else {
+    kostenByKat = {};
+    ausg.forEach(r => {
+      const kat = mapAusgabeKat(r.kategorie);
+      const arr = kostenByKat[kat] || (kostenByKat[kat] = Array(12).fill(0));
+      arr[(r.monat || 1) - 1] += Number(r.summe) || 0;
+    });
+  }
   const kostenLines = Object.entries(kostenByKat).map(([kat, arr]) => ({
     kategorie: kat, bezeichnung: KOSTEN_LABEL[kat] || 'aus Buchhaltung',
     betrag_monatlich: round2(arr.reduce((s, v) => s + v, 0) / 12),
-    betraege_monate: quelle === 'bwa' ? null : arr.map(round2),
+    betraege_monate: arr.map(round2),
   }));
 
   return { umsatzLines, kostenLines };

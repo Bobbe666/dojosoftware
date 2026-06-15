@@ -1864,6 +1864,8 @@ router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
       rechnungsnummer_extern,
       ist_gwg = 0,
       privatanteil_prozent = 0,
+      leistung_von = null,
+      leistung_bis = null,
       dojo_id: body_dojo_id,
     } = req.body;
 
@@ -1894,8 +1896,9 @@ router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
       INSERT INTO buchhaltung_belege (
         beleg_nummer, dojo_id, organisation_name, buchungsart,
         beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
-        kategorie, beschreibung, lieferant_kunde, rechnungsnummer_extern, ist_gwg, privatanteil_prozent, erstellt_von
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        kategorie, beschreibung, lieferant_kunde, rechnungsnummer_extern, ist_gwg, privatanteil_prozent,
+        leistung_von, leistung_bis, erstellt_von
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const params = [
@@ -1915,6 +1918,8 @@ router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
       rechnungsnummer_extern || null,
       ist_gwg ? 1 : 0,
       parseFloat(privatanteil_prozent) || 0,
+      leistung_von || null,
+      leistung_bis || null,
       req.user?.id || 1
     ];
 
@@ -1974,7 +1979,9 @@ router.put('/belege/:id', requireBuchhaltungAccess, (req, res) => {
       lieferant_kunde,
       rechnungsnummer_extern,
       ist_gwg,
-      privatanteil_prozent
+      privatanteil_prozent,
+      leistung_von,
+      leistung_bis
     } = req.body;
 
     // Berechne MwSt und Brutto
@@ -1998,6 +2005,8 @@ router.put('/belege/:id', requireBuchhaltungAccess, (req, res) => {
         rechnungsnummer_extern = ?,
         ist_gwg = ?,
         privatanteil_prozent = ?,
+        leistung_von = ?,
+        leistung_bis = ?,
         geaendert_von = ?
       WHERE beleg_id = ?
     `;
@@ -2015,6 +2024,8 @@ router.put('/belege/:id', requireBuchhaltungAccess, (req, res) => {
       rechnungsnummer_extern !== undefined ? rechnungsnummer_extern : beleg.rechnungsnummer_extern,
       ist_gwg !== undefined ? (ist_gwg ? 1 : 0) : beleg.ist_gwg,
       privatanteil_prozent !== undefined ? (parseFloat(privatanteil_prozent)||0) : beleg.privatanteil_prozent,
+      leistung_von !== undefined ? (leistung_von || null) : beleg.leistung_von,
+      leistung_bis !== undefined ? (leistung_bis || null) : beleg.leistung_bis,
       req.user?.id || 1,
       belegId
     ];

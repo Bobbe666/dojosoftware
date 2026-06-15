@@ -243,7 +243,9 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     lieferant_kunde: '',
     rechnungsnummer_extern: '',
     ist_gwg: false,
-    privatanteil_prozent: '0'
+    privatanteil_prozent: '0',
+    leistung_von: '',
+    leistung_bis: ''
   });
 
   // Pagination
@@ -1713,7 +1715,9 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       lieferant_kunde: '',
       rechnungsnummer_extern: '',
       ist_gwg: false,
-      privatanteil_prozent: '0'
+      privatanteil_prozent: '0',
+      leistung_von: '',
+      leistung_bis: ''
     });
   };
 
@@ -1732,7 +1736,9 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       lieferant_kunde: beleg.lieferant_kunde || '',
       rechnungsnummer_extern: beleg.rechnungsnummer_extern || '',
       ist_gwg: !!beleg.ist_gwg,
-      privatanteil_prozent: String(beleg.privatanteil_prozent || '0')
+      privatanteil_prozent: String(beleg.privatanteil_prozent || '0'),
+      leistung_von: beleg.leistung_von ? beleg.leistung_von.split('T')[0] : '',
+      leistung_bis: beleg.leistung_bis ? beleg.leistung_bis.split('T')[0] : ''
     });
     setShowBelegModal(true);
   };
@@ -2378,6 +2384,34 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   </div>
                 </div>
               )}
+
+              {/* Leistungszeitraum — periodengerechte Abgrenzung (BWA) */}
+              <div className="form-group">
+                <label>Leistungszeitraum <span style={{ fontWeight: 400, color: '#888' }}>(optional — für periodengerechte BWA-Abgrenzung)</span></label>
+                <div className="form-row" style={{ alignItems: 'center', gap: '.5rem' }}>
+                  <input type="date" value={belegForm.leistung_von}
+                    onChange={e => setBelegForm(f => ({ ...f, leistung_von: e.target.value }))} aria-label="Leistung von" />
+                  <span>bis</span>
+                  <input type="date" value={belegForm.leistung_bis}
+                    onChange={e => setBelegForm(f => ({ ...f, leistung_bis: e.target.value }))} aria-label="Leistung bis" />
+                </div>
+                <div style={{ display: 'flex', gap: '.4rem', marginTop: '.4rem', flexWrap: 'wrap' }}>
+                  {[['📅 12 Monate', 12], ['Quartal', 3]].map(([label, months]) => (
+                    <button key={label} type="button"
+                      style={{ padding: '.25rem .6rem', fontSize: '.78rem', cursor: 'pointer', borderRadius: 6 }}
+                      onClick={() => {
+                        const start = belegForm.leistung_von || belegForm.beleg_datum;
+                        const e = new Date(start); e.setMonth(e.getMonth() + months); e.setDate(e.getDate() - 1);
+                        setBelegForm(f => ({ ...f, leistung_von: start, leistung_bis: e.toISOString().split('T')[0] }));
+                      }}>{label}</button>
+                  ))}
+                  {(belegForm.leistung_von || belegForm.leistung_bis) && (
+                    <button type="button" style={{ padding: '.25rem .6rem', fontSize: '.78rem', cursor: 'pointer', borderRadius: 6 }}
+                      onClick={() => setBelegForm(f => ({ ...f, leistung_von: '', leistung_bis: '' }))}>leeren</button>
+                  )}
+                </div>
+                <small style={{ color: '#888' }}>Leer = gilt am Belegdatum. Gesetzt = Betrag wird in der BWA gleichmäßig über die Monate verteilt (z. B. Jahrespolice).</small>
+              </div>
 
               <div className="form-group">
                 <label>Beschreibung *</label>

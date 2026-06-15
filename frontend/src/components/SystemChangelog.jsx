@@ -31,6 +31,26 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.66',
+    date: '2026-06-15',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Belege: Leistungszeitraum + beleg-genaue Periodenabgrenzung im Businessplan',
+    description: 'Belege können jetzt einen Leistungszeitraum (von–bis) bekommen — z. B. eine Jahrespolice 01.01.–31.12. Im Beleg-Formular gibt es dafür zwei Datumsfelder mit Schnellwahl (12 Monate / Quartal). Der Businessplan grenzt die Kosten damit periodengerecht ab: Im BWA-Modus wird jeder Beleg pro rata über seinen Leistungszeitraum auf die Monate verteilt (statt grober Glättung), im EÜR-Modus bleibt es beim tatsächlichen Zahlungsmonat. Gleicher Jahreswert, aber realistische Monatsverteilung.',
+    highlights: [
+      '🧾 Beleg-Formular: Leistungszeitraum (von–bis) mit Schnellwahl „12 Monate" / „Quartal"',
+      '🗓️ BWA verteilt Belege pro rata über den Leistungszeitraum (z. B. Jahrespolice → 1/12 pro Monat)',
+      '📒 EÜR weiterhin nach Zahlungsmonat (Zufluss)',
+    ],
+    details: 'Migration 200 (leistung_von/leistung_bis an buchhaltung_belege). buchhaltung.js: Beleg POST/PUT übernehmen die Felder. businessplan.js: pullBwaKostenByKat verteilt Belege beleg-genau über die Monate.',
+    files: [
+      'backend/migrations/200_beleg_leistungszeitraum.sql',
+      'backend/routes/buchhaltung.js',
+      'backend/routes/businessplan.js',
+      'frontend/src/components/BuchhaltungTab.jsx',
+    ],
+  },
+  {
     version: '3.0.65',
     date: '2026-06-15',
     type: 'feature',
