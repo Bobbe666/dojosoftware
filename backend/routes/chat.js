@@ -149,9 +149,14 @@ router.get('/rooms', async (req, res) => {
 
     let rooms;
     if (isSuperAdmin) {
-      // Super-Admin: alle Räume wo Mitglied (ohne Dojo-Filter)
+      // Super-Admin: ALLE Räume außer denen der Subdomain-Dojos (Dojos mit eigenem
+      // Voll-Admin). Dadurch sieht der Super-Admin auch die Chats des Haupt-Dojos
+      // (z.B. Kampfkunstschule Schreiner), aber nicht die der eigenständigen Subdomains.
       [rooms] = await pool.query(
-        baseQuery + ` WHERE crm.member_id IS NOT NULL` + statusClause + ` ORDER BY COALESCE(crm.pinned,0) DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
+        baseQuery + ` WHERE r.dojo_id NOT IN (
+             SELECT DISTINCT dojo_id FROM admin_users
+             WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt','trainer','checkin')
+           )` + statusClause + ` ORDER BY COALESCE(crm.pinned,0) DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
         [sender_id, sender_type, sender_id, sender_type]
       );
     } else if (isMember) {
