@@ -170,6 +170,7 @@ router.get('/pricing-preview', async (req, res) => {
           api: plan.feature_api || false,
           multidojo: plan.feature_multidojo || false,
           messenger: plan.feature_messenger || isEnterprise,
+          whatsapp: plan.feature_whatsapp || isEnterprise,
           homepage_builder: plan.feature_homepage_builder || isEnterprise,
           priority_support: isPremium || isEnterprise
         }
@@ -278,7 +279,7 @@ router.get('/current', cacheGet(60000), async (req, res) => {
           plan_type: 'enterprise',
           status: 'active',
           feature_verkauf: 1, feature_buchfuehrung: 1, feature_events: 1,
-          feature_multidojo: 1, feature_api: 1, feature_messenger: 1,
+          feature_multidojo: 1, feature_api: 1, feature_messenger: 1, feature_whatsapp: 1,
           feature_homepage_builder: 1, feature_kontoauszug: 1, feature_social_media: 1,
           feature_training: 1, feature_todos: 1, feature_support: 1, feature_gutscheine: 1,
           feature_businessplan: 1,

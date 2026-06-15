@@ -11,6 +11,7 @@ import ChatRoomList from './ChatRoomList.jsx';
 import ChatWindow from './ChatWindow.jsx';
 import ChatPopup from './ChatPopup.jsx';
 import MessengerConversationList from './MessengerConversationList.jsx';
+import WhatsAppConversationList from './WhatsAppConversationList.jsx';
 import '../../styles/Chat.css';
 
 const AdminChatPage = () => {
@@ -21,9 +22,10 @@ const AdminChatPage = () => {
   const [activeRoom, setActiveRoom] = useState(null);
   const [isMobileListVisible, setIsMobileListVisible] = useState(true);
   const [roomListVersion, setRoomListVersion] = useState(0);
-  const [chatMode, setChatMode] = useState('intern'); // 'intern' | 'messenger'
+  const [chatMode, setChatMode] = useState('intern'); // 'intern' | 'messenger' | 'whatsapp'
 
   const hasMessenger = hasFeature('messenger');
+  const hasWhatsapp = hasFeature('whatsapp');
 
   useEffect(() => {
     const roomParam = searchParams.get('room');
@@ -85,6 +87,13 @@ const AdminChatPage = () => {
           📘 Messenger
           {!hasMessenger && <span className="chat-mode-tab__badge">Enterprise</span>}
         </button>
+        <button
+          className={`chat-mode-tab ${chatMode === 'whatsapp' ? 'chat-mode-tab--active' : ''}`}
+          onClick={() => handleSwitchMode('whatsapp')}
+        >
+          💬 WhatsApp
+          {!hasWhatsapp && <span className="chat-mode-tab__badge">Enterprise</span>}
+        </button>
       </div>
 
       {/* Messenger-Upgrade-Banner */}
@@ -104,8 +113,25 @@ const AdminChatPage = () => {
         </div>
       )}
 
+      {/* WhatsApp-Upgrade-Banner */}
+      {chatMode === 'whatsapp' && !hasWhatsapp && (
+        <div className="chat-upgrade-banner">
+          <div className="chat-upgrade-banner__icon">💬</div>
+          <div className="chat-upgrade-banner__content">
+            <strong>WhatsApp Business Integration</strong>
+            <p>Beantworte eingehende WhatsApp-Nachrichten direkt im Chat-Dashboard.</p>
+            <p className="chat-upgrade-banner__plan">
+              Verfügbar ab dem <strong>Enterprise-Plan</strong>
+            </p>
+          </div>
+          <a href="/dashboard/subscription" className="chat-upgrade-banner__btn">
+            Plan upgraden →
+          </a>
+        </div>
+      )}
+
       {/* Chat-Layout */}
-      {(chatMode === 'intern' || hasMessenger) && (
+      {(chatMode === 'intern' || (chatMode === 'messenger' && hasMessenger) || (chatMode === 'whatsapp' && hasWhatsapp)) && (
         <div className="chat-layout">
           <div className={`chat-sidebar ${!isMobileListVisible ? 'chat-sidebar--hidden-mobile' : ''}`}>
             {chatMode === 'intern' ? (
@@ -113,6 +139,11 @@ const AdminChatPage = () => {
                 activeRoomId={activeRoomId}
                 onSelectRoom={handleSelectRoom}
                 refreshVersion={roomListVersion}
+              />
+            ) : chatMode === 'whatsapp' ? (
+              <WhatsAppConversationList
+                activeRoomId={activeRoomId}
+                onSelectRoom={handleSelectRoom}
               />
             ) : (
               <MessengerConversationList
@@ -139,14 +170,20 @@ const AdminChatPage = () => {
             ) : (
               <div className="chat-placeholder">
                 <div className="chat-placeholder-icon">
-                  {chatMode === 'messenger' ? '📘' : '💬'}
+                  {chatMode === 'messenger' ? '📘' : chatMode === 'whatsapp' ? '💬' : '💬'}
                 </div>
                 <div className="chat-placeholder-title">
-                  {chatMode === 'messenger' ? 'Wähle eine Messenger-Konversation' : 'Wähle einen Chat'}
+                  {chatMode === 'messenger'
+                    ? 'Wähle eine Messenger-Konversation'
+                    : chatMode === 'whatsapp'
+                    ? 'Wähle eine WhatsApp-Konversation'
+                    : 'Wähle einen Chat'}
                 </div>
                 <div className="chat-placeholder-hint">
                   {chatMode === 'messenger'
                     ? 'Eingehende Facebook Messenger Nachrichten erscheinen hier.'
+                    : chatMode === 'whatsapp'
+                    ? 'Eingehende WhatsApp-Nachrichten erscheinen hier.'
                     : 'Wähle links einen Chat aus oder starte eine neue Unterhaltung.'
                   }
                 </div>

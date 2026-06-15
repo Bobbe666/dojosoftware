@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.64',
+    date: '2026-06-15',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'WhatsApp-Integration im Chat-Dashboard (Enterprise) — Code fertig, Meta-Setup ausstehend',
+    description: 'Neben dem Facebook Messenger gibt es jetzt auch einen WhatsApp-Kanal: eingehende WhatsApp-Nachrichten (Meta WhatsApp Business Cloud API) landen als Konversationen im Chat-Dashboard und können direkt beantwortet werden — inkl. 24-Stunden-Kundendienstfenster-Logik. Neuer Tab „💬 WhatsApp" im Admin-Chat, Konfiguration unter Einstellungen → Integrationen bzw. Dojo bearbeiten → Digital & Komm. → WhatsApp. Enterprise-Feature (feature_whatsapp). Geht erst live, wenn das Meta-Setup (WhatsApp Business Account + Token + Webhook) hinterlegt ist.',
+    highlights: [
+      '💬 WhatsApp-Konversationen direkt im Chat-Dashboard beantworten',
+      '🔒 24-Stunden-Fenster: außerhalb sind nur genehmigte Vorlagen erlaubt',
+      '🏢 Enterprise-Feature — Konfiguration pro Dojo (Phone-Number-ID, Token, App Secret)',
+    ],
+    details: 'Backend: routes/whatsapp.js (Auto-Loader → /api/whatsapp): Webhook GET/POST (whatsapp_business_account-Struktur, HMAC via req.rawBody), config GET/PUT, conversations, send (Cloud API, Bearer-Token, 24h-Guard), test-token. Migrationen: 203 (chat_messages.sender_type + chat_rooms.source ENUMs um whatsapp_* erweitert), 204 (dojo_whatsapp_config + whatsapp_conversations), 205 (feature_whatsapp in dojo_subscriptions + plan_features/plan_feature_mapping → Enterprise). Frontend: AdminChatPage WhatsApp-Tab, WhatsAppConversationList.jsx, ChatWindow generalisiert (Messenger+WhatsApp = externe Kanäle), WhatsAppKonfiguration.jsx in IntegrationsEinstellungen + DojoEdit. featureAccess.js + subscription.js + SubscriptionContext.jsx um whatsapp ergänzt.',
+    files: ['backend/routes/whatsapp.js', 'backend/migrations/205_whatsapp_feature_flag.sql', 'backend/middleware/featureAccess.js', 'backend/routes/subscription.js', 'frontend/src/components/chat/AdminChatPage.jsx', 'frontend/src/components/chat/WhatsAppConversationList.jsx', 'frontend/src/components/chat/ChatWindow.jsx', 'frontend/src/components/WhatsAppKonfiguration.jsx', 'frontend/src/components/IntegrationsEinstellungen.jsx', 'frontend/src/components/DojoEdit.jsx'],
+  },
+  {
     version: '3.0.63',
     date: '2026-06-15',
     type: 'bugfix',

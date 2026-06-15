@@ -20,7 +20,12 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
   const [readSummary, setReadSummary] = useState({}); // { message_id: { read_count, reader_names, total_members } }
   const [roomMemberCount, setRoomMemberCount] = useState(0);
   const isMessenger = room.source === 'messenger';
-  const messengerWindowOpen = !isMessenger || room.window_open !== false;
+  const isWhatsapp = room.source === 'whatsapp';
+  const isExternal = isMessenger || isWhatsapp;
+  const channelIcon = isWhatsapp ? '💬' : '📘';
+  const channelSendUrl = isWhatsapp ? '/api/whatsapp/send' : '/api/messenger/send';
+  const channelUserLabel = isWhatsapp ? 'WhatsApp-Nutzer' : 'Facebook-Nutzer';
+  const externalWindowOpen = !isExternal || room.window_open !== false;
   const [showSettings, setShowSettings] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -165,9 +170,9 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
     setInput('');
     setIsSending(true);
     try {
-      if (isMessenger) {
-        // Messenger: Senden über Graph API via Backend
-        const res = await fetch('/api/messenger/send', {
+      if (isExternal) {
+        // Messenger/WhatsApp: Senden über Graph API / Cloud API via Backend
+        const res = await fetch(channelSendUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -181,7 +186,7 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
         await sendMessage(room.id, content);
       }
     } catch (e) {
-      if (!isMessenger) {
+      if (!isExternal) {
         // Socket fehlgeschlagen → REST-Fallback
         try {
           const res = await fetch(`/api/chat/rooms/${room.id}/messages`, {
@@ -290,12 +295,12 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
         <HeaderAvatar />
         <div className="chat-window-header-info">
           <div className="chat-window-room-name">
-            {isMessenger && <span style={{ marginRight: 5 }}>📘</span>}
+            {isExternal && <span style={{ marginRight: 5 }}>{channelIcon}</span>}
             {room.name || 'Chat'}
           </div>
-          {isMessenger ? (
+          {isExternal ? (
             <div className="chat-window-member-count">
-              {messengerWindowOpen
+              {externalWindowOpen
                 ? <span style={{ color: 'var(--color-success, #22c55e)' }}>● 24h-Fenster offen</span>
                 : <span style={{ color: 'var(--color-muted, #94a3b8)' }}>🔒 Fenster abgelaufen</span>
               }
@@ -423,7 +428,7 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
 
       {/* Eingabe (nur wenn kein Ankündigungs-Kanal oder Nutzer kein Mitglied) */}
       {room.type !== 'announcement' ? (
-        isMessenger && !messengerWindowOpen ? (
+        isExternal && !externalWindowOpen ? (
           <div className="chat-readonly-bar">
             🔒 24-Stunden-Fenster abgelaufen — Nutzer muss zuerst eine neue Nachricht senden
           </div>
@@ -432,7 +437,7 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
             <textarea
               ref={inputRef}
               className="chat-input"
-              placeholder={isMessenger ? 'Antwort an Facebook-Nutzer…' : 'Nachricht schreiben…'}
+              placeholder={isExternal ? `Antwort an ${channelUserLabel}…` : 'Nachricht schreiben…'}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}

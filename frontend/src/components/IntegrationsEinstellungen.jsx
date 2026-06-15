@@ -16,6 +16,7 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 import configModule from '../config/config.js';
 import StripeConnectSetup from './StripeConnectSetup';
 import MessengerKonfiguration from './MessengerKonfiguration';
+import WhatsAppKonfiguration from './WhatsAppKonfiguration';
 import '../styles/IntegrationsEinstellungen.css';
 
 const IntegrationsEinstellungen = () => {
@@ -856,6 +857,26 @@ const IntegrationsEinstellungen = () => {
           </div>
         ) : (
           <MessengerKonfiguration dojoId={dojoId} />
+        )}
+      </div>
+
+      {/* WhatsApp Section */}
+      <div className="ie-section">
+        <div className="ie-section-header">
+          <span style={{ fontSize: 24 }}>💬</span>
+          <h3 className="ie-section-title">WhatsApp Business</h3>
+        </div>
+
+        {!hasMessenger ? (
+          <div className="ie-upgrade-hint">
+            <AlertCircle size={18} />
+            <span>
+              WhatsApp Business Integration ist für Dojos mit eigener Subdomain verfügbar.
+              Bitte wende dich an den Administrator.
+            </span>
+          </div>
+        ) : (
+          <WhatsAppKonfiguration dojoId={dojoId} />
         )}
       </div>
 

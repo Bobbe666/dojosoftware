@@ -104,6 +104,7 @@ function requireFeature(featureName) {
         kontoauszug:      'feature_kontoauszug',    // Enterprise: Bank-Import + EÜR
         bank_import:      'feature_kontoauszug',    // Alias
         messenger:        'feature_messenger',
+        whatsapp:         'feature_whatsapp',
         homepage_builder: 'feature_homepage_builder',
         gutscheine:       'feature_gutscheine',
         social_media:     'feature_social_media',
@@ -274,6 +275,7 @@ async function syncPlanFeatures(dojoId, planName, { updatePlanType = true } = {}
       kontoauszug:      'feature_kontoauszug',    // Alias
       bank_import:      'feature_kontoauszug',
       messenger:        'feature_messenger',
+      whatsapp:         'feature_whatsapp',
       homepage_builder: 'feature_homepage_builder',
       businessplan:     'feature_businessplan',
     };

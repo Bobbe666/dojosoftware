@@ -4,6 +4,7 @@ import { ArrowLeft, Save, AlertCircle, Palette } from 'lucide-react';
 import BankTabs from './BankTabs';
 import AdminVerwaltung from './AdminVerwaltung';
 import MessengerKonfiguration from './MessengerKonfiguration';
+import WhatsAppKonfiguration from './WhatsAppKonfiguration';
 import DojoLogos from './DojoLogos';
 import RaumVerwaltung from './RaumVerwaltung';
 import { useDojoContext } from '../context/DojoContext';
@@ -35,6 +36,7 @@ const SECTIONS = [
     { key: 'fs-email',        label: 'E-Mail' },
     { key: 'fs-probetraining', label: 'Probetraining' },
     { key: 'fs-messenger',    label: 'Messenger' },
+    { key: 'fs-whatsapp',     label: 'WhatsApp' },
     { key: 'fs-logos',        label: 'Logos & Design' },
   ]},
   { key: 'dokumente', label: 'Dokumente',            icon: '📎' },
@@ -1371,6 +1373,17 @@ const DojoEdit = () => {
                     Verfügbar für Dojos mit konfigurierter Subdomain. Eingehende Messenger-Nachrichten erscheinen im Chat-Dashboard.
                   </p>
                   <MessengerKonfiguration dojoId={id} />
+                </div>
+              )}
+
+              {/* WhatsApp */}
+              {!isNewDojo && (
+                <div className="form-section" id="fs-whatsapp" style={{display: subVisible('fs-whatsapp') ? 'block' : 'none'}}>
+                  <h3>💬 WhatsApp Business Integration</h3>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>
+                    Verfügbar für Dojos mit konfigurierter Subdomain. Eingehende WhatsApp-Nachrichten erscheinen im Chat-Dashboard.
+                  </p>
+                  <WhatsAppKonfiguration dojoId={id} />
                 </div>
               )}
 

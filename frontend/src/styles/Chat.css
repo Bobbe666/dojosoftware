@@ -2272,6 +2272,20 @@
   flex-shrink: 0;
 }
 
+.whatsapp-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #25d366, #128c7e);
+  color: var(--ds-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 .chat-room-item__badges {
   display: flex;
   align-items: center;
