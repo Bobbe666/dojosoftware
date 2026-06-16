@@ -35,7 +35,7 @@ function MemberContractStatus({ mitgliedId }) {
   // Meine Vertrag-Anpassungen + Ruhepause + Kündigungsinfo laden
   useEffect(() => {
     if (!mitgliedId) return;
-    const token = localStorage.getItem('memberToken') || localStorage.getItem('token');
+    const token = localStorage.getItem('memberToken') || localStorage.getItem('token') || localStorage.getItem('dojo_auth_token');
     const headers = { 'Authorization': `Bearer ${token}` };
     const loadAnpassungen = async () => {
       try { const resp = await fetch('/api/vertrag-anpassungen/meine', { headers }); if (resp.ok) { const data = await resp.json(); setMeineAnpassungen(data.anpassungen || []); } } catch (_) {}
@@ -173,7 +173,7 @@ function MemberContractStatus({ mitgliedId }) {
                 if (diffMonate > ruhepauseMaxMonate) { setRuhepauseError(`Ruhepause darf maximal ${ruhepauseMaxMonate} Monat${ruhepauseMaxMonate !== 1 ? 'e' : ''} dauern.`); return; }
                 setRuhepauseLoading(true); setRuhepauseError('');
                 try {
-                  const token = localStorage.getItem('memberToken') || localStorage.getItem('token');
+                  const token = localStorage.getItem('memberToken') || localStorage.getItem('token') || localStorage.getItem('dojo_auth_token');
                   const resp = await fetch('/api/vertrag-anpassungen/beantragen', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -286,7 +286,7 @@ function MemberContractStatus({ mitgliedId }) {
                 onClick={async () => {
                   setKuendigungLoading(true); setKuendigungError(''); setKuendigungSuccess('');
                   try {
-                    const token = localStorage.getItem('memberToken') || localStorage.getItem('token');
+                    const token = localStorage.getItem('memberToken') || localStorage.getItem('token') || localStorage.getItem('dojo_auth_token');
                     const heute = new Date().toISOString().slice(0, 10);
                     const resp = await fetch('/api/vertrag-anpassungen/beantragen', {
                       method: 'POST',
@@ -353,7 +353,7 @@ function MemberContractStatus({ mitgliedId }) {
                 if (!gueltig_von || !gueltig_bis) { setAnpassungError('Bitte Beginn und Ende ausfüllen.'); return; }
                 setAnpassungLoading(true); setAnpassungError('');
                 try {
-                  const token = localStorage.getItem('memberToken') || localStorage.getItem('token');
+                  const token = localStorage.getItem('memberToken') || localStorage.getItem('token') || localStorage.getItem('dojo_auth_token');
                   const resp = await fetch('/api/vertrag-anpassungen/beantragen', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
