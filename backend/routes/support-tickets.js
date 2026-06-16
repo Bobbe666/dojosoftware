@@ -82,7 +82,7 @@ const getNextTicketNummer = async () => {
 // Prüfen ob User Zugriff auf Ticket hat
 const hatZugriff = (ticket, user) => {
   // SuperAdmin hat immer Zugriff
-  if ((user.rolle === 'super_admin' || user.role === 'super_admin') || user.username === 'admin') {
+  if (istSuperAdmin(user)) {
     return true;
   }
 
@@ -102,6 +102,16 @@ const hatZugriff = (ticket, user) => {
   }
 
   return false;
+};
+
+// Ist Super-Admin? dojo_id === null bedeutet in dieser Plattform Super-Admin
+// (JWT-Konvention). Rolle/Username allein reicht nicht — Accounts wie "Bobbe"/"Steffi"
+// haben dojo_id=null aber rolle='admin'; sie müssen trotzdem alle Tickets sehen.
+const istSuperAdmin = (user) => {
+  if (!user) return false;
+  return (user.rolle === 'super_admin' || user.role === 'super_admin')
+    || user.username === 'admin'
+    || user.dojo_id === null || user.dojo_id === undefined;
 };
 
 // Ist Admin/Bearbeiter?
@@ -136,7 +146,7 @@ router.get('/', async (req, res) => {
     const params = [];
 
     // Berechtigungs-Filter
-    if ((user.rolle === 'super_admin' || user.role === 'super_admin') || user.username === 'admin') {
+    if (istSuperAdmin(user)) {
       // SuperAdmin sieht alle Tickets
     } else if ((user.rolle === 'admin' || user.role === 'admin')) {
       // Admin sieht Tickets des eigenen Dojos + eigene
@@ -189,7 +199,7 @@ router.get('/', async (req, res) => {
       let countQuery = 'SELECT COUNT(*) as total FROM support_tickets t WHERE 1=1';
       const countParams = [];
 
-      if ((user.rolle === 'super_admin' || user.role === 'super_admin') || user.username === 'admin') {
+      if (istSuperAdmin(user)) {
         // Alle
       } else if ((user.rolle === 'admin' || user.role === 'admin')) {
         countQuery += ' AND (t.dojo_id = ? OR t.ersteller_id = ? OR t.zugewiesen_an = ?)';
@@ -238,7 +248,7 @@ router.get('/statistiken', (req, res) => {
   let whereClause = '1=1';
   const params = [];
 
-  if (user.role !== 'super_admin' && user.username !== 'admin') {
+  if (!istSuperAdmin(user)) {
     whereClause = 'dojo_id = ?';
     params.push(user.dojo_id);
   }
