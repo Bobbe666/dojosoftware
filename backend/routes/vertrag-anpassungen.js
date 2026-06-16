@@ -542,7 +542,8 @@ router.get('/kuendigung-info', authenticateToken, async (req, res) => {
     if (!mitglied_id) return res.status(403).json({ success: false });
 
     const [[vertrag]] = await pool.query(
-      `SELECT kuendigungsfrist_monate, kuendigungsdatum, status, vertragsbeginn
+      `SELECT kuendigungsfrist_monate, kuendigungsdatum, status, vertragsbeginn, vertragsende,
+              mindestlaufzeit_monate, verlaengerung_monate, automatische_verlaengerung
        FROM vertraege WHERE mitglied_id = ? AND status IN ('aktiv','ruhepause','gekuendigt')
        ORDER BY vertragsbeginn DESC LIMIT 1`,
       [mitglied_id]
@@ -556,6 +557,10 @@ router.get('/kuendigung-info', authenticateToken, async (req, res) => {
     fruehestens.setMonth(fruehestens.getMonth() + 1);
     fruehestens.setDate(0); // letzter Tag des Monats
     const fruehestensStr = fruehestens.toISOString().slice(0, 10);
+
+    // Ist die Online-Kündigung für dieses Dojo aktiviert?
+    const [[mem]] = await pool.query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
+    const [[dojoSettings]] = mem ? await pool.query('SELECT kuendigung_schriftlich FROM dojo WHERE id = ?', [mem.dojo_id]) : [[null]];
 
     // Offener Antrag?
     const [[offenerAntrag]] = await pool.query(
@@ -571,6 +576,11 @@ router.get('/kuendigung-info', authenticateToken, async (req, res) => {
       bereits_gekuendigt: !!vertrag.kuendigungsdatum || vertrag.status === 'gekuendigt',
       kuendigungsdatum: vertrag.kuendigungsdatum || null,
       offener_antrag: offenerAntrag || null,
+      // #kuendigung: Vertragsdaten + Online-Kündigung-Flag (für Mitglieder-Ansicht analog Admin)
+      vertragsbeginn: vertrag.vertragsbeginn || null,
+      vertragsende: vertrag.vertragsende || null,
+      mindestlaufzeit_monate: vertrag.mindestlaufzeit_monate || null,
+      online_kuendigung_aktiv: !dojoSettings?.kuendigung_schriftlich,
     });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });

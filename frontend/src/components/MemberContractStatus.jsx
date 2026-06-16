@@ -215,54 +215,98 @@ function MemberContractStatus({ mitgliedId }) {
           </div>
         )}
 
-        {/* Kündigung-Formular */}
+        {/* Kündigung-Formular — zeigt dieselben Bestimmungen wie die Admin-Ansicht */}
         {showKuendigungForm && (
           <div style={{ background: 'rgba(239,68,68,0.06)', borderRadius: 10, padding: '1rem', border: '1px solid rgba(239,68,68,0.25)', marginBottom: '0.75rem' }}>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
-              Deine Kündigungsfrist beträgt <strong style={{ color: 'var(--text-primary)' }}>{kuendigungInfo?.kuendigungsfrist_monate || 3} Monate</strong>.
-              {kuendigungInfo?.fruehestens_datum && (
-                <> Frühestmögliches Vertragsende: <strong style={{ color: '#f87171' }}>{new Date(kuendigungInfo.fruehestens_datum + 'T00:00').toLocaleDateString('de-DE')}</strong>.</>
-              )}
-            </p>
-            <div style={{ marginBottom: '0.65rem' }}>
-              <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Kündigungsgrund (optional)</label>
-              <textarea
-                value={kuendigungGrund}
-                onChange={e => setKuendigungGrund(e.target.value)}
-                placeholder="Grund für die Kündigung…"
-                rows={3}
-                style={{ width: '100%', borderRadius: 7, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', padding: '0.5rem 0.65rem', fontSize: '0.85rem', resize: 'vertical', boxSizing: 'border-box' }}
-              />
-            </div>
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', cursor: 'pointer' }}>
-              <input type="checkbox" checked={kuendigungBestaetigt} onChange={e => setKuendigungBestaetigt(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
-              Ich bestätige, dass ich meinen Vertrag kündigen möchte. Die Kündigung wird nach Prüfung durch den Administrator wirksam.
-            </label>
-            {kuendigungError && <p style={{ color: '#f87171', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{kuendigungError}</p>}
-            {kuendigungSuccess && <p style={{ color: '#4ade80', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{kuendigungSuccess}</p>}
-            <button
-              disabled={!kuendigungBestaetigt || kuendigungLoading}
-              onClick={async () => {
-                setKuendigungLoading(true); setKuendigungError(''); setKuendigungSuccess('');
-                try {
-                  const token = localStorage.getItem('memberToken') || localStorage.getItem('token');
-                  const resp = await fetch('/api/vertrag-anpassungen/beantragen', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({ typ: 'kuendigung', gueltig_bis: kuendigungInfo?.fruehestens_datum, grund: kuendigungGrund || null }),
-                  });
-                  const data = await resp.json();
-                  if (!resp.ok) throw new Error(data.error || 'Fehler');
-                  setKuendigungSuccess('Deine Kündigung wurde übermittelt und wird geprüft.');
-                  setShowKuendigungForm(false);
-                  setKuendigungInfo(prev => ({ ...prev, offener_antrag: { id: data.id } }));
-                } catch (e) { setKuendigungError(e.message); }
-                finally { setKuendigungLoading(false); }
-              }}
-              style={{ background: kuendigungBestaetigt ? 'rgba(239,68,68,0.8)' : 'rgba(255,255,255,0.1)', color: 'var(--ds-text)', border: 'none', borderRadius: 8, padding: '0.5rem 1.25rem', fontWeight: 600, cursor: kuendigungBestaetigt ? 'pointer' : 'not-allowed', fontSize: '0.85rem', opacity: kuendigungBestaetigt ? 1 : 0.5 }}
-            >
-              {kuendigungLoading ? '⏳ Senden…' : '✕ Kündigung beantragen'}
-            </button>
+            {kuendigungInfo?.online_kuendigung_aktiv === false ? (
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.55, margin: 0 }}>
+                Eine Online-Kündigung ist für dieses Dojo nicht aktiviert. Bitte reiche deine Kündigung schriftlich ein bzw. wende dich direkt an dein Dojo.
+              </p>
+            ) : (
+            <>
+              {/* Kündigungsbestimmungen (analog Admin) */}
+              <h4 style={{ margin: '0 0 0.6rem', fontSize: '0.92rem', color: 'var(--text-primary)' }}>📋 Kündigungsbestimmungen</h4>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '0.85rem' }}>
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>⏰ Kündigungsfristen</strong>
+                  <ul style={{ margin: '0.2rem 0 0', paddingLeft: '1.1rem' }}>
+                    <li><strong>Erstlaufzeit:</strong> Kündigung bis 3 Monate vor Vertragsende möglich</li>
+                    <li><strong>Nach Verlängerung:</strong> Kündigung mit 1 Monat Frist zum Monatsende</li>
+                    <li><strong>Sonderkündigungsrecht:</strong> Bei Umzug über 25km Entfernung (Nachweis erforderlich)</li>
+                  </ul>
+                </div>
+                <div style={{ marginBottom: '0.6rem' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>📋 Kündigungsregelungen</strong>
+                  <ul style={{ margin: '0.2rem 0 0', paddingLeft: '1.1rem' }}>
+                    <li>Bei vorzeitiger Kündigung: Zahlung der Restlaufzeit</li>
+                    <li>Keine Rückerstattung bereits gezahlter Beiträge</li>
+                  </ul>
+                </div>
+                <div style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.25)', borderRadius: 8, padding: '0.6rem 0.75rem' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>📄 Aktueller Vertrag</strong>
+                  <div style={{ marginTop: '0.3rem', display: 'grid', gap: '0.15rem' }}>
+                    <div><strong>Vertragslaufzeit:</strong> {kuendigungInfo?.vertragsbeginn ? new Date(kuendigungInfo.vertragsbeginn).toLocaleDateString('de-DE') : '—'} – {kuendigungInfo?.vertragsende ? new Date(kuendigungInfo.vertragsende).toLocaleDateString('de-DE') : '—'}</div>
+                    <div><strong>Früheste Kündigung:</strong> {(() => {
+                      if (!kuendigungInfo?.vertragsende) return kuendigungInfo?.fruehestens_datum ? new Date(kuendigungInfo.fruehestens_datum + 'T00:00').toLocaleDateString('de-DE') : '—';
+                      const ve = new Date(kuendigungInfo.vertragsende); const f = new Date(ve); f.setMonth(ve.getMonth() - 3); return f.toLocaleDateString('de-DE');
+                    })()}</div>
+                    <div><strong>Vertragsende:</strong> {kuendigungInfo?.vertragsende ? new Date(kuendigungInfo.vertragsende).toLocaleDateString('de-DE') : '—'}</div>
+                    {kuendigungInfo?.fruehestens_datum && (
+                      <div style={{ color: '#f87171', marginTop: '0.2rem' }}>Frühestmögliches Vertragsende bei Kündigung heute: <strong>{new Date(kuendigungInfo.fruehestens_datum + 'T00:00').toLocaleDateString('de-DE')}</strong></div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '0.65rem' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Kündigungsgrund (optional)</label>
+                <select
+                  value={kuendigungGrund}
+                  onChange={e => setKuendigungGrund(e.target.value)}
+                  style={{ width: '100%', padding: '0.5rem 0.65rem', borderRadius: 7, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }}
+                >
+                  <option value="">Bitte wählen…</option>
+                  <option value="Umzug">Umzug</option>
+                  <option value="Finanzielle Gründe">Finanzielle Gründe</option>
+                  <option value="Zeitmangel">Zeitmangel</option>
+                  <option value="Krankheit/Verletzung">Krankheit/Verletzung</option>
+                  <option value="Unzufriedenheit mit Service">Unzufriedenheit mit Service</option>
+                  <option value="Wechsel zu anderem Verein">Wechsel zu anderem Verein</option>
+                  <option value="Sonstiges">Sonstiges</option>
+                </select>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', cursor: 'pointer' }}>
+                <input type="checkbox" checked={kuendigungBestaetigt} onChange={e => setKuendigungBestaetigt(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
+                <span><strong style={{ color: '#f87171' }}>⚠️ Bestätigung erforderlich:</strong> Ich habe die Kündigungsbestimmungen gelesen und verstanden. Mir ist bewusst, dass bei vorzeitiger Kündigung die Restlaufzeit zu zahlen ist und keine Rückerstattung bereits gezahlter Beiträge erfolgt.</span>
+              </label>
+              {kuendigungError && <p style={{ color: '#f87171', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{kuendigungError}</p>}
+              {kuendigungSuccess && <p style={{ color: '#4ade80', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{kuendigungSuccess}</p>}
+              <button
+                disabled={!kuendigungBestaetigt || kuendigungLoading}
+                onClick={async () => {
+                  setKuendigungLoading(true); setKuendigungError(''); setKuendigungSuccess('');
+                  try {
+                    const token = localStorage.getItem('memberToken') || localStorage.getItem('token');
+                    const heute = new Date().toISOString().slice(0, 10);
+                    const resp = await fetch('/api/vertrag-anpassungen/beantragen', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({ typ: 'kuendigung', gueltig_von: heute, gueltig_bis: kuendigungInfo?.fruehestens_datum, grund: kuendigungGrund || null }),
+                    });
+                    const data = await resp.json();
+                    if (!resp.ok) throw new Error(data.error || 'Fehler');
+                    setKuendigungSuccess('Deine Kündigung wurde übermittelt und wird geprüft.');
+                    setShowKuendigungForm(false);
+                    setKuendigungInfo(prev => ({ ...prev, offener_antrag: { id: data.id } }));
+                  } catch (e) { setKuendigungError(e.message); }
+                  finally { setKuendigungLoading(false); }
+                }}
+                style={{ background: kuendigungBestaetigt ? 'rgba(239,68,68,0.8)' : 'rgba(255,255,255,0.1)', color: 'var(--ds-text)', border: 'none', borderRadius: 8, padding: '0.5rem 1.25rem', fontWeight: 600, cursor: kuendigungBestaetigt ? 'pointer' : 'not-allowed', fontSize: '0.85rem', opacity: kuendigungBestaetigt ? 1 : 0.5 }}
+              >
+                {kuendigungLoading ? '⏳ Senden…' : '✕ Kündigung beantragen'}
+              </button>
+            </>
+            )}
           </div>
         )}
 

@@ -1169,6 +1169,18 @@ const EinstellungenDojo = () => {
                     max="12"
                   />
                 </div>
+                <div className="form-group">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={dojo.kuendigung_schriftlich === false || dojo.kuendigung_schriftlich === 0}
+                      onChange={(e) => handleChange({ target: { name: 'kuendigung_schriftlich', value: !e.target.checked } })}
+                      disabled={!isEditing}
+                    />
+                    Online-Kündigung in der App erlauben
+                  </label>
+                  <small>Wenn aktiv, können Mitglieder ihren Vertrag selbst in der App kündigen (mit Frist & Bestätigung). Sonst nur schriftlich.</small>
+                </div>
               </div>
             </div>
 
