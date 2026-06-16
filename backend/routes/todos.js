@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
       WHERE 1=1
     `;
     const params = [];
-    if (dojoId) { sql += ' AND t.dojo_id = ?'; params.push(dojoId); }
+    if (dojoId) { sql += ' AND (t.dojo_id = ? OR t.dojo_id IS NULL)'; params.push(dojoId); }
     else         { sql += ' AND (t.dojo_id IS NULL OR 1=1)'; }
     if (status   && status   !== 'alle') { sql += ' AND t.status = ?';    params.push(status); }
     if (kontext  && kontext  !== 'alle') { sql += ' AND t.kontext = ?';   params.push(kontext); }
@@ -63,7 +63,7 @@ router.get('/:id', async (req, res) => {
       WHERE t.id = ?
     `;
     const params = [id];
-    if (dojoId) { sql += ' AND t.dojo_id = ?'; params.push(dojoId); }
+    if (dojoId) { sql += ' AND (t.dojo_id = ? OR t.dojo_id IS NULL)'; params.push(dojoId); }
     const [rows] = await pool.query(sql, params);
     if (!rows.length) return res.status(404).json({ error: 'Nicht gefunden' });
     res.json({ todo: rows[0] });
@@ -104,7 +104,7 @@ router.put('/:id', async (req, res) => {
   try {
     let where = 'WHERE id = ?';
     const params = [id];
-    if (dojoId) { where += ' AND dojo_id = ?'; params.push(dojoId); }
+    if (dojoId) { where += ' AND (dojo_id = ? OR dojo_id IS NULL)'; params.push(dojoId); }
     await pool.query(
       `UPDATE todos SET titel=?, beschreibung=?, sachstand=?, prioritaet=?, status=?, kontext=?, faellig_am=?, zugewiesen_an=? ${where}`,
       [titel, beschreibung || null, sachstand || null, prioritaet, status, kontext, faellig_am || null, zugewiesen_an || null, ...params]
@@ -131,7 +131,7 @@ router.patch('/:id/status', async (req, res) => {
   try {
     let where = 'WHERE id = ?';
     const params = [status, id];
-    if (dojoId) { where += ' AND dojo_id = ?'; params.push(dojoId); }
+    if (dojoId) { where += ' AND (dojo_id = ? OR dojo_id IS NULL)'; params.push(dojoId); }
     await pool.query(`UPDATE todos SET status = ? ${where}`, params);
     res.json({ success: true });
   } catch (err) {
@@ -146,7 +146,7 @@ router.delete('/:id', async (req, res) => {
   try {
     let where = 'WHERE id = ?';
     const params = [id];
-    if (dojoId) { where += ' AND dojo_id = ?'; params.push(dojoId); }
+    if (dojoId) { where += ' AND (dojo_id = ? OR dojo_id IS NULL)'; params.push(dojoId); }
     await pool.query(`DELETE FROM todos ${where}`, params);
     res.json({ success: true });
   } catch (err) {
