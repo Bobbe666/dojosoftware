@@ -495,7 +495,7 @@ router.post('/:id/email-senden', async (req, res) => {
     const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
     await page.goto(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' } });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '12mm', bottom: '22mm', left: '12mm', right: '12mm' } });
     await browser.close();
 
     // E-Mail-Body: Rechnung INLINE sichtbar (Mail-Layout) + PDF im Anhang
