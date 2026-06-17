@@ -195,13 +195,18 @@ router.post('/register/step1', step1Limiter, async (req, res) => {
     // SECURITY: Passwort hashen (12 Rounds für Sicherheit)
     const passwordHash = await bcrypt.hash(password, 12);
 
+    // Registrierungs-IP + Browser erfassen (Sicherheit/Missbrauchsschutz, Art. 6 Abs. 1 lit. f DSGVO)
+    const regIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+      || req.ip || req.socket?.remoteAddress || null;
+    const regUa = (req.headers['user-agent'] || '').slice(0, 500) || null;
+
     // In Registrierungs-Tabelle einfügen (mit Promo-Code falls vorhanden)
     await queryAsync(`
       INSERT INTO registrierungen (
         email, password_hash, verification_token, token_expires_at, status, created_at,
-        promo_code, promo_code_id, werber_mitglied_id
-      ) VALUES (?, ?, ?, ?, 'email_pending', NOW(), ?, ?, ?)
-    `, [email, passwordHash, verificationToken, expiresAt, promo_code || null, promoCodeId, werberId]);
+        promo_code, promo_code_id, werber_mitglied_id, registrierung_ip, registrierung_user_agent
+      ) VALUES (?, ?, ?, ?, 'email_pending', NOW(), ?, ?, ?, ?, ?)
+    `, [email, passwordHash, verificationToken, expiresAt, promo_code || null, promoCodeId, werberId, regIp, regUa]);
 
     logger.info('Neue Registrierung gestartet', { email, promo_code: promo_code || 'keiner' });
 
