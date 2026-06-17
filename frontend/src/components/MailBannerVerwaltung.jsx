@@ -112,6 +112,8 @@ export default function MailBannerVerwaltung() {
 
   const selectedDojo = (data?.dojos || []).find(d => d.id === dojoSel);
   const dojoLocked = dojoSel > 0 && !(selectedDojo?.darf_branden);
+  // Verband = TDA International (eigenes „Dojo", bekommt eine eigene Reihe wie HOF/Events)
+  const verbandDojo = (data?.dojos || []).find(d => /tiger\s*&?\s*dragon|international/i.test(d.dojoname || ''));
 
   return (
     <div className="section-card" style={{ marginTop: 20 }}>
@@ -133,6 +135,14 @@ export default function MailBannerVerwaltung() {
           <h4 style={{ margin: '22px 0 10px', color: '#e2e8f0' }}>{APP_LABELS.events}</h4>
           {grid(anlaesse.map(a => card('events', a, 0)))}
 
+          {/* TDA Verband — eigene Reihe (technisch app=dojo, dojo_id = TDA International) */}
+          {verbandDojo && (
+            <>
+              <h4 style={{ margin: '22px 0 10px', color: '#e2e8f0' }}>🏛️ TDA Verband</h4>
+              {grid(anlaesse.map(a => card('dojo', a, verbandDojo.id)))}
+            </>
+          )}
+
           {/* Dojo — mit Dojo-Wähler */}
           <h4 style={{ margin: '22px 0 8px', color: '#e2e8f0' }}>{APP_LABELS.dojo}</h4>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -140,7 +150,7 @@ export default function MailBannerVerwaltung() {
             <select value={dojoSel} onChange={e => setDojoSel(parseInt(e.target.value, 10))}
               style={{ padding: '6px 10px', borderRadius: 6, background: '#0f172a', color: '#e2e8f0', border: '1px solid rgba(148,163,184,.3)' }}>
               <option value={0}>★ Standard (alle Dojos)</option>
-              {(data.dojos || []).map(d => (
+              {(data.dojos || []).filter(d => d.id !== verbandDojo?.id).map(d => (
                 <option key={d.id} value={d.id}>{d.dojoname}{d.darf_branden ? '' : ' (kein Enterprise)'}</option>
               ))}
             </select>
