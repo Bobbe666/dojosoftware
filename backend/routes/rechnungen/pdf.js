@@ -578,3 +578,5 @@ router.patch('/:id/positionen-kategorien', async (req, res) => {
 
 module.exports = router;
 module.exports.buildRechnungHTML = buildRechnungHTML;
+module.exports.buildRechnungEmailBody = buildRechnungEmailBody;
+module.exports.giroQr = giroQr;
