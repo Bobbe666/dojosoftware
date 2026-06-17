@@ -1074,6 +1074,10 @@ const RechnungErstellen = () => {
       const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
       const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
       const nettoPreis = bruttoPreis - rabattBetrag;
+      // Beschreibung/Leistungsdatum (Freitext) mitspeichern – z. B. der Leistungszeitraum/Monat
+      const beschrTeile = [];
+      if (pos.leistungsdatum) beschrTeile.push(`Leistungsdatum: ${pos.leistungsdatum}`);
+      if (pos.freitext && pos.freitext.trim()) beschrTeile.push(pos.freitext.trim());
       return {
         bezeichnung: pos.bezeichnung,
         artikelnummer: pos.artikelnummer || null,
@@ -1081,6 +1085,7 @@ const RechnungErstellen = () => {
         einzelpreis: pos.einzelpreis,
         gesamtpreis: nettoPreis,
         mwst_satz: pos.ust_prozent,
+        beschreibung: beschrTeile.join(' · ') || null,
         ist_rabattfaehig: pos.ist_rabattfaehig || false,
         rabatt_prozent: pos.rabatt_prozent || 0
       };

@@ -146,7 +146,7 @@ function buildRechnungHTML(rechnung, positionen) {
         const label = rateLabels[rate];
         return `<tr>
           <td>${pos.position_nr}</td>
-          <td>${pos.bezeichnung}</td>
+          <td>${pos.bezeichnung}${pos.beschreibung ? `<br><span style="font-size:0.85em;color:#555">${pos.beschreibung}</span>` : ''}</td>
           <td style="text-align:right">${pos.menge}</td>
           <td style="text-align:right">${fmt(pos.einzelpreis)}</td>
           ${multiRate ? `<td style="text-align:center">${label}</td>` : ''}

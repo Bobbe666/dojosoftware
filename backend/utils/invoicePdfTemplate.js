@@ -308,7 +308,7 @@ module.exports = function generateInvoiceHTML(rechnung, positionen, qrCodeDataUR
         return `
           <tr>
             <td>${pos.position_nr}</td>
-            <td>${pos.bezeichnung || ''}</td>
+            <td>${pos.bezeichnung || ''}${pos.beschreibung ? `<br><span style="font-size:0.85em;color:#555">${pos.beschreibung}</span>` : ''}</td>
             <td>${pos.artikelnummer || ''}</td>
             <td>${pos.menge || 1}</td>
             <td>Stk.</td>

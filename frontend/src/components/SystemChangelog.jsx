@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.73',
+    date: '2026-06-17',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Rechnungspositionen: Beschreibung/Leistungszeitraum wird gespeichert & gedruckt',
+    description: 'Bug behoben: Beim Erstellen/Bearbeiten einer Rechnung wurde der pro Position eingegebene Freitext (Leistungszeitraum/Monat) sowie das Leistungsdatum NICHT gespeichert (mappedPositionen ließ das Feld weg) → beschreibung landete als NULL in der DB. Zusätzlich druckten beide PDF-Templates die Positions-Beschreibung gar nicht. Jetzt wird der Freitext/Leistungsdatum gespeichert und unter der Bezeichnung jeder Position im PDF angezeigt.',
+    highlights: [
+      '💾 Positions-Freitext + Leistungsdatum werden jetzt gespeichert',
+      '🧾 PDF zeigt die Beschreibung/den Zeitraum je Position an',
+      '🔧 Betrifft Rechnung erstellen UND bearbeiten',
+    ],
+    details: 'RechnungErstellen.jsx mappedPositionen ergänzt beschreibung (Leistungsdatum · Freitext); pdf.js buildRechnungHTML + utils/invoicePdfTemplate.js rendern pos.beschreibung unter der Bezeichnung.',
+    files: ['frontend/src/components/RechnungErstellen.jsx', 'backend/routes/rechnungen/pdf.js', 'backend/utils/invoicePdfTemplate.js'],
+  },
+  {
     version: '3.0.72',
     date: '2026-06-17',
     type: 'improvement',
