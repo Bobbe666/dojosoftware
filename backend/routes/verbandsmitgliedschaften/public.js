@@ -8,41 +8,6 @@ const db = require('../../db');
 const router = express.Router();
 const { DEFAULT_BEITRAG_DOJO, DEFAULT_BEITRAG_EINZEL, getEinstellung } = require('./shared');
 
-// Auto-Willkommensmail nach Verbands-Anmeldung (mit Begrüßungs-Banner, dojo_id 2 = TDA Verband).
-// Vermerk (willkommensmail_gesendet_am) wird gesetzt → erscheint im Daily Briefing.
-async function sendeVerbandWillkommen({ insertId, email, name, typ, mitgliedsnummer, gueltig_ab, gueltig_bis, jahresbeitrag }) {
-  if (!email) return;
-  try {
-    const { sendEmailForDojo } = require('../../services/emailService');
-    const { renderEmail, getDojoMailTheme } = require('../../services/emailLayout');
-    const theme = await getDojoMailTheme({ dojoname: 'Tiger & Dragon Association - International' });
-    const fmtD = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '–';
-    const betrag = jahresbeitrag != null && jahresbeitrag !== '' ? Number(jahresbeitrag).toFixed(2).replace('.', ',') + ' €' : '–';
-    const typLabel = typ === 'dojo' ? 'Dojo-Mitgliedschaft' : 'Einzelmitgliedschaft';
-    const bodyHtml = `
-      <p style="font-size:16px;margin:0 0 16px;">Hallo ${name},</p>
-      <p style="margin:0 0 14px;">herzlich willkommen im <strong>Tiger &amp; Dragon Association Verband</strong> &ndash; sch&ouml;n, dass du dabei bist!</p>
-      <div class="box">
-        <p style="margin:0 0 8px;"><strong>Deine Mitgliedschaft auf einen Blick</strong></p>
-        Mitgliedsnummer: <strong>${mitgliedsnummer}</strong><br>
-        Art: ${typLabel}<br>
-        Laufzeit: ${fmtD(gueltig_ab)} &ndash; ${fmtD(gueltig_bis)}<br>
-        Jahresbeitrag: ${betrag}
-      </div>
-      <p style="margin:14px 0;">Den Beitrag wickeln wir nun mit dir ab &ndash; die Zahlungsinformationen erh&auml;ltst du in K&uuml;rze. Sobald das erledigt ist, ist deine Mitgliedschaft vollst&auml;ndig aktiv und du kannst alle Vorteile und Verg&uuml;nstigungen des Verbands nutzen.</p>
-      <p style="margin:14px 0 0;">Bei Fragen melde dich einfach direkt bei uns.</p>
-      <p style="margin:14px 0 0;">Sportliche Gr&uuml;&szlig;e<br><strong>Tiger &amp; Dragon Association &ndash; International</strong></p>`;
-    const html = renderEmail({ theme, anlass: 'begruessung', titel: 'Willkommen im TDA Verband', subtitel: 'Tiger & Dragon Association', bodyHtml });
-    const r = await sendEmailForDojo({ to: email, subject: 'Willkommen im TDA Verband!', html, text: `Willkommen im TDA Verband! Deine Mitgliedsnummer: ${mitgliedsnummer}.` }, 2);
-    if (r && r.success && insertId) {
-      db.query('UPDATE verbandsmitgliedschaften SET willkommensmail_gesendet_am = NOW() WHERE id = ?', [insertId]);
-      logger.info?.('Verband-Willkommensmail gesendet', { mitgliedsnummer, email });
-    }
-  } catch (e) {
-    logger.error('Verband-Willkommensmail fehlgeschlagen:', e.message);
-  }
-}
-
 // Ländercode-Mapping (ISO 3166-1 Alpha-2)
 const LAENDER_CODES = {
   'deutschland': 'DE',
@@ -189,10 +154,16 @@ router.post('/public/anmeldung', async (req, res) => {
         return res.status(500).json({ success: false, error: 'Datenbankfehler bei der Anmeldung' });
       }
       res.json({ success: true, mitgliedsnummer, message: 'Anmeldung erfolgreich!' });
-      // Auto-Willkommensmail direkt nach der Anmeldung (fire-and-forget, blockiert die Antwort nicht)
-      const empfaenger = typ === 'einzel' ? email : dojo_email;
-      const empfName = typ === 'einzel' ? `${vorname || ''} ${nachname || ''}`.trim() : (dojo_name || dojo_inhaber || 'Mitglied');
-      sendeVerbandWillkommen({ insertId: result.insertId, email: empfaenger, name: empfName, typ, mitgliedsnummer, gueltig_ab, gueltig_bis, jahresbeitrag });
+      // Auto-Willkommensmail direkt nach der Anmeldung (fire-and-forget). Die Rechnung
+      // folgt automatisch 2 Std. später per Cron (processFaelligeRechnungen).
+      const verbandMails = require('../../services/verbandMails');
+      verbandMails.sendWillkommen(db.promise(), {
+        id: result.insertId,
+        typ: typ === 'dojo' ? 'dojo' : 'einzelperson',
+        person_vorname: vorname, person_nachname: nachname, person_email: email,
+        dojo_name, dojo_inhaber, dojo_email,
+        mitgliedsnummer, jahresbeitrag, gueltig_ab, gueltig_bis,
+      }).catch(() => {});
     });
   } catch (err) {
     logger.error('Fehler bei der Anmeldung:', err);

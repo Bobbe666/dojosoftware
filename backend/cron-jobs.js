@@ -247,6 +247,24 @@ function initCronJobs() {
   });
 
   /**
+   * Verband-Rechnungen: automatisch 2 Std. nach der Willkommensmail versenden
+   * (fortlaufende Rechnungsnummer, Mail wird im verband_mail_log gespeichert).
+   * Läuft alle 15 Minuten.
+   */
+  cron.schedule('*/15 * * * *', async () => {
+    const t0 = Date.now();
+    try {
+      const { processFaelligeRechnungen } = require('./services/verbandMails');
+      const res = await processFaelligeRechnungen(db.promise());
+      if (res.gesendet > 0) logger.success(`🧾 Verband-Rechnungen: ${res.gesendet}/${res.faellig} versendet`);
+      await recordCronRun('verband_rechnungen', { erfolg: true, info: `${res.gesendet} gesendet`, dauerMs: Date.now() - t0 });
+    } catch (error) {
+      logger.error('❌ Verband-Rechnungen Cron-Job Fehler', { error: error.message, stack: error.stack });
+      await recordCronRun('verband_rechnungen', { erfolg: false, info: error.message, dauerMs: Date.now() - t0 });
+    }
+  });
+
+  /**
    * Feature-Trials: Abgelaufene Trials deaktivieren
    * Läuft täglich um 00:30 Uhr
    * Setzt Status von abgelaufenen Trials auf 'expired' und loggt Zugriffsentzug
