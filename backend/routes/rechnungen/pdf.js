@@ -165,6 +165,8 @@ function buildRechnungHTML(rechnung, positionen, qr = null) {
     h2.rechnung-title { font-size: 15pt; color: #1e293b; margin: 16px 0 14px; border-left: 4px solid #DAA520; padding-left: 12px; }
 
     table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 9pt; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; break-inside: avoid; }
     thead tr { background: #1e293b; color: #fff; }
     th { padding: 9px 8px; text-align: left; font-weight: 600; font-size: 8.5pt; letter-spacing: 0.03em; }
     th:nth-child(3), th:nth-child(4), th:nth-child(5) { text-align: right; }
@@ -172,12 +174,13 @@ function buildRechnungHTML(rechnung, positionen, qr = null) {
     td { padding: 9px 8px; border-bottom: 1px solid #eef2f7; color: #334155; }
     td:nth-child(3), td:nth-child(4), td:nth-child(5) { text-align: right; }
 
-    .totals { margin-left: auto; width: 50%; font-size: 9.5pt; margin-top: 6px; }
+    .totals { margin-left: auto; width: 50%; font-size: 9.5pt; margin-top: 6px; page-break-inside: avoid; break-inside: avoid; }
     .totals-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eef2f7; color: #475569; }
     .totals-row.final { font-weight: bold; font-size: 12pt; border-top: 2px solid #DAA520; border-bottom: none; margin-top: 4px; padding-top: 8px; color: #1e293b; }
 
-    .payment-terms { margin-top: 20px; padding: 13px 16px; background: #f0f9ff; border-left: 4px solid #DAA520; border-radius: 0 6px 6px 0; font-size: 9pt; color: #334155; }
+    .payment-terms { margin-top: 20px; padding: 13px 16px; background: #f0f9ff; border-left: 4px solid #DAA520; border-radius: 0 6px 6px 0; font-size: 9pt; color: #334155; page-break-inside: avoid; break-inside: avoid; }
     .payment-terms p + p { margin-top: 5px; }
+    .payment-terms table { page-break-inside: avoid; break-inside: avoid; }
     .payment-terms strong { color: #1e293b; }
 
     .footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid #eef2f7; font-size: 8pt; color: #94a3b8; text-align: center; line-height: 1.6; }
