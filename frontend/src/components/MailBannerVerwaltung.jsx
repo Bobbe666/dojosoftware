@@ -14,6 +14,7 @@ export default function MailBannerVerwaltung() {
   const [busy, setBusy] = useState('');
   const [dojoSel, setDojoSel] = useState(0); // 0 = Standard (alle Dojos)
   const fileInputs = useRef({});
+  const defaultedRef = useRef(false);
   const token = localStorage.getItem('token');
   const authHeader = { Authorization: `Bearer ${token}` };
 
@@ -21,6 +22,12 @@ export default function MailBannerVerwaltung() {
     try {
       const res = await axios.get('/mail-banners', { headers: authHeader });
       setData(res.data);
+      // Standard-Auswahl beim ersten Laden: Kampfkunstschule Schreiner (falls vorhanden)
+      if (!defaultedRef.current) {
+        defaultedRef.current = true;
+        const schreiner = (res.data?.dojos || []).find(d => /schreiner/i.test(d.dojoname || ''));
+        if (schreiner) setDojoSel(schreiner.id);
+      }
     } catch (e) {
       setMsg({ ok: false, text: 'Banner konnten nicht geladen werden: ' + (e.response?.data?.error || e.message) });
     }
