@@ -262,6 +262,12 @@ router.post('/register', verbandRegisterLimiter, async (req, res) => {
       insertData.person_telefon = telefon;
     }
 
+    // Registrierungs-IP + Browser speichern (Sicherheit / Missbrauchsschutz,
+    // Art. 6 Abs. 1 lit. f DSGVO) — macht Registrierungen unter fremdem Namen nachvollziehbar.
+    insertData.registrierung_ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+      || req.ip || req.socket?.remoteAddress || null;
+    insertData.registrierung_user_agent = (req.headers['user-agent'] || '').slice(0, 500) || null;
+
     const columns = Object.keys(insertData).join(', ');
     const placeholders = Object.keys(insertData).map(() => '?').join(', ');
     const values = Object.values(insertData);
