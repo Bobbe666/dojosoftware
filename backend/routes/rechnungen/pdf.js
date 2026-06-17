@@ -10,8 +10,12 @@ const fs = require('fs').promises;
 const logger = require('../../utils/logger');
 const { queryAsync } = require('./shared');
 const { sendEmailForDojo } = require('../../services/emailService');
+const { bannerUrlFor } = require('../../services/emailLayout');
 
 function buildRechnungHTML(rechnung, positionen) {
+  // Header-Banner wie in der E-Mail-Rechnung (Anlass 'rechnung', pro Dojo); Fallback = Schiefer-Header
+  const dojoIdForBanner = rechnung.resolved_dojo_id || rechnung.dojo_id || 0;
+  const bannerUrl = bannerUrlFor('dojo', 'rechnung', dojoIdForBanner);
   const fmt = (n) => parseFloat(n || 0).toFixed(2).replace('.', ',');
   // DIN 5008: Datum mit führenden Nullen TT.MM.JJJJ
   const datumFmt = (d) => {
@@ -32,7 +36,10 @@ function buildRechnungHTML(rechnung, positionen) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #475569; background: #fff; }
 
-    /* Marken-Header (Schiefer/Gold – wie die E-Mails) */
+    /* Banner-Bild wie in der E-Mail-Rechnung */
+    .invoice-banner-img { display: block; width: 100%; height: auto; border: 0; }
+
+    /* Marken-Header (Schiefer/Gold – Fallback wenn kein Banner) */
     .invoice-banner {
       background: #1e293b;
       background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -84,13 +91,15 @@ function buildRechnungHTML(rechnung, positionen) {
   </style>
 </head>
 <body>
-  <div class="invoice-banner">
+  ${bannerUrl
+    ? `<img class="invoice-banner-img" src="${bannerUrl}" alt="${rechnung.dojoname || 'Rechnung'}" />`
+    : `<div class="invoice-banner">
     <div>
       <div class="company-name">${rechnung.dojoname || ''}</div>
       <div class="company-addr">${rechnung.dojo_strasse || ''} ${rechnung.dojo_hausnummer || ''} &bull; ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}</div>
     </div>
     <div class="invoice-label">Rechnung</div>
-  </div>
+  </div>`}
 
   <div class="content">
     <div class="addr-meta">

@@ -179,4 +179,4 @@ function renderEmail(o = {}) {
 </body></html>`;
 }
 
-module.exports = { renderEmail, getDojoMailTheme, DEFAULT_THEME, PUBLIC_URL };
+module.exports = { renderEmail, getDojoMailTheme, DEFAULT_THEME, PUBLIC_URL, bannerUrlFor };
