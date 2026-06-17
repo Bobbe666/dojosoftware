@@ -104,6 +104,37 @@ async function applyBeitraege(mitglied_id, gueltig_von, gueltig_bis, betrag) {
   return r.affectedRows;
 }
 
+// Ordentliches Kündigungsdatum: IMMER zum Vertragsende mit Kündigungsfrist (Standard 3 Monate).
+// Keine Ausnahmen — eine vorzeitige Beendigung ist über diesen Weg nicht möglich.
+// Rückgabe: { datum: 'YYYY-MM-DD', frist, basis: 'vertragsende'|'monatsende' }
+function berechneKuendigungsdatum(vertrag, heute = new Date()) {
+  const frist = parseInt(vertrag?.kuendigungsfrist_monate) || 3;
+
+  // Fester Vertrag mit Laufzeitende → zum (ggf. verlängerten) Vertragsende kündbar
+  if (vertrag?.vertragsende) {
+    let ende = new Date(vertrag.vertragsende);
+    const verl = parseInt(vertrag.verlaengerung_monate) || 12;
+    const autoVerl = vertrag.automatische_verlaengerung === null || vertrag.automatische_verlaengerung === undefined
+      ? true : !!vertrag.automatische_verlaengerung;
+    // Stichtag = frist Monate vor Vertragsende. Liegt er in der Vergangenheit, rollt der
+    // Vertrag (bei autom. Verlängerung) jeweils um verl Monate weiter, bis er kündbar ist.
+    const stichtag = (d) => { const s = new Date(d); s.setMonth(s.getMonth() - frist); return s; };
+    let guard = 0;
+    while (heute > stichtag(ende) && guard < 240) {
+      if (!autoVerl) break; // ohne Verlängerung bleibt es beim regulären Ende
+      ende.setMonth(ende.getMonth() + verl);
+      guard++;
+    }
+    return { datum: ende.toISOString().slice(0, 10), frist, basis: 'vertragsende' };
+  }
+
+  // Offener Vertrag ohne Laufzeitende → frist Monate, zum Monatsende
+  const ende = new Date(heute);
+  ende.setMonth(ende.getMonth() + frist + 1);
+  ende.setDate(0); // letzter Tag des Zielmonats
+  return { datum: ende.toISOString().slice(0, 10), frist, basis: 'monatsende' };
+}
+
 // ── GET /mitglied/:id  (Admin: alle Anpassungen eines Mitglieds) ──────────
 router.get('/mitglied/:id', authenticateToken, async (req, res) => {
   try {
@@ -180,7 +211,8 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
     if (!mitglied_id) return res.status(403).json({ success: false, error: 'Kein Mitglied-Konto verknüpft.' });
 
     const { typ, gueltig_von, gueltig_bis, grund } = req.body;
-    if (!typ || !gueltig_von || !gueltig_bis) {
+    // Bei Kündigung wird das Datum serverseitig zwingend berechnet (kein Client-Wert nötig)
+    if (!typ || (typ !== 'kuendigung' && (!gueltig_von || !gueltig_bis))) {
       return res.status(400).json({ success: false, error: 'Pflichtfelder fehlen' });
     }
 
@@ -190,6 +222,10 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
     );
     const [[mem]] = await pool.query(`SELECT m.dojo_id, d.ruhepause_max_monate FROM mitglieder m LEFT JOIN dojo d ON m.dojo_id = d.id WHERE m.mitglied_id = ?`, [mitglied_id]);
     if (!mem) return res.status(404).json({ success: false, error: 'Mitglied nicht gefunden.' });
+
+    // Effektive Gültigkeit — bei Kündigung serverseitig erzwungen, sonst vom Mitglied
+    let effektivVon = gueltig_von || new Date().toISOString().slice(0, 10);
+    let effektivBis = gueltig_bis || null;
 
     if (typ === 'ruhepause') {
       const maxMonate = mem.ruhepause_max_monate || 3;
@@ -210,34 +246,29 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
         return res.status(403).json({ success: false, error: 'Online-Kündigung ist für dieses Dojo nicht aktiviert. Bitte wenden Sie sich direkt ans Dojo.' });
       }
 
-      // Aktiven Vertrag laden um Kündigungsfrist zu prüfen
+      // Aktiven Vertrag laden um das ordentliche Kündigungsdatum zu berechnen
       const [[vertrag]] = await pool.query(
-        `SELECT kuendigungsfrist_monate, kuendigungsdatum FROM vertraege
+        `SELECT kuendigungsfrist_monate, kuendigungsdatum, vertragsende, verlaengerung_monate, automatische_verlaengerung
+         FROM vertraege
          WHERE mitglied_id = ? AND status IN ('aktiv','ruhepause') ORDER BY vertragsbeginn DESC LIMIT 1`,
         [mitglied_id]
       );
       if (!vertrag) return res.status(400).json({ success: false, error: 'Kein aktiver Vertrag gefunden.' });
       if (vertrag.kuendigungsdatum) return res.status(400).json({ success: false, error: 'Eine Kündigung liegt bereits vor.' });
 
-      // Frühestmögliches Kündigungsdatum berechnen
-      const frist = parseInt(vertrag.kuendigungsfrist_monate) || 3;
-      const fruehestens = new Date();
-      fruehestens.setMonth(fruehestens.getMonth() + frist);
-      fruehestens.setDate(1); // immer zum Monatsende — letzter Tag des Monats
-      fruehestens.setMonth(fruehestens.getMonth() + 1);
-      fruehestens.setDate(0);
-      const fruehestensStr = fruehestens.toISOString().slice(0, 10);
-
-      if (gueltig_bis && gueltig_bis < fruehestensStr) {
-        return res.status(400).json({ success: false, error: `Frühestmögliches Kündigungsdatum: ${new Date(fruehestensStr).toLocaleDateString('de-DE')}` });
-      }
+      // FESTE REGEL: Kündigung immer 3 Monate zum Vertragsende — keine Ausnahmen.
+      // Das Datum wird serverseitig erzwungen; ein vom Client gesendeter Wunschtermin
+      // wird bewusst ignoriert, eine vorzeitige Beendigung ist hier nicht möglich.
+      const k = berechneKuendigungsdatum(vertrag);
+      effektivVon = new Date().toISOString().slice(0, 10); // Kündigungseingang = heute
+      effektivBis = k.datum;                                // ordentliches Vertragsende
     }
 
     const [ins] = await pool.query(
       `INSERT INTO vertrag_anpassungen
        (mitglied_id, dojo_id, typ, alter_betrag, neuer_betrag, gueltig_von, gueltig_bis, status, grund, erstellt_von)
        VALUES (?, ?, ?, ?, 0, ?, ?, 'beantragt', ?, 'mitglied')`,
-      [mitglied_id, mem.dojo_id, typ, lb?.betrag || 0, gueltig_von || new Date().toISOString().slice(0,10), gueltig_bis || null, grund || null]
+      [mitglied_id, mem.dojo_id, typ, lb?.betrag || 0, effektivVon, effektivBis, grund || null]
     );
 
     // Admin-Benachrichtigung für Ruhepause- und Kündigungs-Anträge
@@ -245,8 +276,8 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
       try {
         const [[memInfo]] = await pool.query('SELECT vorname, nachname FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
         const name = memInfo ? `${memInfo.vorname} ${memInfo.nachname}` : `Mitglied #${mitglied_id}`;
-        const vonStr = new Date(gueltig_von).toLocaleDateString('de-DE');
-        const bisStr = new Date(gueltig_bis).toLocaleDateString('de-DE');
+        const vonStr = new Date(effektivVon).toLocaleDateString('de-DE');
+        const bisStr = new Date(effektivBis).toLocaleDateString('de-DE');
 
         const isKuendigung = typ === 'kuendigung';
         const notifSubject = isKuendigung ? 'Kündigung beantragt' : 'Ruhepause beantragt';
@@ -266,8 +297,8 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
               antrag_id: ins.insertId,
               mitglied_id,
               dojo_id: mem.dojo_id,
-              gueltig_von: gueltig_von || null,
-              gueltig_bis: gueltig_bis || null,
+              gueltig_von: effektivVon || null,
+              gueltig_bis: effektivBis || null,
               vorname: memInfo?.vorname,
               nachname: memInfo?.nachname,
               grund: grund || null
@@ -294,7 +325,7 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
           [mitglied_id]
         );
         if (memMail?.email) {
-          const bisStr = gueltig_bis ? new Date(gueltig_bis).toLocaleDateString('de-DE') : '—';
+          const bisStr = effektivBis ? new Date(effektivBis).toLocaleDateString('de-DE') : '—';
           await sendEmailForDojo({
             to: memMail.email,
             subject: `Kündigung eingegangen – ${memMail.dojoname}`,
@@ -305,8 +336,9 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
               <div style="background:#fff;padding:28px;border-radius:0 0 10px 10px">
                 <p>Sehr geehrte/r ${memMail.vorname} ${memMail.nachname},</p>
                 <p>wir haben Ihren Kündigungsantrag erhalten. Die Kündigung wird durch den Administrator geprüft und bestätigt.</p>
+                <p>Ihr Vertrag endet ordentlich zum nachstehenden Datum (Kündigungsfrist 3 Monate zum Vertragsende):</p>
                 <table style="width:100%;border-collapse:collapse;margin:16px 0">
-                  <tr><td style="padding:8px;color:#666;width:50%">Frühestmögliches Vertragsende:</td><td style="padding:8px;font-weight:600">${bisStr}</td></tr>
+                  <tr><td style="padding:8px;color:#666;width:50%">Vertragsende:</td><td style="padding:8px;font-weight:600">${bisStr}</td></tr>
                 </table>
                 <p style="color:#555">Sie erhalten eine weitere E-Mail, sobald Ihre Kündigung bestätigt wurde.</p>
                 <p>Mit freundlichen Grüßen<br><strong>${memMail.dojoname}</strong></p>
@@ -602,12 +634,10 @@ router.get('/kuendigung-info', authenticateToken, async (req, res) => {
 
     if (!vertrag) return res.json({ success: true, keinVertrag: true });
 
-    const frist = parseInt(vertrag.kuendigungsfrist_monate) || 3;
-    const fruehestens = new Date();
-    fruehestens.setMonth(fruehestens.getMonth() + frist);
-    fruehestens.setMonth(fruehestens.getMonth() + 1);
-    fruehestens.setDate(0); // letzter Tag des Monats
-    const fruehestensStr = fruehestens.toISOString().slice(0, 10);
+    // FESTE REGEL: ordentliche Kündigung immer zum Vertragsende mit Kündigungsfrist (Standard 3 Monate)
+    const kInfo = berechneKuendigungsdatum(vertrag);
+    const frist = kInfo.frist;
+    const fruehestensStr = kInfo.datum;
 
     // Ist die Online-Kündigung für dieses Dojo aktiviert?
     const [[mem]] = await pool.query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);

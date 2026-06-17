@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.70',
+    date: '2026-06-17',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Online-Kündigung: festes Datum 3 Monate zum Vertragsende (keine vorzeitige Beendigung)',
+    description: 'Die Online-Kündigung berechnet das Vertragsende jetzt zwingend serverseitig: immer zum nächstmöglichen regulären Vertragsende mit der Kündigungsfrist (Standard 3 Monate). Ein vom Mitglied gewünschtes früheres Datum ist nicht mehr möglich — eine vorzeitige Beendigung ist über die Selbstbedienung ausgeschlossen. Wird die Frist verpasst, greift die Kündigung automatisch zum darauffolgenden Vertragsende. Behebt einen Fall, in dem zum 30.09. statt korrekt zum 06.02. gekündigt worden wäre.',
+    highlights: [
+      '🔒 Kündigungsdatum serverseitig erzwungen — Client-Wunschtermin wird ignoriert',
+      '📅 Immer 3 Monate (bzw. Vertragsfrist) zum Vertragsende — keine Ausnahmen',
+      '🔁 Frist verpasst → automatisch zum nächsten Vertragsende',
+      '📝 Kündigungsbestimmungen & Bestätigungstext im Mitgliederbereich angepasst',
+    ],
+    details: 'vertrag-anpassungen.js: neue Helper berechneKuendigungsdatum() (rollt bei verpasster Frist über autom. Verlängerung weiter); /beantragen und /kuendigung-info nutzen sie, Client-gueltig_bis bei Kündigung verworfen; MemberContractStatus.jsx Texte/Anzeige aktualisiert.',
+    files: ['backend/routes/vertrag-anpassungen.js', 'frontend/src/components/MemberContractStatus.jsx'],
+  },
+  {
     version: '3.0.69',
     date: '2026-06-17',
     type: 'feature',

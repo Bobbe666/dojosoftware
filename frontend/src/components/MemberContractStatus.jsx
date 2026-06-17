@@ -228,17 +228,17 @@ function MemberContractStatus({ mitgliedId }) {
               <h4 style={{ margin: '0 0 0.6rem', fontSize: '0.92rem', color: 'var(--text-primary)' }}>📋 Kündigungsbestimmungen</h4>
               <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '0.85rem' }}>
                 <div style={{ marginBottom: '0.5rem' }}>
-                  <strong style={{ color: 'var(--text-primary)' }}>⏰ Kündigungsfristen</strong>
+                  <strong style={{ color: 'var(--text-primary)' }}>⏰ Kündigungsfrist</strong>
                   <ul style={{ margin: '0.2rem 0 0', paddingLeft: '1.1rem' }}>
-                    <li><strong>Erstlaufzeit:</strong> Kündigung bis 3 Monate vor Vertragsende möglich</li>
-                    <li><strong>Nach Verlängerung:</strong> Kündigung mit 1 Monat Frist zum Monatsende</li>
+                    <li><strong>Immer 3 Monate zum Vertragsende</strong> — eine ordentliche Kündigung wird stets zum nächstmöglichen Vertragsende wirksam.</li>
+                    <li>Wird die Frist verpasst, verlängert sich der Vertrag automatisch; die Kündigung greift dann zum darauffolgenden Vertragsende.</li>
                     <li><strong>Sonderkündigungsrecht:</strong> Bei Umzug über 25km Entfernung (Nachweis erforderlich)</li>
                   </ul>
                 </div>
                 <div style={{ marginBottom: '0.6rem' }}>
                   <strong style={{ color: 'var(--text-primary)' }}>📋 Kündigungsregelungen</strong>
                   <ul style={{ margin: '0.2rem 0 0', paddingLeft: '1.1rem' }}>
-                    <li>Bei vorzeitiger Kündigung: Zahlung der Restlaufzeit</li>
+                    <li>Eine vorzeitige Beendigung ist nicht möglich; der Vertrag läuft bis zum regulären Vertragsende.</li>
                     <li>Keine Rückerstattung bereits gezahlter Beiträge</li>
                   </ul>
                 </div>
@@ -246,13 +246,9 @@ function MemberContractStatus({ mitgliedId }) {
                   <strong style={{ color: 'var(--text-primary)' }}>📄 Aktueller Vertrag</strong>
                   <div style={{ marginTop: '0.3rem', display: 'grid', gap: '0.15rem' }}>
                     <div><strong>Vertragslaufzeit:</strong> {kuendigungInfo?.vertragsbeginn ? new Date(kuendigungInfo.vertragsbeginn).toLocaleDateString('de-DE') : '—'} – {kuendigungInfo?.vertragsende ? new Date(kuendigungInfo.vertragsende).toLocaleDateString('de-DE') : '—'}</div>
-                    <div><strong>Früheste Kündigung:</strong> {(() => {
-                      if (!kuendigungInfo?.vertragsende) return kuendigungInfo?.fruehestens_datum ? new Date(kuendigungInfo.fruehestens_datum + 'T00:00').toLocaleDateString('de-DE') : '—';
-                      const ve = new Date(kuendigungInfo.vertragsende); const f = new Date(ve); f.setMonth(ve.getMonth() - 3); return f.toLocaleDateString('de-DE');
-                    })()}</div>
-                    <div><strong>Vertragsende:</strong> {kuendigungInfo?.vertragsende ? new Date(kuendigungInfo.vertragsende).toLocaleDateString('de-DE') : '—'}</div>
+                    <div><strong>Kündigungsfrist:</strong> {kuendigungInfo?.kuendigungsfrist_monate || 3} Monate zum Vertragsende</div>
                     {kuendigungInfo?.fruehestens_datum && (
-                      <div style={{ color: '#f87171', marginTop: '0.2rem' }}>Frühestmögliches Vertragsende bei Kündigung heute: <strong>{new Date(kuendigungInfo.fruehestens_datum + 'T00:00').toLocaleDateString('de-DE')}</strong></div>
+                      <div style={{ color: '#fbbf24', marginTop: '0.2rem' }}>Bei Kündigung heute endet dein Vertrag ordentlich zum: <strong>{new Date(kuendigungInfo.fruehestens_datum + 'T00:00').toLocaleDateString('de-DE')}</strong></div>
                     )}
                   </div>
                 </div>
@@ -277,7 +273,7 @@ function MemberContractStatus({ mitgliedId }) {
               </div>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', cursor: 'pointer' }}>
                 <input type="checkbox" checked={kuendigungBestaetigt} onChange={e => setKuendigungBestaetigt(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
-                <span><strong style={{ color: '#f87171' }}>⚠️ Bestätigung erforderlich:</strong> Ich habe die Kündigungsbestimmungen gelesen und verstanden. Mir ist bewusst, dass bei vorzeitiger Kündigung die Restlaufzeit zu zahlen ist und keine Rückerstattung bereits gezahlter Beiträge erfolgt.</span>
+                <span><strong style={{ color: '#f87171' }}>⚠️ Bestätigung erforderlich:</strong> Ich habe die Kündigungsbestimmungen gelesen und verstanden. Mir ist bewusst, dass die Kündigung erst zum nächstmöglichen Vertragsende (3 Monate Frist) wirksam wird, die Beiträge bis dahin weiterlaufen und keine Rückerstattung bereits gezahlter Beiträge erfolgt.</span>
               </label>
               {kuendigungError && <p style={{ color: '#f87171', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{kuendigungError}</p>}
               {kuendigungSuccess && <p style={{ color: '#4ade80', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{kuendigungSuccess}</p>}
