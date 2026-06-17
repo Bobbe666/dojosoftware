@@ -13,7 +13,14 @@ const { sendEmailForDojo } = require('../../services/emailService');
 
 function buildRechnungHTML(rechnung, positionen) {
   const fmt = (n) => parseFloat(n || 0).toFixed(2).replace('.', ',');
-  const datumFmt = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '-';
+  // DIN 5008: Datum mit führenden Nullen TT.MM.JJJJ
+  const datumFmt = (d) => {
+    if (!d) return '-';
+    const dt = new Date(d);
+    return `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()}`;
+  };
+  // Leistungszeitraum aus den Positions-Beschreibungen ableiten (z. B. Monate/Tage)
+  const istKleinunternehmer = rechnung.steuer_status === 'kleinunternehmer';
 
   return `<!DOCTYPE html>
 <html lang="de">
@@ -107,7 +114,8 @@ function buildRechnungHTML(rechnung, positionen) {
       <div class="meta-block">
         <div><span class="meta-label">Rechnungs-Nr.:</span> <strong>${rechnung.rechnungsnummer}</strong></div>
         ${rechnung.mitglied_id ? `<div><span class="meta-label">Kundennummer:</span> ${rechnung.mitglied_id}</div>` : ''}
-        <div><span class="meta-label">Datum:</span> ${datumFmt(rechnung.datum)}</div>
+        <div><span class="meta-label">Rechnungsdatum:</span> ${datumFmt(rechnung.datum)}</div>
+        <div><span class="meta-label">Liefer-/Leistungsdatum:</span> ${datumFmt(rechnung.leistungsdatum || rechnung.datum)}</div>
         <div><span class="meta-label">Faellig bis:</span> ${datumFmt(rechnung.faelligkeitsdatum)}</div>
       </div>
     </div>
@@ -193,11 +201,13 @@ function buildRechnungHTML(rechnung, positionen) {
 
     <div class="payment-terms">
       <p><strong>Zahlungsbedingung:</strong> Ohne Abzug bis zum ${datumFmt(rechnung.faelligkeitsdatum)}.</p>
+      ${istKleinunternehmer ? `<p>Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).</p>` : ''}
       ${rechnung.dojo_email ? `<p>Kontakt: ${rechnung.dojo_email}</p>` : ''}
     </div>
 
     <div class="footer">
       ${rechnung.dojoname || ''} &bull; ${rechnung.dojo_strasse || ''} ${rechnung.dojo_hausnummer || ''}, ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}
+      ${(rechnung.steuernummer || rechnung.umsatzsteuer_id) ? `<br>${rechnung.steuernummer ? `Steuernummer: ${rechnung.steuernummer}` : ''}${(rechnung.steuernummer && rechnung.umsatzsteuer_id) ? ' &bull; ' : ''}${rechnung.umsatzsteuer_id ? `USt-IdNr.: ${rechnung.umsatzsteuer_id}` : ''}` : ''}
     </div>
   </div>
 </body>
@@ -225,7 +235,8 @@ router.get('/:id/vorschau', (req, res) => {
       d.plz AS dojo_plz,
       d.ort AS dojo_ort,
       d.telefon AS dojo_telefon,
-      d.email AS dojo_email
+      d.email AS dojo_email,
+      d.steuernummer, d.umsatzsteuer_id, d.steuer_status
     FROM rechnungen r
     LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
     LEFT JOIN dojo d ON COALESCE(m.dojo_id, r.dojo_id) = d.id
@@ -346,7 +357,8 @@ router.post('/:id/email-senden', async (req, res) => {
         m.strasse, m.hausnummer, m.plz, m.ort,
         COALESCE(m.dojo_id, r.dojo_id) AS resolved_dojo_id,
         d.dojoname, d.strasse AS dojo_strasse, d.hausnummer AS dojo_hausnummer,
-        d.plz AS dojo_plz, d.ort AS dojo_ort, d.email AS dojo_email
+        d.plz AS dojo_plz, d.ort AS dojo_ort, d.email AS dojo_email,
+        d.steuernummer, d.umsatzsteuer_id, d.steuer_status
       FROM rechnungen r
       LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
       LEFT JOIN dojo d ON COALESCE(m.dojo_id, r.dojo_id) = d.id
