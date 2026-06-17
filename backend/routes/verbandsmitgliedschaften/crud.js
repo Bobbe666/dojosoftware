@@ -611,4 +611,17 @@ router.get('/zahlungen/:zahlungs_id/pdf', async (req, res) => {
   }
 });
 
+// GET /:id/mails — gesendete Mails dieser Mitgliedschaft (rechtssicheres Archiv)
+router.get('/:id/mails', (req, res) => {
+  db.query(
+    `SELECT id, typ, betreff, empfaenger, status, gesendet_am, html, text_inhalt
+     FROM verband_mail_log WHERE mitgliedschaft_id = ? ORDER BY gesendet_am DESC`,
+    [parseInt(req.params.id)],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, mails: rows || [] });
+    }
+  );
+});
+
 module.exports = router;

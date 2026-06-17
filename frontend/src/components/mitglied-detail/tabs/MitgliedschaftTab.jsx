@@ -333,6 +333,7 @@ function VertragAnpassungSektion({ vertrag, mitglied, vertragAnpassungen, setVer
   const [error, setError] = React.useState('');
   const [localForm, setLocalForm] = React.useState({ typ: 'schueler', neuer_betrag: '', gueltig_von: '', gueltig_bis: '', grund: '' });
   const [localEdit, setLocalEdit] = React.useState({});
+  const [mails, setMails] = React.useState([]);
   const mid = mitglied?.mitglied_id || mitglied?.id;
   const loadAnpassungen = async () => {
     try {
@@ -340,7 +341,19 @@ function VertragAnpassungSektion({ vertrag, mitglied, vertragAnpassungen, setVer
       setVertragAnpassungen(r.data.anpassungen || []);
     } catch {}
   };
-  React.useEffect(() => { if (mid) loadAnpassungen(); }, [mid]);
+  const loadMails = async () => {
+    try {
+      const r = await axios.get(`/vertrag-anpassungen/mitglied/${mid}/mail-log`);
+      setMails(r.data.mails || []);
+    } catch {}
+  };
+  const viewMail = (m) => {
+    const w = window.open('', '_blank');
+    if (!w) { alert('Bitte Popups erlauben, um die E-Mail anzuzeigen.'); return; }
+    w.document.write(m.html || `<pre style="font-family:sans-serif;white-space:pre-wrap;padding:1rem">${(m.text_inhalt || '').replace(/</g, '&lt;')}</pre>`);
+    w.document.close();
+  };
+  React.useEffect(() => { if (mid) { loadAnpassungen(); loadMails(); } }, [mid]);
   const handleOpen = async () => { if (!open) await loadAnpassungen(); setOpen(v => !v); };
   const typLabels = { schueler: 'Schüler', student: 'Student', azubi: 'Azubi', rentner: 'Rentner', sonstiges: 'Sonstiges', ruhepause: 'Ruhepause' };
   const statusColors = { genehmigt: '#4caf50', beantragt: '#ff9800', abgelehnt: '#f44336', abgelaufen: '#888' };
@@ -443,6 +456,29 @@ function VertragAnpassungSektion({ vertrag, mitglied, vertragAnpassungen, setVer
               </button>
             </div>
           )}
+        </div>
+      )}
+      {mails.length > 0 && (
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+            ✉️ <strong style={{ color: 'var(--text-primary)' }}>Gesendete E-Mails</strong>
+            <span style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: '1px 7px', fontSize: '0.72rem' }}>{mails.length}</span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>(rechtssicheres Archiv)</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            {mails.map(m => (
+              <div key={m.id} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '0.55rem 0.75rem', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.84rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.betreff}</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    {m.gesendet_am ? new Date(m.gesendet_am).toLocaleString('de-DE') : '–'} · {m.empfaenger}
+                    {m.status && m.status !== 'gesendet' && <span style={{ color: '#f44336', marginLeft: 6 }}>({m.status})</span>}
+                  </div>
+                </div>
+                <button onClick={() => viewMail(m)} style={{ padding: '3px 10px', borderRadius: 5, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#818cf8', cursor: 'pointer', fontSize: '0.76rem', fontWeight: 600, whiteSpace: 'nowrap' }}>Ansehen</button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

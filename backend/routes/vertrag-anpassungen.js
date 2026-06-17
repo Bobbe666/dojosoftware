@@ -117,6 +117,20 @@ router.get('/mitglied/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// ── GET /mitglied/:id/mail-log  (Admin: gesendete Mails eines Mitglieds, rechtssicher) ──
+router.get('/mitglied/:id/mail-log', authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT id, typ, betreff, empfaenger, status, gesendet_am, html, text_inhalt
+       FROM mitglied_mail_log WHERE mitglied_id = ? ORDER BY gesendet_am DESC`,
+      [parseInt(req.params.id)]
+    );
+    res.json({ success: true, mails: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── POST /  (Admin erstellt → sofort genehmigt) ──────────────────────────
 router.post('/', authenticateToken, async (req, res) => {
   try {

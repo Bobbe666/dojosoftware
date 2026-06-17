@@ -67,6 +67,7 @@ const VerbandsMitglieder = () => {
   const [selectedMitgliedschaft, setSelectedMitgliedschaft] = useState(null);
   const [dojosOhneMitgliedschaft, setDojosOhneMitgliedschaft] = useState([]);
   const [detailTab, setDetailTab] = useState('info'); // 'info' | 'vertrag' | 'sepa' | 'historie'
+  const [verbandMails, setVerbandMails] = useState([]);
 
   // SEPA State
   const [sepaData, setSepaData] = useState({ iban: '', bic: '', kontoinhaber: '' });
@@ -378,6 +379,15 @@ const VerbandsMitglieder = () => {
       loadDojosOhneMitgliedschaft();
     }
   }, [showNewModal, formData.typ]);
+
+  // Gesendete Mails (rechtssicheres Archiv) laden, wenn Detail geöffnet wird
+  useEffect(() => {
+    const mid = selectedMitgliedschaft?.id;
+    if (!showDetailModal || !mid) { setVerbandMails([]); return; }
+    api.get(`/verbandsmitgliedschaften/${mid}/mails`)
+      .then(res => setVerbandMails(res.data?.mails || []))
+      .catch(() => setVerbandMails([]));
+  }, [showDetailModal, selectedMitgliedschaft?.id]);
 
   // Initialize signature canvas when modals open
   useEffect(() => {
@@ -2034,6 +2044,41 @@ const VerbandsMitglieder = () => {
                         ))
                       ) : (
                         <p style={styles.hint}>Noch keine Historie-Einträge vorhanden.</p>
+                      )}
+                    </div>
+                  </div>
+                  <div style={styles.detailSection}>
+                    <h4 style={styles.detailSectionTitle}>
+                      <Mail size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                      Gesendete E-Mails {verbandMails.length > 0 && `(${verbandMails.length})`}
+                      <span style={{ ...styles.hint, fontWeight: 400, marginLeft: 8 }}>· rechtssicheres Archiv</span>
+                    </h4>
+                    <div style={styles.historieListe}>
+                      {verbandMails.length > 0 ? (
+                        verbandMails.map((m) => (
+                          <div key={m.id} style={{ ...styles.historieItem, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 600 }}>{m.betreff}</div>
+                              <div style={styles.historieDatum}>
+                                {m.gesendet_am ? new Date(m.gesendet_am).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–'} · {m.empfaenger}
+                                {m.status && m.status !== 'gesendet' && <span style={{ color: '#ef4444', marginLeft: 6 }}>({m.status})</span>}
+                              </div>
+                            </div>
+                            <button
+                              style={styles.submitButton}
+                              onClick={() => {
+                                const w = window.open('', '_blank');
+                                if (!w) { alert('Bitte Popups erlauben, um die E-Mail anzuzeigen.'); return; }
+                                w.document.write(m.html || `<pre style="font-family:sans-serif;white-space:pre-wrap;padding:1rem">${(m.text_inhalt || '').replace(/</g, '&lt;')}</pre>`);
+                                w.document.close();
+                              }}
+                            >
+                              Ansehen
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p style={styles.hint}>Noch keine E-Mails versendet.</p>
                       )}
                     </div>
                   </div>
