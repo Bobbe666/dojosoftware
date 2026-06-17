@@ -340,7 +340,7 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
             <p>Bis dahin bleibst du natürlich vollwertiges Mitglied und kannst weiter mit uns trainieren. 🥋</p>
             <p style="margin-top:18px">Sportliche Grüße<br><strong>Dein Team von ${memMail.dojoname}</strong></p>`;
           const eBetreff = `Kündigung eingegangen – ${memMail.dojoname}`;
-          const eHtml = renderEmail({ theme, anlass: 'kuendigung', titel: 'Kündigung eingegangen', subtitel: memMail.dojoname, bodyHtml });
+          const eHtml = renderEmail({ theme, anlass: 'kuendigung', titel: 'Kündigung eingegangen', bodyHtml });
           const eText = `Wir haben deine Kündigung erhalten\n\nHallo ${memMail.vorname},\n\ndanke für deine Nachricht – deine Kündigung ist eingegangen und wird bearbeitet. Sobald sie bestätigt ist, erhältst du eine weitere E-Mail.\n\nVoraussichtliches Vertragsende: ${bisStr}\n\nGut zu wissen: Die Kündigungsfrist von 3 Monaten bezieht sich immer auf das Ende der Vertragslaufzeit – nicht auf drei Monate ab dem Kündigungsdatum.\n\nBis dahin bleibst du vollwertiges Mitglied.\n\nSportliche Grüße\nDein Team von ${memMail.dojoname}`;
           await sendEmailForDojo({ to: memMail.email, subject: eBetreff, html: eHtml, text: eText }, mem.dojo_id);
           await logMitgliedMail({ mitglied_id, dojo_id: mem.dojo_id, empfaenger: memMail.email, typ: 'kuendigung_eingegangen', betreff: eBetreff, html: eHtml, text: eText });
@@ -500,7 +500,7 @@ router.put('/:id/genehmigen', authenticateToken, async (req, res) => {
           ${anmerkung_admin ? `<div class="box"><p><strong>Persönlicher Hinweis:</strong> ${anmerkung_admin}</p></div>` : ''}
           <p>Wir würden uns sehr freuen, dich irgendwann wieder auf der Matte begrüßen zu dürfen. Bis dahin: alles Gute, viel Erfolg und herzlichen Dank für deine Zeit bei uns! 🥋</p>
           <p style="margin-top:18px">Sportliche Grüße<br><strong>Dein Team von ${m.dojoname}</strong></p>`;
-        const kHtml = renderEmail({ theme, anlass: 'kuendigung', titel: 'Kündigungsbestätigung', subtitel: m.dojoname, bodyHtml });
+        const kHtml = renderEmail({ theme, anlass: 'kuendigung', titel: 'Kündigungsbestätigung', bodyHtml });
         const kText = `Deine Kündigung ist bestätigt\n\nHallo ${m.vorname},\n\nvielen Dank – wir haben deine Kündigung erhalten und bestätigen sie hiermit.\n\nKündigung eingegangen am: ${vonStr}\nDu trainierst noch bis: ${bisStr}\nOffizielles Vertragsende: ${bisStr}\n\nGut zu wissen: Die Kündigungsfrist von 3 Monaten bezieht sich immer auf das Ende der Vertragslaufzeit – nicht auf drei Monate ab dem Kündigungsdatum.\n\nBis zum ${bisStr} bleibst du vollwertiges Mitglied; bis dahin läuft auch der reguläre Beitrag weiter.${anmerkung_admin ? `\n\nHinweis: ${anmerkung_admin}` : ''}\n\nWir würden uns freuen, dich irgendwann wiederzusehen. Alles Gute!\n\nSportliche Grüße\nDein Team von ${m.dojoname}`;
         try {
           await sendEmailForDojo({ to: m.email, subject: kBetreff, html: kHtml, text: kText }, a.dojo_id);
