@@ -455,3 +455,4 @@ router.patch('/:id/positionen-kategorien', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.buildRechnungHTML = buildRechnungHTML;
