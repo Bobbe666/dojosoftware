@@ -329,7 +329,6 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
           const bisStr = effektivBis ? new Date(effektivBis).toLocaleDateString('de-DE') : '—';
           const theme = await getDojoMailTheme({ dojoId: mem.dojo_id, dojoname: memMail.dojoname });
           const bodyHtml = `
-            <h2>Wir haben deine Kündigung erhalten ✅</h2>
             <p>Hallo ${memMail.vorname},</p>
             <p>danke für deine Nachricht – deine Kündigung ist bei uns eingegangen und wird gerade bearbeitet. Sobald sie bestätigt ist, bekommst du von uns noch eine kurze Bestätigung per E-Mail.</p>
             <table class="data">
@@ -487,7 +486,6 @@ router.put('/:id/genehmigen', authenticateToken, async (req, res) => {
         const kBetreff = `Deine Kündigung ist bestätigt – ${m.dojoname}`;
         const theme = await getDojoMailTheme({ dojoId: a.dojo_id, dojoname: m.dojoname });
         const bodyHtml = `
-          <h2>Deine Kündigung ist bestätigt 🙏</h2>
           <p>Hallo ${m.vorname},</p>
           <p>vielen Dank für deine Nachricht – wir haben deine Kündigung erhalten und bestätigen sie dir hiermit. Schön, dass du Teil unseres Dojos warst!</p>
           <table class="data">
