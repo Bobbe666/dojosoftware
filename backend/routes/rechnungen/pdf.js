@@ -10,9 +10,107 @@ const fs = require('fs').promises;
 const logger = require('../../utils/logger');
 const { queryAsync } = require('./shared');
 const { sendEmailForDojo } = require('../../services/emailService');
-const { bannerUrlFor } = require('../../services/emailLayout');
+const { bannerUrlFor, renderEmail, getDojoMailTheme } = require('../../services/emailLayout');
+const QRCode = require('qrcode');
 
-function buildRechnungHTML(rechnung, positionen) {
+// EPC/GiroCode-Payload für SEPA-Überweisung (in Banking-Apps scannbar)
+function epcPayload({ name, iban, bic, amount, ref }) {
+  return [
+    'BCD', '002', '1', 'SCT',
+    bic || '',
+    (name || '').slice(0, 70),
+    (iban || '').replace(/\s+/g, ''),
+    'EUR' + Number(amount || 0).toFixed(2),
+    '', '',
+    (ref || '').slice(0, 140)
+  ].join('\n');
+}
+
+// Erzeugt einen gehosteten GiroCode-QR (URL) – funktioniert in E-Mail UND PDF; null bei Lastschrift/ohne Bank.
+const QR_PUBLIC_URL = process.env.PUBLIC_URL || 'https://dojo.tda-intl.org';
+const QR_DIR = path.join(__dirname, '..', '..', 'uploads', 'rechnung-qr');
+async function giroQr(rechnung) {
+  try {
+    if (rechnung.zahlungsart === 'lastschrift') return null;
+    const dojoId = rechnung.resolved_dojo_id || rechnung.dojo_id;
+    if (!dojoId) return null;
+    const banks = await queryAsync(
+      "SELECT iban, bic FROM dojo_banken WHERE dojo_id = ? AND iban IS NOT NULL AND iban <> '' AND ist_aktiv = 1 ORDER BY ist_standard DESC LIMIT 1",
+      [dojoId]
+    );
+    const bank = banks[0];
+    if (!bank || !bank.iban) return null;
+    const amount = rechnung.brutto_betrag || rechnung.gesamtsumme || rechnung.betrag || 0;
+    const payload = epcPayload({ name: rechnung.dojoname, iban: bank.iban, bic: bank.bic, amount, ref: rechnung.rechnungsnummer });
+    await fs.mkdir(QR_DIR, { recursive: true });
+    const safe = String(rechnung.rechnungsnummer || rechnung.rechnung_id || 'qr').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const datei = `giro-${safe}.png`;
+    await QRCode.toFile(path.join(QR_DIR, datei), payload, { errorCorrectionLevel: 'M', margin: 1, width: 300 });
+    return { url: `${QR_PUBLIC_URL}/uploads/rechnung-qr/${datei}`, iban: bank.iban.replace(/(.{4})/g, '$1 ').trim(), bic: bank.bic || '' };
+  } catch { return null; }
+}
+
+// Rechnung als Inline-HTML für den E-Mail-Body (sichtbar ohne Download), Mail-Layout-konform
+function buildRechnungEmailBody(rechnung, positionen, theme, qr) {
+  const fmt = (n) => parseFloat(n || 0).toFixed(2).replace('.', ',');
+  const dfmt = (d) => { if (!d) return '-'; const t = new Date(d); return `${String(t.getDate()).padStart(2, '0')}.${String(t.getMonth() + 1).padStart(2, '0')}.${t.getFullYear()}`; };
+  const perRate = {};
+  positionen.forEach(p => { const r = parseFloat(p.mwst_satz ?? 19); perRate[r] = (perRate[r] || 0) + parseFloat(p.gesamtpreis || 0); });
+  const netto = Object.values(perRate).reduce((s, v) => s + v, 0);
+  let mwst = 0; Object.entries(perRate).forEach(([r, n]) => { mwst += n * (parseFloat(r) / 100); });
+  const brutto = netto + mwst;
+  const istKlein = rechnung.steuer_status === 'kleinunternehmer';
+  const posRows = positionen.map(p => `
+    <tr>
+      <td style="padding:8px 6px;border-bottom:1px solid #eef2f7;color:#334155;">${p.bezeichnung || ''}${p.beschreibung ? `<br><span style="color:#94a3b8;font-size:12px;">${p.beschreibung}</span>` : ''}</td>
+      <td align="right" style="padding:8px 6px;border-bottom:1px solid #eef2f7;color:#334155;white-space:nowrap;">${p.menge}</td>
+      <td align="right" style="padding:8px 6px;border-bottom:1px solid #eef2f7;color:#334155;white-space:nowrap;">${fmt(p.einzelpreis)} €</td>
+      <td align="right" style="padding:8px 6px;border-bottom:1px solid #eef2f7;color:#334155;white-space:nowrap;">${fmt(p.gesamtpreis)} €</td>
+    </tr>`).join('');
+  let zahlteil;
+  if (rechnung.zahlungsart === 'lastschrift') {
+    zahlteil = `<div class="box"><p>Der Betrag wird per <strong style="color:#1e293b;">SEPA-Lastschrift</strong> eingezogen – du musst nichts weiter tun.</p></div>`;
+  } else {
+    zahlteil = `
+      <div class="box">
+        <p>Bitte überweise den Betrag bis zum <strong style="color:#1e293b;">${dfmt(rechnung.faelligkeitsdatum)}</strong>.</p>
+        ${qr && qr.iban ? `<p style="margin:4px 0;"><strong style="color:#1e293b;">IBAN:</strong> ${qr.iban}${qr.bic ? ` &nbsp; <strong style="color:#1e293b;">BIC:</strong> ${qr.bic}` : ''}</p>` : ''}
+        <p style="margin:4px 0;"><strong style="color:#1e293b;">Verwendungszweck:</strong> ${rechnung.rechnungsnummer}</p>
+      </div>
+      ${qr && qr.url ? `<table style="margin:6px 0;"><tr>
+        <td style="vertical-align:middle;padding-right:12px;"><img src="${qr.url}" width="110" height="110" style="display:block;width:110px;height:110px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;" alt="QR-Code Überweisung" /></td>
+        <td style="vertical-align:middle;font-size:13px;color:#475569;"><strong style="color:#1e293b;">Bequem per QR-Code zahlen</strong><br>Mit deiner Banking-App scannen – Betrag, IBAN und Verwendungszweck sind automatisch ausgefüllt.</td>
+      </tr></table>` : ''}`;
+  }
+  return `
+    <p style="font-size:16px;margin:0 0 14px;color:#1e293b;">Hallo ${rechnung.mitglied_name || ''},</p>
+    <p style="margin:0 0 6px;">anbei deine Rechnung <strong style="color:#1e293b;">${rechnung.rechnungsnummer}</strong>. Die Rechnung findest du auch als PDF im Anhang.</p>
+    <table class="data" style="width:100%;border-collapse:collapse;margin:12px 0;">
+      <tr><td style="color:#64748b;">Rechnungsdatum</td><td align="right" style="color:#1e293b;">${dfmt(rechnung.datum)}</td></tr>
+      <tr><td style="color:#64748b;">Liefer-/Leistungsdatum</td><td align="right" style="color:#1e293b;">${dfmt(rechnung.leistungsdatum || rechnung.datum)}</td></tr>
+      <tr><td style="color:#64748b;">Fällig bis</td><td align="right" style="color:#1e293b;">${dfmt(rechnung.faelligkeitsdatum)}</td></tr>
+    </table>
+    <table role="presentation" width="100%" style="border-collapse:collapse;margin:14px 0;font-size:13px;">
+      <tr style="background:#1e293b;color:#fff;">
+        <th align="left" style="padding:9px 6px;">Bezeichnung</th>
+        <th align="right" style="padding:9px 6px;">Menge</th>
+        <th align="right" style="padding:9px 6px;">Einzelpreis</th>
+        <th align="right" style="padding:9px 6px;">Betrag</th>
+      </tr>
+      ${posRows}
+    </table>
+    <table role="presentation" width="100%" style="margin:8px 0 4px;font-size:13px;">
+      <tr><td align="right" style="color:#64748b;padding:3px 6px;">Nettobetrag:</td><td align="right" style="width:120px;color:#334155;padding:3px 6px;">${fmt(netto)} €</td></tr>
+      ${Object.entries(perRate).map(([r, n]) => `<tr><td align="right" style="color:#64748b;padding:3px 6px;">${r}% MwSt.:</td><td align="right" style="color:#334155;padding:3px 6px;">${fmt(n * (parseFloat(r) / 100))} €</td></tr>`).join('')}
+      <tr><td align="right" style="font-weight:bold;color:#1e293b;border-top:2px solid ${theme.accent || '#DAA520'};padding:7px 6px;">Gesamtbetrag:</td><td align="right" style="font-weight:bold;font-size:16px;color:#1e293b;border-top:2px solid ${theme.accent || '#DAA520'};padding:7px 6px;">${fmt(brutto)} €</td></tr>
+    </table>
+    ${istKlein ? `<p style="font-size:12px;color:#64748b;">Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).</p>` : ''}
+    ${zahlteil}
+    <p style="margin:14px 0 0;">Bei Fragen stehen wir gerne zur Verfügung.</p>
+    <p style="margin:12px 0 0;">Mit freundlichen Grüßen<br><strong style="color:#1e293b;">${rechnung.dojoname || ''}</strong></p>`;
+}
+
+function buildRechnungHTML(rechnung, positionen, qr = null) {
   // Header-Banner wie in der E-Mail-Rechnung (Anlass 'rechnung', pro Dojo); Fallback = Schiefer-Header
   const dojoIdForBanner = rechnung.resolved_dojo_id || rechnung.dojo_id || 0;
   const bannerUrl = bannerUrlFor('dojo', 'rechnung', dojoIdForBanner);
@@ -203,6 +301,11 @@ function buildRechnungHTML(rechnung, positionen) {
       <p><strong>Zahlungsbedingung:</strong> Ohne Abzug bis zum ${datumFmt(rechnung.faelligkeitsdatum)}.</p>
       ${istKleinunternehmer ? `<p>Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).</p>` : ''}
       ${rechnung.dojo_email ? `<p>Kontakt: ${rechnung.dojo_email}</p>` : ''}
+      ${qr && qr.url ? `
+      <table style="margin-top:10px;"><tr>
+        <td style="vertical-align:middle;padding-right:12px;"><img src="${qr.url}" width="96" height="96" style="display:block;width:96px;height:96px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;" alt="QR-Code Überweisung" /></td>
+        <td style="vertical-align:middle;font-size:8.5pt;color:#475569;"><strong style="color:#1e293b;">Bequem per QR-Code zahlen</strong><br>Mit der Banking-App scannen – IBAN, Betrag und Verwendungszweck (${rechnung.rechnungsnummer}) sind dann automatisch ausgefüllt.</td>
+      </tr></table>` : ''}
     </div>
 
     <div class="footer">
@@ -264,10 +367,15 @@ router.get('/:id/vorschau', (req, res) => {
         return res.status(500).send('Fehler beim Laden der Positionen');
       }
 
-      const html = buildRechnungHTML(rechnung, positionen);
-
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(html);
+      giroQr(rechnung).then((qr) => {
+        const html = buildRechnungHTML(rechnung, positionen, qr);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+      }).catch(() => {
+        const html = buildRechnungHTML(rechnung, positionen, null);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+      });
     });
   });
 });
@@ -375,7 +483,9 @@ router.post('/:id/email-senden', async (req, res) => {
     const zielEmail = an_email || rechnung.empfaenger_email;
     if (!zielEmail) return res.status(400).json({ error: 'Keine E-Mail-Adresse hinterlegt' });
 
-    const html = buildRechnungHTML(rechnung, positionen);
+    const dojoId = rechnung.resolved_dojo_id;
+    const qr = await giroQr(rechnung);
+    const html = buildRechnungHTML(rechnung, positionen, qr);
 
     // PDF mit Puppeteer generieren
     // Wichtig: goto mit data:-URL statt setContent — einziger zuverlässiger UTF-8-Fix für Puppeteer
@@ -385,18 +495,18 @@ router.post('/:id/email-senden', async (req, res) => {
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' } });
     await browser.close();
 
-    const dojoId = rechnung.resolved_dojo_id;
-    const datumStr = new Date(rechnung.datum).toLocaleDateString('de-DE');
+    // E-Mail-Body: Rechnung INLINE sichtbar (Mail-Layout) + PDF im Anhang
+    const theme = await getDojoMailTheme({ dojoId, dojoname: rechnung.dojoname });
+    const emailBody = renderEmail({
+      theme, anlass: 'rechnung', titel: 'Rechnung',
+      bodyHtml: buildRechnungEmailBody(rechnung, positionen, theme, qr)
+    });
 
     await sendEmailForDojo({
       to: zielEmail,
       subject: `Rechnung ${rechnung.rechnungsnummer}`,
-      html: `<p>Sehr geehrte/r ${rechnung.mitglied_name},</p>
-<p>anbei erhalten Sie Ihre Rechnung <strong>${rechnung.rechnungsnummer}</strong> vom ${datumStr} über <strong>${parseFloat(rechnung.betrag).toFixed(2).replace('.', ',')} €</strong>.</p>
-<p>Bitte überweisen Sie den Betrag bis zum ${rechnung.faelligkeitsdatum ? new Date(rechnung.faelligkeitsdatum).toLocaleDateString('de-DE') : '-'}.</p>
-<p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p>
-<p>Mit freundlichen Grüßen<br>${rechnung.dojoname || ''}</p>`,
-      text: `Sehr geehrte/r ${rechnung.mitglied_name},\n\nanbei Ihre Rechnung ${rechnung.rechnungsnummer} vom ${datumStr} über ${parseFloat(rechnung.betrag).toFixed(2)} €.\n\nMit freundlichen Grüßen\n${rechnung.dojoname || ''}`,
+      html: emailBody,
+      text: `Hallo ${rechnung.mitglied_name},\n\nanbei deine Rechnung ${rechnung.rechnungsnummer} über ${parseFloat(rechnung.betrag).toFixed(2)} €. Details siehe E-Mail und PDF im Anhang.\n\nMit freundlichen Grüßen\n${rechnung.dojoname || ''}`,
       attachments: [{
         filename: `Rechnung_${rechnung.rechnungsnummer.replace(/[\/\\]/g, '_')}.pdf`,
         content: pdfBuffer,
