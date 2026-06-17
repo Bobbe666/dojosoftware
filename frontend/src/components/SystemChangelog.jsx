@@ -31,6 +31,23 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.69',
+    date: '2026-06-17',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Verband-Mails automatisiert + Kündigungs-Workflow + rechtssicheres Mail-Archiv',
+    description: 'Verbands-Anmeldungen lösen automatisch eine Willkommensmail (mit Begrüßungs-Banner) aus; 2 Std. später folgt per Cron automatisch die Rechnung mit fortlaufender Nummer. Kündigungs-Anträge erscheinen jetzt mit korrekter Überschrift „Kündigung beantragt" und lassen sich im Popup UND im Mitglied-Detail bestätigen oder ablehnen (Ablehnung mit Grund, Bestätigung mit Vertragsende/Laufzeit). Alle versendeten Mails werden rechtssicher gespeichert und dem Mitglied/der Mitgliedschaft zugeordnet.',
+    highlights: [
+      '✉️ Auto-Willkommensmail direkt nach Verbands-Anmeldung',
+      '🧾 Auto-Rechnung 2 Std. später (fortlaufende Rechnungsnummer)',
+      '⚖️ Mail-Archiv: jede Mail gespeichert + dem Kunden zugeordnet',
+      '✅/❌ Kündigung im Popup & Mitglied-Detail bestätigen/ablehnen (mit Mail)',
+      '🏛️ Eigene „TDA Verband"-Banner-Reihe + Daily-Briefing-Vermerk',
+    ],
+    details: 'services/verbandMails.js (Willkommen/Rechnung + processFaelligeRechnungen Cron alle 15 Min); Tabellen verband_mail_log + mitglied_mail_log; vertrag-anpassungen.js genehmigen/ablehnen mit Kündigungs-Mails (Grund/Vertragsdaten) + Logging; AdminRegistrationPopup.jsx kuendigung_antrag-Block; MitgliedschaftTab Bestätigen/Ablehnen; mail-banners dojo_id 2 (Verband-Reihe).',
+    files: ['backend/services/verbandMails.js', 'backend/routes/vertrag-anpassungen.js', 'backend/routes/verbandsmitgliedschaften/public.js', 'backend/cron-jobs.js', 'frontend/src/components/AdminRegistrationPopup.jsx', 'frontend/src/components/mitglied-detail/tabs/MitgliedschaftTab.jsx'],
+  },
+  {
     version: '3.0.68',
     date: '2026-06-15',
     type: 'feature',
