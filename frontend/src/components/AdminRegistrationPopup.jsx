@@ -90,8 +90,8 @@ const AdminRegistrationPopup = () => {
     let meta = null;
     try { meta = currentNotification.metadata ? JSON.parse(currentNotification.metadata) : null; } catch {}
 
-    // Ruhepause-Anträge brauchen keine extra Daten
-    if (meta?.type === 'ruhepause_antrag') return;
+    // Ruhepause-/Kündigungs-Anträge brauchen keine extra Registrierungsdaten
+    if (meta?.type === 'ruhepause_antrag' || meta?.type === 'kuendigung_antrag') return;
 
     let email = meta?.email || null;
 
@@ -177,6 +177,77 @@ const AdminRegistrationPopup = () => {
   // Parse metadata für alle Notification-Typen
   let currentMeta = null;
   try { currentMeta = currentNotification.metadata ? JSON.parse(currentNotification.metadata) : null; } catch {}
+
+  // Kündigungs-Antrag Popup (richtige Überschrift + Bestätigen/Ablehnen)
+  if (currentMeta?.type === 'kuendigung_antrag') {
+    const bisDE = currentMeta.gueltig_bis ? new Date(currentMeta.gueltig_bis).toLocaleDateString('de-DE') : '—';
+    const name = `${currentMeta.vorname || ''} ${currentMeta.nachname || ''}`.trim() || `Mitglied #${currentMeta.mitglied_id}`;
+    return (
+      <div className="admin-registration-popup-overlay">
+        <div className="admin-registration-popup erstcheck-popup">
+          <div className="popup-header">
+            <div className="header-content">
+              <FileText size={26} className="header-icon" />
+              <div>
+                <h2>Kündigung beantragt</h2>
+                <p className="timestamp">
+                  {new Date(currentNotification.created_at).toLocaleString('de-DE')}
+                  {notifications.length > 1 && (
+                    <span className="badge-inline">{notifications.length} ausstehend</span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <button className="close-btn" onClick={handleClose}>
+              <X size={22} />
+            </button>
+          </div>
+          <div className="popup-content">
+            <Section icon={<User size={16} />} title="Mitglied">
+              <Row label="Name" value={name} />
+            </Section>
+            <Section icon={<Calendar size={16} />} title="Kündigung">
+              <Row label="Gewünschtes Vertragsende" value={bisDE} />
+              {currentMeta.grund && <Row label="Grund" value={currentMeta.grund} />}
+            </Section>
+            {showAblehnenForm ? (
+              <div className="ruhepause-ablehnen-form">
+                <label className="erstcheck-label">Begründung für die Ablehnung (wird dem Mitglied mitgeteilt)</label>
+                <textarea
+                  className="ruhepause-kommentar"
+                  value={ablehnenKommentar}
+                  onChange={e => setAblehnenKommentar(e.target.value)}
+                  placeholder="Grund der Ablehnung…"
+                  rows={3}
+                />
+              </div>
+            ) : null}
+          </div>
+          <div className="popup-footer erstcheck-footer">
+            {showAblehnenForm ? (
+              <>
+                <button className="btn-ablehnen-confirm" onClick={() => handleRuhepauseAblehnen(currentMeta.antrag_id)} disabled={actionLoading}>
+                  {actionLoading ? '…' : 'Ablehnung senden'}
+                </button>
+                <button className="btn-secondary" onClick={() => setShowAblehnenForm(false)} disabled={actionLoading}>
+                  Zurück
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="btn-genehmigen" onClick={() => handleRuhepauseGenehmigen(currentMeta.antrag_id)} disabled={actionLoading}>
+                  {actionLoading ? '…' : '✅ Kündigung bestätigen'}
+                </button>
+                <button className="btn-ablehnen" onClick={() => setShowAblehnenForm(true)} disabled={actionLoading}>
+                  ❌ Ablehnen
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Ruhepause-Antrag Popup
   if (currentMeta?.type === 'ruhepause_antrag') {

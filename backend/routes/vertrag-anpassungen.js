@@ -42,6 +42,16 @@ const TYP_LABELS = {
   rentner: 'Rentner', sonstiges: 'Sonstiges', ruhepause: 'Ruhepause', kuendigung: 'Kündigung'
 };
 
+// Rechtssicheres Mail-Log für Mitglieder: jede gesendete Mail gespeichert + zugeordnet
+async function logMitgliedMail({ mitglied_id, dojo_id, empfaenger, typ, betreff, html, text, status = 'gesendet' }) {
+  try {
+    await pool.query(
+      `INSERT INTO mitglied_mail_log (mitglied_id, dojo_id, empfaenger, typ, betreff, html, text_inhalt, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [mitglied_id || null, dojo_id || null, empfaenger || null, typ, betreff || null, html || null, text || null, status]);
+  } catch (e) { /* Logging darf den Flow nie blockieren */ }
+}
+
 async function sendMemberNotification(email, subject, message) {
   try {
     await pool.query(
@@ -428,30 +438,33 @@ router.put('/:id/genehmigen', authenticateToken, async (req, res) => {
       if (a.typ === 'kuendigung') {
         const kuendigungsdatum = a.gueltig_bis || a.gueltig_von;
         const bisStr = kuendigungsdatum ? new Date(kuendigungsdatum).toLocaleDateString('de-DE') : '—';
-        try {
-          await sendEmailForDojo({
-            to: m.email,
-            subject: `Kündigung bestätigt – ${m.dojoname}`,
-            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+        const vonStr = a.gueltig_von ? new Date(a.gueltig_von).toLocaleDateString('de-DE') : new Date().toLocaleDateString('de-DE');
+        const kBetreff = `Kündigung bestätigt – ${m.dojoname}`;
+        const kHtml = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
               <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px;border-radius:10px 10px 0 0;text-align:center">
                 <h2 style="color:#FFD700;margin:0">Kündigung bestätigt</h2>
               </div>
               <div style="background:#fff;padding:28px;border-radius:0 0 10px 10px">
                 <p>Sehr geehrte/r ${m.vorname} ${m.nachname},</p>
-                <p>hiermit bestätigen wir den Eingang und die Bearbeitung Ihrer Kündigung.</p>
+                <p>hiermit bestätigen wir den Eingang und die Bearbeitung Ihrer Kündigung. Deine Mitgliedschaft endet wie folgt:</p>
                 <table style="width:100%;border-collapse:collapse;margin:16px 0;background:#f9fafb;border-radius:8px">
-                  <tr><td style="padding:10px 16px;color:#666;width:50%">Vertragsende:</td><td style="padding:10px 16px;font-weight:600;font-size:16px;color:#dc2626">${bisStr}</td></tr>
+                  <tr><td style="padding:10px 16px;color:#666;width:55%">Kündigung eingegangen am:</td><td style="padding:10px 16px;font-weight:600">${vonStr}</td></tr>
+                  <tr><td style="padding:10px 16px;color:#666">Vertrag läuft noch bis:</td><td style="padding:10px 16px;font-weight:600;font-size:16px;color:#dc2626">${bisStr}</td></tr>
+                  <tr><td style="padding:10px 16px;color:#666">Offizielles Vertragsende:</td><td style="padding:10px 16px;font-weight:600">${bisStr}</td></tr>
                 </table>
-                <p style="color:#555">Bis zu diesem Datum nehmen Sie weiterhin an allen Trainings und Veranstaltungen teil.</p>
+                <p style="color:#555">Bis zum ${bisStr} nimmst du weiterhin an allen Trainings und Veranstaltungen teil; bis dahin ist auch der reguläre Beitrag fällig.</p>
                 ${anmerkung_admin ? `<div style="background:#f0f9ff;border-left:4px solid #3b82f6;padding:12px 16px;margin:16px 0"><p style="margin:0;color:#1e40af"><strong>Hinweis:</strong> ${anmerkung_admin}</p></div>` : ''}
-                <p>Wir bedauern, Sie als Mitglied zu verlieren, und würden uns freuen, Sie zu einem späteren Zeitpunkt wieder bei uns begrüßen zu dürfen.</p>
+                <p>Wir bedauern, dich als Mitglied zu verlieren, und würden uns freuen, dich zu einem späteren Zeitpunkt wieder bei uns begrüßen zu dürfen.</p>
                 <p>Mit freundlichen Grüßen<br><strong>${m.dojoname}</strong></p>
               </div>
-            </div>`,
-            text: `Kündigung bestätigt\n\nSehr geehrte/r ${m.vorname} ${m.nachname},\n\nhiermit bestätigen wir Ihre Kündigung zum ${bisStr}.\n\nMit freundlichen Grüßen\n${m.dojoname}`
-          }, a.dojo_id);
+            </div>`;
+        const kText = `Kündigung bestätigt\n\nSehr geehrte/r ${m.vorname} ${m.nachname},\n\nhiermit bestätigen wir Ihre Kündigung. Offizielles Vertragsende: ${bisStr}. Bis dahin bleibt die Mitgliedschaft aktiv.\n\nMit freundlichen Grüßen\n${m.dojoname}`;
+        try {
+          await sendEmailForDojo({ to: m.email, subject: kBetreff, html: kHtml, text: kText }, a.dojo_id);
+          await logMitgliedMail({ mitglied_id: a.mitglied_id, dojo_id: a.dojo_id, empfaenger: m.email, typ: 'kuendigung_bestaetigt', betreff: kBetreff, html: kHtml, text: kText });
         } catch (mailErr) {
           console.error('[vertrag-anpassungen] Kündigungsbestätigung-Mail Fehler:', mailErr.message);
+          await logMitgliedMail({ mitglied_id: a.mitglied_id, dojo_id: a.dojo_id, empfaenger: m.email, typ: 'kuendigung_bestaetigt', betreff: kBetreff, html: kHtml, text: kText, status: 'fehler' });
         }
       } else {
         const lbl = TYP_LABELS[a.typ] || a.typ;
@@ -489,14 +502,38 @@ router.put('/:id/ablehnen', authenticateToken, async (req, res) => {
       [`%"antrag_id":${id}%`]
     );
 
-    const [[m]] = await pool.query(`SELECT email FROM mitglieder WHERE mitglied_id = ?`, [a.mitglied_id]);
+    const [[m]] = await pool.query(`SELECT m.email, m.vorname, m.nachname, d.dojoname FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id WHERE m.mitglied_id = ?`, [a.mitglied_id]);
     if (m?.email) {
-      const lbl = TYP_LABELS[a.typ] || a.typ;
-      await sendMemberNotification(
-        m.email,
-        `❌ Tarifantrag abgelehnt`,
-        `Dein Antrag auf ${lbl}-Tarif wurde leider abgelehnt.${anmerkung_admin ? ' Begründung: ' + anmerkung_admin : ''}`
-      );
+      if (a.typ === 'kuendigung') {
+        const betreff = `Deine Kündigung – Rückmeldung von ${m.dojoname}`;
+        const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+              <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px;border-radius:10px 10px 0 0;text-align:center">
+                <h2 style="color:#FFD700;margin:0">Rückmeldung zu deiner Kündigung</h2>
+              </div>
+              <div style="background:#fff;padding:28px;border-radius:0 0 10px 10px">
+                <p>Sehr geehrte/r ${m.vorname} ${m.nachname},</p>
+                <p>vielen Dank für deine eingereichte Kündigung. Leider können wir sie in der vorliegenden Form <strong>nicht annehmen</strong>.</p>
+                ${anmerkung_admin ? `<div style="background:#fef2f2;border-left:4px solid #dc2626;padding:12px 16px;margin:16px 0"><p style="margin:0;color:#991b1b"><strong>Grund:</strong> ${anmerkung_admin}</p></div>` : ''}
+                <p style="color:#555">Deine Mitgliedschaft läuft damit unverändert weiter. Bei Fragen oder für eine erneute Einreichung wende dich bitte direkt an uns.</p>
+                <p>Mit freundlichen Grüßen<br><strong>${m.dojoname}</strong></p>
+              </div>
+            </div>`;
+        const text = `Rückmeldung zu deiner Kündigung\n\nSehr geehrte/r ${m.vorname} ${m.nachname},\n\nleider können wir deine Kündigung nicht annehmen.${anmerkung_admin ? ' Grund: ' + anmerkung_admin : ''}\nDeine Mitgliedschaft läuft unverändert weiter.\n\nMit freundlichen Grüßen\n${m.dojoname}`;
+        try {
+          await sendEmailForDojo({ to: m.email, subject: betreff, html, text }, a.dojo_id);
+          await logMitgliedMail({ mitglied_id: a.mitglied_id, dojo_id: a.dojo_id, empfaenger: m.email, typ: 'kuendigung_abgelehnt', betreff, html, text });
+        } catch (mailErr) {
+          console.error('[vertrag-anpassungen] Kündigungs-Ablehnung-Mail Fehler:', mailErr.message);
+          await logMitgliedMail({ mitglied_id: a.mitglied_id, dojo_id: a.dojo_id, empfaenger: m.email, typ: 'kuendigung_abgelehnt', betreff, html, text, status: 'fehler' });
+        }
+      } else {
+        const lbl = TYP_LABELS[a.typ] || a.typ;
+        await sendMemberNotification(
+          m.email,
+          `❌ Tarifantrag abgelehnt`,
+          `Dein Antrag auf ${lbl}-Tarif wurde leider abgelehnt.${anmerkung_admin ? ' Begründung: ' + anmerkung_admin : ''}`
+        );
+      }
     }
 
     res.json({ success: true });
