@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.71',
+    date: '2026-06-17',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Kündigungs-Mails: freundlicheres Design + Banner-Layout + Fristhinweis',
+    description: 'Die Kündigungs-Eingangsbestätigung und die Kündigungsbestätigung nutzen jetzt das zentrale White-Label-Mail-Layout (renderEmail, Anlass „kuendigung") statt eines eigenen Inline-Headers — inkl. Dojo-Banner-Slot. Der Ton ist deutlich wärmer/persönlicher und beide Mails enthalten einen freundlichen Hinweis, dass sich die 3-Monats-Frist immer auf das Vertragsende bezieht (nicht auf 3 Monate ab Kündigungsdatum). Die Eingangsbestätigung wird zudem jetzt ebenfalls rechtssicher im Mail-Archiv gespeichert.',
+    highlights: [
+      '🎨 Zentrales Banner-Layout statt Inline-Header (Anlass „kuendigung")',
+      '💬 Wärmerer, persönlicher Ton',
+      'ℹ️ Fristhinweis: 3 Monate immer zum Vertragsende',
+      '⚖️ Eingangsbestätigung jetzt auch im Mail-Archiv gespeichert',
+    ],
+    details: 'vertrag-anpassungen.js: renderEmail/getDojoMailTheme importiert; Eingangs- und Bestätigungsmail auf zentrales Layout + .box-Hinweis umgestellt; logMitgliedMail auch für kuendigung_eingegangen. Banner „dojo-kuendigung-d<dojoId>“ erscheint automatisch, sobald hochgeladen (sonst Marken-Header-Fallback).',
+    files: ['backend/routes/vertrag-anpassungen.js'],
+  },
+  {
     version: '3.0.70',
     date: '2026-06-17',
     type: 'fix',

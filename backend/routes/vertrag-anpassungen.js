@@ -10,6 +10,7 @@ const webpush = require('web-push');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const { authenticateToken } = require('../middleware/auth');
 const { sendEmailForDojo } = require('../services/emailService');
+const { renderEmail, getDojoMailTheme } = require('../services/emailLayout');
 
 const pool = db.promise();
 
@@ -326,26 +327,24 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
         );
         if (memMail?.email) {
           const bisStr = effektivBis ? new Date(effektivBis).toLocaleDateString('de-DE') : '—';
-          await sendEmailForDojo({
-            to: memMail.email,
-            subject: `Kündigung eingegangen – ${memMail.dojoname}`,
-            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-              <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px;border-radius:10px 10px 0 0;text-align:center">
-                <h2 style="color:#FFD700;margin:0">Kündigung eingegangen</h2>
-              </div>
-              <div style="background:#fff;padding:28px;border-radius:0 0 10px 10px">
-                <p>Sehr geehrte/r ${memMail.vorname} ${memMail.nachname},</p>
-                <p>wir haben Ihren Kündigungsantrag erhalten. Die Kündigung wird durch den Administrator geprüft und bestätigt.</p>
-                <p>Ihr Vertrag endet ordentlich zum nachstehenden Datum (Kündigungsfrist 3 Monate zum Vertragsende):</p>
-                <table style="width:100%;border-collapse:collapse;margin:16px 0">
-                  <tr><td style="padding:8px;color:#666;width:50%">Vertragsende:</td><td style="padding:8px;font-weight:600">${bisStr}</td></tr>
-                </table>
-                <p style="color:#555">Sie erhalten eine weitere E-Mail, sobald Ihre Kündigung bestätigt wurde.</p>
-                <p>Mit freundlichen Grüßen<br><strong>${memMail.dojoname}</strong></p>
-              </div>
-            </div>`,
-            text: `Kündigung eingegangen\n\nSehr geehrte/r ${memMail.vorname} ${memMail.nachname},\n\nwir haben Ihren Kündigungsantrag zum ${bisStr} erhalten. Die Kündigung wird durch den Administrator geprüft.\n\nMit freundlichen Grüßen\n${memMail.dojoname}`
-          }, mem.dojo_id);
+          const theme = await getDojoMailTheme({ dojoId: mem.dojo_id, dojoname: memMail.dojoname });
+          const bodyHtml = `
+            <h2>Wir haben deine Kündigung erhalten ✅</h2>
+            <p>Hallo ${memMail.vorname},</p>
+            <p>danke für deine Nachricht – deine Kündigung ist bei uns eingegangen und wird gerade bearbeitet. Sobald sie bestätigt ist, bekommst du von uns noch eine kurze Bestätigung per E-Mail.</p>
+            <table class="data">
+              <tr><td style="color:#64748b;width:55%">Voraussichtliches Vertragsende</td><td style="font-weight:700;text-align:right;color:${theme.primary}">${bisStr}</td></tr>
+            </table>
+            <div class="box">
+              <p><strong>Gut zu wissen:</strong> Die Kündigungsfrist von 3 Monaten bezieht sich immer auf das <strong>Ende deiner Vertragslaufzeit</strong> – nicht auf drei Monate ab dem Kündigungsdatum. Dein Vertrag endet daher regulär zum oben genannten Datum.</p>
+            </div>
+            <p>Bis dahin bleibst du natürlich vollwertiges Mitglied und kannst weiter mit uns trainieren. 🥋</p>
+            <p style="margin-top:18px">Sportliche Grüße<br><strong>Dein Team von ${memMail.dojoname}</strong></p>`;
+          const eBetreff = `Kündigung eingegangen – ${memMail.dojoname}`;
+          const eHtml = renderEmail({ theme, anlass: 'kuendigung', titel: 'Kündigung eingegangen', subtitel: memMail.dojoname, bodyHtml });
+          const eText = `Wir haben deine Kündigung erhalten\n\nHallo ${memMail.vorname},\n\ndanke für deine Nachricht – deine Kündigung ist eingegangen und wird bearbeitet. Sobald sie bestätigt ist, erhältst du eine weitere E-Mail.\n\nVoraussichtliches Vertragsende: ${bisStr}\n\nGut zu wissen: Die Kündigungsfrist von 3 Monaten bezieht sich immer auf das Ende der Vertragslaufzeit – nicht auf drei Monate ab dem Kündigungsdatum.\n\nBis dahin bleibst du vollwertiges Mitglied.\n\nSportliche Grüße\nDein Team von ${memMail.dojoname}`;
+          await sendEmailForDojo({ to: memMail.email, subject: eBetreff, html: eHtml, text: eText }, mem.dojo_id);
+          await logMitgliedMail({ mitglied_id, dojo_id: mem.dojo_id, empfaenger: memMail.email, typ: 'kuendigung_eingegangen', betreff: eBetreff, html: eHtml, text: eText });
         }
       } catch (mailErr) {
         console.error('[vertrag-anpassungen] Kündigungs-Eingangsmail Fehler:', mailErr.message);
@@ -485,26 +484,26 @@ router.put('/:id/genehmigen', authenticateToken, async (req, res) => {
         const kuendigungsdatum = a.gueltig_bis || a.gueltig_von;
         const bisStr = kuendigungsdatum ? new Date(kuendigungsdatum).toLocaleDateString('de-DE') : '—';
         const vonStr = a.gueltig_von ? new Date(a.gueltig_von).toLocaleDateString('de-DE') : new Date().toLocaleDateString('de-DE');
-        const kBetreff = `Kündigung bestätigt – ${m.dojoname}`;
-        const kHtml = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-              <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px;border-radius:10px 10px 0 0;text-align:center">
-                <h2 style="color:#FFD700;margin:0">Kündigung bestätigt</h2>
-              </div>
-              <div style="background:#fff;padding:28px;border-radius:0 0 10px 10px">
-                <p>Sehr geehrte/r ${m.vorname} ${m.nachname},</p>
-                <p>hiermit bestätigen wir den Eingang und die Bearbeitung Ihrer Kündigung. Deine Mitgliedschaft endet wie folgt:</p>
-                <table style="width:100%;border-collapse:collapse;margin:16px 0;background:#f9fafb;border-radius:8px">
-                  <tr><td style="padding:10px 16px;color:#666;width:55%">Kündigung eingegangen am:</td><td style="padding:10px 16px;font-weight:600">${vonStr}</td></tr>
-                  <tr><td style="padding:10px 16px;color:#666">Vertrag läuft noch bis:</td><td style="padding:10px 16px;font-weight:600;font-size:16px;color:#dc2626">${bisStr}</td></tr>
-                  <tr><td style="padding:10px 16px;color:#666">Offizielles Vertragsende:</td><td style="padding:10px 16px;font-weight:600">${bisStr}</td></tr>
-                </table>
-                <p style="color:#555">Bis zum ${bisStr} nimmst du weiterhin an allen Trainings und Veranstaltungen teil; bis dahin ist auch der reguläre Beitrag fällig.</p>
-                ${anmerkung_admin ? `<div style="background:#f0f9ff;border-left:4px solid #3b82f6;padding:12px 16px;margin:16px 0"><p style="margin:0;color:#1e40af"><strong>Hinweis:</strong> ${anmerkung_admin}</p></div>` : ''}
-                <p>Wir bedauern, dich als Mitglied zu verlieren, und würden uns freuen, dich zu einem späteren Zeitpunkt wieder bei uns begrüßen zu dürfen.</p>
-                <p>Mit freundlichen Grüßen<br><strong>${m.dojoname}</strong></p>
-              </div>
-            </div>`;
-        const kText = `Kündigung bestätigt\n\nSehr geehrte/r ${m.vorname} ${m.nachname},\n\nhiermit bestätigen wir Ihre Kündigung. Offizielles Vertragsende: ${bisStr}. Bis dahin bleibt die Mitgliedschaft aktiv.\n\nMit freundlichen Grüßen\n${m.dojoname}`;
+        const kBetreff = `Deine Kündigung ist bestätigt – ${m.dojoname}`;
+        const theme = await getDojoMailTheme({ dojoId: a.dojo_id, dojoname: m.dojoname });
+        const bodyHtml = `
+          <h2>Deine Kündigung ist bestätigt 🙏</h2>
+          <p>Hallo ${m.vorname},</p>
+          <p>vielen Dank für deine Nachricht – wir haben deine Kündigung erhalten und bestätigen sie dir hiermit. Schön, dass du Teil unseres Dojos warst!</p>
+          <table class="data">
+            <tr><td style="color:#64748b;width:55%">Kündigung eingegangen am</td><td style="font-weight:600;text-align:right">${vonStr}</td></tr>
+            <tr><td style="color:#64748b">Du trainierst noch bis</td><td style="font-weight:700;text-align:right;color:${theme.primary}">${bisStr}</td></tr>
+            <tr><td style="color:#64748b">Offizielles Vertragsende</td><td style="font-weight:600;text-align:right">${bisStr}</td></tr>
+          </table>
+          <div class="box">
+            <p><strong>Gut zu wissen:</strong> Die Kündigungsfrist von 3 Monaten bezieht sich immer auf das <strong>Ende deiner Vertragslaufzeit</strong> – nicht auf drei Monate ab dem Kündigungsdatum. Deshalb endet dein Vertrag regulär zum oben genannten Datum.</p>
+          </div>
+          <p>Bis zum ${bisStr} bist du natürlich vollwertiges Mitglied: Du kannst weiter an allen Trainings und Veranstaltungen teilnehmen, und bis dahin läuft auch dein regulärer Beitrag wie gewohnt weiter.</p>
+          ${anmerkung_admin ? `<div class="box"><p><strong>Persönlicher Hinweis:</strong> ${anmerkung_admin}</p></div>` : ''}
+          <p>Wir würden uns sehr freuen, dich irgendwann wieder auf der Matte begrüßen zu dürfen. Bis dahin: alles Gute, viel Erfolg und herzlichen Dank für deine Zeit bei uns! 🥋</p>
+          <p style="margin-top:18px">Sportliche Grüße<br><strong>Dein Team von ${m.dojoname}</strong></p>`;
+        const kHtml = renderEmail({ theme, anlass: 'kuendigung', titel: 'Kündigungsbestätigung', subtitel: m.dojoname, bodyHtml });
+        const kText = `Deine Kündigung ist bestätigt\n\nHallo ${m.vorname},\n\nvielen Dank – wir haben deine Kündigung erhalten und bestätigen sie hiermit.\n\nKündigung eingegangen am: ${vonStr}\nDu trainierst noch bis: ${bisStr}\nOffizielles Vertragsende: ${bisStr}\n\nGut zu wissen: Die Kündigungsfrist von 3 Monaten bezieht sich immer auf das Ende der Vertragslaufzeit – nicht auf drei Monate ab dem Kündigungsdatum.\n\nBis zum ${bisStr} bleibst du vollwertiges Mitglied; bis dahin läuft auch der reguläre Beitrag weiter.${anmerkung_admin ? `\n\nHinweis: ${anmerkung_admin}` : ''}\n\nWir würden uns freuen, dich irgendwann wiederzusehen. Alles Gute!\n\nSportliche Grüße\nDein Team von ${m.dojoname}`;
         try {
           await sendEmailForDojo({ to: m.email, subject: kBetreff, html: kHtml, text: kText }, a.dojo_id);
           await logMitgliedMail({ mitglied_id: a.mitglied_id, dojo_id: a.dojo_id, empfaenger: m.email, typ: 'kuendigung_bestaetigt', betreff: kBetreff, html: kHtml, text: kText });
