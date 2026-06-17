@@ -1276,6 +1276,10 @@ try {
 app.use('/api/finanzaemter', require('./routes/finanzaemter'));
 logger.success('Route geladen', { path: '/api/finanzaemter' });
 
+// COCKPIT ROUTES (Inhaber-Lagezentrum, read-only, EIGENES COCKPIT_TOKEN statt JWT)
+app.use('/api/cockpit', require('./routes/cockpit'));
+logger.success('Route geladen', { path: '/api/cockpit' });
+
 // 2.4 KURSE ROUTES (Course Management)
 try {
   const kurseRoutes = require('./routes/kurse');
