@@ -274,8 +274,8 @@ function initCronJobs() {
     try {
       const { processAutoVerlaengerung } = require('./services/verbandMails');
       const res = await processAutoVerlaengerung(db.promise());
-      if (res.verlaengert > 0) logger.success(`🔁 Verband-Verlängerung: ${res.verlaengert}/${res.faellig} um 1 Jahr verlängert`);
-      await recordCronRun('verband_verlaengerung', { erfolg: true, info: `${res.verlaengert} verlängert`, dauerMs: Date.now() - t0 });
+      if (res.verlaengert > 0) logger.success(`🔁 Verband-Verlängerung: ${res.verlaengert}/${res.faellig} verlängert, ${res.berechnet} Rechnungen versendet`);
+      await recordCronRun('verband_verlaengerung', { erfolg: true, info: `${res.verlaengert} verlängert, ${res.berechnet} berechnet`, dauerMs: Date.now() - t0 });
     } catch (error) {
       logger.error('❌ Verband-Verlängerung Cron-Job Fehler', { error: error.message, stack: error.stack });
       await recordCronRun('verband_verlaengerung', { erfolg: false, info: error.message, dauerMs: Date.now() - t0 });

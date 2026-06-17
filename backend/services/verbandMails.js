@@ -335,14 +335,18 @@ async function sendKuendigungBestaetigung(pool, m, opts = {}) {
 }
 
 // ── Auto-Verlängerung: läuft die Mitgliedschaft ohne Kündigung aus, +1 Jahr ──
-// Aktive Mitgliedschaften, deren gueltig_bis abgelaufen ist, werden um 1 Jahr verlängert.
+// Aktive Mitgliedschaften, deren gueltig_bis abgelaufen ist, werden um 1 Jahr verlängert
+// und erhalten automatisch die neue Jahresrechnung (mit frischer Nummer) – auch bei Lastschrift.
 async function processAutoVerlaengerung(pool) {
   const [rows] = await q(pool,
-    `SELECT id, mitgliedsnummer, gueltig_von, gueltig_bis FROM verbandsmitgliedschaften
+    `SELECT * FROM verbandsmitgliedschaften
      WHERE status = 'aktiv' AND gueltig_bis IS NOT NULL AND gueltig_bis < CURDATE() LIMIT 200`);
-  let verlaengert = 0;
+  let verlaengert = 0, berechnet = 0;
   for (const m of rows) {
     try {
+      const altesEnde = new Date(m.gueltig_bis);
+      const neuesEnde = new Date(altesEnde); neuesEnde.setFullYear(neuesEnde.getFullYear() + 1);
+      const neuesEndeStr = neuesEnde.toISOString().slice(0, 10);
       await q(pool,
         `UPDATE verbandsmitgliedschaften
          SET gueltig_von = DATE_ADD(COALESCE(gueltig_von, gueltig_bis), INTERVAL 1 YEAR),
@@ -351,11 +355,18 @@ async function processAutoVerlaengerung(pool) {
       await q(pool,
         `INSERT INTO verband_vertragshistorie (verbandsmitgliedschaft_id, aktion, beschreibung, durchgefuehrt_von)
          VALUES (?, 'verlaengert', ?, 'System (Auto-Verlängerung)')`,
-        [m.id, `Mitgliedschaft automatisch um 1 Jahr verlängert (kein Kündigungseingang). Neues Ende: ${new Date(new Date(m.gueltig_bis).setFullYear(new Date(m.gueltig_bis).getFullYear() + 1)).toLocaleDateString('de-DE')}`]);
+        [m.id, `Mitgliedschaft automatisch um 1 Jahr verlängert (kein Kündigungseingang). Neues Ende: ${neuesEnde.toLocaleDateString('de-DE')}`]);
       verlaengert++;
+
+      // Neue Jahresrechnung automatisch erzeugen + versenden (Überweisung MIT QR, Lastschrift als Einzugs-Info).
+      // Frische Rechnungsnummer erzwingen (rechnungsnummer:null), neues Mitgliedsjahr im Beleg.
+      if (!m.beitragsfrei && Number(m.jahresbeitrag) > 0) {
+        const mNeu = { ...m, gueltig_von: neuesEndeStr, gueltig_ab: neuesEndeStr, gueltig_bis: neuesEndeStr, rechnungsnummer: null };
+        try { if (await sendRechnung(pool, mNeu)) berechnet++; } catch (e) { /* Rechnung optional */ }
+      }
     } catch (e) { /* nächster */ }
   }
-  return { faellig: rows.length, verlaengert };
+  return { faellig: rows.length, verlaengert, berechnet };
 }
 
 module.exports = { sendWillkommen, sendRechnung, processFaelligeRechnungen, naechsteRechnungsnummer, sendUebertragungWillkommen, sendKuendigungBestaetigung, processAutoVerlaengerung };
