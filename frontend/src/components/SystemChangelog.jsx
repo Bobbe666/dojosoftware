@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.72',
+    date: '2026-06-17',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Kündigungs-Banner verwaltbar im Mail-Banner-Dashboard',
+    description: 'Der neue Anlass „Kündigung" lässt sich jetzt im Super-Admin-Mail-Banner-Dashboard pflegen – ausschließlich in der Dojo-Sektion (nicht HOF/Events/Verband, dort gibt es keine Kündigungsmails). Für die Kampfkunstschule Schreiner ist bereits ein eigener Kündigungs-Banner hinterlegt.',
+    highlights: [
+      '🖼️ Anlass „Kündigung" im Banner-Dashboard (nur Dojo-Sektion)',
+      '🏫 Schreiner: eigener Kündigungs-Banner aktiv',
+    ],
+    details: 'mail-banners.js: UPLOAD_ANLAESSE inkl. kuendigung (Validierung); MailBannerVerwaltung.jsx: dojoAnlaesse-Reihe + Label. Banner dojo-kuendigung-d3.jpg hochgeladen + im Manifest.',
+    files: ['backend/routes/mail-banners.js', 'frontend/src/components/MailBannerVerwaltung.jsx'],
+  },
+  {
     version: '3.0.71',
     date: '2026-06-17',
     type: 'improvement',

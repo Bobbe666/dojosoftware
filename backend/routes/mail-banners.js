@@ -30,6 +30,8 @@ const requireSuperAdmin = [authenticateToken, superOnly];
 
 const APPS = ['hof', 'dojo', 'events'];
 const ANLAESSE = ['einladung', 'begruessung', 'rechnung', 'allgemein'];
+// 'kuendigung' gilt nur für Dojo-Mitglieder-Mails (nicht hof/events/verband) → nur Upload erlaubt
+const UPLOAD_ANLAESSE = [...ANLAESSE, 'kuendigung'];
 const BANNER_DIR = path.join(__dirname, '../uploads/mail-banners');
 const MANIFEST = path.join(BANNER_DIR, 'manifest.json');
 const PUBLIC_BASE = process.env.MAIL_BANNER_BASE_URL || 'https://dojo.tda-intl.org/uploads/mail-banners';
@@ -98,7 +100,7 @@ const upload = multer({ storage, fileFilter, limits: { fileSize: 2 * 1024 * 1024
 
 const validParams = (req, res, next) => {
   if (!APPS.includes(req.params.app)) return res.status(400).json({ error: 'Ungültige App' });
-  if (!ANLAESSE.includes(req.params.anlass)) return res.status(400).json({ error: 'Ungültiger Anlass' });
+  if (!UPLOAD_ANLAESSE.includes(req.params.anlass)) return res.status(400).json({ error: 'Ungültiger Anlass' });
   if (dojoIdFrom(req) > 0 && req.params.app !== 'dojo') return res.status(400).json({ error: 'Dojo-spezifische Banner nur für app=dojo' });
   next();
 };

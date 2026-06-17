@@ -6,7 +6,7 @@ import axios from 'axios';
 // Dojo: app-weites Standard-Banner (dojo_id 0) + pro Dojo eigene (Enterprise-Feature).
 
 const APP_LABELS = { hof: 'Hall of Fame', dojo: 'Dojosoftware', events: 'TDA Events' };
-const ANLASS_LABELS = { einladung: 'Einladung', begruessung: 'Begrüßung', rechnung: 'Rechnung', allgemein: 'Allgemein' };
+const ANLASS_LABELS = { einladung: 'Einladung', begruessung: 'Begrüßung', rechnung: 'Rechnung', allgemein: 'Allgemein', kuendigung: 'Kündigung' };
 
 export default function MailBannerVerwaltung() {
   const [data, setData] = useState(null);
@@ -71,6 +71,8 @@ export default function MailBannerVerwaltung() {
   };
 
   const anlaesse = data?.anlaesse || ['einladung', 'begruessung', 'rechnung', 'allgemein'];
+  // 'Kündigung' gibt es nur für echte Dojo-Mitglieder-Mails (nicht HOF/Events/Verband)
+  const dojoAnlaesse = [...anlaesse, 'kuendigung'];
 
   // Ein Banner-Kärtchen. fallbackUrl = Standard-Banner (wird genutzt wenn kein eigenes), locked = Enterprise gesperrt
   const card = (app, anlass, dojoId, { fallbackUrl = null, locked = false } = {}) => {
@@ -160,7 +162,7 @@ export default function MailBannerVerwaltung() {
                 ? <span style={{ fontSize: 12, color: '#f59e0b' }}>🔒 Eigene Banner sind ein Enterprise-Feature — dieses Dojo hat keinen Enterprise-Plan.</span>
                 : <span style={{ fontSize: 12, color: '#94a3b8' }}>Überschreibt das Standard-Banner nur für dieses Dojo.</span>}
           </div>
-          {grid(anlaesse.map(a => card('dojo', a, dojoSel, {
+          {grid(dojoAnlaesse.map(a => card('dojo', a, dojoSel, {
             fallbackUrl: dojoSel > 0 ? (find('dojo', a, 0)?.url || null) : null,
             locked: dojoLocked,
           })))}
