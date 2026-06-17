@@ -30,61 +30,52 @@ function buildRechnungHTML(rechnung, positionen) {
   <title>Rechnung ${rechnung.rechnungsnummer}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #1a1a1a; background: #fff; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #475569; background: #fff; }
 
-    /* Roter Header-Banner */
+    /* Marken-Header (Schiefer/Gold – wie die E-Mails) */
     .invoice-banner {
-      background: #c0392b;
+      background: #1e293b;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
       color: #fff;
-      padding: 1.2rem 2rem;
+      padding: 22px 32px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 3px solid #DAA520;
     }
-    .invoice-banner .company-name {
-      font-size: 14pt;
-      font-weight: bold;
-      letter-spacing: 0.5px;
-    }
-    .invoice-banner .company-addr {
-      font-size: 8.5pt;
-      opacity: 0.9;
-      margin-top: 3px;
-    }
-    .invoice-banner .invoice-label {
-      font-size: 18pt;
-      font-weight: bold;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
+    .invoice-banner .company-name { font-size: 15pt; font-weight: bold; letter-spacing: 0.3px; color: #fff; }
+    .invoice-banner .company-addr { font-size: 8.5pt; color: rgba(255,255,255,0.72); margin-top: 4px; }
+    .invoice-banner .invoice-label { font-size: 17pt; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; color: #DAA520; }
 
     /* Inhalt */
-    .content { padding: 1.5rem 2rem; max-width: 210mm; margin: 0 auto; }
+    .content { padding: 26px 32px; max-width: 210mm; margin: 0 auto; }
 
-    .addr-meta { display: flex; justify-content: space-between; margin-bottom: 2rem; }
-    .addr-line { font-size: 7.5pt; color: #666; border-bottom: 1px solid #c0392b; padding-bottom: 3px; margin-bottom: 8px; }
-    .recipient { font-size: 10pt; line-height: 1.7; }
-    .meta-block { text-align: right; font-size: 9pt; line-height: 1.8; }
-    .meta-block .meta-label { color: #666; font-size: 8pt; }
+    .addr-meta { display: flex; justify-content: space-between; margin-bottom: 28px; }
+    .addr-line { font-size: 7.5pt; color: #94a3b8; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 10px; }
+    .recipient { font-size: 10pt; line-height: 1.7; color: #1e293b; }
+    .meta-block { text-align: right; font-size: 9pt; line-height: 1.85; }
+    .meta-block .meta-label { color: #94a3b8; font-size: 8pt; }
+    .meta-block strong { color: #1e293b; }
 
-    h2.rechnung-title { font-size: 16pt; color: #c0392b; margin: 1.5rem 0 1rem; border-left: 4px solid #c0392b; padding-left: 0.75rem; }
+    h2.rechnung-title { font-size: 15pt; color: #1e293b; margin: 16px 0 14px; border-left: 4px solid #DAA520; padding-left: 12px; }
 
-    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 9pt; }
-    thead tr { background: #c0392b; color: #fff; }
-    th { padding: 0.5rem 0.4rem; text-align: left; font-weight: 600; font-size: 8.5pt; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 9pt; }
+    thead tr { background: #1e293b; color: #fff; }
+    th { padding: 9px 8px; text-align: left; font-weight: 600; font-size: 8.5pt; letter-spacing: 0.03em; }
     th:nth-child(3), th:nth-child(4), th:nth-child(5) { text-align: right; }
-    tbody tr:nth-child(even) { background: #fafafa; }
-    td { padding: 0.45rem 0.4rem; border-bottom: 1px solid #e5e7eb; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    td { padding: 9px 8px; border-bottom: 1px solid #eef2f7; color: #334155; }
     td:nth-child(3), td:nth-child(4), td:nth-child(5) { text-align: right; }
 
-    .totals { margin-left: auto; width: 48%; font-size: 9.5pt; margin-top: 0.5rem; }
-    .totals-row { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid #e5e7eb; }
-    .totals-row.final { font-weight: bold; font-size: 11pt; border-top: 2px solid #c0392b; border-bottom: 2px solid #c0392b; margin-top: 0.4rem; padding-top: 0.4rem; color: #c0392b; }
+    .totals { margin-left: auto; width: 50%; font-size: 9.5pt; margin-top: 6px; }
+    .totals-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eef2f7; color: #475569; }
+    .totals-row.final { font-weight: bold; font-size: 12pt; border-top: 2px solid #DAA520; border-bottom: none; margin-top: 4px; padding-top: 8px; color: #1e293b; }
 
-    .payment-terms { margin-top: 1.5rem; padding: 0.75rem 1rem; background: #fff5f5; border-left: 3px solid #c0392b; font-size: 9pt; }
-    .payment-terms p + p { margin-top: 4px; }
+    .payment-terms { margin-top: 20px; padding: 13px 16px; background: #f0f9ff; border-left: 4px solid #DAA520; border-radius: 0 6px 6px 0; font-size: 9pt; color: #334155; }
+    .payment-terms p + p { margin-top: 5px; }
+    .payment-terms strong { color: #1e293b; }
 
-    .footer { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid #eee; font-size: 8pt; color: #888; text-align: center; }
+    .footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid #eef2f7; font-size: 8pt; color: #94a3b8; text-align: center; line-height: 1.6; }
 
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
