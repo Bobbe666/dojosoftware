@@ -1715,6 +1715,14 @@ const VerbandsMitglieder = () => {
                           </span>
                         </div>
                       )}
+                      {selectedMitgliedschaft.person_email && (
+                        <a
+                          href={`mailto:${selectedMitgliedschaft.person_email}?subject=${encodeURIComponent('TDA Verband – ' + (selectedMitgliedschaft.person_vorname || '') + ' ' + (selectedMitgliedschaft.person_nachname || ''))}`}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, padding: '8px 14px', borderRadius: 8, background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#d4af37', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}
+                        >
+                          <Mail size={14} /> E-Mail schreiben
+                        </a>
+                      )}
                     </div>
                   )}
 
@@ -1752,6 +1760,14 @@ const VerbandsMitglieder = () => {
                               {selectedMitgliedschaft.dojo_website}
                             </a>
                           </div>
+                        )}
+                        {selectedMitgliedschaft.dojo_email && (
+                          <a
+                            href={`mailto:${selectedMitgliedschaft.dojo_email}?subject=${encodeURIComponent('TDA Verband – ' + (selectedMitgliedschaft.dojo_name || ''))}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, padding: '8px 14px', borderRadius: 8, background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#d4af37', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}
+                          >
+                            <Mail size={14} /> E-Mail schreiben
+                          </a>
                         )}
                       </div>
 
