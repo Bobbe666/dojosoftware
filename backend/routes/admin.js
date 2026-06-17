@@ -2586,9 +2586,20 @@ router.get('/overview-summary', requireSuperAdmin, async (req, res) => {
         ORDER BY created_at ASC LIMIT 10`)
     ]);
 
+    // Vermerk: zuletzt verschickte Verbands-Willkommensmails (für das Daily Briefing)
+    const [willkommensmails] = await db.promise().query(`
+      SELECT id, mitgliedsnummer, typ,
+        COALESCE(NULLIF(TRIM(CONCAT(COALESCE(person_vorname,''),' ',COALESCE(person_nachname,''))),''), dojo_name, person_email, dojo_email) AS name,
+        willkommensmail_gesendet_am
+      FROM verbandsmitgliedschaften
+      WHERE willkommensmail_gesendet_am IS NOT NULL
+        AND willkommensmail_gesendet_am >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      ORDER BY willkommensmail_gesendet_am DESC LIMIT 10`);
+
     res.json({
       success: true,
       goals: goalsWithIst,
+      willkommensmails_verschickt: willkommensmails,
       new_registrations: {
         dojos:      { week: neuDojos7d.cnt,      month: neuDojos30d.cnt },
         verband:    { week: neuVerband7d.cnt,     month: neuVerband30d.cnt },

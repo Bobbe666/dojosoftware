@@ -220,6 +220,27 @@ const DailyBriefing = ({ globalStats, overviewSummary, unreadCount, sslWarnings,
             </div>
           )}
 
+          {/* Willkommensmails verschickt (Vermerk) */}
+          {overviewSummary?.willkommensmails_verschickt?.length > 0 && (
+            <div>
+              <div className="sad-trial-warning-meta">✉️ Willkommensmails verschickt (letzte 7 Tage)</div>
+              <div className="sad2-flex-col-04">
+                {overviewSummary.willkommensmails_verschickt.map((w, i) => (
+                  <div
+                    key={`wm-${i}`}
+                    className="sad-trial-item"
+                    onClick={() => onNavigate?.('verband')}
+                    style={{ cursor: 'pointer' }}
+                    title="Zum Verband-Tab wechseln"
+                  >
+                    <span className="sad2-fw600">✅ Verband-Willkommensmail: {w.name}{w.mitgliedsnummer ? ` (${w.mitgliedsnummer})` : ''}</span>
+                    <span style={{ opacity: 0.75 }}>{w.willkommensmail_gesendet_am ? new Date(w.willkommensmail_gesendet_am).toLocaleDateString('de-DE') : ''}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Trial-Warnungen */}
           {overviewSummary?.trial_expiring?.length > 0 && (
             <div>
