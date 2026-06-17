@@ -118,6 +118,15 @@ const DatenschutzPage = () => {
                 Diese Daten werden zur Bereitstellung unseres Dienstes benötigt
                 (Art. 6 Abs. 1 lit. b DSGVO - Vertragserfüllung).
               </p>
+              <p>
+                Zusätzlich speichern wir bei der Registrierung sowie bei sicherheitsrelevanten
+                Vorgängen (z. B. An- und Abmeldung) die verwendete <strong>IP-Adresse</strong>, den
+                Zeitpunkt und technische Angaben (z. B. Browser-Kennung). Dies dient der Sicherheit
+                sowie der Missbrauchs- und Betrugsprävention – insbesondere der Verhinderung von
+                Registrierungen unter fremdem Namen – sowie dem Nachweis erteilter Einwilligungen
+                (Art. 6 Abs. 1 lit. f DSGVO, berechtigtes Interesse). Die Daten werden nur so lange
+                gespeichert, wie es für diese Zwecke erforderlich ist.
+              </p>
 
               <h3>4.2 Mitgliederdaten (Auftragsverarbeitung)</h3>
               <p>
