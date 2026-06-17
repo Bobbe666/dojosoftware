@@ -300,4 +300,62 @@ async function sendUebertragungWillkommen(pool, m, opts = {}) {
   return !!(r && r.success);
 }
 
-module.exports = { sendWillkommen, sendRechnung, processFaelligeRechnungen, naechsteRechnungsnummer, sendUebertragungWillkommen };
+// ── Kündigungs-Bestätigung (Verband, Mitglied-Selbstkündigung) ───────────────
+// opts: { endeDatum, testTo }
+async function sendKuendigungBestaetigung(pool, m, opts = {}) {
+  const { email, name } = empfaengerVon(m);
+  const to = opts.testTo || email;
+  if (!to) return false;
+  const theme = await getDojoMailTheme({ dojoname: VERBAND_DOJONAME });
+  const endeStr = fmtD(opts.endeDatum || m.gueltig_bis);
+  const bodyHtml = `
+    <p style="font-size:16px;margin:0 0 16px;color:#1e293b;">Hallo ${name},</p>
+    <p style="margin:0 0 14px;">wir bestätigen den Eingang deiner Kündigung. Schade, dass du uns verlässt – wir bedanken uns herzlich für deine Mitgliedschaft im <strong style="color:#1e293b;">Tiger &amp; Dragon Association Verband</strong>.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;margin:18px 0;">
+      <tr><td style="padding:20px 22px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;color:#64748b;line-height:1.9;">
+          <tr><td>Mitgliedsnummer</td><td align="right" style="color:#1e293b;font-weight:600;">${m.mitgliedsnummer || '–'}</td></tr>
+          <tr><td>Mitgliedschaft endet zum</td><td align="right" style="color:#1e293b;font-weight:700;">${endeStr}</td></tr>
+        </table>
+      </td></tr>
+    </table>
+    <div class="box">
+      <p style="margin:0;"><strong style="color:#1e293b;">Gut zu wissen:</strong> Die Mitgliedschaft läuft jeweils bis zum 31.12. eines Jahres. Eine Kündigung bis zum 31.08. beendet sie zum 31.12. desselben Jahres – danach endet sie zum 31.12. des Folgejahres. Dein Vertragsende oben berücksichtigt das bereits.</p>
+    </div>
+    <p style="margin:14px 0;">Bis zum Vertragsende bleibst du vollwertiges Mitglied mit allen Vorteilen.</p>
+    <p style="margin:14px 0 0;">Wir würden uns freuen, dich künftig wieder im Verband begrüßen zu dürfen. Alles Gute!</p>
+    <p style="margin:14px 0 0;">Sportliche Grüße<br><strong style="color:#1e293b;">Tiger &amp; Dragon Association &ndash; International</strong></p>`;
+  const html = renderEmail({ theme, anlass: 'allgemein', titel: 'Kündigung bestätigt', subtitel: 'TDA International · Verband', bodyHtml });
+  const betreff = (opts.testTo ? '[TEST] ' : '') + 'Deine Kündigung ist bestätigt – TDA Verband';
+  const text = `Hallo ${name},\n\nwir bestätigen deine Kündigung. Deine Mitgliedschaft (${m.mitgliedsnummer}) endet zum ${endeStr}.\n\nHinweis: Kündigung bis 31.08. beendet zum 31.12. desselben Jahres, danach zum 31.12. des Folgejahres.\n\nSportliche Grüße\nTiger & Dragon Association – International`;
+  const r = await sendEmailForDojo({ to, subject: betreff, html, text }, VERBAND_DOJO_ID);
+  if (opts.testTo) return !!(r && r.success);
+  await logMail(pool, { mitgliedschaftId: m.id, empfaenger: to, typ: 'kuendigung_bestaetigt', betreff, html, text, result: r });
+  return !!(r && r.success);
+}
+
+// ── Auto-Verlängerung: läuft die Mitgliedschaft ohne Kündigung aus, +1 Jahr ──
+// Aktive Mitgliedschaften, deren gueltig_bis abgelaufen ist, werden um 1 Jahr verlängert.
+async function processAutoVerlaengerung(pool) {
+  const [rows] = await q(pool,
+    `SELECT id, mitgliedsnummer, gueltig_von, gueltig_bis FROM verbandsmitgliedschaften
+     WHERE status = 'aktiv' AND gueltig_bis IS NOT NULL AND gueltig_bis < CURDATE() LIMIT 200`);
+  let verlaengert = 0;
+  for (const m of rows) {
+    try {
+      await q(pool,
+        `UPDATE verbandsmitgliedschaften
+         SET gueltig_von = DATE_ADD(COALESCE(gueltig_von, gueltig_bis), INTERVAL 1 YEAR),
+             gueltig_bis = DATE_ADD(gueltig_bis, INTERVAL 1 YEAR)
+         WHERE id = ?`, [m.id]);
+      await q(pool,
+        `INSERT INTO verband_vertragshistorie (verbandsmitgliedschaft_id, aktion, beschreibung, durchgefuehrt_von)
+         VALUES (?, 'verlaengert', ?, 'System (Auto-Verlängerung)')`,
+        [m.id, `Mitgliedschaft automatisch um 1 Jahr verlängert (kein Kündigungseingang). Neues Ende: ${new Date(new Date(m.gueltig_bis).setFullYear(new Date(m.gueltig_bis).getFullYear() + 1)).toLocaleDateString('de-DE')}`]);
+      verlaengert++;
+    } catch (e) { /* nächster */ }
+  }
+  return { faellig: rows.length, verlaengert };
+}
+
+module.exports = { sendWillkommen, sendRechnung, processFaelligeRechnungen, naechsteRechnungsnummer, sendUebertragungWillkommen, sendKuendigungBestaetigung, processAutoVerlaengerung };

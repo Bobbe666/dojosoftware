@@ -265,6 +265,24 @@ function initCronJobs() {
   });
 
   /**
+   * Verband-Mitgliedschaften: automatische Verlängerung um 1 Jahr.
+   * Aktive Mitgliedschaften ohne Kündigung, deren Laufzeit (31.12.) abgelaufen ist,
+   * werden um ein Jahr verlängert. Läuft täglich um 03:20 Uhr.
+   */
+  cron.schedule('20 3 * * *', async () => {
+    const t0 = Date.now();
+    try {
+      const { processAutoVerlaengerung } = require('./services/verbandMails');
+      const res = await processAutoVerlaengerung(db.promise());
+      if (res.verlaengert > 0) logger.success(`🔁 Verband-Verlängerung: ${res.verlaengert}/${res.faellig} um 1 Jahr verlängert`);
+      await recordCronRun('verband_verlaengerung', { erfolg: true, info: `${res.verlaengert} verlängert`, dauerMs: Date.now() - t0 });
+    } catch (error) {
+      logger.error('❌ Verband-Verlängerung Cron-Job Fehler', { error: error.message, stack: error.stack });
+      await recordCronRun('verband_verlaengerung', { erfolg: false, info: error.message, dauerMs: Date.now() - t0 });
+    }
+  });
+
+  /**
    * Feature-Trials: Abgelaufene Trials deaktivieren
    * Läuft täglich um 00:30 Uhr
    * Setzt Status von abgelaufenen Trials auf 'expired' und loggt Zugriffsentzug

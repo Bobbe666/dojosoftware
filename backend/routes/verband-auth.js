@@ -15,6 +15,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailTemplates');
+const verbandMails = require('../services/verbandMails');
 
 // Magic-Bytes Prüfung für sicheren File-Upload
 const checkImageMagicBytes = (buffer) => {
@@ -2575,5 +2576,85 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
+
+/**
+ * GET /api/verband-auth/kuendigung-info
+ * Zeigt dem Mitglied das voraussichtliche Vertragsende bei Kündigung heute.
+ */
+router.get('/kuendigung-info', verifyVerbandToken, async (req, res) => {
+  try {
+    const rows = await queryAsync(
+      `SELECT id, status, gueltig_bis FROM verbandsmitgliedschaften WHERE id = ? LIMIT 1`,
+      [req.verbandUser.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+    const m = rows[0];
+    const heute = new Date();
+    const stichtag = new Date(heute.getFullYear(), 7, 31, 23, 59, 59); // 31. August
+    let endeJahr = heute > stichtag ? heute.getFullYear() + 1 : heute.getFullYear();
+    const bisJahr = m.gueltig_bis ? new Date(m.gueltig_bis).getFullYear() : endeJahr;
+    endeJahr = Math.max(endeJahr, bisJahr);
+    res.json({
+      success: true,
+      bereits_gekuendigt: m.status === 'gekuendigt',
+      kuendigung_bis: `${heute.getFullYear()}-08-31`,
+      vertragsende_bei_kuendigung: `${endeJahr}-12-31`,
+      aktuelles_ende: m.gueltig_bis
+    });
+  } catch (error) {
+    logger.error('Kündigung-Info-Fehler:', error);
+    res.status(500).json({ error: 'Anfrage fehlgeschlagen' });
+  }
+});
+
+/**
+ * POST /api/verband-auth/kuendigen
+ * Mitglied kündigt seine Verbandsmitgliedschaft selbst (Self-Service).
+ * Regel: Kündigung bis 31.08. → Ende 31.12. desselben Jahres, danach 31.12. Folgejahr.
+ */
+router.post('/kuendigen', verifyVerbandToken, async (req, res) => {
+  try {
+    const rows = await queryAsync(
+      `SELECT id, typ, status, mitgliedsnummer, gueltig_bis, zahlungsart,
+              person_vorname, person_nachname, person_email,
+              dojo_name, dojo_inhaber, dojo_email
+       FROM verbandsmitgliedschaften WHERE id = ? LIMIT 1`,
+      [req.verbandUser.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+    const m = rows[0];
+    if (m.status === 'gekuendigt') {
+      return res.status(400).json({ error: 'Deine Mitgliedschaft ist bereits gekündigt.' });
+    }
+
+    // Vertragsende nach 31.08.-Regel berechnen
+    const heute = new Date();
+    const stichtag = new Date(heute.getFullYear(), 7, 31, 23, 59, 59);
+    let endeJahr = heute > stichtag ? heute.getFullYear() + 1 : heute.getFullYear();
+    const bisJahr = m.gueltig_bis ? new Date(m.gueltig_bis).getFullYear() : endeJahr;
+    endeJahr = Math.max(endeJahr, bisJahr);
+    const endeDatum = `${endeJahr}-12-31`;
+    const grund = (req.body && typeof req.body.grund === 'string') ? req.body.grund.slice(0, 500) : null;
+
+    await queryAsync(
+      `UPDATE verbandsmitgliedschaften SET status = 'gekuendigt', gueltig_bis = ? WHERE id = ?`,
+      [endeDatum, m.id]
+    );
+    await queryAsync(
+      `INSERT INTO verband_vertragshistorie (verbandsmitgliedschaft_id, aktion, beschreibung, durchgefuehrt_von, ip_adresse)
+       VALUES (?, 'gekuendigt', ?, 'Mitglied (Self-Service)', ?)`,
+      [m.id, `Selbstkündigung über das Portal. Vertragsende: ${endeDatum}.${grund ? ' Grund: ' + grund : ''}`, req.ip || null]
+    );
+
+    // Bestätigungsmail (rechtssicher geloggt) – blockiert die Antwort nicht
+    verbandMails.sendKuendigungBestaetigung(db.promise(), m, { endeDatum })
+      .catch(e => logger.warn('Kündigungs-Bestätigungsmail fehlgeschlagen:', e.message));
+
+    res.json({ success: true, vertragsende: endeDatum, message: 'Kündigung bestätigt' });
+  } catch (error) {
+    logger.error('Selbstkündigung-Fehler:', error);
+    res.status(500).json({ error: 'Kündigung fehlgeschlagen' });
+  }
+});
 
 module.exports = router;
