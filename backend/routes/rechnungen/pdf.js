@@ -165,7 +165,7 @@ function buildRechnungHTML(rechnung, positionen, qr = null, opts = {}) {
     .invoice-banner .invoice-label { font-size: 17pt; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; color: #DAA520; }
 
     /* Inhalt */
-    .content { padding: 26px 32px; max-width: 210mm; margin: 0 auto; }
+    .content { padding: 18px 0 0; margin: 0; }
 
     .addr-meta { display: flex; justify-content: space-between; margin-bottom: 28px; }
     .addr-line { font-size: 7.5pt; color: #94a3b8; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 10px; }
@@ -199,7 +199,6 @@ function buildRechnungHTML(rechnung, positionen, qr = null, opts = {}) {
 
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      @page { margin: 0; }
     }
   </style>
 </head>
