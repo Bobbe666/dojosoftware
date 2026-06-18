@@ -50,6 +50,18 @@ async function giroQr(rechnung) {
   } catch { return null; }
 }
 
+// Echte PDF-Fußzeile (Puppeteer) – steht ganz unten auf JEDER Seite. font-size muss explizit gesetzt sein.
+function buildPdfFooter(rechnung) {
+  const adr = `${rechnung.dojoname || ''} &bull; ${rechnung.dojo_strasse || ''} ${rechnung.dojo_hausnummer || ''}, ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}`;
+  const steuer = [
+    rechnung.steuernummer ? `Steuernummer: ${rechnung.steuernummer}` : '',
+    rechnung.umsatzsteuer_id ? `USt-IdNr.: ${rechnung.umsatzsteuer_id}` : ''
+  ].filter(Boolean).join(' &bull; ');
+  return `<div style="font-size:8px;color:#94a3b8;width:100%;text-align:center;font-family:Arial,Helvetica,sans-serif;padding:0 18mm;line-height:1.5;">
+    <div style="border-top:1px solid #eef2f7;padding-top:4px;">${adr}${steuer ? '<br>' + steuer : ''} &nbsp;&bull;&nbsp; Seite <span class="pageNumber"></span> von <span class="totalPages"></span></div>
+  </div>`;
+}
+
 // Rechnung als Inline-HTML für den E-Mail-Body (sichtbar ohne Download), Mail-Layout-konform
 function buildRechnungEmailBody(rechnung, positionen, theme, qr) {
   const fmt = (n) => parseFloat(n || 0).toFixed(2).replace('.', ',');
@@ -110,7 +122,7 @@ function buildRechnungEmailBody(rechnung, positionen, theme, qr) {
     <p style="margin:12px 0 0;">Mit freundlichen Grüßen<br><strong style="color:#1e293b;">${rechnung.dojoname || ''}</strong></p>`;
 }
 
-function buildRechnungHTML(rechnung, positionen, qr = null) {
+function buildRechnungHTML(rechnung, positionen, qr = null, opts = {}) {
   // Header-Banner wie in der E-Mail-Rechnung (Anlass 'rechnung', pro Dojo); Fallback = Schiefer-Header
   const dojoIdForBanner = rechnung.resolved_dojo_id || rechnung.dojo_id || 0;
   const bannerUrl = bannerUrlFor('dojo', 'rechnung', dojoIdForBanner);
@@ -311,10 +323,10 @@ function buildRechnungHTML(rechnung, positionen, qr = null) {
       </tr></table>` : ''}
     </div>
 
-    <div class="footer">
+    ${opts.noFooter ? '' : `<div class="footer">
       ${rechnung.dojoname || ''} &bull; ${rechnung.dojo_strasse || ''} ${rechnung.dojo_hausnummer || ''}, ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}
       ${(rechnung.steuernummer || rechnung.umsatzsteuer_id) ? `<br>${rechnung.steuernummer ? `Steuernummer: ${rechnung.steuernummer}` : ''}${(rechnung.steuernummer && rechnung.umsatzsteuer_id) ? ' &bull; ' : ''}${rechnung.umsatzsteuer_id ? `USt-IdNr.: ${rechnung.umsatzsteuer_id}` : ''}` : ''}
-    </div>
+    </div>`}
   </div>
 </body>
 </html>`;
@@ -488,14 +500,22 @@ router.post('/:id/email-senden', async (req, res) => {
 
     const dojoId = rechnung.resolved_dojo_id;
     const qr = await giroQr(rechnung);
-    const html = buildRechnungHTML(rechnung, positionen, qr);
+    // Inline-Footer im PDF weglassen — die Fußzeile kommt als echte PDF-Fußzeile ganz unten auf JEDER Seite
+    const html = buildRechnungHTML(rechnung, positionen, qr, { noFooter: true });
+    const footerTemplate = buildPdfFooter(rechnung);
 
     // PDF mit Puppeteer generieren
     // Wichtig: goto mit data:-URL statt setContent — einziger zuverlässiger UTF-8-Fix für Puppeteer
     const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
     await page.goto(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '12mm', bottom: '22mm', left: '12mm', right: '12mm' } });
+    const pdfBuffer = await page.pdf({
+      format: 'A4', printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: '<span></span>',
+      footerTemplate,
+      margin: { top: '20mm', bottom: '24mm', left: '18mm', right: '18mm' }
+    });
     await browser.close();
 
     // E-Mail-Body: Rechnung INLINE sichtbar (Mail-Layout) + PDF im Anhang
