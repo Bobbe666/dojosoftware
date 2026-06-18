@@ -147,7 +147,8 @@ function buildRechnungHTML(rechnung, positionen, qr = null, opts = {}) {
     body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #475569; background: #fff; }
 
     /* Banner-Bild wie in der E-Mail-Rechnung */
-    .invoice-banner-img { display: block; width: 100%; height: auto; border: 0; }
+    /* Schmales Banner – im Briefkopf-Bereich, lässt die Adresse im Fensterkuvert frei */
+    .invoice-banner-img { display: block; width: 100%; height: 24mm; object-fit: cover; object-position: center; border: 0; }
 
     /* Marken-Header (Schiefer/Gold – Fallback wenn kein Banner) */
     .invoice-banner {
@@ -165,11 +166,13 @@ function buildRechnungHTML(rechnung, positionen, qr = null, opts = {}) {
     .invoice-banner .invoice-label { font-size: 17pt; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; color: #DAA520; }
 
     /* Inhalt */
-    .content { padding: 18px 0 0; margin: 0; }
+    .content { padding: 6mm 0 0; margin: 0; }
 
-    .addr-meta { display: flex; justify-content: space-between; margin-bottom: 28px; }
-    .addr-line { font-size: 7.5pt; color: #94a3b8; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 10px; }
-    .recipient { font-size: 10pt; line-height: 1.7; color: #1e293b; }
+    /* DIN 5008: Anschriftfeld links (85mm breit), Empfängeradresse im Fenster ~45mm von oben */
+    .addr-meta { display: flex; justify-content: space-between; margin-bottom: 24px; }
+    .anschriftfeld { width: 85mm; }
+    .addr-line { font-size: 7pt; color: #94a3b8; padding-bottom: 2px; margin-bottom: 8px; }
+    .recipient { font-size: 11pt; line-height: 1.55; color: #1e293b; min-height: 27mm; }
     .meta-block { text-align: right; font-size: 9pt; line-height: 1.85; }
     .meta-block .meta-label { color: #94a3b8; font-size: 8pt; }
     .meta-block strong { color: #1e293b; }
@@ -215,7 +218,7 @@ function buildRechnungHTML(rechnung, positionen, qr = null, opts = {}) {
 
   <div class="content">
     <div class="addr-meta">
-      <div>
+      <div class="anschriftfeld">
         <div class="addr-line">${rechnung.dojoname || ''} &bull; ${rechnung.dojo_strasse || ''} ${rechnung.dojo_hausnummer || ''} &bull; ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}</div>
         <div class="recipient">
           <div>${rechnung.mitglied_name || ''}</div>
@@ -513,7 +516,7 @@ router.post('/:id/email-senden', async (req, res) => {
       displayHeaderFooter: true,
       headerTemplate: '<span></span>',
       footerTemplate,
-      margin: { top: '20mm', bottom: '24mm', left: '18mm', right: '18mm' }
+      margin: { top: '12mm', bottom: '24mm', left: '20mm', right: '20mm' }
     });
     await browser.close();
 
