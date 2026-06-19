@@ -338,7 +338,6 @@ function Dashboard() {
     { id: 'events', label: t('tabs.events'), icon: '📅' },
     { id: 'training', label: 'Training', icon: '⏱' },
     { id: 'todos', label: 'To Do', icon: '✅' },
-    { id: 'businessplan', label: 'Businessplan', icon: '📈' },
     { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
     { id: 'community', label: 'Community', icon: '🏘️' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
@@ -520,6 +519,13 @@ function Dashboard() {
       title: 'Finanzcockpit',
       description: 'Cockpit, Break-Even & 5-Jahresplan an einem Ort',
       path: '/dashboard/auswertungen?tab=finanzen&sub=cockpit',
+      featured: true
+    },
+    {
+      icon: '📈',
+      title: 'Businessplan',
+      description: 'Finanzplanung nach Hans-Lindner: Investition, Rentabilität, Liquidität & PDF',
+      action: () => setActiveTab('businessplan'),
       featured: true
     },
     {
@@ -1824,7 +1830,7 @@ function Dashboard() {
                         {finanzenCards.map((card, index) => (
                           <div
                             key={index}
-                            onClick={() => handleNavigation(card.path)}
+                            onClick={() => card.action ? card.action() : handleNavigation(card.path)}
                             className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
                           >
                             {card.badge && (

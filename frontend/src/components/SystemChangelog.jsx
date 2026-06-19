@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.76',
+    date: '2026-06-19',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Businessplan unter Finanzen verlinkt (aus Sidebar entfernt)',
+    description: 'Der Businessplan ist nicht mehr ein eigener Punkt in der Seitenleiste, sondern als Kachel im Finanzen-Bereich erreichbar (aufgeräumtere Navigation). Funktion unverändert.',
+    highlights: ['📈 Businessplan jetzt als Kachel unter Finanzen', '🧹 Sidebar entschlackt'],
+    details: "Dashboard.jsx: tabs-Eintrag businessplan entfernt; finanzenCards-Kachel mit action setActiveTab('businessplan'); Karten-onClick unterstützt jetzt action.",
+    files: ['frontend/src/components/Dashboard.jsx'],
+  },
+  {
     version: '3.0.75',
     date: '2026-06-19',
     type: 'feature',
