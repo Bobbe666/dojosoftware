@@ -187,10 +187,14 @@ const Events = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (cr.data.conflicts?.length > 0) {
-          const names = cr.data.conflicts.map(c => `• ${c.summary}`).join('\n');
-          const ok = window.confirm(
-            `⚠️ Terminkonflikt mit privatem Kalender!\n\n${names}\n\nTrotzdem anlegen?`
-          );
+          const hasVerband = cr.data.conflicts.some(c => c.source === 'verband');
+          const names = cr.data.conflicts
+            .map(c => `• ${c.source === 'verband' ? '🥋 ' : '📅 '}${c.summary}`)
+            .join('\n');
+          const titel = hasVerband
+            ? '⚠️ Terminkonflikt mit Verbands-Turnier / privatem Kalender!'
+            : '⚠️ Terminkonflikt mit privatem Kalender!';
+          const ok = window.confirm(`${titel}\n\n${names}\n\nTrotzdem anlegen?`);
           if (!ok) return;
         }
       } catch (e) {

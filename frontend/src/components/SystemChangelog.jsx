@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.75',
+    date: '2026-06-19',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Verbands-Termine im Super-Admin-Kalender (Überschneidungs-Schutz)',
+    description: 'Neuer Bereich im Super-Admin-Kalender (System → Kalender): Turniertermine anderer Kampfsportverbände (DKV, WKU/WAKO, Taekwondo, BKO, WMAC, WOMAA …) können manuell gepflegt oder per KI-Web-Sync gefunden werden. Bestätigte Verbands-Termine fließen automatisch in den Konflikt-Check beim Anlegen eigener Events/Turniere ein, sodass Terminüberschneidungen vermieden werden. Per-Web-Sync gefundene Termine landen als „unbestätigt" und müssen manuell freigegeben werden.',
+    highlights: [
+      '🥋 Verbands-Termine manuell anlegen/bearbeiten/löschen',
+      '🔄 Web-Sync: KI sucht kommende Turniere der Verbände (als unbestätigt)',
+      '⚠️ Konflikt-Warnung beim Event-Anlegen prüft jetzt auch Verbands-Turniere',
+      '✓ Manuelle Bestätigung schützt vor halluzinierten Treffern',
+    ],
+    details: 'Migration 209 (verbands_fremdtermine); super-admin-calendar.js erweitert (CRUD /fremdtermine, /fremdtermine/sync via @anthropic-ai/sdk web_search, check-conflict um Verbandstermine ergänzt); SuperAdminDashboard.jsx Kalender-Tab um Verbands-Termine-Sektion erweitert; Events.jsx Konflikt-Meldung generalisiert.',
+    files: ['backend/routes/super-admin-calendar.js', 'backend/migrations/209_verbands_fremdtermine.sql', 'frontend/src/components/SuperAdminDashboard.jsx', 'frontend/src/components/Events.jsx'],
+  },
+  {
     version: '3.0.74',
     date: '2026-06-19',
     type: 'feature',

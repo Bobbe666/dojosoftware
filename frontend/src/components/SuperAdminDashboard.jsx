@@ -161,6 +161,15 @@ const SuperAdminDashboard = () => {
   const [myFeedWebcalUrl, setMyFeedWebcalUrl] = useState('');
   const [feedCopied, setFeedCopied] = useState(false);
 
+  // Verbands-Fremdtermine (andere Kampfsportverbände)
+  const [fremdtermine, setFremdtermine] = useState([]);
+  const [ftLoading, setFtLoading] = useState(false);
+  const [ftMsg, setFtMsg] = useState('');
+  const [ftSyncing, setFtSyncing] = useState(false);
+  const [ftEditId, setFtEditId] = useState(null);
+  const ftEmptyForm = { verband: 'DKV', titel: '', start_datum: '', end_datum: '', ort: '', region: '', quelle_url: '', notiz: '' };
+  const [ftForm, setFtForm] = useState(ftEmptyForm);
+
   // State für Aktivitäten und Pushnachrichten
   const [activities, setActivities] = useState([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
@@ -386,6 +395,93 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  // ── Verbands-Fremdtermine ───────────────────────────────────────────────────
+  const ftErr = (e) => {
+    const raw = e.response?.data?.error ?? e.response?.data?.message ?? e.message;
+    return typeof raw === 'object' ? JSON.stringify(raw) : raw;
+  };
+
+  const loadFremdtermine = async () => {
+    setFtLoading(true);
+    try {
+      const r = await axios.get('/admin/calendar/fremdtermine', { headers: { Authorization: `Bearer ${token}` } });
+      if (r.data.success) setFremdtermine(r.data.termine || []);
+    } catch (e) { console.error('fremdtermine:', e); }
+    finally { setFtLoading(false); }
+  };
+
+  const resetFtForm = () => { setFtForm(ftEmptyForm); setFtEditId(null); };
+
+  const saveFremdtermin = async () => {
+    if (!ftForm.titel.trim() || !ftForm.start_datum) {
+      setFtMsg('❌ Titel und Startdatum sind Pflicht');
+      setTimeout(() => setFtMsg(''), 3000);
+      return;
+    }
+    try {
+      const payload = { ...ftForm, status: 'bestaetigt' };
+      if (ftEditId) {
+        await axios.put(`/admin/calendar/fremdtermine/${ftEditId}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        setFtMsg('✅ Termin aktualisiert');
+      } else {
+        await axios.post('/admin/calendar/fremdtermine', payload, { headers: { Authorization: `Bearer ${token}` } });
+        setFtMsg('✅ Termin gespeichert');
+      }
+      resetFtForm();
+      loadFremdtermine();
+      setTimeout(() => setFtMsg(''), 3000);
+    } catch (e) {
+      setFtMsg('❌ ' + ftErr(e));
+    }
+  };
+
+  const editFremdtermin = (t) => {
+    setFtEditId(t.id);
+    setFtForm({
+      verband: t.verband || 'DKV',
+      titel: t.titel || '',
+      start_datum: (t.start_datum || '').slice(0, 10),
+      end_datum: (t.end_datum || '').slice(0, 10),
+      ort: t.ort || '', region: t.region || '',
+      quelle_url: t.quelle_url || '', notiz: t.notiz || ''
+    });
+  };
+
+  const confirmFremdtermin = async (id) => {
+    try {
+      await axios.put(`/admin/calendar/fremdtermine/${id}`, { status: 'bestaetigt' }, { headers: { Authorization: `Bearer ${token}` } });
+      loadFremdtermine();
+    } catch (e) { setFtMsg('❌ ' + ftErr(e)); }
+  };
+
+  const deleteFremdtermin = async (id) => {
+    if (!window.confirm('Diesen Verbands-Termin wirklich löschen?')) return;
+    try {
+      await axios.delete(`/admin/calendar/fremdtermine/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (ftEditId === id) resetFtForm();
+      loadFremdtermine();
+    } catch (e) { setFtMsg('❌ ' + ftErr(e)); }
+  };
+
+  const syncFremdtermine = async () => {
+    setFtSyncing(true);
+    setFtMsg('🔄 Suche Verbands-Turniere im Web … das kann ~30 Sek dauern.');
+    try {
+      const r = await axios.post('/admin/calendar/fremdtermine/sync', {}, { headers: { Authorization: `Bearer ${token}` }, timeout: 120000 });
+      if (r.data.success) {
+        setFtMsg(`✅ Sync fertig: ${r.data.inserted} neu, ${r.data.skipped} übersprungen (von ${r.data.found} gefunden). Bitte unten prüfen & bestätigen.`);
+        loadFremdtermine();
+      } else {
+        setFtMsg('❌ ' + (r.data.error || 'Sync fehlgeschlagen'));
+      }
+    } catch (e) {
+      setFtMsg('❌ ' + ftErr(e));
+    } finally {
+      setFtSyncing(false);
+      setTimeout(() => setFtMsg(''), 8000);
+    }
+  };
+
   // Tab-Navigation von Unterkomponenten (z.B. „Zu den Kontakten" in der Lizenzverwaltung)
   useEffect(() => {
     const handler = (e) => { if (e.detail?.tab) setActiveTab(e.detail.tab); };
@@ -406,6 +502,7 @@ const SuperAdminDashboard = () => {
       loadIcalSettings();
       loadIcalEvents();
       loadMyFeedUrl();
+      loadFremdtermine();
     }
   }, [activeTab, subActiveTab.system]);
 
@@ -1657,6 +1754,110 @@ const SuperAdminDashboard = () => {
                   </>
                 ) : (
                   <p style={{ color: 'var(--text-3)', fontSize: '13px' }}>Feed-URL wird geladen…</p>
+                )}
+              </div>
+
+              {/* ── Verbands-Termine (andere Kampfsportverbände) ───────────────── */}
+              <div className="section-card" style={{ marginTop: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div>
+                    <h3 style={{ marginBottom: '0.5rem' }}>🥋 Verbands-Termine (andere Verbände)</h3>
+                    <p style={{ color: 'var(--text-3)', fontSize: '13px', marginBottom: '1.2rem', maxWidth: '640px' }}>
+                      Turniertermine anderer Kampfsportverbände (DKV, WKU/WAKO, Taekwondo, BKO, WMAC, WOMAA …).
+                      <strong> Bestätigte</strong> Termine werden beim Anlegen eigener Turniere/Events automatisch auf Überschneidungen geprüft.
+                      Per <strong>Sync</strong> sucht die KI im Web nach kommenden Terminen — diese landen als <em>unbestätigt</em> und müssen von dir freigegeben werden.
+                    </p>
+                  </div>
+                  <button className="btn-secondary" onClick={syncFremdtermine} disabled={ftSyncing} style={{ whiteSpace: 'nowrap' }}>
+                    {ftSyncing ? '🔄 Sync läuft…' : '🔄 Web-Sync'}
+                  </button>
+                </div>
+
+                {ftMsg && (
+                  <div className={`sad-feedback-box ${ftMsg.startsWith('✅') ? 'sad-feedback-box--success' : ftMsg.startsWith('❌') ? 'sad-feedback-box--error' : ''}`}>
+                    {ftMsg}
+                  </div>
+                )}
+
+                {/* Eingabe-/Bearbeiten-Formular */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.6rem', marginTop: '0.5rem' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Verband</label>
+                    <select value={ftForm.verband} onChange={e => setFtForm({ ...ftForm, verband: e.target.value })}>
+                      {['DKV', 'WKU', 'WAKO', 'Taekwondo', 'BKO', 'WMAC', 'WOMAA', 'sonstige'].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0, gridColumn: 'span 2' }}>
+                    <label>Titel des Turniers *</label>
+                    <input type="text" value={ftForm.titel} onChange={e => setFtForm({ ...ftForm, titel: e.target.value })} placeholder="z.B. DKV Bayernliga" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Datum von *</label>
+                    <input type="date" value={ftForm.start_datum} onChange={e => setFtForm({ ...ftForm, start_datum: e.target.value })} />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Datum bis</label>
+                    <input type="date" value={ftForm.end_datum} onChange={e => setFtForm({ ...ftForm, end_datum: e.target.value })} />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Ort</label>
+                    <input type="text" value={ftForm.ort} onChange={e => setFtForm({ ...ftForm, ort: e.target.value })} placeholder="Stadt / Halle" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Region</label>
+                    <input type="text" value={ftForm.region} onChange={e => setFtForm({ ...ftForm, region: e.target.value })} placeholder="Bundesland / Land" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0, gridColumn: 'span 2' }}>
+                    <label>Quelle-URL</label>
+                    <input type="url" value={ftForm.quelle_url} onChange={e => setFtForm({ ...ftForm, quelle_url: e.target.value })} placeholder="https://…" />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.75rem' }}>
+                  <button className="btn-primary" onClick={saveFremdtermin} style={{ whiteSpace: 'nowrap' }}>
+                    {ftEditId ? '💾 Änderung speichern' : '➕ Termin hinzufügen'}
+                  </button>
+                  {ftEditId && (
+                    <button className="btn-secondary" onClick={resetFtForm}>Abbrechen</button>
+                  )}
+                </div>
+
+                {/* Liste */}
+                <hr className="sad2-hr" />
+                {ftLoading && <div style={{ color: 'var(--text-3)', fontSize: '13px' }}>Lade Verbands-Termine…</div>}
+                {!ftLoading && fremdtermine.length === 0 && (
+                  <p style={{ color: 'var(--text-3)', fontSize: '13px' }}>
+                    Noch keine Verbands-Termine. Trage welche ein oder nutze den Web-Sync.
+                  </p>
+                )}
+                {!ftLoading && fremdtermine.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {fremdtermine.map(t => (
+                      <div key={t.id} className="ical-event-row" style={{ alignItems: 'center', opacity: t.status === 'unbestaetigt' ? 0.75 : 1 }}>
+                        <span className="ical-event-date">
+                          {new Date(t.start_datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                          {t.end_datum && t.end_datum !== t.start_datum && ' – ' + new Date(t.end_datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                        </span>
+                        <span style={{ fontWeight: 600, fontSize: '12px', padding: '1px 6px', borderRadius: '4px', background: 'var(--bg-2, rgba(255,255,255,0.06))', whiteSpace: 'nowrap' }}>
+                          {t.verband}
+                        </span>
+                        <span className="ical-event-summary">
+                          {t.titel}
+                          {t.status === 'unbestaetigt' && <em style={{ color: 'var(--warning, #e0a800)', marginLeft: '0.4rem', fontSize: '12px' }}>· unbestätigt{t.quelle_typ === 'sync' ? ' (Web-Sync)' : ''}</em>}
+                        </span>
+                        {(t.ort || t.region) && <span className="ical-event-location">📍 {[t.ort, t.region].filter(Boolean).join(', ')}</span>}
+                        <span style={{ display: 'flex', gap: '0.35rem', marginLeft: 'auto' }}>
+                          {t.status === 'unbestaetigt' && (
+                            <button className="btn-secondary" onClick={() => confirmFremdtermin(t.id)} title="Bestätigen" style={{ padding: '2px 8px', fontSize: '12px' }}>✓ Bestätigen</button>
+                          )}
+                          {t.quelle_url && (
+                            <a href={t.quelle_url} target="_blank" rel="noopener noreferrer" title="Quelle öffnen" style={{ padding: '2px 6px', fontSize: '12px', textDecoration: 'none' }}>🔗</a>
+                          )}
+                          <button className="btn-secondary" onClick={() => editFremdtermin(t)} title="Bearbeiten" style={{ padding: '2px 8px', fontSize: '12px' }}>✏️</button>
+                          <button className="btn-secondary" onClick={() => deleteFremdtermin(t.id)} title="Löschen" style={{ padding: '2px 8px', fontSize: '12px' }}>🗑️</button>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
               </>
