@@ -1452,6 +1452,15 @@ try {
 // VERTRAG-ANPASSUNGEN (Mitglied-seitige Anpassungsanträge)try {  const vertragAnpassungenRouter = require(path.join(__dirname, "routes", "vertrag-anpassungen.js"));  app.use("/api/vertrag-anpassungen", authenticateToken, vertragAnpassungenRouter);  logger.success("Route gemountet", { path: "/api/vertrag-anpassungen" });} catch (error) {  logger.error("Fehler beim Laden der Route", {    route: "vertrag-anpassungen",    error: error.message  });}
 }
 
+// AG-ABRECHNUNG (automatische Monats-Abrechnung Karate AG an Schulen)
+try {
+  const agAbrechnungRouter = require(path.join(__dirname, "routes", "ag-abrechnung.js"));
+  app.use("/api/ag-abrechnung", agAbrechnungRouter);
+  logger.success('Route gemountet', { path: '/api/ag-abrechnung' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'ag-abrechnung', error: error.message });
+}
+
 // VORLAGEN (E-Mail/Brief-Vorlagen)
 try {
   const vorlagenRouter = require(path.join(__dirname, "routes", "vorlagen.js"));

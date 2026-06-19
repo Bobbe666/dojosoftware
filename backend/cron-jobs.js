@@ -283,6 +283,24 @@ function initCronJobs() {
   });
 
   /**
+   * AG-Abrechnung Monatsabschluss: am 1. des Monats für den Vormonat Entwürfe anlegen
+   * (Unterrichtstage = Wochentag minus Schulferien/Feiertage). Variante B: zur Bestätigung;
+   * bei auto_versand wird direkt die Rechnung erzeugt. Läuft am 1. um 06:30 Uhr.
+   */
+  cron.schedule('30 6 1 * *', async () => {
+    const t0 = Date.now();
+    try {
+      const { processMonatsabschluss } = require('./services/agAbrechnung');
+      const res = await processMonatsabschluss(db.promise());
+      if (res.configs > 0) logger.success(`🥋 AG-Abrechnung ${res.monat}/${res.jahr}: ${res.entwuerfe}/${res.configs} Entwürfe angelegt`);
+      await recordCronRun('ag_abrechnung', { erfolg: true, info: `${res.entwuerfe} Entwürfe (${res.monat}/${res.jahr})`, dauerMs: Date.now() - t0 });
+    } catch (error) {
+      logger.error('❌ AG-Abrechnung Cron-Job Fehler', { error: error.message, stack: error.stack });
+      await recordCronRun('ag_abrechnung', { erfolg: false, info: error.message, dauerMs: Date.now() - t0 });
+    }
+  });
+
+  /**
    * Feature-Trials: Abgelaufene Trials deaktivieren
    * Läuft täglich um 00:30 Uhr
    * Setzt Status von abgelaufenen Trials auf 'expired' und loggt Zugriffsentzug
