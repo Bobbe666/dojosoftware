@@ -29,6 +29,7 @@ import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Rechnungsverwaltung.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import AgAbrechnung from './AgAbrechnung';
 
 
 const BUCHUNGSKATEGORIEN = [
@@ -528,6 +529,9 @@ const Rechnungsverwaltung = () => {
           <button className={`tab ${activeView === 'archiv' ? 'active' : ''}`} onClick={() => setActiveView('archiv')}>
             <Archive size={15} /> {t('invoices.filters.archive')}
           </button>
+          <button className={`tab ${activeView === 'ag' ? 'active' : ''}`} onClick={() => setActiveView('ag')}>
+            🥋 AG-Abrechnung
+          </button>
         </div>
         <div className="control-bar-right">
           <div className="search-bar-inline">
@@ -546,7 +550,11 @@ const Rechnungsverwaltung = () => {
         </div>
       </div>
 
+      {/* AG-Abrechnung */}
+      {activeView === 'ag' && <AgAbrechnung />}
+
       {/* Rechnungstabelle */}
+      {activeView !== 'ag' && (
       <div className="rechnungen-table-container">
         {filteredRechnungen.length === 0 ? (
           <div className="empty-state">
@@ -636,6 +644,7 @@ const Rechnungsverwaltung = () => {
           </table>
         )}
       </div>
+      )}
 
       {/* Detail-Modal */}
       {showModal && modalRechnung && (

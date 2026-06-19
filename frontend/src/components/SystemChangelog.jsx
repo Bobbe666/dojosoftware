@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.74',
+    date: '2026-06-19',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Automatische AG-Monatsabrechnung (Karate AG an Schulen)',
+    description: 'Neue Monatsend-Automatik für AG-Kurse: Das System ermittelt die Unterrichtstage (fester Wochentag minus bayerische Schulferien & Feiertage), erzeugt am Monatsanfang automatisch einen Entwurf für den Vormonat und – nach Bestätigung – eine Rechnung mit einer Position je Unterrichtstag (3 Std. × Stundensatz). Bedienung unter Rechnungen → Tab „AG-Abrechnung": Konfigurationen anlegen, Entwürfe prüfen/Tage abhaken, Rechnung erstellen. Optional vollautomatisch (auto_versand).',
+    highlights: [
+      '🥋 Unterrichtstage automatisch aus Wochentag − Schulferien (BY) − Feiertage',
+      '🗓️ Monatsend-Cron erzeugt Entwurf für den Vormonat',
+      '✅ Entwurf prüfen, Tage abhaken, Rechnung erstellen (im neuen Design + QR)',
+      '⚙️ Konfiguration pro Schule/AG (Wochentag, Std./Tag, Preis, MwSt)',
+    ],
+    details: 'Migration 208 (ag_abrechnung_config, ag_abrechnung_lauf, schulferien BY); services/agAbrechnung.js; routes/ag-abrechnung.js; cron 1. d. Monats 06:30; Frontend AgAbrechnung.jsx als Tab in Rechnungsverwaltung.',
+    files: ['backend/services/agAbrechnung.js', 'backend/routes/ag-abrechnung.js', 'backend/migrations/208_ag_abrechnung.sql', 'frontend/src/components/AgAbrechnung.jsx', 'frontend/src/components/Rechnungsverwaltung.jsx'],
+  },
+  {
     version: '3.0.73',
     date: '2026-06-17',
     type: 'fix',
