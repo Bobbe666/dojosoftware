@@ -79,6 +79,11 @@ router.get('/app', (req, res) => {
     res.set('Content-Type', 'text/html; charset=utf-8');
     return res.send(`<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;background:#0c0c1c;color:#fff;display:flex;height:100vh;align-items:center;justify-content:center;margin:0"><div style="text-align:center"><div style="font-size:3rem">🔒</div><h2>Zugriff verweigert</h2><p style="color:#888">Bitte den vollständigen Link mit Token verwenden.</p></div></body>`);
   }
+  // Globale CSP (script-src 'self') wuerde das Inline-Script dieser Seite blocken.
+  // Nur fuer diese eine, in sich geschlossene Tool-Seite Inline-Script/Style erlauben.
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data: https:; connect-src 'self'; base-uri 'self'; form-action 'self'");
   res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(PAGE_HTML);
 });
