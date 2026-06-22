@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.77',
+    date: '2026-06-22',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Mitglieder-App: „Nächste Prüfung" nur noch für zugelassene Mitglieder',
+    description: 'Behebt Verwirrung: Bisher wurde „Nächste Prüfung am …" allen Mitgliedern eines Stils angezeigt (Datum kam aus der allgemeinen Prüfungstermin-Vorlage), wodurch Mitglieder dachten, sie dürften teilnehmen. Jetzt erscheinen Anzeige und Countdown nur noch, wenn das Mitglied tatsächlich zur Prüfung zugelassen/eingeteilt ist.',
+    highlights: [
+      '🎓 „Nächste Prüfung" + Countdown nur für zugelassene Teilnehmer',
+      '🚫 Allgemeines Vorlagen-Datum wird nicht mehr angezeigt',
+    ],
+    details: "MemberDashboard.jsx: stats.naechstePruefung nicht mehr aus memberData.naechste_pruefung_datum (pruefungstermin_vorlagen), sondern ausschließlich aus loadApprovedExams() (/pruefungen?mitglied_id&status=geplant, backendseitig auf eigenes mitglied_id gefiltert).",
+    files: ['frontend/src/components/MemberDashboard.jsx'],
+  },
+  {
     version: '3.0.76',
     date: '2026-06-19',
     type: 'improvement',

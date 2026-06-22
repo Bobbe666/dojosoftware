@@ -735,7 +735,7 @@ const MemberDashboard = () => {
         if (data.success && data.pruefungen) {
           setApprovedExams(data.pruefungen);
 
-          // Nächste Prüfung: nur aus tatsächlicher Teilnahme-Liste setzen
+          // Nächste Prüfung: NUR aus tatsächlicher Zulassungs-/Teilnahme-Liste setzen
           if (data.pruefungen.length > 0) {
             const nextExamData = data.pruefungen[0]; // Erste Prüfung (nach Datum sortiert)
             setNextExam({
@@ -744,9 +744,12 @@ const MemberDashboard = () => {
               stilId: nextExamData.stil_id,
               graduierung: nextExamData.graduierung_nachher
             });
+            // Countdown/Anzeige „Nächste Prüfung" nur für zugelassene Mitglieder
+            setStats(prev => ({ ...prev, naechstePruefung: nextExamData.pruefungsdatum }));
           } else {
-            // Kein aktiver Prüfungstermin mehr → Countdown ausblenden
+            // Nicht zugelassen / kein Termin → Anzeige + Countdown ausblenden
             setNextExam(null);
+            setStats(prev => ({ ...prev, naechstePruefung: null }));
           }
         }
       }
@@ -981,15 +984,16 @@ const MemberDashboard = () => {
                 ).length
               : 0);
 
-        const nextExam = memberData.naechste_pruefung_datum;
-
+        // WICHTIG: „nächste Prüfung" NICHT aus memberData.naechste_pruefung_datum (kommt aus
+        // pruefungstermin_vorlagen pro Stil → unabhängig von Zulassung/Anmeldung). Wird unten in
+        // loadApprovedExams() ausschließlich aus den tatsächlich zugelassenen Prüfungen gesetzt.
         setStats({
           trainingsstunden: totalAnwesend,
           anwesenheitAnwesend: totalAnwesend,
           anwesenheitMoeglich: moeglich,
           anwesenheit: attendancePercentage,
           offeneBeitraege: openPayments,
-          naechstePruefung: nextExam
+          naechstePruefung: null
         });
         
         // Speichere Mitgliederdaten für weitere Verwendung
