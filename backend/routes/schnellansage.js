@@ -156,6 +156,11 @@ const PAGE_HTML = `<!doctype html>
       <button data-w="morgen">Morgen</button>
     </div>
     <p class="hint" id="taghint"></p>
+    <label style="margin-top:1.1rem">Art der Änderung</label>
+    <div class="seg" id="art">
+      <button data-a="zeit" class="on">Zeitänderung</button>
+      <button data-a="ausfall">Fällt aus</button>
+    </div>
   </div>
 
   <div class="card">
@@ -164,16 +169,16 @@ const PAGE_HTML = `<!doctype html>
   </div>
 
   <div class="card">
-    <div class="row">
+    <div class="row" id="zeitRow">
       <label>Neue Uhrzeit <span class="muted" style="text-transform:none;font-weight:400">(optional)</span></label>
       <input type="time" id="zeit">
     </div>
     <div class="row" style="margin-bottom:0">
       <label>Grund / Text</label>
       <div class="chips" style="margin:0 0 .5rem">
-        <span class="chip" data-g="Aufgrund der warmen Temperaturen legen wir die Stunden zusammen.">🔥 Hitze</span>
-        <span class="chip" data-g="Aufgrund von Krankheit der Trainer müssen wir die Stunden zusammenlegen.">🤒 Krankheit</span>
-        <span class="chip" data-g="Wegen einer Prüfung der Trainer legen wir die Stunden zusammen.">🎓 Prüfung</span>
+        <span class="chip" data-g="Aufgrund der warmen Temperaturen">🔥 Hitze</span>
+        <span class="chip" data-g="Aufgrund von Krankheit der Trainer">🤒 Krankheit</span>
+        <span class="chip" data-g="Wegen einer Prüfung der Trainer">🎓 Prüfung</span>
       </div>
       <input type="text" id="grund" placeholder="z. B. Aufgrund der warmen Temperaturen…">
     </div>
@@ -205,6 +210,7 @@ const PAGE_HTML = `<!doctype html>
 const TOKEN = new URLSearchParams(location.search).get('token') || '';
 const TAGE = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 let wann = 'heute';
+let art = 'zeit';        // 'zeit' = Verschiebung/Zusammenlegung, 'ausfall' = Stunden fallen aus
 let plan = [];           // alle Stundenplan-Einträge
 let touchedTitel = false, touchedText = false;
 
@@ -234,20 +240,56 @@ function renderStunden(){
 
 function checkedLabels(){ return [...document.querySelectorAll('.cb:checked')].map(cb => cb.dataset.label); }
 
-function compose(){
+function buildText(){
+  const ausfall = art === 'ausfall';
   const zeit = $('zeit').value;
-  const grund = $('grund').value.trim();
+  const grund = $('grund').value.trim();   // Grund-Klausel, z.B. "Aufgrund der warmen Temperaturen"
   const stunden = checkedLabels();
+  const sList = stunden.join(', ');
+  const hasG = grund.length > 0;
+  let satz;
 
+  if (ausfall){
+    // Stunden fallen komplett aus
+    if (!stunden.length){
+      satz = hasG ? (grund + ' findet das Training heute leider nicht statt.')
+                  : 'Das Training findet heute leider nicht statt.';
+    } else if (stunden.length === 1){
+      satz = hasG ? (grund + ' fällt die Stunde ' + sList + ' heute leider aus.')
+                  : ('Die Stunde ' + sList + ' fällt heute leider aus.');
+    } else {
+      satz = hasG ? (grund + ' fallen die Stunden ' + sList + ' heute leider aus.')
+                  : ('Die Stunden ' + sList + ' fallen heute leider aus.');
+    }
+  } else {
+    // Zeitänderung / Zusammenlegung
+    if (zeit){
+      satz = hasG ? (grund + ' findet das Training heute erst ab ' + zeit + ' Uhr statt.')
+                  : ('Das Training findet heute erst ab ' + zeit + ' Uhr statt.');
+    } else {
+      satz = hasG ? (grund + ' ändern sich heute die Trainingszeiten.')
+                  : 'Die Trainingszeiten ändern sich heute.';
+    }
+    if (stunden.length){
+      satz += ' ' + (stunden.length === 1 ? 'Betroffen ist' : 'Betroffen sind') + ': ' + sList + '.';
+    }
+    if (zeit){
+      satz += ' Alle Teilnehmer dürfen um ' + zeit + ' Uhr gemeinsam trainieren.';
+    }
+  }
+  return satz + ' Wir bitten um euer Verständnis!';
+}
+
+function compose(){
+  const ausfall = art === 'ausfall';
+  const zeit = $('zeit').value;
   if (!touchedTitel){
-    $('titel').value = zeit ? ('Training heute ab '+zeit+' Uhr') : 'Trainingsänderung heute';
+    $('titel').value = ausfall
+      ? 'Trainingsausfall heute'
+      : (zeit ? ('Training heute ab ' + zeit + ' Uhr') : 'Trainingsänderung heute');
   }
   if (!touchedText){
-    let t = grund ? grund : '';
-    if (stunden.length) t += (t?' ':'') + 'Betroffen: ' + stunden.join(', ') + '.';
-    if (zeit) t += (t?' ':'') + 'Das Training findet heute erst ab ' + zeit + ' Uhr statt. Alle Teilnehmer dürfen um ' + zeit + ' Uhr gemeinsam trainieren.';
-    if (t) t += ' Wir bitten um euer Verständnis!';
-    $('nachricht').value = t;
+    $('nachricht').value = buildText();
   }
   $('pvTitel').textContent = $('titel').value || 'Titel…';
   $('pvText').textContent = $('nachricht').value || 'Nachricht…';
@@ -259,6 +301,13 @@ $('seg').addEventListener('click', e => {
   wann = b.dataset.w;
   [...$('seg').children].forEach(x => x.classList.toggle('on', x===b));
   renderTagHint(); renderStunden(); compose();
+});
+$('art').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  art = b.dataset.a;
+  [...$('art').children].forEach(x => x.classList.toggle('on', x===b));
+  $('zeitRow').style.display = (art === 'ausfall') ? 'none' : '';
+  compose();
 });
 document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
   $('grund').value = c.dataset.g; compose();
