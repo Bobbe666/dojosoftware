@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.78',
+    date: '2026-06-22',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Mitglieder-App Stil-Ansicht: allgemeiner Prüfungstermin ausgeblendet',
+    description: 'Ergänzung zu v3.0.77: Auch in der Stil-Übersicht (MemberStyles) wurde „Nächste Prüfung" mit dem allgemeinen Vorlagen-Termin (auto_gefuellt aus pruefungstermin_vorlagen) angezeigt. Dieser wird jetzt ausgeblendet („Nicht geplant"), damit nur tatsächlich für das Mitglied gesetzte/zugelassene Termine erscheinen.',
+    highlights: ['🎓 Auch in der Stil-Ansicht kein allgemeiner Vorlagen-Termin mehr'],
+    details: 'MemberStyles.jsx: Anzeige nur wenn naechste_pruefung gesetzt UND nicht auto_gefuellt (Backend /mitglieder/:id/stil/:stilId/data setzt auto_gefuellt bei Vorlagen-Termin).',
+    files: ['frontend/src/components/MemberStyles.jsx'],
+  },
+  {
     version: '3.0.77',
     date: '2026-06-22',
     type: 'fix',

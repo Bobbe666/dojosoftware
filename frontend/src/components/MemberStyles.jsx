@@ -228,8 +228,10 @@ const MemberStyles = () => {
                           <Calendar size={14} className="mst-icon-primary" />
                           <div>
                             <div className="mst-exam-box-label">Nächste Prüfung</div>
-                            <div className={`mst-exam-date-primary${stilData?.naechste_pruefung ? ' mst-exam-date-primary--set' : ''}`}>
-                              {formatDate(stilData?.naechste_pruefung) || 'Nicht geplant'}
+                            {/* auto_gefuellt = allgemeiner Vorlagen-Termin (nicht zulassungsbasiert) → nicht anzeigen,
+                                damit nicht-zugelassene Mitglieder nicht denken, sie dürften teilnehmen */}
+                            <div className={`mst-exam-date-primary${(stilData?.naechste_pruefung && !stilData?.auto_gefuellt) ? ' mst-exam-date-primary--set' : ''}`}>
+                              {(stilData?.naechste_pruefung && !stilData?.auto_gefuellt) ? formatDate(stilData.naechste_pruefung) : 'Nicht geplant'}
                             </div>
                           </div>
                         </div>
