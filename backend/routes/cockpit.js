@@ -168,4 +168,64 @@ router.get('/summary', cockpitAuth, async (req, res) => {
   }
 });
 
+// ──────────────────────────────────────────────────────────────────
+// GET /api/cockpit/finanzen
+// Finanzen-App (Beleg-Scanner / Buchhaltung) — nutzt das Dojo-Backend.
+// Eigene Kachel-Gruppe im Cockpit (app = 'finanzen').
+// ──────────────────────────────────────────────────────────────────
+router.get('/finanzen', cockpitAuth, async (req, res) => {
+  const pool = db.promise();
+  const items = [];
+
+  const safeVal = async (sql, fallback = 0) => {
+    try {
+      const [[row]] = await pool.query(sql);
+      return Number(row ? Object.values(row)[0] : fallback) || 0;
+    } catch (_) { return fallback; }
+  };
+
+  try {
+    // ── Neue Belege heute ──────────────────────────────────────────
+    const neue_belege_heute = await safeVal(
+      `SELECT COUNT(*) AS c FROM buchhaltung_belege
+       WHERE DATE(erstellt_am) = CURDATE() AND storniert = 0`
+    );
+    items.push({ key: 'neue_belege_heute', label: 'Neue Belege heute', value: neue_belege_heute, severity: 'info' });
+
+    // ── Belege zu prüfen (review_needed) ───────────────────────────
+    const belege_review = await safeVal(
+      `SELECT COUNT(*) AS c FROM buchhaltung_belege
+       WHERE review_needed = 1 AND festgeschrieben = 0 AND storniert = 0`
+    );
+    items.push({ key: 'belege_review', label: 'Belege zu prüfen', value: belege_review, severity: sev(belege_review, { warnAbove: 0 }) });
+
+    // ── Ausgaben diesen Monat (brutto, ohne privat) ────────────────
+    const ausgaben_monat = await safeVal(
+      `SELECT COALESCE(SUM(betrag_brutto),0) AS c FROM buchhaltung_belege
+       WHERE buchungsart = 'ausgabe' AND privat = 0 AND storniert = 0
+         AND MONTH(beleg_datum) = MONTH(CURDATE()) AND YEAR(beleg_datum) = YEAR(CURDATE())`
+    );
+    items.push({ key: 'ausgaben_monat', label: 'Ausgaben Monat (€)', value: Math.round(ausgaben_monat), severity: 'info' });
+
+    // ── Einnahmen diesen Monat (brutto, ohne privat) ───────────────
+    const einnahmen_monat = await safeVal(
+      `SELECT COALESCE(SUM(betrag_brutto),0) AS c FROM buchhaltung_belege
+       WHERE buchungsart = 'einnahme' AND privat = 0 AND storniert = 0
+         AND MONTH(beleg_datum) = MONTH(CURDATE()) AND YEAR(beleg_datum) = YEAR(CURDATE())`
+    );
+    items.push({ key: 'einnahmen_monat', label: 'Einnahmen Monat (€)', value: Math.round(einnahmen_monat), severity: 'info' });
+
+    res.json({
+      app:          'finanzen',
+      label:        'Finanzen',
+      icon:         '🧾',
+      generated_at: new Date().toISOString(),
+      items,
+    });
+  } catch (error) {
+    logger.error('Cockpit-Finanzen Fehler:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
