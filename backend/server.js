@@ -2144,6 +2144,19 @@ try {
     });
 }
 
+// 15.1b SCHNELL-ANSAGE (Token-geschützt, kurzfristige Trainingszeit-Änderungen)
+try {
+  const schnellansageRouter = require(path.join(__dirname, "routes", "schnellansage.js"));
+  app.use("/api/schnellansage", schnellansageRouter);
+  logger.success('Route gemountet', { path: '/api/schnellansage' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'schnellansage',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 15.2 EMAIL SERVICE - NEU
 try {
   const emailServiceRouter = require(path.join(__dirname, "routes", "emailService.js"));
