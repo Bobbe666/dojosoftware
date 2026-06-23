@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.80',
+    date: '2026-06-23',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Chat: Datum lesbarer + Farb-Codierung (heute grün / neu rot) + hellere Namen',
+    description: 'Chat-Lesbarkeit verbessert: Zeitstempel der Nachrichten deutlicher sichtbar (Datum + Uhrzeit), heutige Nachrichten in Grün hervorgehoben. In der Chat-Liste sind Räume mit neuen/ungelesenen Nachrichten jetzt rot, Räume mit heutiger Aktivität grün markiert (schneller Überblick). Teilnehmer-/Absendernamen etwas heller und klarer.',
+    highlights: [
+      '📅 Datum + Uhrzeit je Nachricht besser lesbar',
+      '🟢 Heutige Nachrichten/Chats grün',
+      '🔴 Neue/ungelesene Chats rot',
+      '👤 Teilnehmer-Namen heller/klarer',
+    ],
+    details: 'Chat.css: chat-message-time Opacity↑, chat-message-time--today grün (#16a34a), chat-message-sender heller (#cbd5e1/600), chat-room-item-time--today grün + chat-room-item--unread rot; ChatRoomList.jsx setzt today-Klasse + Jahr im Datum.',
+    files: ['frontend/src/styles/Chat.css', 'frontend/src/components/chat/ChatRoomList.jsx'],
+  },
+  {
     version: '3.0.79',
     date: '2026-06-23',
     type: 'fix',

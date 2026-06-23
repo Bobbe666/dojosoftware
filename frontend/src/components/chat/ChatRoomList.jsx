@@ -141,7 +141,12 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom, refreshVersion }) => {
     const now = new Date();
     const isToday = d.toDateString() === now.toDateString();
     if (isToday) return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
+  const isLastToday = (dateStr) => {
+    if (!dateStr) return false;
+    return new Date(dateStr).toDateString() === new Date().toDateString();
   };
 
   // Emoji-Avatar für Gruppen-/Ankündigungs-Räume
@@ -192,7 +197,7 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom, refreshVersion }) => {
             {room.name || 'Chat'}
             {room.status !== 'active' && <StatusDot status={room.status} />}
           </span>
-          <span className="chat-room-item-time">{formatTime(room.last_message_at)}</span>
+          <span className={`chat-room-item-time${isLastToday(room.last_message_at) ? ' chat-room-item-time--today' : ''}`}>{formatTime(room.last_message_at)}</span>
         </div>
         <div className="chat-room-item-bottom">
           <span className="chat-room-item-preview">

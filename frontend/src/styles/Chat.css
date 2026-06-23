@@ -281,6 +281,21 @@
   flex-shrink: 0;
 }
 
+/* Heutige Aktivität → grün */
+.chat-room-item-time--today {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+/* Neue/ungelesene Nachrichten → rot (hat Vorrang vor „heute") */
+.chat-room-item--unread .chat-room-item-time {
+  color: #dc2626;
+  font-weight: 700;
+}
+.chat-room-item--unread .chat-room-item-name {
+  color: #dc2626;
+}
+
 .chat-room-item-bottom {
   display: flex;
   justify-content: space-between;
@@ -559,13 +574,13 @@
   align-items: flex-start;
 }
 
-/* Absendername */
+/* Absendername — etwas heller/klarer zur besseren Unterscheidung der Teilnehmer */
 .chat-message-sender {
-  font-size: 0.7rem;
-  color: var(--text-muted, #bbb);
+  font-size: 0.72rem;
+  color: #cbd5e1;
   margin-bottom: 0.2rem;
   padding-left: 0.6rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .chat-message-bubble-wrap { position: relative; }
@@ -600,7 +615,7 @@
 /* Zeitstempel inline unten rechts */
 .chat-message-time {
   font-size: 0.68rem;
-  opacity: 0.55;
+  opacity: 0.75;
   margin-left: 0.5rem;
   white-space: nowrap;
   flex-shrink: 0;
@@ -2350,16 +2365,16 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
 }
 
-/* ─── Heutiger Zeitstempel: Karate-Rot ───────────────────────────────────────── */
+/* ─── Heutiger Zeitstempel: Grün (heutige Nachrichten) ───────────────────────── */
 
 .chat-message-time--today {
   opacity: 1;
-  color: var(--chat-karate);
+  color: #16a34a;
   font-weight: 700;
 }
 
 .chat-message--own .chat-message-time--today {
-  color: rgba(255, 220, 220, 0.95);
+  color: rgba(210, 255, 215, 0.97);
   font-weight: 700;
   opacity: 1;
 }
