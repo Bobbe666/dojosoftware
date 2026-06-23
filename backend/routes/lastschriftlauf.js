@@ -904,6 +904,9 @@ router.get("/preview", async (req, res) => {
         logger.debug('📢 Preview-Route aufgerufen', { monat, jahr, monatEnde, dojoId: secureDojoId });
 
         const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
+        // Optionaler Filter nach Lastschrift-Gruppe (leer = alle Gruppen)
+        const gruppeKey = req.query.gruppe || null;
+        const gruppeFilter = gruppeKey ? "AND COALESCE(NULLIF(m.zahllaufgruppe,''),'monatsanfang') = ?" : '';
 
         const queryAsync = (sql, params) => new Promise((resolve, reject) => {
             db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
@@ -913,6 +916,7 @@ router.get("/preview", async (req, res) => {
         // UND ohne laufende Stripe-Transaktion (processing)
         const mainParams = [monatEnde];
         if (secureDojoId) mainParams.push(secureDojoId);
+        if (gruppeKey) mainParams.push(gruppeKey);
 
         const mainQuery = `
             SELECT
@@ -923,6 +927,7 @@ router.get("/preview", async (req, res) => {
                 m.bic,
                 m.kontoinhaber,
                 m.zahlungsmethode,
+                m.zahllaufgruppe,
                 sm.bankname,
                 sm.mandatsreferenz,
                 sm.glaeubiger_id,
@@ -992,8 +997,9 @@ router.get("/preview", async (req, res) => {
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND m.aktiv = 1
               ${dojoFilter}
+              ${gruppeFilter}
             GROUP BY m.mitglied_id, m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
-                     m.zahlungsmethode, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id,
+                     m.zahlungsmethode, m.zahllaufgruppe, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id,
                      rp.id, rp.monatlicher_aufschlag, rp.ausstehender_betrag, rp.bereits_abgezahlt
             ORDER BY m.nachname, m.vorname
         `;

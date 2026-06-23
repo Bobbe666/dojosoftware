@@ -500,6 +500,17 @@ const MitgliedschaftTab = ({
 }) => {
   // ── Interner State ──────────────────────────────────────────────────────────
   const [mitgliedschaftSubTab, setMitgliedschaftSubTab] = useState('vertrag');
+  // Lastschrift-Gruppen des Dojos (fuer Zahllaufgruppe-Dropdown)
+  const [lsGruppen, setLsGruppen] = useState([]);
+  useEffect(() => {
+    // Gruppen IMMER nach der Dojo des Mitglieds laden (korrekte Dojo-Zuordnung),
+    // Fallback auf aktives Dojo. Sonst zeigt der Super-Admin fremde Gruppen.
+    const dojoId = mitglied?.dojo_id || activeDojo?.id || null;
+    const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
+    axios.get(`/lastschrift-gruppen${dojoParam}`)
+      .then(res => setLsGruppen(res.data?.gruppen || []))
+      .catch(() => setLsGruppen([]));
+  }, [mitglied?.dojo_id, activeDojo]);
   const [financeSubTab, setFinanceSubTab] = useState('beitraege');
   const [showFamilyMemberModal, setShowFamilyMemberModal] = useState(false);
   const [beitraegeViewMode, setBeitraegeViewMode] = useState('monat');
@@ -1996,10 +2007,20 @@ const MitgliedschaftTab = ({
           </div>
 
           <div className="bnk-kv">
-            <div className="bnk-kv-label">Zahllaufgruppe</div>
+            <div className="bnk-kv-label">Lastschrift-Gruppe</div>
             {editMode
-              ? <input className="bnk-input" type="text" value={updatedData.zahllaufgruppe || ''} onChange={e => handleChange(e, 'zahllaufgruppe')} placeholder="01" />
-              : <div className={mitglied.zahllaufgruppe ? 'bnk-kv-value' : 'bnk-empty'}>{mitglied.zahllaufgruppe || '—'}</div>
+              ? <CustomSelect
+                  value={updatedData.zahllaufgruppe || 'monatsanfang'}
+                  onChange={e => handleChange(e, 'zahllaufgruppe')}
+                  options={(lsGruppen.length
+                    ? lsGruppen.filter(g => g.aktiv !== 0)
+                    : [{ gruppe_key: 'monatsanfang', name: 'Monatsanfang', einzugstag: 1 }]
+                  ).map(g => ({ value: g.gruppe_key, label: `${g.name} · Einzug am ${g.einzugstag}.` }))}
+                />
+              : <div className="bnk-kv-value">{
+                  (lsGruppen.find(g => g.gruppe_key === (mitglied.zahllaufgruppe || 'monatsanfang'))?.name)
+                  || (mitglied.zahllaufgruppe || 'Monatsanfang')
+                }</div>
             }
           </div>
         </div>

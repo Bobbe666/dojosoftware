@@ -943,6 +943,63 @@ db.promise().query(`CREATE INDEX IF NOT EXISTS idx_vertraege_mitglied_status ON 
 db.promise().query(`CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at, dojo_id)`)
   .catch(err => logger.warn('Migration 171g (ignoriert):', { error: err.message }));
 
+// Migration 210-212: Lastschrift-Gruppen (zeitgesteuerte SEPA-Einzüge pro Mitglied, pro Dojo)
+// Reihenfolge-sicher: Tabelle -> Seed je Dojo -> Mitglieder-Default -> Zeitplan-Spalte. Idempotent.
+(async () => {
+  try {
+    await db.promise().query(`
+      CREATE TABLE IF NOT EXISTS lastschrift_gruppen (
+        id              INT AUTO_INCREMENT PRIMARY KEY,
+        dojo_id         INT NOT NULL,
+        gruppe_key      VARCHAR(50) NOT NULL,
+        name            VARCHAR(100) NOT NULL,
+        einzugstag      INT NOT NULL DEFAULT 1,
+        fenster_von     INT DEFAULT NULL,
+        fenster_bis     INT DEFAULT NULL,
+        typ             ENUM('periodisch','extra') NOT NULL DEFAULT 'periodisch',
+        ist_standard    TINYINT(1) NOT NULL DEFAULT 0,
+        aktiv           TINYINT(1) NOT NULL DEFAULT 1,
+        reihenfolge     INT NOT NULL DEFAULT 0,
+        erstellt_am     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        aktualisiert_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_dojo_key (dojo_id, gruppe_key),
+        INDEX idx_dojo_aktiv (dojo_id, aktiv)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    // Default-Gruppen je Dojo (idempotent; pro Dojo eigener Datensatz)
+    await db.promise().query(`
+      INSERT INTO lastschrift_gruppen (dojo_id, gruppe_key, name, einzugstag, fenster_von, fenster_bis, typ, ist_standard, reihenfolge)
+      SELECT d.id, 'monatsanfang', 'Monatsanfang', 1, 1, 14, 'periodisch', 1, 0 FROM dojo d
+      ON DUPLICATE KEY UPDATE name = name
+    `);
+    await db.promise().query(`
+      INSERT INTO lastschrift_gruppen (dojo_id, gruppe_key, name, einzugstag, fenster_von, fenster_bis, typ, ist_standard, reihenfolge)
+      SELECT d.id, 'monatsmitte', 'Monatsmitte (Gruppe 2)', 15, 15, 28, 'periodisch', 0, 1 FROM dojo d
+      ON DUPLICATE KEY UPDATE name = name
+    `);
+    await db.promise().query(`
+      INSERT INTO lastschrift_gruppen (dojo_id, gruppe_key, name, einzugstag, fenster_von, fenster_bis, typ, ist_standard, reihenfolge)
+      SELECT d.id, 'extra', 'Extra (Sonderfälle/Jahreszahler)', 20, NULL, NULL, 'extra', 0, 2 FROM dojo d
+      ON DUPLICATE KEY UPDATE name = name
+    `);
+    // Mitglieder-Default + Bestandsmigration (leer/NULL/'01' -> Standard)
+    await db.promise().query(`ALTER TABLE mitglieder MODIFY COLUMN zahllaufgruppe VARCHAR(50) DEFAULT 'monatsanfang'`);
+    await db.promise().query(`
+      UPDATE mitglieder SET zahllaufgruppe = 'monatsanfang'
+      WHERE zahllaufgruppe IS NULL OR zahllaufgruppe = '' OR zahllaufgruppe = '01'
+    `);
+    // Zeitplan-Gruppenfilter (NULL = alle Gruppen)
+    await db.promise().query(`
+      ALTER TABLE lastschrift_zeitplaene
+        ADD COLUMN IF NOT EXISTS gruppe_key VARCHAR(50) DEFAULT NULL,
+        ADD INDEX IF NOT EXISTS idx_zeitplan_gruppe (dojo_id, gruppe_key)
+    `);
+    logger.success('Migration 210-212 Lastschrift-Gruppen OK');
+  } catch (err) {
+    logger.warn('Migration 210-212 Lastschrift-Gruppen (ignoriert):', { error: err.message });
+  }
+})();
+
 // BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
 try {
   const buchhaltungRoutes = require('./routes/buchhaltung');
@@ -2308,6 +2365,19 @@ try {
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'lastschrift-zeitplaene',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// LASTSCHRIFT-GRUPPEN - Zeitgesteuerte Einzugsgruppen pro Mitglied
+try {
+  const lastschriftGruppenRouter = require(path.join(__dirname, "routes", "lastschrift-gruppen.js"));
+  app.use("/api/lastschrift-gruppen", authenticateToken, lastschriftGruppenRouter);
+  logger.success('Route gemountet', { path: '/api/lastschrift-gruppen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'lastschrift-gruppen',
       error: error.message,
       stack: error.stack
     });

@@ -135,6 +135,7 @@ router.post("/", async (req, res) => {
             typ,
             nur_faellige_bis_tag,
             zahlungszyklus_filter,
+            gruppe_key,
             aktiv
         } = req.body;
 
@@ -150,8 +151,8 @@ router.post("/", async (req, res) => {
         const insertQuery = `
             INSERT INTO lastschrift_zeitplaene (
                 dojo_id, name, beschreibung, ausfuehrungstag, ausfuehrungszeit,
-                typ, nur_faellige_bis_tag, zahlungszyklus_filter, aktiv
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                typ, nur_faellige_bis_tag, zahlungszyklus_filter, gruppe_key, aktiv
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const result = await queryAsync(insertQuery, [
@@ -163,6 +164,7 @@ router.post("/", async (req, res) => {
             typ || "beitraege",
             nur_faellige_bis_tag || null,
             zahlungszyklus_filter ? JSON.stringify(zahlungszyklus_filter) : null,
+            gruppe_key || null,
             aktiv !== false
         ]);
 
@@ -203,6 +205,7 @@ router.put("/:id", async (req, res) => {
             typ,
             nur_faellige_bis_tag,
             zahlungszyklus_filter,
+            gruppe_key,
             aktiv
         } = req.body;
 
@@ -225,6 +228,7 @@ router.put("/:id", async (req, res) => {
                 typ = COALESCE(?, typ),
                 nur_faellige_bis_tag = ?,
                 zahlungszyklus_filter = ?,
+                gruppe_key = ?,
                 aktiv = COALESCE(?, aktiv),
                 aktualisiert_am = NOW()
             WHERE zeitplan_id = ?
@@ -238,6 +242,7 @@ router.put("/:id", async (req, res) => {
             typ,
             nur_faellige_bis_tag,
             zahlungszyklus_filter ? JSON.stringify(zahlungszyklus_filter) : null,
+            gruppe_key !== undefined ? (gruppe_key || null) : null,
             aktiv,
             id
         ]);
@@ -426,13 +431,15 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
         const includeRechnungen = typen.includes('rechnungen') || typen.includes('alle');
         const includeVerkaeufe = typen.includes('verkaeufe') || typen.includes('alle');
 
+        const gruppeKey = zeitplan.gruppe_key || null;
+
         if (includeBeitraege) {
-            const beitraegeMitglieder = await ladeBeitraegeMitglieder(dojoId, monatEnde, zeitplan.zahlungszyklus_filter);
+            const beitraegeMitglieder = await ladeBeitraegeMitglieder(dojoId, monatEnde, zeitplan.zahlungszyklus_filter, gruppeKey);
             mitglieder = mitglieder.concat(beitraegeMitglieder);
         }
 
         if (includeRechnungen) {
-            const rechnungenMitglieder = await ladeRechnungenMitglieder(dojoId);
+            const rechnungenMitglieder = await ladeRechnungenMitglieder(dojoId, gruppeKey);
             // Kombiniere mit existierenden Mitgliedern (addiere Beträge)
             for (const rm of rechnungenMitglieder) {
                 const existing = mitglieder.find(m => m.mitglied_id === rm.mitglied_id);
@@ -446,7 +453,7 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
         }
 
         if (includeVerkaeufe) {
-            const verkaeufeMitglieder = await ladeVerkaeufeMitglieder(dojoId);
+            const verkaeufeMitglieder = await ladeVerkaeufeMitglieder(dojoId, gruppeKey);
             for (const vm of verkaeufeMitglieder) {
                 const existing = mitglieder.find(m => m.mitglied_id === vm.mitglied_id);
                 if (existing) {
@@ -562,7 +569,7 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
 /**
  * Lädt Mitglieder mit offenen Beiträgen
  */
-async function ladeBeitraegeMitglieder(dojoId, monatEnde, zahlungszyklusFilter) {
+async function ladeBeitraegeMitglieder(dojoId, monatEnde, zahlungszyklusFilter, gruppeKey) {
     let query = `
         SELECT
             m.mitglied_id,
@@ -597,6 +604,10 @@ async function ladeBeitraegeMitglieder(dojoId, monatEnde, zahlungszyklusFilter) 
     `;
     const params = [monatEnde, dojoId];
 
+    // Filter nach Lastschrift-Gruppe (NULL = alle Gruppen; ohne/unbekannte Gruppe -> Standard "monatsanfang")
+    query += ` AND (? IS NULL OR COALESCE(NULLIF(m.zahllaufgruppe,''),'monatsanfang') = ?)`;
+    params.push(gruppeKey || null, gruppeKey || null);
+
     // Optional: Filter nach Zahlungszyklus
     if (zahlungszyklusFilter && Array.isArray(JSON.parse(zahlungszyklusFilter))) {
         const zyklen = JSON.parse(zahlungszyklusFilter);
@@ -627,7 +638,7 @@ async function ladeBeitraegeMitglieder(dojoId, monatEnde, zahlungszyklusFilter) 
 /**
  * Lädt Mitglieder mit offenen Rechnungen
  */
-async function ladeRechnungenMitglieder(dojoId) {
+async function ladeRechnungenMitglieder(dojoId, gruppeKey) {
     const query = `
         SELECT
             m.mitglied_id,
@@ -644,10 +655,11 @@ async function ladeRechnungenMitglieder(dojoId) {
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND m.stripe_customer_id IS NOT NULL
           AND sm.stripe_payment_method_id IS NOT NULL
+          AND (? IS NULL OR COALESCE(NULLIF(m.zahllaufgruppe,''),'monatsanfang') = ?)
         GROUP BY m.mitglied_id, m.vorname, m.nachname
     `;
 
-    const results = await queryAsync(query, [dojoId]);
+    const results = await queryAsync(query, [dojoId, gruppeKey || null, gruppeKey || null]);
 
     return results.map(r => ({
         mitglied_id: r.mitglied_id,
@@ -660,7 +672,7 @@ async function ladeRechnungenMitglieder(dojoId) {
 /**
  * Lädt Mitglieder mit offenen Verkäufen
  */
-async function ladeVerkaeufeMitglieder(dojoId) {
+async function ladeVerkaeufeMitglieder(dojoId, gruppeKey) {
     const query = `
         SELECT
             m.mitglied_id,
@@ -677,10 +689,11 @@ async function ladeVerkaeufeMitglieder(dojoId) {
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND m.stripe_customer_id IS NOT NULL
           AND sm.stripe_payment_method_id IS NOT NULL
+          AND (? IS NULL OR COALESCE(NULLIF(m.zahllaufgruppe,''),'monatsanfang') = ?)
         GROUP BY m.mitglied_id, m.vorname, m.nachname
     `;
 
-    const results = await queryAsync(query, [dojoId]);
+    const results = await queryAsync(query, [dojoId, gruppeKey || null, gruppeKey || null]);
 
     return results.map(r => ({
         mitglied_id: r.mitglied_id,

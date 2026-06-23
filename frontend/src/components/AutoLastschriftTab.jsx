@@ -15,6 +15,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { useDojoContext } from "../context/DojoContext";
+import LastschriftGruppenVerwaltung from "./LastschriftGruppenVerwaltung";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/AutoLastschrift.css";
@@ -40,9 +41,21 @@ const AutoLastschriftTab = ({ embedded = false, dojoIdOverride = null }) => {
     ausfuehrungszeit: "06:00",
     typen: ["beitraege"], // Array für Mehrfachauswahl
     nur_faellige_bis_tag: "",
+    gruppe_key: "", // "" = alle Gruppen
     aktiv: true,
     dojo_id: "" // Wird beim Öffnen des Modals gesetzt
   });
+
+  // Lastschrift-Gruppen des im Formular gewählten Dojos
+  const [gruppen, setGruppen] = useState([]);
+  useEffect(() => {
+    const gid = formData.dojo_id && formData.dojo_id !== "all" ? formData.dojo_id : null;
+    if (!gid) { setGruppen([]); return; }
+    fetch(`${API_BASE}/lastschrift-gruppen?dojo_id=${gid}`)
+      .then(r => r.json())
+      .then(d => setGruppen(d.gruppen || []))
+      .catch(() => setGruppen([]));
+  }, [formData.dojo_id]);
 
   // Aktuelles Dojo aus Context, localStorage oder Override (für Verband)
   const currentDojoId = dojoIdOverride || activeDojo?.id || localStorage.getItem("dojo_id");
@@ -244,6 +257,7 @@ const AutoLastschriftTab = ({ embedded = false, dojoIdOverride = null }) => {
       ausfuehrungszeit: zeitplan.ausfuehrungszeit?.substring(0, 5) || "06:00",
       typen: typen,
       nur_faellige_bis_tag: zeitplan.nur_faellige_bis_tag || "",
+      gruppe_key: zeitplan.gruppe_key || "",
       aktiv: zeitplan.aktiv !== false,
       dojo_id: (zeitplan.dojo_id === null || zeitplan.dojo_id === 0) ? "all" : (zeitplan.dojo_id || "")
     });
@@ -260,6 +274,7 @@ const AutoLastschriftTab = ({ embedded = false, dojoIdOverride = null }) => {
       ausfuehrungszeit: "06:00",
       typen: ["beitraege"],
       nur_faellige_bis_tag: "",
+      gruppe_key: "",
       aktiv: true,
       dojo_id: defaultDojoId
     });
@@ -348,6 +363,8 @@ const AutoLastschriftTab = ({ embedded = false, dojoIdOverride = null }) => {
           Neuer Zeitplan
         </button>
       </div>
+
+      <LastschriftGruppenVerwaltung dojoId={currentDojoId} />
 
       {error && (
         <div className="alert alert-danger">
@@ -534,6 +551,33 @@ const AutoLastschriftTab = ({ embedded = false, dojoIdOverride = null }) => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="form-group">
+                <label>Lastschrift-Gruppe</label>
+                <select
+                  value={formData.gruppe_key || ""}
+                  onChange={(e) => {
+                    const key = e.target.value;
+                    const g = gruppen.find((x) => x.gruppe_key === key);
+                    setFormData((fd) => ({
+                      ...fd,
+                      gruppe_key: key,
+                      ausfuehrungstag: g ? g.einzugstag : fd.ausfuehrungstag,
+                    }));
+                  }}
+                  disabled={!formData.dojo_id || formData.dojo_id === "all"}
+                >
+                  <option value="">Alle Gruppen</option>
+                  {gruppen.map((g) => (
+                    <option key={g.gruppe_key} value={g.gruppe_key}>
+                      {g.name} (Einzug am {g.einzugstag}.)
+                    </option>
+                  ))}
+                </select>
+                <small style={{ color: "#888" }}>
+                  Bei Auswahl zieht der Lauf nur Mitglieder dieser Gruppe ein; der Ausführungstag richtet sich nach der Gruppe.
+                </small>
               </div>
 
               <div className="form-group">

@@ -47,6 +47,16 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const [selectedFormat, setSelectedFormat] = useState('csv');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [gruppen, setGruppen] = useState([]);
+  const [gruppeFilter, setGruppeFilter] = useState('');
+  useEffect(() => {
+    const gid = dojoId && dojoId !== 'all' ? dojoId : null;
+    const dp = gid ? `?dojo_id=${gid}` : '';
+    fetchWithAuth(`${config.apiBaseUrl}/lastschrift-gruppen${dp}`)
+      .then(r => r.ok ? r.json() : { gruppen: [] })
+      .then(d => setGruppen(d.gruppen || []))
+      .catch(() => setGruppen([]));
+  }, [dojoId]);
   const [availableBanks, setAvailableBanks] = useState([]);
   const [selectedBank, setSelectedBank] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
@@ -339,8 +349,9 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
     try {
       setLoading(true);
       const dojoParam = numericDojoId ? `&dojo_id=${numericDojoId}` : '';
+      const gruppeParam = gruppeFilter ? `&gruppe=${encodeURIComponent(gruppeFilter)}` : '';
       // Monat und Jahr als Query-Parameter übergeben
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/preview?monat=${selectedMonth}&jahr=${selectedYear}${dojoParam}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/preview?monat=${selectedMonth}&jahr=${selectedYear}${dojoParam}${gruppeParam}`);
 
       if (!response.ok) {
         let errorMessage = 'Fehler beim Laden der Vorschau';
@@ -799,6 +810,22 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                 </div>
               </div>
             </>
+          )}
+          {gruppen.length > 0 && (
+            <select
+              className="ll-select"
+              value={gruppeFilter}
+              onChange={(e) => setGruppeFilter(e.target.value)}
+              title="Nach Lastschrift-Gruppe filtern"
+              style={{ marginRight: 8 }}
+            >
+              <option value="">Alle Gruppen</option>
+              {gruppen.map((g) => (
+                <option key={g.gruppe_key} value={g.gruppe_key}>
+                  {g.name} (Tag {g.einzugstag})
+                </option>
+              ))}
+            </select>
           )}
           <button
             className="btn btn-info ll-btn-sm"
