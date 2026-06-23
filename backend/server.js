@@ -1000,6 +1000,12 @@ db.promise().query(`CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_lo
   }
 })();
 
+// Migration 213: offene_posten -> Stripe-PaymentIntent (Phase 2: 10er-Karten Auto-Abbuchung)
+db.promise().query(`
+  ALTER TABLE offene_posten
+    ADD COLUMN IF NOT EXISTS stripe_payment_intent_id VARCHAR(255) DEFAULT NULL
+`).catch(err => logger.warn('Migration 213 (ignoriert):', { error: err.message }));
+
 // BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
 try {
   const buchhaltungRoutes = require('./routes/buchhaltung');

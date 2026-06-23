@@ -2,6 +2,7 @@ const express = require('express');
 const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
+const PaymentProviderFactory = require('../services/PaymentProviderFactory');
 
 // Helper function to promisify db.query
 const query = (sql, params) => {
@@ -327,6 +328,25 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
       });
     }
 
+    // Doppelklick-/Doppel-Submit-Schutz: identische Lastschrift-Aufladung in den
+    // letzten 90 Sekunden ablehnen (verhindert doppelte Karte + doppelte Abbuchung)
+    if (zahlungsart === 'lastschrift') {
+      const recent = await query(
+        `SELECT op.id FROM offene_posten op
+           JOIN zehnerkarten zk ON op.zehnerkarte_id = zk.id
+          WHERE op.mitglied_id = ? AND zk.tarif_id = ? AND op.zahlungsart = 'lastschrift'
+            AND op.created_at >= (NOW() - INTERVAL 90 SECOND)
+          LIMIT 1`,
+        [mitglied_id, tarif_id]
+      );
+      if (recent.length > 0) {
+        return res.status(409).json({
+          success: false,
+          error: 'Identische Aufladung wurde gerade eben schon angelegt (Doppelklick-Schutz). Bitte einen Moment warten.'
+        });
+      }
+    }
+
     // Mitglied-Daten abrufen
     const mitglieder = await query(
       'SELECT * FROM mitglieder WHERE mitglied_id = ?',
@@ -399,10 +419,10 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
 
       zusatzInfo.benachrichtigung = 'Admin wurde über Barzahlung informiert';
     } else if (zahlungsart === 'lastschrift') {
-      // Offenen Posten für nächste SEPA-Buchung erstellen
+      // Offenen Posten anlegen ...
       const beschreibung = `10er-Karte: ${tarif.name}`;
 
-      await query(
+      const opResult = await query(
         `INSERT INTO offene_posten (
           mitglied_id,
           zehnerkarte_id,
@@ -420,8 +440,40 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
           heute
         ]
       );
+      const offenerPostenId = opResult.insertId;
 
-      zusatzInfo.lastschrift = 'Betrag wird bei nächster SEPA-Buchung eingezogen';
+      // ... und sofort automatisch per SEPA-Lastschrift abbuchen (event-getrieben).
+      if (tarif.price_cents > 0) {
+        try {
+          const provider = await PaymentProviderFactory.getProvider(mitglied.dojo_id);
+          if (provider && typeof provider.chargeSepaDirectDebit === 'function') {
+            const result = await provider.chargeSepaDirectDebit(
+              mitglied_id,
+              tarif.price_cents / 100,
+              beschreibung
+            );
+            if (result && (result.status === 'succeeded' || result.status === 'processing')) {
+              await query(
+                `UPDATE offene_posten SET status = 'gebucht', gebucht_am = NOW(), stripe_payment_intent_id = ? WHERE id = ?`,
+                [result.payment_intent_id, offenerPostenId]
+              );
+              zusatzInfo.lastschrift = 'Betrag wird automatisch per SEPA-Lastschrift eingezogen';
+              zusatzInfo.stripe_status = result.status;
+            } else {
+              zusatzInfo.lastschrift = 'Karte erstellt — SEPA-Einzug konnte nicht sofort bestätigt werden, Betrag bleibt offen.';
+            }
+          } else {
+            zusatzInfo.lastschrift = 'Karte erstellt — kein Stripe-Einzug konfiguriert, Betrag bleibt offen.';
+          }
+        } catch (chargeErr) {
+          logger.warn('10er-Karte Auto-SEPA fehlgeschlagen', { error: chargeErr.message, mitglied_id, offenerPostenId });
+          zusatzInfo.lastschrift = 'Karte erstellt — automatischer Einzug fehlgeschlagen: '
+            + (chargeErr.userMessage || chargeErr.message) + ' (Betrag bleibt offen).';
+          zusatzInfo.lastschrift_fehler = true;
+        }
+      } else {
+        zusatzInfo.lastschrift = 'Betrag 0 € — kein Einzug nötig.';
+      }
     } else if (zahlungsart === 'rechnung') {
       // Rechnung erstellen
       const rechnungsnummer = await generateRechnungsnummer();
