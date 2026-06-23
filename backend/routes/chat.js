@@ -126,6 +126,7 @@ router.get('/rooms', async (req, res) => {
            FROM chat_messages cm2
            WHERE cm2.room_id = r.id
              AND cm2.deleted_at IS NULL
+             AND NOT (cm2.sender_id = ? AND cm2.sender_type = ?)
              AND cm2.id NOT IN (
                SELECT message_id FROM chat_message_reads
                WHERE member_id = ? AND member_type = ?
@@ -157,19 +158,19 @@ router.get('/rooms', async (req, res) => {
              SELECT DISTINCT dojo_id FROM admin_users
              WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt','trainer','checkin')
            )` + statusClause + ` ORDER BY COALESCE(crm.pinned,0) DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
-        [sender_id, sender_type, sender_id, sender_type]
+        [sender_id, sender_type, sender_id, sender_type, sender_id, sender_type]
       );
     } else if (isMember) {
       // 🔒 Mitglieder: NUR Räume in denen sie explizit Mitglied sind
       [rooms] = await pool.query(
         baseQuery + ` WHERE crm.member_id IS NOT NULL AND r.dojo_id = ?` + statusClause + ` ORDER BY COALESCE(crm.pinned,0) DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
-        [sender_id, sender_type, sender_id, sender_type, dojo_id]
+        [sender_id, sender_type, sender_id, sender_type, sender_id, sender_type, dojo_id]
       );
     } else {
       // Admin/Trainer: ALLE Räume des Dojos sehen
       [rooms] = await pool.query(
         baseQuery + ` WHERE r.dojo_id = ?` + statusClause + ` ORDER BY COALESCE(crm.pinned,0) DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
-        [sender_id, sender_type, sender_id, sender_type, dojo_id]
+        [sender_id, sender_type, sender_id, sender_type, sender_id, sender_type, dojo_id]
       );
     }
 
