@@ -10,6 +10,26 @@ const logger = require('../utils/logger');
 const { collectKalenderEintraege, toLocalDate } = require('./kalenderAggregation');
 
 const STEFFI_EMAIL = 'schreinersteffi94@web.de';
+const GEB_DOJO_ID = 3; // Kampfkunstschule Schreiner
+
+// Aktive Mitglieder mit Geburtstag im angegebenen Monat (1-12).
+async function geburtstageImMonat(monatNum) {
+  try {
+    const dbm = require('../db').promise();
+    const [rows] = await dbm.query(
+      `SELECT vorname, nachname, geburtsdatum, DAY(geburtsdatum) AS tag
+       FROM mitglieder
+       WHERE dojo_id = ? AND geburtsdatum IS NOT NULL AND MONTH(geburtsdatum) = ?
+         AND aktiv = 1 AND gekuendigt = 0
+       ORDER BY DAY(geburtsdatum), nachname`,
+      [GEB_DOJO_ID, monatNum]
+    );
+    return rows;
+  } catch (e) {
+    logger.error?.('[monatsVorschau] Geburtstage:', e.message);
+    return [];
+  }
+}
 
 // Wechselnde Liebessprüche — einer pro Monat (rotiert).
 const LIEBESSPRUECHE = [
@@ -58,8 +78,12 @@ function fmtDatum(d) {
 // Baut Betreff + HTML der Monats-Vorschau.
 async function buildMonatsVorschau(ref = new Date()) {
   const { von, bis, monatName } = naechsterMonatRange(ref);
+  const [jahr, monatNum] = von.split('-').map(Number); // Jahr + Monat (1-12) des kommenden Monats
   let events = [];
   try { ({ events } = await collectKalenderEintraege(von, bis)); } catch (e) { logger.error?.('[monatsVorschau] Kalender:', e.message); }
+
+  let geburtstage = [];
+  try { geburtstage = await geburtstageImMonat(monatNum); } catch (e) { logger.error?.('[monatsVorschau] Geb:', e.message); }
 
   const spruch = spruchFuer(ref);
   const C = { rose: '#e11d48', soft: '#fb7185', bg: '#fff5f7', card: '#ffffff', text: '#3f3f46', muted: '#71717a', gold: '#d4a017' };
@@ -80,6 +104,23 @@ async function buildMonatsVorschau(ref = new Date()) {
       }).join('')
     : `<tr><td style="padding:18px;color:${C.muted};text-align:center;">Für ${monatName} steht aktuell noch nichts im Kalender — Zeit für uns zwei. 😘</td></tr>`;
 
+  const gebRows = geburtstage.length
+    ? geburtstage.map(g => {
+        const datum = new Date(jahr, monatNum - 1, g.tag)
+          .toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' });
+        const gebJahr = g.geburtsdatum ? new Date(g.geburtsdatum).getFullYear() : null;
+        const alter = gebJahr ? (jahr - gebJahr) : null;
+        return `<tr>
+          <td style="padding:10px 14px;border-bottom:1px solid #fde4ea;vertical-align:top;width:130px;">
+            <div style="font-weight:bold;color:${C.rose};font-size:13px;">${datum}</div>
+          </td>
+          <td style="padding:10px 14px;border-bottom:1px solid #fde4ea;">
+            <div style="font-weight:600;color:${C.text};font-size:15px;">🎂 ${g.vorname || ''} ${g.nachname || ''}</div>
+            ${alter ? `<div style="font-size:12px;color:${C.muted};">wird ${alter} Jahre</div>` : ''}
+          </td></tr>`;
+      }).join('')
+    : `<tr><td style="padding:16px;color:${C.muted};text-align:center;">Im ${monatName} hat niemand Geburtstag.</td></tr>`;
+
   const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Monats-Vorschau ${monatName}</title></head>
 <body style="margin:0;padding:0;background:${C.bg};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.bg}"><tr><td align="center" style="padding:24px 12px;">
@@ -99,6 +140,12 @@ async function buildMonatsVorschau(ref = new Date()) {
     </td></tr>
     <tr><td style="padding:6px 28px 8px;font-family:Arial,Helvetica,sans-serif;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${eventRows}</table>
+    </td></tr>
+    <tr><td style="padding:14px 32px 4px;font-family:Arial,Helvetica,sans-serif;">
+      <div style="font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:${C.gold};font-weight:bold;">🎂 Geburtstage im ${monatName}</div>
+    </td></tr>
+    <tr><td style="padding:6px 28px 8px;font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${gebRows}</table>
     </td></tr>
     <tr><td align="center" style="padding:20px 32px 30px;font-family:Georgia,serif;">
       <div style="font-size:15px;color:${C.text};">In Liebe,<br>dein Sascha 😘❤️</div>
