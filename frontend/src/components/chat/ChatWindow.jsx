@@ -105,10 +105,17 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
 
     const handleMessage = (message) => {
       if (message.room_id !== room.id) return;
+      // is_own serverseitig nicht pro Empfänger gesetzt → hier bestimmen, sonst erscheint
+      // die eigene Nachricht links wie eine fremde
+      const ownId = user?.mitglied_id || user?.user_id || user?.admin_id;
+      const typeMatch = (user?.role === 'member' && message.sender_type === 'mitglied')
+        || (user?.role === 'trainer' && message.sender_type === 'trainer')
+        || ((user?.role === 'admin' || user?.role === 'super_admin') && message.sender_type === 'admin');
+      const msg = { ...message, is_own: message.is_own ?? (String(message.sender_id) === String(ownId) && typeMatch) };
       setMessages(prev => {
         // Duplikate vermeiden
-        if (prev.find(m => m.id === message.id)) return prev;
-        return [...prev, message];
+        if (prev.find(m => m.id === msg.id)) return prev;
+        return [...prev, msg];
       });
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
       // Als gelesen markieren da wir gerade im Raum sind

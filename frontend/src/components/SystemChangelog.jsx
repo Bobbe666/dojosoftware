@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.79',
+    date: '2026-06-23',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Chat/Messenger: Absturz beim Antworten, „immer neu"-Zähler & Push behoben',
+    description: 'Mehrere Chat-Bugs behoben: (1) Schwarzer Bildschirm/App-Absturz beim Antworten — neue Chat-Error-Boundary fängt Render-Fehler ab (App muss nicht mehr neu gestartet werden) + content-Felder überall null-sicher. (2) „Zeigt alte Nachrichten immer wieder als neu" — der Ungelesen-Zähler zählte fälschlich eigene gesendete Nachrichten (und archivierte Räume) mit. (3) Push-Benachrichtigungen kamen unzuverlässig — null-content brach den Versand still ab; Ziel-Link jetzt rollenrichtig (Mitglied vs. Admin). Zudem werden eigene Live-Nachrichten korrekt rechts angezeigt.',
+    highlights: [
+      '🛡️ Chat-Error-Boundary: kein Komplett-Absturz mehr beim Antworten',
+      '🔢 Ungelesen-Zähler ignoriert eigene & archivierte Nachrichten',
+      '🔔 Push robuster (null-content abgefangen) + korrekter Ziel-Link',
+      '➡️ Eigene Live-Nachrichten erscheinen wieder rechts',
+    ],
+    details: 'ChatErrorBoundary.jsx (um ChatWindow in ChatPage+AdminChatPage); ChatMessage/ChatContext/chatSocket content null-sicher; ChatPopup Route rollenabhängig; chat.js /unread-count schließt eigene + archivierte aus (+ dojo_id NULL für Super-Admin); ChatWindow berechnet is_own für Socket-Nachrichten.',
+    files: ['frontend/src/components/chat/ChatErrorBoundary.jsx', 'frontend/src/components/chat/ChatWindow.jsx', 'frontend/src/components/chat/ChatMessage.jsx', 'frontend/src/components/chat/ChatPopup.jsx', 'frontend/src/context/ChatContext.jsx', 'backend/routes/chat.js', 'backend/socket/chatSocket.js'],
+  },
+  {
     version: '3.0.78',
     date: '2026-06-22',
     type: 'fix',

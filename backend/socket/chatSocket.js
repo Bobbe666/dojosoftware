@@ -141,17 +141,20 @@ async function triggerOfflinePush(io, room_id, message, sender_id, sender_type) 
         const subs = subsByUser[member.member_id] || [];
         if (!subs.length) return [];
         const unreadCount = unreadMap[`${member.member_id}:${member.member_type}`] || 1;
+        const bodyText = typeof message.content === 'string' ? message.content : '';
+        // Empfänger Mitglied → Mitglieder-Chat, sonst (Trainer/Admin) → Dashboard-Chat
+        const targetUrl = member.member_type === 'mitglied'
+          ? `/member/chat?room=${room_id}`
+          : `/dashboard/chat?room=${room_id}`;
         const payload = JSON.stringify({
           title: message.sender_name || 'Neue Nachricht',
-          body: message.content.length > 80
-            ? message.content.substring(0, 80) + '…'
-            : message.content,
+          body: bodyText.length > 80 ? bodyText.substring(0, 80) + '…' : (bodyText || 'Neue Nachricht'),
           icon: '/icons/icon-192x192.png',
           badge: '/icons/badge-72x72.png',
           tag: `chat-room-${room_id}`,
           requireInteraction: false,
           unreadCount,
-          data: { url: `/member/chat?room=${room_id}`, room_id }
+          data: { url: targetUrl, room_id }
         });
         return subs.map(sub =>
           webpush.sendNotification(

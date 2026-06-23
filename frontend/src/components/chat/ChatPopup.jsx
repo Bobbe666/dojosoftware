@@ -6,16 +6,20 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, X } from 'lucide-react';
 import { useChatContext } from '../../context/ChatContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const ChatPopup = () => {
   const { popup, dismissPopup } = useChatContext();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   if (!popup) return null;
 
   const handleClick = () => {
     dismissPopup();
-    navigate(`/member/chat?room=${popup.roomId}`);
+    // Member → Mitglieder-Chat, Admin/Trainer → Dashboard-Chat
+    const base = (user?.role === 'member') ? '/member/chat' : '/dashboard/chat';
+    navigate(`${base}?room=${popup.roomId}`);
   };
 
   return (

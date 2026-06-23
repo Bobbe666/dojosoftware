@@ -75,13 +75,13 @@ const ChatMessage = ({ message, onReact, readInfo, totalMembers }) => {
             <div className="chat-message-announcement">
               <span className="chat-message-announcement-icon">📣</span>
               <div className="chat-message-announcement-text">
-                {message.content.replace(/^📣 \*\*/, '').replace(/\*\*\n\n/, '\n\n')}
+                {String(message.content || '').replace(/^📣 \*\*/, '').replace(/\*\*\n\n/, '\n\n')}
               </div>
             </div>
           ) : isDeleted ? (
             <span className="chat-message-deleted">[Nachricht gelöscht]</span>
           ) : (
-            <span className="chat-message-text">{message.content}</span>
+            <span className="chat-message-text">{typeof message.content === 'string' ? message.content : (message.content == null ? '' : String(message.content))}</span>
           )}
           <span className={`chat-message-time${isToday(message.sent_at) ? ' chat-message-time--today' : ''}`}>
             {formatTime(message.sent_at)}

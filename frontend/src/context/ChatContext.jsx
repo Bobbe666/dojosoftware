@@ -97,11 +97,10 @@ export const ChatProvider = ({ children }) => {
 
       if (!isOwn) {
         setUnreadCount(c => c + 1);
+        const text = typeof message.content === 'string' ? message.content : '';
         showPopup({
           senderName: message.sender_name || 'Jemand',
-          preview: message.content.length > 70
-            ? message.content.substring(0, 70) + '…'
-            : message.content,
+          preview: text.length > 70 ? text.substring(0, 70) + '…' : (text || 'Neue Nachricht'),
           roomId: message.room_id
         });
       }

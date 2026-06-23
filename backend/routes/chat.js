@@ -937,13 +937,15 @@ router.get('/unread-count', async (req, res) => {
        FROM chat_messages cm
        JOIN chat_room_members crm ON crm.room_id = cm.room_id
          AND crm.member_id = ? AND crm.member_type = ?
-       JOIN chat_rooms r ON r.id = cm.room_id AND r.dojo_id = ?
+       JOIN chat_rooms r ON r.id = cm.room_id AND (r.dojo_id = ? OR ? IS NULL)
        WHERE cm.deleted_at IS NULL
+         AND NOT (cm.sender_id = ? AND cm.sender_type = ?)
+         AND (crm.archived = 0 OR crm.archived IS NULL)
          AND cm.id NOT IN (
            SELECT message_id FROM chat_message_reads
            WHERE member_id = ? AND member_type = ?
          )`,
-      [sender_id, sender_type, dojo_id, sender_id, sender_type]
+      [sender_id, sender_type, dojo_id, dojo_id, sender_id, sender_type, sender_id, sender_type]
     );
 
     res.json({ success: true, count: result[0].total });

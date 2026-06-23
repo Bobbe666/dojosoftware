@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import MemberHeader from '../MemberHeader.jsx';
 import ChatRoomList from './ChatRoomList.jsx';
 import ChatWindow from './ChatWindow.jsx';
+import ChatErrorBoundary from './ChatErrorBoundary.jsx';
 import ChatPopup from './ChatPopup.jsx';
 import '../../styles/Chat.css';
 
@@ -77,6 +78,7 @@ const ChatPage = () => {
         {/* Rechte Spalte: Chatfenster */}
         <div className={`chat-main ${isMobileListVisible && !activeRoomId ? 'chat-main--hidden-mobile' : ''}`}>
           {activeRoom ? (
+            <ChatErrorBoundary key={activeRoom.id} onReset={handleBack}>
             <ChatWindow
               key={activeRoom.id}
               room={activeRoom}
@@ -93,6 +95,7 @@ const ChatPage = () => {
                 }
               }}
             />
+            </ChatErrorBoundary>
           ) : (
             <div className="chat-placeholder">
               <div className="chat-placeholder-icon">🥋</div>

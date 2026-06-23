@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useSubscription } from '../../context/SubscriptionContext.jsx';
 import ChatRoomList from './ChatRoomList.jsx';
 import ChatWindow from './ChatWindow.jsx';
+import ChatErrorBoundary from './ChatErrorBoundary.jsx';
 import ChatPopup from './ChatPopup.jsx';
 import MessengerConversationList from './MessengerConversationList.jsx';
 import WhatsAppConversationList from './WhatsAppConversationList.jsx';
@@ -154,6 +155,7 @@ const AdminChatPage = () => {
           </div>
           <div className={`chat-main ${isMobileListVisible && !activeRoomId ? 'chat-main--hidden-mobile' : ''}`}>
             {activeRoom ? (
+              <ChatErrorBoundary key={activeRoom.id} onReset={handleBack}>
               <ChatWindow
                 key={activeRoom.id}
                 room={activeRoom}
@@ -167,6 +169,7 @@ const AdminChatPage = () => {
                   }
                 }}
               />
+              </ChatErrorBoundary>
             ) : (
               <div className="chat-placeholder">
                 <div className="chat-placeholder-icon">
