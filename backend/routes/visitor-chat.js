@@ -95,6 +95,17 @@ async function loadDojoKontext(dojoId) {
   }
 }
 
+// ─── Master-Schalter: Ist die KI für dieses Dojo aktiv? ──────────────────────
+// Ohne Dojo-Bezug (z.B. tda-intl.com) oder ohne Config-Eintrag: standardmäßig AN.
+async function isKiAktiv(dojoId) {
+  if (!dojoId) return true;
+  try {
+    const [[cfg]] = await pool.query('SELECT ki_aktiv FROM visitor_chat_config WHERE dojo_id = ?', [dojoId]);
+    if (!cfg) return true;
+    return cfg.ki_aktiv === 1 || cfg.ki_aktiv === true;
+  } catch (_) { return true; }
+}
+
 // ─── AI-Reply: Claude antwortet auf Besuchernachrichten ──────────────────────
 async function sendAIReply(session, io, conversationHistory) {
   const dojoId = session.dojo_id || null;
@@ -120,13 +131,13 @@ ${kontext.tarifeText || 'Informationen auf Anfrage'}
 - Trainingsort: Vilsbiburg (genaue Adresse auf der Website unter "Über uns")
 - Vertragsfragen: Mindestlaufzeit je nach Tarif, Kündigung schriftlich mit entsprechender Frist
 - Es gibt weitere Möglichkeiten und Konditionen, die man gerne vor Ort besprechen kann – erwähne das kurz wenn es thematisch passt, ohne Details zu nennen
-- Bei komplexen Fragen, Terminvereinbarungen oder zum Bestätigen einer Anmeldung: bitte die Person, einfach hier im Chat zu schreiben — wir klären alles direkt im Chat. Empfiehl NIEMALS anzurufen oder per Telefon zu kontaktieren, nenne auch keine Telefonnummer.
+- Bei Fragen, die du nicht sicher beantworten kannst (komplexe Themen, Terminvereinbarungen, Bestätigung einer Anmeldung, individuelle Konditionen): sage klar und freundlich zu, dass sich jemand vom Team persönlich darum kümmert und meldet – hier im Chat und per E-Mail. Falls noch keine E-Mail-Adresse vorliegt, bitte freundlich darum, damit das Team antworten kann. Empfiehl NIEMALS anzurufen oder per Telefon zu kontaktieren, nenne auch keine Telefonnummer.
 
 ## Dein Verhalten
 - Antworte immer auf Deutsch
 - Sei herzlich und motivierend – Kampfsport macht Spaß!
 - Halte Antworten kurz (2-4 Sätze) außer bei komplexen Fragen
-- Wenn du etwas nicht weißt: sage es ehrlich und empfiehl den direkten Kontakt
+- Wenn du etwas nicht weißt: sage es ehrlich und sichere zu, dass sich das Team persönlich meldet – hier im Chat und per E-Mail
 - Schreibe KEINE Markdown-Formatierung (kein **, keine #) – nur normalen Text
 ${kontext.zusatzKontext ? `\n## Weitere Infos vom Dojo\n${kontext.zusatzKontext}` : ''}
 
@@ -1032,14 +1043,18 @@ router.post('/sessions/:token/messages', async (req, res) => {
     };
     await pushToStaff(session.dojo_id, pushPayload);
 
-    // AI-Reply: wenn Staff offline ODER wenn AI-Modus (Abwesend) aktiv
-    if (io) {
-      const staffRoomSockets = io.sockets.adapter.rooms.get(staffRoom);
-      const superAdminSockets = io.sockets.adapter.rooms.get('visitor-super-admin');
-      const staffOnline = (staffRoomSockets && staffRoomSockets.size > 0) ||
-                          (superAdminSockets && superAdminSockets.size > 0);
-      const aiModeActive = dojoAiMode.get(String(session.dojo_id)) === true;
-      if (!staffOnline || aiModeActive) {
+    // KI-Reply: Sensei Kenji antwortet IMMER sofort – auch wenn Team online ist.
+    // Ausnahme: ein Mensch vom Team hat die Unterhaltung bereits übernommen
+    // (echte Staff-Antwort = sender_id gesetzt; KI/Auto-Antworten haben kein sender_id).
+    // Master-Schalter: visitor_chat_config.ki_aktiv (Default an).
+    try {
+      const kiAktiv = await isKiAktiv(session.dojo_id);
+      const [[human]] = await pool.query(
+        `SELECT COUNT(*) AS c FROM visitor_chat_messages
+         WHERE session_id = ? AND sender_type = 'staff' AND sender_id IS NOT NULL`,
+        [session.id]
+      );
+      if (kiAktiv && (!human || human.c === 0)) {
         const [history] = await pool.query(
           `SELECT sender_type, message FROM visitor_chat_messages
            WHERE session_id = ? ORDER BY id ASC LIMIT 20`,
@@ -1049,8 +1064,10 @@ router.post('/sessions/:token/messages', async (req, res) => {
           sendAIReply(session, io, history).catch(err =>
             logger.warn('AI-Reply Fehler', { error: err.message, sessionId: session.id })
           );
-        }, 1200);
+        }, 800);
       }
+    } catch (e) {
+      logger.warn('KI-Reply-Gate Fehler', { error: e.message, sessionId: session.id });
     }
 
     res.json({ success: true, message: newMsg });
