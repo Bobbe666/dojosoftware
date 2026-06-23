@@ -4,17 +4,33 @@
 // Version: 2026_03_30
 // =====================================================================================
 
+// Merkt sich, ob beim Installieren bereits ein alter SW aktiv war (= echtes Update)
+let istUpdate = false;
 self.addEventListener('install', (event) => {
+  istUpdate = !!self.registration.active;
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    Promise.all([
+    (async () => {
       // Alle alten Caches (z.B. von früherer PWA/Workbox) löschen
-      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))),
-      clients.claim(),
-    ])
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+      await clients.claim();
+
+      // Nur bei echtem Update (nicht beim Erst-Install): offene Fenster einmal neu laden,
+      // damit die neue App-Version (frische Assets) sofort greift. Durchbricht hartnäckige
+      // Home-Screen-PWA-Caches ohne Neuinstallation.
+      if (istUpdate) {
+        try {
+          const wins = await clients.matchAll({ type: 'window' });
+          for (const win of wins) {
+            if (win.url) win.navigate(win.url);
+          }
+        } catch (_) { /* navigate optional */ }
+      }
+    })()
   );
 });
 

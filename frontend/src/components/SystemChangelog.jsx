@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.82',
+    date: '2026-06-23',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'PWA aktualisiert sich automatisch (Service-Worker erzwingt Frisch-Laden)',
+    description: 'Damit veraltete Home-Screen-Apps (PWA) nicht mehr hängenbleiben: Sobald eine neue Version aktiv wird, lädt der Service-Worker die offenen App-Fenster automatisch einmal neu (nur bei echtem Update, nicht beim Erst-Install). So greifen neue Versionen ohne manuelles Neu-Installieren. Zusammen mit dem Aktualisieren-Banner (v3.0.81) ist das Update-Problem damit grundlegend gelöst.',
+    highlights: [
+      '🔁 Service-Worker lädt App bei neuer Version automatisch frisch',
+      '🚫 Kein manuelles Löschen/Neu-Installieren der PWA mehr nötig',
+    ],
+    details: 'public/sw.js: activate lädt offene Fenster via clients.navigate neu (Guard istUpdate verhindert Reload beim Erst-Install).',
+    files: ['frontend/public/sw.js'],
+  },
+  {
     version: '3.0.81',
     date: '2026-06-23',
     type: 'improvement',
