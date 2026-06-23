@@ -19,6 +19,12 @@ const Anthropic = require('@anthropic-ai/sdk');
 
 const pool = db.promise();
 
+// Name des KI-Assistenten (global, wenn kein Dojo-spezifischer Name gesetzt ist).
+// Bezug Japan/Karate – wird im Chat sichtbar als "<Name> · KI", damit Besucher
+// erkennen, dass aktuell die KI antwortet (ein Mensch übernimmt bei Bedarf).
+const DEFAULT_ASSISTENT = 'Sensei Kenji';
+const KI_LABEL = ' · KI';
+
 // VAPID konfigurieren (nur wenn Keys vorhanden)
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
@@ -80,12 +86,12 @@ async function loadDojoKontext(dojoId) {
       tarifeText,
       stundenplanText,
       stileText,
-      assistentName: chatConfig?.assistent_name || 'Assistent',
+      assistentName: chatConfig?.assistent_name || DEFAULT_ASSISTENT,
       zusatzKontext: chatConfig?.zusatz_kontext || '',
     };
   } catch (err) {
     logger.warn('AI-Kontext konnte nicht geladen werden', { error: err.message });
-    return { dojoName: 'Kampfkunstschule', tarifeText: '', stundenplanText: '', stileText: '', assistentName: 'Assistent', zusatzKontext: '' };
+    return { dojoName: 'Kampfkunstschule', tarifeText: '', stundenplanText: '', stileText: '', assistentName: DEFAULT_ASSISTENT, zusatzKontext: '' };
   }
 }
 
@@ -94,10 +100,11 @@ async function sendAIReply(session, io, conversationHistory) {
   const dojoId = session.dojo_id || null;
   if (!process.env.ANTHROPIC_API_KEY) return sendAutoReply(session, io);
 
-  const kontext = dojoId ? await loadDojoKontext(dojoId) : { dojoName: 'TDA', tarifeText: '', stundenplanText: '', stileText: '', assistentName: 'Assistent', zusatzKontext: '' };
+  const kontext = dojoId ? await loadDojoKontext(dojoId) : { dojoName: 'TDA', tarifeText: '', stundenplanText: '', stileText: '', assistentName: DEFAULT_ASSISTENT, zusatzKontext: '' };
 
-  const systemPrompt = `Du bist ${kontext.assistentName}, der freundliche AI-Assistent der ${kontext.dojoName}.
+  const systemPrompt = `Du bist ${kontext.assistentName}, die freundliche KI-Assistentin der ${kontext.dojoName}.
 Du beantwortest Fragen von Interessenten und Mitgliedern auf Deutsch – kurz, freundlich und konkret.
+Du bist eine KI (kein Mensch) und machst daraus kein Geheimnis: Stelle dich in deiner ERSTEN Antwort kurz mit Namen vor und weise dezent darauf hin, dass gerade die KI antwortet und ein Mensch aus dem Team bei Bedarf übernimmt. Danach nicht mehr wiederholen.
 
 ## Unsere Kampfkünste
 ${kontext.stileText || '- Kickboxen, Taekwondo, Karate, ShieldX Selbstverteidigung, MMA, Grappling'}
@@ -148,7 +155,7 @@ ${kontext.zusatzKontext ? `\n## Weitere Infos vom Dojo\n${kontext.zusatzKontext}
     const [insertResult] = await pool.query(
       `INSERT INTO visitor_chat_messages (session_id, sender_type, sender_name, message)
        VALUES (?, 'staff', ?, ?)`,
-      [session.id, kontext.dojoName + ' AI', aiText]
+      [session.id, kontext.assistentName + KI_LABEL, aiText]
     );
 
     const [[aiMsg]] = await pool.query(
@@ -606,14 +613,15 @@ router.get('/widget.js', (req, res) => {
       <div id="vc-header">
         <div id="vc-header-avatar">🥋</div>
         <div id="vc-header-text">
-          <div id="vc-header-title">Live-Chat</div>
-          <div id="vc-header-sub">Wir antworten so schnell wie möglich</div>
+          <div id="vc-header-title">${DEFAULT_ASSISTENT}</div>
+          <div id="vc-header-sub">KI-Assistent · ein Mensch übernimmt bei Bedarf</div>
         </div>
         <button id="vc-close" aria-label="Chat schließen">✕</button>
       </div>
       <div id="vc-body">
         <div id="vc-form">
           <h4>Schreib uns!</h4>
+          <p>Es antwortet zunächst unsere KI <strong>${DEFAULT_ASSISTENT}</strong> – sofort und rund um die Uhr. Bei Bedarf übernimmt ein Mensch aus dem Team.</p>
           <p>Bitte gib deinen Namen und deine E-Mail an, damit wir dir antworten können.</p>
           <input id="vc-name" class="vc-input" type="text" placeholder="Dein Name *" maxlength="100" />
           <input id="vc-email" class="vc-input" type="email" placeholder="Deine E-Mail *" maxlength="255" />
@@ -680,7 +688,7 @@ router.get('/widget.js', (req, res) => {
   // ── Chat-UI aufbauen (nach erfolgreichem Session-Start) ────────────────────
   function buildChatUI() {
     body.innerHTML = \`
-      <div id="vc-messages"><div id="vc-empty">Noch keine Nachrichten. Schreib uns!</div></div>
+      <div id="vc-messages"><div id="vc-empty">🥋 ${DEFAULT_ASSISTENT} (KI) ist für dich da – stell einfach deine Frage!</div></div>
       <div id="vc-input-row">
         <textarea id="vc-text" rows="1" placeholder="Deine Nachricht..." maxlength="2000"></textarea>
         <button id="vc-send">➤</button>
