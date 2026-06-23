@@ -388,14 +388,23 @@ module.exports = function initChatSocket(io) {
     // ── Gelesen-Status senden ─────────────────────────────────────────────────
     socket.on('chat:read', async ({ room_id }) => {
       try {
-        // 🔒 Mitgliedschafts-Check + Dojo-Isolation
-        const [access] = await pool.query(
-          `SELECT crm.id FROM chat_room_members crm
-           JOIN chat_rooms r ON r.id = crm.room_id
-           WHERE crm.room_id = ? AND crm.member_id = ? AND crm.member_type = ?
-             AND (r.dojo_id = ? OR ? IS NULL)`,
-          [room_id, sender_id, sender_type, dojo_id, dojo_id]
-        );
+        // 🔒 Zugriff prüfen. Admin/Trainer dürfen Dojo-Räume auch ohne Mitgliedschaft als gelesen markieren.
+        const isPriv = ['admin', 'super_admin', 'trainer'].includes(socket.user.role);
+        let access;
+        if (isPriv) {
+          [access] = await pool.query(
+            `SELECT id FROM chat_rooms WHERE id = ? AND (dojo_id = ? OR ? IS NULL)`,
+            [room_id, dojo_id, dojo_id]
+          );
+        } else {
+          [access] = await pool.query(
+            `SELECT crm.id FROM chat_room_members crm
+             JOIN chat_rooms r ON r.id = crm.room_id
+             WHERE crm.room_id = ? AND crm.member_id = ? AND crm.member_type = ?
+               AND (r.dojo_id = ? OR ? IS NULL)`,
+            [room_id, sender_id, sender_type, dojo_id, dojo_id]
+          );
+        }
         if (!access[0]) return;
 
         // Alle ungelesenen Nachrichten im Raum als gelesen markieren

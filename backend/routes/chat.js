@@ -612,14 +612,24 @@ router.put('/rooms/:id/read', async (req, res) => {
     const room_id = parseInt(req.params.id);
     const dojo_id = getDojoId(req);
 
-    // 🔒 Mitgliedschaft + Dojo-Zugehörigkeit prüfen
-    const [access] = await pool.query(
-      `SELECT r.id FROM chat_rooms r
-       JOIN chat_room_members crm ON crm.room_id = r.id
-         AND crm.member_id = ? AND crm.member_type = ?
-       WHERE r.id = ? AND (r.dojo_id = ? OR ? IS NULL)`,
-      [sender_id, sender_type, room_id, dojo_id, dojo_id]
-    );
+    // 🔒 Zugriff prüfen. Admin/Trainer dürfen Räume ihres Dojos auch ohne explizite
+    // Mitgliedschaft als gelesen markieren (sie sehen in der Admin-/Messenger-App alle Räume).
+    const isPriv = ['admin', 'super_admin', 'trainer'].includes(req.user.role);
+    let access;
+    if (isPriv) {
+      [access] = await pool.query(
+        `SELECT id FROM chat_rooms WHERE id = ? AND (dojo_id = ? OR ? IS NULL)`,
+        [room_id, dojo_id, dojo_id]
+      );
+    } else {
+      [access] = await pool.query(
+        `SELECT r.id FROM chat_rooms r
+         JOIN chat_room_members crm ON crm.room_id = r.id
+           AND crm.member_id = ? AND crm.member_type = ?
+         WHERE r.id = ? AND (r.dojo_id = ? OR ? IS NULL)`,
+        [sender_id, sender_type, room_id, dojo_id, dojo_id]
+      );
+    }
     if (!access[0]) return res.status(403).json({ message: 'Kein Zugriff auf diesen Raum' });
 
     const [unread] = await pool.query(
