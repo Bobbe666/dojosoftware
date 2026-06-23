@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.81',
+    date: '2026-06-23',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Zuverlässiger „Neue Version verfügbar"-Banner (auch in der App/PWA)',
+    description: 'Der Aktualisieren-Banner erkennt neue Versionen jetzt zuverlässiger: Die Build-ID wird ins App-Bundle gebacken und beim Start sowie beim Wieder-Öffnen der App (Fokus) gegen den Server verglichen. So erscheint der Hinweis „Neue Version verfügbar – jetzt aktualisieren" auch bei veraltet gecachter Home-Screen-App, ohne dass man sie löschen/neu installieren muss. Beim Aktualisieren werden zusätzlich Caches geleert und der Service-Worker aktualisiert.',
+    highlights: [
+      '🔄 Banner erkennt veraltete App schon beim Öffnen',
+      '👀 Erneute Prüfung beim Zurückkehren in die App (Fokus)',
+      '🧹 „Aktualisieren" leert Cache + erzwingt Service-Worker-Update',
+    ],
+    details: 'deploy.sh backt VITE_BUILD_ID (Git-Hash) ins Bundle; UpdateBanner.jsx vergleicht BUILD_ID gegen /version.json (Fallback localStorage) + visibilitychange/focus-Listener + serviceWorker.update() im Update-Flow.',
+    files: ['deploy.sh', 'frontend/src/components/UpdateBanner.jsx'],
+  },
+  {
     version: '3.0.80',
     date: '2026-06-23',
     type: 'improvement',

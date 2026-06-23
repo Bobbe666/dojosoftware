@@ -94,10 +94,11 @@ if [[ "$MODE" == "all" || "$MODE" == "frontend" ]]; then
   cd "$FRONTEND_LOCAL"
   # dist leeren vor jedem Build — verhindert Chunk-Akkumulation (Safari "Importing module failed")
   rm -rf dist
-  CI=false npm run build 2>&1 | grep -E '✓|error|built in' | head -5
-
-  # Version-Stamping: Git-Hash in sw.js schreiben damit Browser neue Version erkennt
+  # Build-ID (Git-Hash) VOR dem Build ermitteln und ins Bundle backen → App kennt ihre eigene Version
   VERSION=$(git -C "$HOME/dojosoftware" rev-parse --short HEAD)
+  CI=false VITE_BUILD_ID="$VERSION" npm run build 2>&1 | grep -E '✓|error|built in' | head -5
+
+  # Version-Stamping: Git-Hash in sw.js + version.json schreiben damit App neue Version erkennt
   node -e "
     const fs = require('fs'), p = 'dist/sw.js', v = '$VERSION';
     fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/Version: [^\n]+/, 'Version: ' + v));
