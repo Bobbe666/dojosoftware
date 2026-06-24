@@ -301,6 +301,24 @@ function initCronJobs() {
   });
 
   /**
+   * Mitglieder-Logins: legt für aktive Mitglieder OHNE Account automatisch einen Login an
+   * (Username vorname.nachname, Passwort = Geburtsdatum) — damit neue Mitglieder sich sofort
+   * einloggen können, ohne manuelles „Alle anlegen". Läuft alle 20 Minuten.
+   */
+  cron.schedule('*/20 * * * *', async () => {
+    const t0 = Date.now();
+    try {
+      const { ensureMemberLogins } = require('./services/memberLoginService');
+      const res = await ensureMemberLogins();
+      if (res.created > 0) logger.success(`🔑 Mitglieder-Logins: ${res.created} angelegt, ${res.mails} Willkommens-Mails`);
+      await recordCronRun('member_logins', { erfolg: true, info: `${res.created} angelegt, ${res.mails} Mails, ${res.uebersprungen} ohne Geburtsdatum`, dauerMs: Date.now() - t0 });
+    } catch (error) {
+      logger.error('❌ Mitglieder-Login Cron-Job Fehler', { error: error.message, stack: error.stack });
+      await recordCronRun('member_logins', { erfolg: false, info: error.message, dauerMs: Date.now() - t0 });
+    }
+  });
+
+  /**
    * Feature-Trials: Abgelaufene Trials deaktivieren
    * Läuft täglich um 00:30 Uhr
    * Setzt Status von abgelaufenen Trials auf 'expired' und loggt Zugriffsentzug
