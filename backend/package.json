@@ -25,6 +25,7 @@
     "body-parser": "^1.20.3",
     "check-disk-space": "^3.4.0",
     "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "csrf-csrf": "^4.0.3",
     "csv-parser": "^3.2.0",

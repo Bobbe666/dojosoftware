@@ -251,6 +251,9 @@ app.use(cors({
 // rawBody anhängen (für Stripe-Webhook-Signaturprüfung, z. B. /api/payment-provider/refund-webhook)
 app.use(express.json({ charset: 'utf-8', limit: '50mb', verify: (req, res, buf) => { req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true, charset: 'utf-8', limit: '50mb' }));
+// Cookie-Parser: req.cookies verfügbar machen (u.a. für CSRF-Token-Generierung,
+// die sonst mit "'dojo_csrf' in undefined" scheitert und das Log flutet).
+app.use(require('cookie-parser')());
 
 // =============================================
 // SESSION MIDDLEWARE (Phase 2 Security Upgrade)
