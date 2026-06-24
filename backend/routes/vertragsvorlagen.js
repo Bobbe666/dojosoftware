@@ -6,6 +6,7 @@ const db = require('../db');
 const fs = require('fs');
 const path = require('path');
 const { generateVertragsvorlagePdf, replacePlaceholders } = require('../utils/vertragsvorlagenPdfGenerator');
+const { buildContractMap, resolveContractPlaceholders, insertDojoLogo } = require('../utils/vertragPlaceholders');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -714,7 +715,7 @@ router.get('/:id/generate-pdf', async (req, res) => {
     const template = vorlagen[0];
 
     // Mitgliedsdaten laden
-    const mitglieder = await queryAsync('SELECT * FROM mitglieder WHERE id = ?', [mitglied_id]);
+    const mitglieder = await queryAsync('SELECT * FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
     if (mitglieder.length === 0) {
       return res.status(404).json({ error: 'Mitglied nicht gefunden' });
     }
@@ -742,64 +743,18 @@ router.get('/:id/generate-pdf', async (req, res) => {
       }
     }
 
-    // Daten für Platzhalter vorbereiten
-    const data = {
-      mitglied: {
-        vorname: mitglied.vorname || '',
-        nachname: mitglied.nachname || '',
-        email: mitglied.email || '',
-        telefon: mitglied.telefon || '',
-        strasse: mitglied.strasse || '',
-        hausnummer: mitglied.hausnummer || '',
-        plz: mitglied.plz || '',
-        ort: mitglied.ort || '',
-        geburtsdatum: mitglied.geburtsdatum ? new Date(mitglied.geburtsdatum).toLocaleDateString('de-DE') : '',
-        mitgliedsnummer: mitglied.mitgliedsnummer || mitglied.id
-      },
-      vertrag: vertrag ? {
-        vertragsnummer: vertrag.vertragsnummer || `V-${vertrag.id}`,
-        vertragsbeginn: vertrag.vertragsbeginn ? new Date(vertrag.vertragsbeginn).toLocaleDateString('de-DE') : '',
-        vertragsende: vertrag.vertragsende ? new Date(vertrag.vertragsende).toLocaleDateString('de-DE') : '',
-        monatsbeitrag: vertrag.monatsbeitrag || '0.00',
-        mindestlaufzeit_monate: vertrag.mindestlaufzeit_monate || '0',
-        kuendigungsfrist_monate: vertrag.kuendigungsfrist_monate || '0',
-        tarifname: vertrag.tarifname || ''
-      } : {
-        vertragsnummer: '',
-        vertragsbeginn: '',
-        vertragsende: '',
-        monatsbeitrag: '',
-        mindestlaufzeit_monate: '',
-        kuendigungsfrist_monate: '',
-        tarifname: ''
-      },
-      dojo: {
-        dojoname: dojo.dojoname || '',
-        strasse: dojo.strasse || '',
-        hausnummer: dojo.hausnummer || '',
-        plz: dojo.plz || '',
-        ort: dojo.ort || '',
-        telefon: dojo.telefon || '',
-        email: dojo.email || '',
-        internet: dojo.internet || ''
-      },
-      system: {
-        datum: new Date().toLocaleDateString('de-DE'),
-        jahr: new Date().getFullYear().toString(),
-        monat: (new Date().getMonth() + 1).toString().padStart(2, '0')
-      }
-    };
+    // Gläubiger-ID (SEPA-Mandat, optional)
+    let glaeubigerId = '';
+    try {
+      const mand = await queryAsync('SELECT glaeubiger_id FROM sepa_mandate WHERE mitglied_id = ? ORDER BY id DESC LIMIT 1', [mitglied.mitglied_id || mitglied.id]);
+      glaeubigerId = mand[0]?.glaeubiger_id || '';
+    } catch (_) { /* optional */ }
 
-    // Template rendern
-    let html = template.grapesjs_html;
-
-    // Platzhalter ersetzen
-    Object.entries(data).forEach(([category, values]) => {
-      Object.entries(values).forEach(([key, value]) => {
-        const placeholder = new RegExp(`{{${category}\\.${key}}}`, 'g');
-        html = html.replace(placeholder, value || '');
-      });
-    });
+    // Zentrales Platzhalter-Mapping (eine Quelle der Wahrheit, utils/vertragPlaceholders.js).
+    // Deckt {{kat.feld}} + {{feld}} + Alias-Platzhalter ({{dojo_name}}, {{iban}}, …) ab.
+    const map = buildContractMap(mitglied, dojo, vertrag, { glaeubigerId });
+    let html = resolveContractPlaceholders(template.grapesjs_html || template.tiptap_html || '', map);
+    html = insertDojoLogo(html, await loadDojoLogo(template.dojo_id));
 
     // HTML mit CSS kombinieren
     const fullHtml = `
@@ -1058,7 +1013,7 @@ router.get('/:id/generate-pdf-tiptap', async (req, res) => {
     // Mitglied (optional)
     let mitglied = null;
     if (mitglied_id) {
-      const mitglieder = await queryAsync('SELECT * FROM mitglieder WHERE id = ?', [mitglied_id]);
+      const mitglieder = await queryAsync('SELECT * FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
       if (mitglieder.length > 0) mitglied = mitglieder[0];
     }
 

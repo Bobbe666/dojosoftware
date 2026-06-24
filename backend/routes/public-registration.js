@@ -12,6 +12,7 @@ const enc = require('../services/encryptionService');
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
+const { buildContractMap, resolveContractPlaceholders, insertDojoLogo } = require('../utils/vertragPlaceholders');
 
 // Rate-Limiter für Registrierungs-Endpoints (10 Requests / 15 Min pro IP)
 const registerLimiter = rateLimit({
@@ -70,77 +71,9 @@ async function generateAndStoreContractPdf(mitgliedId, dojoId, vertragId) {
       glaeubigerId = mand[0]?.glaeubiger_id || '';
     } catch (_) { /* Mandat optional */ }
 
-    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '';
-    const anredeMap = { m: 'Herr', w: 'Frau', d: '' };
-    const mitgliedsnr = m.mitgliedsnummer || m.mitglied_id;
-
-    // Kanonisches Platzhalter-Mapping (deckungsgleich mit dem Vorschau-Pfad in
-    // routes/vertragsvorlagen.js: {{kategorie.feld}} + {{feld}} + Alias-Platzhalter).
-    const data = {
-      mitglied: {
-        vorname: m.vorname || '', nachname: m.nachname || '', email: m.email || '',
-        telefon: m.telefon || m.telefon_mobil || '', strasse: m.strasse || '', hausnummer: m.hausnummer || '',
-        plz: m.plz || '', ort: m.ort || '', geburtsdatum: fmtDate(m.geburtsdatum),
-        mitgliedsnummer: mitgliedsnr,
-      },
-      vertrag: vertrag ? {
-        vertragsnummer: vertrag.vertragsnummer || `V-${vertrag.id}`,
-        vertragsbeginn: fmtDate(vertrag.vertragsbeginn), vertragsende: fmtDate(vertrag.vertragsende),
-        monatsbeitrag: vertrag.monatsbeitrag || '0.00',
-        mindestlaufzeit_monate: vertrag.mindestlaufzeit_monate || '0',
-        kuendigungsfrist_monate: vertrag.kuendigungsfrist_monate || '0',
-        tarifname: vertrag.tarifname || '',
-      } : { vertragsnummer: '', vertragsbeginn: '', vertragsende: '', monatsbeitrag: '', mindestlaufzeit_monate: '', kuendigungsfrist_monate: '', tarifname: '' },
-      dojo: {
-        dojoname: dojo.dojoname || '', strasse: dojo.strasse || '', hausnummer: dojo.hausnummer || '',
-        plz: dojo.plz || '', ort: dojo.ort || '', telefon: dojo.telefon || '', email: dojo.email || '', internet: dojo.internet || '',
-      },
-      system: {
-        datum: new Date().toLocaleDateString('de-DE'),
-        jahr: new Date().getFullYear().toString(),
-        monat: (new Date().getMonth() + 1).toString().padStart(2, '0'),
-      },
-    };
-
-    const aliases = {
-      mitglied_id: mitgliedsnr,
-      anrede: anredeMap[(m.geschlecht || '').toLowerCase()] ?? '',
-      mobil: m.telefon || m.telefon_mobil || '',
-      dojo_name: data.dojo.dojoname,
-      dojo_adresse: `${data.dojo.strasse} ${data.dojo.hausnummer}, ${data.dojo.plz} ${data.dojo.ort}`.trim(),
-      dojo_kontakt: `Tel: ${data.dojo.telefon} | E-Mail: ${data.dojo.email}`,
-      tarif_name: data.vertrag.tarifname,
-      betrag: data.vertrag.monatsbeitrag,
-      aufnahmegebuehr: '0.00',
-      mindestlaufzeit: `${data.vertrag.mindestlaufzeit_monate} Monate`,
-      nutzungsbeginn: data.vertrag.vertragsbeginn,
-      vertragsverlaengerung: '1 Monat',
-      kuendigungsfrist: `${data.vertrag.kuendigungsfrist_monate} Monate`,
-      zahlweise: 'monatlich',
-      zahlungsdienstleister: data.dojo.dojoname,
-      glaeubiger_id: glaeubigerId,
-      kontoinhaber: m.kontoinhaber || `${m.vorname} ${m.nachname}`,
-      kreditinstitut: m.bankname || '',
-      bic: m.bic || '',
-      iban: m.iban || '',
-      sepa_referenz: vertrag?.vertragsnummer || '',
-      zahlungstermine: '',
-    };
-
-    function replacePh(tpl) {
-      let r = tpl || '';
-      r = r.replace(/\{\{system\.uhrzeit\}\}/g, new Date().toLocaleTimeString('de-DE'));
-      Object.entries(data).forEach(([cat, vals]) => {
-        Object.entries(vals).forEach(([key, value]) => {
-          r = r.replace(new RegExp(`\\{\\{${cat}\\.${key}\\}\\}`, 'g'), value ?? '');
-          r = r.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value ?? '');
-        });
-      });
-      Object.entries(aliases).forEach(([ph, value]) => {
-        r = r.replace(new RegExp(`\\{\\{${ph}\\}\\}`, 'g'), value ?? '');
-      });
-      return r;
-    }
+    // Zentrales Platzhalter-Mapping (eine Quelle der Wahrheit, siehe utils/vertragPlaceholders.js)
+    const map = buildContractMap(m, dojo, vertrag, { glaeubigerId });
+    const replacePh = (tpl) => resolveContractPlaceholders(tpl, map);
 
     // Logo laden + in logo-placeholder einsetzen
     let logoBase64 = null;
@@ -154,14 +87,7 @@ async function generateAndStoreContractPdf(mitgliedId, dojoId, vertragId) {
       }
     } catch (_) { /* Logo optional */ }
 
-    let bodyHtml = replacePh(vorlage.grapesjs_html || vorlage.tiptap_html || '');
-    if (logoBase64) {
-      const logoImg = `<img src="${logoBase64}" alt="Logo" style="width:100%;height:100%;object-fit:contain;" />`;
-      bodyHtml = bodyHtml.replace(
-        /<div[^>]*class="[^"]*logo-placeholder[^"]*"[^>]*>[\s\S]*?<\/div>/g,
-        (match) => match.replace(/>[\s\S]*?<\/div>/, `>${logoImg}</div>`)
-      );
-    }
+    const bodyHtml = insertDojoLogo(replacePh(vorlage.grapesjs_html || vorlage.tiptap_html || ''), logoBase64);
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
       ${replacePh(vorlage.grapesjs_css || '')}
@@ -2207,3 +2133,5 @@ router.get('/sonder-aktionen', async (req, res) => {
 });
 
 module.exports = router;
+// Für Skripte / erneutes Erzeugen (z.B. Nachsenden korrigierter Verträge)
+module.exports.generateAndStoreContractPdf = generateAndStoreContractPdf;
