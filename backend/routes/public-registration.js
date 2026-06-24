@@ -61,18 +61,20 @@ async function generateAndStoreContractPdf(mitgliedId, dojoId, vertragId) {
       ? await new Promise((res, rej) => db.query('SELECT * FROM vertraege WHERE id = ?', [vertragId], (e, r) => e ? rej(e) : res(r[0] || null)))
       : null;
 
-    // SEPA-Gläubiger-ID (falls Mandat vorhanden)
-    let glaeubigerId = '';
-    try {
-      const mand = await new Promise((res, rej) => db.query(
-        'SELECT glaeubiger_id FROM sepa_mandate WHERE mitglied_id = ? ORDER BY id DESC LIMIT 1',
-        [mitgliedId], (e, r) => e ? rej(e) : res(r)
-      ));
-      glaeubigerId = mand[0]?.glaeubiger_id || '';
-    } catch (_) { /* Mandat optional */ }
+    // Tarifname über den Tarif des Vertrags (für {{tarif_name}})
+    let tarifname = '';
+    if (vertrag && vertrag.tarif_id) {
+      try {
+        const tarif = await new Promise((res, rej) => db.query(
+          'SELECT name FROM tarife WHERE id = ?', [vertrag.tarif_id], (e, r) => e ? rej(e) : res(r[0] || null)
+        ));
+        tarifname = tarif?.name || '';
+      } catch (_) { /* optional */ }
+    }
 
-    // Zentrales Platzhalter-Mapping (eine Quelle der Wahrheit, siehe utils/vertragPlaceholders.js)
-    const map = buildContractMap(m, dojo, vertrag, { glaeubigerId });
+    // Zentrales Platzhalter-Mapping (eine Quelle der Wahrheit, siehe utils/vertragPlaceholders.js).
+    // Gläubiger-ID kommt dojo-weit aus dojo.sepa_glaeubiger_id (in der Util berücksichtigt).
+    const map = buildContractMap(m, dojo, vertrag, { tarifname });
     const replacePh = (tpl) => resolveContractPlaceholders(tpl, map);
 
     // Logo laden + in logo-placeholder einsetzen

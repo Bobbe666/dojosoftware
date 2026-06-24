@@ -71,7 +71,7 @@ function buildContractMap(mitglied = {}, dojo = {}, vertrag = null, opts = {}) {
     kuendigungsfrist: `${data.vertrag.kuendigungsfrist_monate} Monate`,
     zahlweise: 'monatlich',
     zahlungsdienstleister: data.dojo.dojoname,
-    glaeubiger_id: opts.glaeubigerId || '',
+    glaeubiger_id: opts.glaeubigerId || d.sepa_glaeubiger_id || '',
     kontoinhaber: m.kontoinhaber || `${m.vorname || ''} ${m.nachname || ''}`.trim(),
     kreditinstitut: m.bankname || '',
     bic: m.bic || '',

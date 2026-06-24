@@ -743,16 +743,19 @@ router.get('/:id/generate-pdf', async (req, res) => {
       }
     }
 
-    // Gläubiger-ID (SEPA-Mandat, optional)
-    let glaeubigerId = '';
-    try {
-      const mand = await queryAsync('SELECT glaeubiger_id FROM sepa_mandate WHERE mitglied_id = ? ORDER BY id DESC LIMIT 1', [mitglied.mitglied_id || mitglied.id]);
-      glaeubigerId = mand[0]?.glaeubiger_id || '';
-    } catch (_) { /* optional */ }
+    // Tarifname über den Tarif des Vertrags (für {{tarif_name}})
+    let tarifname = '';
+    if (vertrag && vertrag.tarif_id) {
+      try {
+        const tarif = await queryAsync('SELECT name FROM tarife WHERE id = ?', [vertrag.tarif_id]);
+        tarifname = tarif[0]?.name || '';
+      } catch (_) { /* optional */ }
+    }
 
     // Zentrales Platzhalter-Mapping (eine Quelle der Wahrheit, utils/vertragPlaceholders.js).
-    // Deckt {{kat.feld}} + {{feld}} + Alias-Platzhalter ({{dojo_name}}, {{iban}}, …) ab.
-    const map = buildContractMap(mitglied, dojo, vertrag, { glaeubigerId });
+    // Deckt {{kat.feld}} + {{feld}} + Alias ({{dojo_name}}, {{iban}}, …) ab; Gläubiger-ID
+    // kommt dojo-weit aus dojo.sepa_glaeubiger_id (in der Util berücksichtigt).
+    const map = buildContractMap(mitglied, dojo, vertrag, { tarifname });
     let html = resolveContractPlaceholders(template.grapesjs_html || template.tiptap_html || '', map);
     html = insertDojoLogo(html, await loadDojoLogo(template.dojo_id));
 
