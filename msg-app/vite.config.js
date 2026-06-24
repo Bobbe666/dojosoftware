@@ -9,7 +9,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // HTML-Shell NICHT precachen → Navigationen holen index.html immer frisch
+        // aus dem Netz (verhindert das Zurückfallen auf eine alte App-Version).
+        // Gehashte JS/CSS bleiben precached/immutable.
+        globPatterns: ['**/*.{js,css,ico,png,svg}'],
+        navigateFallback: null,
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
