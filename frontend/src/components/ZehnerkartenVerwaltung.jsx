@@ -22,6 +22,8 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
   // Nachkauf Modal States
   const [showNachkaufModal, setShowNachkaufModal] = useState(false);
   const [showZahlungsModal, setShowZahlungsModal] = useState(false);
+  // Einmaliges Aufklärungs-Fenster beim ersten Lastschrift-Einzug
+  const [showLastschriftInfo, setShowLastschriftInfo] = useState(false);
   const [nachkaufTarifId, setNachkaufTarifId] = useState(null);
   const [selectedZahlungsart, setSelectedZahlungsart] = useState(null);
 
@@ -140,12 +142,8 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
     }
   };
 
-  const handleNachkauf = async () => {
-    if (!selectedZahlungsart) {
-      alert('Bitte wählen Sie eine Zahlungsart aus');
-      return;
-    }
-
+  // Eigentlicher Nachkauf (API-Aufruf)
+  const doNachkauf = async () => {
     try {
       const response = await axios.post('/zehnerkarten/nachkauf', {
         mitglied_id: mitgliedId,
@@ -158,16 +156,18 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
         await loadZehnerkarten();
         setShowZahlungsModal(false);
         setShowNachkaufModal(false);
+        const usedZahlungsart = selectedZahlungsart;
         setSelectedZahlungsart(null);
         setNachkaufTarifId(null);
 
         // Erfolgsmeldung je nach Zahlungsart
         let message = '✅ 10er-Karte erfolgreich erstellt!\n\n';
-        if (selectedZahlungsart === 'bar') {
+        if (usedZahlungsart === 'bar') {
           message += '💵 Hinweis: Der Admin wurde über die Barzahlung informiert.';
-        } else if (selectedZahlungsart === 'lastschrift') {
-          message += '🏦 Der Betrag wird bei der nächsten SEPA-Buchung eingezogen.';
-        } else if (selectedZahlungsart === 'rechnung') {
+        } else if (usedZahlungsart === 'lastschrift') {
+          // Backend liefert den echten Status (sofortiger Einzug / offen / Fehler)
+          message += '🏦 ' + (response.data.lastschrift || 'Der Betrag wird automatisch per SEPA-Lastschrift eingezogen.');
+        } else if (usedZahlungsart === 'rechnung') {
           message += '📧 Die Rechnung wird per E-Mail versendet.';
         }
         alert(message);
@@ -176,6 +176,19 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
       console.error('Fehler beim Nachkauf:', error);
       alert(error.response?.data?.error || '❌ Fehler beim Erstellen der 10er-Karte');
     }
+  };
+
+  const handleNachkauf = async () => {
+    if (!selectedZahlungsart) {
+      alert('Bitte wählen Sie eine Zahlungsart aus');
+      return;
+    }
+    // Beim ERSTEN Lastschrift-Einzug einmalig aufklären (echtes Geld wird sofort abgebucht)
+    if (selectedZahlungsart === 'lastschrift' && !localStorage.getItem('zehnerkarte_lastschrift_info_seen')) {
+      setShowLastschriftInfo(true);
+      return;
+    }
+    await doNachkauf();
   };
 
   const handleDeleteKarte = async (karteId) => {
@@ -528,6 +541,46 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
         </div>
       )}
 
+      {/* EINMALIGE AUFKLÄRUNG: erster automatischer SEPA-Einzug */}
+      {showLastschriftInfo && (
+        <div className="zk-modal-overlay" style={{ zIndex: 100000 }}>
+          <div className="zk-modal-box" style={{ maxWidth: 540, textAlign: 'left', background: 'linear-gradient(135deg, rgba(26,26,46,0.99) 0%, rgba(12,12,28,1) 100%)' }}>
+            <div className="zk-modal-emoji" style={{ textAlign: 'center' }}>⚠️</div>
+            <h2 className="zk-modal-heading" style={{ textAlign: 'center' }}>
+              Erster SEPA-Einzug — bitte kurz beachten
+            </h2>
+            <p className="zk-modal-body" style={{ textAlign: 'left' }}>
+              Dieser Hinweis erscheint <strong>nur dieses eine Mal</strong>. Beim Bezahlen einer 10er-Karte
+              per Lastschrift gilt ab jetzt:
+            </p>
+            <ul style={{ textAlign: 'left', lineHeight: 1.6, color: 'rgba(255,255,255,0.88)', fontSize: '0.95rem', margin: '0 0 1rem', paddingLeft: '1.2rem' }}>
+              <li>Der Betrag wird <strong>sofort automatisch</strong> per SEPA-Lastschrift abgebucht — nicht mehr „bei der nächsten Buchung".</li>
+              <li>Voraussetzung ist ein <strong>aktives SEPA-Mandat</strong> des Mitglieds. Fehlt es, wird die Karte trotzdem erstellt, der Betrag bleibt aber <strong>offen</strong> (die Meldung sagt dir den Grund).</li>
+              <li><strong>Nicht doppelt klicken</strong> — identische Aufladungen werden 90 Sekunden lang blockiert.</li>
+              <li>Den tatsächlichen Einzug siehst du in <strong>Stripe</strong>. Bitte beim ersten Mal kurz kontrollieren, dass genau eine Buchung erscheint.</li>
+            </ul>
+            <div className="zk-modal-btn-row">
+              <button
+                onClick={() => {
+                  localStorage.setItem('zehnerkarte_lastschrift_info_seen', '1');
+                  setShowLastschriftInfo(false);
+                  doNachkauf();
+                }}
+                className="zk-modal-btn-primary"
+              >
+                ✅ Verstanden & jetzt einziehen
+              </button>
+              <button
+                onClick={() => setShowLastschriftInfo(false)}
+                className="zk-modal-btn-cancel"
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ZAHLUNGSAUSWAHL MODAL */}
       {showZahlungsModal && (
         <div className="zk-modal-overlay--payment">
@@ -570,7 +623,7 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
                       SEPA-Lastschrift
                     </h4>
                     <p className="zk-payment-desc">
-                      Der Betrag wird bei der nächsten Lastschrift eingezogen
+                      Der Betrag wird sofort automatisch per SEPA-Lastschrift eingezogen (aktives Mandat nötig)
                     </p>
                   </div>
                   {selectedZahlungsart === 'lastschrift' && (
