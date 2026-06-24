@@ -202,6 +202,9 @@ const registrationLimiter = rateLimit({
  */
 const csrfConfig = {
   getSecret: () => process.env.CSRF_SECRET || process.env.SESSION_SECRET || 'csrf-fallback-secret',
+  // csrf-csrf v4 verlangt zwingend getSessionIdentifier (gab es in v2/v3 nicht).
+  // Double-Submit-Cookie-Pattern: Session-ID falls vorhanden, sonst stateless ('').
+  getSessionIdentifier: (req) => req.session?.id || '',
   cookieName: 'dojo_csrf',
   cookieOptions: {
     httpOnly: true,
