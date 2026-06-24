@@ -22,6 +22,23 @@ const ROOM_GROUPS = [
   { key: 'besucher', label: 'Besucher',          icon: '👋', match: (r) => r.source && r.source !== 'internal' },
 ];
 
+// Grüner Punkt: Gegenseite (bzw. ein Gruppenmitglied) ist GERADE aktiv (≤ 5 Min)
+const OnlineDot = () => (
+  <span
+    title="Gerade aktiv"
+    style={{
+      display: 'inline-block',
+      width: 7,
+      height: 7,
+      borderRadius: '50%',
+      background: '#22c55e',
+      flexShrink: 0,
+      marginLeft: 5,
+      verticalAlign: 'middle',
+    }}
+  />
+);
+
 const StatusDot = ({ status }) => {
   const map = {
     active:   { color: '#22c55e', label: 'Aktiv' },
@@ -195,7 +212,7 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom, refreshVersion }) => {
         <div className="chat-room-item-top">
           <span className="chat-room-item-name">
             {room.name || 'Chat'}
-            {room.status !== 'active' && <StatusDot status={room.status} />}
+            {room.online && <OnlineDot />}
           </span>
           <span className={`chat-room-item-time${isLastToday(room.last_message_at) ? ' chat-room-item-time--today' : ''}`}>{formatTime(room.last_message_at)}</span>
         </div>

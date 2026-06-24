@@ -10,6 +10,8 @@ const { authenticateToken } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const db = require('../db');
 const pool = db.promise(); // Promise-basierte API von mysql2
+// Präsenz (grüner Punkt = gerade aktiv ≤ 5 Min) aus dem Chat-Socket
+const { isMemberOnline } = require('../socket/chatSocket');
 const logger = require('../utils/logger');
 
 // Alle Routen erfordern Authentifizierung
@@ -174,7 +176,7 @@ router.get('/rooms', async (req, res) => {
       );
     }
 
-    // Namen für Direktchats: Gegenseite ermitteln
+    // Namen für Direktchats: Gegenseite ermitteln + Online-Präsenz
     for (const room of rooms) {
       if (room.type === 'direct') {
         const [otherMember] = await pool.query(
@@ -189,7 +191,17 @@ router.get('/rooms', async (req, res) => {
           room.name = await getSenderName(otherMember[0].member_id, otherMember[0].member_type);
           room.other_member_id = otherMember[0].member_id;
           room.other_member_type = otherMember[0].member_type;
+          // Grüner Punkt: nur wenn die Gegenseite gerade aktiv ist (≤ 5 Min)
+          room.online = isMemberOnline(otherMember[0].member_id, otherMember[0].member_type);
         }
+      } else {
+        // Gruppe/Ankündigung: online, wenn irgendein anderes Mitglied gerade aktiv ist
+        const [members] = await pool.query(
+          `SELECT member_id, member_type FROM chat_room_members
+           WHERE room_id = ? AND NOT (member_id = ? AND member_type = ?)`,
+          [room.id, sender_id, sender_type]
+        );
+        room.online = members.some(m => isMemberOnline(m.member_id, m.member_type));
       }
     }
 

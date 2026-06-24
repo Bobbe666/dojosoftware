@@ -10,6 +10,35 @@ const db = require('../db');
 const pool = db.promise(); // Promise-basierte API von mysql2
 const logger = require('../utils/logger');
 
+// ─── Präsenz: wer ist GERADE in der App aktiv (online ≤ 5 Min) ────────────────
+// In-Memory; basiert auf aktiven Socket-Verbindungen + letztem Aktivitätszeitpunkt.
+// online = mindestens ein Socket verbunden ODER zuletzt vor < 5 Min aktiv (deckt
+// kurze Reconnects/App-Wechsel ab). Kein "angemeldet/hat Account" mehr.
+const PRESENCE_WINDOW_MS = 5 * 60 * 1000;
+const presence = new Map(); // "id:type" -> { count, lastActive }
+const pKey = (id, type) => `${id}:${type}`;
+function presenceConnect(id, type) {
+  const k = pKey(id, type);
+  const p = presence.get(k) || { count: 0, lastActive: 0 };
+  p.count += 1; p.lastActive = Date.now();
+  presence.set(k, p);
+}
+function presenceDisconnect(id, type) {
+  const p = presence.get(pKey(id, type));
+  if (p) { p.count = Math.max(0, p.count - 1); p.lastActive = Date.now(); }
+}
+function presenceTouch(id, type) {
+  const k = pKey(id, type);
+  const p = presence.get(k) || { count: 0, lastActive: 0 };
+  p.lastActive = Date.now();
+  presence.set(k, p);
+}
+function isMemberOnline(id, type) {
+  const p = presence.get(pKey(id, type));
+  if (!p) return false;
+  return p.count > 0 || (Date.now() - p.lastActive) < PRESENCE_WINDOW_MS;
+}
+
 // VAPID konfigurieren
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
@@ -208,6 +237,7 @@ module.exports = function initChatSocket(io) {
     const { sender_id, sender_type } = getSenderInfoFromUser(socket.user);
     const dojo_id = socket.user.dojo_id;
 
+    presenceConnect(sender_id, sender_type);
     logger.info('Socket.io Chat verbunden', { sender_id, sender_type, dojo_id });
 
     // Dojo-weiter Room (für Ankündigungen und Broadcasts)
@@ -441,6 +471,7 @@ module.exports = function initChatSocket(io) {
 
     // ── Trennung ──────────────────────────────────────────────────────────────
     socket.on('disconnect', () => {
+      presenceDisconnect(sender_id, sender_type);
       logger.debug('Socket.io Chat getrennt', { sender_id, sender_type });
     });
   });
@@ -448,3 +479,5 @@ module.exports = function initChatSocket(io) {
 
 // Export für REST-Fallback in chat.js
 module.exports.triggerOfflinePush = triggerOfflinePush;
+// Export für Präsenz-Anzeige (grüner Punkt) in chat.js
+module.exports.isMemberOnline = isMemberOnline;
