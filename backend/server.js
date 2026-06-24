@@ -1006,6 +1006,12 @@ db.promise().query(`
     ADD COLUMN IF NOT EXISTS stripe_payment_intent_id VARCHAR(255) DEFAULT NULL
 `).catch(err => logger.warn('Migration 213 (ignoriert):', { error: err.message }));
 
+// Migration 214: beitraege -> 10er-Karten-Verrechnungs-Marker (Ruhepause-Verrechnung)
+db.promise().query(`
+  ALTER TABLE beitraege
+    ADD COLUMN IF NOT EXISTS verrechnet_zehnerkarte_id INT DEFAULT NULL
+`).catch(err => logger.warn('Migration 214 (ignoriert):', { error: err.message }));
+
 // BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
 try {
   const buchhaltungRoutes = require('./routes/buchhaltung');

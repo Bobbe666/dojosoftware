@@ -26,6 +26,18 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
   const [showLastschriftInfo, setShowLastschriftInfo] = useState(false);
   const [nachkaufTarifId, setNachkaufTarifId] = useState(null);
   const [selectedZahlungsart, setSelectedZahlungsart] = useState(null);
+  // Vorschau der Ruhepause-Beitragsverrechnung (nur bei Lastschrift)
+  const [verrechnungPreview, setVerrechnungPreview] = useState(null);
+  useEffect(() => {
+    if (selectedZahlungsart === 'lastschrift' && nachkaufTarifId && mitgliedId) {
+      axios.get(`/zehnerkarten/verrechnung-preview?mitglied_id=${mitgliedId}&tarif_id=${nachkaufTarifId}`)
+        .then(r => setVerrechnungPreview(r.data))
+        .catch(() => setVerrechnungPreview(null));
+    } else {
+      setVerrechnungPreview(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedZahlungsart, nachkaufTarifId, mitgliedId]);
 
   const [newKarte, setNewKarte] = useState({
     tarif_id: '',
@@ -167,6 +179,12 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
         } else if (usedZahlungsart === 'lastschrift') {
           // Backend liefert den echten Status (sofortiger Einzug / offen / Fehler)
           message += '🏦 ' + (response.data.lastschrift || 'Der Betrag wird automatisch per SEPA-Lastschrift eingezogen.');
+          if (response.data.verrechnung && response.data.verrechnung.anrechenbar_eur > 0) {
+            message += `\n\n🧾 ${response.data.verrechnung.anrechenbar_eur.toFixed(2)} € aus Pausenbeiträgen angerechnet.`;
+          }
+          if (response.data.guthaben_eur > 0) {
+            message += `\n💚 ${response.data.guthaben_eur.toFixed(2)} € als Guthaben gutgeschrieben.`;
+          }
         } else if (usedZahlungsart === 'rechnung') {
           message += '📧 Die Rechnung wird per E-Mail versendet.';
         }
@@ -653,6 +671,26 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
                 </div>
               </div>
             </div>
+
+            {selectedZahlungsart === 'lastschrift' && verrechnungPreview && verrechnungPreview.anrechenbar_cents > 0 && (
+              <div style={{
+                margin: '0 0 1rem', padding: '0.85rem 1rem', borderRadius: '10px',
+                background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.4)',
+                color: 'rgba(255,255,255,0.9)', fontSize: '0.9rem', lineHeight: 1.5, textAlign: 'left'
+              }}>
+                <strong>ℹ️ Pausen-Verrechnung</strong><br />
+                {verrechnungPreview.beitraege.length} bezahlte Monatsbeitrag{verrechnungPreview.beitraege.length !== 1 ? 'e' : ''} aus
+                dem Ruhepause-Zeitraum (<strong>{(verrechnungPreview.anrechenbar_cents / 100).toFixed(2)} €</strong>) werden angerechnet.
+                <br />
+                {verrechnungPreview.abbuchung_cents > 0
+                  ? <>→ Es werden nur <strong>{(verrechnungPreview.abbuchung_cents / 100).toFixed(2)} €</strong> abgebucht
+                      <span style={{ color: 'rgba(255,255,255,0.6)' }}> (statt {(verrechnungPreview.kartenpreis_cents / 100).toFixed(2)} €)</span>.</>
+                  : <>→ <strong>Kein Einzug nötig</strong> – vollständig mit Pausenbeiträgen verrechnet.</>}
+                {verrechnungPreview.guthaben_cents > 0 && (
+                  <><br />→ <strong>{(verrechnungPreview.guthaben_cents / 100).toFixed(2)} €</strong> werden als Guthaben gutgeschrieben.</>
+                )}
+              </div>
+            )}
 
             <div className="zk-modal-btn-row">
               <button

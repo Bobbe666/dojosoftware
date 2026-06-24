@@ -15,6 +15,46 @@ const query = (sql, params) => {
 };
 
 /**
+ * Ruhepause-Verrechnung: bereits BEZAHLTE Mitgliedsbeiträge, deren Zahlungsdatum
+ * in einen Ruhepause-Zeitraum des Mitglieds fällt, werden auf den 10er-Karten-Preis
+ * angerechnet. Nur die Differenz wird per SEPA abgebucht; ein Überschuss wird als
+ * Guthaben gutgeschrieben. Bereits angerechnete Beiträge (verrechnet_zehnerkarte_id
+ * gesetzt) werden ausgeschlossen -> keine Doppel-Anrechnung.
+ */
+async function computeRuhepauseVerrechnung(mitgliedId, kartenpreisCents) {
+  const beitraege = await query(
+    `SELECT b.beitrag_id, b.betrag, b.zahlungsdatum
+       FROM beitraege b
+      WHERE b.mitglied_id = ?
+        AND b.bezahlt = 1
+        AND b.art = 'mitgliedsbeitrag'
+        AND b.verrechnet_zehnerkarte_id IS NULL
+        AND EXISTS (
+          SELECT 1 FROM vertraege v
+           WHERE v.mitglied_id = b.mitglied_id
+             AND v.ruhepause_von IS NOT NULL AND v.ruhepause_bis IS NOT NULL
+             AND b.zahlungsdatum BETWEEN v.ruhepause_von AND v.ruhepause_bis
+        )
+      ORDER BY b.zahlungsdatum ASC`,
+    [mitgliedId]
+  );
+  let anrechenbarCents = 0;
+  const items = beitraege.map(b => {
+    const c = Math.round(parseFloat(b.betrag) * 100);
+    anrechenbarCents += c;
+    return { beitrag_id: b.beitrag_id, betrag_cents: c, zahlungsdatum: b.zahlungsdatum };
+  });
+  const differenzCents = (kartenpreisCents || 0) - anrechenbarCents;
+  return {
+    kartenpreis_cents: kartenpreisCents || 0,
+    anrechenbar_cents: anrechenbarCents,
+    beitraege: items,
+    abbuchung_cents: differenzCents > 0 ? differenzCents : 0,
+    guthaben_cents: differenzCents < 0 ? -differenzCents : 0,
+  };
+}
+
+/**
  * GET /mitglieder/:mitgliedId/zehnerkarten
  * Alle 10er-Karten eines Mitglieds abrufen
  */
@@ -301,6 +341,26 @@ router.get('/zehnerkarten/:id/buchungen', async (req, res) => {
 });
 
 /**
+ * GET /zehnerkarten/verrechnung-preview?mitglied_id=&tarif_id=
+ * Vorschau: wie viel aus Ruhepause-Beiträgen angerechnet wird und was abgebucht/gutgeschrieben wird.
+ */
+router.get('/zehnerkarten/verrechnung-preview', async (req, res) => {
+  try {
+    const { mitglied_id, tarif_id } = req.query;
+    if (!mitglied_id || !tarif_id) {
+      return res.status(400).json({ success: false, error: 'mitglied_id und tarif_id erforderlich' });
+    }
+    const tarife = await query('SELECT price_cents FROM tarife WHERE id = ?', [tarif_id]);
+    if (tarife.length === 0) return res.status(404).json({ success: false, error: 'Tarif nicht gefunden' });
+    const v = await computeRuhepauseVerrechnung(mitglied_id, tarife[0].price_cents);
+    res.json({ success: true, ...v });
+  } catch (error) {
+    logger.error('Fehler bei Verrechnungs-Vorschau:', { error });
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * POST /zehnerkarten/nachkauf
  * Neue 10er-Karte nach Ablauf der alten kaufen (mit Zahlungsauswahl)
  */
@@ -419,45 +479,67 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
 
       zusatzInfo.benachrichtigung = 'Admin wurde über Barzahlung informiert';
     } else if (zahlungsart === 'lastschrift') {
-      // Offenen Posten anlegen ...
       const beschreibung = `10er-Karte: ${tarif.name}`;
 
+      // Ruhepause-Verrechnung: bezahlte Pausen-Beiträge anrechnen
+      const verr = await computeRuhepauseVerrechnung(mitglied_id, tarif.price_cents);
+      const abbuchungCents = verr.abbuchung_cents;
+
+      // Angerechnete Beiträge markieren (gegen Doppel-Anrechnung) + Vermerk
+      for (const b of verr.beitraege) {
+        await query(
+          `UPDATE beitraege
+              SET verrechnet_zehnerkarte_id = ?,
+                  beschreibung = CONCAT(COALESCE(beschreibung, ''), ' | Angerechnet auf 10er-Karte #', ?)
+            WHERE beitrag_id = ?`,
+          [neueKarteId, neueKarteId, b.beitrag_id]
+        );
+      }
+
+      // Offenen Posten mit der tatsächlichen Abbuchungssumme (Differenz) anlegen
+      const opBeschreibung = verr.anrechenbar_cents > 0
+        ? `${beschreibung} (abzgl. ${(verr.anrechenbar_cents / 100).toFixed(2)} € Pausenbeiträge)`
+        : beschreibung;
       const opResult = await query(
         `INSERT INTO offene_posten (
-          mitglied_id,
-          zehnerkarte_id,
-          betrag_cents,
-          beschreibung,
-          faellig_am,
-          status,
-          zahlungsart
+          mitglied_id, zehnerkarte_id, betrag_cents, beschreibung, faellig_am, status, zahlungsart
         ) VALUES (?, ?, ?, ?, ?, 'offen', 'lastschrift')`,
-        [
-          mitglied_id,
-          neueKarteId,
-          tarif.price_cents,
-          beschreibung,
-          heute
-        ]
+        [mitglied_id, neueKarteId, abbuchungCents, opBeschreibung, heute]
       );
       const offenerPostenId = opResult.insertId;
 
-      // ... und sofort automatisch per SEPA-Lastschrift abbuchen (event-getrieben).
-      if (tarif.price_cents > 0) {
+      // Überschuss als Guthaben gutschreiben
+      if (verr.guthaben_cents > 0) {
+        await query(
+          `INSERT INTO mitglied_gutschriften (mitglied_id, dojo_id, betrag, restbetrag, grund)
+           VALUES (?, ?, ?, ?, ?)`,
+          [mitglied_id, mitglied.dojo_id, verr.guthaben_cents / 100, verr.guthaben_cents / 100,
+           `Überschuss aus Ruhepause-Beitragsverrechnung mit 10er-Karte #${neueKarteId}`]
+        );
+        zusatzInfo.guthaben_eur = verr.guthaben_cents / 100;
+      }
+      if (verr.anrechenbar_cents > 0) {
+        zusatzInfo.verrechnung = {
+          anrechenbar_eur: verr.anrechenbar_cents / 100,
+          anzahl_beitraege: verr.beitraege.length,
+          abbuchung_eur: abbuchungCents / 100,
+          guthaben_eur: verr.guthaben_cents / 100
+        };
+      }
+
+      // SEPA-Einzug nur über die Differenz (falls > 0)
+      if (abbuchungCents > 0) {
         try {
           const provider = await PaymentProviderFactory.getProvider(mitglied.dojo_id);
           if (provider && typeof provider.chargeSepaDirectDebit === 'function') {
-            const result = await provider.chargeSepaDirectDebit(
-              mitglied_id,
-              tarif.price_cents / 100,
-              beschreibung
-            );
+            const result = await provider.chargeSepaDirectDebit(mitglied_id, abbuchungCents / 100, beschreibung);
             if (result && (result.status === 'succeeded' || result.status === 'processing')) {
               await query(
                 `UPDATE offene_posten SET status = 'gebucht', gebucht_am = NOW(), stripe_payment_intent_id = ? WHERE id = ?`,
                 [result.payment_intent_id, offenerPostenId]
               );
-              zusatzInfo.lastschrift = 'Betrag wird automatisch per SEPA-Lastschrift eingezogen';
+              zusatzInfo.lastschrift = (verr.anrechenbar_cents > 0 ? `Differenz von ${(abbuchungCents / 100).toFixed(2)} € wird ` : 'Betrag wird ')
+                + 'automatisch per SEPA-Lastschrift eingezogen';
               zusatzInfo.stripe_status = result.status;
             } else {
               zusatzInfo.lastschrift = 'Karte erstellt — SEPA-Einzug konnte nicht sofort bestätigt werden, Betrag bleibt offen.';
@@ -472,7 +554,11 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
           zusatzInfo.lastschrift_fehler = true;
         }
       } else {
-        zusatzInfo.lastschrift = 'Betrag 0 € — kein Einzug nötig.';
+        // Nichts abzubuchen (komplett durch Pausenbeiträge gedeckt)
+        await query(`UPDATE offene_posten SET status = 'gebucht', gebucht_am = NOW() WHERE id = ?`, [offenerPostenId]);
+        zusatzInfo.lastschrift = verr.anrechenbar_cents > 0
+          ? 'Vollständig mit Pausenbeiträgen verrechnet — kein Einzug nötig.'
+          : 'Betrag 0 € — kein Einzug nötig.';
       }
     } else if (zahlungsart === 'rechnung') {
       // Rechnung erstellen
