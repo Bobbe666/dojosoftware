@@ -42,41 +42,131 @@ async function generateAndStoreContractPdf(mitgliedId, dojoId, vertragId) {
     if (!vorlagen.length) return null;
     const vorlage = vorlagen[0];
 
-    // Mitglied + Dojo-Daten laden
-    const [mitglieder] = await new Promise((res, rej) => db.query(
-      `SELECT m.*, d.dojoname, d.inhaber, d.strasse AS dojo_strasse, d.hausnummer AS dojo_hausnummer,
-              d.plz AS dojo_plz, d.ort AS dojo_ort, d.telefon AS dojo_telefon, d.email AS dojo_email
-       FROM mitglieder m LEFT JOIN dojo d ON m.dojo_id = d.id
-       WHERE m.mitglied_id = ?`, [mitgliedId], (e, r) => e ? rej(e) : res([r])
+    // Mitglied laden (PK ist mitglied_id)
+    const mitglieder = await new Promise((res, rej) => db.query(
+      `SELECT * FROM mitglieder WHERE mitglied_id = ?`, [mitgliedId], (e, r) => e ? rej(e) : res(r)
     ));
     if (!mitglieder.length) return null;
     const m = mitglieder[0];
+
+    // Dojo laden
+    const dojoRows = await new Promise((res, rej) => db.query(
+      `SELECT * FROM dojo WHERE id = ?`, [dojoId], (e, r) => e ? rej(e) : res(r)
+    ));
+    const dojo = dojoRows[0] || {};
 
     // Vertragsdaten laden
     const vertrag = vertragId
       ? await new Promise((res, rej) => db.query('SELECT * FROM vertraege WHERE id = ?', [vertragId], (e, r) => e ? rej(e) : res(r[0] || null)))
       : null;
 
-    // Platzhalter ersetzen
-    function replacePh(html) {
-      if (!html) return '';
-      let r = html;
-      r = r.replace(/\{\{system\.datum\}\}/g, new Date().toLocaleDateString('de-DE'));
+    // SEPA-Gläubiger-ID (falls Mandat vorhanden)
+    let glaeubigerId = '';
+    try {
+      const mand = await new Promise((res, rej) => db.query(
+        'SELECT glaeubiger_id FROM sepa_mandate WHERE mitglied_id = ? ORDER BY id DESC LIMIT 1',
+        [mitgliedId], (e, r) => e ? rej(e) : res(r)
+      ));
+      glaeubigerId = mand[0]?.glaeubiger_id || '';
+    } catch (_) { /* Mandat optional */ }
+
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '';
+    const anredeMap = { m: 'Herr', w: 'Frau', d: '' };
+    const mitgliedsnr = m.mitgliedsnummer || m.mitglied_id;
+
+    // Kanonisches Platzhalter-Mapping (deckungsgleich mit dem Vorschau-Pfad in
+    // routes/vertragsvorlagen.js: {{kategorie.feld}} + {{feld}} + Alias-Platzhalter).
+    const data = {
+      mitglied: {
+        vorname: m.vorname || '', nachname: m.nachname || '', email: m.email || '',
+        telefon: m.telefon || m.telefon_mobil || '', strasse: m.strasse || '', hausnummer: m.hausnummer || '',
+        plz: m.plz || '', ort: m.ort || '', geburtsdatum: fmtDate(m.geburtsdatum),
+        mitgliedsnummer: mitgliedsnr,
+      },
+      vertrag: vertrag ? {
+        vertragsnummer: vertrag.vertragsnummer || `V-${vertrag.id}`,
+        vertragsbeginn: fmtDate(vertrag.vertragsbeginn), vertragsende: fmtDate(vertrag.vertragsende),
+        monatsbeitrag: vertrag.monatsbeitrag || '0.00',
+        mindestlaufzeit_monate: vertrag.mindestlaufzeit_monate || '0',
+        kuendigungsfrist_monate: vertrag.kuendigungsfrist_monate || '0',
+        tarifname: vertrag.tarifname || '',
+      } : { vertragsnummer: '', vertragsbeginn: '', vertragsende: '', monatsbeitrag: '', mindestlaufzeit_monate: '', kuendigungsfrist_monate: '', tarifname: '' },
+      dojo: {
+        dojoname: dojo.dojoname || '', strasse: dojo.strasse || '', hausnummer: dojo.hausnummer || '',
+        plz: dojo.plz || '', ort: dojo.ort || '', telefon: dojo.telefon || '', email: dojo.email || '', internet: dojo.internet || '',
+      },
+      system: {
+        datum: new Date().toLocaleDateString('de-DE'),
+        jahr: new Date().getFullYear().toString(),
+        monat: (new Date().getMonth() + 1).toString().padStart(2, '0'),
+      },
+    };
+
+    const aliases = {
+      mitglied_id: mitgliedsnr,
+      anrede: anredeMap[(m.geschlecht || '').toLowerCase()] ?? '',
+      mobil: m.telefon || m.telefon_mobil || '',
+      dojo_name: data.dojo.dojoname,
+      dojo_adresse: `${data.dojo.strasse} ${data.dojo.hausnummer}, ${data.dojo.plz} ${data.dojo.ort}`.trim(),
+      dojo_kontakt: `Tel: ${data.dojo.telefon} | E-Mail: ${data.dojo.email}`,
+      tarif_name: data.vertrag.tarifname,
+      betrag: data.vertrag.monatsbeitrag,
+      aufnahmegebuehr: '0.00',
+      mindestlaufzeit: `${data.vertrag.mindestlaufzeit_monate} Monate`,
+      nutzungsbeginn: data.vertrag.vertragsbeginn,
+      vertragsverlaengerung: '1 Monat',
+      kuendigungsfrist: `${data.vertrag.kuendigungsfrist_monate} Monate`,
+      zahlweise: 'monatlich',
+      zahlungsdienstleister: data.dojo.dojoname,
+      glaeubiger_id: glaeubigerId,
+      kontoinhaber: m.kontoinhaber || `${m.vorname} ${m.nachname}`,
+      kreditinstitut: m.bankname || '',
+      bic: m.bic || '',
+      iban: m.iban || '',
+      sepa_referenz: vertrag?.vertragsnummer || '',
+      zahlungstermine: '',
+    };
+
+    function replacePh(tpl) {
+      let r = tpl || '';
       r = r.replace(/\{\{system\.uhrzeit\}\}/g, new Date().toLocaleTimeString('de-DE'));
-      Object.entries(m).forEach(([k, v]) => {
-        r = r.replace(new RegExp(`\\{\\{mitglied\\.${k}\\}\\}`, 'g'), v ?? '');
-        r = r.replace(new RegExp(`\\{\\{dojo\\.${k.replace(/^dojo_/,'')}\\}\\}`, 'g'), v ?? '');
+      Object.entries(data).forEach(([cat, vals]) => {
+        Object.entries(vals).forEach(([key, value]) => {
+          r = r.replace(new RegExp(`\\{\\{${cat}\\.${key}\\}\\}`, 'g'), value ?? '');
+          r = r.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value ?? '');
+        });
       });
-      if (vertrag) Object.entries(vertrag).forEach(([k, v]) => {
-        r = r.replace(new RegExp(`\\{\\{vertrag\\.${k}\\}\\}`, 'g'), v ?? '');
+      Object.entries(aliases).forEach(([ph, value]) => {
+        r = r.replace(new RegExp(`\\{\\{${ph}\\}\\}`, 'g'), value ?? '');
       });
       return r;
+    }
+
+    // Logo laden + in logo-placeholder einsetzen
+    let logoBase64 = null;
+    try {
+      const logos = await new Promise((res, rej) => db.query(
+        "SELECT file_path, mime_type FROM dojo_logos WHERE dojo_id = ? AND logo_type = 'haupt' LIMIT 1",
+        [dojoId], (e, r) => e ? rej(e) : res(r)
+      ));
+      if (logos.length && fs.existsSync(logos[0].file_path)) {
+        logoBase64 = `data:${logos[0].mime_type || 'image/png'};base64,${fs.readFileSync(logos[0].file_path).toString('base64')}`;
+      }
+    } catch (_) { /* Logo optional */ }
+
+    let bodyHtml = replacePh(vorlage.grapesjs_html || vorlage.tiptap_html || '');
+    if (logoBase64) {
+      const logoImg = `<img src="${logoBase64}" alt="Logo" style="width:100%;height:100%;object-fit:contain;" />`;
+      bodyHtml = bodyHtml.replace(
+        /<div[^>]*class="[^"]*logo-placeholder[^"]*"[^>]*>[\s\S]*?<\/div>/g,
+        (match) => match.replace(/>[\s\S]*?<\/div>/, `>${logoImg}</div>`)
+      );
     }
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
       ${replacePh(vorlage.grapesjs_css || '')}
       body{font-family:Arial,sans-serif;padding:20px;}@page{margin:2cm;}
-    </style></head><body>${replacePh(vorlage.grapesjs_html || vorlage.tiptap_html || '')}</body></html>`;
+    </style></head><body>${bodyHtml}</body></html>`;
 
     // PDF mit Puppeteer
     const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox','--disable-setuid-sandbox'] });
@@ -1888,13 +1978,13 @@ router.post('/mitglied-anlegen', async (req, res) => {
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
               <h2 style="color:#1a1a2e;">Willkommen, ${vorname}!</h2>
               <p>Vielen Dank für Ihre Registrierung bei <strong>${dojoName}</strong>.</p>
-              <p>Ihre Mitgliedsnummer lautet: <strong>${mitgliedsnummer}</strong></p>
+              <p>Ihre Mitgliedsnummer lautet: <strong>${mitgliedsnummer || newMitgliedId}</strong></p>
               ${pdfBuffer ? '<p>Im Anhang finden Sie Ihren unterzeichneten Mitgliedsvertrag als PDF.</p>' : ''}
               <p>Bei Fragen wenden Sie sich gerne an uns.</p>
               <p style="margin-top:2rem;">Mit freundlichen Grüßen,<br>${dojoName}</p>
             </div>
           `,
-          text: `Willkommen ${vorname}! Ihre Mitgliedsnummer: ${mitgliedsnummer}. ${pdfBuffer ? 'Mitgliedsvertrag im Anhang.' : ''}`,
+          text: `Willkommen ${vorname}! Ihre Mitgliedsnummer: ${mitgliedsnummer || newMitgliedId}. ${pdfBuffer ? 'Mitgliedsvertrag im Anhang.' : ''}`,
           attachments: pdfBuffer ? [{
             filename: 'Mitgliedsvertrag.pdf',
             content: pdfBuffer,
