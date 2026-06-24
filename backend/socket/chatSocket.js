@@ -249,7 +249,10 @@ module.exports = function initChatSocket(io) {
     // ── Nachricht senden ──────────────────────────────────────────────────────
     socket.on('chat:message', async ({ room_id, content }, callback) => {
       try {
-        if (!content || !content.trim()) return;
+        if (!content || !content.trim()) {
+          if (typeof callback === 'function') callback({ success: false, error: 'Leerer Nachrichteninhalt' });
+          return;
+        }
 
         // 🔒 Zugriff, Raumtyp + Dojo-Isolation prüfen
         // Super-Admin (dojo_id=null) darf in alle Räume schreiben
@@ -260,8 +263,14 @@ module.exports = function initChatSocket(io) {
              AND (r.dojo_id = ? OR ? IS NULL)`,
           [room_id, sender_id, sender_type, dojo_id, dojo_id]
         );
-        if (!access[0]) return;
-        if (access[0].type === 'announcement' && sender_type === 'mitglied') return;
+        if (!access[0]) {
+          if (typeof callback === 'function') callback({ success: false, error: 'Kein Zugriff auf diesen Raum' });
+          return;
+        }
+        if (access[0].type === 'announcement' && sender_type === 'mitglied') {
+          if (typeof callback === 'function') callback({ success: false, error: 'Mitglieder können in Ankündigungen nicht schreiben' });
+          return;
+        }
 
         // In DB speichern
         const [result] = await pool.query(

@@ -47,7 +47,8 @@ export default function ChatThread({ room, onBack, onMessageSent }) {
 
     const handleMsg = (msg) => {
       if (msg.room_id === room.id) {
-        setMessages(prev => [...prev, msg])
+        // Dedupe per id (Nachricht kann via REST-Antwort UND Socket-Broadcast kommen)
+        setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
         // Als gelesen markieren
         socket.emit('chat:read', { room_id: room.id })
       }
@@ -76,21 +77,23 @@ export default function ChatThread({ room, onBack, onMessageSent }) {
   }, [messages])
 
   const handleSend = (text) => {
-    const socket = getSocket()
-    socket.emit('chat:message', { room_id: room.id, content: text }, (ack) => {
-      if (ack?.success) {
-        // Socket-Event kommt über 'chat:message' zurück → wird oben hinzugefügt
-      } else {
-        // Fallback: REST
-        api.post(`/chat/rooms/${room.id}/messages`, { content: text })
-          .then(r => {
-            setMessages(prev => [...prev, r.data])
-            onMessageSent?.({ room_id: room.id, content: text, sent_at: new Date().toISOString() })
-          })
-          .catch(() => {})
-      }
-    })
-    onMessageSent?.({ room_id: room.id, content: text, sent_at: new Date().toISOString() })
+    // Zuverlässig per REST senden (persistiert + broadcastet serverseitig).
+    // Der Server schickt die Nachricht via Socket an den Raum zurück (inkl. Absender),
+    // daher hier nur ergänzen, falls noch nicht vorhanden (Dedupe per id).
+    // Kein Socket-Ack-Pfad mehr: bei fehlender Socket-Verbindung ging die Nachricht
+    // sonst lautlos verloren, weil der REST-Fallback im nie feuernden Ack-Callback steckte.
+    api.post(`/chat/rooms/${room.id}/messages`, { content: text })
+      .then(r => {
+        const msg = r.data?.message || r.data
+        if (msg && msg.id) {
+          setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
+        }
+        onMessageSent?.({ room_id: room.id, content: text, sent_at: new Date().toISOString() })
+      })
+      .catch(err => {
+        const m = err?.response?.data?.message || 'Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.'
+        alert('⚠️ ' + m)
+      })
   }
 
   const isMine = (msg) =>
