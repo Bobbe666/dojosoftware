@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // Sichtbarer Build-Stempel (zur Verifikation, welche Version geladen ist)
+  define: {
+    __BUILD__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')),
+  },
   plugins: [
     react(),
     VitePWA({

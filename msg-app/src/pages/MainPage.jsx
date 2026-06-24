@@ -168,6 +168,7 @@ export default function MainPage() {
         <div className="list-header">
           <div className="list-header-left">
             <span className="app-name">💬 Dojo MSG</span>
+            <span style={{ fontSize: '0.6rem', opacity: 0.45, marginLeft: 6 }} title="Build-Stand">{typeof __BUILD__ !== 'undefined' ? __BUILD__ : ''}</span>
           </div>
           <div className="header-actions">
             <button className="btn-new-chat" onClick={() => setShowNewRoom(true)} title="Neues Gespräch">✏️</button>
