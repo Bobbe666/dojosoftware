@@ -9,6 +9,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const db = require('../db');
 const { generateAndStoreContractPdf } = require('../routes/public-registration');
 const { sendEmailForDojo } = require('../services/emailService');
+const { buildWelcomeContractMail } = require('../services/welcomeContractMail');
 
 const q = (sql, p = []) => new Promise((res, rej) => db.query(sql, p, (e, r) => e ? rej(e) : res(r)));
 
@@ -36,19 +37,12 @@ const q = (sql, p = []) => new Promise((res, rej) => db.query(sql, p, (e, r) => 
   if (!pdfBuffer) { console.error('PDF-Erzeugung fehlgeschlagen (keine aktive Vorlage oder Fehler)'); process.exit(1); }
   console.log(`  PDF erzeugt (${pdfBuffer.length} Bytes)`);
 
+  const mail = await buildWelcomeContractMail({ mitglied: m, dojoName, korrigiert: true });
   await sendEmailForDojo({
     to: empfaenger,
-    subject: `Willkommen bei ${dojoName} – Ihr Mitgliedsvertrag`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-      <h2 style="color:#1a1a2e;">Willkommen, ${m.vorname}!</h2>
-      <p>Vielen Dank für Ihre Registrierung bei <strong>${dojoName}</strong>.</p>
-      <p>Ihre Mitgliedsnummer lautet: <strong>${m.mitgliedsnummer || m.mitglied_id}</strong></p>
-      <p>Im Anhang finden Sie Ihren Mitgliedsvertrag als PDF. Eine zuvor versandte Version enthielt
-         versehentlich Platzhalter – bitte verwenden Sie diese korrigierte Fassung.</p>
-      <p>Bei Fragen wenden Sie sich gerne an uns.</p>
-      <p style="margin-top:2rem;">Mit freundlichen Grüßen,<br>${dojoName}</p>
-    </div>`,
-    text: `Willkommen ${m.vorname}! Ihre Mitgliedsnummer: ${m.mitgliedsnummer || m.mitglied_id}. Mitgliedsvertrag (korrigiert) im Anhang.`,
+    subject: mail.subject,
+    html: mail.html,
+    text: mail.text,
     attachments: [{ filename: 'Mitgliedsvertrag.pdf', content: pdfBuffer, contentType: 'application/pdf' }],
   }, m.dojo_id);
 

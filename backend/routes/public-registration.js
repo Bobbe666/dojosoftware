@@ -1897,27 +1897,20 @@ router.post('/mitglied-anlegen', async (req, res) => {
         ));
         const dojoName = dojoRows[0]?.dojoname || 'Ihr Dojo';
 
-        const emailOpts = {
+        // Zentrales Dojo-Mail-Layout (wie Zugangsdaten-Mail)
+        const { buildWelcomeContractMail } = require('../services/welcomeContractMail');
+        const mail = await buildWelcomeContractMail({
+          mitglied: { vorname, mitgliedsnummer: mitgliedsnummer || newMitgliedId, mitglied_id: newMitgliedId, dojo_id },
+          dojoName,
+          korrigiert: false,
+        });
+        await sendEmailForDojo({
           to: email,
-          subject: `Willkommen bei ${dojoName} – Ihre Mitgliedschaft ist bestätigt`,
-          html: `
-            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-              <h2 style="color:#1a1a2e;">Willkommen, ${vorname}!</h2>
-              <p>Vielen Dank für Ihre Registrierung bei <strong>${dojoName}</strong>.</p>
-              <p>Ihre Mitgliedsnummer lautet: <strong>${mitgliedsnummer || newMitgliedId}</strong></p>
-              ${pdfBuffer ? '<p>Im Anhang finden Sie Ihren unterzeichneten Mitgliedsvertrag als PDF.</p>' : ''}
-              <p>Bei Fragen wenden Sie sich gerne an uns.</p>
-              <p style="margin-top:2rem;">Mit freundlichen Grüßen,<br>${dojoName}</p>
-            </div>
-          `,
-          text: `Willkommen ${vorname}! Ihre Mitgliedsnummer: ${mitgliedsnummer || newMitgliedId}. ${pdfBuffer ? 'Mitgliedsvertrag im Anhang.' : ''}`,
-          attachments: pdfBuffer ? [{
-            filename: 'Mitgliedsvertrag.pdf',
-            content: pdfBuffer,
-            contentType: 'application/pdf'
-          }] : []
-        };
-        await sendEmailForDojo(emailOpts, dojo_id);
+          subject: mail.subject,
+          html: mail.html,
+          text: mail.text,
+          attachments: pdfBuffer ? [{ filename: 'Mitgliedsvertrag.pdf', content: pdfBuffer, contentType: 'application/pdf' }] : [],
+        }, dojo_id);
       } catch (emailErr) {
         logger.warn('Willkommens-Email fehlgeschlagen', { error: emailErr.message, mitglied_id: newMitgliedId });
       }
