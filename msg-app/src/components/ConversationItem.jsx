@@ -12,6 +12,13 @@ export default function ConversationItem({ room, unread, active, timeStr, onClic
   const menuRef = useRef(null)
   const icon = TYPE_ICON[room.type] || '💬'
   const name = room.name || (room.type === 'direct' ? 'Direktnachricht' : 'Gespräch')
+  // Letzte Nachricht heute? → grüne Uhrzeit (wie im Chat der Haupt-Software)
+  const lastDate = room.last_message_at ? new Date(room.last_message_at) : null
+  const now = new Date()
+  const isToday = !!lastDate &&
+    lastDate.getFullYear() === now.getFullYear() &&
+    lastDate.getMonth() === now.getMonth() &&
+    lastDate.getDate() === now.getDate()
 
   useEffect(() => {
     if (!menuOpen) return
@@ -44,7 +51,7 @@ export default function ConversationItem({ room, unread, active, timeStr, onClic
             {room.pinned ? <span className="conv-pin-icon">📌</span> : null}
             {name}
           </span>
-          <span className="conv-item-time">{timeStr}</span>
+          <span className={`conv-item-time${isToday ? ' conv-item-time--today' : ''}`}>{timeStr}</span>
         </div>
         <div className="conv-item-row">
           <span className="conv-item-preview">{room.last_message || 'Noch keine Nachrichten'}</span>

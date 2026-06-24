@@ -110,9 +110,29 @@ export default function ChatThread({ room, onBack, onMessageSent }) {
           <div className="thread-no-messages">Noch keine Nachrichten. Schreibe die erste!</div>
         ) : (
           <>
-            {messages.map(msg => (
-              <MessageBubble key={msg.id} msg={msg} isMine={isMine(msg)} />
-            ))}
+            {messages.map((msg, index) => {
+              const d = new Date(msg.sent_at)
+              const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+              const prev = messages[index - 1] ? new Date(messages[index - 1].sent_at) : null
+              const prevKey = prev ? `${prev.getFullYear()}-${prev.getMonth()}-${prev.getDate()}` : null
+              const showSep = key !== prevKey
+              const today = new Date()
+              const isToday = d.getFullYear() === today.getFullYear() &&
+                d.getMonth() === today.getMonth() && d.getDate() === today.getDate()
+              const label = isToday
+                ? 'Heute'
+                : d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
+              return (
+                <React.Fragment key={msg.id}>
+                  {showSep && (
+                    <div className={`thread-date-sep${isToday ? ' thread-date-sep--today' : ''}`}>
+                      <span className="thread-date-sep-label">{label}</span>
+                    </div>
+                  )}
+                  <MessageBubble msg={msg} isMine={isMine(msg)} />
+                </React.Fragment>
+              )
+            })}
             <div ref={bottomRef} />
           </>
         )}

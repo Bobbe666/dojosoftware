@@ -168,8 +168,11 @@ html, body, #root {
 }
 .conv-item:hover { background: var(--bg-item-hover); }
 .conv-item--active { background: var(--bg-item-active) !important; }
-.conv-item--unread .conv-item-name { color: #fff; font-weight: 600; }
+.conv-item--unread .conv-item-name { color: #dc2626; font-weight: 700; }
 .conv-item--unread .conv-item-preview { color: var(--text-2); }
+/* Neu/ungelesen → rot, heute → grün (wie im Chat der Haupt-Software) */
+.conv-item--unread .conv-item-time { color: #dc2626; font-weight: 700; }
+.conv-item-time--today { color: #16a34a; font-weight: 700; }
 
 .conv-item-avatar {
   width: 46px; height: 46px; border-radius: 50%;
@@ -488,4 +491,29 @@ html, body, #root {
 /* Touch-Geräte: Aktionsbutton immer sichtbar */
 @media (hover: none) {
   .conv-action-btn { opacity: 1; }
+}
+
+/* ── Datumstrenner im Verlauf (Heute / Datum) ───────────────────────────────── */
+.thread-date-sep {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 8px;
+}
+.thread-date-sep-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 3px 12px;
+  border-radius: 999px;
+}
+/* Heute → rote Hervorhebung (wie „HEUTE" im Chat der Haupt-Software) */
+.thread-date-sep--today .thread-date-sep-label {
+  background: linear-gradient(135deg, #dc2626, #e63946);
+  border-color: #dc2626;
+  color: #fff;
 }
