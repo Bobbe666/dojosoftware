@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.83',
+    date: '2026-06-25',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Trainer-Bereich: Trainer können eigene Stunden selbst absagen, verlegen oder ändern',
+    description: 'Die Schnell-Ansage gibt es jetzt auch für Trainer – mit eigenem Login (ein Passwort für alle Apps). Trainer sehen ausschließlich ihre eigenen Stunden und zugewiesene Vertretungsstunden und können diese in Sekunden absagen oder verlegen; die Info erscheint sofort als Popup in der App und auf der Homepage und läuft automatisch ab. Bei jeder Änderung durch einen Trainer wird der Admin automatisch über drei Kanäle informiert: E-Mail, In-App-Benachrichtigung und eine interne Chat-Nachricht.',
+    highlights: [
+      '🥋 Eigener Trainer-Bereich mit Login (gewohnte Zugangsdaten)',
+      '🔒 Trainer können nur ihre eigenen Stunden + Vertretungsstunden ändern',
+      '📣 Absagen/Verlegen erscheint sofort in App & Homepage, läuft selbst ab',
+      '🔔 Admin wird bei jeder Trainer-Änderung per E-Mail, Push & Chat informiert',
+    ],
+    details: 'routes/schnellansage.js: /trainer (Login-Seite + Kachel-Dashboard), GET /meine-stunden (serverseitig auf erlaubte Kurse/Vertretungen gefiltert), POST /veroeffentlichen (Trainer-Guard). services/trainerAnsageNotify.js: 3-Kanal-Admin-Benachrichtigung. auth.js: trainer_id in Login/JWT. Trainer↔Kurs-Auflösung über trainer_ids (JSON), Trainer-Login via Name/E-Mail aufgelöst (dojo-übergreifend).',
+    files: ['backend/routes/schnellansage.js', 'backend/services/trainerAnsageNotify.js', 'backend/routes/auth.js'],
+  },
+  {
     version: '3.0.82',
     date: '2026-06-23',
     type: 'improvement',
