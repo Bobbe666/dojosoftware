@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.88',
+    date: '2026-06-26',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Pilot-Partner: Status „Gewonnen" heißt jetzt „Angenommen" + E-Mail-Versand repariert',
+    description: 'Der Pilot-Bewerbungsstatus wird in der Verwaltung als „Angenommen" angezeigt (Wortlaut statt „Gewonnen"; interner Wert unverändert). Zusätzlich: Der globale E-Mail-Versand (u.a. Pilot-Statusmails) lief noch über die alte, geblockte alfahosting-Konfiguration in notification_settings und schlug fehl — jetzt auf Brevo (info@tda-intl.com) umgestellt.',
+    highlights: [
+      '🏷️ „Gewonnen" → „Angenommen" im Pilot-Bewerbungs-Status',
+      '📧 Pilot-Status-Mails (und weitere globale Mails) gehen wieder raus (Brevo statt alfahosting)',
+    ],
+    details: 'PilotBewerbungen.jsx STATUS_META.gewonnen.label → „Angenommen" (Key bleibt „gewonnen"). DB-Fix: notification_settings.email_config (id=1) von alfa3085.alfahosting-server.de:465 auf smtp-relay.brevo.com:587 + default_from_email info@tda-intl.com umgestellt — getEmailSettings() nutzt diese Tabelle.',
+    files: ['frontend/src/components/PilotBewerbungen.jsx'],
+  },
+  {
     version: '3.0.87',
     date: '2026-06-26',
     type: 'bugfix',

@@ -7,7 +7,7 @@ import '../styles/PilotBewerbungen.css';
 const STATUS_META = {
   neu:         { label: 'Neu',         color: '#3b82f6', icon: '🆕' },
   in_pruefung: { label: 'In Prüfung',  color: '#f59e0b', icon: '🔍' },
-  gewonnen:    { label: 'Gewonnen',    color: '#22c55e', icon: '🏆' },
+  gewonnen:    { label: 'Angenommen',  color: '#22c55e', icon: '🏆' },
   abgelehnt:   { label: 'Abgelehnt',   color: '#ef4444', icon: '✖' },
 };
 
