@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.87',
+    date: '2026-06-26',
+    type: 'bugfix',
+    zielgruppe: 'intern',
+    title: 'Prüfungsergebnisse-Modal: Einstellungs-Eingabefelder ans Dark-Theme angepasst',
+    description: 'Im Einstellungen-Panel des Batch-Modals waren die Eingabefelder (Bestanden ab, Max. Punkte pro Item, Punkteschritte) ungestylt und weiß. Sie haben jetzt dunklen Hintergrund, Rahmen und Fokus-Stil passend zum Rest.',
+    highlights: ['🎨 Einstellungs-Inputs im Prüfungsergebnis-Modal nicht mehr weiß'],
+    details: 'PruefungsVerwaltung.css: CSS für .pv3-bm-settings-panel/-grid/-label/-input/-select ergänzt (fehlte komplett → Browser-Defaults).',
+    files: ['frontend/src/styles/PruefungsVerwaltung.css'],
+  },
+  {
     version: '3.0.86',
     date: '2026-06-26',
     type: 'bugfix',
