@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.86',
+    date: '2026-06-26',
+    type: 'bugfix',
+    zielgruppe: 'intern',
+    title: 'Prüfungsergebnisse-Modal: durchsichtiger Footer behoben',
+    description: 'Im Batch-Modal „Prüfungsergebnisse eintragen" war die Fußleiste (Abbrechen/Speichern) fast durchsichtig, sodass die Teilnehmer-Karten (Punkt/Kommentar) durchschienen. Footer hat jetzt einen opaken Hintergrund.',
+    highlights: ['🩹 Footer im Prüfungsergebnis-Modal nicht mehr durchsichtig'],
+    details: 'PruefungsVerwaltung.css .pv3-bm-sticky-actions: background var(--surface-2) (≈transparent, ohne Fallback) → var(--surface-1, #12121e) wie der Modal-Hintergrund.',
+    files: ['frontend/src/styles/PruefungsVerwaltung.css'],
+  },
+  {
     version: '3.0.85',
     date: '2026-06-26',
     type: 'improvement',

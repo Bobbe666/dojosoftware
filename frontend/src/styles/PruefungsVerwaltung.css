@@ -4001,7 +4001,9 @@ h4.pv3-grad-card-name {
   position: sticky; bottom: 0;
   display: flex; justify-content: flex-end; gap: 0.75rem;
   padding: 0.9rem 1.25rem;
-  background: var(--surface-2);
+  /* Opaker Hintergrund (wie Modal-bg) — var(--surface-2) ist fast transparent,
+     dadurch schienen vorher die Karten/Eingabefelder durch den Footer. */
+  background: var(--surface-1, #12121e);
   border-top: 1px solid var(--border-default);
   margin: 0 -1.5rem -1.5rem;
   border-radius: 0 0 var(--comp-radius-lg) var(--comp-radius-lg);
