@@ -1330,12 +1330,6 @@ export default function VerbandUrkundenRegister() {
         const isKB      = u.art === 'kickboxen_schuelergrad';
         const isAikido  = u.art === 'aikido_schuelergrad';
         const isShieldX = u.art === 'shieldx';
-        const examiner  = (() => {
-          const p = u.pruefer
-            ? (typeof u.pruefer === 'string' ? (() => { try { return JSON.parse(u.pruefer); } catch { return [u.pruefer]; } })() : u.pruefer)
-            : [];
-          return (Array.isArray(p) ? p : [p]).filter(Boolean).join(', ') || (u.ausgestellt_von || '');
-        })();
 
         return (
           <div className="ur-overlay" onClick={() => setPreviewEntry(null)}>
@@ -1432,27 +1426,21 @@ export default function VerbandUrkundenRegister() {
                       {name}
                     </div>
                     {/* Rang über "RANK / TITLE" */}
-                    <div style={{ position: 'absolute', top: '67.1%', left: '6.1%', width: '67.3%', textAlign: 'center',
+                    <div style={{ position: 'absolute', top: '65.2%', left: '6.1%', width: '67.3%', textAlign: 'center',
                       fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: 'italic', fontSize: 'clamp(8pt,2.1vw,16pt)', color: '#1a1a1a' }}>
                       {grad || <em style={{ opacity: 0.4 }}>Grad nicht angegeben</em>}
                     </div>
-                    {/* CertNr / Date / Examiner — rechte Spalte */}
+                    {/* CertNr / Date — rechte Spalte */}
                     {nr && (
-                      <div style={{ position: 'absolute', top: '38.6%', left: '76.1%', width: '20.2%', textAlign: 'center',
+                      <div style={{ position: 'absolute', top: '40%', left: '76.1%', width: '20.2%', textAlign: 'center',
                         fontFamily: 'Georgia, serif', fontSize: 'clamp(6pt,1.2vw,9pt)', color: '#1a1a1a', letterSpacing: '0.5px' }}>
                         {nr}
                       </div>
                     )}
-                    <div style={{ position: 'absolute', top: '47.1%', left: '76.1%', width: '20.2%', textAlign: 'center',
+                    <div style={{ position: 'absolute', top: '48.6%', left: '76.1%', width: '20.2%', textAlign: 'center',
                       fontFamily: 'Georgia, serif', fontSize: 'clamp(6pt,1.2vw,9pt)', color: '#1a1a1a' }}>
                       {datum}
                     </div>
-                    {examiner && (
-                      <div style={{ position: 'absolute', top: '61.4%', left: '76.1%', width: '20.2%', textAlign: 'center',
-                        fontFamily: 'Georgia, serif', fontSize: 'clamp(6pt,1.2vw,9pt)', color: '#1a1a1a' }}>
-                        {examiner}
-                      </div>
-                    )}
                   </div>
                 )}
 

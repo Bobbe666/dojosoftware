@@ -103,12 +103,11 @@ const VORLAGEN_CONFIG = {
     // links und 89,9 / 107,8 / 137,6 mm rechts). Texte sitzen knapp über den Linien.
     styles: `
       .cert-name { position:absolute;top:100mm;left:18mm;width:200mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:23pt;font-style:italic;color:#1a1a1a; }
-      .cert-rank { position:absolute;top:141mm;left:18mm;width:200mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:21pt;font-style:italic;color:#1a1a1a; }
-      .cert-nummer { position:absolute;top:81mm;left:226mm;width:60mm;text-align:center;font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a;letter-spacing:0.5px; }
-      .cert-datum { position:absolute;top:99mm;left:226mm;width:60mm;text-align:center;font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a; }
-      .cert-examiner { position:absolute;top:129mm;left:226mm;width:60mm;text-align:center;font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a; }
+      .cert-rank { position:absolute;top:137mm;left:18mm;width:200mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:21pt;font-style:italic;color:#1a1a1a; }
+      .cert-nummer { position:absolute;top:84mm;left:226mm;width:60mm;text-align:center;font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a;letter-spacing:0.5px; }
+      .cert-datum { position:absolute;top:102mm;left:226mm;width:60mm;text-align:center;font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a; }
     `,
-    renderNr: true, renderDatum: true, renderExaminer: true,
+    renderNr: true, renderDatum: true,
   },
 };
 
