@@ -8,8 +8,14 @@ const router  = express.Router();
 const db      = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { sendEmail } = require('../services/emailService');
+const { renderEmail, DEFAULT_THEME } = require('../services/emailLayout');
 
 const pool = db.promise();
+
+// Zentrales Mail-Layout (allgemeiner TDA-Header) für alle Pilot-Mails
+const PILOT_THEME = { ...DEFAULT_THEME, dojoName: 'TDA International' };
+const pilotHtml = (bodyHtml, titel = 'TDA Pilot-Partner-Programm') =>
+  renderEmail({ theme: PILOT_THEME, anlass: 'allgemein', titel, bodyHtml });
 
 // Super-Admin Guard (wie demo-termine.js)
 function onlySuperAdmin(req, res, next) {
@@ -82,7 +88,7 @@ async function sendAdminBenachrichtigung(b) {
     to: 'info@tda-intl.com',
     subject: `🏆 Neue Pilot-Bewerbung: ${b.schulname}`,
     text,
-    html,
+    html: pilotHtml(html, 'Neue Pilot-Bewerbung'),
     replyTo: b.email
   });
 }
@@ -108,7 +114,7 @@ async function sendBewerberBestaetigung(b) {
     to: b.email,
     subject: 'Deine Pilot-Partner-Bewerbung ist eingegangen 🏆',
     text,
-    html,
+    html: pilotHtml(html),
     replyTo: 'info@tda-intl.com'
   });
 }
@@ -346,11 +352,12 @@ router.put('/admin/:id', authenticateToken, onlySuperAdmin, async (req, res) => 
             `Wir schauen uns jede Bewerbung persönlich an und melden uns, sobald die ` +
             `Entscheidung gefallen ist.\n\n` +
             `Viele Grüße\nTDA International`,
-          html:
+          html: pilotHtml(
             `<p>Hallo <strong>${esc(b.ansprechpartner)}</strong>,</p>` +
             `<p>gute Nachrichten: Eure Bewerbung für <strong>„${esc(b.schulname)}"</strong> ist bei uns angekommen und befindet sich jetzt <strong>in der Prüfung</strong>. 🔍</p>` +
             `<p>Wir schauen uns jede Bewerbung persönlich an und melden uns, sobald die Entscheidung gefallen ist.</p>` +
-            `<p>Viele Grüße<br><strong>TDA International</strong></p>`,
+            `<p>Viele Grüße<br><strong>TDA International</strong></p>`
+          ),
           replyTo: 'info@tda-intl.com'
         }).catch(err => console.error('[Pilot-Bewerbung] In-Prüfung-Mail-Fehler:', err.message));
       }
@@ -370,7 +377,7 @@ router.put('/admin/:id', authenticateToken, onlySuperAdmin, async (req, res) => 
             `Von Zeit zu Zeit schicken wir euch außerdem einen kurzen Fragebogen (2 Minuten), ` +
             `damit wir die Software gemeinsam mit euch noch besser machen.\n\n` +
             `Willkommen an Bord!\nTDA International`,
-          html:
+          html: pilotHtml(
             `<p>Hallo <strong>${esc(b.ansprechpartner)}</strong>,</p>` +
             `<p>wir freuen uns riesig: <strong>„${esc(b.schulname)}"</strong> ist unser neuer <strong>Pilot-Partner</strong>! 🏆</p>` +
             `<p><strong>Das erwartet euch jetzt:</strong></p>` +
@@ -380,7 +387,8 @@ router.put('/admin/:id', authenticateToken, onlySuperAdmin, async (req, res) => 
             `<li>Übernahme eurer bestehenden Daten</li>` +
             `</ul>` +
             `<p>Wir melden uns in den nächsten Tagen persönlich bei euch, um den Start zu planen. Von Zeit zu Zeit schicken wir euch außerdem einen kurzen Fragebogen (2 Minuten), damit wir die Software gemeinsam mit euch noch besser machen.</p>` +
-            `<p>Willkommen an Bord!<br><strong>TDA International</strong></p>`,
+            `<p>Willkommen an Bord!<br><strong>TDA International</strong></p>`
+          ),
           replyTo: 'info@tda-intl.com'
         }).catch(err => console.error('[Pilot-Bewerbung] Gewonnen-Mail-Fehler:', err.message));
       }
@@ -399,12 +407,13 @@ router.put('/admin/:id', authenticateToken, onlySuperAdmin, async (req, res) => 
             `Ihr könnt die DojoSoftware natürlich trotzdem jederzeit 14 Tage kostenlos testen — ` +
             `meldet euch gern bei uns.\n\n` +
             `Sportliche Grüße\nTDA International`,
-          html:
+          html: pilotHtml(
             `<p>Hallo <strong>${esc(b.ansprechpartner)}</strong>,</p>` +
             `<p>vielen Dank für euer Interesse am TDA Pilot-Partner-Programm und die Mühe, die ihr euch mit der Bewerbung für <strong>„${esc(b.schulname)}"</strong> gemacht habt.</p>` +
             `<p>Wir können pro Monat leider nur eine Schule als Pilot-Partner aufnehmen — dieses Mal ist die Wahl auf eine andere Schule gefallen. Das ist keine Wertung eurer Schule!</p>` +
             `<p>Ihr könnt die DojoSoftware natürlich trotzdem jederzeit <strong>14 Tage kostenlos testen</strong> — meldet euch gern bei uns.</p>` +
-            `<p>Sportliche Grüße<br><strong>TDA International</strong></p>`,
+            `<p>Sportliche Grüße<br><strong>TDA International</strong></p>`
+          ),
           replyTo: 'info@tda-intl.com'
         }).catch(err => console.error('[Pilot-Bewerbung] Abgelehnt-Mail-Fehler:', err.message));
       }
