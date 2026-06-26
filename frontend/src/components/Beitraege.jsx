@@ -385,6 +385,9 @@ const Beitraege = () => {
                         <div className="meta">
                           {kuendigung.vertragsnummer} · Kündigung: {formatDate(kuendigung.kuendigungsdatum)}
                         </div>
+                        {kuendigung.kuendigung_eingegangen && (
+                          <div className="meta">Eingegeben am: {formatDate(kuendigung.kuendigung_eingegangen)}</div>
+                        )}
                         {kuendigung.kuendigungsgrund && (
                           <div className="meta">Grund: {kuendigung.kuendigungsgrund}</div>
                         )}

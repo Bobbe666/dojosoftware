@@ -287,7 +287,12 @@ router.get("/all", (req, res) => {
             m.trainingsstunden,
             COALESCE(GROUP_CONCAT(DISTINCT ms.stil ORDER BY ms.stil SEPARATOR ', '), '') AS stile,
             -- Foto
-            m.foto_pfad
+            m.foto_pfad,
+            -- 🆕 Vertrags-/Kündigungsdaten (relevanter Vertrag: aktiver bevorzugt, sonst neuester)
+            (SELECT v.status            FROM vertraege v WHERE v.mitglied_id = m.mitglied_id ORDER BY (v.status='aktiv') DESC, v.id DESC LIMIT 1) AS vertrag_status,
+            (SELECT v.vertragsende       FROM vertraege v WHERE v.mitglied_id = m.mitglied_id ORDER BY (v.status='aktiv') DESC, v.id DESC LIMIT 1) AS vertrag_ende,
+            (SELECT v.kuendigung_eingegangen FROM vertraege v WHERE v.mitglied_id = m.mitglied_id ORDER BY (v.status='aktiv') DESC, v.id DESC LIMIT 1) AS kuendigung_eingegangen,
+            (SELECT v.kuendigungsdatum    FROM vertraege v WHERE v.mitglied_id = m.mitglied_id ORDER BY (v.status='aktiv') DESC, v.id DESC LIMIT 1) AS kuendigungsdatum
         FROM mitglieder m
         LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
         LEFT JOIN graduierungen g ON m.graduierung_id = g.graduierung_id

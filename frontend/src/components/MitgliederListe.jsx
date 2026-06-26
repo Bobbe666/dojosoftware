@@ -236,6 +236,18 @@ const MemberCard = React.memo(({
         </div>
         {/* Alter */}
         {age > 0 && <div className="ml-card-alter">{age} J.</div>}
+        {/* Gekündigt-Hinweis mit Datum (eingegeben am, sonst wirksam zum) */}
+        {(mitglied.vertrag_status === 'gekuendigt' || mitglied.vertrag_status === 'beendet') && (
+          <div
+            style={{ marginTop: 4, fontSize: '11px', fontWeight: 600, color: '#f87171', display: 'flex', alignItems: 'center', gap: 4 }}
+            title="Vertrag gekündigt"
+          >
+            🚫 Gekündigt
+            {(mitglied.kuendigung_eingegangen || mitglied.kuendigungsdatum)
+              ? ` · ${new Date(mitglied.kuendigung_eingegangen || mitglied.kuendigungsdatum).toLocaleDateString('de-DE')}`
+              : ''}
+          </div>
+        )}
       </div>
     </div>
   );

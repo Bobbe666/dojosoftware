@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.85',
+    date: '2026-06-26',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Kündigungs-Datum sichtbar: Mitgliederliste, Monatsbericht & Detail',
+    description: 'Gekündigte Mitglieder sind jetzt direkt in der Mitgliederliste mit Hinweis und Kündigungsdatum erkennbar (das repariert nebenbei den Vertrags-Filter „Gekündigt"). Der Monatsbericht in Beiträge funktioniert wieder und zeigt bei jeder Kündigung zusätzlich, wann sie eingegeben wurde. Im Mitglied-Detail (Reiter Mitgliedschaft) wird das Eingangsdatum wie gehabt angezeigt.',
+    highlights: [
+      '🚫 „Gekündigt"-Hinweis mit Datum direkt auf der Mitglieder-Karte',
+      '🔧 Vertrags-Filter „Gekündigt/Beendet" funktioniert wieder',
+      '📊 Monatsbericht (Beiträge) wieder funktionsfähig – inkl. „Eingegeben am" pro Kündigung',
+    ],
+    details: 'mitglieder.js /all: Korrelierte Subqueries liefern vertrag_status, vertrag_ende, kuendigung_eingegangen, kuendigungsdatum (relevanter Vertrag: aktiver bevorzugt, sonst neuester). MitgliederListe.jsx: Gekündigt-Badge mit Datum. Neuer Endpoint routes/monatsreport.js (war 404) liefert Umsätze (verkaeufe + bezahlte rechnungen), neue Verträge, Kündigungen (mit kuendigung_eingegangen) und Pausen für den aktuellen Monat. Beitraege.jsx zeigt „Eingegeben am".',
+    files: ['backend/routes/monatsreport.js', 'backend/routes/mitglieder.js', 'frontend/src/components/MitgliederListe.jsx', 'frontend/src/components/Beitraege.jsx'],
+  },
+  {
     version: '3.0.84',
     date: '2026-06-26',
     type: 'feature',
