@@ -224,6 +224,60 @@ export function druckeAikidoSchuelergrad(u) {
   });
 }
 
+export function druckeShieldX(u) {
+  const name     = `${u.vorname} ${u.nachname}`;
+  const grad     = u.grad || '';
+  const certNr   = u.urkundennummer || '';
+  const datum    = formatDatum(u.ausstellungsdatum);
+  const examiner = (() => {
+    const p = u.pruefer
+      ? (typeof u.pruefer === 'string' ? (() => { try { return JSON.parse(u.pruefer); } catch { return [u.pruefer]; } })() : u.pruefer)
+      : [];
+    return (Array.isArray(p) ? p : [p]).filter(Boolean).join(', ') || (u.ausgestellt_von || '');
+  })();
+
+  const printStyle = document.createElement('style');
+  printStyle.id = 'shieldx-print-style';
+  printStyle.textContent = `
+    @media print {
+      @page { size: A4 landscape; margin: 0; }
+      #root { display: none !important; }
+      #shieldx-overlay { display: block !important; }
+    }
+    #shieldx-overlay { display: none; }
+  `;
+  document.head.appendChild(printStyle);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'shieldx-overlay';
+  // Positionen identisch zur Vorlage/Vorschau (gemessen aus urkunde_shieldx.jpg)
+  overlay.innerHTML = `
+    <div style="position:relative;width:297mm;height:210mm;background:transparent;">
+      <div style="position:absolute;top:100mm;left:18mm;width:200mm;text-align:center;
+                  font-family:Georgia,'Times New Roman',serif;font-size:23pt;font-style:italic;color:#1a1a1a;">
+        ${name}
+      </div>
+      <div style="position:absolute;top:141mm;left:18mm;width:200mm;text-align:center;
+                  font-family:Georgia,'Times New Roman',serif;font-size:21pt;font-style:italic;color:#1a1a1a;">
+        ${grad}
+      </div>
+      ${certNr ? `<div style="position:absolute;top:81mm;left:226mm;width:60mm;text-align:center;
+                  font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a;letter-spacing:0.5px;">${certNr}</div>` : ''}
+      <div style="position:absolute;top:99mm;left:226mm;width:60mm;text-align:center;
+                  font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a;">${datum}</div>
+      ${examiner ? `<div style="position:absolute;top:129mm;left:226mm;width:60mm;text-align:center;
+                  font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a;">${examiner}</div>` : ''}
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.fonts.ready.then(() => {
+    window.print();
+    document.body.removeChild(overlay);
+    document.head.removeChild(printStyle);
+  });
+}
+
 export function druckeBoB(u) {
   const name   = `${u.vorname} ${u.nachname}`;
   const certNr = u.urkundennummer || '';

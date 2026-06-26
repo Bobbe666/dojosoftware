@@ -38,6 +38,114 @@ import '../styles/Buttons.css';
 import '../styles/Dashboard.css';
 import '../styles/PruefungsVerwaltung.css';
 
+// ============================================================================
+// Urkunden-Vorlagen — geteilt zwischen Druck (druckeUrkunden) + Live-Vorschau.
+// WICHTIG: bgImage wird NICHT mitgedruckt (Papier ist vorgedruckt). Es dient
+// ausschließlich der Ansicht/Vorschau, damit man sieht wie der fertige Druck
+// aussieht. Gedruckt werden nur die Datenfelder (.cert-*).
+// ============================================================================
+const URKUNDE_ORIGIN = typeof window !== 'undefined' ? window.location.origin : '';
+const VORLAGEN_CONFIG = {
+  pruefungsurkunde: {
+    pageSize: 'A4 landscape', pageW: '297mm', pageH: '210mm',
+    bgImage: null,
+    styles: `
+      .cert-name { position:absolute;width:100%;top:64mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
+      .cert-rank { position:absolute;width:100%;top:102mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
+      .cert-nummer { position:absolute;width:100%;top:165mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:11pt;color:#000;letter-spacing:1px; }
+      .cert-datum { position:absolute;width:100%;top:173mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:11pt;color:#000; }
+    `,
+    renderNr: true, renderDatum: true,
+  },
+  kickboxen_schuelergrad: {
+    pageSize: 'A4 landscape', pageW: '297mm', pageH: '210mm',
+    bgImage: `${URKUNDE_ORIGIN}/assets/urkunde_kickboxen.jpg`,
+    styles: `
+      .cert-name { position:absolute;width:100%;top:64mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
+      .cert-rank { position:absolute;width:100%;top:65mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
+      .cert-nummer { position:absolute;width:100%;top:165mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:11pt;color:#000;letter-spacing:1px; }
+      .cert-datum { position:absolute;width:100%;top:173mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:11pt;color:#000; }
+    `,
+    renderNr: true, renderDatum: true,
+  },
+  aikido_schuelergrad: {
+    pageSize: 'A4 landscape', pageW: '297mm', pageH: '210mm',
+    bgImage: `${URKUNDE_ORIGIN}/assets/urkunde_aikido.jpg`,
+    extraFonts: `<style>@font-face{font-family:'Bonzai';src:url('${URKUNDE_ORIGIN}/assets/bonzai.ttf') format('truetype');}</style>`,
+    styles: `
+      .cert-name { position:absolute;top:64mm;left:135mm;width:148mm;text-align:center;font-family:'Bonzai',cursive;font-size:26pt;color:#1a1a1a; }
+      .cert-rank { position:absolute;top:109mm;left:135mm;width:148mm;text-align:center;font-family:'Bonzai',cursive;font-size:22pt;color:#1a1a1a; }
+      .cert-nummer { position:absolute;top:174mm;left:20mm;width:115mm;text-align:center;font-family:'Bonzai',cursive;font-size:13pt;color:#1a1a1a;letter-spacing:0.5px; }
+      .cert-datum { display:none; }
+    `,
+    renderNr: true, renderDatum: false,
+  },
+  board_of_black_belts: {
+    pageSize: 'A3 landscape', pageW: '420mm', pageH: '297mm',
+    bgImage: `${URKUNDE_ORIGIN}/assets/urkunde_bobb.jpg`,
+    extraFonts: `
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+      <style>@font-face{font-family:'Bonzai';src:url('${URKUNDE_ORIGIN}/assets/bonzai.ttf') format('truetype');}</style>
+    `,
+    styles: `
+      .cert-name { position:absolute;top:69mm;left:8mm;width:136mm;text-align:center;font-family:'Great Vibes',cursive;font-size:30pt;line-height:1;color:#1a0f08; }
+      .cert-rank { display:none; }
+      .cert-nummer { position:absolute;top:168mm;left:28mm;font-family:'Bonzai',cursive;font-size:14pt;color:#1a0f08; }
+      .cert-datum { position:absolute;top:180mm;left:19mm;font-family:'Bonzai',cursive;font-size:14pt;color:#1a0f08; }
+    `,
+    renderNr: true, renderDatum: true,
+  },
+  shieldx: {
+    pageSize: 'A4 landscape', pageW: '297mm', pageH: '210mm',
+    bgImage: `${URKUNDE_ORIGIN}/assets/urkunde_shieldx.jpg`,
+    // Positionen aus der Vorlage gemessen (A4 quer, Linien bei 109,4 / 149,2 mm
+    // links und 89,9 / 107,8 / 137,6 mm rechts). Texte sitzen knapp über den Linien.
+    styles: `
+      .cert-name { position:absolute;top:100mm;left:18mm;width:200mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:23pt;font-style:italic;color:#1a1a1a; }
+      .cert-rank { position:absolute;top:141mm;left:18mm;width:200mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:21pt;font-style:italic;color:#1a1a1a; }
+      .cert-nummer { position:absolute;top:81mm;left:226mm;width:60mm;text-align:center;font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a;letter-spacing:0.5px; }
+      .cert-datum { position:absolute;top:99mm;left:226mm;width:60mm;text-align:center;font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a; }
+      .cert-examiner { position:absolute;top:129mm;left:226mm;width:60mm;text-align:center;font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a; }
+    `,
+    renderNr: true, renderDatum: true, renderExaminer: true,
+  },
+};
+
+// Live-Vorschau einer Urkunde: zeigt das Design (bgImage) mit den Datenfeldern
+// an der exakt gleichen Position wie im Druck — gedruckt wird später nur Text.
+function CertPreview({ vorlage, sample, datumDE, prueferName, maxWidth = 520 }) {
+  const cfg = VORLAGEN_CONFIG[vorlage] || VORLAGEN_CONFIG.pruefungsurkunde;
+  const MM = 3.7795275591; // px pro mm @96dpi
+  const pageWmm = parseFloat(cfg.pageW);
+  const pageHmm = parseFloat(cfg.pageH);
+  const scale = maxWidth / (pageWmm * MM);
+  const useBonzai = vorlage === 'aikido_schuelergrad';
+  const bz = (s) => useBonzai ? (s || '').replace(/ß/g, 'ss') : (s || '');
+  const scoped = (cfg.styles || '').replace(/\.cert-/g, '.cert-preview-doc .cert-');
+  const name = bz(`${sample?.vorname || ''} ${sample?.nachname || ''}`.trim()) || 'Max Mustermann';
+  const rank = bz(sample?.graduierung_nachher || sample?.graduierung_zwischen || '—');
+  const nummer = bz(sample?.urkundennummer || '00000000-00001');
+  return (
+    <div style={{ width: maxWidth, height: pageHmm * MM * scale, position: 'relative', margin: '0 auto', boxShadow: '0 6px 24px rgba(0,0,0,0.45)', background: '#fff', borderRadius: 6, overflow: 'hidden' }}>
+      {cfg.extraFonts ? <div dangerouslySetInnerHTML={{ __html: cfg.extraFonts }} /> : null}
+      <style dangerouslySetInnerHTML={{ __html: scoped }} />
+      <div className="cert-preview-doc" style={{
+        width: pageWmm * MM, height: pageHmm * MM,
+        transform: `scale(${scale})`, transformOrigin: 'top left',
+        position: 'absolute', top: 0, left: 0,
+        background: cfg.bgImage ? `#fff url('${cfg.bgImage}') center / 100% 100% no-repeat` : '#fff',
+      }}>
+        <div className="cert-name">{name}</div>
+        <div className="cert-rank">{rank}</div>
+        <div className="cert-nummer">{nummer}</div>
+        <div className="cert-datum">{datumDE}</div>
+        {cfg.renderExaminer ? <div className="cert-examiner">{bz(prueferName || '')}</div> : null}
+      </div>
+    </div>
+  );
+}
+
 const PruefungsVerwaltung = () => {
   const { getDojoFilterParam, activeDojo, loading: dojosLoading, dojos } = useDojoContext();
   const navigate = useNavigate();
@@ -2129,62 +2237,7 @@ const PruefungsVerwaltung = () => {
     // Lade-Platzhalter anzeigen
     win.document.write('<html><body style="background:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#333;font-size:16px;">Urkundennummer wird geladen…</body></html>');
 
-    const origin = window.location.origin;
-
-    // Vorlagen-Konfiguration
-    const VORLAGEN_CONFIG = {
-      pruefungsurkunde: {
-        pageSize: 'A4 landscape', pageW: '297mm', pageH: '210mm',
-        bgImage: null,
-        styles: `
-          .cert-name { position:absolute;width:100%;top:64mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
-          .cert-rank { position:absolute;width:100%;top:102mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
-          .cert-nummer { position:absolute;width:100%;top:165mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:11pt;color:#000;letter-spacing:1px; }
-          .cert-datum { position:absolute;width:100%;top:173mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:11pt;color:#000; }
-        `,
-        renderNr: true, renderDatum: true,
-      },
-      kickboxen_schuelergrad: {
-        pageSize: 'A4 landscape', pageW: '297mm', pageH: '210mm',
-        bgImage: `${origin}/assets/urkunde_kickboxen.jpg`,
-        styles: `
-          .cert-name { position:absolute;width:100%;top:64mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
-          .cert-rank { position:absolute;width:100%;top:65mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
-          .cert-nummer { position:absolute;width:100%;top:165mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:11pt;color:#000;letter-spacing:1px; }
-          .cert-datum { position:absolute;width:100%;top:173mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:11pt;color:#000; }
-        `,
-        renderNr: true, renderDatum: true,
-      },
-      aikido_schuelergrad: {
-        pageSize: 'A4 landscape', pageW: '297mm', pageH: '210mm',
-        bgImage: null,
-        extraFonts: `<style>@font-face{font-family:'Bonzai';src:url('${origin}/assets/bonzai.ttf') format('truetype');}</style>`,
-        styles: `
-          .cert-name { position:absolute;top:64mm;left:135mm;width:148mm;text-align:center;font-family:'Bonzai',cursive;font-size:26pt;color:#1a1a1a; }
-          .cert-rank { position:absolute;top:109mm;left:135mm;width:148mm;text-align:center;font-family:'Bonzai',cursive;font-size:22pt;color:#1a1a1a; }
-          .cert-nummer { position:absolute;top:174mm;left:20mm;width:115mm;text-align:center;font-family:'Bonzai',cursive;font-size:13pt;color:#1a1a1a;letter-spacing:0.5px; }
-          .cert-datum { display:none; }
-        `,
-        renderNr: true, renderDatum: false,
-      },
-      board_of_black_belts: {
-        pageSize: 'A3 landscape', pageW: '420mm', pageH: '297mm',
-        bgImage: `${origin}/assets/urkunde_bobb.jpg`,
-        extraFonts: `
-          <link rel="preconnect" href="https://fonts.googleapis.com">
-          <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
-          <style>@font-face{font-family:'Bonzai';src:url('${origin}/assets/bonzai.ttf') format('truetype');}</style>
-        `,
-        styles: `
-          .cert-name { position:absolute;top:69mm;left:8mm;width:136mm;text-align:center;font-family:'Great Vibes',cursive;font-size:30pt;line-height:1;color:#1a0f08; }
-          .cert-rank { display:none; }
-          .cert-nummer { position:absolute;top:168mm;left:28mm;font-family:'Bonzai',cursive;font-size:14pt;color:#1a0f08; }
-          .cert-datum { position:absolute;top:180mm;left:19mm;font-family:'Bonzai',cursive;font-size:14pt;color:#1a0f08; }
-        `,
-        renderNr: true, renderDatum: true,
-      },
-    };
-
+    // VORLAGEN_CONFIG ist modul-global (oben definiert) — geteilt mit CertPreview.
     const cfg = VORLAGEN_CONFIG[vorlage] || VORLAGEN_CONFIG['pruefungsurkunde'];
 
     const buildAndPrint = (kandidatenMitNummern) => {
@@ -2200,7 +2253,7 @@ const PruefungsVerwaltung = () => {
       // die nächste Seite und der page-break-before erzeugt eine zusätzliche Leerseite.
       const pageBlocks = kandidatenMitNummern.map((p, i) =>
         (i > 0 ? '<div class="page-break"></div>' : '') +
-        `<div class="cert-page"><div class="cert-name">${bz(`${p.vorname || ''} ${p.nachname || ''}`)}</div><div class="cert-rank">${bz(p.graduierung_nachher || '—')}</div>${p.urkundennummer ? `<div class="cert-nummer">${bz(p.urkundennummer)}</div>` : ''}<div class="cert-datum">${pruefDatumDE}</div></div>`
+        `<div class="cert-page"><div class="cert-name">${bz(`${p.vorname || ''} ${p.nachname || ''}`)}</div><div class="cert-rank">${bz(p.graduierung_nachher || '—')}</div>${p.urkundennummer ? `<div class="cert-nummer">${bz(p.urkundennummer)}</div>` : ''}<div class="cert-datum">${pruefDatumDE}</div>${cfg.renderExaminer ? `<div class="cert-examiner">${bz(termin?.pruefer_name || '')}</div>` : ''}</div>`
       ).join('');
 
       const html = `<!DOCTYPE html>
@@ -3859,12 +3912,13 @@ const PruefungsVerwaltung = () => {
           { key: 'kickboxen_schuelergrad', label: 'Kickboxen',          img: '/assets/urkunde_kickboxen.jpg' },
           { key: 'aikido_schuelergrad',    label: 'Aikido',             img: '/assets/urkunde_aikido.jpg' },
           { key: 'board_of_black_belts',  label: 'Board of Black Belts', img: '/assets/urkunde_bobb.jpg' },
+          { key: 'shieldx',               label: 'ShieldX',             img: '/assets/urkunde_shieldx.jpg' },
         ];
         const closeModal = () => setDruckAuswahlModal({ open: false, termin: null, selected: [], vorlage: 'pruefungsurkunde' });
         return createPortal(
           <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}
             onClick={closeModal}>
-            <div style={{background:'#1e1e35',borderRadius:'12px',width:'100%',maxWidth:'580px',boxShadow:'0 20px 60px rgba(0,0,0,0.7)',border:'1px solid rgba(255,255,255,0.1)',overflow:'hidden'}}
+            <div style={{background:'#1e1e35',borderRadius:'12px',width:'100%',maxWidth:'600px',maxHeight:'92vh',overflowY:'auto',boxShadow:'0 20px 60px rgba(0,0,0,0.7)',border:'1px solid rgba(255,255,255,0.1)'}}
               onClick={e => e.stopPropagation()}>
 
               {/* Header */}
@@ -3890,7 +3944,7 @@ const PruefungsVerwaltung = () => {
                 <div style={{fontSize:'11px',fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'10px'}}>
                   Urkunden-Vorlage
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'8px'}}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'8px'}}>
                   {VORLAGEN.map(v => {
                     const selected = druckAuswahlModal.vorlage === v.key;
                     return (
@@ -3934,6 +3988,31 @@ const PruefungsVerwaltung = () => {
                   })}
                 </div>
               </div>
+
+              {/* Live-Vorschau — zeigt wie der fertige Druck aussieht (Design + Daten).
+                  Gedruckt wird später NUR der Text auf das vorgedruckte Papier. */}
+              {(() => {
+                const sample = druckAuswahlModal.termin.pruefungen.find(p => druckAuswahlModal.selected.includes(p.pruefung_id))
+                  || druckAuswahlModal.termin.pruefungen[0];
+                const datumDE = new Date(druckAuswahlModal.termin.datum).toLocaleDateString('de-DE');
+                return (
+                  <div style={{padding:'4px 20px 0'}}>
+                    <div style={{fontSize:'11px',fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'10px'}}>
+                      Vorschau (fertiger Druck)
+                    </div>
+                    <CertPreview
+                      vorlage={druckAuswahlModal.vorlage}
+                      sample={sample}
+                      datumDE={datumDE}
+                      prueferName={druckAuswahlModal.termin.pruefer_name || ''}
+                      maxWidth={520}
+                    />
+                    <div style={{fontSize:'10.5px',color:'#64748b',textAlign:'center',marginTop:'8px',lineHeight:1.4}}>
+                      Hintergrund nur zur Ansicht — gedruckt werden ausschließlich die Daten auf das vorgedruckte Papier.
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Kandidaten-Liste */}
               <div style={{padding:'14px 20px'}}>

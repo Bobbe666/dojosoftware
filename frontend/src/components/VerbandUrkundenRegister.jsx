@@ -16,7 +16,7 @@ import {
   UserCheck, BookOpen, CheckCircle, AlertCircle,
   RefreshCw, Download, Calendar, User, MapPin, Printer, Eye
 } from 'lucide-react';
-import { druckeBoB, druckeKickboxSchuelergrad, druckeAikidoSchuelergrad, druckeHofNominierung } from './UrkundeDrucken';
+import { druckeBoB, druckeKickboxSchuelergrad, druckeAikidoSchuelergrad, druckeHofNominierung, druckeShieldX } from './UrkundeDrucken';
 import '../styles/VerbandUrkundenRegister.css';
 
 // ============================================================================
@@ -31,6 +31,7 @@ const ARTEN = {
   kickboxen_schuelergrad:    { label: 'Kickboxen Schülergrad',  icon: Award,      color: '#e11d48', img: '/assets/urkunde_kickboxen.jpg' },
   aikido_schuelergrad:       { label: 'Aikido Schülergrad',     icon: Award,      color: '#0ea5e9', img: '/assets/urkunde_aikido.jpg' },
   hof_nominierung:           { label: 'HoF Nominierung',        icon: Star,       color: '#b8860b', img: '/assets/urkunde_hof_nominierung.png' },
+  shieldx:                   { label: 'ShieldX',                icon: Shield,     color: '#7f1d1d', img: '/assets/urkunde_shieldx.jpg' },
   trainer_lizenz:      { label: 'Trainer-Lizenz',          icon: UserCheck,  color: '#10b981', img: null },
   kampfrichter_lizenz: { label: 'Kampfrichter-Lizenz',     icon: Shield,     color: '#f97316', img: null },
   meister_urkunde:     { label: 'Meister-Urkunde',         icon: Award,      color: '#ef4444', img: null },
@@ -655,6 +656,15 @@ export default function VerbandUrkundenRegister() {
                         <Printer size={14} />
                       </button>
                     )}
+                    {u.art === 'shieldx' && (
+                      <button
+                        className="ur-action-btn ur-action-btn--print"
+                        onClick={() => druckeShieldX(u)}
+                        title="ShieldX-Urkunde drucken"
+                      >
+                        <Printer size={14} />
+                      </button>
+                    )}
                     <button
                       className="ur-action-btn"
                       onClick={() => setPreviewEntry(u)}
@@ -816,7 +826,7 @@ export default function VerbandUrkundenRegister() {
                   const datum = u.ausstellungsdatum
                     ? new Date(u.ausstellungsdatum).toLocaleDateString('de-DE', { day:'2-digit', month:'long', year:'numeric' })
                     : '—';
-                  const canPrint = ['board_of_black_belts','kickboxen_schuelergrad','aikido_schuelergrad'].includes(u.art);
+                  const canPrint = ['board_of_black_belts','kickboxen_schuelergrad','aikido_schuelergrad','shieldx'].includes(u.art);
                   return (
                     <div key={u.id} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderLeft:`4px solid ${art.color}`, borderRadius:'12px', padding:'18px 20px' }}>
                       {/* Type + Actions */}
@@ -831,6 +841,7 @@ export default function VerbandUrkundenRegister() {
                               setTimeout(() => {
                                 if (u.art === 'board_of_black_belts') druckeBoB(u);
                                 else if (u.art === 'kickboxen_schuelergrad') druckeKickboxSchuelergrad(u);
+                                else if (u.art === 'shieldx') druckeShieldX(u);
                                 else druckeAikidoSchuelergrad(u);
                               }, 100);
                             }} style={{ display:'inline-flex', alignItems:'center', gap:'6px', padding:'7px 14px', borderRadius:'8px', background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.35)', color:'#818cf8', cursor:'pointer', fontSize:'13px', fontWeight:600 }}>
@@ -1318,6 +1329,13 @@ export default function VerbandUrkundenRegister() {
         const isBoB     = u.art === 'board_of_black_belts';
         const isKB      = u.art === 'kickboxen_schuelergrad';
         const isAikido  = u.art === 'aikido_schuelergrad';
+        const isShieldX = u.art === 'shieldx';
+        const examiner  = (() => {
+          const p = u.pruefer
+            ? (typeof u.pruefer === 'string' ? (() => { try { return JSON.parse(u.pruefer); } catch { return [u.pruefer]; } })() : u.pruefer)
+            : [];
+          return (Array.isArray(p) ? p : [p]).filter(Boolean).join(', ') || (u.ausgestellt_von || '');
+        })();
 
         return (
           <div className="ur-overlay" onClick={() => setPreviewEntry(null)}>
@@ -1403,8 +1421,43 @@ export default function VerbandUrkundenRegister() {
                   </div>
                 )}
 
+                {/* ShieldX: Hintergrundbild mit Texten (A4 quer) */}
+                {isShieldX && (
+                  <div style={{ position: 'relative', width: '100%', paddingBottom: '70.7%', overflow: 'hidden', borderRadius: '6px' }}>
+                    <img src="/assets/urkunde_shieldx.jpg" alt="ShieldX Urkunde"
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {/* Name über "FIRST NAME, LAST NAME" */}
+                    <div style={{ position: 'absolute', top: '47.6%', left: '6.1%', width: '67.3%', textAlign: 'center',
+                      fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: 'italic', fontSize: 'clamp(9pt,2.4vw,18pt)', color: '#1a1a1a' }}>
+                      {name}
+                    </div>
+                    {/* Rang über "RANK / TITLE" */}
+                    <div style={{ position: 'absolute', top: '67.1%', left: '6.1%', width: '67.3%', textAlign: 'center',
+                      fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: 'italic', fontSize: 'clamp(8pt,2.1vw,16pt)', color: '#1a1a1a' }}>
+                      {grad || <em style={{ opacity: 0.4 }}>Grad nicht angegeben</em>}
+                    </div>
+                    {/* CertNr / Date / Examiner — rechte Spalte */}
+                    {nr && (
+                      <div style={{ position: 'absolute', top: '38.6%', left: '76.1%', width: '20.2%', textAlign: 'center',
+                        fontFamily: 'Georgia, serif', fontSize: 'clamp(6pt,1.2vw,9pt)', color: '#1a1a1a', letterSpacing: '0.5px' }}>
+                        {nr}
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', top: '47.1%', left: '76.1%', width: '20.2%', textAlign: 'center',
+                      fontFamily: 'Georgia, serif', fontSize: 'clamp(6pt,1.2vw,9pt)', color: '#1a1a1a' }}>
+                      {datum}
+                    </div>
+                    {examiner && (
+                      <div style={{ position: 'absolute', top: '61.4%', left: '76.1%', width: '20.2%', textAlign: 'center',
+                        fontFamily: 'Georgia, serif', fontSize: 'clamp(6pt,1.2vw,9pt)', color: '#1a1a1a' }}>
+                        {examiner}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Alle anderen Typen: Info-Karte */}
-                {!isBoB && !isKB && !isAikido && (
+                {!isBoB && !isKB && !isAikido && !isShieldX && (
                   <div style={{ background: 'var(--bg-secondary,#1e2330)', borderRadius: '8px', padding: '1.5rem', lineHeight: 2 }}>
                     {[
                       ['Name', name],
@@ -1427,10 +1480,11 @@ export default function VerbandUrkundenRegister() {
               </div>
 
               <div className="ur-modal-footer">
-                {(isBoB || isKB || isAikido) && (
+                {(isBoB || isKB || isAikido || isShieldX) && (
                   <button className="ur-btn-save" onClick={() => {
                     if (isBoB) druckeBoB(u);
                     else if (isKB) druckeKickboxSchuelergrad(u);
+                    else if (isShieldX) druckeShieldX(u);
                     else druckeAikidoSchuelergrad(u);
                     setPreviewEntry(null);
                   }}>

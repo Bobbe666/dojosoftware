@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.84',
+    date: '2026-06-26',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Neue Urkunden-Vorlage „ShieldX" in der Prüfungsverwaltung – mit Live-Vorschau',
+    description: 'Beim Drucken der Urkunden kann jetzt die ShieldX-Vorlage gewählt werden. Im Druck-Dialog wird live angezeigt, wie die fertige Urkunde aussieht (Design mit Name, Rang, Urkundennummer, Datum und Prüfer an der richtigen Stelle). Gedruckt werden – wie bei den anderen Vorlagen – ausschließlich die Daten auf das vorgedruckte ShieldX-Papier. Nachdruck und Vorschau funktionieren auch im Verbands-Urkundenregister.',
+    highlights: [
+      '🛡️ ShieldX als zusätzliche Urkunden-Vorlage auswählbar',
+      '👁️ Live-Vorschau zeigt den fertigen Druck (Design + Daten)',
+      '🖨️ Druck nur der Daten auf vorgedrucktes Papier (wie gewohnt)',
+      '📚 Anzeige & Nachdruck auch im Verbands-Urkundenregister',
+    ],
+    details: 'PruefungsVerwaltung.jsx: VORLAGEN_CONFIG auf Modul-Ebene gehoben + Vorlage „shieldx" (gemessene mm-Positionen) + neue Komponente CertPreview (rendert bgImage + Datenfelder per scoped CSS skaliert). buildAndPrint druckt cert-examiner (termin.pruefer_name) wenn renderExaminer. UrkundeDrucken.js: druckeShieldX (Overlay, nur Daten). VerbandUrkundenRegister.jsx: ARTEN + Print-Button + Vorschau-Branch + canPrint. Migration 216 erweitert ENUM verband_urkunden.art um „shieldx". Asset public/assets/urkunde_shieldx.jpg.',
+    files: ['frontend/src/components/PruefungsVerwaltung.jsx', 'frontend/src/components/UrkundeDrucken.js', 'frontend/src/components/VerbandUrkundenRegister.jsx', 'backend/migrations/216_verband_urkunden_shieldx.sql', 'frontend/public/assets/urkunde_shieldx.jpg'],
+  },
+  {
     version: '3.0.83',
     date: '2026-06-25',
     type: 'feature',
