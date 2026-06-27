@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.94',
+    date: '2026-06-27',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Coach-App: Vertretung suchen (Anfrage an alle Trainer)',
+    description: 'Trainer können in der Coach-App eine Vertretungs-Anfrage an alle Trainer des Dojos senden (Stunde aus „Meine Stunden" wählen oder frei eingeben + Notiz). Alle Trainer werden per E-Mail informiert und sehen die offenen Anfragen in der App. Wer zuerst „Ich übernehme" tippt, bekommt die Vertretung; der anfragende Trainer und die Admins werden automatisch benachrichtigt.',
+    highlights: [
+      '🆘 Vertretungs-Anfrage an alle Trainer aus der Coach-App',
+      '⚡ „Ich übernehme" – wer zuerst zusagt, gewinnt (first-come)',
+      '📧 E-Mail an alle Trainer + Bestätigung an Anfragenden & Admin',
+    ],
+    details: 'Migration 217 vertretungs_anfragen. coach.js: POST/GET /coach/vertretung, POST /:id/uebernehmen (atomar, status=offen→uebernommen), /:id/stornieren. services/vertretungNotify.js (sendEmailForDojo an Trainer/Admins). Coach-App (~/dojo-coach): modules/VertretungSuchen.jsx + Dashboard-Kachel.',
+    files: ['backend/routes/coach.js', 'backend/services/vertretungNotify.js', 'backend/migrations/217_vertretungs_anfragen.sql', 'dojo-coach/src/modules/VertretungSuchen.jsx'],
+  },
+  {
     version: '3.0.93',
     date: '2026-06-27',
     type: 'improvement',
