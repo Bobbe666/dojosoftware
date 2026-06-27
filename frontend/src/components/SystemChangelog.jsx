@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.92',
+    date: '2026-06-27',
+    type: 'bugfix',
+    zielgruppe: 'intern',
+    title: 'Prüfung durchführen: 403/Absturz behoben (falscher Token-Key)',
+    description: 'Die Prüfungs-Live-Ansicht konnte nicht starten: Stile/Prüfungen/Timer-Config gaben 403 und die Seite stürzte weiß ab. Ursache: PruefungDurchfuehren las den Auth-Token aus dem falschen localStorage-Key (token statt dojo_auth_token) → „Bearer null". Behoben + .map gegen leere Stile abgesichert.',
+    highlights: ['🩹 „Prüfung durchführen" startet wieder (kein 403/Whitescreen mehr)'],
+    details: 'PruefungDurchfuehren.jsx: 18× localStorage.getItem(\'token\') → (dojo_auth_token || authToken); stile.map mit Array-Guard.',
+    files: ['frontend/src/components/PruefungDurchfuehren.jsx'],
+  },
+  {
     version: '3.0.91',
     date: '2026-06-27',
     type: 'improvement',

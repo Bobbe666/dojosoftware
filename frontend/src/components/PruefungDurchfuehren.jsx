@@ -325,7 +325,7 @@ const PruefungDurchfuehren = () => {
     try {
       const dojoParam = getDojoFilterParam();
       const res = await fetch(`${API_BASE_URL}/pruefungen/timer-config?${dojoParam}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}` }
       });
       if (!res.ok) return;
       const config = await res.json();
@@ -352,7 +352,7 @@ const PruefungDurchfuehren = () => {
       const dojoParam = getDojoFilterParam();
       fetch(`${API_BASE_URL}/pruefungen/timer-config?${dojoParam}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}` },
         body: JSON.stringify({
           modus: timerModus,
           einfach_runden: timerEinfachRunden,
@@ -436,7 +436,7 @@ const PruefungDurchfuehren = () => {
   const fetchStile = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/stile`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}` }
       });
       const data = await response.json();
       console.log('📚 Stile geladen:', data);
@@ -447,7 +447,7 @@ const PruefungDurchfuehren = () => {
       for (const stil of data) {
         const stilId = stil.stil_id || stil.id;
         const gradRes = await fetch(`${API_BASE_URL}/stile/${stilId}/graduierungen`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}` }
         });
         const gradData = await gradRes.json();
         console.log(`🥋 Graduierungen für ${stil.name} (ID: ${stilId}):`, gradData);
@@ -471,7 +471,7 @@ const PruefungDurchfuehren = () => {
     try {
       const params = `farbe_hex=${farben.join(',')}&laenge_cm=${laengeCm || ''}`;
       const res = await fetch(`${API_BASE_URL}/pruefungen/guertel-bestand?${params}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}` }
       });
       if (!res.ok) return;
       const d = await res.json();
@@ -495,7 +495,7 @@ const PruefungDurchfuehren = () => {
       const response = await fetch(
         `${API_BASE_URL}/pruefungen?${dojoParam}`,
         {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}` }
         }
       );
 
@@ -540,7 +540,7 @@ const PruefungDurchfuehren = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}`
         },
         body: JSON.stringify({
           extern_vorname: externForm.vorname.trim(),
@@ -694,7 +694,7 @@ const PruefungDurchfuehren = () => {
       try {
         await fetch(`${API_BASE_URL}/pruefungen/${pruefungId}`, {
           method: 'PUT',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             bestanden: ergebnis.bestanden,
             status: ergebnis.bestanden ? 'bestanden' : 'nicht_bestanden'
@@ -741,7 +741,7 @@ const PruefungDurchfuehren = () => {
         {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(updateData)
@@ -798,7 +798,7 @@ const PruefungDurchfuehren = () => {
           await fetch(`${API_BASE_URL}/pruefungen/${pruefling.pruefung_id}/bewertungen`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({ bewertungen: bewertungenArray })
@@ -849,7 +849,7 @@ const PruefungDurchfuehren = () => {
           }
           const response = await fetch(`${API_BASE_URL}/pruefungen/${pruefling.pruefung_id}`, {
             method: 'PUT',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(updateData)
           });
           if (response.ok) {
@@ -874,7 +874,7 @@ const PruefungDurchfuehren = () => {
               if (arr.length > 0) {
                 await fetch(`${API_BASE_URL}/pruefungen/${pruefling.pruefung_id}/bewertungen`, {
                   method: 'POST',
-                  headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' },
+                  headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}`, 'Content-Type': 'application/json' },
                   body: JSON.stringify({ bewertungen: arr })
                 });
               }
@@ -929,7 +929,7 @@ const PruefungDurchfuehren = () => {
         {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -952,7 +952,7 @@ const PruefungDurchfuehren = () => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/stile/${stilId}/graduierungen/${graduierungId}/pruefungsinhalte`,
-        { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}` } }
       );
 
       if (!response.ok) {
@@ -988,7 +988,7 @@ const PruefungDurchfuehren = () => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/pruefungen/${pruefungId}/bewertungen`,
-        { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}` } }
       );
 
       if (!response.ok) return;
@@ -1126,7 +1126,7 @@ const PruefungDurchfuehren = () => {
           await fetch(`${API_BASE_URL}/pruefungen/${pruefungId}/bewertungen`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -1155,7 +1155,7 @@ const PruefungDurchfuehren = () => {
   const downloadUrkunde = async (pruefungId) => {
     try {
       const response = await fetch(`${API_BASE_URL}/pruefungen/${pruefungId}/urkunde/download`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${(localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'))}` }
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -1222,7 +1222,7 @@ Ein besonderer Dank gilt den Eltern und Familien, die ihre Sportlerinnen und Spo
 Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. Herzlichen Glückwunsch zu dieser großartigen Leistung! Wir freuen uns darauf, euch weiterhin auf eurem Weg im ${stilName} zu begleiten und gemeinsam viele weitere sportliche Erfolge zu feiern. 🥊👏`;
 
     try {
-      const authToken = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken') || localStorage.getItem('token');
+      const authToken = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken') || (localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken'));
       const response = await fetch(`${API_BASE_URL}/news`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
@@ -1937,7 +1937,7 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
             <span className="pd-tb-label">Stil</span>
             <select value={selectedStil} onChange={(e) => setSelectedStil(e.target.value)} className="pd-tb-select">
               <option value="all">Alle Stile</option>
-              {stile.map(s => <option key={s.stil_id} value={s.stil_id}>{s.name}</option>)}
+              {(Array.isArray(stile) ? stile : []).map(s => <option key={s.stil_id} value={s.stil_id}>{s.name}</option>)}
             </select>
           </div>
 
@@ -3150,7 +3150,7 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
               <select value={externForm.stil_id} onChange={e => setExternForm({...externForm,stil_id:e.target.value,graduierung_nachher_id:''})}
                 style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'6px',color: 'var(--ds-text)',fontSize:'14px',boxSizing:'border-box'}}>
                 <option value="">— Bitte wählen —</option>
-                {stile.filter(s => s.aktiv).map(s => (
+                {(Array.isArray(stile) ? stile : []).filter(s => s.aktiv).map(s => (
                   <option key={s.stil_id} value={s.stil_id}>{s.name}</option>
                 ))}
               </select>
