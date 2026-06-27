@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.91',
+    date: '2026-06-27',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Pilot-Feedback-Umfragen im zentralen Layout mit eigenem Banner',
+    description: 'Die Umfrage-Mails (Einrichtung/Erfahrung/laufend) nutzen jetzt das zentrale Mail-Layout mit eigenem „Euer Feedback zählt"-Banner (TDA-Header). Signatur von „TDA Systems" auf „TDA International" vereinheitlicht.',
+    highlights: ['🎨 Umfrage-Mails mit TDA-Banner-Header statt schlichtem Text'],
+    details: 'pilotFeedbackService.js sendUmfrageMail: renderEmail({ bannerUrl: mail-banner-pilot-umfrage.jpg }); Asset in frontend/public/assets.',
+    files: ['backend/services/pilotFeedbackService.js', 'frontend/public/assets/mail-banner-pilot-umfrage.jpg'],
+  },
+  {
     version: '3.0.90',
     date: '2026-06-27',
     type: 'improvement',

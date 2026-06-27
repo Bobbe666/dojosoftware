@@ -16,10 +16,14 @@
 const crypto = require('crypto');
 const db = require('../db');
 const { sendEmail } = require('./emailService');
+const { renderEmail, DEFAULT_THEME } = require('./emailLayout');
 
 const pool = db.promise();
 
 const FEEDBACK_BASE_URL = 'https://dojo.tda-intl.org/pilot-feedback';
+// Zentrales Mail-Layout + eigenes Umfrage-Banner (Hero-Header)
+const UMFRAGE_THEME = { ...DEFAULT_THEME, dojoName: 'TDA International' };
+const UMFRAGE_BANNER = 'https://dojo.tda-intl.org/assets/mail-banner-pilot-umfrage.jpg';
 const PROGRAMM_DAUER_TAGE = 365;   // 12 Monate Pilot-Programm
 const ERINNERUNG_NACH_TAGEN = 7;   // einmalige Erinnerung
 
@@ -93,16 +97,18 @@ async function sendUmfrageMail(umfrage, partner, istErinnerung = false) {
     `${intro}\n\n` +
     `Hier geht's zum Fragebogen (kein Login nötig):\n${link}\n\n` +
     `Vielen Dank, dass ihr als Pilot-Partner dabei seid!\n\n` +
-    `Viele Grüße\nTDA Systems`;
+    `Viele Grüße\nTDA International`;
 
-  const html =
+  const bodyHtml =
     `<p>Hallo <strong>${partner.ansprechpartner}</strong>,</p>` +
     (istErinnerung ? `<p>kleine Erinnerung — wir würden uns weiterhin über euer Feedback freuen:</p>` : '') +
     `<p>${intro}</p>` +
     `<p style="margin:24px 0"><a href="${link}" style="display:inline-block;padding:12px 26px;background:linear-gradient(135deg,#f7d98f,#d9aa43);color:#050608;border-radius:8px;text-decoration:none;font-weight:bold">📝 Zum Fragebogen (2 Minuten)</a></p>` +
     `<p style="color:#666;font-size:13px">Oder direkt im Browser öffnen: <a href="${link}">${link}</a> — kein Login nötig.</p>` +
     `<p>Vielen Dank, dass ihr als Pilot-Partner dabei seid!</p>` +
-    `<p>Viele Grüße<br><strong>TDA Systems</strong></p>`;
+    `<p>Viele Grüße<br><strong>TDA International</strong></p>`;
+
+  const html = renderEmail({ theme: UMFRAGE_THEME, anlass: 'allgemein', titel, bannerUrl: UMFRAGE_BANNER, bodyHtml });
 
   await sendEmail({
     to: partner.email,
