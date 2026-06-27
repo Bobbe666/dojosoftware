@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.93',
+    date: '2026-06-27',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Zulassung entfernen: auch bei bereits bewerteten Prüfungen (mit Rückfrage)',
+    description: 'Bisher konnte eine Zulassung nur entfernt werden, solange die Prüfung noch nicht bewertet war (sonst 404). Jetzt: Ist die Prüfung schon bewertet, kommt eine klare Rückfrage „Bereits bewertet – trotzdem entfernen?". Bestätigt man, wird die Prüfung gelöscht und eine evtl. vergebene Urkunde aus dem Verbandsregister mitentfernt.',
+    highlights: [
+      '✅ Kranke/abwesende Kandidaten auch nach versehentlicher Bewertung entfernbar',
+      '🧹 Vergebene Urkundennummer wird beim Entfernen aus dem Register geräumt',
+    ],
+    details: 'kandidaten.js DELETE /:mitglied_id/zulassung/:pruefung_id: ohne ?force=true → 409 {already_graded} bei bewerteten; mit force → Löschung + DELETE verband_urkunden WHERE urkundennummer. PruefungsVerwaltung.jsx handleZulassungEntfernen: 409 → window.confirm → Retry mit force.',
+    files: ['backend/routes/pruefungen/kandidaten.js', 'frontend/src/components/PruefungsVerwaltung.jsx'],
+  },
+  {
     version: '3.0.92',
     date: '2026-06-27',
     type: 'bugfix',

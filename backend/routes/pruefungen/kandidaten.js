@@ -345,22 +345,49 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
 });
 
 // DELETE /kandidaten/:mitglied_id/zulassung/:pruefung_id - Zulassung widerrufen
+// Ohne ?force=true: nur unbewertete (status='geplant') löschbar; bewertete → 409 (already_graded).
+// Mit ?force=true: löscht auch bereits bewertete Prüfungen (Rückfrage im Frontend) + räumt
+// eine evtl. vergebene Urkunde aus dem Verbandsregister mit weg.
 router.delete('/:mitglied_id/zulassung/:pruefung_id', (req, res) => {
   const mitglied_id = parseInt(req.params.mitglied_id);
   const pruefung_id = parseInt(req.params.pruefung_id);
+  const force = req.query.force === 'true' || req.query.force === '1';
   const secureDojoId = getSecureDojoId(req);
 
-  // Ownership-Check
-  const ownerCheck = secureDojoId
-    ? "DELETE FROM pruefungen WHERE pruefung_id = ? AND mitglied_id = ? AND status = 'geplant' AND dojo_id = ?"
-    : "DELETE FROM pruefungen WHERE pruefung_id = ? AND mitglied_id = ? AND status = 'geplant'";
-  const ownerParams = secureDojoId ? [pruefung_id, mitglied_id, secureDojoId] : [pruefung_id, mitglied_id];
+  const dojoCond = secureDojoId ? ' AND dojo_id = ?' : '';
+  const baseParams = secureDojoId ? [pruefung_id, mitglied_id, secureDojoId] : [pruefung_id, mitglied_id];
 
-  db.query(ownerCheck, ownerParams, (err, result) => {
-    if (err) return res.status(500).json({ error: 'Fehler beim Widerrufen der Zulassung', details: err.message });
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'Prüfung nicht gefunden oder bereits durchgeführt' });
-    res.json({ success: true, message: 'Zulassung erfolgreich widerrufen' });
-  });
+  // 1) Prüfung laden (Status + ggf. Urkundennummer)
+  db.query(
+    `SELECT status, urkunde_nr FROM pruefungen WHERE pruefung_id = ? AND mitglied_id = ?${dojoCond}`,
+    baseParams,
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Fehler beim Widerrufen der Zulassung', details: err.message });
+      if (!rows || rows.length === 0) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
+
+      const pr = rows[0];
+      const istBewertet = pr.status !== 'geplant';
+      if (istBewertet && !force) {
+        // Frontend fragt nach und ruft mit ?force=true erneut auf
+        return res.status(409).json({ error: 'Prüfung bereits bewertet', already_graded: true, status: pr.status });
+      }
+
+      // 2) Löschen (mit force auch bewertete)
+      db.query(
+        `DELETE FROM pruefungen WHERE pruefung_id = ? AND mitglied_id = ?${dojoCond}`,
+        baseParams,
+        (e2, result) => {
+          if (e2) return res.status(500).json({ error: 'Fehler beim Widerrufen der Zulassung', details: e2.message });
+          if (result.affectedRows === 0) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
+          // 3) Verwaiste Urkunde aus dem Verbandsregister entfernen (falls vergeben)
+          if (pr.urkunde_nr) {
+            db.query("DELETE FROM verband_urkunden WHERE urkundennummer = ?", [pr.urkunde_nr], () => {});
+          }
+          res.json({ success: true, message: 'Zulassung erfolgreich widerrufen', war_bewertet: istBewertet });
+        }
+      );
+    }
+  );
 });
 
 // POST /:pruefung_id/gelesen - Mitglied bestätigt Lesebestätigung der Prüfungseinladung

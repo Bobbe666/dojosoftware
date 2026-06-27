@@ -1316,21 +1316,33 @@ const PruefungsVerwaltung = () => {
   };
 
   // Funktion zum Entfernen der Zulassung
-  const handleZulassungEntfernen = async (pruefung) => {
-    if (!window.confirm(`${pruefung.vorname} ${pruefung.nachname} kommt nicht zur Prüfung?\n\nZulassung entfernen — Stunden und Wartezeit laufen normal weiter.`)) {
+  const handleZulassungEntfernen = async (pruefung, force = false) => {
+    if (!force && !window.confirm(`${pruefung.vorname} ${pruefung.nachname} kommt nicht zur Prüfung?\n\nZulassung entfernen — Stunden und Wartezeit laufen normal weiter.`)) {
       return;
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/pruefungen/kandidaten/${pruefung.mitglied_id}/zulassung/${pruefung.pruefung_id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
-          }
+      const url = `${API_BASE_URL}/pruefungen/kandidaten/${pruefung.mitglied_id}/zulassung/${pruefung.pruefung_id}${force ? '?force=true' : ''}`;
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
         }
-      );
+      });
+
+      // Bereits bewertet → Rückfrage und ggf. erzwingen
+      if (response.status === 409) {
+        const data = await response.json().catch(() => ({}));
+        if (data.already_graded) {
+          const statusLabel = data.status === 'bestanden' ? 'bestanden'
+            : data.status === 'nicht_bestanden' ? 'nicht bestanden'
+            : (data.status || 'bewertet');
+          if (window.confirm(`Diese Prüfung ist bereits bewertet (${statusLabel}).\n\nTrotzdem entfernen? Eine ggf. vergebene Urkunde wird damit ungültig und aus dem Verbandsregister entfernt.`)) {
+            return handleZulassungEntfernen(pruefung, true);
+          }
+          return;
+        }
+      }
 
       if (!response.ok) throw new Error('Fehler beim Entfernen der Zulassung');
 
