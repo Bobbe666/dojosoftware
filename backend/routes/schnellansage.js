@@ -23,8 +23,17 @@ const TOKEN = process.env.SCHNELLANSAGE_TOKEN;
 
 const TAGE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
-// Zieltag/-datum (Europe/Berlin) für 'heute' | 'morgen'
+// Zieltag/-datum (Europe/Berlin) für 'heute' | 'morgen' | 'YYYY-MM-DD'
 function zielDatum(datum) {
+  // Explizites Datum (Vertretung im Voraus planen)
+  if (typeof datum === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(datum)) {
+    const d = new Date(`${datum}T12:00:00`);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return { dayName: TAGE[d.getDay()], dateStr: `${yyyy}-${mm}-${dd}`,
+             label: `${TAGE[d.getDay()]}, ${d.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })}` };
+  }
   const berlin = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
   if (datum === 'morgen') berlin.setDate(berlin.getDate() + 1);
   const yyyy = berlin.getFullYear();
@@ -465,7 +474,9 @@ router.get('/trainer', (req, res) => {
 // (eigene Kurse + Vertretungsstunden). Admin/Super-Admin → alle Stunden des Dojos.
 router.get('/meine-stunden', authenticateToken, requireTrainerOrAdmin, async (req, res) => {
   try {
-    const datum = req.query.datum === 'morgen' ? 'morgen' : 'heute';
+    const rawDatum = (req.query.datum || 'heute').toString();
+    const datum = /^\d{4}-\d{2}-\d{2}$/.test(rawDatum) ? rawDatum
+      : (rawDatum === 'morgen' ? 'morgen' : 'heute');
     const { dayName, dateStr, label } = zielDatum(datum);
     const ctx = await trainerKontext(req);
 
