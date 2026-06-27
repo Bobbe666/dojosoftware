@@ -14,8 +14,10 @@ const pool = db.promise();
 
 // Zentrales Mail-Layout (allgemeiner TDA-Header) für alle Pilot-Mails
 const PILOT_THEME = { ...DEFAULT_THEME, dojoName: 'TDA International' };
+// Eigenes Pilot-Banner (Hero-Header) — liegt in frontend/public/assets, ausgeliefert unter /assets
+const PILOT_BANNER = (process.env.DOJO_PUBLIC_URL || 'https://dojo.tda-intl.org') + '/assets/mail-banner-pilot.jpg';
 const pilotHtml = (bodyHtml, titel = 'TDA Pilot-Partner-Programm') =>
-  renderEmail({ theme: PILOT_THEME, anlass: 'allgemein', titel, bodyHtml });
+  renderEmail({ theme: PILOT_THEME, anlass: 'allgemein', titel, bannerUrl: PILOT_BANNER, bodyHtml });
 
 // Super-Admin Guard (wie demo-termine.js)
 function onlySuperAdmin(req, res, next) {
