@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.89',
+    date: '2026-06-27',
+    type: 'bugfix',
+    zielgruppe: 'intern',
+    title: 'Pilot-Partner: Programm-Start-Button bei leerem Datum gesperrt',
+    description: 'Im Pilot-Bereich konnte „Programm-Start speichern" ohne Datum geklickt werden → 400-Fehler. Der Button ist jetzt deaktiviert, solange kein Datum gewählt ist (zusätzlicher Guard in der Funktion).',
+    highlights: ['🚫 „Programm-Start speichern" nur noch mit gültigem Datum klickbar'],
+    details: 'PilotBewerbungen.jsx: saveProgrammStart(bewerbungId, datum) mit Leer-Guard; Speichern-Button disabled wenn kein effektives Datum.',
+    files: ['frontend/src/components/PilotBewerbungen.jsx'],
+  },
+  {
     version: '3.0.88',
     date: '2026-06-26',
     type: 'improvement',

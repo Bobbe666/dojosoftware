@@ -110,10 +110,11 @@ export default function PilotBewerbungen() {
     }
   };
 
-  const saveProgrammStart = async (bewerbungId) => {
+  const saveProgrammStart = async (bewerbungId, datum) => {
+    if (!datum) { showMsg('error', 'Bitte zuerst ein Datum für den Programm-Start wählen'); return; }
     try {
       await axios.put(`/pilot-feedback/admin/programm-start/${bewerbungId}`,
-        { programm_start: startDrafts[bewerbungId] }, { headers: authHeader });
+        { programm_start: datum }, { headers: authHeader });
       showMsg('success', 'Programm-Start gespeichert — Umfragen neu geplant');
       load();
       loadFeedback(bewerbungId);
@@ -285,7 +286,19 @@ export default function PilotBewerbungen() {
                             value={startDrafts[b.id] ?? (b.programm_start ? String(b.programm_start).slice(0, 10) : '')}
                             onChange={e => setStartDrafts(d => ({ ...d, [b.id]: e.target.value }))}
                           />
-                          <button className="pb-btn pb-btn--ghost" onClick={() => saveProgrammStart(b.id)}>Speichern</button>
+                          {(() => {
+                            const startVal = startDrafts[b.id] ?? (b.programm_start ? String(b.programm_start).slice(0, 10) : '');
+                            const leer = !startVal;
+                            return (
+                              <button
+                                className="pb-btn pb-btn--ghost"
+                                disabled={leer}
+                                title={leer ? 'Bitte zuerst ein Datum wählen' : 'Programm-Start speichern'}
+                                style={leer ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                                onClick={() => saveProgrammStart(b.id, startVal)}
+                              >Speichern</button>
+                            );
+                          })()}
                         </div>
                       </div>
 
