@@ -7,9 +7,43 @@
 const db = require('../db');
 const logger = require('../utils/logger');
 const { sendEmailForDojo } = require('./emailService');
+const webpush = require('web-push');
 
 const COACH_URL = process.env.COACH_APP_URL || 'https://coach.tda-intl.org';
 const pool = db.promise();
+
+let vapidReady = false;
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  try {
+    webpush.setVapidDetails(process.env.VAPID_EMAIL || 'mailto:info@tda-intl.com', process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+    vapidReady = true;
+  } catch (e) { logger.warn('[vertretung] VAPID-Setup fehlgeschlagen', { error: e.message }); }
+}
+
+// Web-Push an die Geräte gegebener Nutzer (admin_users.id) senden
+async function pushToUsers(userIds, payload) {
+  if (!vapidReady || !Array.isArray(userIds) || userIds.length === 0) return 0;
+  let sent = 0;
+  let subs = [];
+  try {
+    [subs] = await pool.query(
+      `SELECT id, endpoint, p256dh_key, auth_key FROM push_subscriptions
+        WHERE user_id IN (?) AND is_active = 1`, [userIds]
+    );
+  } catch (e) { logger.warn('[vertretung] Push-Subs laden fehlgeschlagen', { error: e.message }); return 0; }
+  const data = JSON.stringify(payload);
+  for (const s of subs) {
+    try {
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh_key, auth: s.auth_key } }, data);
+      sent++;
+    } catch (e) {
+      if (e.statusCode === 404 || e.statusCode === 410) {
+        await pool.query('UPDATE push_subscriptions SET is_active = 0 WHERE id = ?', [s.id]).catch(() => {});
+      }
+    }
+  }
+  return sent;
+}
 
 function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
@@ -66,7 +100,14 @@ async function notifyTrainersNeueAnfrage({ dojoId, anfrage }) {
     try { await sendEmailForDojo({ to: t.email, subject: betreff, html, text }, dojoId); result.email++; }
     catch (e) { logger.warn('[vertretung] Trainer-Mail fehlgeschlagen', { to: t.email, error: e.message }); }
   }
-  logger.info('[vertretung] Neue Anfrage benachrichtigt', { dojoId, trainer: result.email });
+  // Web-Push an alle Trainer (best effort)
+  try {
+    result.push = await pushToUsers(
+      trainers.map(t => t.id).filter(Boolean),
+      { title: '🆘 Vertretung gesucht', body: `${anfrage.anfrage_name}: ${label}`, url: COACH_URL }
+    );
+  } catch (_) {}
+  logger.info('[vertretung] Neue Anfrage benachrichtigt', { dojoId, trainer: result.email, push: result.push });
   return result;
 }
 
@@ -92,6 +133,12 @@ async function notifyUebernahme({ dojoId, anfrage, uebernehmerName, anfrageEmail
     try { await sendEmailForDojo({ to, subject: betreff, html, text }, dojoId); result.email++; }
     catch (e) { logger.warn('[vertretung] Übernahme-Mail fehlgeschlagen', { to, error: e.message }); }
   }
+  // Web-Push an den anfragenden Trainer
+  try {
+    if (anfrage.anfrage_admin_id) {
+      await pushToUsers([anfrage.anfrage_admin_id], { title: '✅ Vertretung übernommen', body: `${uebernehmerName}: ${label}`, url: COACH_URL });
+    }
+  } catch (_) {}
   return result;
 }
 

@@ -215,4 +215,9 @@ router.post('/vertretung/:id/stornieren', authenticateToken, async (req, res) =>
   }
 });
 
+// GET /api/coach/vapid-key — öffentlicher VAPID-Key für Push-Subscription
+router.get('/vapid-key', authenticateToken, (req, res) => {
+  res.json({ key: process.env.VAPID_PUBLIC_KEY || null });
+});
+
 module.exports = router;

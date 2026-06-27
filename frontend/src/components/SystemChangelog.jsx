@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.95',
+    date: '2026-06-27',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Coach-App Vertretung: Push-Benachrichtigungen + freie Datumswahl',
+    description: 'Vertretungs-Anfragen lösen jetzt zusätzlich zur E-Mail echte Push-Benachrichtigungen auf dem Handy aus (auch bei geschlossener App). Trainer aktivieren Push einmalig in der Coach-App. Außerdem lässt sich beim Stunden-Bezug ein beliebiges Datum wählen (Planung im Voraus, nicht nur heute/morgen).',
+    highlights: [
+      '🔔 Push aufs Handy bei neuer Vertretungs-Anfrage + bei Übernahme',
+      '📅 Vertretung für jeden Tag im Voraus planbar (Datumswahl)',
+    ],
+    details: 'vertretungNotify.js: web-push an push_subscriptions der Trainer (user_id). coach.js: GET /vapid-key. schnellansage.js zielDatum akzeptiert YYYY-MM-DD. Coach-App: push.js (subscribe), public/push-sw.js (workbox importScripts), Enable-Button + Datumsfeld in VertretungSuchen. iOS: nur als installierte PWA.',
+    files: ['backend/services/vertretungNotify.js', 'backend/routes/coach.js', 'backend/routes/schnellansage.js', 'dojo-coach/src/push.js', 'dojo-coach/public/push-sw.js'],
+  },
+  {
     version: '3.0.94',
     date: '2026-06-27',
     type: 'feature',
