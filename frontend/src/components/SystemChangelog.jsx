@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.90',
+    date: '2026-06-27',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Pilot-Partner: keine Status-Wechsel-Buttons mehr bei angenommenen Partnern',
+    description: 'Bei einer bereits angenommenen Pilot-Bewerbung werden die Buttons „Neu / In Prüfung / Abgelehnt" ausgeblendet — so kann nicht versehentlich eine falsche Status-Mail (z. B. „Abgelehnt") an einen bereits gewonnenen Partner gehen. „Löschen" bleibt erhalten.',
+    highlights: ['🔒 Angenommene Partner: keine versehentlichen Status-Wechsel/Mails mehr'],
+    details: 'PilotBewerbungen.jsx: Status-Wechsel-Buttons nur noch wenn b.status !== "gewonnen".',
+    files: ['frontend/src/components/PilotBewerbungen.jsx'],
+  },
+  {
     version: '3.0.89',
     date: '2026-06-27',
     type: 'bugfix',

@@ -354,7 +354,9 @@ export default function PilotBewerbungen() {
                   )}
 
                   <div className="pb-actions">
-                    {Object.entries(STATUS_META).filter(([k]) => k !== b.status).map(([key, m]) => (
+                    {/* Bei angenommenen Partnern (Status „gewonnen") keine Status-Wechsel-Buttons —
+                        verhindert versehentliche „In Prüfung"/„Abgelehnt"-Mails an den Partner. */}
+                    {b.status !== 'gewonnen' && Object.entries(STATUS_META).filter(([k]) => k !== b.status).map(([key, m]) => (
                       <button key={key} className="pb-btn" style={{ '--btn-color': m.color }} onClick={() => updateStatus(b.id, key)}>
                         {m.icon} {m.label}
                       </button>
