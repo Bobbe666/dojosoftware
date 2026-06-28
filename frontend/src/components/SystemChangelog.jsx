@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.96',
+    date: '2026-06-28',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Neue Urkunden-Vorlage „Enso Karate" + Prüfer beim Drucken eintragbar',
+    description: 'Die Enso-Karate-Urkunde ist jetzt als Vorlage in der Prüfungsverwaltung hinterlegt (A4 hoch) – mit Live-Vorschau; gedruckt werden nur die Daten auf das vorgedruckte Papier. Beim Drucken können zwei Prüfer eingetragen werden, die exakt auf der Urkunde erscheinen (links/rechts); der zweite Prüfer bleibt frei, wenn nicht ausgefüllt. Beim Enso-Grad wird automatisch nur die Kyu-Nummer eingesetzt (passend zum vorgedruckten „Kyu Grad verliehen").',
+    highlights: [
+      '🥋 Enso-Karate-Urkunde als Druck-Vorlage (mit Vorschau)',
+      '✍️ Zwei Prüfer beim Drucken eintragbar → genau so auf der Urkunde',
+      '🔢 Grad-Feld zeigt nur die Kyu-Nummer (z.B. „8.")',
+    ],
+    details: 'PruefungsVerwaltung.jsx: VORLAGEN_CONFIG.enso (A4 portrait, gemessene Positionen, gradTransform, renderOrt/renderPruefer); CertPreview + druckeUrkunden um cert-ort/cert-pruefer1/cert-pruefer2 erweitert; Prüfer-Eingabefelder im Druck-Modal. Asset urkunde_enso.jpg. Migration 218 (ENUM art += enso). VerbandUrkundenRegister: ARTEN.enso. Feinausrichtung gegen Test-Druck noch möglich.',
+    files: ['frontend/src/components/PruefungsVerwaltung.jsx', 'frontend/public/assets/urkunde_enso.jpg', 'backend/migrations/218_verband_urkunden_enso.sql', 'frontend/src/components/VerbandUrkundenRegister.jsx'],
+  },
+  {
     version: '3.0.95',
     date: '2026-06-27',
     type: 'feature',

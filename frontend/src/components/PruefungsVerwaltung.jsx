@@ -109,11 +109,29 @@ const VORLAGEN_CONFIG = {
     `,
     renderNr: true, renderDatum: true,
   },
+  enso: {
+    pageSize: 'A4 portrait', pageW: '210mm', pageH: '297mm',
+    bgImage: `${URKUNDE_ORIGIN}/assets/urkunde_enso.jpg`,
+    // A4 hoch, Positionen aus dem Design gemessen: Name-Linie 134mm (Text drüber),
+    // Grad in der Lücke „der __ Kyu Grad" ~x75/y157, Prüfer-Linien 240mm (L 44,5 / R 115,5),
+    // Ort/Datum-Linien 274mm. Urkundennr. über linkem Prüfer.
+    styles: `
+      .cert-name { position:absolute;top:120mm;left:5mm;width:200mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:26pt;color:#1a1a1a; }
+      .cert-rank { position:absolute;top:150mm;left:58mm;width:34mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:19pt;font-weight:bold;color:#1a1a1a; }
+      .cert-nummer { position:absolute;top:215mm;left:13mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:9pt;color:#1a1a1a;letter-spacing:0.5px; }
+      .cert-pruefer1 { position:absolute;top:231mm;left:13mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:12pt;color:#1a1a1a; }
+      .cert-pruefer2 { position:absolute;top:231mm;left:84mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:12pt;color:#1a1a1a; }
+      .cert-ort { position:absolute;top:265mm;left:13mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:11pt;color:#1a1a1a; }
+      .cert-datum { position:absolute;top:265mm;left:84mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:11pt;color:#1a1a1a; }
+    `,
+    renderNr: true, renderDatum: true, renderOrt: true, renderPruefer: true,
+    gradTransform: (g) => { const s = (g || '').split('Kyu')[0].trim(); return s || (g || ''); },
+  },
 };
 
 // Live-Vorschau einer Urkunde: zeigt das Design (bgImage) mit den Datenfeldern
 // an der exakt gleichen Position wie im Druck — gedruckt wird später nur Text.
-function CertPreview({ vorlage, sample, datumDE, prueferName, maxWidth = 520 }) {
+function CertPreview({ vorlage, sample, datumDE, prueferName, pruefer1, pruefer2, ort, maxWidth = 520 }) {
   const cfg = VORLAGEN_CONFIG[vorlage] || VORLAGEN_CONFIG.pruefungsurkunde;
   const MM = 3.7795275591; // px pro mm @96dpi
   const pageWmm = parseFloat(cfg.pageW);
@@ -123,7 +141,8 @@ function CertPreview({ vorlage, sample, datumDE, prueferName, maxWidth = 520 }) 
   const bz = (s) => useBonzai ? (s || '').replace(/ß/g, 'ss') : (s || '');
   const scoped = (cfg.styles || '').replace(/\.cert-/g, '.cert-preview-doc .cert-');
   const name = bz(`${sample?.vorname || ''} ${sample?.nachname || ''}`.trim()) || 'Max Mustermann';
-  const rank = bz(sample?.graduierung_nachher || sample?.graduierung_zwischen || '—');
+  const gradRaw = sample?.graduierung_nachher || sample?.graduierung_zwischen || '—';
+  const rank = bz(cfg.gradTransform ? cfg.gradTransform(gradRaw) : gradRaw);
   const nummer = bz(sample?.urkundennummer || '00000000-00001');
   return (
     <div style={{ width: maxWidth, height: pageHmm * MM * scale, position: 'relative', margin: '0 auto', boxShadow: '0 6px 24px rgba(0,0,0,0.45)', background: '#fff', borderRadius: 6, overflow: 'hidden' }}>
@@ -140,6 +159,9 @@ function CertPreview({ vorlage, sample, datumDE, prueferName, maxWidth = 520 }) 
         <div className="cert-nummer">{nummer}</div>
         <div className="cert-datum">{datumDE}</div>
         {cfg.renderExaminer ? <div className="cert-examiner">{bz(prueferName || '')}</div> : null}
+        {cfg.renderOrt ? <div className="cert-ort">{bz(ort || '')}</div> : null}
+        {cfg.renderPruefer ? <div className="cert-pruefer1">{bz(pruefer1 || '')}</div> : null}
+        {cfg.renderPruefer ? <div className="cert-pruefer2">{bz(pruefer2 || '')}</div> : null}
       </div>
     </div>
   );
@@ -2234,7 +2256,10 @@ const PruefungsVerwaltung = () => {
 
   // Urkunden-Datendruck: druckt Name + Gurt + Urkundennummer + Datum auf die vorgedruckte Urkunde
   // A4 Querformat – Fenster wird SOFORT geöffnet (User-Gesture), Inhalt dann async befüllt
-  const druckeUrkunden = (kandidaten, termin, vorlage = 'pruefungsurkunde') => {
+  const druckeUrkunden = (kandidaten, termin, vorlage = 'pruefungsurkunde', opts = {}) => {
+    const prueferEins = opts.pruefer1 != null ? opts.pruefer1 : (termin?.pruefer_name || '');
+    const prueferZwei = opts.pruefer2 || '';
+    const certOrt = opts.ort != null ? opts.ort : (termin?.ort || '');
     if (!kandidaten || kandidaten.length === 0) return;
 
     // Fenster SOFORT im Click-Kontext öffnen (Browser-Popup-Blocker umgehen)
@@ -2264,7 +2289,7 @@ const PruefungsVerwaltung = () => {
       // die nächste Seite und der page-break-before erzeugt eine zusätzliche Leerseite.
       const pageBlocks = kandidatenMitNummern.map((p, i) =>
         (i > 0 ? '<div class="page-break"></div>' : '') +
-        `<div class="cert-page"><div class="cert-name">${bz(`${p.vorname || ''} ${p.nachname || ''}`)}</div><div class="cert-rank">${bz(p.graduierung_nachher || '—')}</div>${p.urkundennummer ? `<div class="cert-nummer">${bz(p.urkundennummer)}</div>` : ''}<div class="cert-datum">${pruefDatumDE}</div>${cfg.renderExaminer ? `<div class="cert-examiner">${bz(termin?.pruefer_name || '')}</div>` : ''}</div>`
+        `<div class="cert-page"><div class="cert-name">${bz(`${p.vorname || ''} ${p.nachname || ''}`)}</div><div class="cert-rank">${bz(cfg.gradTransform ? cfg.gradTransform(p.graduierung_nachher || '') : (p.graduierung_nachher || '—'))}</div>${p.urkundennummer ? `<div class="cert-nummer">${bz(p.urkundennummer)}</div>` : ''}<div class="cert-datum">${pruefDatumDE}</div>${cfg.renderExaminer ? `<div class="cert-examiner">${bz(termin?.pruefer_name || '')}</div>` : ''}${cfg.renderOrt ? `<div class="cert-ort">${bz(certOrt)}</div>` : ''}${cfg.renderPruefer ? `<div class="cert-pruefer1">${bz(prueferEins)}</div><div class="cert-pruefer2">${bz(prueferZwei)}</div>` : ''}</div>`
       ).join('');
 
       const html = `<!DOCTYPE html>
@@ -3924,7 +3949,11 @@ const PruefungsVerwaltung = () => {
           { key: 'aikido_schuelergrad',    label: 'Aikido',             img: '/assets/urkunde_aikido.jpg' },
           { key: 'board_of_black_belts',  label: 'Board of Black Belts', img: '/assets/urkunde_bobb.jpg' },
           { key: 'shieldx',               label: 'ShieldX',             img: '/assets/urkunde_shieldx.jpg' },
+          { key: 'enso',                  label: 'Enso Karate',         img: '/assets/urkunde_enso.jpg' },
         ];
+        const cfgSel = VORLAGEN_CONFIG[druckAuswahlModal.vorlage] || {};
+        const prueferEinsVal = druckAuswahlModal.pruefer1 != null ? druckAuswahlModal.pruefer1 : (druckAuswahlModal.termin.pruefer_name || '');
+        const prueferZweiVal = druckAuswahlModal.pruefer2 != null ? druckAuswahlModal.pruefer2 : '';
         const closeModal = () => setDruckAuswahlModal({ open: false, termin: null, selected: [], vorlage: 'pruefungsurkunde' });
         return createPortal(
           <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}
@@ -4000,6 +4029,23 @@ const PruefungsVerwaltung = () => {
                 </div>
               </div>
 
+              {/* Prüfer-Eingabe (nur Vorlagen mit Prüfer-Feldern, z.B. Enso) */}
+              {cfgSel.renderPruefer && (
+                <div style={{padding:'10px 20px 0'}}>
+                  <div style={{fontSize:'11px',fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'8px'}}>
+                    Prüfer (erscheinen auf der Urkunde)
+                  </div>
+                  <div style={{display:'flex',gap:'8px'}}>
+                    <input value={prueferEinsVal} placeholder="Prüfer 1 (links)"
+                      onChange={e => setDruckAuswahlModal(m => ({...m, pruefer1: e.target.value}))}
+                      style={{flex:1,padding:'8px 10px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'8px',color:'#e2e8f0',fontSize:'13px'}} />
+                    <input value={prueferZweiVal} placeholder="Prüfer 2 (rechts, optional)"
+                      onChange={e => setDruckAuswahlModal(m => ({...m, pruefer2: e.target.value}))}
+                      style={{flex:1,padding:'8px 10px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:'8px',color:'#e2e8f0',fontSize:'13px'}} />
+                  </div>
+                </div>
+              )}
+
               {/* Live-Vorschau — zeigt wie der fertige Druck aussieht (Design + Daten).
                   Gedruckt wird später NUR der Text auf das vorgedruckte Papier. */}
               {(() => {
@@ -4016,7 +4062,10 @@ const PruefungsVerwaltung = () => {
                       sample={sample}
                       datumDE={datumDE}
                       prueferName={druckAuswahlModal.termin.pruefer_name || ''}
-                      maxWidth={520}
+                      pruefer1={prueferEinsVal}
+                      pruefer2={prueferZweiVal}
+                      ort={druckAuswahlModal.termin.ort || ''}
+                      maxWidth={420}
                     />
                     <div style={{fontSize:'10.5px',color:'#64748b',textAlign:'center',marginTop:'8px',lineHeight:1.4}}>
                       Hintergrund nur zur Ansicht — gedruckt werden ausschließlich die Daten auf das vorgedruckte Papier.
@@ -4070,7 +4119,7 @@ const PruefungsVerwaltung = () => {
                   disabled={druckAuswahlModal.selected.length === 0}
                   onClick={() => {
                     const ausgewaehlt = druckAuswahlModal.termin.pruefungen.filter(p => druckAuswahlModal.selected.includes(p.pruefung_id));
-                    druckeUrkunden(ausgewaehlt, druckAuswahlModal.termin, druckAuswahlModal.vorlage);
+                    druckeUrkunden(ausgewaehlt, druckAuswahlModal.termin, druckAuswahlModal.vorlage, { pruefer1: prueferEinsVal, pruefer2: prueferZweiVal, ort: druckAuswahlModal.termin.ort || '' });
                     closeModal();
                   }}
                   style={{padding:'8px 20px',background: druckAuswahlModal.selected.length === 0 ? 'rgba(99,102,241,0.3)' : '#6366f1',border:'none',borderRadius:'8px',color: 'var(--ds-text)',cursor: druckAuswahlModal.selected.length === 0 ? 'default' : 'pointer',fontSize:'13px',fontWeight:600,display:'flex',alignItems:'center',gap:'6px'}}>

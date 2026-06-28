@@ -32,6 +32,7 @@ const ARTEN = {
   aikido_schuelergrad:       { label: 'Aikido Schülergrad',     icon: Award,      color: '#0ea5e9', img: '/assets/urkunde_aikido.jpg' },
   hof_nominierung:           { label: 'HoF Nominierung',        icon: Star,       color: '#b8860b', img: '/assets/urkunde_hof_nominierung.png' },
   shieldx:                   { label: 'ShieldX',                icon: Shield,     color: '#7f1d1d', img: '/assets/urkunde_shieldx.jpg' },
+  enso:                      { label: 'Enso Karate',           icon: Award,      color: '#b45309', img: '/assets/urkunde_enso.jpg' },
   trainer_lizenz:      { label: 'Trainer-Lizenz',          icon: UserCheck,  color: '#10b981', img: null },
   kampfrichter_lizenz: { label: 'Kampfrichter-Lizenz',     icon: Shield,     color: '#f97316', img: null },
   meister_urkunde:     { label: 'Meister-Urkunde',         icon: Award,      color: '#ef4444', img: null },
