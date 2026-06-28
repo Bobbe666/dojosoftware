@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.101',
+    date: '2026-06-28',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Urkunden-Vorlagen Etappe 3: eigene Vorlagen sind druckbar',
+    description: 'Selbst im Editor erstellte Urkunden-Vorlagen erscheinen jetzt im Urkunden-Druck-Dialog (eigenes Dropdown-Thumbnail), mit Live-Vorschau und korrektem Druck (generisch aus den platzierten Feldern). Prüfer-Felder werden eingeblendet, wenn die Vorlage Prüfer-Felder hat. Die fest hinterlegten KSS-Vorlagen (Kickboxen/Aikido/BoB/ShieldX/Enso) bleiben unverändert (Hybrid).',
+    highlights: [
+      '🖨️ Im Editor erstellte Urkunden sind jetzt druckbar (Dropdown + Vorschau)',
+      '🧩 Generisches Feld-Rendering aus der DB-Vorlage (Druck + Vorschau)',
+    ],
+    details: 'PruefungsVerwaltung.jsx: dbVorlagen laden (/api/urkunden-vorlagen, Enterprise), Modal-Dropdown um db_-Einträge erweitert; CertPreview + druckeUrkunden generischer DB-Zweig (feldWert/escHtml/seiteFromFormat); Register-Art „sonstiges" für DB-Vorlagen. KSS-Migration bewusst offen gelassen (Hardcode druckt exakt).',
+    files: ['frontend/src/components/PruefungsVerwaltung.jsx'],
+  },
+  {
     version: '3.0.100',
     date: '2026-06-28',
     type: 'feature',

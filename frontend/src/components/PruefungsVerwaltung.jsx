@@ -132,11 +132,51 @@ const VORLAGEN_CONFIG = {
   },
 };
 
+// --- DB-Vorlagen (visueller Editor) → generisches Feld-Rendering ---
+const kyuOnly = (g) => { const s = (g || '').split('Kyu')[0].trim(); return s || (g || ''); };
+const seiteFromFormat = (fmt) => fmt === 'a4_hoch'
+  ? { pageSize: 'A4 portrait', pageW: '210mm', pageH: '297mm', w: 210, h: 297 }
+  : { pageSize: 'A4 landscape', pageW: '297mm', pageH: '210mm', w: 297, h: 210 };
+const escHtml = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function feldWert(feld, p, ctx) {
+  switch (feld.key) {
+    case 'name': return `${p.vorname || ''} ${p.nachname || ''}`.trim();
+    case 'grad': return ctx.optionen?.gradKyuOnly ? kyuOnly(p.graduierung_nachher || '') : (p.graduierung_nachher || '');
+    case 'datum': return ctx.datumStr || '';
+    case 'ort': return ctx.ort || '';
+    case 'nummer': return p.urkundennummer ? ((ctx.optionen?.nummerPrefix || '') + p.urkundennummer) : (ctx.nummerFallback || '');
+    case 'pruefer1': return ctx.pruefer1 || '';
+    case 'pruefer2': return ctx.pruefer2 || '';
+    case 'freitext': return feld.text || '';
+    default: return '';
+  }
+}
+
 // Live-Vorschau einer Urkunde: zeigt das Design (bgImage) mit den Datenfeldern
 // an der exakt gleichen Position wie im Druck — gedruckt wird später nur Text.
-function CertPreview({ vorlage, sample, datumDE, prueferName, pruefer1, pruefer2, ort, maxWidth = 520 }) {
-  const cfg = VORLAGEN_CONFIG[vorlage] || VORLAGEN_CONFIG.pruefungsurkunde;
+function CertPreview({ vorlage, sample, datumDE, prueferName, pruefer1, pruefer2, ort, dbVorlage, maxWidth = 520 }) {
   const MM = 3.7795275591; // px pro mm @96dpi
+
+  // --- DB-Vorlage (aus dem Editor): generisch aus felder rendern ---
+  if (dbVorlage) {
+    const s = seiteFromFormat(dbVorlage.seitenformat);
+    const scaleDb = maxWidth / (s.w * MM);
+    const ctx = { datumStr: datumDE, ort, pruefer1, pruefer2, optionen: dbVorlage.optionen || {}, nummerFallback: (dbVorlage.optionen?.nummerPrefix || '') + '20260628-00001' };
+    return (
+      <div style={{ width: maxWidth, height: s.h * MM * scaleDb, position: 'relative', margin: '0 auto', boxShadow: '0 6px 24px rgba(0,0,0,0.45)', background: '#fff', borderRadius: 6, overflow: 'hidden' }}>
+        {dbVorlage.extra_font_url ? <link rel="stylesheet" href={dbVorlage.extra_font_url} /> : null}
+        <div style={{ width: s.w * MM, height: s.h * MM, transform: `scale(${scaleDb})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0, background: dbVorlage.bg_image_path ? `#fff url('${dbVorlage.bg_image_path}') center / 100% 100% no-repeat` : '#fff' }}>
+          {(dbVorlage.felder || []).map((f, i) => (
+            <div key={i} style={{ position: 'absolute', top: `${f.top}mm`, left: `${f.left}mm`, width: `${f.width}mm`, textAlign: f.align, fontFamily: dbVorlage.schriftart || 'Georgia, serif', fontWeight: f.bold ? 700 : 400, fontSize: `${f.size}pt`, color: '#1a1a1a', lineHeight: 1.1 }}>
+              {feldWert(f, sample || {}, ctx)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const cfg = VORLAGEN_CONFIG[vorlage] || VORLAGEN_CONFIG.pruefungsurkunde;
   const pageWmm = parseFloat(cfg.pageW);
   const pageHmm = parseFloat(cfg.pageH);
   const scale = maxWidth / (pageWmm * MM);
@@ -175,6 +215,17 @@ const PruefungsVerwaltung = () => {
   const navigate = useNavigate();
   const { hasFeature } = useSubscription();
   const API_BASE_URL = '/api'; // Nutzt Vite-Proxy
+
+  // Eigene Urkunden-Vorlagen (Editor, Enterprise) für das Druck-Dropdown laden
+  useEffect(() => {
+    if (!hasFeature || !hasFeature('urkunden_vorlagen')) { setDbVorlagen([]); return; }
+    const dp = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
+    const tk = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    fetch(`/api/urkunden-vorlagen${dp}`, { headers: { Authorization: `Bearer ${tk}` } })
+      .then(r => r.ok ? r.json() : { vorlagen: [] })
+      .then(d => setDbVorlagen(d.vorlagen || []))
+      .catch(() => setDbVorlagen([]));
+  }, [activeDojo?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // State
   const [kandidaten, setKandidaten] = useState([]);
@@ -346,6 +397,7 @@ const PruefungsVerwaltung = () => {
 
   // Teilnehmerliste Druck-Auswahl-Modal
   const [druckAuswahlModal, setDruckAuswahlModal] = useState({ open: false, termin: null, selected: [], vorlage: 'pruefungsurkunde' });
+  const [dbVorlagen, setDbVorlagen] = useState([]); // eigene Urkunden-Vorlagen (Editor, Enterprise)
 
   // Expanded/Collapsed State für Prüfungstermine
   const [expandedTermine, setExpandedTermine] = useState({});
@@ -2279,7 +2331,15 @@ const PruefungsVerwaltung = () => {
     win.document.write('<html><body style="background:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#333;font-size:16px;">Urkundennummer wird geladen…</body></html>');
 
     // VORLAGEN_CONFIG ist modul-global (oben definiert) — geteilt mit CertPreview.
-    const cfg = VORLAGEN_CONFIG[vorlage] || VORLAGEN_CONFIG['pruefungsurkunde'];
+    // DB-Vorlage (aus dem Editor) hat Vorrang und rendert generisch aus felder.
+    const dbV = opts.dbVorlage || null;
+    const cfg = dbV
+      ? (() => { const s = seiteFromFormat(dbV.seitenformat); return {
+          pageSize: s.pageSize, pageW: s.pageW, pageH: s.pageH, styles: '',
+          extraFonts: dbV.extra_font_url ? `<link rel="stylesheet" href="${dbV.extra_font_url}">` : '',
+          datumLang: !!(dbV.optionen && dbV.optionen.datumLang),
+        }; })()
+      : (VORLAGEN_CONFIG[vorlage] || VORLAGEN_CONFIG['pruefungsurkunde']);
 
     const buildAndPrint = (kandidatenMitNummern) => {
       const pruefDatum = termin?.datum || new Date().toISOString().split('T')[0];
@@ -2294,9 +2354,12 @@ const PruefungsVerwaltung = () => {
       // WICHTIG: cert-page bekommt calc(pageH - 1px) damit der Trenner (height:0)
       // auf DERSELBEN Seite wie die Cert-Page bleibt — sonst schiebt Chrome ihn auf
       // die nächste Seite und der page-break-before erzeugt eine zusätzliche Leerseite.
+      const dbCtx = { datumStr: pruefDatumDE, ort: certOrt, pruefer1: prueferEins, pruefer2: prueferZwei, optionen: (dbV && dbV.optionen) || {} };
       const pageBlocks = kandidatenMitNummern.map((p, i) =>
         (i > 0 ? '<div class="page-break"></div>' : '') +
-        `<div class="cert-page"><div class="cert-name">${bz(`${p.vorname || ''} ${p.nachname || ''}`)}</div><div class="cert-rank">${bz(cfg.gradTransform ? cfg.gradTransform(p.graduierung_nachher || '') : (p.graduierung_nachher || '—'))}</div>${p.urkundennummer ? `<div class="cert-nummer">${cfg.nummerPrefix || ''}${bz(p.urkundennummer)}</div>` : ''}<div class="cert-datum">${pruefDatumDE}</div>${cfg.renderExaminer ? `<div class="cert-examiner">${bz(termin?.pruefer_name || '')}</div>` : ''}${cfg.renderOrt ? `<div class="cert-ort">${bz(certOrt)}</div>` : ''}${cfg.renderPruefer ? `<div class="cert-pruefer1">${bz(prueferEins)}</div><div class="cert-pruefer2">${bz(prueferZwei)}</div>` : ''}</div>`
+        (dbV
+          ? `<div class="cert-page">${(dbV.felder || []).map(f => { const val = feldWert(f, p, dbCtx); return val === '' ? '' : `<div style="position:absolute;top:${f.top}mm;left:${f.left}mm;width:${f.width}mm;text-align:${f.align};font-family:${dbV.schriftart || 'Georgia, serif'};font-weight:${f.bold ? 700 : 400};font-size:${f.size}pt;color:#1a1a1a;line-height:1.1;">${escHtml(val)}</div>`; }).join('')}</div>`
+          : `<div class="cert-page"><div class="cert-name">${bz(`${p.vorname || ''} ${p.nachname || ''}`)}</div><div class="cert-rank">${bz(cfg.gradTransform ? cfg.gradTransform(p.graduierung_nachher || '') : (p.graduierung_nachher || '—'))}</div>${p.urkundennummer ? `<div class="cert-nummer">${cfg.nummerPrefix || ''}${bz(p.urkundennummer)}</div>` : ''}<div class="cert-datum">${pruefDatumDE}</div>${cfg.renderExaminer ? `<div class="cert-examiner">${bz(termin?.pruefer_name || '')}</div>` : ''}${cfg.renderOrt ? `<div class="cert-ort">${bz(certOrt)}</div>` : ''}${cfg.renderPruefer ? `<div class="cert-pruefer1">${bz(prueferEins)}</div><div class="cert-pruefer2">${bz(prueferZwei)}</div>` : ''}</div>`)
       ).join('');
 
       const html = `<!DOCTYPE html>
@@ -2398,7 +2461,7 @@ const PruefungsVerwaltung = () => {
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify({
                 urkundennummer: k.urkundennummer,
-                art: vorlage || 'pruefungsurkunde',
+                art: dbV ? 'sonstiges' : (vorlage || 'pruefungsurkunde'),
                 vorname: vn,
                 nachname: nn,
                 geburtsdatum: k.geburtsdatum || null,
@@ -3967,8 +4030,13 @@ const PruefungsVerwaltung = () => {
           { key: 'board_of_black_belts',  label: 'Board of Black Belts', img: '/assets/urkunde_bobb.jpg' },
           { key: 'shieldx',               label: 'ShieldX',             img: '/assets/urkunde_shieldx.jpg' },
           { key: 'enso',                  label: 'Enso Karate',         img: '/assets/urkunde_enso.jpg' },
+          ...dbVorlagen.map(v => ({ key: 'db_' + v.id, label: v.name, img: v.bg_image_path, db: true })),
         ];
+        const selDb = (druckAuswahlModal.vorlage || '').startsWith('db_')
+          ? dbVorlagen.find(v => 'db_' + v.id === druckAuswahlModal.vorlage) : null;
         const cfgSel = VORLAGEN_CONFIG[druckAuswahlModal.vorlage] || {};
+        const showPruefer = selDb ? (selDb.felder || []).some(f => f.key === 'pruefer1' || f.key === 'pruefer2') : !!cfgSel.renderPruefer;
+        const datumLangSel = selDb ? !!(selDb.optionen && selDb.optionen.datumLang) : !!cfgSel.datumLang;
         const cleanPruefer = (v) => (v && v.trim() && v.trim().toLowerCase() !== 'nicht festgelegt') ? v : '';
         const prueferEinsVal = druckAuswahlModal.pruefer1 != null ? druckAuswahlModal.pruefer1 : cleanPruefer(druckAuswahlModal.termin.pruefer_name);
         const prueferZweiVal = druckAuswahlModal.pruefer2 != null ? druckAuswahlModal.pruefer2 : '';
@@ -4056,7 +4124,7 @@ const PruefungsVerwaltung = () => {
               </div>
 
               {/* Prüfer-Eingabe (nur Vorlagen mit Prüfer-Feldern, z.B. Enso) */}
-              {cfgSel.renderPruefer && (
+              {showPruefer && (
                 <div style={{padding:'10px 20px 0'}}>
                   <div style={{fontSize:'11px',fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'8px'}}>
                     Prüfer (erscheinen auf der Urkunde)
@@ -4077,7 +4145,7 @@ const PruefungsVerwaltung = () => {
               {(() => {
                 const sample = druckAuswahlModal.termin.pruefungen.find(p => druckAuswahlModal.selected.includes(p.pruefung_id))
                   || druckAuswahlModal.termin.pruefungen[0];
-                const datumDE = cfgSel.datumLang
+                const datumDE = datumLangSel
                   ? new Date(druckAuswahlModal.termin.datum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })
                   : new Date(druckAuswahlModal.termin.datum).toLocaleDateString('de-DE');
                 return (
@@ -4093,6 +4161,7 @@ const PruefungsVerwaltung = () => {
                       pruefer1={prueferEinsVal}
                       pruefer2={prueferZweiVal}
                       ort={druckAuswahlModal.termin.ort || ''}
+                      dbVorlage={selDb}
                       maxWidth={420}
                     />
                     <div style={{fontSize:'10.5px',color:'#64748b',textAlign:'center',marginTop:'8px',lineHeight:1.4}}>
@@ -4147,7 +4216,7 @@ const PruefungsVerwaltung = () => {
                   disabled={druckAuswahlModal.selected.length === 0}
                   onClick={() => {
                     const ausgewaehlt = druckAuswahlModal.termin.pruefungen.filter(p => druckAuswahlModal.selected.includes(p.pruefung_id));
-                    druckeUrkunden(ausgewaehlt, druckAuswahlModal.termin, druckAuswahlModal.vorlage, { pruefer1: prueferEinsVal, pruefer2: prueferZweiVal, ort: druckAuswahlModal.termin.ort || '' });
+                    druckeUrkunden(ausgewaehlt, druckAuswahlModal.termin, druckAuswahlModal.vorlage, { pruefer1: prueferEinsVal, pruefer2: prueferZweiVal, ort: druckAuswahlModal.termin.ort || '', dbVorlage: selDb });
                     closeModal();
                   }}
                   style={{padding:'8px 20px',background: druckAuswahlModal.selected.length === 0 ? 'rgba(99,102,241,0.3)' : '#6366f1',border:'none',borderRadius:'8px',color: 'var(--ds-text)',cursor: druckAuswahlModal.selected.length === 0 ? 'default' : 'pointer',fontSize:'13px',fontWeight:600,display:'flex',alignItems:'center',gap:'6px'}}>
