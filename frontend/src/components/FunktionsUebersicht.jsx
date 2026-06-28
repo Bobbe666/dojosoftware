@@ -22,6 +22,9 @@ const APPS = [
   { name: 'Coach-App (Trainer)', icon: '🧑‍🏫', url: 'https://coach.tda-intl.org', fuer: 'Trainer', desc: 'Schnell-Ansage, Meine Stunden, Vertretung suchen, Check-in, Chat', plan: 'enterprise' },
   { name: 'Finanzen-App (Beleg-Scanner)', icon: '🧾', url: 'https://finanzen.tda-intl.org', fuer: 'Inhaber / Buchhaltung', desc: 'Belege fotografieren, automatisch erkennen (OCR), in die Buchhaltung', plan: 'premium' },
   { name: 'TDA Events', icon: '🥇', url: 'https://events.tda-intl.org', fuer: 'Turniere / Events', desc: 'Turnier-Plattform: Anmeldung, Einwaage, Ergebnisse, Saison-Rangliste', plan: 'zusatz' },
+  { name: 'Dojo-Admin-Portal', icon: '🏯', url: 'https://dojo.tda-intl.org', fuer: 'Inhaber / Admin', desc: 'Das Verwaltungs-Backend — Mitglieder, Finanzen, Prüfungen, Einstellungen', plan: 'standard' },
+  { name: 'Schnell-Ansage', icon: '📢', url: null, fuer: 'Trainer / Mitglieder', desc: 'Kurzfristige Trainingszeit-Änderungen als Popup (App + Website), läuft automatisch ab', plan: 'professional' },
+  { name: 'Cockpit / Lagezentrum', icon: '🛰️', url: null, fuer: 'Inhaber', desc: 'Read-only Überblick, der alle Apps zusammenfasst (iPhone-Widget)', plan: 'zusatz' },
 ];
 
 const BEREICHE = [
@@ -113,21 +116,23 @@ export default function FunktionsUebersicht() {
           {APPS.map((a) => {
             const m = PLAN_META[a.plan];
             const enthalten = (meinRank > 0 && RANK[a.plan]) ? meinRank >= RANK[a.plan] : null;
+            const Tag = a.url ? 'a' : 'div';
+            const linkProps = a.url ? { href: a.url, target: '_blank', rel: 'noreferrer' } : {};
             return (
-              <a key={a.name} href={a.url} target="_blank" rel="noreferrer"
+              <Tag key={a.name} {...linkProps}
                 style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: 10, padding: '12px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, opacity: enthalten === false ? 0.62 : 1 }}>
                 <span style={{ fontSize: 22, lineHeight: 1 }}>{a.icon}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{a.name}</div>
                   <div style={{ fontSize: 12.5, opacity: 0.7, lineHeight: 1.35, margin: '2px 0 4px' }}>{a.desc}</div>
-                  <div style={{ fontSize: 11, opacity: 0.55 }}>Für: {a.fuer} · {a.url.replace('https://', '')} ↗</div>
+                  <div style={{ fontSize: 11, opacity: 0.55 }}>Für: {a.fuer}{a.url ? ` · ${a.url.replace('https://', '')} ↗` : ''}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flex: '0 0 auto' }}>
                   <span style={badge(m.color)}>{m.label}</span>
                   {enthalten === true && <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>✓</span>}
                   {enthalten === false && <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 600 }}>🔒</span>}
                 </div>
-              </a>
+              </Tag>
             );
           })}
         </div>

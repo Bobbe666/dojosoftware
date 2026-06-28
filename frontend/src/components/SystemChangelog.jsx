@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.107',
+    date: '2026-06-28',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Apps-Übersicht: Dojo-Admin-Portal, Schnell-Ansage & Cockpit ergänzt',
+    description: 'In der Funktionsübersicht sind jetzt auch das Dojo-Admin-Portal, die Schnell-Ansage und das Cockpit/Lagezentrum gelistet. Apps ohne feste Adresse werden als Karte ohne Link dargestellt.',
+    highlights: ['📲 Mehr Apps in der Übersicht (Admin-Portal, Schnell-Ansage, Cockpit)'],
+    details: 'FunktionsUebersicht.jsx: 3 Apps ergänzt, optionale URL (Tag a/div).',
+    files: ['frontend/src/components/FunktionsUebersicht.jsx'],
+  },
+  {
     version: '3.0.106',
     date: '2026-06-28',
     type: 'improvement',
