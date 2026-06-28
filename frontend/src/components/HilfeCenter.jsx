@@ -212,32 +212,152 @@ Unter **Berichte → Anwesenheit**:
     beschreibung: 'Gürtelprüfungen planen und verwalten',
     artikel: [
       {
-        id: 'pruefung-planen',
-        titel: 'Prüfung planen',
+        id: 'pruefung-ueberblick',
+        titel: 'Überblick: So läuft eine Prüfung',
         inhalt: `
-## Gürtelprüfung planen
+## Prüfungswesen — der komplette Ablauf
 
-### Neue Prüfung anlegen
-1. Gehen Sie zu **Prüfungswesen → Prüfungen**
-2. Klicken Sie auf **Neue Prüfung**
-3. Wählen Sie:
-   - Datum und Uhrzeit
-   - Stil (Karate, Judo, etc.)
-   - Ort
-   - Prüfer
+Das Prüfungswesen begleitet eine Gürtelprüfung von der Planung bis zur Urkunde. Du findest es unter **Prüfungswesen → Termine**. Die Verwaltung ist in Reiter (Tabs) gegliedert:
 
-### Teilnehmer zuordnen
-- Mitglieder können sich selbst anmelden (wenn aktiviert)
-- Oder Admin fügt Teilnehmer manuell hinzu
-- System prüft automatisch Voraussetzungen:
-  - Mindest-Trainingseinheiten
-  - Wartezeit seit letzter Prüfung
-  - Aktueller Gürtelgrad
+- **Prüfungstermine** — geplante & vergangene Termine, gruppiert nach Datum/Stil.
+- **Kandidaten** — wer ist grundsätzlich prüfungsreif?
+- **Zugelassene** — wer ist konkret für einen Termin zugelassen?
+- **Abgeschlossen** — bereits bewertete Prüfungen + Urkunden/Protokolle.
+- **Statistik** — Bestehensquoten u. a.
 
-### Nach der Prüfung
-1. Ergebnisse eintragen (Bestanden/Nicht bestanden)
-2. Neue Gürtelgrade werden automatisch aktualisiert
-3. Urkunden können generiert werden
+### Der typische Weg
+1. **Termin planen** (Datum, Stil, Ort, Prüfer).
+2. **Kandidaten zulassen** — das System prüft Voraussetzungen (Trainingsstunden, Wartezeit, aktueller Grad).
+3. **Prüfung durchführen** (Live-Ansicht mit Timer & Bewertung) oder Ergebnisse direkt eintragen.
+4. **Ergebnisse** eintragen (bestanden / nicht bestanden) — neue Grade werden automatisch gesetzt.
+5. **Urkunden drucken** — auf die vorgedruckten Urkunden, mit Live-Vorschau.
+
+Die folgenden Artikel beschreiben jeden Schritt im Detail.
+        `
+      },
+      {
+        id: 'pruefung-planen',
+        titel: 'Prüfungstermin planen',
+        inhalt: `
+## Prüfungstermin anlegen
+
+1. **Prüfungswesen → Termine → Neuer Termin**.
+2. Festlegen:
+   - **Datum & Uhrzeit**
+   - **Stil** (z. B. Enso Karate, ShieldX, Aikido …)
+   - **Ort** (erscheint später auf der Urkunde im Feld „Ort")
+   - **Prüfer** (kann später beim Drucken noch überschrieben werden)
+3. Speichern — der Termin erscheint unter **Prüfungstermine**, nach Datum gruppiert.
+
+### Anmeldung
+- Mitglieder können sich (wenn aktiviert) **selbst anmelden**, oder
+- der Admin lädt Teilnehmer manuell zu.
+
+> Tipp: Über die Termin-Liste kannst du je Termin direkt **Prüfung starten**, **Ergebnisse** eintragen und **Urkunden** drucken.
+        `
+      },
+      {
+        id: 'pruefung-kandidaten-zulassung',
+        titel: 'Kandidaten & Zulassung',
+        inhalt: `
+## Kandidaten zulassen
+
+Unter **Kandidaten** zeigt das System, wer prüfungsreif ist. Geprüft werden automatisch:
+- **Mindest-Trainingseinheiten** seit der letzten Prüfung
+- **Wartezeit** (je Stil/Grad hinterlegt)
+- **Aktueller Gürtelgrad** (nächster Grad wird vorgeschlagen)
+
+Mit **Zulassen** wird ein Mitglied dem Termin zugeordnet (Reiter **Zugelassene**).
+
+### Doppelprüfung (Zwischengurt)
+Steigt jemand zwei Grade auf, kann ein **Zwischengurt** gesetzt werden — dann werden beim Drucken automatisch **zwei Urkunden** erzeugt (bis Zwischengurt + Zielgurt).
+
+### Zulassung entfernen (z. B. wenn jemand krank ist)
+- Im Reiter **Zugelassene** beim Teilnehmer auf **„Kommt nicht — Zulassung entfernen"**.
+- Stunden & Wartezeit laufen normal weiter.
+- Ist die Prüfung **schon bewertet** (z. B. versehentlich über „Alle bestanden"), kommt eine Rückfrage **„Bereits bewertet — trotzdem entfernen?"**. Bestätigst du, wird die Prüfung gelöscht und eine evtl. vergebene Urkundennummer aus dem Verbandsregister entfernt.
+        `
+      },
+      {
+        id: 'pruefung-durchfuehren',
+        titel: 'Prüfung durchführen (Live)',
+        inhalt: `
+## Prüfung durchführen
+
+Über **Prüfung starten** öffnet sich die Live-Ansicht für den Prüfungstag.
+
+- **Timer**: Runden/Pausen für die Prüfung (Einfach-Modus oder Blöcke).
+- **Teilnehmerliste**: nach Stil filterbar.
+- **Bewertung**: je Teilnehmer bestanden / nicht bestanden (+ optional Punkte/Kommentar).
+- **Protokoll**: pro Prüfling kann ein Protokoll erstellt/gesendet werden.
+
+> Hinweis: Falls die Seite nicht lädt und Fehler zeigt, kurz **abmelden und neu anmelden** (abgelaufene Sitzung) und mit **Cmd/Strg+Shift+R** neu laden.
+        `
+      },
+      {
+        id: 'pruefung-ergebnisse',
+        titel: 'Ergebnisse eintragen',
+        inhalt: `
+## Ergebnisse eintragen
+
+Du kannst einzeln oder gesammelt bewerten.
+
+### Sammel-Eingabe (Batch)
+Im Dialog **„Prüfungsergebnisse eintragen"**:
+- **Schnellauswahl**: „Alle bestanden" / „Alle nicht bestanden" / „Alle zurücksetzen".
+- Je Teilnehmer **offen / bestanden / nicht bestanden** (+ optional Punkt/Kommentar).
+- Unter **Einstellungen**: Bestehens-Regeln (Punkte ab, Prozent ab, max. Punkte, Punkteschritte) — als Standard speicherbar.
+
+### Nach dem Speichern
+- Neue **Gürtelgrade** werden automatisch gesetzt.
+- Die Prüfungen wandern in **Abgeschlossen**.
+- Anschließend können **Urkunden gedruckt** werden.
+
+> Achtung: „Alle bestanden" bewertet wirklich **alle** ausgewählten Teilnehmer. Wer nicht teilnimmt (z. B. krank), vorher über **Zulassung entfernen** rausnehmen.
+        `
+      },
+      {
+        id: 'urkunden-drucken',
+        titel: 'Urkunden drucken',
+        inhalt: `
+## Urkunden drucken
+
+Über **Urkunden** (bei einem Termin oder in „Abgeschlossen") öffnet sich der Druck-Dialog.
+
+1. **Urkunden-Vorlage** wählen (z. B. Enso Karate, ShieldX, … oder eine **eigene Vorlage**).
+2. **Live-Vorschau**: zeigt, wie der fertige Druck aussieht (Design + Daten an der richtigen Stelle).
+3. Bei Vorlagen mit Prüfern: **Prüfer 1 (links)** und **Prüfer 2 (rechts, optional)** eintragen — genau diese stehen auf der Urkunde. Leere Felder bleiben frei.
+4. Teilnehmer auswählen → **drucken**.
+
+### Wichtig zum Druck
+- **Gedruckt werden nur die Daten** (Name, Grad, Datum, Ort, Prüfer, Urkunden-Nr.) — der Hintergrund ist nur die Ansicht. **Lege das vorgedruckte Urkunden-Papier** in den Drucker.
+- Die **Urkundennummer** wird automatisch fortlaufend vergeben und im **Verbandsregister** gespeichert.
+- Mache idealerweise zuerst einen **Test-Druck auf ein leeres Blatt** und lege es aufs Original, um die Ausrichtung zu prüfen.
+        `
+      },
+      {
+        id: 'urkunden-vorlagen-editor',
+        titel: 'Eigene Urkunden-Vorlagen (Editor)',
+        inhalt: `
+## Eigene Urkunden-Vorlagen erstellen (Enterprise)
+
+Mit dem visuellen Editor hinterlegt jedes Dojo seine **eigenen Urkunden** — ganz ohne Programmierung.
+
+**Öffnen:** Druck-Dialog → **„⚙ Eigene Vorlagen"**, oder direkt **Dashboard → /dashboard/urkunden-vorlagen**.
+
+### Neue Vorlage anlegen
+1. **„+ Neue Vorlage"** → **Name** vergeben und **Format** wählen (A4 hoch / A4 quer).
+2. **Design hochladen** (JPG/PNG deiner vorgedruckten Urkunde) → erscheint als Hintergrund.
+3. **Felder hinzufügen** (Buttons): Name, Grad, Datum, Ort, Urkunden-Nr., Prüfer 1, Prüfer 2, Freitext.
+4. Felder **per Drag & Drop** an die richtige Stelle ziehen.
+5. Pro Feld einstellbar: **Schriftgröße, Breite, Ausrichtung, fett**.
+6. **Optionen**: Datum ausgeschrieben (z. B. „28. Juni 2026"), Grad nur als Kyu-Nummer („8."), Präfix vor der Urkunden-Nr. („Urkunden-Nr.: ").
+7. **Live-Vorschau** mit Beispieldaten prüfen → **Speichern**.
+
+### Verwenden
+Die gespeicherte Vorlage erscheint anschließend **im Druck-Dialog im Dropdown** und wird wie jede andere gedruckt (nur die Daten aufs vorgedruckte Papier).
+
+> Tipp: Lade das Design möglichst **gerade & randlos** hoch (genau das spätere Papier), dann passt die Vorschau 1:1. Feinjustierung am besten mit einem Test-Druck.
         `
       }
     ]

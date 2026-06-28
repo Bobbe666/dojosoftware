@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.102',
+    date: '2026-06-28',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Hilfe-Center: komplette Anleitung zum Prüfungswesen + Urkunden-Editor',
+    description: 'Das Hilfe-Center beschreibt jetzt den gesamten Prüfungsablauf (Überblick, Termin planen, Kandidaten/Zulassung inkl. „krank entfernen", Prüfung durchführen, Ergebnisse eintragen, Urkunden drucken) sowie eine Schritt-für-Schritt-Anleitung für den neuen visuellen Urkunden-Vorlagen-Editor.',
+    highlights: [
+      '📖 Vollständige Prüfungswesen-Anleitung im Hilfe-Center',
+      '🎨 Anleitung „Eigene Urkunden-Vorlagen erstellen"',
+    ],
+    details: 'HilfeCenter.jsx: Kategorie „Prüfungswesen" um 7 Artikel erweitert (Überblick, planen, Kandidaten/Zulassung, durchführen, Ergebnisse, Urkunden drucken, Vorlagen-Editor).',
+    files: ['frontend/src/components/HilfeCenter.jsx'],
+  },
+  {
     version: '3.0.101',
     date: '2026-06-28',
     type: 'feature',
