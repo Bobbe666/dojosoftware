@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.104',
+    date: '2026-06-28',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Neue Funktionsübersicht — alle Funktionen mit Plan-Zuordnung',
+    description: 'Neue Seite „Funktionsübersicht" (Dashboard → /funktionen, verlinkt aus dem Hilfe-Center): zeigt alle Funktionen der Software nach Bereichen gruppiert, jeweils mit Plan-Badge (Standard/Professional/Premium/Enterprise) und „enthalten ✓ / ab Plan 🔒" passend zum aktuellen Abo.',
+    highlights: [
+      '🧭 Vollständige Funktionsübersicht auf einer Seite',
+      '🏷️ Plan-Zuordnung je Funktion (Standard → Enterprise)',
+      '✓/🔒 zeigt, was im eigenen Plan enthalten ist',
+    ],
+    details: 'FunktionsUebersicht.jsx (Tiers aus plan_feature_mapping abgeleitet), Route /dashboard/funktionen, Button im Hilfe-Center.',
+    files: ['frontend/src/components/FunktionsUebersicht.jsx', 'frontend/src/App.jsx', 'frontend/src/components/HilfeCenter.jsx'],
+  },
+  {
     version: '3.0.103',
     date: '2026-06-28',
     type: 'improvement',

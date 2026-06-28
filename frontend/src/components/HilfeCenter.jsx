@@ -8,6 +8,7 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './HilfeCenter.css';
 
 // Hilfe-Inhalte strukturiert nach Kategorien
@@ -1298,6 +1299,7 @@ Einmalig **„🔔 Push-Benachrichtigungen aktivieren"** tippen. Auf dem **iPhon
 };
 
 const HilfeCenter = () => {
+  const navigate = useNavigate();
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [selectedArtikel, setSelectedArtikel] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -1421,6 +1423,12 @@ const HilfeCenter = () => {
       <div className="hilfe-header">
         <h2>Hilfe & Anleitungen</h2>
         <p>Finden Sie Antworten und Anleitungen zu allen Funktionen der Dojo-Software</p>
+
+        <button
+          onClick={() => navigate('/dashboard/funktionen')}
+          style={{ marginTop: 4, padding: '9px 16px', background: 'linear-gradient(135deg,#6366f1,#4f46e5)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+          🧭 Funktionsübersicht — alle Funktionen & Pläne
+        </button>
 
         {/* Suchfeld */}
         <div className="hilfe-search">

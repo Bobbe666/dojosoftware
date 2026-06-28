@@ -182,6 +182,7 @@ const NotificationSystem = lazyWithReload(() => import(/* webpackChunkName: "not
 const PruefungsVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "exams" */ "./components/PruefungsVerwaltung"));
 const PruefungDurchfuehren = lazyWithReload(() => import(/* webpackChunkName: "exams" */ "./components/PruefungDurchfuehren"));
 const UrkundenVorlagenEditor = lazyWithReload(() => import(/* webpackChunkName: "exams" */ "./components/UrkundenVorlagenEditor"));
+const FunktionsUebersicht = lazyWithReload(() => import(/* webpackChunkName: "help" */ "./components/FunktionsUebersicht"));
 const BadgeAdminOverview = lazyWithReload(() => import(/* webpackChunkName: "badges" */ "./components/BadgeAdminOverview"));
 const PasswortVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/PasswortVerwaltung"));
 const DojoLizenzverwaltung = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/DojoLizenzverwaltung"));
@@ -973,6 +974,7 @@ const App = () => {
               <Route path="termine" element={<Suspense fallback={<LazyLoadFallback />}><PruefungsVerwaltung /></Suspense>} />
               <Route path="pruefung-durchfuehren" element={<Suspense fallback={<LazyLoadFallback />}><PruefungDurchfuehren /></Suspense>} />
               <Route path="urkunden-vorlagen" element={<Suspense fallback={<LazyLoadFallback />}><UrkundenVorlagenEditor /></Suspense>} />
+              <Route path="funktionen" element={<Suspense fallback={<LazyLoadFallback />}><FunktionsUebersicht /></Suspense>} />
               <Route path="kalender" element={<Suspense fallback={<LazyLoadFallback />}><KalenderZentrale /></Suspense>} />
 
               {/* Badge-Verwaltung (Auszeichnungen) */}
