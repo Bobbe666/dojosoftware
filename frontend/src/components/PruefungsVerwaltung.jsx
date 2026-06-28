@@ -125,6 +125,7 @@ const VORLAGEN_CONFIG = {
       .cert-datum { position:absolute;top:265mm;left:84mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:11pt;color:#1a1a1a; }
     `,
     renderNr: true, renderDatum: true, renderOrt: true, renderPruefer: true, datumLang: true,
+    nummerPrefix: 'Urkunden-Nr.: ',
     gradTransform: (g) => { const s = (g || '').split('Kyu')[0].trim(); return s || (g || ''); },
   },
 };
@@ -143,7 +144,7 @@ function CertPreview({ vorlage, sample, datumDE, prueferName, pruefer1, pruefer2
   const name = bz(`${sample?.vorname || ''} ${sample?.nachname || ''}`.trim()) || 'Max Mustermann';
   const gradRaw = sample?.graduierung_nachher || sample?.graduierung_zwischen || '—';
   const rank = bz(cfg.gradTransform ? cfg.gradTransform(gradRaw) : gradRaw);
-  const nummer = bz(sample?.urkundennummer || '00000000-00001');
+  const nummer = (cfg.nummerPrefix || '') + bz(sample?.urkundennummer || '00000000-00001');
   return (
     <div style={{ width: maxWidth, height: pageHmm * MM * scale, position: 'relative', margin: '0 auto', boxShadow: '0 6px 24px rgba(0,0,0,0.45)', background: '#fff', borderRadius: 6, overflow: 'hidden' }}>
       {cfg.extraFonts ? <div dangerouslySetInnerHTML={{ __html: cfg.extraFonts }} /> : null}
@@ -2292,7 +2293,7 @@ const PruefungsVerwaltung = () => {
       // die nächste Seite und der page-break-before erzeugt eine zusätzliche Leerseite.
       const pageBlocks = kandidatenMitNummern.map((p, i) =>
         (i > 0 ? '<div class="page-break"></div>' : '') +
-        `<div class="cert-page"><div class="cert-name">${bz(`${p.vorname || ''} ${p.nachname || ''}`)}</div><div class="cert-rank">${bz(cfg.gradTransform ? cfg.gradTransform(p.graduierung_nachher || '') : (p.graduierung_nachher || '—'))}</div>${p.urkundennummer ? `<div class="cert-nummer">${bz(p.urkundennummer)}</div>` : ''}<div class="cert-datum">${pruefDatumDE}</div>${cfg.renderExaminer ? `<div class="cert-examiner">${bz(termin?.pruefer_name || '')}</div>` : ''}${cfg.renderOrt ? `<div class="cert-ort">${bz(certOrt)}</div>` : ''}${cfg.renderPruefer ? `<div class="cert-pruefer1">${bz(prueferEins)}</div><div class="cert-pruefer2">${bz(prueferZwei)}</div>` : ''}</div>`
+        `<div class="cert-page"><div class="cert-name">${bz(`${p.vorname || ''} ${p.nachname || ''}`)}</div><div class="cert-rank">${bz(cfg.gradTransform ? cfg.gradTransform(p.graduierung_nachher || '') : (p.graduierung_nachher || '—'))}</div>${p.urkundennummer ? `<div class="cert-nummer">${cfg.nummerPrefix || ''}${bz(p.urkundennummer)}</div>` : ''}<div class="cert-datum">${pruefDatumDE}</div>${cfg.renderExaminer ? `<div class="cert-examiner">${bz(termin?.pruefer_name || '')}</div>` : ''}${cfg.renderOrt ? `<div class="cert-ort">${bz(certOrt)}</div>` : ''}${cfg.renderPruefer ? `<div class="cert-pruefer1">${bz(prueferEins)}</div><div class="cert-pruefer2">${bz(prueferZwei)}</div>` : ''}</div>`
       ).join('');
 
       const html = `<!DOCTYPE html>

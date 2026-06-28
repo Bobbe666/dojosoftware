@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.98',
+    date: '2026-06-28',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Enso-Urkunde: Label „Urkunden-Nr." vor der Nummer',
+    description: 'Vor der (automatischen DB-)Urkundennummer steht auf der Enso-Urkunde jetzt „Urkunden-Nr.: …".',
+    highlights: ['🏷️ „Urkunden-Nr.:" vor der Nummer auf der Enso-Urkunde'],
+    details: 'PruefungsVerwaltung.jsx: enso nummerPrefix in cert-nummer (Druck + Vorschau).',
+    files: ['frontend/src/components/PruefungsVerwaltung.jsx'],
+  },
+  {
     version: '3.0.97',
     date: '2026-06-28',
     type: 'improvement',
