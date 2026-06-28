@@ -42,6 +42,7 @@ import VisitorChatAlerts from './chat/VisitorChatAlerts';
 import DashboardUebersicht from './DashboardUebersicht';
 import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
+import FunktionsUebersicht from './FunktionsUebersicht';
 import CockpitUebersicht from './CockpitUebersicht';
 import EntwicklungsWidget from './EntwicklungsWidget';
 import StilErinnerungBanner from './StilErinnerungBanner';
@@ -345,6 +346,7 @@ function Dashboard() {
     { id: 'verwaltung', label: t('tabs.verwaltung'), icon: '🏯' },
     { id: 'berichte', label: t('tabs.berichte'), icon: '📄' },
     { id: 'schnellaktionen', label: t('tabs.schnellaktionen'), icon: '⚡' },
+    { id: 'funktionen', label: 'Apps & Funktionen', icon: '🧭' },
     ...(hasFeature('support') ? [{ id: 'hilfe-support', label: t('tabs.hilfeSupport'), icon: '❓' }] : []),
     { id: 'einstellungen', label: 'Einstellungen', icon: '⚙️' }
   ];
@@ -2075,6 +2077,13 @@ function Dashboard() {
                               🔄 {loading ? t('quickActions.loading') : t('quickActions.refreshStats')}
                             </button>
                           </div>
+                        </div>
+                      )}
+
+                      {/* 🧭 Apps & Funktionen Tab 🧭 */}
+                      {activeTab === 'funktionen' && (
+                        <div className="nav-section">
+                          <FunktionsUebersicht />
                         </div>
                       )}
 

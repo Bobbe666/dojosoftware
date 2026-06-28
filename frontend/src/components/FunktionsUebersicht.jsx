@@ -11,6 +11,7 @@ const PLAN_META = {
   professional: { label: 'Professional', color: '#3b82f6' },
   premium:      { label: 'Premium',      color: '#8b5cf6' },
   enterprise:   { label: 'Enterprise',   color: '#DAA520' },
+  zusatz:       { label: 'Zusatzprodukt', color: '#14b8a6' },
 };
 
 // Eigenständige Begleit-Apps (eigene URL/PWA)
@@ -20,6 +21,7 @@ const APPS = [
   { name: 'Chat / Nachrichten', icon: '💬', url: 'https://msg.dojo.tda-intl.org', fuer: 'Team & Mitglieder', desc: 'Direktnachrichten, Gruppen, Ankündigungen (auch Messenger/WhatsApp)', plan: 'premium' },
   { name: 'Coach-App (Trainer)', icon: '🧑‍🏫', url: 'https://coach.tda-intl.org', fuer: 'Trainer', desc: 'Schnell-Ansage, Meine Stunden, Vertretung suchen, Check-in, Chat', plan: 'enterprise' },
   { name: 'Finanzen-App (Beleg-Scanner)', icon: '🧾', url: 'https://finanzen.tda-intl.org', fuer: 'Inhaber / Buchhaltung', desc: 'Belege fotografieren, automatisch erkennen (OCR), in die Buchhaltung', plan: 'premium' },
+  { name: 'TDA Events', icon: '🥇', url: 'https://events.tda-intl.org', fuer: 'Turniere / Events', desc: 'Turnier-Plattform: Anmeldung, Einwaage, Ergebnisse, Saison-Rangliste', plan: 'zusatz' },
 ];
 
 const BEREICHE = [
@@ -110,7 +112,7 @@ export default function FunktionsUebersicht() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 10 }}>
           {APPS.map((a) => {
             const m = PLAN_META[a.plan];
-            const enthalten = meinRank > 0 ? meinRank >= RANK[a.plan] : null;
+            const enthalten = (meinRank > 0 && RANK[a.plan]) ? meinRank >= RANK[a.plan] : null;
             return (
               <a key={a.name} href={a.url} target="_blank" rel="noreferrer"
                 style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: 10, padding: '12px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, opacity: enthalten === false ? 0.62 : 1 }}>

@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.106',
+    date: '2026-06-28',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Funktionsübersicht als eigener Sidebar-Punkt + TDA Events ergänzt',
+    description: '„🧭 Apps & Funktionen" ist jetzt ein eigener Punkt in der Seitenleiste (vorher nur im Hilfe-Center). In der App-Liste ist zusätzlich TDA Events aufgeführt; Begleit-Apps mit eigener Adresse sind klar markiert.',
+    highlights: ['🧭 Eigener Sidebar-Punkt „Apps & Funktionen"'],
+    details: 'Dashboard.jsx: Tab funktionen + Render FunktionsUebersicht. FunktionsUebersicht.jsx: TDA Events ergänzt, „Zusatzprodukt"-Badge.',
+    files: ['frontend/src/components/Dashboard.jsx', 'frontend/src/components/FunktionsUebersicht.jsx'],
+  },
+  {
     version: '3.0.105',
     date: '2026-06-28',
     type: 'improvement',
