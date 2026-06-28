@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.99',
+    date: '2026-06-28',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Enso-Urkunde: elegante Schrift (Shippori Mincho) + Druck wartet auf Font-Laden',
+    description: 'Die Enso-Urkunde nutzt jetzt die japanische Mincho-Serife „Shippori Mincho" (sauberer Druck, edler Look) statt Georgia. Außerdem wartet der Urkunden-Druck bei Web-Schriften aufs Laden der Schrift, damit der erste Druck nicht in der Fallback-Schrift erscheint (gilt auch für Aikido/BoB).',
+    highlights: ['🖌️ Enso-Urkunde in „Shippori Mincho" (japanisch angehaucht)', '🖨️ Druck wartet auf Web-Schrift → kein „ausgefranster" Erstdruck'],
+    details: 'PruefungsVerwaltung.jsx: enso extraFonts (Google Fonts Shippori Mincho) + font-family in allen cert-* Feldern; buildAndPrint druckt erst nach win.document.fonts.ready (Fallback 2,5s) wenn cfg.extraFonts.',
+    files: ['frontend/src/components/PruefungsVerwaltung.jsx'],
+  },
+  {
     version: '3.0.98',
     date: '2026-06-28',
     type: 'improvement',

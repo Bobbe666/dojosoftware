@@ -112,17 +112,18 @@ const VORLAGEN_CONFIG = {
   enso: {
     pageSize: 'A4 portrait', pageW: '210mm', pageH: '297mm',
     bgImage: `${URKUNDE_ORIGIN}/assets/urkunde_enso.jpg`,
+    extraFonts: `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">`,
     // A4 hoch, Positionen aus dem Design gemessen: Name-Linie 134mm (Text drüber),
     // Grad in der Lücke „der __ Kyu Grad" ~x75/y157, Prüfer-Linien 240mm (L 44,5 / R 115,5),
-    // Ort/Datum-Linien 274mm. Urkundennr. über linkem Prüfer.
+    // Ort/Datum-Linien 274mm. Schrift: Shippori Mincho (japanische Mincho-Serife).
     styles: `
-      .cert-name { position:absolute;top:120mm;left:5mm;width:200mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:26pt;color:#1a1a1a; }
-      .cert-rank { position:absolute;top:153mm;left:61mm;width:32mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:17pt;font-weight:bold;color:#1a1a1a; }
-      .cert-nummer { position:absolute;top:202mm;left:5mm;width:200mm;text-align:center;font-family:Georgia,serif;font-size:10pt;color:#1a1a1a;letter-spacing:0.5px; }
-      .cert-pruefer1 { position:absolute;top:231mm;left:13mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:12pt;color:#1a1a1a; }
-      .cert-pruefer2 { position:absolute;top:231mm;left:84mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:12pt;color:#1a1a1a; }
-      .cert-ort { position:absolute;top:265mm;left:13mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:11pt;color:#1a1a1a; }
-      .cert-datum { position:absolute;top:265mm;left:84mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:11pt;color:#1a1a1a; }
+      .cert-name { position:absolute;top:120mm;left:5mm;width:200mm;text-align:center;font-family:'Shippori Mincho',Georgia,serif;font-size:25pt;color:#1a1a1a; }
+      .cert-rank { position:absolute;top:153mm;left:61mm;width:32mm;text-align:center;font-family:'Shippori Mincho',Georgia,serif;font-size:17pt;font-weight:700;color:#1a1a1a; }
+      .cert-nummer { position:absolute;top:202mm;left:5mm;width:200mm;text-align:center;font-family:'Shippori Mincho',Georgia,serif;font-size:10pt;color:#1a1a1a;letter-spacing:0.5px; }
+      .cert-pruefer1 { position:absolute;top:231mm;left:13mm;width:63mm;text-align:center;font-family:'Shippori Mincho',Georgia,serif;font-size:12pt;color:#1a1a1a; }
+      .cert-pruefer2 { position:absolute;top:231mm;left:84mm;width:63mm;text-align:center;font-family:'Shippori Mincho',Georgia,serif;font-size:12pt;color:#1a1a1a; }
+      .cert-ort { position:absolute;top:265mm;left:13mm;width:63mm;text-align:center;font-family:'Shippori Mincho',Georgia,serif;font-size:11pt;color:#1a1a1a; }
+      .cert-datum { position:absolute;top:265mm;left:84mm;width:63mm;text-align:center;font-family:'Shippori Mincho',Georgia,serif;font-size:11pt;color:#1a1a1a; }
     `,
     renderNr: true, renderDatum: true, renderOrt: true, renderPruefer: true, datumLang: true,
     nummerPrefix: 'Urkunden-Nr.: ',
@@ -2332,7 +2333,17 @@ const PruefungsVerwaltung = () => {
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => win.print(), 600);
+      // Bei Web-Schriften (extraFonts) auf Font-Laden warten, sonst druckt der erste
+      // Versuch in der Fallback-Schrift. document.fonts.ready + Sicherheits-Timeout.
+      const druckeJetzt = () => { try { win.print(); } catch (_) {} };
+      if (cfg.extraFonts && win.document.fonts && win.document.fonts.ready) {
+        let gedruckt = false;
+        const go = () => { if (!gedruckt) { gedruckt = true; druckeJetzt(); } };
+        win.document.fonts.ready.then(() => setTimeout(go, 250));
+        setTimeout(go, 2500); // Fallback falls fonts.ready nie auflöst
+      } else {
+        setTimeout(druckeJetzt, 600);
+      }
     };
 
     // Urkundennummer async holen, dann Fenster befüllen
