@@ -117,14 +117,14 @@ const VORLAGEN_CONFIG = {
     // Ort/Datum-Linien 274mm. Urkundennr. über linkem Prüfer.
     styles: `
       .cert-name { position:absolute;top:120mm;left:5mm;width:200mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:26pt;color:#1a1a1a; }
-      .cert-rank { position:absolute;top:150mm;left:58mm;width:34mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:19pt;font-weight:bold;color:#1a1a1a; }
-      .cert-nummer { position:absolute;top:215mm;left:13mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:9pt;color:#1a1a1a;letter-spacing:0.5px; }
+      .cert-rank { position:absolute;top:153mm;left:61mm;width:32mm;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:17pt;font-weight:bold;color:#1a1a1a; }
+      .cert-nummer { position:absolute;top:202mm;left:5mm;width:200mm;text-align:center;font-family:Georgia,serif;font-size:10pt;color:#1a1a1a;letter-spacing:0.5px; }
       .cert-pruefer1 { position:absolute;top:231mm;left:13mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:12pt;color:#1a1a1a; }
       .cert-pruefer2 { position:absolute;top:231mm;left:84mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:12pt;color:#1a1a1a; }
       .cert-ort { position:absolute;top:265mm;left:13mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:11pt;color:#1a1a1a; }
       .cert-datum { position:absolute;top:265mm;left:84mm;width:63mm;text-align:center;font-family:Georgia,serif;font-size:11pt;color:#1a1a1a; }
     `,
-    renderNr: true, renderDatum: true, renderOrt: true, renderPruefer: true,
+    renderNr: true, renderDatum: true, renderOrt: true, renderPruefer: true, datumLang: true,
     gradTransform: (g) => { const s = (g || '').split('Kyu')[0].trim(); return s || (g || ''); },
   },
 };
@@ -2257,7 +2257,8 @@ const PruefungsVerwaltung = () => {
   // Urkunden-Datendruck: druckt Name + Gurt + Urkundennummer + Datum auf die vorgedruckte Urkunde
   // A4 Querformat – Fenster wird SOFORT geöffnet (User-Gesture), Inhalt dann async befüllt
   const druckeUrkunden = (kandidaten, termin, vorlage = 'pruefungsurkunde', opts = {}) => {
-    const prueferEins = opts.pruefer1 != null ? opts.pruefer1 : (termin?.pruefer_name || '');
+    const _pn = termin?.pruefer_name;
+    const prueferEins = opts.pruefer1 != null ? opts.pruefer1 : ((_pn && _pn.trim() && _pn.trim().toLowerCase() !== 'nicht festgelegt') ? _pn : '');
     const prueferZwei = opts.pruefer2 || '';
     const certOrt = opts.ort != null ? opts.ort : (termin?.ort || '');
     if (!kandidaten || kandidaten.length === 0) return;
@@ -2278,7 +2279,9 @@ const PruefungsVerwaltung = () => {
 
     const buildAndPrint = (kandidatenMitNummern) => {
       const pruefDatum = termin?.datum || new Date().toISOString().split('T')[0];
-      const pruefDatumDE = new Date(pruefDatum).toLocaleDateString('de-DE');
+      const pruefDatumDE = cfg.datumLang
+        ? new Date(pruefDatum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })
+        : new Date(pruefDatum).toLocaleDateString('de-DE');
 
       const useBonzai = vorlage === 'aikido_schuelergrad';
       const bz = (s) => useBonzai ? (s || '').replace(/ß/g, 'ss') : (s || '');
@@ -3952,7 +3955,8 @@ const PruefungsVerwaltung = () => {
           { key: 'enso',                  label: 'Enso Karate',         img: '/assets/urkunde_enso.jpg' },
         ];
         const cfgSel = VORLAGEN_CONFIG[druckAuswahlModal.vorlage] || {};
-        const prueferEinsVal = druckAuswahlModal.pruefer1 != null ? druckAuswahlModal.pruefer1 : (druckAuswahlModal.termin.pruefer_name || '');
+        const cleanPruefer = (v) => (v && v.trim() && v.trim().toLowerCase() !== 'nicht festgelegt') ? v : '';
+        const prueferEinsVal = druckAuswahlModal.pruefer1 != null ? druckAuswahlModal.pruefer1 : cleanPruefer(druckAuswahlModal.termin.pruefer_name);
         const prueferZweiVal = druckAuswahlModal.pruefer2 != null ? druckAuswahlModal.pruefer2 : '';
         const closeModal = () => setDruckAuswahlModal({ open: false, termin: null, selected: [], vorlage: 'pruefungsurkunde' });
         return createPortal(
@@ -4051,7 +4055,9 @@ const PruefungsVerwaltung = () => {
               {(() => {
                 const sample = druckAuswahlModal.termin.pruefungen.find(p => druckAuswahlModal.selected.includes(p.pruefung_id))
                   || druckAuswahlModal.termin.pruefungen[0];
-                const datumDE = new Date(druckAuswahlModal.termin.datum).toLocaleDateString('de-DE');
+                const datumDE = cfgSel.datumLang
+                  ? new Date(druckAuswahlModal.termin.datum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })
+                  : new Date(druckAuswahlModal.termin.datum).toLocaleDateString('de-DE');
                 return (
                   <div style={{padding:'4px 20px 0'}}>
                     <div style={{fontSize:'11px',fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'10px'}}>

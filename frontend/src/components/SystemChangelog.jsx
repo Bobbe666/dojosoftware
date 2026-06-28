@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.97',
+    date: '2026-06-28',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Enso-Urkunde: Feinschliff (Grad, Urkundennummer zentriert, Prüfer, Datum)',
+    description: 'Kyu-Grad sitzt jetzt sauber in der Lücke „der __ Kyu Grad", Urkundennummer ist zentriert, leere Prüfer („Nicht festgelegt") bleiben auf der Urkunde frei, und das Datum erscheint elegant ausgeschrieben (z.B. „28. Juni 2026").',
+    highlights: ['🎯 Enso-Urkunde: Grad/Urkundennr. korrigiert, Datum ausgeschrieben, „Nicht festgelegt" wird nicht gedruckt'],
+    details: 'PruefungsVerwaltung.jsx: enso cert-rank top/size, cert-nummer zentriert (full width), datumLang (long date) in druckeUrkunden+Vorschau, cleanPruefer („Nicht festgelegt"→leer) in Modal+druckeUrkunden.',
+    files: ['frontend/src/components/PruefungsVerwaltung.jsx'],
+  },
+  {
     version: '3.0.96',
     date: '2026-06-28',
     type: 'feature',
