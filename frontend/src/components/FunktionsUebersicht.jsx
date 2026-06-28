@@ -13,6 +13,15 @@ const PLAN_META = {
   enterprise:   { label: 'Enterprise',   color: '#DAA520' },
 };
 
+// Eigenständige Begleit-Apps (eigene URL/PWA)
+const APPS = [
+  { name: 'Mitglieder-App', icon: '📱', url: 'https://app.tda-vib.de', fuer: 'Mitglieder', desc: 'Profil, Kurse, Check-in, Chat, Mitgliedsausweis', plan: 'standard' },
+  { name: 'Check-in-App', icon: '✅', url: 'https://checkin.tda-intl.org', fuer: 'Eingang / Terminal', desc: 'Anwesenheit blitzschnell erfassen + Verkauf', plan: 'standard' },
+  { name: 'Chat / Nachrichten', icon: '💬', url: 'https://msg.dojo.tda-intl.org', fuer: 'Team & Mitglieder', desc: 'Direktnachrichten, Gruppen, Ankündigungen (auch Messenger/WhatsApp)', plan: 'premium' },
+  { name: 'Coach-App (Trainer)', icon: '🧑‍🏫', url: 'https://coach.tda-intl.org', fuer: 'Trainer', desc: 'Schnell-Ansage, Meine Stunden, Vertretung suchen, Check-in, Chat', plan: 'enterprise' },
+  { name: 'Finanzen-App (Beleg-Scanner)', icon: '🧾', url: 'https://finanzen.tda-intl.org', fuer: 'Inhaber / Buchhaltung', desc: 'Belege fotografieren, automatisch erkennen (OCR), in die Buchhaltung', plan: 'premium' },
+];
+
 const BEREICHE = [
   { titel: 'Mitglieder & Verwaltung', icon: '👥', items: [
     ['Mitgliederverwaltung', 'Stammdaten, Gurte/Grade, Stile, Foto, Notfallkontakt', 'standard'],
@@ -92,6 +101,33 @@ export default function FunktionsUebersicht() {
         {meinRank > 0 && <div style={{ fontSize: 14 }}>Dein Plan: <strong style={{ color: PLAN_META[effektiv]?.color }}>{PLAN_META[effektiv]?.label || effektiv}</strong></div>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 'auto' }}>
           {Object.entries(PLAN_META).map(([k, m]) => <span key={k} style={badge(m.color)}>{m.label}</span>)}
+        </div>
+      </div>
+
+      {/* Begleit-Apps */}
+      <div style={{ marginBottom: 26 }}>
+        <h2 style={{ fontSize: 17, margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 8 }}><span>📲</span>Apps (eigene Logins/PWAs)</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 10 }}>
+          {APPS.map((a) => {
+            const m = PLAN_META[a.plan];
+            const enthalten = meinRank > 0 ? meinRank >= RANK[a.plan] : null;
+            return (
+              <a key={a.name} href={a.url} target="_blank" rel="noreferrer"
+                style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: 10, padding: '12px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, opacity: enthalten === false ? 0.62 : 1 }}>
+                <span style={{ fontSize: 22, lineHeight: 1 }}>{a.icon}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{a.name}</div>
+                  <div style={{ fontSize: 12.5, opacity: 0.7, lineHeight: 1.35, margin: '2px 0 4px' }}>{a.desc}</div>
+                  <div style={{ fontSize: 11, opacity: 0.55 }}>Für: {a.fuer} · {a.url.replace('https://', '')} ↗</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flex: '0 0 auto' }}>
+                  <span style={badge(m.color)}>{m.label}</span>
+                  {enthalten === true && <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>✓</span>}
+                  {enthalten === false && <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 600 }}>🔒</span>}
+                </div>
+              </a>
+            );
+          })}
         </div>
       </div>
 

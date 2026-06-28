@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.105',
+    date: '2026-06-28',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Funktionsübersicht: Apps-Sektion (Mitglieder-App, Check-in, Chat, Coach, Finanzen)',
+    description: 'Die Funktionsübersicht zeigt jetzt oben auch die eigenständigen Apps mit eigener Adresse: Mitglieder-App, Check-in-App, Chat/Nachrichten, Coach-App (Trainer) und Finanzen-App (Beleg-Scanner) — mit Zweck, Zielgruppe, Plan-Badge und direktem Link.',
+    highlights: ['📲 Übersicht aller Begleit-Apps mit Links & Plan-Zuordnung'],
+    details: 'FunktionsUebersicht.jsx: APPS-Sektion (app.tda-vib.de, checkin., msg.dojo., coach., finanzen.).',
+    files: ['frontend/src/components/FunktionsUebersicht.jsx'],
+  },
+  {
     version: '3.0.104',
     date: '2026-06-28',
     type: 'feature',
