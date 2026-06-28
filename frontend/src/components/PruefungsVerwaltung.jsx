@@ -24,6 +24,7 @@ class KalenderErrorBoundary extends Component {
 }
 import { useNavigate } from 'react-router-dom';
 import { useDojoContext } from '../context/DojoContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import { Check, X, Calendar, Award, Users, TrendingUp, ChevronUp, ChevronDown, Download, Edit, Trash2, Play, FileText, Scroll, Printer, CalendarDays } from 'lucide-react';
 
 const KalenderZentrale = lazy(() => import('./KalenderZentrale'));
@@ -172,6 +173,7 @@ function CertPreview({ vorlage, sample, datumDE, prueferName, pruefer1, pruefer2
 const PruefungsVerwaltung = () => {
   const { getDojoFilterParam, activeDojo, loading: dojosLoading, dojos } = useDojoContext();
   const navigate = useNavigate();
+  const { hasFeature } = useSubscription();
   const API_BASE_URL = '/api'; // Nutzt Vite-Proxy
 
   // State
@@ -3997,8 +3999,16 @@ const PruefungsVerwaltung = () => {
 
               {/* Vorlagen-Auswahl */}
               <div style={{padding:'14px 20px 0'}}>
-                <div style={{fontSize:'11px',fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'10px'}}>
-                  Urkunden-Vorlage
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}}>
+                  <div style={{fontSize:'11px',fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em'}}>
+                    Urkunden-Vorlage
+                  </div>
+                  {hasFeature('urkunden_vorlagen') && (
+                    <button onClick={() => { closeModal(); navigate('/dashboard/urkunden-vorlagen'); }}
+                      style={{background:'none',border:'none',color:'#818cf8',cursor:'pointer',fontSize:'12px',textDecoration:'underline'}}>
+                      ⚙ Eigene Vorlagen
+                    </button>
+                  )}
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'8px'}}>
                   {VORLAGEN.map(v => {

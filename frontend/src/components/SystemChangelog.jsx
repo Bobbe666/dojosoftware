@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.100',
+    date: '2026-06-28',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Urkunden-Vorlagen-Editor (Enterprise) — Etappe 2: visueller Editor',
+    description: 'Neuer Admin-Bereich „Urkunden-Vorlagen" (/dashboard/urkunden-vorlagen, Enterprise): eigenes Urkunden-Design hochladen, Felder (Name/Grad/Datum/Ort/Urkunden-Nr./Prüfer 1+2/Freitext) per Drag & Drop platzieren, Größe/Ausrichtung/Optionen einstellen, Live-Vorschau mit Beispieldaten, speichern. Erreichbar über „⚙ Eigene Vorlagen" im Urkunden-Druck-Dialog. Noch offen: Etappe 3 (Druck/Vorschau aus DB + KSS-Vorlagen migrieren).',
+    highlights: [
+      '🎨 Eigene Urkunden-Designs pro Dojo per Drag & Drop',
+      '👁️ Live-Vorschau mit Beispieldaten',
+      '🔒 Enterprise-Feature',
+    ],
+    details: 'UrkundenVorlagenEditor.jsx (Liste + Editor, Pointer-Drag, Upload, CRUD über /api/urkunden-vorlagen). App.jsx Route urkunden-vorlagen. PruefungsVerwaltung: gegateter Link im Druck-Modal (hasFeature urkunden_vorlagen).',
+    files: ['frontend/src/components/UrkundenVorlagenEditor.jsx', 'frontend/src/App.jsx', 'frontend/src/components/PruefungsVerwaltung.jsx'],
+  },
+  {
     version: '3.0.99',
     date: '2026-06-28',
     type: 'improvement',
