@@ -112,6 +112,7 @@ function requireFeature(featureName) {
         todos:            'feature_todos',
         support:          'feature_support',
         businessplan:     'feature_businessplan',
+        urkunden_vorlagen: 'feature_urkunden_vorlagen',  // Enterprise: eigene Urkunden-Designs
       };
 
       const featureColumn = featureColumnMap[featureName];
@@ -278,6 +279,7 @@ async function syncPlanFeatures(dojoId, planName, { updatePlanType = true } = {}
       whatsapp:         'feature_whatsapp',
       homepage_builder: 'feature_homepage_builder',
       businessplan:     'feature_businessplan',
+      urkunden_vorlagen: 'feature_urkunden_vorlagen',
     };
 
     // Trial = alle Features freischalten (volle Testphase)
