@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.103',
+    date: '2026-06-28',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Hilfe-Center erweitert: Kommunikation/Chat + Coach-App',
+    description: 'Neue Hilfe-Kategorien: „Kommunikation & Chat" (Chat-Grundlagen, jemandem schreiben via „Neues Gespräch", Messenger/WhatsApp) und „Coach-App (Trainer)" (Anmelden, Schnell-Ansage, Vertretung suchen inkl. Push).',
+    highlights: ['📖 Hilfe: Chat & Coach-App-Anleitungen'],
+    details: 'HilfeCenter.jsx: Kategorien kommunikation + coach_app ergänzt.',
+    files: ['frontend/src/components/HilfeCenter.jsx'],
+  },
+  {
     version: '3.0.102',
     date: '2026-06-28',
     type: 'improvement',

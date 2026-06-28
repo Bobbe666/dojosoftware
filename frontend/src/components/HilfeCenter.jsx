@@ -1184,6 +1184,116 @@ Jedes Mitglied hat einen persönlichen Code:
         `
       }
     ]
+  },
+  kommunikation: {
+    icon: '💬',
+    titel: 'Kommunikation & Chat',
+    beschreibung: 'Nachrichten mit Team & Mitgliedern',
+    artikel: [
+      {
+        id: 'chat-grundlagen',
+        titel: 'Chat-Grundlagen',
+        inhalt: `
+## Chat im Dojo
+
+Den Chat findest du unter **Kommunikation** im Dashboard bzw. als eigene Nachrichten-App unter **msg.dojo.tda-intl.org** (ein Login — öffnet sich mit deinem Account).
+
+Oben gibt es (je nach Freischaltung) Reiter:
+- **💬 Intern** — Chats mit Team & Mitgliedern.
+- **📘 Messenger** / **💬 WhatsApp** — externe Kanäle (Enterprise, siehe eigener Artikel).
+
+### Räume/Gespräche
+- **Direktnachricht** (1:1) oder **Gruppe/Kurs-Chat**.
+- **Ankündigung**: Kanal, in dem nur Admins schreiben (alle lesen).
+        `
+      },
+      {
+        id: 'neues-gespraech',
+        titel: 'Jemandem schreiben (Neues Gespräch)',
+        inhalt: `
+## Eine neue Person anschreiben
+
+**Wichtig:** Das **Suchfeld oben** durchsucht nur deine **bestehenden** Chats — damit findest du niemanden, mit dem du noch nicht geschrieben hast.
+
+Um jemandem **ohne bestehenden Chat** zu schreiben:
+1. Auf **„Neues Gespräch"** (➕ / ✏️) tippen.
+2. **Direktnachricht** wählen.
+3. Im Suchfeld dort den **Namen eintippen** (ab 2 Buchstaben) → Person auswählen → Gespräch starten.
+
+So erreichst du jedes aktive Mitglied und jeden Trainer/Admin deines Dojos.
+        `
+      },
+      {
+        id: 'messenger-whatsapp',
+        titel: 'Messenger & WhatsApp (Enterprise)',
+        inhalt: `
+## Externe Kanäle anbinden (Enterprise)
+
+Im Chat können **Facebook Messenger** und **WhatsApp** als zusätzliche Kanäle laufen — Nachrichten von Besuchern/Mitgliedern landen direkt im Admin-Chat.
+
+- Einrichtung unter **Einstellungen → Integrationen** (Seiten-/Phone-Number-ID, Token, App Secret, Webhook).
+- **24-Stunden-Fenster**: Außerhalb des Meta-24h-Fensters ist das Antworten gesperrt (Meta-Vorgabe) — die Eingabe wird dann blockiert.
+        `
+      }
+    ]
+  },
+  coach_app: {
+    icon: '🧑‍🏫',
+    titel: 'Coach-App (Trainer)',
+    beschreibung: 'Die App für Trainer: Stunden, Ansagen, Vertretung',
+    artikel: [
+      {
+        id: 'coach-login',
+        titel: 'Coach-App öffnen & anmelden',
+        inhalt: `
+## Coach-App (Enterprise)
+
+Die Coach-App ist die eigene App für Trainer: **coach.tda-intl.org** (am besten zum Home-Bildschirm hinzufügen → wie eine App).
+
+- **Anmelden** mit den gewohnten Zugangsdaten.
+- Ein Login öffnet auch **Check-in** und **Chat** ohne erneutes Anmelden.
+- Wird je Dojo freigeschaltet (Enterprise).
+
+Module: **Schnell-Ansage**, **Meine Stunden**, **Vertretung suchen**, **Check-in**, **Chat**.
+        `
+      },
+      {
+        id: 'coach-schnellansage',
+        titel: 'Schnell-Ansage (Stunde absagen/ändern)',
+        inhalt: `
+## Stunde kurzfristig absagen oder verlegen
+
+In der Coach-App → **Schnell-Ansage**:
+1. Tag (Heute/Morgen) und betroffene **Stunde** wählen.
+2. **Absagen**, **verlegen** oder kurze Info eingeben.
+3. Veröffentlichen.
+
+Die Info erscheint **sofort als Popup** in der Mitglieder-App und auf der Homepage und **läuft automatisch ab**. Bei jeder Änderung wird der **Admin automatisch informiert** (E-Mail, In-App, Chat).
+
+Trainer sehen/ändern nur ihre **eigenen Stunden + zugewiesene Vertretungen**.
+        `
+      },
+      {
+        id: 'coach-vertretung',
+        titel: 'Vertretung suchen',
+        inhalt: `
+## Vertretung suchen & übernehmen
+
+In der Coach-App → **🆘 Vertretung suchen**:
+
+### Anfrage stellen
+1. **„Aus meinen Stunden"** (Datum wählen — auch im Voraus) und die Stunde auswählen, **oder** „Frei eingeben" (Kurs/Datum/Zeit) + optionale Notiz.
+2. **„Anfrage an alle Trainer senden"** → alle Trainer bekommen eine **E-Mail** (und **Push**, falls aktiviert) und sehen die Anfrage in der App.
+
+### Übernehmen
+- Unter **„Offene Anfragen"** auf **„Ich übernehme"** — **wer zuerst zusagt, bekommt die Vertretung.**
+- Der anfragende Trainer und der Admin werden automatisch informiert.
+
+### Push aktivieren
+Einmalig **„🔔 Push-Benachrichtigungen aktivieren"** tippen. Auf dem **iPhone** funktioniert Push nur, wenn die Coach-App vorher **zum Home-Bildschirm hinzugefügt** (installiert) wurde.
+        `
+      }
+    ]
   }
 };
 
