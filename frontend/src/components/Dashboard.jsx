@@ -1713,7 +1713,6 @@ function Dashboard() {
 
                       {/* ✨ Events Tab ✨ */}
                       {activeTab === 'events' && (
-                        <>
                           <div className="nav-cards">
                           {eventsCards.map((card, index) => (
                             <div
@@ -1737,10 +1736,6 @@ function Dashboard() {
                             </div>
                           ))}
                           </div>
-                          <div className="content-card" style={{ marginTop: '1rem' }}>
-                            <TodoPanel fixedKontext="events" />
-                          </div>
-                        </>
                       )}
 
                       {/* ⏱ Training Timer Tab (Enterprise) */}

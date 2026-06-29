@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.108',
+    date: '2026-06-29',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Events-Tab: To-Do-Liste entfernt',
+    description: 'Im Events-Tab wurde versehentlich die To-Do-Übersicht mit angezeigt. To-Do ist jetzt wieder nur im eigenen „To Do"-Tab.',
+    highlights: ['🧹 Events-Tab zeigt keine To-Do-Liste mehr'],
+    details: 'Dashboard.jsx: TodoPanel fixedKontext="events" aus dem Events-Tab entfernt.',
+    files: ['frontend/src/components/Dashboard.jsx'],
+  },
+  {
     version: '3.0.107',
     date: '2026-06-28',
     type: 'improvement',
