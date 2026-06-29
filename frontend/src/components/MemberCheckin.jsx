@@ -24,6 +24,8 @@ const MemberCheckin = ({ onClose }) => {
   const [activeCheckins, setActiveCheckins]                   = useState([]); // [{stundenplan_id, checkin_id, kurs_name, stil}]
   const [trainerCheckedInCourses, setTrainerCheckedInCourses] = useState([]);
   const [checkoutLoading, setCheckoutLoading]                 = useState(null); // checkin_id das gerade ausgecheckt wird
+  const [stilFilterAktiv, setStilFilterAktiv]                 = useState(false); // Dojo-Einstellung
+  const [showAlleKurse, setShowAlleKurse]                     = useState(false); // „Weitere Kurse anzeigen"
 
   const API_BASE = config.apiBaseUrl;
 
@@ -75,6 +77,15 @@ const MemberCheckin = ({ onClose }) => {
         const result = await coursesRes.json();
         if (result.success) setCoursesToday(result.courses || []);
       }
+
+      // Dojo-Einstellung: Stil-Filter beim Check-in?
+      try {
+        const setRes = await fetchWithAuth(`${API_BASE}/checkin-einstellungen`);
+        if (setRes.ok) {
+          const s = await setRes.json();
+          setStilFilterAktiv(!!s.stil_filter_aktiv);
+        }
+      } catch { /* Default: aus */ }
 
       const checkinsRes = await fetchWithAuth(`${API_BASE}/checkin/today-member/${mitgliedId}`);
       if (checkinsRes.ok) {
@@ -239,6 +250,16 @@ const MemberCheckin = ({ onClose }) => {
     );
   }
 
+  // ── Stil-Filter (Dojo-Einstellung): zuerst nur Kurse des eigenen Stils ──
+  const memberStyles = (((memberData?.mitglied || memberData)?.stile) || '')
+    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const stilFilterEffektiv = stilFilterAktiv && memberStyles.length > 0;
+  const courseMatchesStyle = (c) => memberStyles.includes((c.stil || '').trim().toLowerCase());
+  const offeneKurse = coursesToday.filter(c => !checkedInCourses.includes(c.stundenplan_id));
+  const passendeKurse = offeneKurse.filter(courseMatchesStyle);
+  const versteckteAnzahl = offeneKurse.length - passendeKurse.length;
+  const sichtbareKurse = (stilFilterEffektiv && !showAlleKurse) ? passendeKurse : offeneKurse;
+
   return (
     <div ref={overlayRef} className="modal-overlay member-checkin-modal" style={overlayStyle} onClick={onClose}>
       <div className="modal-content checkin-modal" style={modalStyle} onClick={(e) => e.stopPropagation()}>
@@ -329,8 +350,16 @@ const MemberCheckin = ({ onClose }) => {
                   <p>Du bist bereits für alle heutigen Kurse eingecheckt.</p>
                 </div>
               ) : (
+                <>
                 <div className="courses-list">
-                  {coursesToday.map((course) => {
+                  {sichtbareKurse.length === 0 && (
+                    <div className="no-courses">
+                      <div className="no-courses-icon">🥋</div>
+                      <h4>Keine Kurse für deinen Stil heute</h4>
+                      <p>Über „Weitere Kurse anzeigen" siehst du alle heutigen Stunden.</p>
+                    </div>
+                  )}
+                  {sichtbareKurse.map((course) => {
                     if (checkedInCourses.includes(course.stundenplan_id)) return null;
 
                     const title    = getCourseTitle(course);
@@ -389,6 +418,16 @@ const MemberCheckin = ({ onClose }) => {
                     );
                   })}
                 </div>
+                {stilFilterEffektiv && !showAlleKurse && versteckteAnzahl > 0 && (
+                  <button
+                    className="btn btn-secondary"
+                    style={{ width: '100%', marginTop: '0.5rem' }}
+                    onClick={() => setShowAlleKurse(true)}
+                  >
+                    Weitere Kurse anzeigen ({versteckteAnzahl}) →
+                  </button>
+                )}
+                </>
               )}
 
               <div className="action-buttons">

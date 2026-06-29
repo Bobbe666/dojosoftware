@@ -47,7 +47,7 @@ function requireFeature(featureName) {
                 s.feature_verkauf, s.feature_buchfuehrung,
                 s.feature_events, s.feature_multidojo, s.feature_api,
                 s.feature_kontoauszug, s.feature_social_media, s.feature_training, s.feature_todos,
-                s.feature_businessplan,
+                s.feature_businessplan, s.feature_display,
                 s.trial_ends_at, s.subscription_ends_at,
                 d.dojoname as dojo_name, d.subdomain
          FROM dojo_subscriptions s
@@ -113,6 +113,7 @@ function requireFeature(featureName) {
         support:          'feature_support',
         businessplan:     'feature_businessplan',
         urkunden_vorlagen: 'feature_urkunden_vorlagen',  // Enterprise: eigene Urkunden-Designs
+        display:          'feature_display',             // Enterprise: Werbe-/Info-Bildschirm
       };
 
       const featureColumn = featureColumnMap[featureName];
@@ -280,6 +281,7 @@ async function syncPlanFeatures(dojoId, planName, { updatePlanType = true } = {}
       homepage_builder: 'feature_homepage_builder',
       businessplan:     'feature_businessplan',
       urkunden_vorlagen: 'feature_urkunden_vorlagen',
+      display:          'feature_display',
     };
 
     // Trial = alle Features freischalten (volle Testphase)

@@ -1,0 +1,246 @@
+/* PublicWerbeDisplay.css — Vollbild-Werbe-/Info-Bildschirm (Digital Signage, Kiosk) */
+
+.wd-display {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #0e0e1a;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Topbar ---------- */
+.wd-topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.6vh 3vw;
+  background: linear-gradient(90deg, rgba(240,165,0,0.18), rgba(14,14,26,0));
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.wd-brand {
+  font-size: 3.4vh;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #f0a500;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.wd-clock { text-align: right; line-height: 1.1; }
+.wd-clock-time { display: block; font-size: 3.6vh; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wd-clock-date { display: block; font-size: 1.7vh; opacity: 0.7; text-transform: capitalize; }
+
+/* ---------- Stage ---------- */
+.wd-stage {
+  position: relative;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+.wd-stage-inner { position: absolute; inset: 0; }
+
+.wd-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4vh 5vw;
+  box-sizing: border-box;
+  animation: wd-fade 0.7s ease;
+}
+@keyframes wd-fade {
+  from { opacity: 0; transform: scale(1.015); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- Medien (Bild/Video) ---------- */
+.wd-slide-media { padding: 0; background: #000; }
+.wd-media-img, .wd-media-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.wd-media-caption {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 2.5vh 4vw;
+  font-size: 3vh;
+  font-weight: 700;
+  background: linear-gradient(0deg, rgba(0,0,0,0.75), rgba(0,0,0,0));
+}
+
+/* ---------- Text-Slide ---------- */
+.wd-slide-text { text-align: center; }
+.wd-text-title {
+  font-size: 7vh;
+  font-weight: 900;
+  margin: 0 0 2vh 0;
+  line-height: 1.05;
+  text-shadow: 0 3px 14px rgba(0,0,0,0.35);
+}
+.wd-text-body {
+  font-size: 3.6vh;
+  font-weight: 400;
+  max-width: 80vw;
+  margin: 0;
+  line-height: 1.35;
+  opacity: 0.95;
+}
+.wd-fallback-logo { font-size: 12vh; margin-bottom: 2vh; }
+
+/* ---------- QR-Slide ---------- */
+.wd-slide-qr { text-align: center; background: linear-gradient(135deg, #1a1a2e, #0e0e1a); }
+.wd-qr-title { font-size: 5.5vh; font-weight: 800; margin: 0 0 3vh; }
+.wd-qr-box {
+  background: #fff;
+  padding: 2.2vh;
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+}
+.wd-qr-box canvas { display: block; width: 38vh !important; height: 38vh !important; }
+.wd-qr-sub { font-size: 3vh; margin-top: 3vh; opacity: 0.9; }
+
+/* ---------- Auto-Slides ---------- */
+.wd-slide-auto { align-items: stretch; justify-content: flex-start; }
+.wd-auto-header {
+  font-size: 5vh;
+  font-weight: 800;
+  color: #f0a500;
+  margin-bottom: 3vh;
+  display: flex;
+  align-items: baseline;
+  gap: 1.5vw;
+}
+.wd-auto-sub { font-size: 3vh; color: #fff; opacity: 0.7; font-weight: 600; text-transform: capitalize; }
+.wd-auto-empty { font-size: 4vh; opacity: 0.8; margin: auto; text-align: center; }
+
+/* Kursplan-Grid */
+.wd-kurs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(28vw, 1fr));
+  gap: 2.2vh 2vw;
+  align-content: start;
+}
+.wd-kurs-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-left: 6px solid #f0a500;
+  border-radius: 14px;
+  padding: 2.2vh 2vw;
+}
+.wd-kurs-zeit { font-size: 3.4vh; font-weight: 800; color: #f0a500; font-variant-numeric: tabular-nums; }
+.wd-kurs-name { font-size: 3.2vh; font-weight: 700; margin-top: 0.5vh; }
+.wd-kurs-gruppe { font-size: 2.2vh; opacity: 0.65; }
+.wd-kurs-trainer { font-size: 2.4vh; opacity: 0.85; margin-top: 0.8vh; }
+
+/* Listen (Events / Prüfungen) */
+.wd-liste { display: flex; flex-direction: column; gap: 1.8vh; }
+.wd-liste-row {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  padding: 2vh 2.2vw;
+}
+.wd-liste-datum {
+  flex: 0 0 auto;
+  min-width: 16vw;
+  font-size: 3vh;
+  font-weight: 800;
+  color: #f0a500;
+}
+.wd-liste-haupt { flex: 1 1 auto; display: flex; flex-direction: column; }
+.wd-liste-titel { font-size: 3.2vh; font-weight: 700; }
+.wd-liste-ort { font-size: 2.2vh; opacity: 0.7; margin-top: 0.4vh; }
+.wd-liste-tag {
+  flex: 0 0 auto;
+  font-size: 2.2vh;
+  background: rgba(240,165,0,0.18);
+  color: #f0a500;
+  padding: 0.6vh 1.4vw;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+/* Geburtstage */
+.wd-slide-geburtstag { background: linear-gradient(135deg, #2a1a3e, #16213e); }
+.wd-gb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20vw, 1fr)); gap: 2.4vh 2vw; align-content: start; }
+.wd-gb-card {
+  background: rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 3vh 1vw;
+  text-align: center;
+}
+.wd-gb-name { font-size: 4vh; font-weight: 800; }
+.wd-gb-tag { font-size: 2.4vh; color: #f0a500; margin-top: 0.8vh; font-weight: 700; }
+
+/* Schnell-Ansage */
+.wd-slide-ansage {
+  text-align: center;
+  background: linear-gradient(135deg, #3a1010, #16213e);
+}
+.wd-ansage-badge {
+  font-size: 3vh;
+  font-weight: 800;
+  color: #ff6b6b;
+  letter-spacing: 1px;
+  margin-bottom: 2.5vh;
+  text-transform: uppercase;
+}
+.wd-ansage-title { font-size: 6.5vh; font-weight: 900; margin: 0 0 2.5vh; line-height: 1.05; }
+.wd-ansage-text { font-size: 4vh; max-width: 82vw; line-height: 1.35; opacity: 0.95; }
+
+/* ---------- Fortschrittspunkte ---------- */
+.wd-dots {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: 1.2vw;
+  padding: 1.6vh 0;
+  background: rgba(0,0,0,0.25);
+}
+.wd-dot {
+  width: 1.2vh;
+  height: 1.2vh;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transition: all 0.3s ease;
+}
+.wd-dot.active { background: #f0a500; transform: scale(1.4); }
+
+/* ---------- Enterprise-Hinweis ---------- */
+.wd-enterprise {
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 30%, #1f1f3a 0%, #0e0e1a 70%);
+}
+.wd-ent-inner {
+  margin: auto;
+  text-align: center;
+  max-width: 70vw;
+  animation: wd-fade 0.8s ease;
+}
+.wd-ent-logo { font-size: 13vh; margin-bottom: 1vh; }
+.wd-ent-badge {
+  display: inline-block;
+  font-size: 2.4vh;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #1a1a2e;
+  background: linear-gradient(135deg, #f0a500, #ffd166);
+  padding: 0.7vh 2.2vw;
+  border-radius: 999px;
+  margin-bottom: 3vh;
+}
+.wd-ent-title { font-size: 6vh; font-weight: 900; margin: 0 0 3vh; }
+.wd-ent-text { font-size: 3.6vh; line-height: 1.4; margin: 0 0 2vh; }
+.wd-ent-text strong { color: #f0a500; }
+.wd-ent-sub { font-size: 2.8vh; line-height: 1.45; opacity: 0.8; margin: 0 0 5vh; }
+.wd-ent-foot { font-size: 2vh; opacity: 0.5; letter-spacing: 1px; }

@@ -507,6 +507,19 @@ try {
   });
 }
 
+// ÖFFENTLICHES WERBE-/INFO-DISPLAY (Digital Signage, vor Authentifizierung)
+try {
+  const publicDisplayRoutes = require('./routes/public-display');
+  app.use('/api/public/display', publicDisplayRoutes);
+  logger.success('Route geladen', { path: '/api/public/display' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'public display',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
 // 1.0.3b PUBLIC NEWS (JSON-API, Widget, RSS)
 try {
   const publicNewsRoutes = require('./routes/public-news');
@@ -1014,6 +1027,80 @@ db.promise().query(`
   ALTER TABLE beitraege
     ADD COLUMN IF NOT EXISTS verrechnet_zehnerkarte_id INT DEFAULT NULL
 `).catch(err => logger.warn('Migration 214 (ignoriert):', { error: err.message }));
+
+// Migration 215: Werbe-/Info-Display (Digital Signage, Enterprise-Feature)
+db.promise().query(`ALTER TABLE dojo_subscriptions ADD COLUMN IF NOT EXISTS feature_display BOOLEAN DEFAULT FALSE`)
+  .catch(err => logger.warn('Migration 215a (ignoriert):', { error: err.message }));
+db.promise().query(`ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS feature_display BOOLEAN DEFAULT FALSE`)
+  .catch(err => logger.warn('Migration 215b (ignoriert):', { error: err.message }));
+db.promise().query(`UPDATE subscription_plans SET feature_display = TRUE WHERE plan_name IN ('enterprise','premium')`)
+  .catch(err => logger.warn('Migration 215c (ignoriert):', { error: err.message }));
+(async () => {
+  try {
+    await db.promise().query(`
+      CREATE TABLE IF NOT EXISTS display_config (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        dojo_id INT NOT NULL,
+        aktiv BOOLEAN DEFAULT TRUE,
+        titel VARCHAR(255) DEFAULT NULL,
+        standard_dauer INT DEFAULT 12,
+        uhr_anzeigen BOOLEAN DEFAULT TRUE,
+        auto_kursplan BOOLEAN DEFAULT TRUE,
+        auto_events BOOLEAN DEFAULT TRUE,
+        auto_pruefungen BOOLEAN DEFAULT TRUE,
+        auto_geburtstage BOOLEAN DEFAULT FALSE,
+        auto_schnellansage BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_display_config_dojo (dojo_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.promise().query(`
+      CREATE TABLE IF NOT EXISTS display_slides (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        dojo_id INT NOT NULL,
+        typ VARCHAR(32) NOT NULL DEFAULT 'text',
+        titel VARCHAR(255) DEFAULT NULL,
+        text_inhalt TEXT DEFAULT NULL,
+        medien_url VARCHAR(500) DEFAULT NULL,
+        qr_daten VARCHAR(500) DEFAULT NULL,
+        hintergrund_farbe VARCHAR(32) DEFAULT NULL,
+        text_farbe VARCHAR(32) DEFAULT NULL,
+        dauer INT DEFAULT NULL,
+        sortierung INT DEFAULT 0,
+        aktiv BOOLEAN DEFAULT TRUE,
+        start_datum DATE DEFAULT NULL,
+        end_datum DATE DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        KEY idx_display_slides_dojo (dojo_id, aktiv, sortierung)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    // Enterprise/Premium-Dojos automatisch freischalten (analog Plan-Mapping)
+    await db.promise().query(`
+      UPDATE dojo_subscriptions s
+        JOIN subscription_plans p ON p.plan_name = s.plan_type
+        SET s.feature_display = p.feature_display
+      WHERE p.feature_display = TRUE
+    `);
+    logger.success('Migration 215 Werbe-Display OK');
+  } catch (err) {
+    logger.warn('Migration 215 Werbe-Display (ignoriert):', { error: err.message });
+  }
+})();
+
+// WERBE-/INFO-DISPLAY ROUTES (Digital Signage, Admin-Verwaltung, Enterprise)
+try {
+  const displayRoutes = require('./routes/display');
+  app.use('/api/display', authenticateToken, displayRoutes);
+  logger.success('Route gemountet', { path: '/api/display' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'display routes',
+    error: error.message,
+    stack: error.stack
+  });
+}
 
 // BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
 try {

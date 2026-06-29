@@ -117,7 +117,8 @@ export const SubscriptionProvider = ({ children }) => {
       social_media: 'Social Media Posting',
       training: 'Training Timer',
       todos: 'To-Do System',
-      bestellsystem: 'Artikel-Bestellsystem (Enterprise)'
+      bestellsystem: 'Artikel-Bestellsystem (Enterprise)',
+      display: 'Werbe-/Info-Bildschirm (Enterprise)'
     };
     return featureNames[featureName] || featureName;
   };
@@ -135,7 +136,8 @@ export const SubscriptionProvider = ({ children }) => {
       homepage_builder: 'enterprise',
       social_media: 'enterprise',
       training: 'enterprise',
-      todos: 'enterprise'
+      todos: 'enterprise',
+      display: 'enterprise'
     };
     return featurePlans[featureName] || 'starter';
   };

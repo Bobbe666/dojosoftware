@@ -93,6 +93,8 @@ const GruppenStilverwaltung = lazyWithReload(() => import(/* webpackChunkName: "
 const Stilverwaltung = lazyWithReload(() => import(/* webpackChunkName: "styles" */ "./components/Stilverwaltung"));
 const StandortVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "settings" */ "./components/StandortVerwaltung"));
 const PublicTimetableDisplay = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/PublicTimetableDisplay"));
+const PublicWerbeDisplay = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/PublicWerbeDisplay"));
+const DisplayVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "settings" */ "./components/DisplayVerwaltung"));
 
 // ============================================================================
 // LAZY LOADED - Finanzen & Beiträge
@@ -164,6 +166,7 @@ const CourseRatingAdmin = lazyWithReload(() => import(/* webpackChunkName: "trai
 // ============================================================================
 const Personal = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/TrainerPersonal"));
 const EinstellungenDojo = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/EinstellungenDojo"));
+const CheckinEinstellungen = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/CheckinEinstellungen"));
 const ThemeEinstellungen = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/ThemeEinstellungen"));
 const AuditLog = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/AuditLog"));
 const SecurityDashboard = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/SecurityDashboard"));
@@ -653,6 +656,9 @@ const App = () => {
             {/* Public Timetable Display - No authentication required */}
             <Route path="/public-timetable" element={<Suspense fallback={<LazyLoadFallback />}><PublicTimetableDisplay /></Suspense>} />
 
+            {/* Public Werbe-/Info-Display (Digital Signage) - No authentication required */}
+            <Route path="/public-display" element={<Suspense fallback={<LazyLoadFallback />}><PublicWerbeDisplay /></Suspense>} />
+
             {/* Buddy Invite Registration - No authentication required */}
             <Route path="/registration/buddy-invite/:token" element={<Suspense fallback={<LazyLoadFallback />}><BuddyInviteRegistration /></Suspense>} />
 
@@ -917,6 +923,9 @@ const App = () => {
               {/* Check-In System */}
               <Route path="checkin" element={<Suspense fallback={<LazyLoadFallback />}><CheckinSystem /></Suspense>} />
 
+              {/* Werbe-/Info-Bildschirm (Digital Signage) Verwaltung */}
+              <Route path="werbe-display" element={<Suspense fallback={<LazyLoadFallback />}><DisplayVerwaltung /></Suspense>} />
+
               {/* Personal Check-In System */}
               <Route path="personal-checkin" element={<Suspense fallback={<LazyLoadFallback />}><PersonalCheckin /></Suspense>} />
 
@@ -1079,6 +1088,7 @@ const App = () => {
               <Route path="einstellungen/meindojo" element={<Suspense fallback={<LazyLoadFallback />}><EinstellungenDojo /></Suspense>} />
               <Route path="einstellungen/zahlungen" element={<Suspense fallback={<LazyLoadFallback />}><ZahlungsEinstellungen /></Suspense>} />
               <Route path="einstellungen/design" element={<Suspense fallback={<LazyLoadFallback />}><ThemeEinstellungen /></Suspense>} />
+              <Route path="einstellungen/checkin" element={<Suspense fallback={<LazyLoadFallback />}><CheckinEinstellungen /></Suspense>} />
 
               {/* Audit-Log (Änderungsprotokoll) */}
               <Route path="audit-log" element={<Suspense fallback={<LazyLoadFallback />}><AuditLog /></Suspense>} />

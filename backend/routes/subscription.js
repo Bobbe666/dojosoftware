@@ -282,7 +282,7 @@ router.get('/current', cacheGet(60000), async (req, res) => {
           feature_multidojo: 1, feature_api: 1, feature_messenger: 1, feature_whatsapp: 1,
           feature_homepage_builder: 1, feature_kontoauszug: 1, feature_social_media: 1,
           feature_training: 1, feature_todos: 1, feature_support: 1, feature_gutscheine: 1,
-          feature_businessplan: 1,
+          feature_businessplan: 1, feature_display: 1,
           max_members: 99999
         },
         trial_days_left: null,

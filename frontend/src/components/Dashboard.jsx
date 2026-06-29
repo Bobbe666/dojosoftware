@@ -609,6 +609,13 @@ function Dashboard() {
       featured: true
     },
     {
+      icon: '✅',
+      title: 'Check-in',
+      description: 'Stil-Filter beim Check-in: Mitgliedern zuerst nur Kurse des eigenen Stils zeigen',
+      path: '/dashboard/einstellungen/checkin',
+      featured: false
+    },
+    {
       icon: '🏯',
       title: 'Dojo-Verwaltung',
       description: 'Dojos verwalten, Design, Theme, Verträge & Steuern',
@@ -1605,7 +1612,24 @@ function Dashboard() {
                             </div>
                             <div className="nav-arrow">↗</div>
                           </div>
-                          
+
+                          {hasFeature('display') && (
+                          <div
+                            onClick={() => handleNavigation('/dashboard/werbe-display')}
+                            className="nav-card clickable featured"
+                          >
+                            <div className="nav-badge new">NEU</div>
+                            <div className="nav-content">
+                              <div className="nav-card-header">
+                                <span className="nav-icon">🖥️</span>
+                                <h3>Werbe-Bildschirm</h3>
+                              </div>
+                              <p>Werbung & Infos für 2. Monitor verwalten</p>
+                            </div>
+                            <div className="nav-arrow">→</div>
+                          </div>
+                          )}
+
                           <div
                             onClick={() => handleNavigation('/dashboard/kasse')}
                             className="nav-card clickable featured"

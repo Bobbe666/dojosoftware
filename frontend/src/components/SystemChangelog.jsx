@@ -31,6 +31,45 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.110',
+    date: '2026-06-29',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Check-in: optionaler Stil-Filter (pro Dojo einstellbar)',
+    description: 'Neu unter Einstellungen → Check-in: Wenn aktiviert, sehen Mitglieder beim Einchecken zuerst nur die Kurse ihres eigenen Stils. Über „Weitere Kurse anzeigen" können sie weiterhin jede andere Stunde besuchen. Jedes Dojo (Subdomain) entscheidet selbst. Hat ein Mitglied keinen Stil hinterlegt, werden alle Kurse gezeigt.',
+    highlights: [
+      '🥋 Check-in zeigt zuerst nur Kurse des eigenen Stils (optional)',
+      '➕ „Weitere Kurse anzeigen" für andere Stunden',
+      '⚙️ Pro Dojo in den Einstellungen ein-/ausschaltbar',
+    ],
+    details: 'Migration 220 (checkin_einstellungen), routes/checkin-einstellungen.js (GET/PUT), CheckinEinstellungen.jsx + Route /dashboard/einstellungen/checkin + Karte, MemberCheckin.jsx Stil-Filter (Match über Stil-Name aus mitglied_stile) + „Weitere"-Button.',
+    files: ['backend/routes/checkin-einstellungen.js', 'frontend/src/components/CheckinEinstellungen.jsx', 'frontend/src/components/MemberCheckin.jsx'],
+  },
+  {
+    version: '3.0.109',
+    date: '2026-06-29',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Werbe-/Info-Bildschirm für den 2. Monitor (Enterprise)',
+    description: 'Neuer eigenständiger Vollbild-Bildschirm fürs Dojo (Fire-TV-Stick / Mini-PC): rotierende Werbung, Infos, Bilder, Videos und QR-Codes – plus automatische Inhalte wie heutiger Kursplan, kommende Events, Prüfungen, Geburtstage und Schnell-Ansagen. Verwaltung im Check-in-Tab unter „Werbe-Bildschirm".',
+    highlights: [
+      '🖥️ Eigene Anzeige-Adresse /public-display?dojo=… für den 2. Bildschirm',
+      '🗂️ Eigene Slides: Bild, Text, Video, QR-Code – mit Reihenfolge & Zeitfenster',
+      '🤖 Auto-Inhalte: Kursplan, Events, Prüfungen, Geburtstage, Schnell-Ansagen',
+      '📱 Einrichtungs-QR + Kopier-Link im Check-in-Tab'
+    ],
+    details: 'Migration 215 (feature_display, display_config, display_slides). Backend: routes/display.js (Admin-CRUD + Upload, requireFeature(\'display\')) + routes/public-display.js (öffentlich, CORS, Auto-Slides). Frontend: PublicWerbeDisplay.jsx (Kiosk, Rotation) + DisplayVerwaltung.jsx (Check-in-Tab-Karte, hasFeature(\'display\')). Token-frei wie die Stundenplananzeige.',
+    files: [
+      'backend/server.js',
+      'backend/routes/display.js',
+      'backend/routes/public-display.js',
+      'backend/middleware/featureAccess.js',
+      'frontend/src/components/PublicWerbeDisplay.jsx',
+      'frontend/src/components/DisplayVerwaltung.jsx',
+      'frontend/src/components/Dashboard.jsx',
+    ],
+  },
+  {
     version: '3.0.108',
     date: '2026-06-29',
     type: 'fix',
