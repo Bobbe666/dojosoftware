@@ -1029,14 +1029,24 @@ db.promise().query(`
 `).catch(err => logger.warn('Migration 214 (ignoriert):', { error: err.message }));
 
 // Migration 215: Werbe-/Info-Display (Digital Signage, Enterprise-Feature)
-db.promise().query(`ALTER TABLE dojo_subscriptions ADD COLUMN IF NOT EXISTS feature_display BOOLEAN DEFAULT FALSE`)
-  .catch(err => logger.warn('Migration 215a (ignoriert):', { error: err.message }));
-db.promise().query(`ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS feature_display BOOLEAN DEFAULT FALSE`)
-  .catch(err => logger.warn('Migration 215b (ignoriert):', { error: err.message }));
-db.promise().query(`UPDATE subscription_plans SET feature_display = TRUE WHERE plan_name IN ('enterprise','premium')`)
-  .catch(err => logger.warn('Migration 215c (ignoriert):', { error: err.message }));
+// MySQL-kompatibel: ADD COLUMN IF NOT EXISTS gibt es nur in MariaDB → Spalten via information_schema absichern.
 (async () => {
   try {
+    const ensureColumn = async (table, column, ddl) => {
+      const [rows] = await db.promise().query(
+        `SELECT 1 FROM information_schema.columns
+         WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ? LIMIT 1`,
+        [table, column]
+      );
+      if (!rows.length) {
+        await db.promise().query(`ALTER TABLE \`${table}\` ADD COLUMN ${ddl}`);
+      }
+    };
+    await ensureColumn('dojo_subscriptions', 'feature_display', 'feature_display BOOLEAN DEFAULT FALSE');
+    await ensureColumn('subscription_plans', 'feature_display', 'feature_display BOOLEAN DEFAULT FALSE');
+    await db.promise().query(
+      `UPDATE subscription_plans SET feature_display = TRUE WHERE plan_name IN ('enterprise','premium')`
+    );
     await db.promise().query(`
       CREATE TABLE IF NOT EXISTS display_config (
         id INT AUTO_INCREMENT PRIMARY KEY,
