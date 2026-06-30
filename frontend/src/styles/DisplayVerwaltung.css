@@ -25,7 +25,7 @@
 .dv-url-left { flex: 1 1 380px; }
 .dv-steps { margin: 0.4rem 0 0.8rem; padding-left: 1.1rem; opacity: 0.85; }
 .dv-url-box { display: flex; gap: 0.6rem; align-items: center; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 0.6rem 0.8rem; flex-wrap: wrap; }
-.dv-url-box code { font-size: 0.95rem; color: #f0a500; word-break: break-all; flex: 1 1 auto; }
+.dv-url-box code { font-size: 0.95rem; color: #e11d2a; word-break: break-all; flex: 1 1 auto; }
 .dv-url-box button { background: rgba(255,255,255,0.1); border: none; color: inherit; padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; }
 .dv-url-actions { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
 .dv-url-qr { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: #fff; padding: 0.9rem; border-radius: 14px; }
@@ -36,7 +36,7 @@
 /* Buttons */
 .dv-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: inherit; padding: 0.6rem 1.1rem; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; }
 .dv-btn:hover { background: rgba(255,255,255,0.16); }
-.dv-btn-primary { background: linear-gradient(135deg, #f0a500, #d98e00); border-color: transparent; color: #1a1a2e; }
+.dv-btn-primary { background: linear-gradient(135deg, #e11d2a, #b01018); border-color: transparent; color: #fff; }
 .dv-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .dv-link { background: none; border: none; color: #8ab4ff; cursor: pointer; font-size: 0.9rem; padding: 0.2rem 0.4rem; }
 .dv-link-danger { color: #f87171; }
@@ -71,7 +71,7 @@
   padding: 0.9rem 1rem;
   cursor: pointer;
 }
-.dv-auto-tile.on { border-color: #f0a500; background: rgba(240,165,0,0.1); }
+.dv-auto-tile.on { border-color: #e11d2a; background: rgba(225,29,42,0.12); }
 .dv-auto-tile input { grid-row: 1 / 3; align-self: center; }
 .dv-auto-label { font-weight: 700; }
 .dv-auto-hint { font-size: 0.78rem; opacity: 0.65; grid-column: 2; }

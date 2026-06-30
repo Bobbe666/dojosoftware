@@ -6,7 +6,7 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #0e0e1a;
+  background: #0a0a0a;
   color: #fff;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   display: flex;
@@ -20,14 +20,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.6vh 3vw;
-  background: linear-gradient(90deg, rgba(240,165,0,0.18), rgba(14,14,26,0));
+  background: linear-gradient(90deg, rgba(225,29,42,0.22), rgba(14,14,26,0));
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 .wd-brand {
   font-size: 3.4vh;
   font-weight: 800;
   letter-spacing: 0.5px;
-  color: #f0a500;
+  color: #e11d2a;
   text-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .wd-clock { text-align: right; line-height: 1.1; }
@@ -94,7 +94,7 @@
 .wd-fallback-logo { font-size: 12vh; margin-bottom: 2vh; }
 
 /* ---------- QR-Slide ---------- */
-.wd-slide-qr { text-align: center; background: linear-gradient(135deg, #1a1a2e, #0e0e1a); }
+.wd-slide-qr { text-align: center; background: linear-gradient(135deg, #1a0808, #0a0a0a); }
 .wd-qr-title { font-size: 5.5vh; font-weight: 800; margin: 0 0 3vh; }
 .wd-qr-box {
   background: #fff;
@@ -110,7 +110,7 @@
 .wd-auto-header {
   font-size: 5vh;
   font-weight: 800;
-  color: #f0a500;
+  color: #e11d2a;
   margin-bottom: 3vh;
   display: flex;
   align-items: baseline;
@@ -129,11 +129,11 @@
 .wd-kurs-card {
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
-  border-left: 6px solid #f0a500;
+  border-left: 6px solid #e11d2a;
   border-radius: 14px;
   padding: 2.2vh 2vw;
 }
-.wd-kurs-zeit { font-size: 3.4vh; font-weight: 800; color: #f0a500; font-variant-numeric: tabular-nums; }
+.wd-kurs-zeit { font-size: 3.4vh; font-weight: 800; color: #e11d2a; font-variant-numeric: tabular-nums; }
 .wd-kurs-name { font-size: 3.2vh; font-weight: 700; margin-top: 0.5vh; }
 .wd-kurs-gruppe { font-size: 2.2vh; opacity: 0.65; }
 .wd-kurs-trainer { font-size: 2.4vh; opacity: 0.85; margin-top: 0.8vh; }
@@ -153,7 +153,7 @@
   min-width: 16vw;
   font-size: 3vh;
   font-weight: 800;
-  color: #f0a500;
+  color: #e11d2a;
 }
 .wd-liste-haupt { flex: 1 1 auto; display: flex; flex-direction: column; }
 .wd-liste-titel { font-size: 3.2vh; font-weight: 700; }
@@ -161,15 +161,15 @@
 .wd-liste-tag {
   flex: 0 0 auto;
   font-size: 2.2vh;
-  background: rgba(240,165,0,0.18);
-  color: #f0a500;
+  background: rgba(225,29,42,0.22);
+  color: #e11d2a;
   padding: 0.6vh 1.4vw;
   border-radius: 999px;
   font-weight: 700;
 }
 
 /* Geburtstage */
-.wd-slide-geburtstag { background: linear-gradient(135deg, #2a1a3e, #16213e); }
+.wd-slide-geburtstag { background: linear-gradient(135deg, #2a0a0e, #0e0e0e); }
 .wd-gb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20vw, 1fr)); gap: 2.4vh 2vw; align-content: start; }
 .wd-gb-card {
   background: rgba(255,255,255,0.08);
@@ -178,12 +178,12 @@
   text-align: center;
 }
 .wd-gb-name { font-size: 4vh; font-weight: 800; }
-.wd-gb-tag { font-size: 2.4vh; color: #f0a500; margin-top: 0.8vh; font-weight: 700; }
+.wd-gb-tag { font-size: 2.4vh; color: #e11d2a; margin-top: 0.8vh; font-weight: 700; }
 
 /* Schnell-Ansage */
 .wd-slide-ansage {
   text-align: center;
-  background: linear-gradient(135deg, #3a1010, #16213e);
+  background: linear-gradient(135deg, #3a0a0a, #0e0e0e);
 }
 .wd-ansage-badge {
   font-size: 3vh;
@@ -212,13 +212,13 @@
   background: rgba(255,255,255,0.25);
   transition: all 0.3s ease;
 }
-.wd-dot.active { background: #f0a500; transform: scale(1.4); }
+.wd-dot.active { background: #e11d2a; transform: scale(1.4); }
 
 /* ---------- Enterprise-Hinweis ---------- */
 .wd-enterprise {
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 30%, #1f1f3a 0%, #0e0e1a 70%);
+  background: radial-gradient(circle at 50% 30%, #2a0a0e 0%, #0a0a0a 70%);
 }
 .wd-ent-inner {
   margin: auto;
@@ -233,14 +233,14 @@
   font-weight: 800;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: #1a1a2e;
-  background: linear-gradient(135deg, #f0a500, #ffd166);
+  color: #fff;
+  background: linear-gradient(135deg, #e11d2a, #ff5a5a);
   padding: 0.7vh 2.2vw;
   border-radius: 999px;
   margin-bottom: 3vh;
 }
 .wd-ent-title { font-size: 6vh; font-weight: 900; margin: 0 0 3vh; }
 .wd-ent-text { font-size: 3.6vh; line-height: 1.4; margin: 0 0 2vh; }
-.wd-ent-text strong { color: #f0a500; }
+.wd-ent-text strong { color: #e11d2a; }
 .wd-ent-sub { font-size: 2.8vh; line-height: 1.45; opacity: 0.8; margin: 0 0 5vh; }
 .wd-ent-foot { font-size: 2vh; opacity: 0.5; letter-spacing: 1px; }

@@ -106,7 +106,7 @@ const PublicWerbeDisplay = () => {
           <div
             className="wd-slide wd-slide-text"
             style={{
-              background: slide.hintergrund_farbe || 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              background: slide.hintergrund_farbe || 'linear-gradient(135deg, #2a0a0a 0%, #0a0a0a 100%)',
               color: slide.text_farbe || '#ffffff'
             }}
           >
