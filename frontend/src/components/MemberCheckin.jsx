@@ -213,11 +213,11 @@ const MemberCheckin = ({ onClose }) => {
     zIndex: 9999,
     overflow: 'hidden',
     display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-    paddingTop: '5vh', paddingLeft: '1rem', paddingRight: '1rem',
+    paddingTop: '4dvh', paddingLeft: '1rem', paddingRight: '1rem',
   };
   const modalStyle = {
     maxWidth: '450px', width: '100%',
-    height: '90vh',
+    height: '92dvh', maxHeight: '92dvh',
     overflow: 'hidden',
     display: 'flex', flexDirection: 'column',
     borderRadius: '1rem',
@@ -229,6 +229,15 @@ const MemberCheckin = ({ onClose }) => {
     touchAction: 'pan-y',
     overscrollBehavior: 'contain',
     padding: '0.75rem',
+  };
+  // „Weiter"/Bestätigen als fixe Fußleiste — immer sichtbar, auch beim Scrollen
+  const actionBarStyle = {
+    position: 'sticky', bottom: '-0.75rem',
+    marginLeft: '-0.75rem', marginRight: '-0.75rem', marginBottom: '-0.75rem',
+    marginTop: '0.75rem', padding: '0.75rem',
+    background: 'rgba(26,26,46,0.99)',
+    borderTop: '1px solid rgba(255,255,255,0.12)',
+    display: 'flex', gap: '0.5rem',
   };
 
   if (!memberData) {
@@ -430,7 +439,7 @@ const MemberCheckin = ({ onClose }) => {
                 </>
               )}
 
-              <div className="action-buttons">
+              <div className="action-buttons" style={actionBarStyle}>
                 <button onClick={onClose} className="btn btn-secondary">Abbrechen</button>
                 <button onClick={() => setStep(2)} disabled={selectedCourses.length === 0} className="btn btn-primary">
                   Weiter →
@@ -469,7 +478,7 @@ const MemberCheckin = ({ onClose }) => {
                 })}
               </div>
 
-              <div className="action-buttons">
+              <div className="action-buttons" style={actionBarStyle}>
                 <button onClick={() => setStep(1)} className="btn btn-secondary">← Zurück</button>
                 <button onClick={executeCheckin} disabled={loading} className="btn btn-success btn-large">
                   {loading ? 'Lädt...' : 'Jetzt anmelden!'}

@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.111',
+    date: '2026-06-30',
+    type: 'fix',
+    zielgruppe: 'allgemein',
+    title: 'Check-in am Handy: Scrollen & „Weiter" repariert',
+    description: 'Beim Einchecken konnte man auf dem Handy nicht bis zum „Weiter"-Button scrollen, weil das Fenster über den sichtbaren Bildschirm hinausragte. Das Fenster nutzt jetzt die dynamische Bildschirmhöhe (dvh), die Kursliste scrollt sauber, und die Buttons („Weiter"/„Bestätigen") sind als feste Fußleiste immer sichtbar.',
+    highlights: [
+      '📱 Check-in: Kursliste scrollt jetzt zuverlässig',
+      '✅ „Weiter"/„Bestätigen" immer sichtbar (fixe Fußleiste)',
+    ],
+    details: 'MemberCheckin.jsx: modalStyle/overlay von vh→dvh (92dvh), action-buttons position:sticky Fußleiste.',
+    files: ['frontend/src/components/MemberCheckin.jsx'],
+  },
+  {
     version: '3.0.110',
     date: '2026-06-29',
     type: 'feature',
