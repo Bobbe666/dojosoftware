@@ -1,0 +1,73 @@
+/* PublicProbetrainingTermin.css — öffentliche Self-Service-Buchungsseite (schwarz/rot) */
+.ppt-wrap {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #0e0e12 0%, #17171f 100%);
+  padding: 24px 14px 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #f4f4f6;
+  box-sizing: border-box;
+}
+.ppt-card {
+  width: 100%;
+  max-width: 560px;
+  background: #1c1c24;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 26px 22px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+.ppt-loading { text-align: center; padding: 40px 0; opacity: 0.7; }
+
+.ppt-header h1 { font-size: 1.6rem; margin: 10px 0 6px; }
+.ppt-header p { margin: 0; opacity: 0.8; line-height: 1.5; }
+.ppt-badge {
+  display: inline-block; font-size: 0.72rem; font-weight: 800; letter-spacing: 2px;
+  text-transform: uppercase; color: #fff; background: #e11d2a;
+  padding: 5px 12px; border-radius: 999px;
+}
+
+.ppt-info { margin: 16px 0 0; background: rgba(225,29,42,0.12); border: 1px solid rgba(225,29,42,0.3); border-radius: 10px; padding: 10px 14px; font-size: 0.9rem; }
+.ppt-inline-error { margin: 16px 0 0; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.35); color: #fca5a5; border-radius: 10px; padding: 10px 14px; font-size: 0.9rem; }
+.ppt-empty { margin-top: 20px; text-align: center; opacity: 0.7; line-height: 1.5; }
+
+.ppt-slots { margin-top: 20px; display: flex; flex-direction: column; gap: 14px; }
+.ppt-slot { background: #24242e; border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 16px 16px 18px; }
+.ppt-slot-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ppt-slot-name { font-size: 1.15rem; font-weight: 700; }
+.ppt-slot-sub { font-size: 0.85rem; opacity: 0.6; }
+.ppt-slot-meta { font-size: 0.85rem; opacity: 0.7; margin: 4px 0 12px; }
+.ppt-dates { display: flex; flex-wrap: wrap; gap: 8px; }
+.ppt-date {
+  background: #2e2e3a; border: 1.5px solid transparent; color: #f4f4f6;
+  padding: 9px 14px; border-radius: 10px; font-size: 0.92rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ppt-date:hover { background: #37374a; }
+.ppt-date.active { background: #e11d2a; border-color: #ff5a5a; color: #fff; }
+
+.ppt-confirm-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(14,14,18,0.96); backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding: 14px; display: flex; justify-content: center;
+}
+.ppt-confirm-btn {
+  width: 100%; max-width: 560px; background: linear-gradient(135deg, #e11d2a, #b3121f);
+  color: #fff; border: none; border-radius: 12px; padding: 15px; font-size: 1.05rem; font-weight: 800; cursor: pointer;
+}
+.ppt-confirm-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ppt-success { text-align: center; }
+.ppt-success-icon { font-size: 3.4rem; }
+.ppt-success h1 { font-size: 1.7rem; margin: 8px 0 16px; }
+.ppt-success-box { background: #24242e; border: 1px solid rgba(225,29,42,0.3); border-radius: 14px; padding: 18px; margin: 0 0 18px; }
+.ppt-success-date { font-size: 1.2rem; font-weight: 800; color: #ff5a5a; }
+.ppt-success-time { margin-top: 6px; opacity: 0.9; }
+.ppt-success-trainer { margin-top: 6px; font-size: 0.9rem; opacity: 0.7; }
+.ppt-success p { opacity: 0.85; line-height: 1.5; }
+.ppt-muted { opacity: 0.5 !important; font-size: 0.85rem; margin-top: 14px; }
+.ppt-error-card { text-align: center; }
+.ppt-error-card h1 { margin: 8px 0 12px; }

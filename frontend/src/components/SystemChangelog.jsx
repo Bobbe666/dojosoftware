@@ -31,6 +31,30 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.112',
+    date: '2026-07-01',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Probetraining: Selbst-Buchung, schönere Mail & Check-in-Hinweis',
+    description: 'Nach einer Probetraining-Anfrage kann der Interessent seinen Termin jetzt selbst über einen Link in der Bestätigungsmail buchen – dann wird alles automatisch sauber verbucht (Status „Probetraining vereinbart"). Am Trainingstag sieht der Trainer beim Check-in ein Popup „Heute Probetraining: … kommt". Die Bestätigungsmails haben jetzt einen richtigen Hero-Header.',
+    highlights: [
+      '📅 Terminvorschläge + „Termin verbindlich buchen"-Button in der Bestätigungsmail',
+      '✅ Selbst-Buchung über /probetraining/termin/<Link> → automatische Verbuchung + finale Bestätigung',
+      '🥋 Check-in-Popup für den Trainer am Tag des Probetrainings',
+      '✉️ Verbesserter Mail-Header (Hero) + Dojo-Markenfarbe Rot'
+    ],
+    details: 'Migration 216 (interessenten: bestaetigung_token, token_ablauf, probetraining_uhrzeit, probetraining_stundenplan_id). Backend: public-probetraining.js (Token in /buchen, GET/POST /termin/:token), emailService (Bestätigung mit CTA + neue sendProbetrainingTerminBestaetigung), emailLayout Hero-Header, checkin.js /probetrainings-today. Frontend: PublicProbetrainingTermin.jsx (+Route). Check-in-App: CheckinPage.jsx Popup/Banner. Dojo 3 theme_farbe → #e11d2a.',
+    files: [
+      'backend/server.js',
+      'backend/routes/public-probetraining.js',
+      'backend/routes/checkin.js',
+      'backend/services/emailService.js',
+      'backend/services/emailLayout.js',
+      'frontend/src/pages/PublicProbetrainingTermin.jsx',
+      'checkin-app/src/pages/CheckinPage.jsx',
+    ],
+  },
+  {
     version: '3.0.111',
     date: '2026-06-30',
     type: 'fix',

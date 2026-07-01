@@ -610,19 +610,30 @@ Bitte kontaktieren Sie den Interessenten zeitnah!
  * @param {Object} data - Anfragedaten
  */
 const sendProbetrainingBestaetigung = async (data) => {
-  const { to, vorname, dojoName, kurs, wunschdatum } = data;
+  const { to, vorname, dojoName, dojoId, kurs, wunschdatum, buchungsUrl, terminvorschlaege = [] } = data;
 
   const subject = `✅ Ihre Probetraining-Anfrage bei ${dojoName}`;
 
-  const theme = await getDojoMailTheme({ dojoname: dojoName });
+  const theme = await getDojoMailTheme(dojoId ? { dojoId } : { dojoname: dojoName });
+  const fmtLang = (dstr) => new Date(dstr).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const vorschlaegeHtml = (buchungsUrl && terminvorschlaege.length)
+    ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px 20px;margin:18px 0;">
+         <p style="margin:0 0 10px;font-size:14px;color:#166534;"><strong>📅 Sichern Sie sich direkt Ihren Wunschtermin${kurs ? ` – ${kurs.name}` : ''}:</strong></p>
+         ${terminvorschlaege.map(t => `<p style="margin:4px 0;font-size:15px;color:#15803d;">• ${fmtLang(t.datum)}${t.uhrzeit ? ` um ${t.uhrzeit} Uhr` : ''}</p>`).join('')}
+         <p style="margin:12px 0 0;font-size:13px;color:#166534;">Klicken Sie unten, um Ihren Termin in wenigen Sekunden verbindlich zu buchen.</p>
+       </div>`
+    : (kurs ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px 20px;margin:18px 0;"><p style="margin:0 0 8px;font-size:14px;color:#166534;"><strong>Ihr gewünschter Kurs:</strong></p><p style="margin:0;font-size:16px;color:#15803d;">${kurs.name}<br><span style="font-size:14px;color:#166534;">${kurs.wochentag}, ${kurs.start_zeit} - ${kurs.end_zeit}</span></p></div>` : '');
+
   const html = renderEmail({
     theme, anlass: 'begruessung', titel: dojoName, subtitel: '🥋 Vielen Dank für Ihre Anfrage!',
     footerNote: 'Bei Fragen antworten Sie einfach auf diese E-Mail.',
+    cta: buchungsUrl ? { url: buchungsUrl, label: '📅 Termin verbindlich buchen' } : undefined,
     bodyHtml: `
       <p style="font-size:16px;color:#1e293b;margin:0 0 14px;">Hallo ${vorname},</p>
-      <p style="margin:0;">vielen Dank für Ihr Interesse an einem Probetraining bei uns! Wir haben Ihre Anfrage erhalten und melden uns in Kürze bei Ihnen.</p>
-      ${kurs ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px 20px;margin:18px 0;"><p style="margin:0 0 8px;font-size:14px;color:#166534;"><strong>Ihr gewünschter Kurs:</strong></p><p style="margin:0;font-size:16px;color:#15803d;">${kurs.name}<br><span style="font-size:14px;color:#166534;">${kurs.wochentag}, ${kurs.start_zeit} - ${kurs.end_zeit}</span></p></div>` : ''}
-      ${wunschdatum ? `<p style="margin:14px 0 0;"><strong>Ihr Wunschtermin:</strong> ${new Date(wunschdatum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>` : ''}
+      <p style="margin:0;">vielen Dank für Ihr Interesse an einem Probetraining bei uns! Wir haben Ihre Anfrage erhalten.</p>
+      ${vorschlaegeHtml}
+      ${!buchungsUrl && wunschdatum ? `<p style="margin:14px 0 0;"><strong>Ihr Wunschtermin:</strong> ${new Date(wunschdatum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>` : ''}
       <div class="box"><p><strong>Was Sie mitbringen sollten:</strong><br>• Bequeme Sportkleidung<br>• Etwas zu trinken<br>• Gute Laune! 😊</p></div>
       <p style="margin:14px 0 0;">Wir freuen uns auf Sie!<br><br>Mit sportlichen Grüßen<br><strong>Ihr Team von ${dojoName}</strong></p>`,
   });
@@ -631,10 +642,10 @@ const sendProbetrainingBestaetigung = async (data) => {
 Hallo ${vorname},
 
 vielen Dank für Ihr Interesse an einem Probetraining bei ${dojoName}!
-Wir haben Ihre Anfrage erhalten und werden uns in Kürze bei Ihnen melden.
+Wir haben Ihre Anfrage erhalten.
 
-${kurs ? `Ihr gewünschter Kurs: ${kurs.name} (${kurs.wochentag}, ${kurs.start_zeit})` : ''}
-${wunschdatum ? `Ihr Wunschtermin: ${new Date(wunschdatum).toLocaleDateString('de-DE')}` : ''}
+${(buchungsUrl && terminvorschlaege.length) ? `Sichern Sie sich direkt Ihren Wunschtermin${kurs ? ` (${kurs.name})` : ''}:\n${terminvorschlaege.map(t => `- ${fmtLang(t.datum)}${t.uhrzeit ? ` um ${t.uhrzeit} Uhr` : ''}`).join('\n')}\n\nJetzt buchen: ${buchungsUrl}` : (kurs ? `Ihr gewünschter Kurs: ${kurs.name} (${kurs.wochentag}, ${kurs.start_zeit})` : '')}
+${!buchungsUrl && wunschdatum ? `Ihr Wunschtermin: ${new Date(wunschdatum).toLocaleDateString('de-DE')}` : ''}
 
 Was Sie mitbringen sollten:
 - Bequeme Sportkleidung
@@ -647,12 +658,56 @@ Mit sportlichen Grüßen
 Ihr Team von ${dojoName}
   `;
 
-  return sendEmail({
-    to,
-    subject,
-    text,
-    html
+  return sendEmail({ to, subject, text, html });
+};
+
+/**
+ * Finale Terminbestätigung, nachdem der Kunde selbst einen Probetraining-Termin gebucht hat.
+ */
+const sendProbetrainingTerminBestaetigung = async (data) => {
+  const { to, vorname, dojoName, dojoId, datum, uhrzeit, kurs, stil, trainer } = data;
+  const datumLang = new Date(datum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const subject = `🥋 Dein Probetraining bei ${dojoName} ist gebucht – ${datumLang}`;
+
+  const theme = await getDojoMailTheme(dojoId ? { dojoId } : { dojoname: dojoName });
+  const dtd  = 'padding:5px 0;color:#475569;width:40%;';
+  const dtdv = 'padding:5px 0;font-weight:bold;color:#1e293b;';
+  const html = renderEmail({
+    theme, anlass: 'begruessung', titel: dojoName, subtitel: '🥋 Probetraining bestätigt!',
+    footerNote: 'Solltest du doch nicht können, antworte einfach auf diese E-Mail.',
+    bodyHtml: `
+      <p style="font-size:16px;color:#1e293b;margin:0 0 14px;">Hallo ${vorname},</p>
+      <p style="margin:0;">super – dein Probetraining ist verbindlich gebucht. Wir freuen uns riesig auf dich! 🎉</p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px 20px;margin:18px 0;">
+        <p style="margin:0 0 10px;font-size:14px;color:#166534;"><strong>Dein Termin:</strong></p>
+        <table role="presentation" width="100%" style="font-size:14px;border-collapse:collapse;">
+          <tr><td style="${dtd}">Datum:</td><td style="${dtdv}">${datumLang}</td></tr>
+          ${uhrzeit ? `<tr><td style="${dtd}">Uhrzeit:</td><td style="${dtdv}">${uhrzeit} Uhr</td></tr>` : ''}
+          ${kurs ? `<tr><td style="${dtd}">Kurs:</td><td style="${dtdv}">${kurs}${stil ? ` (${stil})` : ''}</td></tr>` : ''}
+          ${trainer && trainer.trim() ? `<tr><td style="${dtd}">Trainer:</td><td style="padding:5px 0;color:#334155;">${trainer}</td></tr>` : ''}
+        </table>
+      </div>
+      <div class="box"><p><strong>Was du mitbringen solltest:</strong><br>• Bequeme Sportkleidung<br>• Etwas zu trinken<br>• Gute Laune! 😊</p></div>
+      <p style="margin:14px 0 0;">Bis bald auf der Matte!<br><br>Mit sportlichen Grüßen<br><strong>Dein Team von ${dojoName}</strong></p>`,
   });
+
+  const text = `Hallo ${vorname},
+
+super – dein Probetraining ist verbindlich gebucht!
+
+Dein Termin:
+- Datum: ${datumLang}
+${uhrzeit ? `- Uhrzeit: ${uhrzeit} Uhr\n` : ''}${kurs ? `- Kurs: ${kurs}${stil ? ` (${stil})` : ''}\n` : ''}${trainer && trainer.trim() ? `- Trainer: ${trainer}\n` : ''}
+
+Was du mitbringen solltest:
+- Bequeme Sportkleidung
+- Etwas zu trinken
+- Gute Laune!
+
+Bis bald auf der Matte!
+Dein Team von ${dojoName}`;
+
+  return sendEmail({ to, subject, text, html });
 };
 
 /**
@@ -795,6 +850,7 @@ module.exports = {
   sendBadgeEmail,
   sendProbetrainingAnfrageEmail,
   sendProbetrainingBestaetigung,
+  sendProbetrainingTerminBestaetigung,
   sendPruefungsAnmeldungBestaetigung,
   sendPruefungsAnmeldungAdminNotification,
   createEmailTransporter,

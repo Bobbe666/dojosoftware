@@ -357,6 +357,41 @@ router.get('/courses-today', async (req, res) => {
   }
 });
 
+// Heute vereinbarte Probetrainings (für Trainer-Popup im Check-in)
+// GET /checkin/probetrainings-today?date=YYYY-MM-DD&kurs_id=123
+router.get('/probetrainings-today', async (req, res) => {
+  try {
+    const today = req.query.date ? new Date(req.query.date + 'T12:00:00') : new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const secureDojoId = getSecureDojoId(req);
+    const dojoFilter = secureDojoId ? ' AND i.dojo_id = ?' : '';
+    const params = [dateStr];
+    if (secureDojoId) params.push(secureDojoId);
+
+    const rows = await queryAsync(`
+      SELECT i.id, i.vorname, i.nachname, i.telefon,
+             i.probetraining_uhrzeit, i.probetraining_stundenplan_id, i.gewuenschter_kurs_id,
+             k.gruppenname AS kurs_name, k.stil
+      FROM interessenten i
+      LEFT JOIN kurse k ON k.kurs_id = i.gewuenschter_kurs_id
+      WHERE DATE(i.probetraining_datum) = ?
+        AND i.status = 'probetraining_vereinbart'
+        AND (i.archiviert = 0 OR i.archiviert IS NULL)${dojoFilter}
+      ORDER BY i.probetraining_uhrzeit
+    `, params);
+
+    // Optionaler Kurs-Filter (Trainer sieht nur die für seinen Kurs)
+    const kursId = req.query.kurs_id ? parseInt(req.query.kurs_id, 10) : null;
+    const probetrainings = kursId
+      ? rows.filter(r => r.gewuenschter_kurs_id === kursId || r.gewuenschter_kurs_id == null)
+      : rows;
+
+    res.json({ success: true, date: dateStr, probetrainings });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Fehler beim Laden der Probetrainings', details: error.message });
+  }
+});
+
 // Multi-Course Check-in - GEÄNDERT: Re-Check-in nach Checkout möglich, Check-in ohne Kurs erlaubt
 router.post('/multi-course', async (req, res) => {
   try {

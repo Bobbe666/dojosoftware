@@ -1099,6 +1099,27 @@ db.promise().query(`
   }
 })();
 
+// Migration 216: Probetraining Self-Service-Buchung (Token + Slot-Felder auf interessenten)
+(async () => {
+  try {
+    const ensureColumn = async (table, column, ddl) => {
+      const [rows] = await db.promise().query(
+        `SELECT 1 FROM information_schema.columns
+         WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ? LIMIT 1`,
+        [table, column]
+      );
+      if (!rows.length) await db.promise().query(`ALTER TABLE \`${table}\` ADD COLUMN ${ddl}`);
+    };
+    await ensureColumn('interessenten', 'bestaetigung_token', 'bestaetigung_token VARCHAR(64) NULL');
+    await ensureColumn('interessenten', 'bestaetigung_token_ablauf', 'bestaetigung_token_ablauf DATETIME NULL');
+    await ensureColumn('interessenten', 'probetraining_uhrzeit', 'probetraining_uhrzeit VARCHAR(10) NULL');
+    await ensureColumn('interessenten', 'probetraining_stundenplan_id', 'probetraining_stundenplan_id INT NULL');
+    logger.success('Migration 216 Probetraining-Buchung OK');
+  } catch (err) {
+    logger.warn('Migration 216 Probetraining-Buchung (ignoriert):', { error: err.message });
+  }
+})();
+
 // WERBE-/INFO-DISPLAY ROUTES (Digital Signage, Admin-Verwaltung, Enterprise)
 try {
   const displayRoutes = require('./routes/display');

@@ -93,7 +93,7 @@ function button(cta, theme) {
   <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:6px auto 2px;">
     <tr><td align="center" bgcolor="${bg}" style="border-radius:7px;">
       <a href="${cta.url}" target="_blank"
-         style="display:inline-block;padding:13px 34px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#1a1a1a;text-decoration:none;border-radius:7px;">
+         style="display:inline-block;padding:13px 34px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:7px;">
         ${cta.label || 'Mehr erfahren'}
       </a>
     </td></tr>
@@ -130,8 +130,8 @@ function renderEmail(o = {}) {
     : '';
 
   const headerInner = theme.logoUrl
-    ? `<img src="${theme.logoUrl}" alt="${titel}" height="48" style="height:48px;max-height:48px;width:auto;border:0;display:inline-block;" />`
-    : `<div style="font-size:22px;font-weight:bold;color:${theme.accent};line-height:1.2;">${titel}</div>`;
+    ? `<img src="${theme.logoUrl}" alt="${titel}" height="52" style="height:52px;max-height:52px;width:auto;border:0;display:inline-block;" />`
+    : `<div style="font-size:25px;font-weight:800;color:${theme.accent};line-height:1.15;letter-spacing:.04em;text-transform:uppercase;">${titel}</div>`;
 
   const ctaRow = o.cta && o.cta.url
     ? `<tr><td class="pad" align="center" style="padding:4px 32px 26px;">${button(o.cta, theme)}</td></tr>`
@@ -141,9 +141,10 @@ function renderEmail(o = {}) {
   // nur ein schlanker Untertitel-Streifen auf hellem Grund.
   const headerRow = bannerUrl
     ? (subtitel ? `<tr><td class="pad" align="center" style="padding:18px 32px 0;font-family:Arial,Helvetica,sans-serif;"><div style="font-size:13px;font-weight:600;letter-spacing:.04em;color:${theme.primary};">${subtitel}</div></td></tr>` : '')
-    : `<tr><td align="center" style="background:${theme.primary};background:linear-gradient(135deg,${theme.primary} 0%,${theme.primary2} 100%);padding:30px 32px;font-family:Arial,Helvetica,sans-serif;">
+    : `<tr><td align="center" style="background:${theme.primary};background:linear-gradient(135deg,#0e0e12 0%,${theme.primary2} 100%);padding:34px 32px 28px;font-family:Arial,Helvetica,sans-serif;">
       ${headerInner}
-      ${subtitel ? `<div style="font-size:13px;color:rgba(255,255,255,.82);margin-top:8px;">${subtitel}</div>` : ''}
+      <div style="width:56px;height:3px;background:${theme.accent};margin:14px auto 0;font-size:0;line-height:3px;border-radius:2px;">&nbsp;</div>
+      ${subtitel ? `<div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:14px;letter-spacing:.03em;">${subtitel}</div>` : ''}
     </td></tr>`;
 
   return `<!DOCTYPE html>

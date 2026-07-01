@@ -6,9 +6,14 @@
 
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const db = require('../db');
 const logger = require('../utils/logger');
-const { sendProbetrainingAnfrageEmail, sendProbetrainingBestaetigung } = require('../services/emailService');
+const { sendProbetrainingAnfrageEmail, sendProbetrainingBestaetigung, sendProbetrainingTerminBestaetigung } = require('../services/emailService');
+
+// Basis-URL der Dojo-App (dort liegt die öffentliche Buchungsseite /probetraining/termin/:token)
+const APP_BASE = process.env.PUBLIC_APP_URL || 'https://dojo.tda-intl.org';
+const WOCHENTAGE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -19,6 +24,25 @@ const queryAsync = (sql, params = []) => {
     });
   });
 };
+
+function genToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Nächste N Vorkommen eines deutschen Wochentags ab „in abTagen Tagen", als YYYY-MM-DD
+function naechsteTermine(tagName, anzahl = 3, abTagen = 2) {
+  const idx = WOCHENTAGE.indexOf(tagName);
+  if (idx < 0) return [];
+  const res = [];
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + abTagen);
+  for (let i = 0; i < 70 && res.length < anzahl; i++) {
+    if (d.getDay() === idx) res.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return res;
+}
 
 /**
  * GET /api/public/probetraining/dojo/:subdomain
@@ -218,6 +242,9 @@ router.post('/buchen', async (req, res) => {
       });
     }
 
+    // Token für die Self-Service-Terminbuchung (30 Tage gültig)
+    const token = genToken();
+
     // Interessent anlegen
     const result = await queryAsync(`
       INSERT INTO interessenten (
@@ -226,8 +253,9 @@ router.post('/buchen', async (req, res) => {
         probetraining_datum, notizen,
         status, anfrage_quelle, erstkontakt_datum, erstkontakt_quelle,
         datenschutz_akzeptiert, datenschutz_akzeptiert_am,
-        prioritaet, erstellt_am
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'neu', 'probetraining_formular', CURDATE(), ?, 1, NOW(), 'hoch', NOW())
+        prioritaet, erstellt_am,
+        bestaetigung_token, bestaetigung_token_ablauf
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'neu', 'probetraining_formular', CURDATE(), ?, 1, NOW(), 'hoch', NOW(), ?, DATE_ADD(NOW(), INTERVAL 30 DAY))
     `, [
       dojo_id,
       vorname.trim(),
@@ -240,10 +268,22 @@ router.post('/buchen', async (req, res) => {
       wunsch_uhrzeit || (kursDetails ? kursDetails.start_zeit : null),
       wunschdatum || null,
       nachricht || null,
-      wie_gefunden || 'Probetraining-Formular'
+      wie_gefunden || 'Probetraining-Formular',
+      token
     ]);
 
     const interessentId = result.insertId;
+
+    // Terminvorschläge für den Wunschkurs (falls ausgewählt) berechnen
+    const terminvorschlaege = kursDetails
+      ? naechsteTermine(kursDetails.wochentag, 3).map(datum => ({
+          datum,
+          uhrzeit: kursDetails.start_zeit,
+          kurs: kursDetails.name,
+          stil: kursDetails.stil_name
+        }))
+      : [];
+    const buchungsUrl = `${APP_BASE}/probetraining/termin/${token}`;
 
     logger.info('Neue Probetraining-Anfrage eingegangen', {
       interessent_id: interessentId,
@@ -266,13 +306,16 @@ router.post('/buchen', async (req, res) => {
         });
       }
 
-      // Bestätigung an Interessent
+      // Bestätigung an Interessent (mit Terminvorschlägen + Buchungslink)
       await sendProbetrainingBestaetigung({
         to: email,
         vorname,
         dojoName: dojo.dojoname,
+        dojoId: dojo_id,
         kurs: kursDetails,
-        wunschdatum
+        wunschdatum,
+        buchungsUrl,
+        terminvorschlaege
       });
 
       // Bestätigung gesendet markieren
@@ -304,6 +347,168 @@ router.post('/buchen', async (req, res) => {
       success: false,
       error: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.'
     });
+  }
+});
+
+/**
+ * GET /api/public/probetraining/termin/:token
+ * Lädt die Buchungsseite: Interessent-Basics, Dojo, verfügbare Slots + nächste Termine.
+ */
+router.get('/termin/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const rows = await queryAsync(`
+      SELECT i.id, i.vorname, i.nachname, i.dojo_id, i.gewuenschter_kurs_id,
+             i.probetraining_datum, i.probetraining_uhrzeit, i.probetraining_stundenplan_id,
+             i.status, i.bestaetigung_token_ablauf,
+             d.dojoname
+      FROM interessenten i JOIN dojo d ON d.id = i.dojo_id
+      WHERE i.bestaetigung_token = ? LIMIT 1
+    `, [token]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Ungültiger oder abgelaufener Link.' });
+    }
+    const i = rows[0];
+    if (i.bestaetigung_token_ablauf && new Date(i.bestaetigung_token_ablauf) < new Date()) {
+      return res.status(410).json({ success: false, error: 'Dieser Link ist leider abgelaufen. Bitte melde dich direkt beim Dojo.' });
+    }
+
+    // Probetraining-geeignete Slots des Dojos
+    const slots = await queryAsync(`
+      SELECT sp.stundenplan_id, sp.tag AS wochentag,
+             TIME_FORMAT(sp.uhrzeit_start, '%H:%i') AS uhrzeit_start,
+             TIME_FORMAT(sp.uhrzeit_ende, '%H:%i') AS uhrzeit_ende,
+             k.kurs_id, k.gruppenname AS kursname, k.stil AS stil_name,
+             CONCAT(t.vorname, ' ', t.nachname) AS trainer
+      FROM stundenplan sp
+      INNER JOIN kurse k ON sp.kurs_id = k.kurs_id
+      LEFT JOIN trainer t ON k.trainer_id = t.trainer_id
+      WHERE k.dojo_id = ? AND (k.probetraining_erlaubt = 1 OR k.probetraining_erlaubt IS NULL)
+      ORDER BY FIELD(sp.tag,'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'), sp.uhrzeit_start
+    `, [i.dojo_id]);
+
+    const slotsMitTerminen = slots.map(s => ({
+      ...s,
+      naechste_termine: naechsteTermine(s.wochentag, 3)
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        interessent: { vorname: i.vorname, nachname: i.nachname },
+        dojo: { id: i.dojo_id, name: i.dojoname },
+        gebucht: i.probetraining_datum ? {
+          datum: i.probetraining_datum,
+          uhrzeit: i.probetraining_uhrzeit,
+          stundenplan_id: i.probetraining_stundenplan_id,
+          status: i.status
+        } : null,
+        slots: slotsMitTerminen
+      }
+    });
+  } catch (error) {
+    logger.error('Fehler beim Laden der Probetraining-Buchungsseite', { error: error.message });
+    res.status(500).json({ success: false, error: 'Serverfehler' });
+  }
+});
+
+/**
+ * POST /api/public/probetraining/termin/:token
+ * Kunde bucht einen konkreten Termin (Self-Service) → status 'probetraining_vereinbart'.
+ * Body: { stundenplan_id, datum: 'YYYY-MM-DD' }
+ */
+router.post('/termin/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { stundenplan_id, datum } = req.body;
+
+    if (!stundenplan_id || !datum) {
+      return res.status(400).json({ success: false, error: 'Bitte einen Termin auswählen.' });
+    }
+
+    const rows = await queryAsync(
+      `SELECT id, dojo_id, vorname, nachname, email, bestaetigung_token_ablauf
+       FROM interessenten WHERE bestaetigung_token = ? LIMIT 1`, [token]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Ungültiger oder abgelaufener Link.' });
+    }
+    const i = rows[0];
+    if (i.bestaetigung_token_ablauf && new Date(i.bestaetigung_token_ablauf) < new Date()) {
+      return res.status(410).json({ success: false, error: 'Dieser Link ist leider abgelaufen.' });
+    }
+
+    // Slot laden + validieren (gehört zum Dojo, Datum passt zum Wochentag, liegt in der Zukunft)
+    const slots = await queryAsync(`
+      SELECT sp.stundenplan_id, sp.tag AS wochentag,
+             TIME_FORMAT(sp.uhrzeit_start,'%H:%i') AS uhrzeit_start,
+             TIME_FORMAT(sp.uhrzeit_ende,'%H:%i') AS uhrzeit_ende,
+             k.kurs_id, k.gruppenname AS kursname, k.stil AS stil_name,
+             CONCAT(t.vorname,' ',t.nachname) AS trainer, d.dojoname, d.email AS dojo_email
+      FROM stundenplan sp
+      INNER JOIN kurse k ON sp.kurs_id = k.kurs_id
+      JOIN dojo d ON d.id = k.dojo_id
+      LEFT JOIN trainer t ON k.trainer_id = t.trainer_id
+      WHERE sp.stundenplan_id = ? AND k.dojo_id = ? LIMIT 1
+    `, [stundenplan_id, i.dojo_id]);
+
+    if (slots.length === 0) {
+      return res.status(400).json({ success: false, error: 'Der gewählte Kurs ist nicht verfügbar.' });
+    }
+    const slot = slots[0];
+
+    const d = new Date(datum + 'T00:00:00');
+    const heute = new Date(); heute.setHours(0, 0, 0, 0);
+    if (isNaN(d.getTime()) || d < heute) {
+      return res.status(400).json({ success: false, error: 'Bitte einen Termin in der Zukunft wählen.' });
+    }
+    if (WOCHENTAGE[d.getDay()] !== slot.wochentag) {
+      return res.status(400).json({ success: false, error: 'Das Datum passt nicht zum gewählten Kurstag.' });
+    }
+
+    // Verbuchen: Termin + Status setzen
+    await queryAsync(`
+      UPDATE interessenten
+      SET probetraining_datum = ?, probetraining_stundenplan_id = ?, probetraining_uhrzeit = ?,
+          gewuenschter_kurs_id = ?, wunsch_wochentag = ?, status = 'probetraining_vereinbart',
+          aktualisiert_am = NOW()
+      WHERE id = ?
+    `, [datum, slot.stundenplan_id, slot.uhrzeit_start, slot.kurs_id, slot.wochentag, i.id]);
+
+    logger.info('Probetraining-Termin selbst gebucht', {
+      interessent_id: i.id, dojo_id: i.dojo_id, datum, stundenplan_id: slot.stundenplan_id
+    });
+
+    // Mails: finale Bestätigung an Kunde + Info an Dojo
+    try {
+      await sendProbetrainingTerminBestaetigung({
+        to: i.email, vorname: i.vorname, dojoName: slot.dojoname, dojoId: i.dojo_id,
+        datum, uhrzeit: slot.uhrzeit_start, kurs: slot.kursname, stil: slot.stil_name, trainer: slot.trainer
+      });
+      if (slot.dojo_email) {
+        await sendProbetrainingAnfrageEmail({
+          to: slot.dojo_email, dojoName: slot.dojoname,
+          interessent: { vorname: i.vorname, nachname: i.nachname, email: i.email, telefon: null },
+          kurs: slot, wunschdatum: datum,
+          nachricht: `✅ TERMIN SELBST GEBUCHT: ${slot.wochentag}, ${new Date(datum).toLocaleDateString('de-DE')} um ${slot.uhrzeit_start} — ${slot.kursname}`
+        });
+      }
+    } catch (mailErr) {
+      logger.error('Fehler beim E-Mail-Versand nach Terminbuchung', { error: mailErr.message, interessent_id: i.id });
+    }
+
+    res.json({
+      success: true,
+      message: 'Dein Probetraining ist gebucht! Du bekommst gleich eine Bestätigung per E-Mail.',
+      data: {
+        datum, uhrzeit: slot.uhrzeit_start, kurs: slot.kursname,
+        wochentag: slot.wochentag, trainer: slot.trainer, dojo_name: slot.dojoname
+      }
+    });
+  } catch (error) {
+    logger.error('Fehler bei Probetraining-Terminbuchung', { error: error.message, stack: error.stack });
+    res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.' });
   }
 });
 

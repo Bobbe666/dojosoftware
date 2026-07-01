@@ -246,6 +246,7 @@ const BuddyInviteRegistration = lazyWithReload(() => import(/* webpackChunkName:
 const LastschriftZustimmung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/LastschriftZustimmung"));
 const VerbandMitgliedWerden = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/VerbandMitgliedWerden"));
 const ProbetrainingBuchung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/ProbetrainingBuchung"));
+const PublicProbetrainingTermin = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/PublicProbetrainingTermin"));
 const DemoBuchung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/DemoBuchung"));
 const PilotFeedback = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/PilotFeedback"));
 const EventGastAnmeldung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/EventGastAnmeldung"));
@@ -670,6 +671,7 @@ const App = () => {
 
             {/* Probetraining-Buchung - Öffentlich zugänglich */}
             <Route path="/probetraining" element={<Suspense fallback={<LazyLoadFallback />}><ProbetrainingBuchung /></Suspense>} />
+            <Route path="/probetraining/termin/:token" element={<Suspense fallback={<LazyLoadFallback />}><PublicProbetrainingTermin /></Suspense>} />
 
             {/* Demo-Termin buchen - Öffentlich zugänglich (für Software-Interessenten) */}
             <Route path="/demo-buchen" element={<Suspense fallback={<LazyLoadFallback />}><DemoBuchung /></Suspense>} />
