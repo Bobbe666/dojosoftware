@@ -283,7 +283,7 @@ router.get("/:id/kurse", (req, res) => {
  * PUT /mitglieder/:id/beitrag
  * Aktualisiert den Monatsbeitrag eines Mitglieds
  */
-router.put("/:id/beitrag", validateId('id'), (req, res) => {
+router.put("/:id/beitrag", validateId('id'), async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { monatsbeitrag } = req.body;
   const secureDojoId = getSecureDojoId(req);
@@ -293,39 +293,49 @@ router.put("/:id/beitrag", validateId('id'), (req, res) => {
     return res.status(400).json({ error: "Ungültiger Monatsbeitrag" });
   }
 
-  const beitrag = parseFloat(monatsbeitrag);
+  const beitrag = Math.round(parseFloat(monatsbeitrag) * 100) / 100;
+  // WICHTIG: monatsbeitrag liegt in `vertraege`, NICHT in `mitglieder`.
+  const dojoFilter = secureDojoId ? ' AND dojo_id = ?' : '';
 
-  // SQL Query mit Multi-Tenancy
-  let whereConditions = ['mitglied_id = ?'];
-  const values = [beitrag, id];
+  const conn = await db.promise().getConnection();
+  try {
+    await conn.beginTransaction();
 
-  if (secureDojoId) {
-    whereConditions.push('dojo_id = ?');
-    values.push(secureDojoId);
+    const vertragParams = secureDojoId ? [beitrag, id, secureDojoId] : [beitrag, id];
+    const [vRes] = await conn.query(
+      `UPDATE vertraege SET monatsbeitrag = ? WHERE mitglied_id = ? AND status = 'aktiv'${dojoFilter}`,
+      vertragParams
+    );
+
+    if (vRes.affectedRows === 0) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'Kein aktiver Vertrag gefunden oder keine Berechtigung' });
+    }
+
+    const beitragParams = secureDojoId ? [beitrag, id, secureDojoId] : [beitrag, id];
+    const [bRes] = await conn.query(
+      `UPDATE beitraege SET betrag = ?
+       WHERE mitglied_id = ? AND art = 'mitgliedsbeitrag' AND bezahlt = 0 AND zahlungsdatum >= CURDATE()${dojoFilter}`,
+      beitragParams
+    );
+
+    await conn.commit();
+    logger.info(`Monatsbeitrag Mitglied ${id} → ${beitrag}€ (Vertrag + ${bRes.affectedRows} künftige Beiträge angepasst)`);
+    res.json({
+      message: 'Beitrag erfolgreich aktualisiert',
+      monatsbeitrag: beitrag,
+      angepasste_beitraege: bRes.affectedRows
+    });
+  } catch (error) {
+    try { await conn.rollback(); } catch (e) { /* noop */ }
+    logger.error('Datenbankfehler beim Beitrag-Update:', error);
+    res.status(500).json({
+      error: 'Datenbankfehler beim Aktualisieren des Beitrags',
+      details: error.message
+    });
+  } finally {
+    conn.release();
   }
-
-  const query = `
-    UPDATE mitglieder
-    SET monatsbeitrag = ?
-    WHERE ${whereConditions.join(' AND ')}
-  `;
-
-  db.query(query, values, (error, results) => {
-    if (error) {
-      logger.error('Datenbankfehler beim Beitrag-Update:', error);
-      return res.status(500).json({
-        error: 'Datenbankfehler beim Aktualisieren des Beitrags',
-        details: error.message
-      });
-    }
-
-    if (results.affectedRows === 0) {
-      return res.status(404).json({ error: 'Mitglied nicht gefunden oder keine Berechtigung' });
-    }
-
-    logger.info(`Monatsbeitrag aktualisiert für Mitglied ${id} auf ${beitrag}€`);
-    res.json({ message: 'Beitrag erfolgreich aktualisiert', monatsbeitrag: beitrag });
-  });
 });
 
 module.exports = router;
