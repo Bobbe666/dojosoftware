@@ -31,14 +31,14 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
-    version: '3.0.114',
+    version: '3.0.115',
     date: '2026-07-01',
     type: 'fix',
     zielgruppe: 'allgemein',
-    title: 'Mitglieder-App: Karten unter dem Ausweis nicht mehr abgeschnitten',
-    description: 'Die vier Karten (Trainings, Anwesenheit usw.) unter dem Mitgliedsausweis wurden auf dem Handy links/rechts abgeschnitten. Sie werden jetzt untereinander in voller Breite angezeigt.',
-    highlights: ['📱 Karten unter dem Ausweis jetzt untereinander (kein Abschneiden)'],
-    details: 'MemberDashboard.responsive.css: .member-stats-grid auf einspaltig (1fr) bei ≤767px.',
+    title: 'Mitglieder-App: Karten unter dem Ausweis passen jetzt auf den Bildschirm',
+    description: 'Die Karten unter dem Mitgliedsausweis standen zwar untereinander, ragten aber noch über den Bildschirmrand. Jetzt schrumpfen sie sauber auf die verfügbare Breite (kein horizontaler Überlauf mehr).',
+    highlights: ['📱 Karten unter dem Ausweis passen sich der Bildschirmbreite an'],
+    details: 'MemberDashboard.responsive.css: .md-stats-grid ≤767px auf minmax(0,1fr) + min-width:0/box-sizing/max-width auf Grid-Items (behebt Grid-Überlauf durch min-width:auto).',
     files: ['frontend/src/styles/MemberDashboard.responsive.css'],
   },
   {

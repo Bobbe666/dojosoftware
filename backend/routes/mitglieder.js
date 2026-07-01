@@ -3986,8 +3986,18 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
 
                     const { rabattProzent, rabattBetragCents, rabattGrund } = await applyFamilyDiscount();
                     let monatsbeitrag = tarifPreis;
+                    let effektRabattProzent = rabattProzent;
+                    let effektRabattGrund = rabattGrund;
 
-                    if (rabattBetragCents) {
+                    // Individueller Preis (Admin-Override) hat absoluten Vorrang vor Tarif + Rabatt
+                    const customPreis = parseFloat(fm.individueller_beitrag);
+                    const hatCustomPreis = fm.individueller_beitrag !== '' && fm.individueller_beitrag != null && !isNaN(customPreis) && customPreis >= 0;
+
+                    if (hatCustomPreis) {
+                        monatsbeitrag = Math.round(customPreis * 100) / 100;
+                        effektRabattProzent = 0;
+                        effektRabattGrund = fm.rabatt_grund || 'Individueller Preis';
+                    } else if (rabattBetragCents) {
                         monatsbeitrag = Math.max(0, Math.round((tarifPreis - rabattBetragCents / 100) * 100) / 100);
                     } else if (rabattProzent > 0) {
                         monatsbeitrag = Math.round((tarifPreis * (100 - rabattProzent)) * 100) / 100;
@@ -4001,8 +4011,8 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
                         vertragsbeginn: mainMemberData.vertragsbeginn || new Date().toISOString().split('T')[0],
                         monatsbeitrag: monatsbeitrag,
                         monatlicher_beitrag: monatsbeitrag,
-                        rabatt_prozent: rabattProzent,
-                        rabatt_grund: (rabattProzent > 0 || rabattBetragCents) ? rabattGrund : null,
+                        rabatt_prozent: effektRabattProzent,
+                        rabatt_grund: (effektRabattProzent > 0 || rabattBetragCents || hatCustomPreis) ? effektRabattGrund : null,
                         mindestlaufzeit_monate: tarif.mindestlaufzeit_monate || 12,
                         kuendigungsfrist_monate: tarif.kuendigungsfrist_monate || 3,
                         aufnahmegebuehr_cents: tarif.aufnahmegebuehr_cents || 0,

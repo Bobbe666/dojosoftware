@@ -521,7 +521,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     setFamilyMembers(prev => [...prev, {
       ...newFamilyMember,
       position: prev.length + 2, // Position 1 = Hauptmitglied
-      isMinor: isFamilyMemberMinor(newFamilyMember.geburtsdatum)
+      isMinor: isFamilyMemberMinor(newFamilyMember.geburtsdatum),
+      rabatt_prozent: '',        // Admin-Sonderrabatt (überschreibt Familienrabatt)
+      individueller_beitrag: ''  // Admin: individueller Monatsbeitrag (€, überschreibt alles)
     }]);
 
     // Reset form
@@ -724,6 +726,25 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     if (position === 3) return { prozent: 15, name: 'Familien-Rabatt (3. Mitglied)' };
     if (position >= 4) return { prozent: 20, name: 'Familien-Rabatt (4.+ Mitglied)' };
     return { prozent: 0, name: '' };
+  };
+
+  // Generischer Feld-Updater für ein Familienmitglied (z.B. Sonderrabatt / individueller Preis)
+  const updateFamilyMemberField = (index, field, value) => {
+    setFamilyMembers(prev => prev.map((m, i) => i === index ? { ...m, [field]: value } : m));
+  };
+
+  // Endpreis eines Familienmitglieds in Cents — gleiche Logik wie das Backend:
+  // individueller Preis > Sonderrabatt (ersetzt Familienrabatt) > Familienrabatt.
+  const computeFamilyMemberPriceCents = (member) => {
+    const selectedTarif = (availableTarife || []).find(t => t.tarif_id === member.tarif_id);
+    const base = selectedTarif ? (selectedTarif.monatlicher_beitrag_cents || 0) : (member.tarif_preis || 0);
+    const custom = parseFloat(member.individueller_beitrag);
+    if (member.individueller_beitrag !== '' && member.individueller_beitrag != null && !isNaN(custom) && custom >= 0) {
+      return Math.round(custom * 100);
+    }
+    const sonder = parseFloat(member.rabatt_prozent);
+    const pct = (!isNaN(sonder) && sonder > 0) ? Math.min(100, sonder) : (getFamilyDiscount(member.position).prozent || 0);
+    return Math.max(0, Math.round(base * (100 - pct) / 100));
   };
 
   // Duplikatsprüfung
@@ -2235,8 +2256,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             const discount = getFamilyDiscount(member.position);
             const selectedTarif = (availableTarife || []).find(t => t.tarif_id === member.tarif_id);
             const originalPrice = selectedTarif ? selectedTarif.monatlicher_beitrag_cents : 0;
-            const discountAmount = Math.round(originalPrice * discount.prozent / 100);
-            const finalPrice = originalPrice - discountAmount;
+            const hatCustomPreis = member.individueller_beitrag !== '' && member.individueller_beitrag != null && !isNaN(parseFloat(member.individueller_beitrag));
+            const sonderRabatt = parseFloat(member.rabatt_prozent);
+            const hatSonderRabatt = !isNaN(sonderRabatt) && sonderRabatt > 0;
+            const effektProzent = hatSonderRabatt ? Math.min(100, sonderRabatt) : discount.prozent;
+            const discountAmount = Math.round(originalPrice * effektProzent / 100);
+            const finalPrice = computeFamilyMemberPriceCents(member);
 
             return (
               <div key={index} className="nma-s6-family-card">
@@ -2271,6 +2296,33 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   </select>
                 </div>
 
+                {/* Spezielle Konditionen – nur im Admin-Modus */}
+                {!isRegistrationFlow && member.tarif_id && (
+                  <div className="nma-s6-tarif-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+                    <div>
+                      <label className="nma-s6-tarif-label">Sonderrabatt (%)</label>
+                      <input
+                        type="number" min="0" max="100" step="1"
+                        value={member.rabatt_prozent ?? ''}
+                        onChange={(e) => updateFamilyMemberField(index, 'rabatt_prozent', e.target.value)}
+                        placeholder={discount.prozent ? `statt Familienrabatt ${discount.prozent}%` : 'z.B. 10'}
+                        className="nma-s6-tarif-select"
+                        disabled={hatCustomPreis}
+                      />
+                    </div>
+                    <div>
+                      <label className="nma-s6-tarif-label">Individueller Beitrag (€/Monat)</label>
+                      <input
+                        type="number" min="0" step="0.01"
+                        value={member.individueller_beitrag ?? ''}
+                        onChange={(e) => updateFamilyMemberField(index, 'individueller_beitrag', e.target.value)}
+                        placeholder="überschreibt Tarif + Rabatt"
+                        className="nma-s6-tarif-select"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Preis-Berechnung mit Rabatt */}
                 {member.tarif_id && selectedTarif && (
                   <div className="nma-s6-price-box">
@@ -2281,14 +2333,23 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                       </span>
                     </div>
 
-                    {discount.prozent > 0 && (
+                    {!hatCustomPreis && effektProzent > 0 && (
                       <div className="nma-s6-discount-row">
                         <span className="u-flex-row-sm">
-                          <span className="nma-s6-discount-badge">-{discount.prozent}%</span>
-                          {discount.name}:
+                          <span className="nma-s6-discount-badge">-{effektProzent}%</span>
+                          {hatSonderRabatt ? 'Sonderrabatt' : discount.name}:
                         </span>
                         <span className="nma-s6-discount-amount">
                           -{(discountAmount / 100).toFixed(2)} €
+                        </span>
+                      </div>
+                    )}
+
+                    {hatCustomPreis && (
+                      <div className="nma-s6-discount-row">
+                        <span className="u-flex-row-sm">
+                          <span className="nma-s6-discount-badge">Individuell</span>
+                          Individueller Beitrag gesetzt
                         </span>
                       </div>
                     )}

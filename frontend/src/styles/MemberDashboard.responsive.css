@@ -252,11 +252,25 @@
      MITGLIEDSAUSWEIS — vollbreite responsive
      ============================================= */
 
-  .member-stats-grid {
-    grid-template-columns: 1fr !important; /* Karten untereinander (kein seitliches Abschneiden) */
+  .member-stats-grid,
+  .md-stats-grid {
+    grid-template-columns: minmax(0, 1fr) !important; /* Karten untereinander, dürfen schrumpfen */
     gap: 0.6rem !important;
     margin-bottom: 0.75rem !important;
     align-items: start !important;
+    justify-content: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Grid-Items müssen unter ihre Inhaltsbreite schrumpfen können */
+  .member-stats-grid > *,
+  .md-stats-grid > *,
+  .member-stat-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .member-stats-grid .mitgliedsausweis-container {
