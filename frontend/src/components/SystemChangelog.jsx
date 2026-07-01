@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.117',
+    date: '2026-07-01',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Verbands-Termine: übersichtlichere Karten + anklickbares Turnier',
+    description: 'Die Liste der Verbands-/Fremdtermine (Super-Admin → Kalender) ist jetzt als übersichtliche Karten mit Datums-Chip aufbereitet, und der Turnier-Titel ist direkt anklickbar (öffnet die Turnier-/Quellseite). Der KI-Web-Sync liefert dafür bevorzugt den direkten Link zur Turnierseite.',
+    highlights: ['🗂️ Karten-Darstellung mit Datums-Chip & Status-Farbe', '🔗 Turnier-Titel als Link zur Quelle anklickbar'],
+    details: 'SuperAdminDashboard.jsx Kalender-Tab: Fremdtermine-Liste als Karten, Titel verlinkt quelle_url. super-admin-calendar.js: Sync-Prompt bevorzugt direkte Turnier-URL.',
+    files: ['frontend/src/components/SuperAdminDashboard.jsx', 'backend/routes/super-admin-calendar.js'],
+  },
+  {
     version: '3.0.116',
     date: '2026-07-01',
     type: 'feature',

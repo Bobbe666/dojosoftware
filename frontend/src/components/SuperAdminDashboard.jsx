@@ -1830,33 +1830,63 @@ const SuperAdminDashboard = () => {
                   </p>
                 )}
                 {!ftLoading && fremdtermine.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    {fremdtermine.map(t => (
-                      <div key={t.id} className="ical-event-row" style={{ alignItems: 'center', opacity: t.status === 'unbestaetigt' ? 0.75 : 1 }}>
-                        <span className="ical-event-date">
-                          {new Date(t.start_datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-                          {t.end_datum && t.end_datum !== t.start_datum && ' – ' + new Date(t.end_datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-                        </span>
-                        <span style={{ fontWeight: 600, fontSize: '12px', padding: '1px 6px', borderRadius: '4px', background: 'var(--bg-2, rgba(255,255,255,0.06))', whiteSpace: 'nowrap' }}>
-                          {t.verband}
-                        </span>
-                        <span className="ical-event-summary">
-                          {t.titel}
-                          {t.status === 'unbestaetigt' && <em style={{ color: 'var(--warning, #e0a800)', marginLeft: '0.4rem', fontSize: '12px' }}>· unbestätigt{t.quelle_typ === 'sync' ? ' (Web-Sync)' : ''}</em>}
-                        </span>
-                        {(t.ort || t.region) && <span className="ical-event-location">📍 {[t.ort, t.region].filter(Boolean).join(', ')}</span>}
-                        <span style={{ display: 'flex', gap: '0.35rem', marginLeft: 'auto' }}>
-                          {t.status === 'unbestaetigt' && (
-                            <button className="btn-secondary" onClick={() => confirmFremdtermin(t.id)} title="Bestätigen" style={{ padding: '2px 8px', fontSize: '12px' }}>✓ Bestätigen</button>
-                          )}
-                          {t.quelle_url && (
-                            <a href={t.quelle_url} target="_blank" rel="noopener noreferrer" title="Quelle öffnen" style={{ padding: '2px 6px', fontSize: '12px', textDecoration: 'none' }}>🔗</a>
-                          )}
-                          <button className="btn-secondary" onClick={() => editFremdtermin(t)} title="Bearbeiten" style={{ padding: '2px 8px', fontSize: '12px' }}>✏️</button>
-                          <button className="btn-secondary" onClick={() => deleteFremdtermin(t.id)} title="Löschen" style={{ padding: '2px 8px', fontSize: '12px' }}>🗑️</button>
-                        </span>
-                      </div>
-                    ))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                    {fremdtermine.map(t => {
+                      const start = new Date(t.start_datum);
+                      const tag = start.toLocaleDateString('de-DE', { day: '2-digit' });
+                      const monat = start.toLocaleDateString('de-DE', { month: 'short' }).replace('.', '');
+                      const hatRange = t.end_datum && t.end_datum !== t.start_datum;
+                      const unbest = t.status === 'unbestaetigt';
+                      return (
+                        <div key={t.id} style={{
+                          display: 'flex', alignItems: 'center', gap: '0.9rem',
+                          padding: '0.7rem 0.9rem', borderRadius: '10px',
+                          background: 'var(--bg-2, rgba(255,255,255,0.04))',
+                          border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                          borderLeft: `4px solid ${unbest ? '#e0a800' : '#22c55e'}`
+                        }}>
+                          {/* Datum-Chip */}
+                          <div style={{ flex: '0 0 auto', width: '52px', textAlign: 'center', background: 'rgba(0,0,0,0.22)', borderRadius: '8px', padding: '6px 0' }}>
+                            <div style={{ fontSize: '19px', fontWeight: 800, lineHeight: 1 }}>{tag}</div>
+                            <div style={{ fontSize: '11px', textTransform: 'uppercase', opacity: 0.7, marginTop: '2px' }}>{monat}</div>
+                          </div>
+                          {/* Hauptinfo */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 700, fontSize: '12px', padding: '1px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.09)', whiteSpace: 'nowrap' }}>{t.verband}</span>
+                              {t.quelle_url ? (
+                                <a href={t.quelle_url} target="_blank" rel="noopener noreferrer" title="Turnier-Seite öffnen"
+                                   style={{ fontWeight: 700, fontSize: '15px', color: '#5b9dff', textDecoration: 'none' }}>
+                                  {t.titel} <span style={{ fontSize: '12px', opacity: 0.85 }}>↗</span>
+                                </a>
+                              ) : (
+                                <span style={{ fontWeight: 700, fontSize: '15px' }}>{t.titel}</span>
+                              )}
+                              {unbest && (
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#e0a800', background: 'rgba(224,168,0,0.15)', padding: '1px 8px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+                                  unbestätigt{t.quelle_typ === 'sync' ? ' · Web-Sync' : ''}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '12.5px', color: 'var(--text-3)', marginTop: '3px', display: 'flex', gap: '0.9rem', flexWrap: 'wrap' }}>
+                              <span>🗓 {start.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}{hatRange ? ` – ${new Date(t.end_datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}` : ''}</span>
+                              {(t.ort || t.region) && <span>📍 {[t.ort, t.region].filter(Boolean).join(', ')}</span>}
+                            </div>
+                          </div>
+                          {/* Aktionen */}
+                          <div style={{ display: 'flex', gap: '0.35rem', flex: '0 0 auto' }}>
+                            {unbest && (
+                              <button className="btn-secondary" onClick={() => confirmFremdtermin(t.id)} title="Bestätigen" style={{ padding: '3px 9px', fontSize: '12px' }}>✓</button>
+                            )}
+                            {t.quelle_url && (
+                              <a href={t.quelle_url} target="_blank" rel="noopener noreferrer" className="btn-secondary" title="Turnier-Seite öffnen" style={{ padding: '3px 9px', fontSize: '12px', textDecoration: 'none' }}>🔗</a>
+                            )}
+                            <button className="btn-secondary" onClick={() => editFremdtermin(t)} title="Bearbeiten" style={{ padding: '3px 9px', fontSize: '12px' }}>✏️</button>
+                            <button className="btn-secondary" onClick={() => deleteFremdtermin(t.id)} title="Löschen" style={{ padding: '3px 9px', fontSize: '12px' }}>🗑️</button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

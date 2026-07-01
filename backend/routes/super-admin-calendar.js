@@ -363,7 +363,7 @@ Fokus: Deutschland (DACH-Raum), plus international relevante Großevents dieser 
 Nutze die Web-Suche, um die offiziellen Turnierkalender/Terminlisten dieser Verbände zu finden. Trage NUR Termine mit konkretem Datum ein (keine "TBA"/unklaren Termine).
 
 Gib am Ende AUSSCHLIESSLICH ein JSON-Array zurück (kein weiterer Text danach), Format pro Eintrag:
-{"verband":"<Kürzel aus der Liste>","titel":"<Turniername>","start_datum":"YYYY-MM-DD","end_datum":"YYYY-MM-DD oder null","ort":"<Stadt/Halle oder null>","region":"<Bundesland/Land oder null>","quelle_url":"<URL der Quelle>"}
+{"verband":"<Kürzel aus der Liste>","titel":"<Turniername>","start_datum":"YYYY-MM-DD","end_datum":"YYYY-MM-DD oder null","ort":"<Stadt/Halle oder null>","region":"<Bundesland/Land oder null>","quelle_url":"<direkter Link zur konkreten Turnier-/Ausschreibungsseite; falls es keine eigene Turnierseite gibt, die offizielle Kalender-/Terminseite des Verbands>"}
 
 Wenn für einen Verband nichts Konkretes auffindbar ist, lass ihn weg. Maximal 40 Einträge.`;
 
