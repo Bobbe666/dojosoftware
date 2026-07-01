@@ -502,6 +502,13 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
                                     'UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = ?, euer_ausblenden = 1 WHERE beitrag_id = ?',
                                     ['Stripe SEPA (Auto)', beitrag.beitrag_id]
                                 );
+                                // Verknüpfte Rechnung (z.B. Prüfungsgebühr) mit-abschließen,
+                                // damit sie nicht als "offen" hängen bleibt (sie wird ja über
+                                // den Beitrag eingezogen, nicht separat).
+                                await queryAsync(
+                                    "UPDATE rechnungen r JOIN beitraege b ON b.rechnung_id = r.rechnung_id SET r.status = 'bezahlt', r.bezahlt_am = CURDATE(), r.zahlungsart = 'lastschrift' WHERE b.beitrag_id = ? AND r.status <> 'bezahlt'",
+                                    [beitrag.beitrag_id]
+                                );
                             }
                         }
                         if (mitgliedData.rechnungen) {
@@ -651,6 +658,13 @@ async function ladeRechnungenMitglieder(dojoId, gruppeKey) {
         INNER JOIN rechnungen r ON m.mitglied_id = r.mitglied_id
             AND r.status IN ('offen', 'teilweise_bezahlt', 'ueberfaellig')
             AND r.archiviert = 0
+            -- KRITISCH gegen Doppelabbuchung (z.B. Prüfungsgebühr): Rechnungen mit
+            -- verknüpftem Beitrag NIE separat einziehen. Der Beitrag ist der Einzugsposten;
+            -- die Rechnung wird beim Beitrags-Einzug automatisch als bezahlt markiert
+            -- (StripeDataevProvider markiert verknüpfte Rechnung, zeitplaene ebenso).
+            AND NOT EXISTS (
+                SELECT 1 FROM beitraege b_link WHERE b_link.rechnung_id = r.rechnung_id
+            )
         WHERE m.dojo_id = ?
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND m.stripe_customer_id IS NOT NULL

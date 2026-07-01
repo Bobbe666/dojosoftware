@@ -138,6 +138,8 @@ router.get("/", async (req, res) => {
             LEFT JOIN rechnungen r ON v.mitglied_id = r.mitglied_id
                 AND r.status IN ('offen', 'teilweise_bezahlt', 'ueberfaellig')
                 AND r.archiviert = 0
+                -- Rechnungen mit verknüpftem Beitrag zählen NICHT separat (Doppelabbuchungs-Schutz)
+                AND NOT EXISTS (SELECT 1 FROM beitraege b_link WHERE b_link.rechnung_id = r.rechnung_id)
             LEFT JOIN mitglied_ratenplan rp ON v.mitglied_id = rp.mitglied_id AND rp.aktiv = 1
             WHERE (v.status = 'aktiv' OR (v.status = 'gekuendigt' AND (v.vertragsende IS NULL OR v.vertragsende >= CURDATE())))
               AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
@@ -353,6 +355,8 @@ router.get("/xml", async (req, res) => {
                 LEFT JOIN rechnungen r ON v.mitglied_id = r.mitglied_id
                     AND r.status IN ('offen', 'teilweise_bezahlt', 'ueberfaellig')
                     AND r.archiviert = 0
+                    -- Rechnungen mit verknüpftem Beitrag zählen NICHT separat (Doppelabbuchungs-Schutz)
+                    AND NOT EXISTS (SELECT 1 FROM beitraege b_link WHERE b_link.rechnung_id = r.rechnung_id)
                 WHERE (v.status = 'aktiv' OR (v.status = 'gekuendigt' AND (v.vertragsende IS NULL OR v.vertragsende >= CURDATE())))
                   AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
                   AND sm.mandatsreferenz IS NOT NULL
@@ -2634,6 +2638,7 @@ router.get('/zusammensetzung', async (req, res) => {
         const [rechnungen] = await pool.query(
             `SELECT rechnung_id, rechnungsnummer, COALESCE(gesamtsumme, betrag) AS betrag, COALESCE(rechnungsdatum, datum) AS datum, beschreibung
              FROM rechnungen WHERE mitglied_id = ? AND archiviert = 0 AND status IN ('offen','teilweise_bezahlt','ueberfaellig')
+               AND NOT EXISTS (SELECT 1 FROM beitraege b_link WHERE b_link.rechnung_id = rechnungen.rechnung_id)
              ORDER BY COALESCE(rechnungsdatum, datum)`, [mid]);
         const [verkaeufe] = await pool.query(
             `SELECT verkauf_id, bon_nummer, brutto_gesamt_cent / 100 AS betrag, verkauf_datum, bemerkung FROM verkaeufe
