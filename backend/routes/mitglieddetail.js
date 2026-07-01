@@ -538,10 +538,13 @@ router.get("/:id/familie", authenticateToken, async (req, res) => {
       let membersQuery = `
         SELECT
           m.mitglied_id, m.vorname, m.nachname, m.geburtsdatum, m.email, m.telefon,
-          m.familien_id, m.rabatt_prozent, m.rabatt_grund,
+          m.familien_id,
           m.vertreter1_typ, m.vertreter1_name, m.vertreter1_email, m.vertreter1_telefon,
           TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) AS alter_jahre,
           v.status AS vertrag_status,
+          COALESCE(v.monatsbeitrag, v.monatlicher_beitrag) AS monatsbeitrag,
+          v.rabatt_prozent AS rabatt_prozent,
+          v.rabatt_grund AS rabatt_grund,
           t.name AS tarif_name
         FROM mitglieder m
         LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'

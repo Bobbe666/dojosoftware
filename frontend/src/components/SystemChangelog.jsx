@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.119',
+    date: '2026-07-01',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Familie-Tab: Monatsbeitrag & Rabatt pro Mitglied nachträglich bearbeiten',
+    description: 'Im Familie-Tab eines Mitglieds kann jetzt pro Familienmitglied der Monatsbeitrag und ein Rabatt direkt angepasst werden („✏️ Beitrag") – wirkt sofort auf den Vertrag und die offenen künftigen Beiträge. Der bisher verwirrende, informative Rabatt (der nichts abrechnete) wurde entfernt; angezeigt wird jetzt der echte Vertrags-Monatsbeitrag.',
+    highlights: [
+      '✏️ Beitrag/Rabatt je Familienmitglied direkt im Familie-Tab bearbeiten',
+      '💶 Anzeige des echten Monatsbeitrags aus dem Vertrag',
+      '🧹 Irreführenden Info-Rabatt entfernt'
+    ],
+    details: 'MemberFamilyTab.jsx: Inline-Editor pro Mitglied → PUT /mitglieder/:id/beitrag (jetzt auch rabatt_prozent + rabatt_grund am Vertrag). mitglieddetail.js /familie liefert vertraege.monatsbeitrag/rabatt statt mitglieder.rabatt. Block „Familienmanagement" → „Familien-Zuordnung".',
+    files: ['frontend/src/components/mitglied-detail/tabs/MemberFamilyTab.jsx', 'backend/routes/mitglieder.js', 'backend/routes/mitglieddetail.js'],
+  },
+  {
     version: '3.0.118',
     date: '2026-07-01',
     type: 'improvement',

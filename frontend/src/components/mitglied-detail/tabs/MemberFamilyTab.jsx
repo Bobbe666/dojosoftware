@@ -35,7 +35,52 @@ const MemberFamilyTab = ({ mitglied, updatedData, editMode, handleChange, Custom
   const [zusammenError, setZusammenError] = useState('');
   const searchTimer = useRef(null);
 
+  // Beitrag/Rabatt pro Familienmitglied bearbeiten (nachträglich, wirkt auf den Vertrag)
+  const [beitragEditId, setBeitragEditId] = useState(null);
+  const [beitragForm, setBeitragForm] = useState({ monatsbeitrag: '', rabatt_prozent: '', rabatt_grund: '' });
+  const [beitragSaving, setBeitragSaving] = useState(false);
+  const [beitragError, setBeitragError] = useState('');
+
   const token = localStorage.getItem('dojo_auth_token');
+
+  const openBeitragEditor = (fm) => {
+    setBeitragEditId(fm.mitglied_id);
+    setBeitragError('');
+    setBeitragForm({
+      monatsbeitrag: fm.monatsbeitrag != null ? String(fm.monatsbeitrag) : '',
+      rabatt_prozent: (fm.rabatt_prozent != null && parseFloat(fm.rabatt_prozent) > 0) ? String(fm.rabatt_prozent) : '',
+      rabatt_grund: fm.rabatt_grund || ''
+    });
+  };
+  const closeBeitragEditor = () => { setBeitragEditId(null); setBeitragError(''); };
+
+  const saveBeitrag = async (fmId) => {
+    if (beitragForm.monatsbeitrag === '' || isNaN(parseFloat(beitragForm.monatsbeitrag))) {
+      setBeitragError('Bitte einen gültigen Monatsbeitrag eingeben.');
+      return;
+    }
+    setBeitragSaving(true);
+    setBeitragError('');
+    try {
+      const res = await fetch(`${config.apiBaseUrl}/mitglieder/${fmId}/beitrag`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          monatsbeitrag: parseFloat(beitragForm.monatsbeitrag),
+          rabatt_prozent: beitragForm.rabatt_prozent === '' ? 0 : parseFloat(beitragForm.rabatt_prozent),
+          rabatt_grund: beitragForm.rabatt_grund || null
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Speichern fehlgeschlagen');
+      setBeitragEditId(null);
+      await fetchFamilie();
+    } catch (err) {
+      setBeitragError(err.message);
+    } finally {
+      setBeitragSaving(false);
+    }
+  };
 
   const fetchFamilie = async () => {
     if (!mitglied?.mitglied_id) return;
@@ -260,34 +305,83 @@ const MemberFamilyTab = ({ mitglied, updatedData, editMode, handleChange, Custom
           <div className="fam-member-list">
             {familienmitglieder.map((fm) => {
               const isCurrent = fm.mitglied_id === mitglied?.mitglied_id;
+              const editing = beitragEditId === fm.mitglied_id;
+              const goTo = () => { if (!isCurrent) window.location.href = `/dashboard/mitglieder/${fm.mitglied_id}`; };
               return (
-                <div
-                  key={fm.mitglied_id}
-                  className={`fam-member-row${isCurrent ? ' fam-member-row--current' : ' fam-member-row--other'}`}
-                  onClick={() => { if (!isCurrent) window.location.href = `/dashboard/mitglieder/${fm.mitglied_id}`; }}
-                >
-                  <div className={`fam-avatar${fm.ist_minderjaehrig ? ' fam-avatar--minor' : ' fam-avatar--adult'}`}>
-                    {fm.ist_minderjaehrig ? '👶' : '👤'}
-                  </div>
-                  <div className="fam-member-info">
-                    <div className="fam-member-name">
-                      {fm.vorname} {fm.nachname}
-                      {isCurrent && <span className="fam-current-chip">aktuell</span>}
+                <div key={fm.mitglied_id} className="fam-member-block">
+                  <div className={`fam-member-row${isCurrent ? ' fam-member-row--current' : ' fam-member-row--other'}`}>
+                    <div className={`fam-avatar${fm.ist_minderjaehrig ? ' fam-avatar--minor' : ' fam-avatar--adult'}`} onClick={goTo} style={{ cursor: isCurrent ? 'default' : 'pointer' }}>
+                      {fm.ist_minderjaehrig ? '👶' : '👤'}
                     </div>
-                    <div className="fam-member-meta">
-                      {fm.alter_jahre !== null && <span>{fm.alter_jahre} Jahre</span>}
-                      {fm.tarif_name && <span className="fam-meta-tarif">{fm.tarif_name}</span>}
-                      {fm.rabatt_prozent && parseFloat(fm.rabatt_prozent) > 0 && (
-                        <span className="fam-meta-rabatt">-{fm.rabatt_prozent}% {fm.rabatt_grund || 'Rabatt'}</span>
-                      )}
-                      {fm.vertrag_status && (
-                        <span className={fm.vertrag_status === 'aktiv' ? 'fam-meta-aktiv' : 'fam-meta-inaktiv'}>
-                          {fm.vertrag_status}
-                        </span>
-                      )}
+                    <div className="fam-member-info" onClick={goTo} style={{ cursor: isCurrent ? 'default' : 'pointer' }}>
+                      <div className="fam-member-name">
+                        {fm.vorname} {fm.nachname}
+                        {isCurrent && <span className="fam-current-chip">aktuell</span>}
+                      </div>
+                      <div className="fam-member-meta">
+                        {fm.alter_jahre !== null && <span>{fm.alter_jahre} Jahre</span>}
+                        {fm.tarif_name && <span className="fam-meta-tarif">{fm.tarif_name}</span>}
+                        {fm.monatsbeitrag != null && <span className="fam-meta-beitrag">{parseFloat(fm.monatsbeitrag).toFixed(2)} €/Mon.</span>}
+                        {fm.rabatt_prozent != null && parseFloat(fm.rabatt_prozent) > 0 && (
+                          <span className="fam-meta-rabatt">-{parseFloat(fm.rabatt_prozent)}% {fm.rabatt_grund || 'Rabatt'}</span>
+                        )}
+                        {fm.vertrag_status && (
+                          <span className={fm.vertrag_status === 'aktiv' ? 'fam-meta-aktiv' : 'fam-meta-inaktiv'}>
+                            {fm.vertrag_status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: '0 0 auto' }}>
+                      <button
+                        type="button"
+                        className="fam-beitrag-btn"
+                        onClick={(e) => { e.stopPropagation(); editing ? closeBeitragEditor() : openBeitragEditor(fm); }}
+                        title="Monatsbeitrag & Rabatt anpassen"
+                        disabled={fm.vertrag_status !== 'aktiv'}
+                        style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.15)', background: editing ? 'rgba(225,29,42,0.2)' : 'rgba(255,255,255,0.08)', color: 'inherit', cursor: fm.vertrag_status !== 'aktiv' ? 'not-allowed' : 'pointer', opacity: fm.vertrag_status !== 'aktiv' ? 0.5 : 1, whiteSpace: 'nowrap' }}
+                      >
+                        {editing ? '✕' : '✏️ Beitrag'}
+                      </button>
+                      {!isCurrent && <div className="fam-arrow" onClick={goTo} style={{ cursor: 'pointer' }}>→</div>}
                     </div>
                   </div>
-                  {!isCurrent && <div className="fam-arrow">→</div>}
+
+                  {editing && (
+                    <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.9rem', margin: '0.15rem 0 0.3rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.7rem' }}>
+                        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '12px', opacity: 0.85 }}>
+                          Monatsbeitrag (€)
+                          <input className="fam-input fam-input--sm" type="number" step="0.01" min="0"
+                            value={beitragForm.monatsbeitrag}
+                            onChange={(e) => setBeitragForm({ ...beitragForm, monatsbeitrag: e.target.value })} />
+                        </label>
+                        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '12px', opacity: 0.85 }}>
+                          Rabatt (%) <span style={{ opacity: 0.6 }}>(nur Doku)</span>
+                          <input className="fam-input fam-input--sm" type="number" step="1" min="0" max="100"
+                            value={beitragForm.rabatt_prozent}
+                            onChange={(e) => setBeitragForm({ ...beitragForm, rabatt_prozent: e.target.value })} />
+                        </label>
+                      </div>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '12px', opacity: 0.85, marginTop: '0.7rem' }}>
+                        Rabatt-Grund
+                        <SelectComponent className="fam-input fam-select fam-input--sm"
+                          value={beitragForm.rabatt_grund}
+                          onChange={(e) => setBeitragForm({ ...beitragForm, rabatt_grund: e.target.value })}
+                          options={RABATT_GRUENDE} />
+                      </label>
+                      {beitragError && <div style={{ color: '#f87171', fontSize: '12px', marginTop: '0.5rem' }}>{beitragError}</div>}
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.8rem' }}>
+                        <button type="button" className="fam-merge-confirm-cancel" onClick={closeBeitragEditor} style={{ padding: '6px 12px', fontSize: '13px' }}>Abbrechen</button>
+                        <button type="button" className="fam-merge-confirm-ok" onClick={() => saveBeitrag(fm.mitglied_id)} disabled={beitragSaving} style={{ padding: '6px 14px', fontSize: '13px' }}>
+                          {beitragSaving ? 'Speichert…' : '💾 Speichern'}
+                        </button>
+                      </div>
+                      <p style={{ fontSize: '11px', opacity: 0.6, margin: '0.6rem 0 0' }}>
+                        Ändert den <strong>Vertrag</strong> dieses Mitglieds und die noch offenen künftigen Beiträge (Lastschrift).
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -297,9 +391,9 @@ const MemberFamilyTab = ({ mitglied, updatedData, editMode, handleChange, Custom
         )}
       </div>
 
-      {/* ── Familienmanagement ── */}
+      {/* ── Familien-Zuordnung ── */}
       <div className="fam-card">
-        <h3 className="fam-section-title">🏷️ Familienmanagement</h3>
+        <h3 className="fam-section-title">🏷️ Familien-Zuordnung</h3>
         <div className="fam-mgmt-grid">
           <div className="fam-kv-row">
             <span className="fam-kv-label">Familien-ID</span>
@@ -308,28 +402,12 @@ const MemberFamilyTab = ({ mitglied, updatedData, editMode, handleChange, Custom
               : <span className="fam-kv-value">{mitglied.familien_id || <span className="fam-kv-empty">Keine Zuordnung</span>}</span>
             }
           </div>
-          <div className="fam-kv-row">
-            <span className="fam-kv-label">Rabatt</span>
-            {editMode
-              ? <input className="fam-input fam-input--sm" type="number" step="0.01" min="0" max="100" value={updatedData.rabatt_prozent || ''} onChange={(e) => handleChange(e, 'rabatt_prozent')} placeholder="z.B. 15.50" />
-              : <span className="fam-kv-value">
-                  {mitglied.rabatt_prozent && parseFloat(mitglied.rabatt_prozent) > 0
-                    ? `${mitglied.rabatt_prozent}%`
-                    : <span className="fam-kv-empty">Kein Rabatt</span>}
-                </span>
-            }
-          </div>
-          <div className="fam-kv-row">
-            <span className="fam-kv-label">Rabatt-Grund</span>
-            {editMode
-              ? <SelectComponent className="fam-input fam-select fam-input--sm" value={updatedData.rabatt_grund || ''} onChange={(e) => handleChange(e, 'rabatt_grund')} options={RABATT_GRUENDE} />
-              : <span className="fam-kv-value">{mitglied.rabatt_grund || <span className="fam-kv-empty">—</span>}</span>
-            }
-          </div>
         </div>
-        {mitglied.familien_id && (
-          <p className="fam-info-note">ℹ️ Dieses Mitglied ist der Familie {mitglied.familien_id} zugeordnet.</p>
-        )}
+        <p className="fam-info-note">
+          {mitglied.familien_id
+            ? <>ℹ️ Dieses Mitglied ist der Familie {mitglied.familien_id} zugeordnet. Monatsbeitrag &amp; Rabatt werden <strong>pro Mitglied oben über „✏️ Beitrag"</strong> gepflegt (wirkt direkt auf den Vertrag).</>
+            : <>ℹ️ Noch keiner Familie zugeordnet. Über <strong>„🔗 Familie zuordnen"</strong> oben mit einer bestehenden Familie verbinden.</>}
+        </p>
       </div>
 
       {/* ── Gesetzliche Vertreter ── */}

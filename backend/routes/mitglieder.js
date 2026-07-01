@@ -5272,7 +5272,7 @@ router.get("/:id/kurse", (req, res) => {
  */
 router.put("/:id/beitrag", validateId('id'), async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { monatsbeitrag } = req.body;
+  const { monatsbeitrag, rabatt_prozent, rabatt_grund } = req.body;
   const secureDojoId = getSecureDojoId(req);
 
   // Validierung
@@ -5285,14 +5285,27 @@ router.put("/:id/beitrag", validateId('id'), async (req, res) => {
   // (die Spalte mitglieder.monatsbeitrag existiert nicht → früher ER_BAD_FIELD 500).
   const dojoFilter = secureDojoId ? ' AND dojo_id = ?' : '';
 
+  // Rabatt-Dokumentation am Vertrag optional mitpflegen
+  const vertragSets = ['monatsbeitrag = ?'];
+  const vertragVals = [beitrag];
+  if (rabatt_prozent !== undefined) {
+    const rp = (rabatt_prozent === '' || rabatt_prozent == null) ? 0 : parseFloat(rabatt_prozent);
+    vertragSets.push('rabatt_prozent = ?');
+    vertragVals.push(isNaN(rp) ? 0 : rp);
+  }
+  if (rabatt_grund !== undefined) {
+    vertragSets.push('rabatt_grund = ?');
+    vertragVals.push(rabatt_grund || null);
+  }
+
   const conn = await db.promise().getConnection();
   try {
     await conn.beginTransaction();
 
-    // 1) Nominal-Monatsbeitrag im aktiven Vertrag setzen
-    const vertragParams = secureDojoId ? [beitrag, id, secureDojoId] : [beitrag, id];
+    // 1) Monatsbeitrag (+ optional Rabatt) im aktiven Vertrag setzen
+    const vertragParams = secureDojoId ? [...vertragVals, id, secureDojoId] : [...vertragVals, id];
     const [vRes] = await conn.query(
-      `UPDATE vertraege SET monatsbeitrag = ? WHERE mitglied_id = ? AND status = 'aktiv'${dojoFilter}`,
+      `UPDATE vertraege SET ${vertragSets.join(', ')} WHERE mitglied_id = ? AND status = 'aktiv'${dojoFilter}`,
       vertragParams
     );
 
