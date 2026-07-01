@@ -465,18 +465,47 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
             }
         }
 
-        if (mitglieder.length === 0) {
-            // Nichts zu tun
-            await updateAusfuehrung(ausfuehrungId, 'erfolg', 0, 0, 0, 0, null, null);
-            await updateZeitplanLetzte(zeitplan.zeitplan_id, 'erfolg', 0, 0);
+        // ===== Guthaben (Gutschriften) verrechnen — auch im automatischen Lauf =====
+        // Offenes Guthaben pro Mitglied vom Einzugsbetrag abziehen. Wird der Betrag dadurch
+        // vollständig gedeckt, erfolgt KEINE (0-€-)Stripe-Buchung, sondern eine direkte
+        // Verbuchung per Guthaben. Ohne diesen Block würden Gutschriften im Auto-Lauf
+        // ignoriert → Mitglied zahlt trotz Guthaben den vollen Betrag.
+        for (const m of mitglieder) {
+            const gutschriften = await queryAsync(
+                `SELECT id, restbetrag FROM mitglied_gutschriften
+                 WHERE mitglied_id = ? AND dojo_id = ? AND verrechnet = 0 AND restbetrag > 0
+                 ORDER BY erstellt_am ASC`,
+                [m.mitglied_id, dojoId]
+            );
+            const gutschriftGesamt = gutschriften.reduce((s, g) => s + parseFloat(g.restbetrag || 0), 0);
+            if (gutschriftGesamt <= 0) continue;
+            const verwendet = Math.min(gutschriftGesamt, m.betrag);
+            m.brutto_betrag = m.betrag;
+            m.betrag = Math.round((m.betrag - verwendet) * 100) / 100;
+            m.offene_gutschriften = gutschriften;
+            m.gutschrift_betrag = verwendet;
+            m._vollGedeckt = m.betrag < 0.01;
+        }
 
-            logger.info(`✅ Lastschriftlauf ${zeitplan.name}: Keine offenen Posten`);
+        // Voll durch Guthaben gedeckte Mitglieder: direkt verbuchen (KEIN Stripe-Einzug)
+        const vollGedeckt = mitglieder.filter(m => m._vollGedeckt);
+        const zuChargen = mitglieder.filter(m => !m._vollGedeckt);
+        for (const m of vollGedeckt) {
+            await verbucheVollDurchGutschrift(m);
+            logger.info(`💳 Mitglied ${m.mitglied_id}: komplett durch Guthaben gedeckt (${m.gutschrift_betrag.toFixed(2)}€) — kein Einzug`);
+        }
 
+        if (zuChargen.length === 0) {
+            // Nichts (mehr) einzuziehen — nichts geladen ODER alles per Guthaben gedeckt
+            const gedeckt = vollGedeckt.length;
+            await updateAusfuehrung(ausfuehrungId, 'erfolg', gedeckt, gedeckt, 0, 0, null, null);
+            await updateZeitplanLetzte(zeitplan.zeitplan_id, 'erfolg', gedeckt, 0);
+            logger.info(`✅ Lastschriftlauf ${zeitplan.name}: ${gedeckt ? gedeckt + ' per Guthaben gedeckt, ' : ''}keine offenen Einzüge`);
             return {
                 ausfuehrung_id: ausfuehrungId,
                 status: 'erfolg',
-                message: 'Keine offenen Posten gefunden',
-                anzahl_verarbeitet: 0
+                message: gedeckt ? `${gedeckt} Mitglied(er) per Guthaben gedeckt` : 'Keine offenen Posten gefunden',
+                anzahl_verarbeitet: gedeckt
             };
         }
 
@@ -487,8 +516,8 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
             throw new Error('Stripe nicht konfiguriert');
         }
 
-        // Führe Batch aus
-        const result = await provider.processLastschriftBatch(mitglieder, monat, jahr);
+        // Führe Batch aus (nur nicht voll durch Guthaben gedeckte Mitglieder)
+        const result = await provider.processLastschriftBatch(zuChargen, monat, jahr);
 
         // Markiere erfolgreiche Beiträge als bezahlt
         if (result.succeeded > 0 || result.processing > 0) {
@@ -527,6 +556,8 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
                                 );
                             }
                         }
+                        // Teil-Guthaben verbrauchen (Betrag war bereits um das Guthaben reduziert)
+                        await konsumiereGutschriften(mitgliedData);
                     }
                 }
             }
@@ -534,7 +565,7 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
 
         // Bestimme Status
         const status = result.failed === 0 ? 'erfolg' : (result.succeeded > 0 ? 'teilweise' : 'fehler');
-        const gesamtbetrag = mitglieder.reduce((sum, m) => sum + m.betrag, 0);
+        const gesamtbetrag = zuChargen.reduce((sum, m) => sum + m.betrag, 0);
 
         // Aktualisiere Ausführung
         await updateAusfuehrung(
@@ -715,6 +746,64 @@ async function ladeVerkaeufeMitglieder(dojoId, gruppeKey) {
         betrag: parseFloat(r.betrag),
         verkaeufe: r.verkauf_ids.split(',').map(id => ({ verkauf_id: parseInt(id) }))
     }));
+}
+
+/**
+ * Reduziert die offenen Gutschriften eines Mitglieds FIFO um m.gutschrift_betrag.
+ * Spiegelt die Logik des manuellen Laufs (lastschriftlauf.js).
+ */
+async function konsumiereGutschriften(m) {
+    if (!(m.offene_gutschriften?.length > 0) || !(m.gutschrift_betrag > 0)) return;
+    let rest = m.gutschrift_betrag;
+    for (const g of m.offene_gutschriften) {
+        if (rest <= 0) break;
+        const verwendet = Math.min(parseFloat(g.restbetrag), rest);
+        const neuerRest = Math.round((parseFloat(g.restbetrag) - verwendet) * 100) / 100;
+        await queryAsync(
+            `UPDATE mitglied_gutschriften
+             SET restbetrag = ?, verrechnet = ?, verrechnet_am = IF(? <= 0.001, NOW(), NULL)
+             WHERE id = ?`,
+            [neuerRest, neuerRest <= 0.001 ? 1 : 0, neuerRest, g.id]
+        );
+        rest -= verwendet;
+    }
+}
+
+/**
+ * Verbucht ein Mitglied, dessen Einzugsbetrag KOMPLETT durch Guthaben gedeckt ist:
+ * Beiträge/Rechnungen/Verkäufe als bezahlt (zahlungsart 'Gutschrift', euer_ausblenden),
+ * verknüpfte Rechnungen mit-abschließen, danach Guthaben verbrauchen. Kein Stripe-Einzug.
+ */
+async function verbucheVollDurchGutschrift(m) {
+    if (m.beitraege) {
+        for (const beitrag of m.beitraege) {
+            await queryAsync(
+                "UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = 'Gutschrift', euer_ausblenden = 1 WHERE beitrag_id = ?",
+                [beitrag.beitrag_id]
+            );
+            await queryAsync(
+                "UPDATE rechnungen r JOIN beitraege b ON b.rechnung_id = r.rechnung_id SET r.status = 'bezahlt', r.bezahlt_am = CURDATE(), r.zahlungsart = 'Gutschrift' WHERE b.beitrag_id = ? AND r.status <> 'bezahlt'",
+                [beitrag.beitrag_id]
+            );
+        }
+    }
+    if (m.rechnungen) {
+        for (const rechnung of m.rechnungen) {
+            await queryAsync(
+                "UPDATE rechnungen SET status = 'bezahlt', bezahlt_am = CURDATE(), zahlungsart = 'Gutschrift' WHERE rechnung_id = ?",
+                [rechnung.rechnung_id]
+            );
+        }
+    }
+    if (m.verkaeufe) {
+        for (const verkauf of m.verkaeufe) {
+            await queryAsync(
+                "UPDATE verkaeufe SET zahlungsstatus = 'bezahlt' WHERE verkauf_id = ?",
+                [verkauf.verkauf_id]
+            );
+        }
+    }
+    await konsumiereGutschriften(m);
 }
 
 /**
