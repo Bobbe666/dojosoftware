@@ -253,7 +253,7 @@
      ============================================= */
 
   .member-stats-grid {
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: 1fr !important; /* Karten untereinander (kein seitliches Abschneiden) */
     gap: 0.6rem !important;
     margin-bottom: 0.75rem !important;
     align-items: start !important;
