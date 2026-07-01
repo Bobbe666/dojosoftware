@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.116',
+    date: '2026-07-01',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Familienmitglieder: Sonderrabatt & individueller Preis in Schritt 4',
+    description: 'Beim Anlegen von Familienmitgliedern (Admin) kann pro Person in Schritt 4 zusätzlich zur Tarif-Auswahl ein Sonderrabatt (%) oder ein individueller Monatsbeitrag (€) vergeben werden. Preisübersicht und Gesamtsumme berücksichtigen das direkt.',
+    highlights: [
+      '🏷️ Sonderrabatt (%) pro Familienmitglied (ersetzt den Familienrabatt)',
+      '💶 Individueller Monatsbeitrag (€) – überschreibt Tarif + Rabatt',
+      '🧮 Live-Preisberechnung + Gesamtsumme angepasst'
+    ],
+    details: 'NeuesMitgliedAnlegen.jsx Schritt 4 (nur !isRegistrationFlow): Felder rabatt_prozent + individueller_beitrag pro Familienmitglied, computeFamilyMemberPriceCents. Backend createFamilyMembers (mitglieder.js): individueller_beitrag als absoluter Vorrang-Override, rabatt_prozent bereits unterstützt.',
+    files: ['frontend/src/components/NeuesMitgliedAnlegen.jsx', 'backend/routes/mitglieder.js'],
+  },
+  {
     version: '3.0.115',
     date: '2026-07-01',
     type: 'fix',

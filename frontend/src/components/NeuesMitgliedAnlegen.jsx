@@ -2419,18 +2419,22 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             {/* Familienmitglieder */}
             {familyMembers.map((member, index) => {
               const discount = getFamilyDiscount(member.position);
-              const originalPrice = member.tarif_preis || 0;
-              const finalPrice = originalPrice - Math.round(originalPrice * discount.prozent / 100);
+              const hatCustom = member.individueller_beitrag !== '' && member.individueller_beitrag != null && !isNaN(parseFloat(member.individueller_beitrag));
+              const sonder = parseFloat(member.rabatt_prozent);
+              const hatSonder = !isNaN(sonder) && sonder > 0;
+              const finalPrice = computeFamilyMemberPriceCents(member);
 
               return (
                 <div key={index} className="nma-s6-summary-row">
                   <span className="u-text-secondary">
                     {member.vorname || 'Vorname'} {member.nachname || 'Nachname'}
-                    {discount.prozent > 0 && (
-                      <span className="nma-badge-success">
-                        (-{discount.prozent}%)
-                      </span>
-                    )}
+                    {hatCustom ? (
+                      <span className="nma-badge-success">(Individuell)</span>
+                    ) : (hatSonder ? (
+                      <span className="nma-badge-success">(-{Math.min(100, sonder)}%)</span>
+                    ) : (discount.prozent > 0 && (
+                      <span className="nma-badge-success">(-{discount.prozent}%)</span>
+                    )))}
                   </span>
                   <span className={member.tarif_id ? 'nma-price-assigned' : 'nma-price-unassigned'}>
                     {member.tarif_id ? `${(finalPrice / 100).toFixed(2)} €` : '-- €'}
@@ -2446,9 +2450,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               const hauptmonatlich = hauptTarif?.monatlicher_beitrag_cents || 0;
               const hauptaufnahme = existingMemberMode ? 0 : (hauptTarif?.aufnahmegebuehr_cents || 0);
               const familienMonatlich = familyMembers.reduce((sum, member) => {
-                const discount = getFamilyDiscount(member.position);
-                const price = member.tarif_preis || 0;
-                return sum + price - Math.round(price * discount.prozent / 100);
+                return sum + computeFamilyMemberPriceCents(member);
               }, 0);
               const familienAufnahme = familyMembers.reduce((sum, member) => sum + (member.aufnahmegebuehr_cents || 0), 0);
               const gesamtMonatlich = hauptmonatlich + familienMonatlich;
