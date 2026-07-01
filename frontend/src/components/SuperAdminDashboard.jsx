@@ -1824,71 +1824,113 @@ const SuperAdminDashboard = () => {
                 {/* Liste */}
                 <hr className="sad2-hr" />
                 {ftLoading && <div style={{ color: 'var(--text-3)', fontSize: '13px' }}>Lade Verbands-Termine…</div>}
-                {!ftLoading && fremdtermine.length === 0 && (
-                  <p style={{ color: 'var(--text-3)', fontSize: '13px' }}>
-                    Noch keine Verbands-Termine. Trage welche ein oder nutze den Web-Sync.
-                  </p>
-                )}
-                {!ftLoading && fremdtermine.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                    {fremdtermine.map(t => {
-                      const start = new Date(t.start_datum);
-                      const tag = start.toLocaleDateString('de-DE', { day: '2-digit' });
-                      const monat = start.toLocaleDateString('de-DE', { month: 'short' }).replace('.', '');
-                      const hatRange = t.end_datum && t.end_datum !== t.start_datum;
-                      const unbest = t.status === 'unbestaetigt';
-                      return (
-                        <div key={t.id} style={{
-                          display: 'flex', alignItems: 'center', gap: '0.9rem',
-                          padding: '0.7rem 0.9rem', borderRadius: '10px',
-                          background: 'var(--bg-2, rgba(255,255,255,0.04))',
-                          border: '1px solid var(--border, rgba(255,255,255,0.08))',
-                          borderLeft: `4px solid ${unbest ? '#e0a800' : '#22c55e'}`
-                        }}>
-                          {/* Datum-Chip */}
-                          <div style={{ flex: '0 0 auto', width: '52px', textAlign: 'center', background: 'rgba(0,0,0,0.22)', borderRadius: '8px', padding: '6px 0' }}>
-                            <div style={{ fontSize: '19px', fontWeight: 800, lineHeight: 1 }}>{tag}</div>
-                            <div style={{ fontSize: '11px', textTransform: 'uppercase', opacity: 0.7, marginTop: '2px' }}>{monat}</div>
-                          </div>
-                          {/* Hauptinfo */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                              <span style={{ fontWeight: 700, fontSize: '12px', padding: '1px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.09)', whiteSpace: 'nowrap' }}>{t.verband}</span>
-                              {t.quelle_url ? (
-                                <a href={t.quelle_url} target="_blank" rel="noopener noreferrer" title="Turnier-Seite öffnen"
-                                   style={{ fontWeight: 700, fontSize: '15px', color: '#5b9dff', textDecoration: 'none' }}>
-                                  {t.titel} <span style={{ fontSize: '12px', opacity: 0.85 }}>↗</span>
-                                </a>
-                              ) : (
-                                <span style={{ fontWeight: 700, fontSize: '15px' }}>{t.titel}</span>
-                              )}
-                              {unbest && (
-                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#e0a800', background: 'rgba(224,168,0,0.15)', padding: '1px 8px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
-                                  unbestätigt{t.quelle_typ === 'sync' ? ' · Web-Sync' : ''}
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: '12.5px', color: 'var(--text-3)', marginTop: '3px', display: 'flex', gap: '0.9rem', flexWrap: 'wrap' }}>
-                              <span>🗓 {start.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}{hatRange ? ` – ${new Date(t.end_datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}` : ''}</span>
-                              {(t.ort || t.region) && <span>📍 {[t.ort, t.region].filter(Boolean).join(', ')}</span>}
-                            </div>
-                          </div>
-                          {/* Aktionen */}
-                          <div style={{ display: 'flex', gap: '0.35rem', flex: '0 0 auto' }}>
+                {!ftLoading && (() => {
+                  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+                  const kommende = fremdtermine
+                    .filter(t => new Date(t.end_datum || t.start_datum) >= heute)
+                    .sort((a, b) => new Date(a.start_datum) - new Date(b.start_datum));
+                  const vergangen = fremdtermine.length - kommende.length;
+
+                  if (kommende.length === 0) {
+                    return (
+                      <p style={{ color: 'var(--text-3)', fontSize: '13px' }}>
+                        {fremdtermine.length === 0
+                          ? 'Noch keine Verbands-Termine. Trage welche ein oder nutze den Web-Sync.'
+                          : `Keine kommenden Verbands-Termine (${vergangen} vergangene ausgeblendet).`}
+                      </p>
+                    );
+                  }
+
+                  // Nach Monat gruppieren (chronologisch)
+                  const gruppen = [];
+                  const idx = {};
+                  for (const t of kommende) {
+                    const d = new Date(t.start_datum);
+                    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
+                    if (idx[key] === undefined) {
+                      idx[key] = gruppen.length;
+                      gruppen.push({ key, label: d.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' }), items: [] });
+                    }
+                    gruppen[idx[key]].items.push(t);
+                  }
+
+                  const renderCard = (t) => {
+                    const start = new Date(t.start_datum);
+                    const tag = start.toLocaleDateString('de-DE', { day: '2-digit' });
+                    const monat = start.toLocaleDateString('de-DE', { month: 'short' }).replace('.', '');
+                    const hatRange = t.end_datum && t.end_datum !== t.start_datum;
+                    const unbest = t.status === 'unbestaetigt';
+                    return (
+                      <div key={t.id} style={{
+                        display: 'flex', alignItems: 'center', gap: '0.9rem',
+                        padding: '0.7rem 0.9rem', borderRadius: '10px',
+                        background: 'var(--bg-2, rgba(255,255,255,0.04))',
+                        border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                        borderLeft: `4px solid ${unbest ? '#e0a800' : '#22c55e'}`
+                      }}>
+                        {/* Datum-Chip */}
+                        <div style={{ flex: '0 0 auto', width: '52px', textAlign: 'center', background: 'rgba(0,0,0,0.22)', borderRadius: '8px', padding: '6px 0' }}>
+                          <div style={{ fontSize: '19px', fontWeight: 800, lineHeight: 1 }}>{tag}</div>
+                          <div style={{ fontSize: '11px', textTransform: 'uppercase', opacity: 0.7, marginTop: '2px' }}>{monat}</div>
+                        </div>
+                        {/* Hauptinfo */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700, fontSize: '12px', padding: '1px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.09)', whiteSpace: 'nowrap' }}>{t.verband}</span>
+                            {t.quelle_url ? (
+                              <a href={t.quelle_url} target="_blank" rel="noopener noreferrer" title="Turnier-Seite öffnen"
+                                 style={{ fontWeight: 700, fontSize: '15px', color: '#5b9dff', textDecoration: 'none' }}>
+                                {t.titel} <span style={{ fontSize: '12px', opacity: 0.85 }}>↗</span>
+                              </a>
+                            ) : (
+                              <span style={{ fontWeight: 700, fontSize: '15px' }}>{t.titel}</span>
+                            )}
                             {unbest && (
-                              <button className="btn-secondary" onClick={() => confirmFremdtermin(t.id)} title="Bestätigen" style={{ padding: '3px 9px', fontSize: '12px' }}>✓</button>
+                              <span style={{ fontSize: '11px', fontWeight: 700, color: '#e0a800', background: 'rgba(224,168,0,0.15)', padding: '1px 8px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+                                unbestätigt{t.quelle_typ === 'sync' ? ' · Web-Sync' : ''}
+                              </span>
                             )}
-                            {t.quelle_url && (
-                              <a href={t.quelle_url} target="_blank" rel="noopener noreferrer" className="btn-secondary" title="Turnier-Seite öffnen" style={{ padding: '3px 9px', fontSize: '12px', textDecoration: 'none' }}>🔗</a>
-                            )}
-                            <button className="btn-secondary" onClick={() => editFremdtermin(t)} title="Bearbeiten" style={{ padding: '3px 9px', fontSize: '12px' }}>✏️</button>
-                            <button className="btn-secondary" onClick={() => deleteFremdtermin(t.id)} title="Löschen" style={{ padding: '3px 9px', fontSize: '12px' }}>🗑️</button>
+                          </div>
+                          <div style={{ fontSize: '12.5px', color: 'var(--text-3)', marginTop: '3px', display: 'flex', gap: '0.9rem', flexWrap: 'wrap' }}>
+                            <span>🗓 {start.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}{hatRange ? ` – ${new Date(t.end_datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}` : ''}</span>
+                            {(t.ort || t.region) && <span>📍 {[t.ort, t.region].filter(Boolean).join(', ')}</span>}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        {/* Aktionen */}
+                        <div style={{ display: 'flex', gap: '0.35rem', flex: '0 0 auto' }}>
+                          {unbest && (
+                            <button className="btn-secondary" onClick={() => confirmFremdtermin(t.id)} title="Bestätigen" style={{ padding: '3px 9px', fontSize: '12px' }}>✓</button>
+                          )}
+                          {t.quelle_url && (
+                            <a href={t.quelle_url} target="_blank" rel="noopener noreferrer" className="btn-secondary" title="Turnier-Seite öffnen" style={{ padding: '3px 9px', fontSize: '12px', textDecoration: 'none' }}>🔗</a>
+                          )}
+                          <button className="btn-secondary" onClick={() => editFremdtermin(t)} title="Bearbeiten" style={{ padding: '3px 9px', fontSize: '12px' }}>✏️</button>
+                          <button className="btn-secondary" onClick={() => deleteFremdtermin(t.id)} title="Löschen" style={{ padding: '3px 9px', fontSize: '12px' }}>🗑️</button>
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                      {vergangen > 0 && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-3)', opacity: 0.75 }}>
+                          {vergangen} vergangene{vergangen === 1 ? 'r Termin' : ' Termine'} ausgeblendet
+                        </div>
+                      )}
+                      {gruppen.map(g => (
+                        <div key={g.key}>
+                          <div style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-3)', margin: '0 0 0.55rem', paddingBottom: '0.3rem', borderBottom: '1px solid var(--border, rgba(255,255,255,0.08))' }}>
+                            {g.label} <span style={{ opacity: 0.6, fontWeight: 500 }}>· {g.items.length}</span>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                            {g.items.map(renderCard)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
               </>
             )}

@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.118',
+    date: '2026-07-01',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Verbands-Termine: vergangene ausgeblendet + nach Monaten gruppiert',
+    description: 'Die Verbands-/Fremdtermine-Liste zeigt nur noch kommende Termine (vergangene werden ausgeblendet) und ist chronologisch nach Monaten gruppiert (mit Monats-Überschrift und Anzahl).',
+    highlights: ['🙈 Vergangene Termine ausgeblendet', '🗓️ Gruppierung nach Monat mit Überschriften'],
+    details: 'SuperAdminDashboard.jsx: Filter end_datum||start_datum >= heute, Sortierung nach start_datum, Gruppierung nach Jahr-Monat.',
+    files: ['frontend/src/components/SuperAdminDashboard.jsx'],
+  },
+  {
     version: '3.0.117',
     date: '2026-07-01',
     type: 'improvement',
