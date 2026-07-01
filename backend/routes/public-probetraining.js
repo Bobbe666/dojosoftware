@@ -242,20 +242,31 @@ router.post('/buchen', async (req, res) => {
       });
     }
 
-    // Token für die Self-Service-Terminbuchung (30 Tage gültig)
-    const token = genToken();
+    // Direkt-Buchung (Variante B): hat der Kunde einen konkreten Slot + gültiges
+    // Datum gewählt, wird sofort verbindlich gebucht — sonst nur Anfrage ("wir melden uns").
+    const kandidatDatum = req.body.probetraining_datum || wunschdatum || null;
+    let gebuchtesDatum = null;
+    let direkt = false;
+    if (kursDetails && kandidatDatum) {
+      const d = new Date(kandidatDatum + 'T00:00:00');
+      const heute = new Date(); heute.setHours(0, 0, 0, 0);
+      if (!isNaN(d.getTime()) && d >= heute && WOCHENTAGE[d.getDay()] === kursDetails.wochentag) {
+        gebuchtesDatum = kandidatDatum;
+        direkt = true;
+      }
+    }
+    const slotZeit = kursDetails && kursDetails.start_zeit ? String(kursDetails.start_zeit).substring(0, 5) : null;
+    const status = direkt ? 'probetraining_vereinbart' : 'neu';
 
-    // Interessent anlegen
+    // Interessent anlegen (gewuenschter_kurs_id = echte kurs_id)
     const result = await queryAsync(`
       INSERT INTO interessenten (
         dojo_id, vorname, nachname, email, telefon,
         interessiert_an, gewuenschter_kurs_id, wunsch_wochentag, wunsch_uhrzeit,
-        probetraining_datum, notizen,
+        probetraining_datum, probetraining_uhrzeit, probetraining_stundenplan_id, notizen,
         status, anfrage_quelle, erstkontakt_datum, erstkontakt_quelle,
-        datenschutz_akzeptiert, datenschutz_akzeptiert_am,
-        prioritaet, erstellt_am,
-        bestaetigung_token, bestaetigung_token_ablauf
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'neu', 'probetraining_formular', CURDATE(), ?, 1, NOW(), 'hoch', NOW(), ?, DATE_ADD(NOW(), INTERVAL 30 DAY))
+        datenschutz_akzeptiert, datenschutz_akzeptiert_am, prioritaet, erstellt_am
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'probetraining_formular', CURDATE(), ?, 1, NOW(), 'hoch', NOW())
     `, [
       dojo_id,
       vorname.trim(),
@@ -263,81 +274,66 @@ router.post('/buchen', async (req, res) => {
       email.toLowerCase().trim(),
       telefon || null,
       interessiert_an || (stil_id ? `Stil-ID: ${stil_id}` : null),
-      kurs_id || null,
-      wunsch_wochentag || (kursDetails ? kursDetails.wochentag : null),
-      wunsch_uhrzeit || (kursDetails ? kursDetails.start_zeit : null),
-      wunschdatum || null,
+      kursDetails ? kursDetails.kurs_id : null,
+      kursDetails ? kursDetails.wochentag : (wunsch_wochentag || null),
+      slotZeit || wunsch_uhrzeit || null,
+      gebuchtesDatum || wunschdatum || null,
+      direkt ? slotZeit : null,
+      direkt ? kursDetails.stundenplan_id : null,
       nachricht || null,
-      wie_gefunden || 'Probetraining-Formular',
-      token
+      status,
+      wie_gefunden || 'Probetraining-Formular'
     ]);
 
     const interessentId = result.insertId;
+    const trainerName = kursDetails ? `${kursDetails.trainer_vorname || ''} ${kursDetails.trainer_nachname || ''}`.trim() : '';
 
-    // Terminvorschläge für den Wunschkurs (falls ausgewählt) berechnen
-    const terminvorschlaege = kursDetails
-      ? naechsteTermine(kursDetails.wochentag, 3).map(datum => ({
-          datum,
-          uhrzeit: kursDetails.start_zeit,
-          kurs: kursDetails.name,
-          stil: kursDetails.stil_name
-        }))
-      : [];
-    const buchungsUrl = `${APP_BASE}/probetraining/termin/${token}`;
-
-    logger.info('Neue Probetraining-Anfrage eingegangen', {
-      interessent_id: interessentId,
-      dojo_id,
-      email,
-      kurs_id
+    logger.info(direkt ? 'Probetraining direkt gebucht (Formular)' : 'Neue Probetraining-Anfrage eingegangen', {
+      interessent_id: interessentId, dojo_id, email, kurs_id, direkt, gebuchtesDatum
     });
 
     // E-Mails versenden (async, Fehler nicht blockierend)
     try {
-      // E-Mail an Dojo-Admin
-      if (dojo.dojo_email) {
-        await sendProbetrainingAnfrageEmail({
-          to: dojo.dojo_email,
-          dojoName: dojo.dojoname,
-          interessent: { vorname, nachname, email, telefon },
-          kurs: kursDetails,
-          wunschdatum,
-          nachricht
+      if (direkt) {
+        // Finale Terminbestätigung an Kunde
+        await sendProbetrainingTerminBestaetigung({
+          to: email, vorname, dojoName: dojo.dojoname, dojoId: dojo_id,
+          datum: gebuchtesDatum, uhrzeit: slotZeit, kurs: kursDetails.name, stil: kursDetails.stil_name, trainer: trainerName
+        });
+        if (dojo.dojo_email) {
+          await sendProbetrainingAnfrageEmail({
+            to: dojo.dojo_email, dojoName: dojo.dojoname,
+            interessent: { vorname, nachname, email, telefon }, kurs: kursDetails, wunschdatum: gebuchtesDatum,
+            nachricht: `✅ DIREKT GEBUCHT übers Formular: ${kursDetails.wochentag}, ${new Date(gebuchtesDatum).toLocaleDateString('de-DE')} um ${slotZeit} — ${kursDetails.name}`
+          });
+        }
+      } else {
+        // Nur Anfrage → Eingangsbestätigung ("wir melden uns"), Dojo-Info
+        if (dojo.dojo_email) {
+          await sendProbetrainingAnfrageEmail({
+            to: dojo.dojo_email, dojoName: dojo.dojoname,
+            interessent: { vorname, nachname, email, telefon }, kurs: kursDetails, wunschdatum, nachricht
+          });
+        }
+        await sendProbetrainingBestaetigung({
+          to: email, vorname, dojoName: dojo.dojoname, dojoId: dojo_id, kurs: kursDetails, wunschdatum
         });
       }
-
-      // Bestätigung an Interessent (mit Terminvorschlägen + Buchungslink)
-      await sendProbetrainingBestaetigung({
-        to: email,
-        vorname,
-        dojoName: dojo.dojoname,
-        dojoId: dojo_id,
-        kurs: kursDetails,
-        wunschdatum,
-        buchungsUrl,
-        terminvorschlaege
-      });
-
-      // Bestätigung gesendet markieren
-      await queryAsync(
-        'UPDATE interessenten SET bestaetigung_gesendet_am = NOW() WHERE id = ?',
-        [interessentId]
-      );
-
+      await queryAsync('UPDATE interessenten SET bestaetigung_gesendet_am = NOW() WHERE id = ?', [interessentId]);
     } catch (emailError) {
-      logger.error('Fehler beim E-Mail-Versand für Probetraining', {
-        error: emailError.message,
-        interessent_id: interessentId
-      });
-      // Weiter machen - E-Mail-Fehler sollte nicht die Buchung abbrechen
+      logger.error('Fehler beim E-Mail-Versand für Probetraining', { error: emailError.message, interessent_id: interessentId });
     }
 
     res.status(201).json({
       success: true,
-      message: 'Vielen Dank für Ihre Anfrage! Wir melden uns in Kürze bei Ihnen.',
+      gebucht: direkt,
+      message: direkt
+        ? 'Dein Probetraining ist gebucht! Du bekommst gleich eine Bestätigung per E-Mail.'
+        : 'Vielen Dank für Ihre Anfrage! Wir melden uns in Kürze bei Ihnen.',
       data: {
         anfrage_id: interessentId,
-        dojo_name: dojo.dojoname
+        dojo_name: dojo.dojoname,
+        ...(direkt ? { datum: gebuchtesDatum, uhrzeit: slotZeit, kurs: kursDetails.name, wochentag: kursDetails.wochentag, trainer: trainerName } : {})
       }
     });
 

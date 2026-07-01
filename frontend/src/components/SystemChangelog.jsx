@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.113',
+    date: '2026-07-01',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Probetraining: direkte Buchung schon im Formular',
+    description: 'Wählt der Interessent im Probetraining-Formular einen konkreten Termin (echte kommende Kurstermine), wird sofort verbindlich gebucht und er bekommt direkt die Terminbestätigung – kein zweiter Schritt nötig. Ohne Terminwahl bleibt es wie bisher eine Anfrage („wir melden uns").',
+    highlights: ['📅 Konkrete Termin-Auswahl im Formular', '✅ Sofort verbindlich gebucht + Bestätigung', '🥋 Erscheint automatisch im Trainer-Check-in-Popup'],
+    details: 'public-probetraining.js /buchen: Direkt-Buchung wenn gültiger Slot+Datum → status probetraining_vereinbart + sendProbetrainingTerminBestaetigung; gewuenschter_kurs_id jetzt echte kurs_id. ProbetrainingBuchung.jsx: Datums-Chips für den gewählten Slot.',
+    files: ['backend/routes/public-probetraining.js', 'frontend/src/pages/ProbetrainingBuchung.jsx'],
+  },
+  {
     version: '3.0.112',
     date: '2026-07-01',
     type: 'feature',

@@ -14,6 +14,20 @@ import {
 import config from '../config/config.js';
 import '../styles/ProbetrainingBuchung.css';
 
+const WOCHENTAGE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+const naechsteTermine = (tagName, anzahl = 4) => {
+  const idx = WOCHENTAGE.indexOf(tagName);
+  if (idx < 0) return [];
+  const res = [];
+  const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 1);
+  for (let i = 0; i < 70 && res.length < anzahl; i++) {
+    if (d.getDay() === idx) res.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return res;
+};
+const fmtChip = (d) => new Date(d + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+
 const ProbetrainingBuchung = () => {
   const [searchParams] = useSearchParams();
 
@@ -37,6 +51,7 @@ const ProbetrainingBuchung = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [bookedInfo, setBookedInfo] = useState(null);
   const [error, setError] = useState(null);
 
   const [dojoData, setDojoData] = useState(null);
@@ -121,6 +136,7 @@ const ProbetrainingBuchung = () => {
         return;
       }
 
+      setBookedInfo({ gebucht: result.gebucht, ...(result.data || {}) });
       setSuccess(true);
 
     } catch (err) {
@@ -135,6 +151,10 @@ const ProbetrainingBuchung = () => {
   const filteredKurse = formData.stil_id
     ? kurse.filter(k => k.stil_name === stile.find(s => s.stil_id == formData.stil_id)?.name)
     : kurse;
+
+  // Aktuell gewählter Slot + dessen nächste konkrete Termine
+  const selectedKurs = filteredKurse.find(k => String(k.stundenplan_id || k.kurs_id) === String(formData.kurs_id));
+  const slotTermine = selectedKurs ? naechsteTermine(selectedKurs.wochentag) : [];
 
   // Loading State
   if (loading) {
@@ -173,11 +193,27 @@ const ProbetrainingBuchung = () => {
             <div className="ptb-success-icon">
               <CheckCircle size={48} color="#10b981" />
             </div>
-            <h2 className="ptb-success-title">Vielen Dank!</h2>
-            <p className="ptb-success-text">
-              Ihre Probetraining-Anfrage wurde erfolgreich übermittelt.<br /><br />
-              Wir werden uns in Kürze bei Ihnen melden, um einen Termin zu vereinbaren.
-            </p>
+            {bookedInfo?.gebucht ? (
+              <>
+                <h2 className="ptb-success-title">Dein Termin ist gebucht! 🥋</h2>
+                <div style={{ background: 'rgba(225,29,42,0.12)', border: '1px solid rgba(225,29,42,0.35)', borderRadius: '12px', padding: '16px', margin: '8px 0 16px' }}>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ff5a5a' }}>
+                    {new Date(bookedInfo.datum + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  </div>
+                  <div style={{ opacity: 0.9, marginTop: '4px' }}>{bookedInfo.uhrzeit} Uhr · {bookedInfo.kurs}</div>
+                  {bookedInfo.trainer && <div style={{ opacity: 0.7, fontSize: '0.9rem', marginTop: '4px' }}>Trainer: {bookedInfo.trainer}</div>}
+                </div>
+                <p className="ptb-success-text">Du bekommst gleich eine Bestätigung per E-Mail. Wir freuen uns auf dich!</p>
+              </>
+            ) : (
+              <>
+                <h2 className="ptb-success-title">Vielen Dank!</h2>
+                <p className="ptb-success-text">
+                  Ihre Probetraining-Anfrage wurde erfolgreich übermittelt.<br /><br />
+                  Wir werden uns in Kürze bei Ihnen melden, um einen Termin zu vereinbaren.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -315,17 +351,29 @@ const ProbetrainingBuchung = () => {
             </div>
           )}
 
-          {/* Wunschdatum */}
-          <div className="ptb-form-group">
-            <label className="ptb-label">Wunschdatum (optional)</label>
-            <input
-              type="date"
-              value={formData.wunschdatum}
-              onChange={e => setFormData({...formData, wunschdatum: e.target.value})}
-              className="ptb-input"
-              min={new Date().toISOString().split('T')[0]}
-            />
-          </div>
+          {/* Konkrete Termin-Auswahl für den gewählten Slot → direkte Buchung */}
+          {selectedKurs && slotTermine.length > 0 && (
+            <div className="ptb-form-group">
+              <label className="ptb-label">Wähle deinen Termin</label>
+              <div className="ptb-date-chips">
+                {slotTermine.map(d => (
+                  <button
+                    type="button"
+                    key={d}
+                    className={`ptb-date-chip${formData.wunschdatum === d ? ' selected' : ''}`}
+                    onClick={() => setFormData({ ...formData, wunschdatum: formData.wunschdatum === d ? '' : d })}
+                  >
+                    {fmtChip(d)}
+                  </button>
+                ))}
+              </div>
+              <p className="ptb-date-hint">
+                {formData.wunschdatum
+                  ? '✅ Mit „Verbindlich buchen" ist dein Termin sofort fix.'
+                  : 'Termin wählen = sofort verbindlich buchen. Ohne Auswahl melden wir uns bei dir.'}
+              </p>
+            </div>
+          )}
 
           {/* Nachricht */}
           <div className="ptb-form-group">
@@ -384,7 +432,7 @@ const ProbetrainingBuchung = () => {
               </>
             ) : (
               <>
-                Probetraining anfragen
+                {formData.wunschdatum && selectedKurs ? 'Termin verbindlich buchen' : 'Probetraining anfragen'}
                 <ChevronRight size={20} />
               </>
             )}
@@ -401,6 +449,14 @@ const ProbetrainingBuchung = () => {
           background: #1a1a2e;
           color: #ffffff;
         }
+        .ptb-date-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .ptb-date-chip {
+          background: rgba(255,255,255,0.08); border: 1.5px solid transparent; color: #fff;
+          padding: 9px 14px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+        }
+        .ptb-date-chip:hover { background: rgba(255,255,255,0.14); }
+        .ptb-date-chip.selected { background: #e11d2a; border-color: #ff5a5a; }
+        .ptb-date-hint { font-size: 0.8rem; opacity: 0.7; margin: 8px 0 0; }
       `}</style>
     </div>
   );
