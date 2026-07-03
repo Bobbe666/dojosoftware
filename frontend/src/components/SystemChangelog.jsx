@@ -31,6 +31,28 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.128',
+    date: '2026-07-03',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Starterpaket doppelt: Bestellung wird nicht mehr dupliziert',
+    description: 'Bei manchen Mitgliedern war das Starterpaket 2× als Bestellung hinterlegt. Ursache: Die automatisch (bei Stil-Zuweisung) angelegte Bestellung und die explizite Bestellung mit Variantenauswahl haben sich nicht abgeglichen. Jetzt wird eine bereits offene Bestellung aktualisiert statt eine zweite anzulegen; die Auto-Anlage fügt zudem atomar ein (race-sicher).',
+    highlights: ['🐛 Keine doppelten Starterpaket-Bestellungen mehr', '🧹 Bestehende Doppel (Mitglied 841/842) bereinigt'],
+    details: 'starterpakete.js POST /:id/bestellen: offene Bestellung updaten statt Insert. mitglieder.js autoStarterpaketBestellung: INSERT ... WHERE NOT EXISTS. 2 Alt-Doppel (offen, ungezogen) gelöscht.',
+    files: ['backend/routes/starterpakete.js', 'backend/routes/mitglieder.js'],
+  },
+  {
+    version: '3.0.127',
+    date: '2026-07-03',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Bankverbindung selbst in der App ändern (SEPA)',
+    description: 'Mitglieder können ihre Bankverbindung für die SEPA-Lastschrift jetzt selbst in der App hinterlegen oder ändern — unter „Zahlungen → Zahlungsmethoden → Bankverbindung". IBAN + Kontoinhaber eingeben, SEPA-Mandat bestätigen, fertig. Weniger Rücklastschriften, kein IBAN-Hin-und-Her per Mail mehr.',
+    highlights: ['🏦 IBAN-Self-Service für Mitglieder', '✅ Mit IBAN-Prüfung & SEPA-Mandat'],
+    details: 'member-payments.js: GET/POST /bankverbindung (Mod-97-IBAN-Check, createSepaCustomer erzeugt neue Stripe-SEPA-PaymentMethod, aktualisiert sepa_mandate + mitglieder.iban; Reihenfolge Stripe-vor-DB, damit bei Stripe-Fehler nichts verändert wird). MemberPayments.jsx: neue Sektion „Bankverbindung (SEPA-Lastschrift)" im Zahlungsmethoden-Tab.',
+    files: ['backend/routes/member-payments.js', 'frontend/src/components/MemberPayments.jsx'],
+  },
+  {
     version: '3.0.126',
     date: '2026-07-03',
     type: 'improvement',

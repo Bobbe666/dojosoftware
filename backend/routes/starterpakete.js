@@ -354,14 +354,32 @@ router.post('/:id/bestellen', async (req, res) => {
     const { varianten_json } = req.body;
     const variantenStr = varianten_json ? (typeof varianten_json === 'string' ? varianten_json : JSON.stringify(varianten_json)) : null;
 
-    await pool.query(
-      `INSERT INTO starterpaket_bestellungen
-         (dojo_id, paket_id, mitglied_id, gesamtpreis_cent, status, varianten_json, erstellt_am)
-       VALUES (?, ?, ?, ?, 'offen', ?, CURRENT_TIMESTAMP)`,
-      [dojoId, paketId, mitgliedId, paket.endpreis_cent, variantenStr]
+    // Duplikat-Schutz: Existiert bereits eine offene (noch nicht eingezogene) Bestellung
+    // für dieses Mitglied+Paket – z.B. die automatisch bei der Stil-Zuweisung angelegte –,
+    // wird diese aktualisiert statt eine zweite anzulegen.
+    const [existing] = await pool.query(
+      `SELECT id FROM starterpaket_bestellungen
+       WHERE mitglied_id = ? AND paket_id = ? AND dojo_id = ? AND status = 'offen'
+       ORDER BY id ASC LIMIT 1`,
+      [mitgliedId, paketId, dojoId]
     );
 
-    logger.info('Starterpaket Bestellung', { dojoId, paketId, mitgliedId, betrag: paket.endpreis_cent });
+    if (existing.length > 0) {
+      await pool.query(
+        `UPDATE starterpaket_bestellungen SET gesamtpreis_cent = ?, varianten_json = ? WHERE id = ?`,
+        [paket.endpreis_cent, variantenStr, existing[0].id]
+      );
+      logger.info('Starterpaket Bestellung (bestehende offene aktualisiert)', { dojoId, paketId, mitgliedId, bestellId: existing[0].id });
+    } else {
+      await pool.query(
+        `INSERT INTO starterpaket_bestellungen
+           (dojo_id, paket_id, mitglied_id, gesamtpreis_cent, status, varianten_json, erstellt_am)
+         VALUES (?, ?, ?, ?, 'offen', ?, CURRENT_TIMESTAMP)`,
+        [dojoId, paketId, mitgliedId, paket.endpreis_cent, variantenStr]
+      );
+      logger.info('Starterpaket Bestellung', { dojoId, paketId, mitgliedId, betrag: paket.endpreis_cent });
+    }
+
     res.json({ success: true, message: 'Bestellung erfolgreich übermittelt' });
   } catch (err) {
     logger.error('Starterpaket bestellen Fehler:', err);

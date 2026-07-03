@@ -5513,11 +5513,21 @@ async function autoStarterpaketBestellung(mitglied_id, stil_ids) {
         [paket.paket_id]
       );
 
-      await pool.query(
-        'INSERT INTO starterpaket_bestellungen (dojo_id, paket_id, mitglied_id, gesamtpreis_cent, status) VALUES (?, ?, ?, ?, ?)',
-        [dojo_id, paket.paket_id, mitglied_id, preisRow?.gesamt || 0, 'offen']
+      // Atomar einfügen: verhindert Doppel-Bestellungen bei parallelen Aufrufen
+      // (die Funktion wird an 3 Stellen fire-and-forget aufgerufen → Race zwischen
+      //  obigem SELECT und dem INSERT). WHERE NOT EXISTS schließt diese Lücke.
+      const [insRes] = await pool.query(
+        `INSERT INTO starterpaket_bestellungen (dojo_id, paket_id, mitglied_id, gesamtpreis_cent, status)
+         SELECT ?, ?, ?, ?, 'offen' FROM DUAL
+         WHERE NOT EXISTS (
+           SELECT 1 FROM starterpaket_bestellungen b
+           WHERE b.mitglied_id = ? AND b.paket_id = ? AND b.status <> 'storniert'
+         )`,
+        [dojo_id, paket.paket_id, mitglied_id, preisRow?.gesamt || 0, mitglied_id, paket.paket_id]
       );
-      logger.info(`Starterpaket auto-erstellt: Mitglied ${mitglied_id}, Paket ${paket.paket_id}, Stil ${stil_id}`);
+      if (insRes.affectedRows > 0) {
+        logger.info(`Starterpaket auto-erstellt: Mitglied ${mitglied_id}, Paket ${paket.paket_id}, Stil ${stil_id}`);
+      }
     }
   } catch (err) {
     logger.error('Fehler bei auto Starterpaket-Bestellung:', { err: err.message, mitglied_id });
