@@ -6,13 +6,40 @@
 // ============================================================================
 import React, { useRef, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
+import { jwtDecode } from 'jwt-decode';
 import { useDojoContext } from '../context/DojoContext';
+import { useSubscription } from '../context/SubscriptionContext';
+
+const PLAN_RANG = { free: 0, basic: 1, starter: 1, professional: 2, premium: 3, enterprise: 4, trial: 4 };
 
 export default function ProbetrainingIntegration() {
   const { activeDojo } = useDojoContext();
+  const { subscription } = useSubscription();
   const sub = activeDojo?.subdomain || '';
   const qrRef = useRef(null);
   const [copied, setCopied] = useState('');
+
+  // Plan-Gate: ab Professional (Super-Admin immer)
+  let isSuperAdmin = false;
+  try {
+    const tk = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    if (tk) { const d = jwtDecode(tk); isSuperAdmin = d.dojo_id == null || d.role === 'super_admin' || d.rolle === 'super_admin'; }
+  } catch { /* ignore */ }
+  const planErlaubt = isSuperAdmin || (PLAN_RANG[subscription?.plan_type] || 0) >= PLAN_RANG.professional;
+
+  if (!planErlaubt) {
+    return (
+      <div style={{ padding: 24, color: 'var(--ds-text,#e2e8f0)', maxWidth: 640, margin: '40px auto', textAlign: 'center' }}>
+        <div style={{ fontSize: 44, marginBottom: 8 }}>🔒</div>
+        <h1 style={{ fontSize: 22, margin: '0 0 8px' }}>Probetraining-Website</h1>
+        <p style={{ opacity: 0.78, lineHeight: 1.55 }}>
+          Buchungs-Link, QR-Code und Embed-Code für die eigene Homepage sind ab dem
+          {' '}<strong>Professional-Plan</strong> verfügbar.
+        </p>
+        <p style={{ opacity: 0.6, fontSize: 13 }}>Wende dich an den Support für ein Upgrade.</p>
+      </div>
+    );
+  }
 
   const linkSubdomain = sub ? `https://${sub}.dojo.tda-intl.org/probetraining` : '';
   const linkParam = sub ? `https://dojo.tda-intl.org/probetraining?dojo=${sub}` : '';

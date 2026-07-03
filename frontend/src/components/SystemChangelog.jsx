@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.126',
+    date: '2026-07-03',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Probetraining-Website: Plan-Gate auch in der Seite',
+    description: 'Der Professional-Gate greift jetzt nicht nur bei der Karte, sondern auch direkt in der Seite — der direkte URL-Aufruf zeigt bei Plänen unter Professional eine „ab Professional"-Sperre statt der Werkzeuge.',
+    highlights: ['🔒 Probetraining-Website auch per Direkt-URL gegated'],
+    details: 'ProbetrainingIntegration.jsx: Plan-Gate (jwtDecode Super-Admin + subscription.plan_type ≥ professional) mit Upgrade-Hinweis.',
+    files: ['frontend/src/components/ProbetrainingIntegration.jsx'],
+  },
+  {
     version: '3.0.125',
     date: '2026-07-03',
     type: 'improvement',
