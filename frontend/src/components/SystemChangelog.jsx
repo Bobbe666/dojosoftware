@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.123',
+    date: '2026-07-03',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Eigene Dojo-Startseite unter /willkommen (Homepage-Builder)',
+    description: 'Jedes Dojo kann jetzt eine eigene gebrandete Startseite bauen und unter <dojo>.dojo.tda-intl.org/willkommen veröffentlichen — mit Hero, Kampfkunststilen, Trainingszeiten, Werten und Probetraining-CTA. Editor unter Einstellungen → „Homepage-Builder". (Nebenbei zwei Bugs behoben, die Speichern & Rendern der Homepages bisher komplett verhinderten.)',
+    highlights: [
+      '🖥️ Eigene Startseite unter /willkommen pro Dojo',
+      '🎨 Gebrandet + Probetraining-Buchung integriert',
+      '⚙️ Editor jetzt auffindbar (Einstellungen → Homepage-Builder)',
+    ],
+    details: 'homepage.js: /willkommen (X-Tenant-Subdomain) + render-by-subdomain; Migration 221 (dojo_homepage.template_id — fehlte, blockierte Speichern) + template_id-Bug im render behoben; Default-CTAs → /probetraining. nginx wildcard: location = /willkommen → Backend. Dashboard.jsx: Homepage-Builder-Karte.',
+    files: ['backend/routes/homepage.js', 'frontend/src/components/Dashboard.jsx'],
+  },
+  {
     version: '3.0.122',
     date: '2026-07-03',
     type: 'fix',

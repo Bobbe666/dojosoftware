@@ -623,6 +623,13 @@ function Dashboard() {
       featured: false
     },
     {
+      icon: '🖥️',
+      title: 'Homepage-Builder',
+      description: 'Eigene Startseite (/willkommen) gestalten & veröffentlichen — Hero, Kampfkunststile, Zeiten & Probetraining-CTA',
+      path: '/dashboard/homepage',
+      featured: false
+    },
+    {
       icon: '🏯',
       title: 'Dojo-Verwaltung',
       description: 'Dojos verwalten, Design, Theme, Verträge & Steuern',
