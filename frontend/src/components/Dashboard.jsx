@@ -620,6 +620,7 @@ function Dashboard() {
       title: 'Probetraining-Link & Website',
       description: 'Buchungs-Link, QR-Code & Embed-Code für die eigene Homepage — Buchung landet als Interessent',
       path: '/dashboard/einstellungen/probetraining-link',
+      minPlan: 'professional',
       featured: false
     },
     {
@@ -2043,7 +2044,15 @@ function Dashboard() {
                             </>
                           ) : (
                             <div className="nav-cards">
-                              {einstellungenCards.filter(card => (!card.superAdminOnly || isSuperAdmin) && (!card.feature || isSuperAdmin || hasFeature(card.feature))).map((card, index) => (
+                              {einstellungenCards.filter(card => {
+                                if (card.superAdminOnly && !isSuperAdmin) return false;
+                                if (card.feature && !isSuperAdmin && !hasFeature(card.feature)) return false;
+                                if (card.minPlan && !isSuperAdmin) {
+                                  const planRang = { free: 0, basic: 1, starter: 1, professional: 2, premium: 3, enterprise: 4, trial: 4 };
+                                  if ((planRang[subscription?.plan_type] || 0) < (planRang[card.minPlan] || 0)) return false;
+                                }
+                                return true;
+                              }).map((card, index) => (
                                 <div
                                   key={index}
                                   onClick={() => card.action ? setEinstellungenView(card.action) : handleNavigation(card.path)}

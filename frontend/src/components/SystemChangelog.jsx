@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.125',
+    date: '2026-07-03',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Probetraining-Link-Karte ab Professional',
+    description: 'Die Karte „Probetraining-Link & Website" (Einstellungen) erscheint jetzt erst ab Plan Professional (bzw. Premium/Enterprise/Trial/Super-Admin) — über einen neuen Plan-Level-Check (minPlan).',
+    highlights: ['🔒 Probetraining-Link-Karte ab Professional'],
+    details: 'Dashboard.jsx: einstellungenCards-Filter um minPlan-Check (planRang, subscription.plan_type) erweitert; Karte minPlan: professional.',
+    files: ['frontend/src/components/Dashboard.jsx'],
+  },
+  {
     version: '3.0.124',
     date: '2026-07-03',
     type: 'improvement',
