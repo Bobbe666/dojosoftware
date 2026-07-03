@@ -167,6 +167,7 @@ const CourseRatingAdmin = lazyWithReload(() => import(/* webpackChunkName: "trai
 const Personal = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/TrainerPersonal"));
 const EinstellungenDojo = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/EinstellungenDojo"));
 const CheckinEinstellungen = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/CheckinEinstellungen"));
+const ProbetrainingIntegration = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/ProbetrainingIntegration"));
 const ThemeEinstellungen = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/ThemeEinstellungen"));
 const AuditLog = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/AuditLog"));
 const SecurityDashboard = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/SecurityDashboard"));
@@ -1091,6 +1092,7 @@ const App = () => {
               <Route path="einstellungen/zahlungen" element={<Suspense fallback={<LazyLoadFallback />}><ZahlungsEinstellungen /></Suspense>} />
               <Route path="einstellungen/design" element={<Suspense fallback={<LazyLoadFallback />}><ThemeEinstellungen /></Suspense>} />
               <Route path="einstellungen/checkin" element={<Suspense fallback={<LazyLoadFallback />}><CheckinEinstellungen /></Suspense>} />
+              <Route path="einstellungen/probetraining-link" element={<Suspense fallback={<LazyLoadFallback />}><ProbetrainingIntegration /></Suspense>} />
 
               {/* Audit-Log (Änderungsprotokoll) */}
               <Route path="audit-log" element={<Suspense fallback={<LazyLoadFallback />}><AuditLog /></Suspense>} />

@@ -616,6 +616,13 @@ function Dashboard() {
       featured: false
     },
     {
+      icon: '🌐',
+      title: 'Probetraining-Link & Website',
+      description: 'Buchungs-Link, QR-Code & Embed-Code für die eigene Homepage — Buchung landet als Interessent',
+      path: '/dashboard/einstellungen/probetraining-link',
+      featured: false
+    },
+    {
       icon: '🏯',
       title: 'Dojo-Verwaltung',
       description: 'Dojos verwalten, Design, Theme, Verträge & Steuern',

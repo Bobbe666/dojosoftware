@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.120',
+    date: '2026-07-03',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Probetraining für die eigene Homepage: Link, QR-Code & Embed',
+    description: 'Neu unter Einstellungen → „Probetraining-Link & Website": fertiger gebrandeter Buchungs-Link zum Verlinken, ein QR-Code (für Flyer/Social) zum Download und ein Embed-Code (iframe) zum direkten Einbetten in die bestehende Homepage. Jede Buchung landet automatisch als Interessent im CRM. Ideal für Dojos, die schon eine eigene Website haben.',
+    highlights: [
+      '🔗 Fertiger Probetraining-Buchungslink pro Dojo',
+      '📱 QR-Code zum Download',
+      '🧩 Embed-Code für die eigene Homepage',
+    ],
+    details: 'ProbetrainingIntegration.jsx (qrcode.react) + Route /dashboard/einstellungen/probetraining-link + Einstellungen-Karte. Nutzt bestehende öffentliche Buchungsseite /probetraining (subdomain-aware) + public-probetraining Backend. Stufe 1+2 von 3 (Landingpage folgt).',
+    files: ['frontend/src/components/ProbetrainingIntegration.jsx', 'frontend/src/App.jsx', 'frontend/src/components/Dashboard.jsx'],
+  },
+  {
     version: '3.0.119',
     date: '2026-07-01',
     type: 'improvement',
