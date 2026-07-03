@@ -606,6 +606,23 @@ const App = () => {
   useSafariDateFix();
   useWakeLock();
 
+  // Root-Weiche: nicht eingeloggte Besucher einer Subdomain-Root mit veröffentlichter
+  // Homepage werden auf /willkommen (Landingpage) geleitet. Eingeloggte + Dojos ohne
+  // Homepage bleiben in der App/Login. Nur exakt auf "/" (nicht /login etc.).
+  useEffect(() => {
+    try {
+      const m = window.location.hostname.match(/^([a-z0-9-]+)\.dojo\.tda-intl\.org$/);
+      if (!m) return;
+      if (window.location.pathname !== '/') return;
+      const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+      if (token) return;
+      fetch('/api/homepage/has-published')
+        .then(r => (r.ok ? r.json() : { published: false }))
+        .then(d => { if (d && d.published) window.location.replace('/willkommen'); })
+        .catch(() => {});
+    } catch { /* ignore */ }
+  }, []);
+
   // Support-Portal auf dedizierter Subdomain
   if (window.location.hostname === 'support.tda-intl.org') {
     return <SupportPortalBranch />;

@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.129',
+    date: '2026-07-03',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Subdomain-Startseite: Besucher landen automatisch auf der Landingpage',
+    description: 'Ruft ein nicht eingeloggter Besucher die Subdomain direkt auf (<dojo>.dojo.tda-intl.org), landet er automatisch auf der veröffentlichten Landingpage (/willkommen) — sofern eine existiert. Eingeloggte kommen wie gewohnt in die App; Dojos ohne Homepage bleiben unverändert. Mitglieder finden auf der Landingpage jetzt einen „Login"-Link.',
+    highlights: [
+      '🏠 Subdomain-Root zeigt Besuchern die Landingpage',
+      '🔑 „Login"-Link auf der Landingpage für Mitglieder',
+    ],
+    details: 'App.jsx: Root-Weiche (nur "/", nicht eingeloggt, Subdomain, /api/homepage/has-published → /willkommen). homepage.js: has-published-Endpoint + Login-nav_item in renderBySubdomain.',
+    files: ['frontend/src/App.jsx', 'backend/routes/homepage.js'],
+  },
+  {
     version: '3.0.128',
     date: '2026-07-03',
     type: 'fix',

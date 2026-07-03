@@ -274,6 +274,9 @@ async function renderBySubdomain(subRaw, res) {
   const config = typeof row.config === 'string' ? JSON.parse(row.config) : (row.config || {});
   const templateId = row.template_id || config.template_id || 'traditional';
 
+  // Mitglieder-Login-Link in die Navigation (Besucher/Mitglieder können einloggen)
+  config.nav_items = [...(config.nav_items || []).filter(n => n && n.href !== '/login'), { id: 'login', label: 'Login', href: '/login' }];
+
   let schedule = [];
   try {
     const [schedRows] = await pool.query(
@@ -306,6 +309,20 @@ router.get('/render-by-subdomain/:subdomain', async (req, res) => {
 router.get('/willkommen', async (req, res) => {
   try { await renderBySubdomain(req.headers['x-tenant-subdomain'] || req.query.dojo, res); }
   catch (err) { logger.error('Homepage /willkommen Fehler:', { error: err.message }); res.status(500).send('<h1>Fehler beim Rendern der Homepage</h1>'); }
+});
+
+// GET /api/homepage/has-published — leichter Check für die Root-Weiche (kein HTML)
+router.get('/has-published', async (req, res) => {
+  try {
+    const sub = String(req.headers['x-tenant-subdomain'] || req.query.dojo || '').toLowerCase();
+    if (!/^[a-z0-9-]+$/.test(sub)) return res.json({ published: false });
+    const [rows] = await pool.query(
+      `SELECT dh.slug FROM dojo_homepage dh JOIN dojo d ON d.id = dh.dojo_id
+       WHERE d.subdomain = ? AND dh.is_published = 1 LIMIT 1`,
+      [sub]
+    );
+    res.json({ published: rows.length > 0, slug: rows[0]?.slug || null });
+  } catch (e) { res.json({ published: false }); }
 });
 
 // ─── GESCHÜTZTE ENDPUNKTE ─────────────────────────────────────────────────────
