@@ -202,11 +202,11 @@ router.get('/render/:slug', async (req, res) => {
     }
 
     const query = isPreview
-      ? `SELECT dh.config, dh.template_id, dh.slug, dh.dojo_id, d.dojoname
+      ? `SELECT dh.config, dh.slug, dh.dojo_id, d.dojoname
          FROM dojo_homepage dh
          JOIN dojo d ON dh.dojo_id = d.id
          WHERE dh.slug = ?`
-      : `SELECT dh.config, dh.template_id, dh.slug, dh.dojo_id, d.dojoname
+      : `SELECT dh.config, dh.slug, dh.dojo_id, d.dojoname
          FROM dojo_homepage dh
          JOIN dojo d ON dh.dojo_id = d.id
          WHERE dh.slug = ? AND dh.is_published = 1`;
@@ -219,7 +219,7 @@ router.get('/render/:slug', async (req, res) => {
 
     const row = rows[0];
     const config = typeof row.config === 'string' ? JSON.parse(row.config) : (row.config || {});
-    const templateId = row.template_id || 'traditional';
+    const templateId = config.template_id || config.template || 'traditional';
 
     // Stundenplan laden falls gewünscht
     let schedule = [];
@@ -261,7 +261,7 @@ router.get('/render-by-subdomain/:subdomain', async (req, res) => {
     if (!/^[a-z0-9-]+$/.test(sub)) return res.status(400).send('<h1>Ungültige Subdomain</h1>');
 
     const [rows] = await pool.query(
-      `SELECT dh.config, dh.template_id, dh.dojo_id, d.dojoname
+      `SELECT dh.config, dh.dojo_id, d.dojoname
        FROM dojo_homepage dh
        JOIN dojo d ON dh.dojo_id = d.id
        WHERE d.subdomain = ? AND dh.is_published = 1
@@ -275,7 +275,7 @@ router.get('/render-by-subdomain/:subdomain', async (req, res) => {
 
     const row = rows[0];
     const config = typeof row.config === 'string' ? JSON.parse(row.config) : (row.config || {});
-    const templateId = row.template_id || 'traditional';
+    const templateId = config.template_id || config.template || 'traditional';
 
     let schedule = [];
     try {
