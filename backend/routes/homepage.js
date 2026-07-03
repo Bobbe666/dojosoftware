@@ -252,55 +252,60 @@ router.get('/render/:slug', async (req, res) => {
 });
 
 // ─── HTML-RENDER PER SUBDOMAIN ────────────────────────────────────────────────
-// GET /api/homepage/render-by-subdomain/:subdomain
-// Rendert die veröffentlichte Homepage des Dojos zur Subdomain (für /willkommen-Routing).
-// Kein Auth. Nutzt denselben Renderer wie /render/:slug.
-router.get('/render-by-subdomain/:subdomain', async (req, res) => {
-  try {
-    const sub = String(req.params.subdomain || '').toLowerCase();
-    if (!/^[a-z0-9-]+$/.test(sub)) return res.status(400).send('<h1>Ungültige Subdomain</h1>');
+// Gemeinsamer Renderer: veröffentlichte Homepage eines Dojos zur Subdomain als HTML.
+async function renderBySubdomain(subRaw, res) {
+  const sub = String(subRaw || '').toLowerCase();
+  if (!/^[a-z0-9-]+$/.test(sub)) return res.status(400).send('<h1>Ungültige Subdomain</h1>');
 
-    const [rows] = await pool.query(
-      `SELECT dh.config, dh.dojo_id, d.dojoname
-       FROM dojo_homepage dh
-       JOIN dojo d ON dh.dojo_id = d.id
-       WHERE d.subdomain = ? AND dh.is_published = 1
-       LIMIT 1`,
-      [sub]
-    );
+  const [rows] = await pool.query(
+    `SELECT dh.config, dh.dojo_id, d.dojoname
+     FROM dojo_homepage dh
+     JOIN dojo d ON dh.dojo_id = d.id
+     WHERE d.subdomain = ? AND dh.is_published = 1
+     LIMIT 1`,
+    [sub]
+  );
 
-    if (rows.length === 0) {
-      return res.status(404).send(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Noch keine Homepage</title></head><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0a;color:#fff;flex-direction:column;gap:16px;text-align:center;padding:24px"><h1 style="font-size:3rem;margin:0">🏗️</h1><p>Für dieses Dojo ist noch keine Homepage veröffentlicht.</p></body></html>`);
-    }
-
-    const row = rows[0];
-    const config = typeof row.config === 'string' ? JSON.parse(row.config) : (row.config || {});
-    const templateId = config.template_id || config.template || 'traditional';
-
-    let schedule = [];
-    try {
-      const [schedRows] = await pool.query(
-        `SELECT se.wochentag, se.uhrzeit_start AS uhrzeit, k.kursname,
-                CONCAT(COALESCE(t.vorname,''), ' ', COALESCE(t.nachname,'')) AS trainer
-         FROM stundenplan_eintraege se
-         LEFT JOIN kurse k ON se.kurs_id = k.id
-         LEFT JOIN trainer t ON se.trainer_id = t.id
-         WHERE se.dojo_id = ? AND se.aktiv = 1
-         ORDER BY FIELD(se.wochentag,'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'), se.uhrzeit_start
-         LIMIT 12`,
-        [row.dojo_id]
-      );
-      schedule = schedRows;
-    } catch (_) { /* nicht kritisch */ }
-
-    const html = renderHomepage(templateId, config, schedule);
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=300');
-    res.send(html);
-  } catch (err) {
-    logger.error('Homepage Render-by-subdomain Fehler:', { error: err.message });
-    res.status(500).send('<h1>Fehler beim Rendern der Homepage</h1>');
+  if (rows.length === 0) {
+    return res.status(404).send(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Noch keine Homepage</title></head><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0a;color:#fff;flex-direction:column;gap:16px;text-align:center;padding:24px"><h1 style="font-size:3rem;margin:0">🏗️</h1><p>Für dieses Dojo ist noch keine Homepage veröffentlicht.</p></body></html>`);
   }
+
+  const row = rows[0];
+  const config = typeof row.config === 'string' ? JSON.parse(row.config) : (row.config || {});
+  const templateId = config.template_id || config.template || 'traditional';
+
+  let schedule = [];
+  try {
+    const [schedRows] = await pool.query(
+      `SELECT se.wochentag, se.uhrzeit_start AS uhrzeit, k.kursname,
+              CONCAT(COALESCE(t.vorname,''), ' ', COALESCE(t.nachname,'')) AS trainer
+       FROM stundenplan_eintraege se
+       LEFT JOIN kurse k ON se.kurs_id = k.id
+       LEFT JOIN trainer t ON se.trainer_id = t.id
+       WHERE se.dojo_id = ? AND se.aktiv = 1
+       ORDER BY FIELD(se.wochentag,'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'), se.uhrzeit_start
+       LIMIT 12`,
+      [row.dojo_id]
+    );
+    schedule = schedRows;
+  } catch (_) { /* nicht kritisch */ }
+
+  const html = renderHomepage(templateId, config, schedule);
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.send(html);
+}
+
+// GET /api/homepage/render-by-subdomain/:subdomain — Subdomain im Pfad
+router.get('/render-by-subdomain/:subdomain', async (req, res) => {
+  try { await renderBySubdomain(req.params.subdomain, res); }
+  catch (err) { logger.error('Homepage render-by-subdomain Fehler:', { error: err.message }); res.status(500).send('<h1>Fehler beim Rendern der Homepage</h1>'); }
+});
+
+// GET /api/homepage/willkommen — Subdomain aus X-Tenant-Subdomain-Header (nginx /willkommen)
+router.get('/willkommen', async (req, res) => {
+  try { await renderBySubdomain(req.headers['x-tenant-subdomain'] || req.query.dojo, res); }
+  catch (err) { logger.error('Homepage /willkommen Fehler:', { error: err.message }); res.status(500).send('<h1>Fehler beim Rendern der Homepage</h1>'); }
 });
 
 // ─── GESCHÜTZTE ENDPUNKTE ─────────────────────────────────────────────────────

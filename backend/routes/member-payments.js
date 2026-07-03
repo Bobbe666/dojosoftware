@@ -6,8 +6,28 @@ const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const PaymentProviderFactory = require('../services/PaymentProviderFactory');
 
 const pool = db.promise();
+
+// --- IBAN-Helfer (Normalisierung, Mod-97-Prüfung, Maskierung) ---
+const normalizeIBAN = (iban) => String(iban || '').replace(/\s+/g, '').toUpperCase();
+const isValidIBAN = (iban) => {
+  const v = normalizeIBAN(iban);
+  if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(v)) return false;
+  const rearranged = v.slice(4) + v.slice(0, 4);
+  const numeric = rearranged.replace(/[A-Z]/g, (ch) => (ch.charCodeAt(0) - 55).toString());
+  let rem = 0;
+  for (let i = 0; i < numeric.length; i += 7) {
+    rem = parseInt(String(rem) + numeric.slice(i, i + 7), 10) % 97;
+  }
+  return rem === 1;
+};
+const maskIBAN = (iban) => {
+  const c = normalizeIBAN(iban);
+  if (c.length <= 8) return c;
+  return `${c.slice(0, 4)} •••• •••• ${c.slice(-4)}`;
+};
 
 // GET /api/member-payments/rechnungen
 // Mitglied ruft eigene offene Rechnungen ab (nur eigene, nie fremde)
@@ -262,6 +282,141 @@ router.get('/naechste-abbuchung', authenticateToken, async (req, res) => {
         logger.error('Fehler bei naechste-abbuchung:', { error: err });
         res.status(500).json({ error: err.message });
     }
+});
+
+// ============================================================================
+// SELF-SERVICE BANKVERBINDUNG (SEPA) — Mitglied ändert eigene IBAN
+// ============================================================================
+
+// GET /api/member-payments/bankverbindung — aktuelle (maskierte) Bankverbindung
+router.get('/bankverbindung', authenticateToken, async (req, res) => {
+  try {
+    const mitgliedId = req.user?.mitglied_id;
+    const dojoId = req.user?.dojo_id;
+    if (!mitgliedId) return res.status(403).json({ error: 'Nur für Mitglieder zugänglich' });
+
+    const [rows] = await pool.query(
+      `SELECT sm.iban, sm.kontoinhaber, sm.status, sm.stripe_payment_method_id
+       FROM sepa_mandate sm
+       WHERE sm.mitglied_id = ? AND sm.status = 'aktiv' AND (sm.archiviert = 0 OR sm.archiviert IS NULL)
+       ORDER BY sm.erstellungsdatum DESC LIMIT 1`,
+      [mitgliedId]
+    );
+
+    let providerSupportsSepa = false;
+    try {
+      const provider = await PaymentProviderFactory.getProvider(dojoId);
+      providerSupportsSepa = !!(provider && typeof provider.createSepaCustomer === 'function');
+    } catch (_) { /* Provider optional */ }
+
+    const mandat = rows[0] || null;
+    res.json({
+      success: true,
+      hat_mandat: !!mandat,
+      iban_masked: mandat?.iban ? maskIBAN(mandat.iban) : null,
+      kontoinhaber: mandat?.kontoinhaber || null,
+      stripe_ready: !!mandat?.stripe_payment_method_id,
+      provider_supports_sepa: providerSupportsSepa,
+    });
+  } catch (err) {
+    logger.error('Fehler bei GET /bankverbindung:', { error: err.message });
+    res.status(500).json({ error: 'Bankverbindung konnte nicht geladen werden' });
+  }
+});
+
+// POST /api/member-payments/bankverbindung — Mitglied hinterlegt neue IBAN selbst
+router.post('/bankverbindung', authenticateToken, async (req, res) => {
+  try {
+    const mitgliedId = req.user?.mitglied_id;
+    const dojoId = req.user?.dojo_id;
+    if (!mitgliedId) return res.status(403).json({ error: 'Nur für Mitglieder zugänglich' });
+
+    let { iban, kontoinhaber, mandat_bestaetigt } = req.body || {};
+
+    if (mandat_bestaetigt !== true) {
+      return res.status(400).json({ error: 'Bitte bestätigen Sie das SEPA-Lastschriftmandat.' });
+    }
+    iban = normalizeIBAN(iban);
+    if (!isValidIBAN(iban)) {
+      return res.status(400).json({ error: 'Die eingegebene IBAN ist ungültig. Bitte prüfen Sie Ihre Eingabe.' });
+    }
+    kontoinhaber = String(kontoinhaber || '').trim();
+    if (kontoinhaber.length < 3) {
+      return res.status(400).json({ error: 'Bitte geben Sie den vollständigen Namen des Kontoinhabers an.' });
+    }
+
+    // Mitglied laden (dojo-gescoped)
+    const [rows] = await pool.query(
+      `SELECT mitglied_id, vorname, nachname, email, stripe_customer_id, dojo_id
+       FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?`,
+      [mitgliedId, dojoId]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    const mitglied = rows[0];
+
+    // 1) Zuerst bei Stripe eine neue SEPA-Zahlungsmethode aus der IBAN erzeugen.
+    //    Schlägt das fehl (ungültige IBAN o.ä.), wird NICHTS in der DB verändert.
+    let stripeInfo = null;
+    let providerSupportsSepa = false;
+    try {
+      const provider = await PaymentProviderFactory.getProvider(dojoId);
+      if (provider && typeof provider.createSepaCustomer === 'function') {
+        providerSupportsSepa = true;
+        stripeInfo = await provider.createSepaCustomer(mitglied, iban, kontoinhaber);
+      }
+    } catch (e) {
+      logger.error('Bankverbindung Self-Service: Stripe-Setup fehlgeschlagen', { error: e.message, mitgliedId });
+      return res.status(400).json({
+        error: 'Die Bankverbindung konnte nicht hinterlegt werden. Bitte prüfen Sie Ihre IBAN und versuchen Sie es erneut.'
+      });
+    }
+
+    // 2) SEPA-Mandat aktualisieren (bestehendes aktives) oder neu anlegen.
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip || null;
+    const ref = `DOJO${dojoId}-${mitgliedId}-${Date.now()}`;
+    const [existing] = await pool.query(
+      `SELECT mandat_id FROM sepa_mandate
+       WHERE mitglied_id = ? AND status = 'aktiv' AND (archiviert = 0 OR archiviert IS NULL)
+       ORDER BY erstellungsdatum DESC LIMIT 1`,
+      [mitgliedId]
+    );
+
+    if (existing.length) {
+      // stripe_payment_method_id wurde durch createSepaCustomer bereits gesetzt.
+      await pool.query(
+        `UPDATE sepa_mandate
+         SET iban = ?, kontoinhaber = ?, mandatsreferenz = ?, unterschrift_datum = NOW(), unterschrift_ip = ?, status = 'aktiv'
+         WHERE mandat_id = ?`,
+        [iban, kontoinhaber, ref, ip, existing[0].mandat_id]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO sepa_mandate
+           (mitglied_id, iban, bic, bankname, kontoinhaber, mandatsreferenz,
+            stripe_payment_method_id, unterschrift_datum, unterschrift_ip, status, erstellungsdatum)
+         VALUES (?, ?, '', NULL, ?, ?, ?, NOW(), ?, 'aktiv', NOW())`,
+        [mitgliedId, iban, kontoinhaber, ref, stripeInfo?.stripe_payment_method_id || null, ip]
+      );
+    }
+
+    // 3) Mitglied auf Lastschrift + IBAN aktualisieren.
+    await pool.query(
+      `UPDATE mitglieder SET iban = ?, zahlungsmethode = 'Lastschrift' WHERE mitglied_id = ? AND dojo_id = ?`,
+      [iban, mitgliedId, dojoId]
+    );
+
+    logger.info('✅ Mitglied hat Bankverbindung selbst aktualisiert', { mitgliedId, dojoId, stripe: !!stripeInfo });
+    res.json({
+      success: true,
+      iban_masked: maskIBAN(iban),
+      kontoinhaber,
+      stripe_ready: providerSupportsSepa ? !!stripeInfo : null,
+      message: 'Ihre Bankverbindung wurde erfolgreich aktualisiert. Offene Beiträge werden über die neue Bankverbindung eingezogen.'
+    });
+  } catch (err) {
+    logger.error('Fehler bei POST /bankverbindung:', { error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Bankverbindung konnte nicht gespeichert werden' });
+  }
 });
 
 module.exports = router;

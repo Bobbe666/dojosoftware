@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.122',
+    date: '2026-07-03',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Familienrabatt-Rundungsfehler (100-facher Beitrag) behoben',
+    description: 'Beim Anlegen von Familienmitgliedern mit Prozent-Rabatt wurde der Monatsbeitrag 100-fach zu hoch berechnet (z.B. 24,50 € wurde 2450 €). Formel korrigiert. Zusätzlich zeigt der Familie-Tab jetzt den Tarif-Beitrag, wenn der Vertrag keinen expliziten Monatsbeitrag hat.',
+    highlights: ['🐛 100-facher Familienbeitrag behoben (Rundungsfehler)', '💶 Tarif-Beitrag als Fallback im Familie-Tab'],
+    details: 'mitglieder.js createFamilyMembers: Math.round(tarifPreis*(100-%))/100 statt *100. mitglieddetail.js /familie: COALESCE(..., t.price_cents/100). Altfall Vanessa Marx (Vertrag 244) + 13 offene Beiträge auf 24,50 € korrigiert (nichts war gezahlt).',
+    files: ['backend/routes/mitglieder.js', 'backend/routes/mitglieddetail.js'],
+  },
+  {
     version: '3.0.121',
     date: '2026-07-03',
     type: 'improvement',

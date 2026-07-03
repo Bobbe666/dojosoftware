@@ -542,7 +542,7 @@ router.get("/:id/familie", authenticateToken, async (req, res) => {
           m.vertreter1_typ, m.vertreter1_name, m.vertreter1_email, m.vertreter1_telefon,
           TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) AS alter_jahre,
           v.status AS vertrag_status,
-          COALESCE(v.monatsbeitrag, v.monatlicher_beitrag) AS monatsbeitrag,
+          COALESCE(v.monatsbeitrag, v.monatlicher_beitrag, t.price_cents / 100) AS monatsbeitrag,
           v.rabatt_prozent AS rabatt_prozent,
           v.rabatt_grund AS rabatt_grund,
           t.name AS tarif_name

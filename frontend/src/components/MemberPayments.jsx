@@ -34,6 +34,13 @@ const MemberPayments = () => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [naechste, setNaechste] = useState(null); // Zusammensetzung nächste Abbuchung
 
+  // --- Self-Service Bankverbindung (SEPA) ---
+  const [bank, setBank] = useState(null);          // { hat_mandat, iban_masked, kontoinhaber, provider_supports_sepa }
+  const [bankEditing, setBankEditing] = useState(false);
+  const [bankForm, setBankForm] = useState({ iban: '', kontoinhaber: '', mandat: false });
+  const [bankSaving, setBankSaving] = useState(false);
+  const [bankMsg, setBankMsg] = useState(null);    // { type: 'success'|'error', text }
+
   // --- Quittungen (Self-Service-PDF, on-the-fly, nichts gespeichert) ---
   const [qJahr, setQJahr] = useState(new Date().getFullYear());
   const [qUmfang, setQUmfang] = useState('beitraege'); // 'beitraege' | 'alle'
@@ -100,6 +107,56 @@ const MemberPayments = () => {
   useEffect(() => {
     if (activeTab === 'historie') loadHistory();
   }, [activeTab, loadHistory]);
+
+  // Aktuelle Bankverbindung laden (für Zahlungsmethoden-Tab)
+  const loadBank = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/member-payments/bankverbindung`);
+      if (res.ok) {
+        const d = await res.json();
+        if (d?.success) {
+          setBank(d);
+          setBankForm(f => ({ ...f, kontoinhaber: d.kontoinhaber || '' }));
+        }
+      }
+    } catch (e) { /* still */ }
+  }, []);
+  useEffect(() => {
+    if (activeTab === 'karten' && !bank) loadBank();
+  }, [activeTab, bank, loadBank]);
+
+  const handleBankSubmit = async () => {
+    setBankMsg(null);
+    if (!bankForm.mandat) {
+      setBankMsg({ type: 'error', text: 'Bitte bestätige das SEPA-Lastschriftmandat.' });
+      return;
+    }
+    setBankSaving(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/member-payments/bankverbindung`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          iban: bankForm.iban,
+          kontoinhaber: bankForm.kontoinhaber,
+          mandat_bestaetigt: true,
+        }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d?.success) {
+        setBank(b => ({ ...(b || {}), hat_mandat: true, iban_masked: d.iban_masked, kontoinhaber: d.kontoinhaber }));
+        setBankEditing(false);
+        setBankForm({ iban: '', kontoinhaber: d.kontoinhaber || '', mandat: false });
+        setBankMsg({ type: 'success', text: d.message || 'Bankverbindung aktualisiert.' });
+      } else {
+        setBankMsg({ type: 'error', text: d?.error || 'Die Bankverbindung konnte nicht gespeichert werden.' });
+      }
+    } catch (e) {
+      setBankMsg({ type: 'error', text: 'Netzwerkfehler. Bitte versuche es erneut.' });
+    } finally {
+      setBankSaving(false);
+    }
+  };
 
   // Quittungs-Posten laden (eigene bezahlte Posten je Jahr + Umfang)
   const loadQuittungen = useCallback(async () => {
@@ -398,6 +455,113 @@ const MemberPayments = () => {
           {/* Tab: Zahlungsmethoden */}
           {activeTab === 'karten' && (
             <div className="mp-section">
+              {/* --- Self-Service Bankverbindung (SEPA) --- */}
+              <div className="mp-bank-block" style={{ marginBottom: 28, padding: 20, border: '1px solid var(--border-color, #e2e8f0)', borderRadius: 12 }}>
+                <div className="mp-cards-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Euro size={18} />
+                  <h2 className="mp-section-title" style={{ margin: 0 }}>Bankverbindung (SEPA-Lastschrift)</h2>
+                </div>
+
+                {bankMsg && (
+                  <div className="mp-security-note" style={{ marginTop: 12, color: bankMsg.type === 'error' ? '#b91c1c' : '#15803d' }}>
+                    {bankMsg.type === 'error' ? <AlertTriangle size={14} /> : <CheckCircle size={14} />}
+                    <span>{bankMsg.text}</span>
+                  </div>
+                )}
+
+                {!bankEditing && (
+                  <div style={{ marginTop: 14 }}>
+                    {bank?.hat_mandat ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        <div className="mp-card-icon">🏦</div>
+                        <div style={{ flex: 1, minWidth: 180 }}>
+                          <div className="mp-card-name">{bank.iban_masked || 'IBAN hinterlegt'}</div>
+                          <div className="u-text-secondary" style={{ fontSize: 13 }}>
+                            {bank.kontoinhaber ? `Kontoinhaber: ${bank.kontoinhaber}` : 'SEPA-Lastschriftmandat aktiv'}
+                          </div>
+                        </div>
+                        <button className="mp-q-toggle-btn" onClick={() => { setBankMsg(null); setBankEditing(true); }}>
+                          Bankverbindung ändern
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        <p className="u-text-secondary" style={{ flex: 1, minWidth: 180, margin: 0 }}>
+                          Hinterlege deine Bankverbindung, damit deine Beiträge bequem per SEPA-Lastschrift eingezogen werden können.
+                        </p>
+                        <button className="mp-q-toggle-btn is-active" onClick={() => { setBankMsg(null); setBankEditing(true); }}>
+                          Bankverbindung hinterlegen
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {bankEditing && (
+                  <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div className="mp-q-field">
+                      <label className="mp-stat-label" htmlFor="bank-iban">IBAN</label>
+                      <input
+                        id="bank-iban"
+                        className="mp-q-select"
+                        type="text"
+                        inputMode="text"
+                        autoComplete="off"
+                        placeholder="DE00 0000 0000 0000 0000 00"
+                        value={bankForm.iban}
+                        onChange={(e) => setBankForm(f => ({ ...f, iban: e.target.value.toUpperCase() }))}
+                      />
+                    </div>
+                    <div className="mp-q-field">
+                      <label className="mp-stat-label" htmlFor="bank-inhaber">Kontoinhaber (Vor- und Nachname)</label>
+                      <input
+                        id="bank-inhaber"
+                        className="mp-q-select"
+                        type="text"
+                        autoComplete="name"
+                        placeholder="Max Mustermann"
+                        value={bankForm.kontoinhaber}
+                        onChange={(e) => setBankForm(f => ({ ...f, kontoinhaber: e.target.value }))}
+                      />
+                    </div>
+                    <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, lineHeight: 1.5 }}>
+                      <input
+                        type="checkbox"
+                        checked={bankForm.mandat}
+                        onChange={(e) => setBankForm(f => ({ ...f, mandat: e.target.checked }))}
+                        style={{ marginTop: 3 }}
+                      />
+                      <span className="u-text-secondary">
+                        Ich ermächtige das Dojo, Zahlungen von meinem Konto per SEPA-Lastschrift einzuziehen, und weise mein
+                        Kreditinstitut an, diese Lastschriften einzulösen (SEPA-Lastschriftmandat).
+                      </span>
+                    </label>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      <button
+                        className="mp-q-toggle-btn is-active"
+                        onClick={handleBankSubmit}
+                        disabled={bankSaving}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                      >
+                        {bankSaving && <Loader2 className="mp-spin" size={16} />}
+                        {bankSaving ? 'Wird gespeichert…' : 'Speichern'}
+                      </button>
+                      <button
+                        className="mp-q-toggle-btn"
+                        onClick={() => { setBankEditing(false); setBankMsg(null); }}
+                        disabled={bankSaving}
+                      >
+                        Abbrechen
+                      </button>
+                    </div>
+                    <div className="mp-security-note" style={{ marginTop: 2 }}>
+                      <Shield size={14} />
+                      <span>Deine IBAN wird sicher über <strong>Stripe</strong> verarbeitet. Offene Beiträge werden anschließend automatisch über die neue Bankverbindung eingezogen.</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="mp-cards-header">
                 <h2 className="mp-section-title">Gespeicherte Karten</h2>
               </div>

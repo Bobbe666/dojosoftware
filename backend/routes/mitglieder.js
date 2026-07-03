@@ -4000,7 +4000,9 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
                     } else if (rabattBetragCents) {
                         monatsbeitrag = Math.max(0, Math.round((tarifPreis - rabattBetragCents / 100) * 100) / 100);
                     } else if (rabattProzent > 0) {
-                        monatsbeitrag = Math.round((tarifPreis * (100 - rabattProzent)) * 100) / 100;
+                        // Rabattierter Preis = tarifPreis * (100 - %) / 100, auf Cent gerundet.
+                        // (Früherer Bug: zusätzliches *100 → 100-facher Betrag, z.B. 24,50 € wurde 2450 €.)
+                        monatsbeitrag = Math.round(tarifPreis * (100 - rabattProzent)) / 100;
                     }
 
                     const vertragData = {
