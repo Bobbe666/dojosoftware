@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.121',
+    date: '2026-07-03',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Probetraining-Buchungsseite im Dojo-Design',
+    description: 'Die öffentliche Probetraining-Buchungsseite übernimmt jetzt die Akzentfarbe des jeweiligen Dojos (statt fixem Rot) — passend zum Logo. Jedes Dojo/Subdomain erscheint im eigenen Look.',
+    highlights: ['🎨 Buchungsseite in der Dojo-Farbe (White-Label)'],
+    details: 'public-probetraining.js liefert theme_farbe; ProbetrainingBuchung.jsx setzt --primary/--ds-accent aus dojoData.farbe (color-mix für Erfolgs-Box).',
+    files: ['backend/routes/public-probetraining.js', 'frontend/src/pages/ProbetrainingBuchung.jsx'],
+  },
+  {
     version: '3.0.120',
     date: '2026-07-03',
     type: 'feature',

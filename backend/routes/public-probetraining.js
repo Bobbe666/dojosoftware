@@ -55,7 +55,7 @@ router.get('/dojo/:subdomain', async (req, res) => {
     // Dojo anhand Subdomain finden
     const dojos = await queryAsync(`
       SELECT d.id, d.dojoname, d.untertitel, d.logo_url, d.email, d.telefon,
-             d.strasse, d.hausnummer, d.plz, d.ort
+             d.strasse, d.hausnummer, d.plz, d.ort, d.theme_farbe, d.theme_scheme
       FROM dojo d
       WHERE d.subdomain = ? AND d.ist_aktiv = 1
     `, [subdomain]);
@@ -101,6 +101,8 @@ router.get('/dojo/:subdomain', async (req, res) => {
           name: dojo.dojoname,
           beschreibung: dojo.untertitel || '',
           logo_url: dojo.logo_url,
+          farbe: dojo.theme_farbe || null,
+          theme_scheme: dojo.theme_scheme || 'default',
           kontakt: {
             email: dojo.email,
             telefon: dojo.telefon,

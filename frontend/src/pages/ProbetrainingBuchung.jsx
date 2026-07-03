@@ -156,10 +156,15 @@ const ProbetrainingBuchung = () => {
   const selectedKurs = filteredKurse.find(k => String(k.stundenplan_id || k.kurs_id) === String(formData.kurs_id));
   const slotTermine = selectedKurs ? naechsteTermine(selectedKurs.wochentag) : [];
 
+  // Dojo-Theme: Akzentfarbe des Dojos auf die Seite ziehen
+  const themeStyle = dojoData?.farbe
+    ? { '--primary': dojoData.farbe, '--ds-accent': dojoData.farbe, '--ds-accent-strong': dojoData.farbe }
+    : undefined;
+
   // Loading State
   if (loading) {
     return (
-      <div className="ptb-container">
+      <div className="ptb-container" style={themeStyle}>
         <div className="ptb-card">
           <div className="ptb-loading">
             <Loader2 size={48} className="ptb-loading-icon" />
@@ -173,7 +178,7 @@ const ProbetrainingBuchung = () => {
   // Error State (Dojo nicht gefunden)
   if (!dojoData) {
     return (
-      <div className="ptb-container">
+      <div className="ptb-container" style={themeStyle}>
         <div className="ptb-card">
           <div className="ptb-loading ptb-loading-error">
             <AlertCircle size={48} />
@@ -187,7 +192,7 @@ const ProbetrainingBuchung = () => {
   // Success State
   if (success) {
     return (
-      <div className="ptb-container">
+      <div className="ptb-container" style={themeStyle}>
         <div className="ptb-card">
           <div className="ptb-success">
             <div className="ptb-success-icon">
@@ -196,8 +201,8 @@ const ProbetrainingBuchung = () => {
             {bookedInfo?.gebucht ? (
               <>
                 <h2 className="ptb-success-title">Dein Termin ist gebucht! 🥋</h2>
-                <div style={{ background: 'rgba(225,29,42,0.12)', border: '1px solid rgba(225,29,42,0.35)', borderRadius: '12px', padding: '16px', margin: '8px 0 16px' }}>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ff5a5a' }}>
+                <div style={{ background: 'color-mix(in srgb, var(--primary, #e11d2a) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--primary, #e11d2a) 35%, transparent)', borderRadius: '12px', padding: '16px', margin: '8px 0 16px' }}>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary, #ff5a5a)' }}>
                     {new Date(bookedInfo.datum + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
                   </div>
                   <div style={{ opacity: 0.9, marginTop: '4px' }}>{bookedInfo.uhrzeit} Uhr · {bookedInfo.kurs}</div>
@@ -221,7 +226,7 @@ const ProbetrainingBuchung = () => {
   }
 
   return (
-    <div className="ptb-container">
+    <div className="ptb-container" style={themeStyle}>
       <div className="ptb-card">
         {/* Header */}
         <div className="ptb-header">
