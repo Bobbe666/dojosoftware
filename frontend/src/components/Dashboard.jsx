@@ -627,6 +627,7 @@ function Dashboard() {
       title: 'Homepage-Builder',
       description: 'Eigene Startseite (/willkommen) gestalten & veröffentlichen — Hero, Kampfkunststile, Zeiten & Probetraining-CTA',
       path: '/dashboard/homepage',
+      feature: 'homepage_builder',
       featured: false
     },
     {
@@ -2042,7 +2043,7 @@ function Dashboard() {
                             </>
                           ) : (
                             <div className="nav-cards">
-                              {einstellungenCards.filter(card => !card.superAdminOnly || isSuperAdmin).map((card, index) => (
+                              {einstellungenCards.filter(card => (!card.superAdminOnly || isSuperAdmin) && (!card.feature || isSuperAdmin || hasFeature(card.feature))).map((card, index) => (
                                 <div
                                   key={index}
                                   onClick={() => card.action ? setEinstellungenView(card.action) : handleNavigation(card.path)}

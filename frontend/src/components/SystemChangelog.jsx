@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.124',
+    date: '2026-07-03',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Homepage-Builder als Premium/Enterprise gegated',
+    description: 'Die Homepage-Builder-Karte in den Einstellungen erscheint jetzt nur für Dojos mit Premium/Enterprise (Feature homepage_builder) bzw. für Super-Admins. Der Backend-API war bereits gegated.',
+    highlights: ['🔒 Homepage-Builder-Karte nur mit Premium/Enterprise'],
+    details: 'Dashboard.jsx: einstellungenCards-Filter um feature-Check erweitert (isSuperAdmin || hasFeature(card.feature)); Homepage-Builder-Karte feature: homepage_builder.',
+    files: ['frontend/src/components/Dashboard.jsx'],
+  },
+  {
     version: '3.0.123',
     date: '2026-07-03',
     type: 'feature',
