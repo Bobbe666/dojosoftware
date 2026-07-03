@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.130',
+    date: '2026-07-03',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Ruhepause verlängert jetzt automatisch das Vertragsende',
+    description: 'Beim Genehmigen einer Ruhepause wird das Vertragsende automatisch um die Pausendauer nach hinten geschoben (nur bei fixem Vertragsende, kein Doppel-Verschieben bei erneuter Genehmigung). Bestehende Ruhepause-Mitglieder wurden einmalig entsprechend nachgezogen.',
+    highlights: ['📅 Vertragsende wird um die Pausendauer verlängert', '🔁 Automatisch beim Genehmigen der Ruhepause'],
+    details: 'vertrag-anpassungen.js /:id/genehmigen (typ ruhepause): DATE_ADD(vertragsende, INTERVAL Pausendauer MONTH), Guard a.status<>genehmigt. Altbestand (Clara +6, Vlad +2, Franz +4, Stefanie +12, Sascha +2) auf DB nachgezogen.',
+    files: ['backend/routes/vertrag-anpassungen.js'],
+  },
+  {
     version: '3.0.129',
     date: '2026-07-03',
     type: 'feature',

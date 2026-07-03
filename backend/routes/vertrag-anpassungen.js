@@ -445,6 +445,19 @@ router.put('/:id/genehmigen', authenticateToken, async (req, res) => {
          WHERE mitglied_id = ? AND status IN ('aktiv','ruhepause') ORDER BY vertragsbeginn DESC LIMIT 1`,
         [a.gueltig_von, a.gueltig_bis, a.gueltig_bis, a.gueltig_von, a.mitglied_id]
       );
+      // Vertragsende um die Pausendauer nach hinten schieben (nur bei Erst-Genehmigung –
+      // a.status ist der Wert VOR dem Genehmigen; verhindert Doppel-Verlängerung bei
+      // erneuter Genehmigung). Nur wenn ein festes Vertragsende gesetzt ist.
+      if (a.status !== 'genehmigt') {
+        await pool.query(
+          `UPDATE vertraege
+             SET vertragsende = DATE_ADD(vertragsende,
+                   INTERVAL GREATEST(1, PERIOD_DIFF(DATE_FORMAT(?, '%Y%m'), DATE_FORMAT(?, '%Y%m')) + 1) MONTH)
+           WHERE mitglied_id = ? AND status IN ('aktiv','ruhepause') AND vertragsende IS NOT NULL
+           ORDER BY vertragsbeginn DESC LIMIT 1`,
+          [a.gueltig_bis, a.gueltig_von, a.mitglied_id]
+        );
+      }
       const today = new Date().toISOString().slice(0, 10);
       if (a.gueltig_von <= today) {
         await pool.query(
