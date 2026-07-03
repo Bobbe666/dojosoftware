@@ -334,6 +334,17 @@ router.put('/:id', async (req, res) => {
 
     if (updateFields.length === 0) return res.status(400).json({ error: 'Keine Felder zum Aktualisieren angegeben' });
 
+    // Wird hier ERSTMALS eine Ruhepause gesetzt? (vorher keine → dann Vertragsende verlängern)
+    let ruhepauseNeu = false;
+    if (ruhepause_von !== undefined && ruhepause_von) {
+      const curParams = secureDojoId ? [id, secureDojoId] : [id];
+      const cur = await queryAsync(
+        `SELECT ruhepause_von FROM vertraege WHERE id = ?${secureDojoId ? ' AND dojo_id = ?' : ''}`,
+        curParams
+      );
+      ruhepauseNeu = cur.length > 0 && !cur[0].ruhepause_von;
+    }
+
     let whereConditions = ['id = ?'];
     queryParams.push(id);
 
@@ -344,6 +355,26 @@ router.put('/:id', async (req, res) => {
 
     const result = await queryAsync(`UPDATE vertraege SET ${updateFields.join(', ')} WHERE ${whereConditions.join(' AND ')}`, queryParams);
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Vertrag nicht gefunden oder keine Berechtigung' });
+
+    // Vertragsende automatisch um die Pausendauer nach hinten schieben (nur bei erstmaliger
+    // Ruhepause, nur wenn ein festes Vertragsende gesetzt ist). Dauer aus dauer_monate oder von/bis.
+    if (ruhepauseNeu) {
+      let intervalExpr = null;
+      let extParams = null;
+      if (ruhepause_dauer_monate) {
+        intervalExpr = 'INTERVAL ? MONTH';
+        extParams = [parseInt(ruhepause_dauer_monate, 10), id];
+      } else if (ruhepause_bis) {
+        intervalExpr = `INTERVAL GREATEST(1, PERIOD_DIFF(DATE_FORMAT(?, '%Y%m'), DATE_FORMAT(?, '%Y%m')) + 1) MONTH`;
+        extParams = [ruhepause_bis, ruhepause_von, id];
+      }
+      if (intervalExpr) {
+        await queryAsync(
+          `UPDATE vertraege SET vertragsende = DATE_ADD(vertragsende, ${intervalExpr}) WHERE id = ? AND vertragsende IS NOT NULL`,
+          extParams
+        );
+      }
+    }
 
     let familyResult = null;
     if (status === 'gekuendigt' || status === 'inaktiv' || status === 'beendet') {

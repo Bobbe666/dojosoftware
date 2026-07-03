@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.131',
+    date: '2026-07-03',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Ruhepause: Vertragsende-Verlängerung auch beim direkten Vertrags-Edit',
+    description: 'Die automatische Vertragsende-Verlängerung um die Pausendauer greift jetzt auch, wenn eine Ruhepause direkt im Vertrag (nicht über den Genehmigen-Weg) gesetzt wird – aber nur beim erstmaligen Setzen, nicht bei normalen Vertrags-Bearbeitungen.',
+    highlights: ['📅 Verlängerung auch im generischen Vertrags-Editor', '🛡️ Kein Doppel-Verschieben bei normalen Edits'],
+    details: 'vertraege/crud.js PUT /:id: erkennt erstmalige Ruhepause (vorher ruhepause_von NULL) → DATE_ADD(vertragsende, Dauer). Ergänzt vertrag-anpassungen /genehmigen aus v3.0.130.',
+    files: ['backend/routes/vertraege/crud.js'],
+  },
+  {
     version: '3.0.130',
     date: '2026-07-03',
     type: 'improvement',
