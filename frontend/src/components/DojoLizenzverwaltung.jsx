@@ -568,7 +568,7 @@ const DojoLizenzverwaltung = () => {
   const loadDojos = async () => {
     setLoading(true);
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos?scope=all`);
       if (!response.ok) throw new Error('Fehler beim Laden');
       const data = await response.json();
       setDojos(data.dojos || data || []);

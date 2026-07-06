@@ -31,6 +31,28 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.133',
+    date: '2026-07-06',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Lizenzverwaltung zeigt jetzt alle Kunden (auch mit eigenem Admin)',
+    description: 'In der Super-Admin-Lizenzverwaltung fehlten selbstverwaltete Lizenz-Kunden (Dojos mit eigenem Admin, z.B. Trials wie Nenad), weil die Liste aus einem Endpoint kam, der diese bewusst ausblendet. Die Lizenzverwaltung lädt jetzt alle aktiven Dojos.',
+    highlights: ['🥋 Alle Kunden-Dojos in der Lizenzverwaltung sichtbar', '🔧 Plan pro Kunde im Details-Tab umstellbar'],
+    details: 'admin.js GET /admin/dojos: opt-in ?scope=all (nur Super-Admin) hebt den Lizenz-Kunden-Ausschluss auf. DojoLizenzverwaltung.loadDojos nutzt scope=all. Andere Consumer (Default) unverändert.',
+    files: ['backend/routes/admin.js', 'frontend/src/components/DojoLizenzverwaltung.jsx'],
+  },
+  {
+    version: '3.0.132',
+    date: '2026-07-04',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Besucher-Chat-KI: keine erfundenen Tarife/Preise mehr',
+    description: 'Die Chat-KI (Sensei Kenji) hatte eine nicht existierende Familienmitgliedschaft samt Preis und "ohne Laufzeit" angeboten. Der System-Prompt untersagt jetzt strikt jede Nennung von Tarifen, Preisen oder Laufzeiten, die nicht wörtlich in den hinterlegten Dojo-Tarifen stehen.',
+    highlights: ['🔒 Nur real hinterlegte Preise pro Dojo', '🚫 Keine erfundene Familien-/Geschwister-Mitgliedschaft', '↪️ Individuelle Konditionen → Verweis ans Team', '🐞 Async-Fehler werden jetzt ans Backend gemeldet'],
+    details: 'visitor-chat.js sendAIReply: Preis-Sektion des System-Prompts zu "STRIKTE REGELN" verschärft – nur wörtliche Tarife aus "## Mitgliedsbeiträge", kein Schätzen/Runden/Erfinden, keine "ohne Laufzeit"-Behauptung ohne Datengrundlage, im Zweifel ans Team verweisen. Tarife werden weiterhin dojo-spezifisch aus tarife (active=1, nicht archiviert) geladen; Familien-Tarife bleiben gefiltert. Zusätzlich: main.jsx globaler window.onerror + unhandledrejection-Catcher → /api/errors/report (gedrosselt), um bisher unsichtbare Async-Abstürze (z.B. schwarzer Bildschirm beim Senden im Chat) im Server-Log sichtbar zu machen.',
+    files: ['backend/routes/visitor-chat.js', 'frontend/src/main.jsx'],
+  },
+  {
     version: '3.0.131',
     date: '2026-07-03',
     type: 'improvement',

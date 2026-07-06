@@ -118,8 +118,14 @@ router.get('/dojos', async (req, res) => {
     // Super-Admin: nur platform_managed Dojos (TDA + eigene, KEINE Lizenz-Kunden)
     // Dojo-Admin: nur sein eigenes Dojo
     const isSuperAdmin = !user.dojo_id;
+    // scope=all → ALLE aktiven Dojos inkl. selbstverwalteter Lizenz-Kunden (für die Lizenzverwaltung).
+    // Ohne Parameter: nur TDA-verwaltete Dojos (Default, z.B. für den Dojo-Switcher).
+    const showAll = req.query.scope === 'all' || req.query.all === '1' || req.query.all === 'true';
     let whereClause, queryParams;
-    if (isSuperAdmin) {
+    if (isSuperAdmin && showAll) {
+      whereClause = `WHERE d.ist_aktiv = TRUE`;
+      queryParams = [];
+    } else if (isSuperAdmin) {
       // Lizenz-Kunden ausschließen: nur Dojos ohne eigenen vollwertigen Admin (= TDA-verwaltete Standorte)
       whereClause = `WHERE d.ist_aktiv = TRUE AND (
         d.id = 2 OR d.ist_hauptdojo = 1 OR d.id NOT IN (
