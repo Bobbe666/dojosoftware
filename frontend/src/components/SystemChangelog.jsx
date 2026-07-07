@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.135',
+    date: '2026-07-07',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'E-Mail-Archiv pro Kunde in der Lizenzverwaltung',
+    description: 'Jede an einen Dojo-Kunden versendete E-Mail wird ab sofort automatisch als Kopie am Kundenaccount abgelegt und ist in der Lizenz-Detailansicht („Gesendete E-Mails") mit Vorschau einsehbar. Zusätzlich: Header aller System-Mails auf das Software-Layout vereinheitlicht und zwei stille Versand-Bugs (Zahlungserinnerung, Event-Anmeldung) behoben.',
+    highlights: ['📧 Alle Kundenmails als Kopie am Account (mit HTML-Vorschau)', '🔧 Zahlungserinnerung & Event-Anmeldebestätigung: Versand-Bug behoben', '🎨 Einheitliche Mail-Header'],
+    details: 'Neue Tabelle dojo_email_archive (Migration 217) + services/emailArchive.js; Hook in sendEmail/sendEmailForDojo (fire-and-forget, dojo_id via archiveDojoId oder Empfänger-Mail). Endpoints GET /admin/dojos/:id/emails(+/:emailId). UI-Sektion + iframe-Viewer in LizenzDetailsTab. sendPaymentReminderEmail/sendEventRegistrationEmail: invertierte sendEmailForDojo-Parameter korrigiert.',
+    files: ['backend/services/emailArchive.js', 'backend/services/emailService.js', 'backend/services/emailTemplates.js', 'backend/routes/admin.js', 'backend/server.js', 'frontend/src/components/LizenzDetailsTab.jsx'],
+  },
+  {
     version: '3.0.134',
     date: '2026-07-07',
     type: 'fix',

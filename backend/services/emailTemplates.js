@@ -100,7 +100,7 @@ async function sendPaymentReminderEmail(dojoId, email, { memberName, amount, due
   const levelColor = levelColors[reminderLevel] || '#3b82f6';
   const titel = levelTexts[reminderLevel] || 'Zahlungserinnerung';
 
-  return sendEmailForDojo(dojoId, {
+  return sendEmailForDojo({
     to: email,
     subject: `${titel} - Rechnung ${invoiceNumber}`,
     html: renderEmail({
@@ -118,7 +118,7 @@ async function sendPaymentReminderEmail(dojoId, email, { memberName, amount, due
         <p style="margin:0;">Bitte überweise den Betrag zeitnah. Falls du bereits gezahlt hast, betrachte diese Nachricht als gegenstandslos.</p>`,
     }),
     text: `${titel}\n\nHallo ${memberName},\n\nwir möchten dich an die ausstehende Zahlung erinnern:\n\nRechnungsnummer: ${invoiceNumber}\nBetrag: €${amount.toFixed(2)}\nFällig seit: ${new Date(dueDate).toLocaleDateString('de-DE')}\n\nBitte überweise den Betrag zeitnah.`
-  });
+  }, dojoId);
 }
 
 /**
@@ -126,7 +126,7 @@ async function sendPaymentReminderEmail(dojoId, email, { memberName, amount, due
  */
 async function sendEventRegistrationEmail(dojoId, email, { memberName, eventName, eventDate, eventLocation }) {
   const theme = await getDojoMailTheme({ dojoId });
-  return sendEmailForDojo(dojoId, {
+  return sendEmailForDojo({
     to: email,
     subject: `Anmeldebestätigung: ${eventName}`,
     html: renderEmail({
@@ -141,7 +141,7 @@ async function sendEventRegistrationEmail(dojoId, email, { memberName, eventName
         <p style="margin:0;">Wir freuen uns auf deine Teilnahme!</p>`,
     }),
     text: `Anmeldung bestätigt!\n\nHallo ${memberName},\n\nDeine Anmeldung wurde registriert:\n\n${eventName}\nDatum: ${new Date(eventDate).toLocaleDateString('de-DE')}\n${eventLocation ? `Ort: ${eventLocation}` : ''}\n\nWir freuen uns auf deine Teilnahme!`
-  });
+  }, dojoId);
 }
 
 module.exports = {

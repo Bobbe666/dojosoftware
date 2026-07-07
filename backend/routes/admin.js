@@ -297,6 +297,42 @@ router.get('/dojos/:id', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/dojos/:id/emails - E-Mail-Archiv eines Kunden (Liste, ohne HTML)
+router.get('/dojos/:id/emails', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await db.promise().query(
+      `SELECT id, empfaenger_email, empfaenger_name, betreff, versand_typ, status, gesendet_am,
+              CHAR_LENGTH(html_inhalt) AS html_len
+         FROM dojo_email_archive
+        WHERE dojo_id = ?
+        ORDER BY gesendet_am DESC
+        LIMIT 500`,
+      [id]
+    );
+    res.json({ emails: rows });
+  } catch (error) {
+    console.error('❌ Fehler beim Abrufen des E-Mail-Archivs:', error);
+    res.status(500).json({ error: 'Fehler beim Abrufen des E-Mail-Archivs', details: error.message });
+  }
+});
+
+// GET /api/admin/dojos/:id/emails/:emailId - eine archivierte Mail komplett (inkl. HTML)
+router.get('/dojos/:id/emails/:emailId', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id, emailId } = req.params;
+    const [rows] = await db.promise().query(
+      `SELECT * FROM dojo_email_archive WHERE id = ? AND dojo_id = ? LIMIT 1`,
+      [emailId, id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'E-Mail nicht gefunden' });
+    res.json({ email: rows[0] });
+  } catch (error) {
+    console.error('❌ Fehler beim Abrufen der E-Mail:', error);
+    res.status(500).json({ error: 'Fehler beim Abrufen der E-Mail', details: error.message });
+  }
+});
+
 // POST /api/admin/dojos - Neues Dojo anlegen
 router.post('/dojos', requireSuperAdmin, async (req, res) => {
   try {

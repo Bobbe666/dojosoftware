@@ -1120,6 +1120,31 @@ db.promise().query(`
   }
 })();
 
+// Migration 217: E-Mail-Archiv pro Dojo-Kunde (alle versendeten Mails als Kopie)
+(async () => {
+  try {
+    await db.promise().query(`
+      CREATE TABLE IF NOT EXISTS dojo_email_archive (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        dojo_id INT NOT NULL,
+        empfaenger_email VARCHAR(255) NOT NULL,
+        empfaenger_name VARCHAR(255) DEFAULT NULL,
+        betreff VARCHAR(500) DEFAULT NULL,
+        html_inhalt LONGTEXT,
+        text_inhalt LONGTEXT,
+        versand_typ VARCHAR(64) DEFAULT NULL,
+        message_id VARCHAR(255) DEFAULT NULL,
+        status VARCHAR(32) DEFAULT 'gesendet',
+        gesendet_am DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_email_archive_dojo (dojo_id, gesendet_am)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    logger.success('Migration 217 E-Mail-Archiv OK');
+  } catch (err) {
+    logger.warn('Migration 217 E-Mail-Archiv (ignoriert):', { error: err.message });
+  }
+})();
+
 // WERBE-/INFO-DISPLAY ROUTES (Digital Signage, Admin-Verwaltung, Enterprise)
 try {
   const displayRoutes = require('./routes/display');

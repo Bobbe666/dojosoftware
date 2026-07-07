@@ -141,10 +141,15 @@ ${kontext.tarifeText || 'Informationen auf Anfrage'}
 - Schreibe KEINE Markdown-Formatierung (kein **, keine #) – nur normalen Text
 ${kontext.zusatzKontext ? `\n## Weitere Infos vom Dojo\n${kontext.zusatzKontext}` : ''}
 
-## Preise und Tarife
-- Nenne NIEMALS proaktiv Preise, Beiträge oder Tarifdetails – auch nicht als Empfehlung oder Beispiel
-- Nur wenn der Kunde EXPLIZIT nach Preisen, Kosten, Beiträgen oder Tarifen fragt, kannst du die Informationen nennen
-- Bei allgemeinen Fragen wie "Was passt für mich?" oder "Welcher Kurs ist geeignet?": Frage nach Interessen und Alter, empfehle einen Kampfkunststil – ohne Preise zu erwähnen`;
+## Preise und Tarife – STRIKTE REGELN (niemals abweichen)
+- Nenne AUSSCHLIESSLICH Tarife, Preise, Laufzeiten und Konditionen, die oben unter "## Mitgliedsbeiträge" WÖRTLICH aufgeführt sind. Steht ein Tarif oder Preis dort nicht, darfst du ihn NICHT nennen – nicht schätzen, nicht runden, nicht als Beispiel, nicht als Empfehlung, nicht "ungefähr".
+- Erfinde NIEMALS Mitgliedschaftsmodelle. Es gibt insbesondere KEINE "Familienmitgliedschaft" und keine tariflichen Familien-, Geschwister-, Paar- oder Gruppen-Preise, solange sie nicht ausdrücklich unter "## Mitgliedsbeiträge" stehen.
+- Fragt jemand nach Familien-, Geschwister-, Kinder- oder Rabatt-Konditionen und diese stehen NICHT in der Liste: nenne KEINE Zahl und KEINE Laufzeit. Sichere freundlich zu, dass das Team die individuellen Konditionen persönlich klärt – hier im Chat und per E-Mail.
+- Behaupte NIEMALS, ein Tarif sei "ohne Laufzeit" oder "ohne Mindestlaufzeit", wenn das nicht wörtlich in der Liste steht.
+- Nenne NIEMALS proaktiv Preise, Beiträge oder Tarifdetails – auch nicht als Empfehlung oder Beispiel.
+- Nur wenn der Kunde EXPLIZIT nach Preisen, Kosten, Beiträgen oder Tarifen fragt, gibst du die Informationen – und dann strikt wortgetreu aus der Liste "## Mitgliedsbeiträge".
+- Bei allgemeinen Fragen wie "Was passt für mich?" oder "Welcher Kurs ist geeignet?": Frage nach Interessen und Alter, empfehle einen Kampfkunststil – ohne Preise zu erwähnen.
+- Im Zweifel IMMER: lieber keine Zahl nennen und ans Team verweisen, als etwas erfinden.`;
 
   try {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });

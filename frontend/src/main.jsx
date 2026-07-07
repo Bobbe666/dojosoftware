@@ -26,6 +26,42 @@ if (SENTRY_DSN) {
   });
 }
 
+// ── Globaler Catcher für ASYNC-Fehler ─────────────────────────────────────────
+// React-Error-Boundaries fangen NUR Render-/Lifecycle-Fehler – NICHT Fehler in
+// Event-Handlern, Socket-Callbacks oder Promise-Rejections. Genau solche Fehler
+// (z.B. "schwarzer Bildschirm beim Senden") blieben bisher unsichtbar. Diese
+// Handler melden sie ans Backend (/api/errors/report → logger.warn 'Frontend-Fehler'),
+// gedrosselt, damit das Log nicht flutet.
+(() => {
+  let lastReport = 0;
+  const report = (kind, message, stack) => {
+    try {
+      const now = Date.now();
+      if (now - lastReport < 2000) return; // max. 1 Meldung / 2s
+      lastReport = now;
+      fetch('/api/errors/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `[${kind}] ${message}`,
+          stack: stack || '',
+          url: window.location.href,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch (_) {}
+  };
+  window.addEventListener('error', (e) => {
+    report('window.onerror', e?.message || 'unknown', e?.error?.stack);
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const r = e?.reason;
+    report('unhandledrejection', (r && (r.message || String(r))) || 'unknown', r?.stack);
+  });
+})();
+
 // _v-Query-Param (Cache-Bypass) nach Update-Reload aus URL entfernen
 if (new URLSearchParams(window.location.search).has('_v')) {
   const clean = new URL(window.location.href);

@@ -1,5 +1,5 @@
-import React from "react";
-import { Building2, Clock, CheckCircle, XCircle, CreditCard, TrendingUp, Globe, Info, Download, Power, PowerOff } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from "react";
+import { Building2, Clock, CheckCircle, XCircle, CreditCard, TrendingUp, Globe, Info, Download, Power, PowerOff, Mail } from 'lucide-react';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
@@ -12,6 +12,32 @@ const PLAN_PRICES = { trial: '0€', basic: '0€', free: '0€', starter: '49�
 
 // Ausgelagert aus DojoLizenzverwaltung.jsx (LizenzDetailsTab).
 const LizenzDetailsTab = ({ activeTab, setActiveTab, selectedDojo, setSelectedDojo, message, featureOverrides, allFeatures, planFeatures, subscriptionPlans, dojoVertraege, dojoVertraegeLoading, showPlanVergleich, setShowPlanVergleich, loadDojoVertraege, handleExtendTrial, handleActivatePlan, handleToggleDojoActive, getPlanBadge, getStatusBadge, formatDate, getRegistrationUrl }) => {
+  // E-Mail-Archiv: alle an diesen Kunden versendeten Mails
+  const [emails, setEmails] = useState([]);
+  const [emailsLoading, setEmailsLoading] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState(null);
+
+  const loadEmails = useCallback(async (dojoId) => {
+    if (!dojoId) return;
+    setEmailsLoading(true);
+    try {
+      const r = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos/${dojoId}/emails`);
+      const d = await r.json();
+      setEmails(Array.isArray(d.emails) ? d.emails : []);
+    } catch (e) { setEmails([]); }
+    setEmailsLoading(false);
+  }, []);
+
+  useEffect(() => { if (selectedDojo?.id) loadEmails(selectedDojo.id); }, [selectedDojo?.id, loadEmails]);
+
+  const openEmail = async (emailId) => {
+    try {
+      const r = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos/${selectedDojo.id}/emails/${emailId}`);
+      const d = await r.json();
+      setSelectedEmail(d.email || null);
+    } catch (e) { alert('E-Mail konnte nicht geladen werden: ' + e.message); }
+  };
+
   return (
           <div className="details-tab">
             <div className="details-header">
@@ -297,6 +323,90 @@ const LizenzDetailsTab = ({ activeTab, setActiveTab, selectedDojo, setSelectedDo
                 </table>
               )}
             </div>
+
+            {/* E-Mail-Archiv: alle an den Kunden versendeten Mails */}
+            <div className="pct-wrap" style={{ marginTop:'1rem' }}>
+              <h4 style={{ display:'flex', alignItems:'center', gap:'0.4rem', marginBottom:'0.75rem', justifyContent:'space-between' }}>
+                <span style={{ display:'flex', alignItems:'center', gap:'0.4rem' }}><Mail size={16} /> Gesendete E-Mails ({emails.length})</span>
+                <button
+                  className="pct-btn-upgrade"
+                  onClick={() => loadEmails(selectedDojo.id)}
+                  style={{ fontSize:'0.72rem', padding:'0.15rem 0.5rem' }}
+                >Aktualisieren</button>
+              </h4>
+              {emailsLoading ? (
+                <div style={{ padding:'1rem 0', fontSize:'0.85rem', color:'var(--text-secondary,#9ca3af)', textAlign:'center' }}>Lädt...</div>
+              ) : emails.length === 0 ? (
+                <p style={{ fontSize:'0.85rem', margin:'0.5rem 0', color:'var(--text-secondary,#9ca3af)', fontStyle:'italic' }}>Noch keine E-Mails an diesen Kunden archiviert. (Neue Mails werden ab sofort automatisch gespeichert.)</p>
+              ) : (
+                <table className="lv-sig-table" style={{ width:'100%' }}>
+                  <thead>
+                    <tr>
+                      <th>Datum</th>
+                      <th>Betreff</th>
+                      <th>Empfänger</th>
+                      <th>Typ</th>
+                      <th>Status</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {emails.map(m => (
+                      <tr key={m.id}>
+                        <td style={{ fontSize:'0.8rem', whiteSpace:'nowrap' }}>{new Date(m.gesendet_am).toLocaleString('de-DE')}</td>
+                        <td style={{ fontSize:'0.8rem' }}>{m.betreff || '–'}</td>
+                        <td style={{ fontSize:'0.8rem' }}>{m.empfaenger_name || m.empfaenger_email}</td>
+                        <td style={{ fontSize:'0.75rem', color:'var(--text-secondary,#9ca3af)' }}>{m.versand_typ || '–'}</td>
+                        <td style={{ fontSize:'0.75rem' }}>{m.status || 'gesendet'}</td>
+                        <td>
+                          <button
+                            className="pct-btn-upgrade"
+                            style={{ fontSize:'0.72rem', padding:'0.15rem 0.5rem' }}
+                            disabled={!m.html_len}
+                            onClick={() => openEmail(m.id)}
+                          >Ansehen</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Viewer-Modal für eine archivierte Mail */}
+            {selectedEmail && (
+              <div
+                onClick={() => setSelectedEmail(null)}
+                style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:'2rem' }}
+              >
+                <div
+                  onClick={e => e.stopPropagation()}
+                  style={{ background:'rgba(26,26,46,0.99)', borderRadius:'12px', width:'min(760px,100%)', maxHeight:'90vh', display:'flex', flexDirection:'column', boxShadow:'0 20px 60px rgba(0,0,0,0.6)', border:'1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <div style={{ padding:'1rem 1.25rem', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'1rem' }}>
+                    <div>
+                      <div style={{ fontWeight:600, color:'#fff' }}>{selectedEmail.betreff || '(kein Betreff)'}</div>
+                      <div style={{ fontSize:'0.78rem', color:'#9ca3af', marginTop:'0.25rem' }}>
+                        An: {selectedEmail.empfaenger_name ? `${selectedEmail.empfaenger_name} <${selectedEmail.empfaenger_email}>` : selectedEmail.empfaenger_email}
+                        {' · '}{new Date(selectedEmail.gesendet_am).toLocaleString('de-DE')}
+                      </div>
+                    </div>
+                    <button onClick={() => setSelectedEmail(null)} style={{ background:'none', border:'none', color:'#9ca3af', fontSize:'1.4rem', cursor:'pointer', lineHeight:1 }}>×</button>
+                  </div>
+                  <div style={{ flex:1, overflow:'auto', background:'#fff', borderRadius:'0 0 12px 12px' }}>
+                    {selectedEmail.html_inhalt ? (
+                      <iframe
+                        title="E-Mail-Vorschau"
+                        srcDoc={selectedEmail.html_inhalt}
+                        style={{ width:'100%', height:'70vh', border:'none', background:'#fff' }}
+                      />
+                    ) : (
+                      <pre style={{ padding:'1.25rem', whiteSpace:'pre-wrap', color:'#1e293b', margin:0 }}>{selectedEmail.text_inhalt || '(kein Inhalt)'}</pre>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
   );
 };

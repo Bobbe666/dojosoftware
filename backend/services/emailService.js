@@ -7,6 +7,7 @@ const db = require('../db');
 const logger = require('../utils/logger');
 const { decrypt, isEncrypted } = require('../utils/encryption');
 const { renderEmail, getDojoMailTheme } = require('./emailLayout');
+const { archiveEmail } = require('./emailArchive');
 
 /**
  * SECURITY: Entschlüsselt Passwort wenn nötig
@@ -285,6 +286,14 @@ const sendEmailForDojo = async (options, dojoId) => {
     const info = await transporter.sendMail(mailOptions);
     logger.info('✅ E-Mail erfolgreich versendet', { messageId: info.messageId, dojoId, mode: settings.mode });
 
+    // Kopie am Kundenaccount ablegen (fire-and-forget, stört Versand nie)
+    archiveEmail({
+      dojoId,
+      to: options.to, name: options.archiveName, subject: options.subject,
+      html: options.html, text: options.text, typ: options.archiveTyp,
+      messageId: info.messageId
+    }).catch(() => {});
+
     return {
       success: true,
       messageId: info.messageId,
@@ -385,6 +394,14 @@ const sendEmail = async (options) => {
 
     const info = await transporter.sendMail(mailOptions);
     logger.info('✅ E-Mail erfolgreich versendet:', { data: info.messageId });
+
+    // Kopie am Kundenaccount ablegen (dojo_id via archiveDojoId ODER Empfänger-Mail)
+    archiveEmail({
+      dojoId: options.archiveDojoId,
+      to: options.to, name: options.archiveName, subject: options.subject,
+      html: options.html, text: options.text, typ: options.archiveTyp,
+      messageId: info.messageId
+    }).catch(() => {});
 
     return {
       success: true,
