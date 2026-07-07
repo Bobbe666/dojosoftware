@@ -3,6 +3,13 @@ import { Building2, Clock, CheckCircle, XCircle, CreditCard, TrendingUp, Globe, 
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
+// Plan-Konstanten (identisch zu DojoLizenzverwaltung.jsx). Fehlten hier bislang →
+// Object.keys(PLAN_HIERARCHY) mit undefined ließ die Detail-Ansicht crashen.
+const PLAN_HIERARCHY = { trial: 0, basic: 1, free: 2, starter: 3, professional: 4, premium: 5, enterprise: 6 };
+const PLAN_COLORS = { trial: '#6b7280', basic: '#a3a3a3', free: '#9ca3af', starter: '#3b82f6', professional: '#8b5cf6', premium: '#d4af37', enterprise: '#ef4444' };
+const PLAN_NAMES = { trial: 'Trial', basic: 'Basic', free: 'Free', starter: 'Starter', professional: 'Professional', premium: 'Premium', enterprise: 'Enterprise' };
+const PLAN_PRICES = { trial: '0€', basic: '0€', free: '0€', starter: '49€/Monat', professional: '89€/Monat', premium: '149€/Monat', enterprise: '249€/Monat' };
+
 // Ausgelagert aus DojoLizenzverwaltung.jsx (LizenzDetailsTab).
 const LizenzDetailsTab = ({ activeTab, setActiveTab, selectedDojo, setSelectedDojo, message, featureOverrides, allFeatures, planFeatures, subscriptionPlans, dojoVertraege, dojoVertraegeLoading, showPlanVergleich, setShowPlanVergleich, loadDojoVertraege, handleExtendTrial, handleActivatePlan, handleToggleDojoActive, getPlanBadge, getStatusBadge, formatDate, getRegistrationUrl }) => {
   return (

@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.134',
+    date: '2026-07-07',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Lizenz-Details öffnen wieder (Crash behoben)',
+    description: 'Beim Klick auf „Details" eines Dojos in der Lizenzverwaltung stürzte die Detail-Ansicht ab und warf einen auf die „Heute"-Seite. Ursache: fehlende Plan-Konstanten (PLAN_HIERARCHY/COLORS/NAMES/PRICES) in der ausgelagerten Detail-Komponente. Jetzt ergänzt – Plan-Wechsel-Ansicht öffnet wieder normal.',
+    highlights: ['🐛 „Details" öffnet die Plan-Verwaltung statt zur Heute-Seite zu springen', '🔧 Fehlende Plan-Konstanten in LizenzDetailsTab ergänzt'],
+    details: 'LizenzDetailsTab.jsx nutzte PLAN_HIERARCHY/COLORS/NAMES/PRICES ohne Import/Definition → Object.keys(undefined) crash → ErrorBoundary → /dashboard. Konstanten lokal definiert.',
+    files: ['frontend/src/components/LizenzDetailsTab.jsx'],
+  },
+  {
     version: '3.0.133',
     date: '2026-07-06',
     type: 'fix',
