@@ -482,11 +482,17 @@ const EinstellungenDojo = () => {
     setMessage("");
 
     try {
+      // Automatisch verwaltete / Read-only-Felder NICHT mitschicken.
+      // Das Backend ignoriert sie zwar, aber z. B. registration_date kommt als
+      // ISO-String ('…T…Z') zurück und darf gar nicht überschrieben werden.
+      const READONLY_FIELDS = [
+        'id', 'created_at', 'updated_at', 'aktualisiert_am', 'last_backup',
+        'registration_date', 'ist_aktiv', 'ist_hauptdojo'
+      ];
+      const dojoData = { ...dojo };
+      READONLY_FIELDS.forEach((f) => delete dojoData[f]);
       // Finanzamt-Objekt für Backend vorbereiten
-      const dojoData = {
-        ...dojo,
-        finanzamt: dojo.finanzamt ? JSON.stringify(dojo.finanzamt) : null
-      };
+      dojoData.finanzamt = dojo.finanzamt ? JSON.stringify(dojo.finanzamt) : null;
 
       const response = await fetchWithAuth(withDojo(`${config.apiBaseUrl}/dojo`), {
         method: "PUT",

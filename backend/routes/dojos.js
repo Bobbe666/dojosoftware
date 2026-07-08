@@ -411,6 +411,22 @@ router.put('/:id', (req, res) => {
       logger.info('Konvertierte leere Strings zu NULL', { fields: convertedFields.join(', ') });
     }
 
+    // ISO-8601-Datetime-Strings (z. B. '2026-07-03T09:18:06.000Z') in das
+    // MySQL-DATETIME-Format 'YYYY-MM-DD HH:MM:SS' umwandeln. Das Frontend lädt
+    // Datumsspalten als JSON-ISO-String und schickt sie unverändert zurück –
+    // MySQL akzeptiert das T/Z-Format sonst nicht ("Incorrect datetime value").
+    let normalizedDateFields = [];
+    Object.keys(filteredData).forEach(field => {
+      const val = filteredData[field];
+      if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
+        filteredData[field] = val.slice(0, 10) + ' ' + val.slice(11, 19);
+        normalizedDateFields.push(field);
+      }
+    });
+    if (normalizedDateFields.length > 0) {
+      logger.info('ISO-Datetime zu MySQL-Format konvertiert', { fields: normalizedDateFields.join(', ') });
+    }
+
     // Prüfe ob Dojo existiert
     req.db.query('SELECT id FROM dojo WHERE id = ?', [id], (err, existing) => {
       if (err) {
