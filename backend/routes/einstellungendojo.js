@@ -175,6 +175,13 @@ router.put('/', (req, res) => {
                 value = isNaN(numValue) ? null : numValue.toString();
               }
             }
+            // ISO-8601-Datetime ('2026-07-03T09:18:06.000Z') → MySQL-DATETIME
+            // ('2026-07-03 09:18:06'). Das Frontend lädt Datumsspalten (z. B.
+            // registration_date) als JSON-ISO-String und schickt sie via
+            // { ...dojo } unverändert zurück; MySQL lehnt das T/Z-Format sonst ab.
+            if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+              value = value.slice(0, 10) + ' ' + value.slice(11, 19);
+            }
             filteredData[key] = value;
           } else {
             skippedFields.push(key);
