@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.136',
+    date: '2026-07-08',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Dojo-Einstellungen speichern wieder (Datums-Fehler behoben)',
+    description: 'Beim Speichern der grundlegenden Dojo-Informationen (z.B. bei Nenad) brach der Vorgang mit einem roten „Serverfehler beim Aktualisieren: Incorrect datetime value" ab. Ursache: das automatisch verwaltete Registrierungsdatum wurde als ISO-Zeitstempel zurück an die Datenbank geschickt, die dieses Format ablehnt. Das Speichern funktioniert jetzt wieder normal.',
+    highlights: ['💾 Dojo-Stammdaten lassen sich wieder speichern', '🐛 „Incorrect datetime value" bei registration_date behoben', '🔒 Read-only-Felder werden nicht mehr mitgeschickt'],
+    details: 'EinstellungenDojo.handleSave sendete { ...dojo } inkl. registration_date als ISO-String (…T…Z) an PUT /api/dojo; MySQL DATETIME lehnt das T/Z-Format ab. Doppelt abgesichert: (1) Frontend filtert Read-only-/Auto-Felder (id, created_at, updated_at, aktualisiert_am, last_backup, registration_date, ist_aktiv, ist_hauptdojo) vor dem Senden raus. (2) Backend (einstellungendojo.js + dojos.js) normalisiert ISO-8601-Strings zu MySQL-Format (YYYY-MM-DD HH:MM:SS) vor dem UPDATE – deckt registration_date und jedes weitere Datumsfeld ab.',
+    files: ['frontend/src/components/EinstellungenDojo.jsx', 'backend/routes/einstellungendojo.js', 'backend/routes/dojos.js'],
+  },
+  {
     version: '3.0.135',
     date: '2026-07-07',
     type: 'feature',
