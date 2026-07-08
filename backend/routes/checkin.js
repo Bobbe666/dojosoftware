@@ -324,6 +324,8 @@ router.get('/courses-today', async (req, res) => {
         s.kurs_id,
         COALESCE(k.gruppenname, 'Unbekannter Kurs') as kurs_name,
         COALESCE(k.stil, 'Unbekannt') as stil,
+        k.min_alter,
+        k.max_alter,
         s.trainer_id,
         COALESCE(CONCAT(t.vorname, ' ', t.nachname), 'Kein Trainer') as trainer,
         COALESCE(t.stil, 'Unbekannt') as trainer_stil,
