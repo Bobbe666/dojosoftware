@@ -45,9 +45,9 @@ CI=false VITE_BUILD_ID="$VERSION" npm run build
 # Version stempeln (sw.js + version.json), damit die App die neue Version erkennt
 node -e "const fs=require('fs'),p='dist/sw.js',v='$VERSION'; if(fs.existsSync(p)) fs.writeFileSync(p, fs.readFileSync(p,'utf8').replace(/Version: [^\n]+/,'Version: '+v)); fs.writeFileSync('dist/version.json',JSON.stringify({v}));"
 
-# In BEIDE Webroots (root-Ebene, NICHT /frontend/-Unterordner!):
+# In ALLE DREI Webroots (deploy.sh macht das automatisch):
 KEY=~/.ssh/id_ed25519_dojo_deploy
-for W in /var/www/dojosoftware/ /var/www/member-app/; do
+for W in /var/www/dojosoftware/ /var/www/member-app/ /var/www/dojosoftware/frontend/; do
   rsync -az --delete --exclude 'assets/' -e "ssh -p 2222 -i $KEY" dist/ root@dojo.tda-intl.org:$W
   rsync -az            -e "ssh -p 2222 -i $KEY" dist/assets/ root@dojo.tda-intl.org:${W}assets/
 done
@@ -86,5 +86,6 @@ ssh -i ~/.ssh/id_ed25519_dojo_deploy -p 2222 root@dojo.tda-intl.org "pm2 status"
 | Backend-Source (LÄUFT hier, git-repo) | `/var/www/dojosoftware-source/backend/` |
 | Frontend Webroot (dojo.tda-intl.org) | `/var/www/dojosoftware/` |
 | Frontend Webroot (app.tda-vib.de) | `/var/www/member-app/` |
+| Frontend Webroot (Wildcard `*.dojo.tda-intl.org`) | `/var/www/dojosoftware/frontend/` — **braucht denselben Build**, sonst 403 auf Subdomains |
 | Checkin-App (NICHT Dojo!) | `/var/www/checkin-app/` |
 | ALT/TOT — nicht mehr nutzen | `/var/www/dojo-backend/` |

@@ -20,8 +20,9 @@ SSH_OPT="-p $SSH_PORT -i $SSH_KEY"
 
 FRONTEND_LOCAL="$HOME/dojosoftware/frontend"
 SOURCE_REMOTE="/var/www/dojosoftware-source"
-FRONTEND_REMOTE_1="/var/www/dojosoftware/"
-FRONTEND_REMOTE_2="/var/www/member-app/"
+FRONTEND_REMOTE_1="/var/www/dojosoftware/"        # dojo.tda-intl.org
+FRONTEND_REMOTE_2="/var/www/member-app/"          # app.tda-vib.de
+FRONTEND_REMOTE_3="/var/www/dojosoftware/frontend/"  # Wildcard *.dojo.tda-intl.org (wildcard-dojo.conf) — MUSS mit!
 PM2_APP="dojosoftware-backend"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -112,7 +113,7 @@ if [[ "$MODE" == "all" || "$MODE" == "frontend" ]]; then
   # ihre alten Chunks weiter laden können (kein 404 / "Importing module failed" nach Deploy).
   # Content-Hashes kollidieren nie → alt + neu koexistieren. Root-Dateien (index.html, sw.js,
   # version.json) werden mit --delete aktualisiert. Chunks älter als 14 Tage werden aufgeräumt.
-  for WEBROOT in "$FRONTEND_REMOTE_1" "$FRONTEND_REMOTE_2"; do
+  for WEBROOT in "$FRONTEND_REMOTE_1" "$FRONTEND_REMOTE_2" "$FRONTEND_REMOTE_3"; do
     rsync -az --delete --exclude 'assets/' -e "ssh $SSH_OPT" "$FRONTEND_LOCAL/dist/" "$SSH_HOST:$WEBROOT"
     rsync -az -e "ssh $SSH_OPT" "$FRONTEND_LOCAL/dist/assets/" "$SSH_HOST:$WEBROOT/assets/"
     ssh $SSH_OPT "$SSH_HOST" "find '$WEBROOT/assets' -type f -mtime +14 -delete 2>/dev/null || true"
