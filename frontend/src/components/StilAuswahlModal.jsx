@@ -6,6 +6,7 @@
  * Erkennung: localStorage-Key `stil_ausgewaehlt_{mitgliedId}`
  */
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import config from '../config/config.js';
 import '../styles/StilAuswahlModal.css';
@@ -163,7 +164,7 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
   const paketStil = aktiveStile.find(s => s.stil_id === paketStilId);
   const paketMeta = paketStil ? (STIL_META[paketStil.name] || { emoji: '🥋', farbe: '#d4af37' }) : null;
 
-  return (
+  return createPortal(
     <div className="sa-overlay">
       <div className="sa-modal">
         {/* Header mit Schrittanzeige */}
@@ -374,7 +375,8 @@ const StilAuswahlModal = ({ mitgliedId, vorname, geburtsdatum, stile, onClose, o
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

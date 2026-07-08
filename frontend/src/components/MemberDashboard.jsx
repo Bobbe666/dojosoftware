@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -1318,7 +1319,7 @@ const MemberDashboard = () => {
       )}
 
       {/* App-Onboarding: einmalig nach Vertragserstellung */}
-      {showOnboarding && (
+      {showOnboarding && createPortal(
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
           background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
@@ -1395,7 +1396,8 @@ const MemberDashboard = () => {
               Jetzt loslegen →
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Event-Benachrichtigungs-Popup */}
@@ -1426,7 +1428,7 @@ const MemberDashboard = () => {
       )}
 
       {/* Benachrichtigung "Weiterlesen" Modal */}
-      {expandedNotif && (
+      {expandedNotif && createPortal(
         <div className="pnp-overlay" onClick={() => setExpandedNotif(null)}>
           <div className="pnp-card" onClick={e => e.stopPropagation()}>
             <div className="pnp-header">
@@ -1473,7 +1475,8 @@ const MemberDashboard = () => {
               <button className="pnp-next-btn" onClick={() => setExpandedNotif(null)}>Schließen</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Prüfungseinladungs-Popup — ausgelagert + memoized (Perf-Fix: war IIFE im Render) */}
@@ -2787,7 +2790,7 @@ const MemberDashboard = () => {
       )}
 
       {/* Prüfungsanmeldung Modal */}
-      {showExamRegistrationModal && selectedExam && (
+      {showExamRegistrationModal && selectedExam && createPortal(
         <div className="md-modal-overlay">
           <div className="md-modal-box">
             {/* Header */}
@@ -2982,7 +2985,8 @@ const MemberDashboard = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Ankündigungen */}
@@ -3106,7 +3110,7 @@ const MemberDashboard = () => {
       {protokollViewId && (() => {
         const proto = pruefProtokolle.find(p => p.pruefung_id === protokollViewId);
         if (!proto?.html_inhalt) return null;
-        return (
+        return createPortal(
           <div onClick={() => setProtokolViewId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', overflowY: 'auto', padding: '16px' }}>
             <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '8px', width: '100%', maxWidth: '210mm', boxShadow: '0 20px 60px rgba(0,0,0,0.6)', marginTop: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #e0e0e0', background: '#f5f5f5', borderRadius: '8px 8px 0 0' }}>
@@ -3115,7 +3119,8 @@ const MemberDashboard = () => {
               </div>
               <div style={{ padding: '16mm 12mm', color: '#1a1a1a' }} dangerouslySetInnerHTML={{ __html: proto.html_inhalt }} />
             </div>
-          </div>
+          </div>,
+          document.body
         );
       })()}
 

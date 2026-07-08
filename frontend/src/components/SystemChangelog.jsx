@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.139',
+    date: '2026-07-08',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Alle Mitglieder-App-Popups liegen jetzt über der Navileiste',
+    description: 'Nach dem Check-in-Fix (v3.0.138) wurden vorsorglich alle übrigen Popups/Modals der Mitglieder-App auf dieselbe Technik umgestellt. Vorher konnten auch sie am unteren Rand von der Navigationsleiste verdeckt werden. Betroffen waren u.a. News-Popup, Umfrage-Popup, Stil-Auswahl, Event- und Push-Benachrichtigungen, Prüfungseinladung/-anmeldung sowie der Protokoll-Viewer.',
+    highlights: ['🔝 11 Popups/Modals via Portal über der Navileiste', '📲 Buttons am unteren Rand überall erreichbar', '🧹 Einheitliche Modal-Technik (createPortal an document.body)'],
+    details: 'Stacking-Context-Falle systematisch beseitigt: alle Vollbild-Overlays der Mitglieder-App (MemberDashboard-Baum) via ReactDOM.createPortal(..., document.body) gerendert. Umgestellt: 7 Komponenten (NewsPopup, UmfragePopup [beide Return-Zweige], StilAuswahlModal, EventNotificationPopup, PushNotificationPopup, PruefungsEinladungPopup, MemberNewsWidget→MemberNewsModal) + 4 inline in MemberDashboard.jsx (App-Onboarding, „Weiterlesen"-Notif, Prüfungsanmeldung, Protokoll-Viewer). MemberCheckin war bereits umgestellt (v3.0.138). Alle Overlay-z-index (2000–10000) > .mobile-bottom-nav (1000) → Portal genügt.',
+    files: ['frontend/src/components/NewsPopup.jsx', 'frontend/src/components/UmfragePopup.jsx', 'frontend/src/components/StilAuswahlModal.jsx', 'frontend/src/components/EventNotificationPopup.jsx', 'frontend/src/components/PushNotificationPopup.jsx', 'frontend/src/components/PruefungsEinladungPopup.jsx', 'frontend/src/components/MemberNewsWidget.jsx', 'frontend/src/components/MemberDashboard.jsx'],
+  },
+  {
     version: '3.0.138',
     date: '2026-07-08',
     type: 'fix',

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 
 // ============================================================================
 // Prüfungseinladungs-Popup — ausgelagert aus MemberDashboard.jsx (Perf-Fix).
@@ -39,7 +40,7 @@ const PruefungsEinladungPopup = React.memo(({ pruefung, sending, onClose, onZusa
     });
   };
 
-  return (
+  return createPortal(
     <div className="pnp-overlay" onClick={onClose}>
       <div className="pnp-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
         <div className="pnp-header">
@@ -148,7 +149,8 @@ const PruefungsEinladungPopup = React.memo(({ pruefung, sending, onClose, onZusa
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 });
 

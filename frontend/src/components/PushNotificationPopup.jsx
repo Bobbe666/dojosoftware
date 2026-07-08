@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Bell, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import './PushNotificationPopup.css';
@@ -72,7 +73,7 @@ const PushNotificationPopup = ({ notifications, onClose, onConfirm }) => {
     return `${d}.${m}.${y}`;
   };
 
-  return (
+  return createPortal(
     <div className="pnp-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="pnp-card">
 
@@ -187,7 +188,8 @@ const PushNotificationPopup = ({ notifications, onClose, onConfirm }) => {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

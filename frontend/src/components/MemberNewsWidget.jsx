@@ -5,6 +5,7 @@
 // in MemberDashboard.css. React.memo.
 // =============================================================================
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
@@ -55,7 +56,7 @@ function MemberNewsModal({ artikel, onClose }) {
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
   const inhalt = artikel.inhalt || '';
   const isHtml = /<[a-z][\s\S]*>/i.test(inhalt);
-  return (
+  return createPortal(
     <div className="member-news-modal-overlay" onClick={onClose}>
       <div className="member-news-modal-box" onClick={e => e.stopPropagation()}>
         <button className="member-news-modal-close" onClick={onClose} aria-label="Schließen">✕</button>
@@ -75,7 +76,8 @@ function MemberNewsModal({ artikel, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

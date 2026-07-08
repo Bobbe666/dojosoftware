@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, Clock, MapPin, Users, X, Check, XCircle, ChevronRight, ShoppingCart } from 'lucide-react';
 import './EventNotificationPopup.css';
 
@@ -69,7 +70,7 @@ const EventNotificationPopup = ({ events, memberData, onAnmelden, onAblehnen, on
     else onClose();
   };
 
-  return (
+  return createPortal(
     <div className="enp-overlay">
       <div className="enp-card">
         {/* Close Button */}
@@ -234,7 +235,8 @@ const EventNotificationPopup = ({ events, memberData, onAnmelden, onAblehnen, on
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

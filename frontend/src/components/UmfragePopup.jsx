@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import './UmfragePopup.css';
@@ -36,7 +37,7 @@ export default function UmfragePopup() {
 
   if (!umfragen.length) return null;
 
-  if (done) return (
+  if (done) return createPortal(
     <div className="ufp-overlay" onClick={e => { if (e.target === e.currentTarget) setDone(true); }}>
       <div className="ufp-box ufp-box--done">
         <div className="ufp-done-icon">✓</div>
@@ -46,7 +47,8 @@ export default function UmfragePopup() {
           Schließen
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 
   const umfrage = umfragen[idx];
@@ -85,7 +87,7 @@ export default function UmfragePopup() {
     }
   };
 
-  return (
+  return createPortal(
     <div className="ufp-overlay">
       <div className="ufp-box">
         {umfragen.length > 1 && (
@@ -163,6 +165,7 @@ export default function UmfragePopup() {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

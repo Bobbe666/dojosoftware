@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -45,7 +46,7 @@ export default function NewsPopup() {
   if (item.bilder_json) { try { bilder = JSON.parse(item.bilder_json).map(toAbs).filter(Boolean); } catch {} }
   if (!bilder.length && item.bild_url) bilder = [toAbs(item.bild_url)];
 
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9000,
       background: 'rgba(0,0,0,0.75)',
@@ -141,6 +142,7 @@ export default function NewsPopup() {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
