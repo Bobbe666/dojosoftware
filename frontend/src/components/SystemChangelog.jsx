@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.138',
+    date: '2026-07-08',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Check-in am Handy: Anmelden-Button war hinter der Navileiste versteckt',
+    description: 'Beim Check-in in der Mitglieder-App verdeckte die untere Navigationsleiste den unteren Teil des Fensters – der „Weiter/Anmelden"-Button und der letzte Kurs waren nicht erreichbar, das Fenster wirkte „nicht scrollbar". Ursache: Das Check-in-Fenster wurde im Seiten-Baum gerendert und saß dadurch trotz hohem z-index unter der fixierten Navileiste. Es wird jetzt per Portal ganz oben angezeigt und liegt sauber über der Navileiste.',
+    highlights: ['📲 Anmelden-Button wieder erreichbar', '🧭 Check-in-Fenster liegt über der Navileiste', '🔝 Modal via createPortal an document.body'],
+    details: 'MemberCheckin.jsx: beide Return-Zweige via ReactDOM.createPortal(..., document.body) gerendert. Vorher wurde das Modal inline in MemberDashboard (Zeile ~3094) gerendert → gefangen in einem Stacking-Context, dessen Paint-Reihenfolge unter .mobile-bottom-nav (z-index 1000) lag, obwohl das Overlay z-index 9999 hat (im Screenshot war die Navileiste als Einzige nicht abgedunkelt = Beweis). Portal hebt das Modal auf Body-Ebene → 9999 schlägt 1000.',
+    files: ['frontend/src/components/MemberCheckin.jsx'],
+  },
+  {
     version: '3.0.137',
     date: '2026-07-08',
     type: 'fix',

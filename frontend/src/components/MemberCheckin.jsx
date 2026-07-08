@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
 import { X, Calendar, CheckCircle, Clock } from 'lucide-react';
@@ -241,7 +242,7 @@ const MemberCheckin = ({ onClose }) => {
   };
 
   if (!memberData) {
-    return (
+    return createPortal(
       <div ref={overlayRef} className="modal-overlay member-checkin-modal" style={overlayStyle} onClick={onClose}>
         <div className="modal-content checkin-modal" style={modalStyle} onClick={(e) => e.stopPropagation()}>
           <div className="modal-header" style={{ flexShrink: 0 }}>
@@ -255,7 +256,8 @@ const MemberCheckin = ({ onClose }) => {
             }
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
@@ -269,7 +271,7 @@ const MemberCheckin = ({ onClose }) => {
   const versteckteAnzahl = offeneKurse.length - passendeKurse.length;
   const sichtbareKurse = (stilFilterEffektiv && !showAlleKurse) ? passendeKurse : offeneKurse;
 
-  return (
+  return createPortal(
     <div ref={overlayRef} className="modal-overlay member-checkin-modal" style={overlayStyle} onClick={onClose}>
       <div className="modal-content checkin-modal" style={modalStyle} onClick={(e) => e.stopPropagation()}>
 
@@ -488,7 +490,8 @@ const MemberCheckin = ({ onClose }) => {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
