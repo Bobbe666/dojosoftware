@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.140',
+    date: '2026-07-08',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Check-in: optionaler Alters-Filter (pro Dojo)',
+    description: 'Neu unter Einstellungen → Check-in: Wenn aktiviert, sieht ein Mitglied beim Einchecken zuerst nur Kurse, deren Altersbereich zu seinem Alter passt — kombinierbar mit dem Stil-Filter, plus „Weitere Kurse anzeigen". Das Min-/Max-Alter legst du je Kurs in der Kursverwaltung fest; Kurse ohne Altersangabe gelten für alle.',
+    highlights: [
+      '🎂 Check-in zeigt zuerst nur alterspassende Kurse (optional)',
+      '🎛️ Kombinierbar mit dem Stil-Filter',
+      '⚙️ Min-/Max-Alter je Kurs in der Kursverwaltung',
+    ],
+    details: 'Migration 222 (kurse.min_alter/max_alter) + 223 (checkin_einstellungen.alter_filter_aktiv). kurse.js create/update/GET, checkin.js courses-today, checkin-einstellungen route (beide Toggles), Kurse.jsx (Alters-Felder), CheckinEinstellungen.jsx (2. Toggle), MemberCheckin.jsx (Alter aus geburtsdatum, kombinierter Filter).',
+    files: ['backend/routes/kurse.js', 'backend/routes/checkin.js', 'backend/routes/checkin-einstellungen.js', 'frontend/src/components/Kurse.jsx', 'frontend/src/components/CheckinEinstellungen.jsx', 'frontend/src/components/MemberCheckin.jsx'],
+  },
+  {
     version: '3.0.139',
     date: '2026-07-08',
     type: 'fix',

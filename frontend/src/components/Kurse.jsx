@@ -22,7 +22,9 @@ const Kurse = () => {
     gruppenname: "",
     stil: "",
     trainer_ids: [],
-    raum_id: ""
+    raum_id: "",
+    min_alter: "",
+    max_alter: ""
   });
 
   const [raeume, setRaeume] = useState([]);
@@ -439,6 +441,8 @@ const Kurse = () => {
         stil: neuerKurs.stil,
         trainer_ids: neuerKurs.trainer_ids,
         raum_id: neuerKurs.raum_id || null,
+        min_alter: neuerKurs.min_alter || null,
+        max_alter: neuerKurs.max_alter || null,
         dojo_id: activeDojo.id
       });
       const newKursId = res.data?.kurs_id || res.data?.id;
@@ -453,7 +457,7 @@ const Kurse = () => {
           }).catch(() => {})
         ));
       }
-      setNeuerKurs({ gruppenname: "", stil: "", trainer_ids: [], raum_id: "" });
+      setNeuerKurs({ gruppenname: "", stil: "", trainer_ids: [], raum_id: "", min_alter: "", max_alter: "" });
       setWizardStep(1);
       setWizardEntries([]);
       setWizardEntryForm({ tag: '', uhrzeit_start: '', uhrzeit_ende: '', raum_id: '' });
@@ -486,7 +490,9 @@ const Kurse = () => {
       gruppenname: kurs.gruppenname,
       stil: kurs.stil,
       trainer_ids: Array.isArray(kurs.trainer_ids) ? kurs.trainer_ids : [kurs.trainer_id],
-      raum_id: kurs.raum_id || ""
+      raum_id: kurs.raum_id || "",
+      min_alter: kurs.min_alter ?? "",
+      max_alter: kurs.max_alter ?? ""
     };
     console.log('EditingData gesetzt auf:', editData);
     setEditingData(editData);
@@ -504,7 +510,9 @@ const Kurse = () => {
         gruppenname: editingData.gruppenname,
         stil: editingData.stil,
         trainer_ids: editingData.trainer_ids,
-        raum_id: editingData.raum_id || null
+        raum_id: editingData.raum_id || null,
+        min_alter: editingData.min_alter || null,
+        max_alter: editingData.max_alter || null
       });
       setEditingId(null);
       ladeAlleDaten();
@@ -917,6 +925,15 @@ const Kurse = () => {
                                       ))}
                                     </select>
                                   </div>
+                                  <div className="ku-edit-field">
+                                    <label>Alter (ab / bis, optional)</label>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                      <input type="number" min="0" max="120" className="sd-input" placeholder="ab"
+                                        value={editingData.min_alter ?? ""} onChange={(e) => setEditingData({...editingData, min_alter: e.target.value})} />
+                                      <input type="number" min="0" max="120" className="sd-input" placeholder="bis"
+                                        value={editingData.max_alter ?? ""} onChange={(e) => setEditingData({...editingData, max_alter: e.target.value})} />
+                                    </div>
+                                  </div>
                                 </div>
                                 <div className="ku-edit-trainers">
                                   <label>Trainer</label>
@@ -1112,6 +1129,15 @@ const Kurse = () => {
                       <option value="">Kein Raum</option>
                       {raeume.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </select>
+                  </div>
+                  <div className="form-group">
+                    <label>🎂 Alter (optional, für Check-in-Filter):</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input type="number" min="0" max="120" className="form-select" placeholder="ab (Min)"
+                        value={neuerKurs.min_alter} onChange={(e) => setNeuerKurs({ ...neuerKurs, min_alter: e.target.value })} />
+                      <input type="number" min="0" max="120" className="form-select" placeholder="bis (Max)"
+                        value={neuerKurs.max_alter} onChange={(e) => setNeuerKurs({ ...neuerKurs, max_alter: e.target.value })} />
+                    </div>
                   </div>
                   <div className="form-group">
                     <label>👨‍🏫 Trainer:</label>

@@ -26,6 +26,7 @@ const MemberCheckin = ({ onClose }) => {
   const [trainerCheckedInCourses, setTrainerCheckedInCourses] = useState([]);
   const [checkoutLoading, setCheckoutLoading]                 = useState(null); // checkin_id das gerade ausgecheckt wird
   const [stilFilterAktiv, setStilFilterAktiv]                 = useState(false); // Dojo-Einstellung
+  const [alterFilterAktiv, setAlterFilterAktiv]              = useState(false); // Dojo-Einstellung
   const [showAlleKurse, setShowAlleKurse]                     = useState(false); // „Weitere Kurse anzeigen"
 
   const API_BASE = config.apiBaseUrl;
@@ -85,6 +86,7 @@ const MemberCheckin = ({ onClose }) => {
         if (setRes.ok) {
           const s = await setRes.json();
           setStilFilterAktiv(!!s.stil_filter_aktiv);
+          setAlterFilterAktiv(!!s.alter_filter_aktiv);
         }
       } catch { /* Default: aus */ }
 
@@ -261,15 +263,31 @@ const MemberCheckin = ({ onClose }) => {
     );
   }
 
-  // ── Stil-Filter (Dojo-Einstellung): zuerst nur Kurse des eigenen Stils ──
-  const memberStyles = (((memberData?.mitglied || memberData)?.stile) || '')
-    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  // ── Check-in-Filter (Dojo-Einstellung): Stil und/oder Alter ──
+  const _md = memberData?.mitglied || memberData;
+  const memberStyles = (_md?.stile || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
   const stilFilterEffektiv = stilFilterAktiv && memberStyles.length > 0;
   const courseMatchesStyle = (c) => memberStyles.includes((c.stil || '').trim().toLowerCase());
+
+  // Alter des Mitglieds aus Geburtsdatum
+  const memberAge = _md?.geburtsdatum
+    ? Math.floor((Date.now() - new Date(_md.geburtsdatum).getTime()) / 31557600000)
+    : null;
+  const alterFilterEffektiv = alterFilterAktiv && memberAge != null;
+  const courseMatchesAge = (c) => {
+    const min = c.min_alter, max = c.max_alter;
+    if ((min == null || min === '') && (max == null || max === '')) return true; // kein Bereich → für alle
+    if (min != null && min !== '' && memberAge < Number(min)) return false;
+    if (max != null && max !== '' && memberAge > Number(max)) return false;
+    return true;
+  };
+
+  const filterAktiv = stilFilterEffektiv || alterFilterEffektiv;
+  const matchesAll = (c) => (!stilFilterEffektiv || courseMatchesStyle(c)) && (!alterFilterEffektiv || courseMatchesAge(c));
   const offeneKurse = coursesToday.filter(c => !checkedInCourses.includes(c.stundenplan_id));
-  const passendeKurse = offeneKurse.filter(courseMatchesStyle);
+  const passendeKurse = offeneKurse.filter(matchesAll);
   const versteckteAnzahl = offeneKurse.length - passendeKurse.length;
-  const sichtbareKurse = (stilFilterEffektiv && !showAlleKurse) ? passendeKurse : offeneKurse;
+  const sichtbareKurse = (filterAktiv && !showAlleKurse) ? passendeKurse : offeneKurse;
 
   return createPortal(
     <div ref={overlayRef} className="modal-overlay member-checkin-modal" style={overlayStyle} onClick={onClose}>
@@ -366,7 +384,7 @@ const MemberCheckin = ({ onClose }) => {
                   {sichtbareKurse.length === 0 && (
                     <div className="no-courses">
                       <div className="no-courses-icon">🥋</div>
-                      <h4>Keine Kurse für deinen Stil heute</h4>
+                      <h4>Keine passenden Kurse heute</h4>
                       <p>Über „Weitere Kurse anzeigen" siehst du alle heutigen Stunden.</p>
                     </div>
                   )}
@@ -429,7 +447,7 @@ const MemberCheckin = ({ onClose }) => {
                     );
                   })}
                 </div>
-                {stilFilterEffektiv && !showAlleKurse && versteckteAnzahl > 0 && (
+                {filterAktiv && !showAlleKurse && versteckteAnzahl > 0 && (
                   <button
                     className="btn btn-secondary"
                     style={{ width: '100%', marginTop: '0.5rem' }}
