@@ -507,14 +507,24 @@
   border: 1.5px solid var(--chat-separator);
   border-radius: 22px;
   resize: none;
-  font-size: 0.9rem;
+  font-size: 16px; /* >=16px verhindert Auto-Zoom auf iOS beim Fokus */
   font-family: inherit;
   outline: none;
-  background: var(--chat-input-bg);
-  color: var(--text-primary, #111);
+  /* WICHTIG: Hintergrund UND Textfarbe aus DEMSELBEN ds-mode-Paar
+     (--ds-bg-input / --ds-text). Vorher: --bg-primary (Body) + --text-primary
+     (Branding-Ebene) → konnten kollidieren → unsichtbarer Text beim Tippen. */
+  background: var(--ds-bg-input, var(--chat-input-bg));
+  color: var(--ds-text, var(--text-primary, #111));
+  -webkit-text-fill-color: var(--ds-text, var(--text-primary, #111));
+  caret-color: var(--chat-accent);
   transition: border-color var(--chat-transition), box-shadow var(--chat-transition);
   overflow-y: auto;
   line-height: 1.45;
+}
+.chat-input::placeholder {
+  color: var(--ds-text-muted, var(--text-muted, rgba(120,120,120,0.7)));
+  -webkit-text-fill-color: var(--ds-text-muted, var(--text-muted, rgba(120,120,120,0.7)));
+  opacity: 1;
 }
 .chat-input:focus {
   border-color: var(--chat-accent);

@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.137',
+    date: '2026-07-08',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Chat: Eingabefeld-Text war je nach Theme unsichtbar',
+    description: 'Im Chat konnten Mitglieder das Eingabefeld bzw. den getippten Text nicht sehen. Ursache: Feld-Hintergrund und Textfarbe kamen aus zwei unabhängigen Theme-Ebenen, die getrennt umgeschaltet werden – sie konnten kollidieren (z.B. dunkler Text auf dunklem Feld oder heller Text auf hellem Feld). Das Feld nutzt jetzt ein garantiert zusammenpassendes Farbpaar und ist in jedem Theme lesbar.',
+    highlights: ['👀 Getippter Text ist wieder sichtbar', '🎨 Feld-Hintergrund + Textfarbe aus demselben ds-mode-Paar', '📱 iOS: kein Auto-Zoom mehr (16px), Cursor & Placeholder sichtbar'],
+    details: 'Chat.css .chat-input: background von --bg-primary (Body-Ebene) → --ds-bg-input, color von --text-primary (Branding-Ebene) → --ds-text; beide Tokens werden pro data-ds-mode (dark/hell/washi) GEMEINSAM definiert und passen daher immer zusammen. Zusätzlich: -webkit-text-fill-color explizit gesetzt (iOS/Safari überschrieb color sonst teils mit transparent), caret-color, ::placeholder-Farbe (--ds-text-muted) und font-size 16px gegen iOS-Fokus-Zoom. Gilt für Admin-Messenger und Mitglieder-App.',
+    files: ['frontend/src/styles/Chat.css'],
+  },
+  {
     version: '3.0.136',
     date: '2026-07-08',
     type: 'fix',
