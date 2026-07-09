@@ -27,6 +27,8 @@ const MemberCheckin = ({ onClose }) => {
   const [checkoutLoading, setCheckoutLoading]                 = useState(null); // checkin_id das gerade ausgecheckt wird
   const [stilFilterAktiv, setStilFilterAktiv]                 = useState(false); // Dojo-Einstellung
   const [alterFilterAktiv, setAlterFilterAktiv]              = useState(false); // Dojo-Einstellung
+  const [guertelFilterAktiv, setGuertelFilterAktiv]         = useState(false); // Dojo-Einstellung
+  const [memberGrades, setMemberGrades]                     = useState({});    // stil_name(lower) → stufe
   const [showAlleKurse, setShowAlleKurse]                     = useState(false); // „Weitere Kurse anzeigen"
 
   const API_BASE = config.apiBaseUrl;
@@ -87,8 +89,20 @@ const MemberCheckin = ({ onClose }) => {
           const s = await setRes.json();
           setStilFilterAktiv(!!s.stil_filter_aktiv);
           setAlterFilterAktiv(!!s.alter_filter_aktiv);
+          setGuertelFilterAktiv(!!s.guertel_filter_aktiv);
         }
       } catch { /* Default: aus */ }
+
+      // Aktuelle Grad-Stufe je Stil (für Gürtel-Filter)
+      try {
+        const gRes = await fetchWithAuth(`${API_BASE}/checkin/member-graduierungen/${mitgliedId}`);
+        if (gRes.ok) {
+          const gd = await gRes.json();
+          const map = {};
+          (gd.grades || []).forEach(g => { if (g.stil_name != null) map[String(g.stil_name).trim().toLowerCase()] = g.stufe; });
+          setMemberGrades(map);
+        }
+      } catch { /* kein Grad → keine Gürtel-Einschränkung */ }
 
       const checkinsRes = await fetchWithAuth(`${API_BASE}/checkin/today-member/${mitgliedId}`);
       if (checkinsRes.ok) {
@@ -282,8 +296,20 @@ const MemberCheckin = ({ onClose }) => {
     return true;
   };
 
-  const filterAktiv = stilFilterEffektiv || alterFilterEffektiv;
-  const matchesAll = (c) => (!stilFilterEffektiv || courseMatchesStyle(c)) && (!alterFilterEffektiv || courseMatchesAge(c));
+  // Gürtel: aktuelle Grad-Stufe des Mitglieds für den Stil des Kurses vs. Kurs-Bereich
+  const guertelFilterEffektiv = guertelFilterAktiv && Object.keys(memberGrades).length > 0;
+  const courseMatchesBelt = (c) => {
+    const min = c.min_grad_stufe, max = c.max_grad_stufe;
+    if (min == null && max == null) return true; // kein Gürtel-Bereich → für alle
+    const stufe = memberGrades[(c.stil || '').trim().toLowerCase()];
+    if (stufe == null) return true; // kein Grad für diesen Stil → nicht einschränken
+    if (min != null && stufe < Number(min)) return false;
+    if (max != null && stufe > Number(max)) return false;
+    return true;
+  };
+
+  const filterAktiv = stilFilterEffektiv || alterFilterEffektiv || guertelFilterEffektiv;
+  const matchesAll = (c) => (!stilFilterEffektiv || courseMatchesStyle(c)) && (!alterFilterEffektiv || courseMatchesAge(c)) && (!guertelFilterEffektiv || courseMatchesBelt(c));
   const offeneKurse = coursesToday.filter(c => !checkedInCourses.includes(c.stundenplan_id));
   const passendeKurse = offeneKurse.filter(matchesAll);
   const versteckteAnzahl = offeneKurse.length - passendeKurse.length;

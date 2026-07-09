@@ -13,6 +13,7 @@ export default function CheckinEinstellungen() {
   const dojoParam = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
   const [stil, setStil] = useState(false);
   const [alter, setAlter] = useState(false);
+  const [guertel, setGuertel] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -20,19 +21,19 @@ export default function CheckinEinstellungen() {
   const load = useCallback(() => {
     setLoading(true);
     axios.get(`/checkin-einstellungen${dojoParam}`, { headers: authHeader() })
-      .then(r => { setStil(!!r.data?.stil_filter_aktiv); setAlter(!!r.data?.alter_filter_aktiv); })
-      .catch(() => { setStil(false); setAlter(false); })
+      .then(r => { setStil(!!r.data?.stil_filter_aktiv); setAlter(!!r.data?.alter_filter_aktiv); setGuertel(!!r.data?.guertel_filter_aktiv); })
+      .catch(() => { setStil(false); setAlter(false); setGuertel(false); })
       .finally(() => setLoading(false));
   }, [dojoParam]);
 
   useEffect(() => { load(); }, [load]);
 
-  const speichern = async (nextStil, nextAlter) => {
+  const speichern = async (nextStil, nextAlter, nextGuertel) => {
     setBusy(true); setMsg('');
     try {
       await axios.put(`/checkin-einstellungen${dojoParam}`,
-        { stil_filter_aktiv: nextStil, alter_filter_aktiv: nextAlter }, { headers: authHeader() });
-      setStil(nextStil); setAlter(nextAlter);
+        { stil_filter_aktiv: nextStil, alter_filter_aktiv: nextAlter, guertel_filter_aktiv: nextGuertel }, { headers: authHeader() });
+      setStil(nextStil); setAlter(nextAlter); setGuertel(nextGuertel);
       setMsg('Gespeichert ✅');
       setTimeout(() => setMsg(''), 2500);
     } catch (e) {
@@ -64,7 +65,7 @@ export default function CheckinEinstellungen() {
             <br /><span style={{ opacity: 0.6 }}>Ohne hinterlegten Stil werden alle Kurse gezeigt.</span>
           </div>
         </div>
-        <Toggle on={stil} onToggle={() => speichern(!stil, alter)} />
+        <Toggle on={stil} onToggle={() => speichern(!stil, alter, guertel)} />
       </div>
 
       {/* Alters-Filter */}
@@ -77,11 +78,24 @@ export default function CheckinEinstellungen() {
             <br /><span style={{ opacity: 0.6 }}>Das Min-/Max-Alter legst du je Kurs in der Kursverwaltung fest. Kurse ohne Altersangabe gelten für alle.</span>
           </div>
         </div>
-        <Toggle on={alter} onToggle={() => speichern(stil, !alter)} />
+        <Toggle on={alter} onToggle={() => speichern(stil, !alter, guertel)} />
+      </div>
+
+      {/* Gürtel-Filter */}
+      <div style={{ marginTop: 12, padding: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>🥋 Nur gürtelpassende Kurse anzeigen</div>
+          <div style={{ fontSize: 13.5, opacity: 0.72, lineHeight: 1.5 }}>
+            Wenn aktiviert, sieht ein Mitglied beim Check-in zuerst nur Kurse, deren Gürtel-Bereich zu seinem aktuellen Grad passt.
+            Über <strong>„Weitere Kurse anzeigen"</strong> bleiben alle Stunden wählbar.
+            <br /><span style={{ opacity: 0.6 }}>Den Gürtel-Bereich (von/bis) legst du je Kurs in der Kursverwaltung fest. Kurse ohne Gürtel-Bereich gelten für alle.</span>
+          </div>
+        </div>
+        <Toggle on={guertel} onToggle={() => speichern(stil, alter, !guertel)} />
       </div>
 
       <p style={{ marginTop: 16, fontSize: 12, opacity: 0.5 }}>
-        {loading ? 'lädt…' : `Stil-Filter: ${stil ? 'an' : 'aus'} · Alters-Filter: ${alter ? 'an' : 'aus'}`}
+        {loading ? 'lädt…' : `Stil: ${stil ? 'an' : 'aus'} · Alter: ${alter ? 'an' : 'aus'} · Gürtel: ${guertel ? 'an' : 'aus'}`}
       </p>
     </div>
   );

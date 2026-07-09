@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.142',
+    date: '2026-07-09',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: '[NOCH INTERN] Check-in Gürtel-Filter + Stil-/Alters-Toggles in der Kursverwaltung',
+    description: 'Neuer Gürtel-Filter beim Check-in (pro Kurs Gürtel von/bis aus den Graduierungen des Stils; Mitglied sieht zuerst nur gürtelpassende Kurse). Alle drei Filter (Stil/Alter/Gürtel) sind jetzt auch direkt in der Kursverwaltung als Schalter, und in Einstellungen → Check-in gibt es den dritten Toggle. Auf intern gestellt bis Freigabe.',
+    highlights: [
+      '🎗️ Check-in Gürtel-Filter (pro Kurs Gürtel von/bis)',
+      '🎛️ Stil-/Alter-/Gürtel-Schalter direkt in der Kursverwaltung',
+    ],
+    details: 'Migration 224 (kurse.min/max_graduierung_id, checkin_einstellungen.guertel_filter_aktiv). kurse.js, checkin.js (courses-today Grad-Stufen + member-graduierungen), checkin-einstellungen (3 Flags), Kurse.jsx (Belt-Dropdowns aus /stile-Graduierungen + 3 Toggles), CheckinEinstellungen.jsx (3. Toggle), MemberCheckin.jsx (Gürtel-Filter via member-graduierungen).',
+    files: ['backend/routes/kurse.js', 'backend/routes/checkin.js', 'backend/routes/checkin-einstellungen.js', 'frontend/src/components/Kurse.jsx', 'frontend/src/components/CheckinEinstellungen.jsx', 'frontend/src/components/MemberCheckin.jsx'],
+  },
+  {
     version: '3.0.141',
     date: '2026-07-09',
     type: 'improvement',

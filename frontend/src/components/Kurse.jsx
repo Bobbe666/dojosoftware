@@ -24,11 +24,17 @@ const Kurse = () => {
     trainer_ids: [],
     raum_id: "",
     min_alter: "",
-    max_alter: ""
+    max_alter: "",
+    min_graduierung_id: "",
+    max_graduierung_id: ""
   });
 
+  // Stile inkl. Graduierungen (für die Gürtel-Dropdowns)
+  const [stileGrad, setStileGrad] = useState([]);
+  const gradForStil = (stilName) => (stileGrad.find(s => s.name === stilName)?.graduierungen) || [];
+
   // Check-in-Einstellungen (Kopie des Alters-Toggles aus Einstellungen → Check-in)
-  const [checkinSettings, setCheckinSettings] = useState({ stil: false, alter: false });
+  const [checkinSettings, setCheckinSettings] = useState({ stil: false, alter: false, guertel: false });
   const [ckBusy, setCkBusy] = useState(false);
 
   const [raeume, setRaeume] = useState([]);
@@ -447,6 +453,8 @@ const Kurse = () => {
         raum_id: neuerKurs.raum_id || null,
         min_alter: neuerKurs.min_alter || null,
         max_alter: neuerKurs.max_alter || null,
+        min_graduierung_id: neuerKurs.min_graduierung_id || null,
+        max_graduierung_id: neuerKurs.max_graduierung_id || null,
         dojo_id: activeDojo.id
       });
       const newKursId = res.data?.kurs_id || res.data?.id;
@@ -461,7 +469,7 @@ const Kurse = () => {
           }).catch(() => {})
         ));
       }
-      setNeuerKurs({ gruppenname: "", stil: "", trainer_ids: [], raum_id: "", min_alter: "", max_alter: "" });
+      setNeuerKurs({ gruppenname: "", stil: "", trainer_ids: [], raum_id: "", min_alter: "", max_alter: "", min_graduierung_id: "", max_graduierung_id: "" });
       setWizardStep(1);
       setWizardEntries([]);
       setWizardEntryForm({ tag: '', uhrzeit_start: '', uhrzeit_ende: '', raum_id: '' });
@@ -496,7 +504,9 @@ const Kurse = () => {
       trainer_ids: Array.isArray(kurs.trainer_ids) ? kurs.trainer_ids : [kurs.trainer_id],
       raum_id: kurs.raum_id || "",
       min_alter: kurs.min_alter ?? "",
-      max_alter: kurs.max_alter ?? ""
+      max_alter: kurs.max_alter ?? "",
+      min_graduierung_id: kurs.min_graduierung_id ?? "",
+      max_graduierung_id: kurs.max_graduierung_id ?? ""
     };
     console.log('EditingData gesetzt auf:', editData);
     setEditingData(editData);
@@ -516,7 +526,9 @@ const Kurse = () => {
         trainer_ids: editingData.trainer_ids,
         raum_id: editingData.raum_id || null,
         min_alter: editingData.min_alter || null,
-        max_alter: editingData.max_alter || null
+        max_alter: editingData.max_alter || null,
+        min_graduierung_id: editingData.min_graduierung_id || null,
+        max_graduierung_id: editingData.max_graduierung_id || null
       });
       setEditingId(null);
       ladeAlleDaten();
@@ -656,7 +668,10 @@ const Kurse = () => {
   useEffect(() => {
     const dp = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
     axios.get(`/checkin-einstellungen${dp}`)
-      .then(r => setCheckinSettings({ stil: !!r.data?.stil_filter_aktiv, alter: !!r.data?.alter_filter_aktiv }))
+      .then(r => setCheckinSettings({ stil: !!r.data?.stil_filter_aktiv, alter: !!r.data?.alter_filter_aktiv, guertel: !!r.data?.guertel_filter_aktiv }))
+      .catch(() => {});
+    axios.get(`/stile?aktiv=true`)
+      .then(r => setStileGrad(Array.isArray(r.data) ? r.data : (r.data?.stile || [])))
       .catch(() => {});
   }, [activeDojo?.id]);
 
@@ -665,7 +680,7 @@ const Kurse = () => {
     setCkBusy(true);
     const dp = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
     try {
-      await axios.put(`/checkin-einstellungen${dp}`, { stil_filter_aktiv: next.stil, alter_filter_aktiv: next.alter });
+      await axios.put(`/checkin-einstellungen${dp}`, { stil_filter_aktiv: next.stil, alter_filter_aktiv: next.alter, guertel_filter_aktiv: next.guertel });
       setCheckinSettings(next);
       showToast('success', label);
     } catch (e) {
@@ -679,6 +694,10 @@ const Kurse = () => {
   const toggleStilFilter = () => {
     const v = !checkinSettings.stil;
     speichereCheckin({ ...checkinSettings, stil: v }, `Stil-Filter beim Check-in ${v ? 'aktiviert' : 'deaktiviert'}.`);
+  };
+  const toggleGuertelFilter = () => {
+    const v = !checkinSettings.guertel;
+    speichereCheckin({ ...checkinSettings, guertel: v }, `Gürtel-Filter beim Check-in ${v ? 'aktiviert' : 'deaktiviert'}.`);
   };
 
   return (
@@ -721,6 +740,13 @@ const Kurse = () => {
                 🎂 Alters-Filter (Check-in)
                 <span style={{ width: 44, height: 24, borderRadius: 999, background: checkinSettings.alter ? '#22c55e' : 'rgba(255,255,255,0.25)', position: 'relative', transition: 'background .2s', flex: '0 0 auto', display: 'inline-block' }}>
                   <span style={{ position: 'absolute', top: 2, left: checkinSettings.alter ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+                </span>
+              </div>
+              <div onClick={toggleGuertelFilter} title="Beim Check-in zuerst nur Kurse zeigen, deren Gürtel-Bereich zum Grad des Mitglieds passt"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '10px', fontSize: '13px', cursor: ckBusy ? 'default' : 'pointer', whiteSpace: 'nowrap', opacity: ckBusy ? 0.6 : 1 }}>
+                🎗️ Gürtel-Filter (Check-in)
+                <span style={{ width: 44, height: 24, borderRadius: 999, background: checkinSettings.guertel ? '#22c55e' : 'rgba(255,255,255,0.25)', position: 'relative', transition: 'background .2s', flex: '0 0 auto', display: 'inline-block' }}>
+                  <span style={{ position: 'absolute', top: 2, left: checkinSettings.guertel ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
                 </span>
               </div>
               <button className="ku-btn-primary" onClick={() => setShowNeuerKursModal(true)}>➕ Neuer Kurs</button>
@@ -981,6 +1007,21 @@ const Kurse = () => {
                                         value={editingData.max_alter ?? ""} onChange={(e) => setEditingData({...editingData, max_alter: e.target.value})} />
                                     </div>
                                   </div>
+                                  <div className="ku-edit-field">
+                                    <label>Gürtel von / bis (optional)</label>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                      <select className="sd-input" value={editingData.min_graduierung_id ?? ""}
+                                        onChange={(e) => setEditingData({...editingData, min_graduierung_id: e.target.value})}>
+                                        <option value="">von (kein)</option>
+                                        {gradForStil(editingData.stil).map(g => <option key={g.graduierung_id} value={g.graduierung_id}>{g.name}</option>)}
+                                      </select>
+                                      <select className="sd-input" value={editingData.max_graduierung_id ?? ""}
+                                        onChange={(e) => setEditingData({...editingData, max_graduierung_id: e.target.value})}>
+                                        <option value="">bis (kein)</option>
+                                        {gradForStil(editingData.stil).map(g => <option key={g.graduierung_id} value={g.graduierung_id}>{g.name}</option>)}
+                                      </select>
+                                    </div>
+                                  </div>
                                 </div>
                                 <div className="ku-edit-trainers">
                                   <label>Trainer</label>
@@ -1185,6 +1226,22 @@ const Kurse = () => {
                       <input type="number" min="0" max="120" className="form-select" placeholder="bis (Max)"
                         value={neuerKurs.max_alter} onChange={(e) => setNeuerKurs({ ...neuerKurs, max_alter: e.target.value })} />
                     </div>
+                  </div>
+                  <div className="form-group">
+                    <label>🎗️ Gürtel von / bis (optional, für Check-in-Filter):</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <select className="form-select" value={neuerKurs.min_graduierung_id} disabled={!neuerKurs.stil}
+                        onChange={(e) => setNeuerKurs({ ...neuerKurs, min_graduierung_id: e.target.value })}>
+                        <option value="">von (kein)</option>
+                        {gradForStil(neuerKurs.stil).map(g => <option key={g.graduierung_id} value={g.graduierung_id}>{g.name}</option>)}
+                      </select>
+                      <select className="form-select" value={neuerKurs.max_graduierung_id} disabled={!neuerKurs.stil}
+                        onChange={(e) => setNeuerKurs({ ...neuerKurs, max_graduierung_id: e.target.value })}>
+                        <option value="">bis (kein)</option>
+                        {gradForStil(neuerKurs.stil).map(g => <option key={g.graduierung_id} value={g.graduierung_id}>{g.name}</option>)}
+                      </select>
+                    </div>
+                    {!neuerKurs.stil && <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '2px' }}>Zuerst einen Stil wählen.</div>}
                   </div>
                   <div className="form-group">
                     <label>👨‍🏫 Trainer:</label>
