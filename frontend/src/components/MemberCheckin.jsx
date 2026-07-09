@@ -473,13 +473,22 @@ const MemberCheckin = ({ onClose }) => {
                     );
                   })}
                 </div>
-                {filterAktiv && !showAlleKurse && versteckteAnzahl > 0 && (
+                {filterAktiv && versteckteAnzahl > 0 && !showAlleKurse && (
                   <button
                     className="btn btn-secondary"
-                    style={{ width: '100%', marginTop: '0.5rem' }}
+                    style={{ width: '100%', marginTop: '0.5rem', fontWeight: 600 }}
                     onClick={() => setShowAlleKurse(true)}
                   >
-                    Weitere Kurse anzeigen ({versteckteAnzahl}) →
+                    🔎 Alle Kurse anzeigen ({versteckteAnzahl} weitere) →
+                  </button>
+                )}
+                {filterAktiv && versteckteAnzahl > 0 && showAlleKurse && (
+                  <button
+                    className="btn btn-secondary"
+                    style={{ width: '100%', marginTop: '0.5rem', opacity: 0.85 }}
+                    onClick={() => setShowAlleKurse(false)}
+                  >
+                    ← Nur passende Kurse anzeigen
                   </button>
                 )}
                 </>
