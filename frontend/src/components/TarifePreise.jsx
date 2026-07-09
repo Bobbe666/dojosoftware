@@ -40,6 +40,15 @@ function translateBillingCycle(cycle) {
   return cycleMap[cycle.toLowerCase()] || cycle;
 }
 
+// Beliebige Zyklus-Werte (deutsch/klein) auf DB-ENUM (MONTHLY|QUARTERLY|YEARLY) abbilden.
+function normalizeBillingCycle(value) {
+  const v = String(value || '').trim().toLowerCase();
+  if (['monthly', 'monatlich', 'monat', 'month'].includes(v)) return 'MONTHLY';
+  if (['quarterly', 'quartalsweise', 'quartal', 'vierteljährlich', 'vierteljaehrlich', 'quarter'].includes(v)) return 'QUARTERLY';
+  if (['yearly', 'jährlich', 'jaehrlich', 'jahr', 'annual', 'year'].includes(v)) return 'YEARLY';
+  return 'MONTHLY';
+}
+
 const TarifePreise = () => {
   const { activeDojo } = useDojoContext();
   const [tarife, setTarife] = useState([]);
@@ -81,8 +90,8 @@ const TarifePreise = () => {
   const [newTarif, setNewTarif] = useState({
     name: "", price_cents: "", aufnahmegebuehr_cents: 4999,
     currency: "EUR", duration_months: "", mindestlaufzeit_monate: "",
-    kuendigungsfrist_monate: 3, billing_cycle: "monthly",
-    payment_method: "bank_transfer", active: true
+    kuendigungsfrist_monate: 3, billing_cycle: "MONTHLY",
+    payment_method: "SEPA", active: true
   });
 
   const [newRabatt, setNewRabatt] = useState({
@@ -445,7 +454,7 @@ const TarifePreise = () => {
         await loadTarifeUndRabatte();
         setShowNewTarif(false);
         setEditingTarif(null);
-        setNewTarif({ name: "", price_cents: "", aufnahmegebuehr_cents: 4999, currency: "EUR", duration_months: "", billing_cycle: "monthly", payment_method: "bank_transfer", active: true });
+        setNewTarif({ name: "", price_cents: "", aufnahmegebuehr_cents: 4999, currency: "EUR", duration_months: "", billing_cycle: "MONTHLY", payment_method: "SEPA", active: true });
       } else {
         alert('Fehler beim Speichern: ' + response.data.error);
       }
@@ -1426,16 +1435,14 @@ const TarifePreise = () => {
                     <option value="">Bitte wählen...</option>
                     {zahlungszyklen.length > 0 ? (
                       zahlungszyklen.map(zyklus => {
-                        const cycleValue = zyklus.name?.toLowerCase() || zyklus.intervall?.toLowerCase() || '';
+                        const cycleValue = normalizeBillingCycle(zyklus.name || zyklus.intervall);
                         return <option key={zyklus.id || zyklus.zyklus_id} value={cycleValue}>{zyklus.name || zyklus.intervall}</option>;
                       })
                     ) : (
                       <>
-                        <option value="daily">Täglich</option>
-                        <option value="weekly">Wöchentlich</option>
-                        <option value="monthly">Monatlich</option>
-                        <option value="quarterly">Vierteljährlich</option>
-                        <option value="yearly">Jährlich</option>
+                        <option value="MONTHLY">Monatlich</option>
+                        <option value="QUARTERLY">Vierteljährlich</option>
+                        <option value="YEARLY">Jährlich</option>
                       </>
                     )}
                   </select>
@@ -1445,10 +1452,10 @@ const TarifePreise = () => {
                 <div>
                   <label className="u-form-label">Zahlungsmethode *</label>
                   <select value={newTarif.payment_method} onChange={(e) => setNewTarif({...newTarif, payment_method: e.target.value})} className="u-input-sm">
-                    <option value="bank_transfer">Banküberweisung</option>
-                    <option value="direct_debit">Lastschrift</option>
-                    <option value="credit_card">Kreditkarte</option>
-                    <option value="cash">Bar</option>
+                    <option value="SEPA">SEPA-Lastschrift</option>
+                    <option value="BANK_TRANSFER">Banküberweisung</option>
+                    <option value="CARD">Kreditkarte</option>
+                    <option value="PAYPAL">PayPal</option>
                   </select>
                 </div>
                 <div>
