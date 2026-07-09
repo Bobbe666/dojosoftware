@@ -31,6 +31,17 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.141',
+    date: '2026-07-09',
+    type: 'improvement',
+    zielgruppe: 'allgemein',
+    title: 'Kursverwaltung: Alters-Filter-Schalter direkt dort',
+    description: 'Der Check-in-Alters-Filter lässt sich jetzt auch direkt in der Kursverwaltung ein-/ausschalten (oben rechts, als Kopie des Schalters aus Einstellungen → Check-in) — praktisch, weil man dort auch das Min-/Max-Alter je Kurs pflegt. Die Alters-Felder (ab/bis) sind beim Anlegen und Bearbeiten eines Kurses vorhanden.',
+    highlights: ['🎂 Alters-Filter-Schalter direkt in der Kursverwaltung'],
+    details: 'Kurse.jsx: Toggle lädt/speichert /api/checkin-einstellungen (beide Flags), oben rechts im Kurse-Tab.',
+    files: ['frontend/src/components/Kurse.jsx'],
+  },
+  {
     version: '3.0.140',
     date: '2026-07-08',
     type: 'feature',

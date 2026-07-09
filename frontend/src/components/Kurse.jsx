@@ -27,6 +27,10 @@ const Kurse = () => {
     max_alter: ""
   });
 
+  // Check-in-Einstellungen (Kopie des Alters-Toggles aus Einstellungen → Check-in)
+  const [checkinSettings, setCheckinSettings] = useState({ stil: false, alter: false });
+  const [ckBusy, setCkBusy] = useState(false);
+
   const [raeume, setRaeume] = useState([]);
   const [scheduleMap, setScheduleMap] = useState({}); // kurs_id → [{wochentag, uhrzeit, dauer}]
 
@@ -648,6 +652,28 @@ const Kurse = () => {
     }
   };
 
+  // Check-in-Einstellungen laden + Alters-Toggle (Kopie aus Einstellungen → Check-in)
+  useEffect(() => {
+    const dp = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
+    axios.get(`/checkin-einstellungen${dp}`)
+      .then(r => setCheckinSettings({ stil: !!r.data?.stil_filter_aktiv, alter: !!r.data?.alter_filter_aktiv }))
+      .catch(() => {});
+  }, [activeDojo?.id]);
+
+  const toggleAlterFilter = async () => {
+    if (ckBusy) return;
+    setCkBusy(true);
+    const next = { ...checkinSettings, alter: !checkinSettings.alter };
+    const dp = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
+    try {
+      await axios.put(`/checkin-einstellungen${dp}`, { stil_filter_aktiv: next.stil, alter_filter_aktiv: next.alter });
+      setCheckinSettings(next);
+      showToast('success', `Alters-Filter beim Check-in ${next.alter ? 'aktiviert' : 'deaktiviert'}.`);
+    } catch (e) {
+      showToast('error', 'Speichern fehlgeschlagen.');
+    } finally { setCkBusy(false); }
+  };
+
   return (
     <div className="kurse-container-modern">
       {/* Toast Notification */}
@@ -676,6 +702,16 @@ const Kurse = () => {
         <div className="ku-topbar-right">
           {activeTab === "kurse" && (
             <>
+              <div
+                onClick={toggleAlterFilter}
+                title="Beim Check-in zuerst nur Kurse zeigen, deren Alter zum Mitglied passt"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '10px', fontSize: '13px', cursor: ckBusy ? 'default' : 'pointer', whiteSpace: 'nowrap', opacity: ckBusy ? 0.6 : 1 }}
+              >
+                🎂 Alters-Filter (Check-in)
+                <span style={{ width: 44, height: 24, borderRadius: 999, background: checkinSettings.alter ? '#22c55e' : 'rgba(255,255,255,0.25)', position: 'relative', transition: 'background .2s', flex: '0 0 auto', display: 'inline-block' }}>
+                  <span style={{ position: 'absolute', top: 2, left: checkinSettings.alter ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+                </span>
+              </div>
               <button className="ku-btn-primary" onClick={() => setShowNeuerKursModal(true)}>➕ Neuer Kurs</button>
               <button className="ku-btn-secondary" onClick={handleCSVExport} title="CSV Export">📊</button>
             </>
