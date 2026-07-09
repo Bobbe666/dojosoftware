@@ -414,7 +414,7 @@ router.put("/:id", (req, res) => {
             if (result.affectedRows === 0) {
                 return res.status(403).json({ error: "Keine Berechtigung - Kurs gehört zu anderem Dojo" });
             }
-            res.json({ kurs_id: id, gruppenname, stil, trainer_ids: trainers, dojo_id: req.tenant.dojo_id });
+            res.json({ kurs_id: id, gruppenname, stil, trainer_ids: trainers, dojo_id: req.tenant?.dojo_id ?? dojoId });
         });
     });
 });
