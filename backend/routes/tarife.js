@@ -18,6 +18,27 @@ const queryAsync = (sql, params = []) => {
   });
 };
 
+// Hilfsfunktion: billing_cycle auf DB-ENUM (MONTHLY|QUARTERLY|YEARLY) normalisieren.
+// Frontend/Dojo-Zyklen liefern teils deutsche/kleingeschriebene Werte ('monatlich', 'monthly'...),
+// die sonst zu "Data truncated for column 'billing_cycle'" führen.
+const normalizeBillingCycle = (value) => {
+  const v = String(value || '').trim().toLowerCase();
+  if (['monthly', 'monatlich', 'monat', 'month'].includes(v)) return 'MONTHLY';
+  if (['quarterly', 'quartalsweise', 'quartal', 'vierteljährlich', 'vierteljaehrlich', 'quarter'].includes(v)) return 'QUARTERLY';
+  if (['yearly', 'jährlich', 'jaehrlich', 'jahr', 'annual', 'year'].includes(v)) return 'YEARLY';
+  return 'MONTHLY'; // sicherer Default (auch für daily/weekly ohne DB-Entsprechung)
+};
+
+// Hilfsfunktion: payment_method auf DB-SET (SEPA|CARD|PAYPAL|BANK_TRANSFER) normalisieren.
+const normalizePaymentMethod = (value) => {
+  const v = String(value || '').trim().toLowerCase();
+  if (['sepa', 'direct_debit', 'lastschrift'].includes(v)) return 'SEPA';
+  if (['card', 'credit_card', 'kreditkarte'].includes(v)) return 'CARD';
+  if (['paypal'].includes(v)) return 'PAYPAL';
+  if (['bank_transfer', 'banküberweisung', 'bankueberweisung', 'überweisung', 'ueberweisung'].includes(v)) return 'BANK_TRANSFER';
+  return 'SEPA'; // sicherer Default (auch für cash/bar ohne DB-Entsprechung)
+};
+
 // Hilfsfunktion: ISO-Datum zu MySQL-Date konvertieren (YYYY-MM-DD)
 const parseDate = (dateValue) => {
   if (!dateValue) return null;
@@ -128,8 +149,8 @@ router.post('/', async (req, res) => {
             aufnahmegebuehr_cents || 4999,
             currency || 'EUR',
             duration_months,
-            billing_cycle || 'MONTHLY',
-            payment_method || 'SEPA',
+            normalizeBillingCycle(billing_cycle),
+            normalizePaymentMethod(payment_method),
             active !== undefined ? active : true,
             mindestlaufzeit_monate || duration_months,
             kuendigungsfrist_monate || 3,
@@ -144,8 +165,8 @@ router.post('/', async (req, res) => {
                 aufnahmegebuehr_cents: aufnahmegebuehr_cents || 4999,
                 currency: currency || 'EUR',
                 duration_months,
-                billing_cycle: billing_cycle || 'MONTHLY',
-                payment_method: payment_method || 'SEPA',
+                billing_cycle: normalizeBillingCycle(billing_cycle),
+                payment_method: normalizePaymentMethod(payment_method),
                 active: active !== undefined ? active : true,
                 mindestlaufzeit_monate: mindestlaufzeit_monate || duration_months,
                 kuendigungsfrist_monate: kuendigungsfrist_monate || 3
@@ -183,7 +204,7 @@ router.put('/:id', async (req, res) => {
             duration_months,
             mindestlaufzeit_monate || duration_months,
             kuendigungsfrist_monate != null ? parseInt(kuendigungsfrist_monate) : 3,
-            billing_cycle, payment_method, active,
+            normalizeBillingCycle(billing_cycle), normalizePaymentMethod(payment_method), active,
             id, parsedDojoId
         ]);
         res.json({ success: true, message: 'Tarif erfolgreich aktualisiert' });
