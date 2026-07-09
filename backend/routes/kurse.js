@@ -229,6 +229,8 @@ router.post("/", (req, res) => {
     const { gruppenname, stil, trainer_ids, trainer_id, raum_id, standort_id } = req.body;
     const min_alter = (req.body.min_alter !== '' && req.body.min_alter != null) ? parseInt(req.body.min_alter) : null;
     const max_alter = (req.body.max_alter !== '' && req.body.max_alter != null) ? parseInt(req.body.max_alter) : null;
+    const min_graduierung_id = (req.body.min_graduierung_id !== '' && req.body.min_graduierung_id != null) ? parseInt(req.body.min_graduierung_id) : null;
+    const max_graduierung_id = (req.body.max_graduierung_id !== '' && req.body.max_graduierung_id != null) ? parseInt(req.body.max_graduierung_id) : null;
 
     // Support both old single trainer_id and new multiple trainer_ids
     const trainers = trainer_ids || (trainer_id ? [trainer_id] : []);
@@ -238,8 +240,8 @@ router.post("/", (req, res) => {
 
     // If standort_id provided, use it; otherwise get the main location
     const insertCourse = (finalStandortId) => {
-        const query = "INSERT INTO kurse (gruppenname, stil, trainer_ids, raum_id, dojo_id, standort_id, min_alter, max_alter) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        db.query(query, [gruppenname, stil, JSON.stringify(trainers), raum_id || null, dojoId, finalStandortId, min_alter, max_alter], (err, result) => {
+        const query = "INSERT INTO kurse (gruppenname, stil, trainer_ids, raum_id, dojo_id, standort_id, min_alter, max_alter, min_graduierung_id, max_graduierung_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        db.query(query, [gruppenname, stil, JSON.stringify(trainers), raum_id || null, dojoId, finalStandortId, min_alter, max_alter, min_graduierung_id, max_graduierung_id], (err, result) => {
             if (err) {
                 logger.error('Fehler beim Hinzufügen des Kurses:', { error: err });
                 return res.status(500).json({ error: "Fehler beim Speichern des Kurses" });
@@ -368,6 +370,8 @@ router.put("/:id", (req, res) => {
     const { gruppenname, stil, trainer_ids, trainer_id, raum_id } = req.body;
     const min_alter = (req.body.min_alter !== '' && req.body.min_alter != null) ? parseInt(req.body.min_alter) : null;
     const max_alter = (req.body.max_alter !== '' && req.body.max_alter != null) ? parseInt(req.body.max_alter) : null;
+    const min_graduierung_id = (req.body.min_graduierung_id !== '' && req.body.min_graduierung_id != null) ? parseInt(req.body.min_graduierung_id) : null;
+    const max_graduierung_id = (req.body.max_graduierung_id !== '' && req.body.max_graduierung_id != null) ? parseInt(req.body.max_graduierung_id) : null;
 
     // Support both old single trainer_id and new multiple trainer_ids
     const trainers = trainer_ids || (trainer_id ? [trainer_id] : []);
@@ -395,11 +399,11 @@ router.put("/:id", (req, res) => {
         }
 
         const updateQuery = (isSuperAdmin && !dojoId)
-            ? `UPDATE kurse SET gruppenname = ?, stil = ?, trainer_ids = ?, raum_id = ?, min_alter = ?, max_alter = ? WHERE kurs_id = ?`
-            : `UPDATE kurse SET gruppenname = ?, stil = ?, trainer_ids = ?, raum_id = ?, min_alter = ?, max_alter = ? WHERE kurs_id = ? AND dojo_id = ?`;
+            ? `UPDATE kurse SET gruppenname = ?, stil = ?, trainer_ids = ?, raum_id = ?, min_alter = ?, max_alter = ?, min_graduierung_id = ?, max_graduierung_id = ? WHERE kurs_id = ?`
+            : `UPDATE kurse SET gruppenname = ?, stil = ?, trainer_ids = ?, raum_id = ?, min_alter = ?, max_alter = ?, min_graduierung_id = ?, max_graduierung_id = ? WHERE kurs_id = ? AND dojo_id = ?`;
         const updateParams = (isSuperAdmin && !dojoId)
-            ? [gruppenname, stil, JSON.stringify(trainers), raum_id || null, min_alter, max_alter, id]
-            : [gruppenname, stil, JSON.stringify(trainers), raum_id || null, min_alter, max_alter, id, dojoId];
+            ? [gruppenname, stil, JSON.stringify(trainers), raum_id || null, min_alter, max_alter, min_graduierung_id, max_graduierung_id, id]
+            : [gruppenname, stil, JSON.stringify(trainers), raum_id || null, min_alter, max_alter, min_graduierung_id, max_graduierung_id, id, dojoId];
 
         db.query(updateQuery, updateParams, (err, result) => {
             if (err) {

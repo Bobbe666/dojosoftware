@@ -326,6 +326,8 @@ router.get('/courses-today', async (req, res) => {
         COALESCE(k.stil, 'Unbekannt') as stil,
         k.min_alter,
         k.max_alter,
+        gmin.reihenfolge AS min_grad_stufe,
+        gmax.reihenfolge AS max_grad_stufe,
         s.trainer_id,
         COALESCE(CONCAT(t.vorname, ' ', t.nachname), 'Kein Trainer') as trainer,
         COALESCE(t.stil, 'Unbekannt') as trainer_stil,
@@ -335,6 +337,8 @@ router.get('/courses-today', async (req, res) => {
         0 as is_full
       FROM stundenplan s
       LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+      LEFT JOIN graduierungen gmin ON gmin.graduierung_id = k.min_graduierung_id
+      LEFT JOIN graduierungen gmax ON gmax.graduierung_id = k.max_graduierung_id
       LEFT JOIN trainer t ON s.trainer_id = t.trainer_id
       WHERE (LOWER(s.tag) = LOWER(?) OR s.tag = ?)${dojoFilter}
       ORDER BY s.uhrzeit_start
@@ -356,6 +360,25 @@ router.get('/courses-today', async (req, res) => {
       error: 'Fehler beim Laden der Kurse',
       details: error.message
     });
+  }
+});
+
+// GET /checkin/member-graduierungen/:mitgliedId — aktuelle Grad-Stufe je Stil (für Gürtel-Filter)
+router.get('/member-graduierungen/:mitgliedId', async (req, res) => {
+  try {
+    const mid = parseInt(req.params.mitgliedId, 10);
+    if (!mid) return res.json({ success: true, grades: [] });
+    const grades = await queryAsync(
+      `SELECT s.name AS stil_name, g.reihenfolge AS stufe
+       FROM mitglied_stil_data msd
+       JOIN graduierungen g ON g.graduierung_id = msd.current_graduierung_id
+       JOIN stile s ON s.stil_id = msd.stil_id
+       WHERE msd.mitglied_id = ?`,
+      [mid]
+    );
+    res.json({ success: true, grades });
+  } catch (error) {
+    res.json({ success: true, grades: [] });
   }
 });
 

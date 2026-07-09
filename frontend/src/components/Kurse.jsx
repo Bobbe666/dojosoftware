@@ -660,18 +660,25 @@ const Kurse = () => {
       .catch(() => {});
   }, [activeDojo?.id]);
 
-  const toggleAlterFilter = async () => {
+  const speichereCheckin = async (next, label) => {
     if (ckBusy) return;
     setCkBusy(true);
-    const next = { ...checkinSettings, alter: !checkinSettings.alter };
     const dp = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
     try {
       await axios.put(`/checkin-einstellungen${dp}`, { stil_filter_aktiv: next.stil, alter_filter_aktiv: next.alter });
       setCheckinSettings(next);
-      showToast('success', `Alters-Filter beim Check-in ${next.alter ? 'aktiviert' : 'deaktiviert'}.`);
+      showToast('success', label);
     } catch (e) {
       showToast('error', 'Speichern fehlgeschlagen.');
     } finally { setCkBusy(false); }
+  };
+  const toggleAlterFilter = () => {
+    const v = !checkinSettings.alter;
+    speichereCheckin({ ...checkinSettings, alter: v }, `Alters-Filter beim Check-in ${v ? 'aktiviert' : 'deaktiviert'}.`);
+  };
+  const toggleStilFilter = () => {
+    const v = !checkinSettings.stil;
+    speichereCheckin({ ...checkinSettings, stil: v }, `Stil-Filter beim Check-in ${v ? 'aktiviert' : 'deaktiviert'}.`);
   };
 
   return (
@@ -702,11 +709,15 @@ const Kurse = () => {
         <div className="ku-topbar-right">
           {activeTab === "kurse" && (
             <>
-              <div
-                onClick={toggleAlterFilter}
-                title="Beim Check-in zuerst nur Kurse zeigen, deren Alter zum Mitglied passt"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '10px', fontSize: '13px', cursor: ckBusy ? 'default' : 'pointer', whiteSpace: 'nowrap', opacity: ckBusy ? 0.6 : 1 }}
-              >
+              <div onClick={toggleStilFilter} title="Beim Check-in zuerst nur Kurse des eigenen Stils zeigen"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '10px', fontSize: '13px', cursor: ckBusy ? 'default' : 'pointer', whiteSpace: 'nowrap', opacity: ckBusy ? 0.6 : 1 }}>
+                🥋 Stil-Filter (Check-in)
+                <span style={{ width: 44, height: 24, borderRadius: 999, background: checkinSettings.stil ? '#22c55e' : 'rgba(255,255,255,0.25)', position: 'relative', transition: 'background .2s', flex: '0 0 auto', display: 'inline-block' }}>
+                  <span style={{ position: 'absolute', top: 2, left: checkinSettings.stil ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+                </span>
+              </div>
+              <div onClick={toggleAlterFilter} title="Beim Check-in zuerst nur Kurse zeigen, deren Alter zum Mitglied passt"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '10px', fontSize: '13px', cursor: ckBusy ? 'default' : 'pointer', whiteSpace: 'nowrap', opacity: ckBusy ? 0.6 : 1 }}>
                 🎂 Alters-Filter (Check-in)
                 <span style={{ width: 44, height: 24, borderRadius: 999, background: checkinSettings.alter ? '#22c55e' : 'rgba(255,255,255,0.25)', position: 'relative', transition: 'background .2s', flex: '0 0 auto', display: 'inline-block' }}>
                   <span style={{ position: 'absolute', top: 2, left: checkinSettings.alter ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
