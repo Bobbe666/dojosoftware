@@ -9,6 +9,7 @@ const db = require('../db');
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../utils/logger');
+const { syncPlanFeatures } = require('../middleware/featureAccess');
 
 // =============================================
 // MIDDLEWARE: Super-Admin Access Check
@@ -886,6 +887,13 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
         [id]
       );
 
+      // Features an den Plan angleichen (Gating liest aus dojo_subscriptions, nicht aus dojo)
+      await syncPlanFeatures(id, 'free');
+      await db.promise().query(
+        `UPDATE dojo_subscriptions SET status = 'active', subscription_ends_at = NULL WHERE dojo_id = ?`,
+        [id]
+      );
+
       logger.info(` Admin: KOSTENLOSER Account aktiviert für Dojo ${dojo.dojoname}`);
 
       return res.json({
@@ -948,6 +956,16 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
           last_payment_at = NOW()
       WHERE id = ?`,
       [plan, usedInterval, subscriptionStartDate, subscriptionEndDate, id]
+    );
+
+    // Features an den Plan angleichen (Gating liest aus dojo_subscriptions, nicht aus dojo).
+    // 'custom' hat keine Plan-Feature-Zuordnung -> Features nicht anfassen.
+    if (plan !== 'custom') {
+      await syncPlanFeatures(id, plan);
+    }
+    await db.promise().query(
+      `UPDATE dojo_subscriptions SET status = 'active', subscription_ends_at = ? WHERE dojo_id = ?`,
+      [subscriptionEndDate, id]
     );
 
     // Log mit Custom-Info wenn vorhanden
