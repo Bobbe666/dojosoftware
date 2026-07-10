@@ -845,16 +845,19 @@ router.put('/dojos/:id/features', requireSuperAdmin, async (req, res) => {
 router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { plan, interval, duration_months, is_free, custom_price, custom_notes } = req.body;
+    // Der Schnellumschalter im Frontend sendet plan_type; die ausführliche
+    // Aktivierung sendet plan (+ interval, duration_months). Beides akzeptieren.
+    const plan = req.body.plan || req.body.plan_type;
+    const { interval, duration_months, is_free, custom_price, custom_notes } = req.body;
 
     // Validierung
-    const validPlans = ['basic', 'premium', 'enterprise', 'free', 'custom'];
+    const validPlans = ['free', 'basic', 'starter', 'professional', 'premium', 'enterprise', 'custom'];
     const validIntervals = ['monthly', 'quarterly', 'yearly'];
 
     if (!plan || !validPlans.includes(plan)) {
       return res.status(400).json({
         error: 'Ungültiger Plan',
-        message: 'Plan muss basic, premium, enterprise, free oder custom sein'
+        message: 'Plan muss free, basic, starter, professional, premium, enterprise oder custom sein'
       });
     }
 
@@ -895,20 +898,30 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
       });
     }
 
-    // Custom oder Standard Plan
-    if (!interval || !validIntervals.includes(interval)) {
-      return res.status(400).json({
-        error: 'Ungültiges Intervall',
-        message: 'Intervall muss monthly, quarterly oder yearly sein'
-      });
-    }
-
-    const months = parseInt(duration_months) || 1;
-    if (months < 1 || months > 60) {
-      return res.status(400).json({
-        error: 'Ungültige Dauer',
-        message: 'Dauer muss zwischen 1 und 60 Monaten liegen'
-      });
+    // Bezahlplan oder Custom.
+    // Intervall/Dauer sind OPTIONAL: Der Schnellumschalter (nur plan_type) aktiviert
+    // den Plan sofort und unbegrenzt (kein Ablaufdatum). Werden interval + duration_months
+    // mitgeliefert, wird ein konkretes Abo-Ende berechnet.
+    let months = null;
+    let subscriptionEndDate = null;
+    let usedInterval = null;
+    if (interval) {
+      if (!validIntervals.includes(interval)) {
+        return res.status(400).json({
+          error: 'Ungültiges Intervall',
+          message: 'Intervall muss monthly, quarterly oder yearly sein'
+        });
+      }
+      months = parseInt(duration_months) || 1;
+      if (months < 1 || months > 60) {
+        return res.status(400).json({
+          error: 'Ungültige Dauer',
+          message: 'Dauer muss zwischen 1 und 60 Monaten liegen'
+        });
+      }
+      subscriptionEndDate = new Date();
+      subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + months);
+      usedInterval = interval;
     }
 
     // Hole aktuelles Dojo
@@ -922,11 +935,7 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
     }
 
     const dojo = dojos[0];
-
-    // Berechne Abo-Ende
     const subscriptionStartDate = new Date();
-    const subscriptionEndDate = new Date();
-    subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + months);
 
     // Aktiviere Abo
     await db.promise().query(
@@ -938,13 +947,13 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
           subscription_ends_at = ?,
           last_payment_at = NOW()
       WHERE id = ?`,
-      [plan, interval, subscriptionStartDate, subscriptionEndDate, id]
+      [plan, usedInterval, subscriptionStartDate, subscriptionEndDate, id]
     );
 
     // Log mit Custom-Info wenn vorhanden
     const logMessage = plan === 'custom'
-      ? `✅ Admin: CUSTOM Abonnement aktiviert für Dojo ${dojo.dojoname} - Preis: ${custom_price}€, ${months} Monate, Notizen: ${custom_notes || 'keine'}`
-      : `✅ Admin: Abonnement aktiviert für Dojo ${dojo.dojoname} - Plan: ${plan}, ${months} Monate`;
+      ? `✅ Admin: CUSTOM Abonnement aktiviert für Dojo ${dojo.dojoname} - Preis: ${custom_price}€, ${months || 'unbegrenzt'} Monate, Notizen: ${custom_notes || 'keine'}`
+      : `✅ Admin: Abonnement aktiviert für Dojo ${dojo.dojoname} - Plan: ${plan}, ${months ? months + ' Monate' : 'unbegrenzt'}`;
 
     logger.info(logMessage);
 
@@ -954,7 +963,7 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
       dojo_id: id,
       dojoname: dojo.dojoname,
       subscription_plan: plan,
-      payment_interval: interval,
+      payment_interval: usedInterval,
       subscription_started_at: subscriptionStartDate,
       subscription_ends_at: subscriptionEndDate,
       duration_months: months,
