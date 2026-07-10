@@ -222,7 +222,7 @@ router.post('/upload', authenticateToken, upload.single('csvFile'), async (req, 
           nachname: data.nachname,
           email: data.email || null,
           telefon: data.telefon || null,
-          mobil: data.mobil || null,
+          telefon_mobil: data.mobil || null,
           geburtsdatum: geburtsdatum,
           strasse: data.strasse || null,
           hausnummer: data.hausnummer || null,
@@ -230,12 +230,11 @@ router.post('/upload', authenticateToken, upload.single('csvFile'), async (req, 
           ort: data.ort || null,
           land: data.land || 'Deutschland',
           geschlecht: mapGender(data.geschlecht),
-          mitgliedsnummer: data.mitgliedsnummer || null,
           eintrittsdatum: eintrittsdatum,
           notfallkontakt_name: data.notfallkontakt_name || null,
           notfallkontakt_telefon: data.notfallkontakt_telefon || null,
           notizen: data.notizen || null,
-          status: mapStatus(data.status)
+          aktiv: mapAktiv(data.status)
         };
 
         const [result] = await db.promise().query(
@@ -337,12 +336,12 @@ function mapGender(value) {
   return null;
 }
 
-function mapStatus(value) {
-  if (!value) return 'aktiv';
+// CSV-Status auf die tinyint-Spalte `aktiv` abbilden (die Tabelle hat keine 'status'-Spalte)
+function mapAktiv(value) {
+  if (!value) return 1;
   const v = value.toLowerCase().trim();
-  if (v === 'inaktiv' || v === 'inactive') return 'inaktiv';
-  if (v === 'gekuendigt' || v === 'gekündigt' || v === 'cancelled') return 'gekuendigt';
-  return 'aktiv';
+  if (v === 'inaktiv' || v === 'inactive' || v === 'gekuendigt' || v === 'gekündigt' || v === 'cancelled') return 0;
+  return 1;
 }
 
 module.exports = router;
