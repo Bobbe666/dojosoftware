@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.144',
+    date: '2026-07-10',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: 'Event-Anmeldung für mehrere Personen mit Kategorie (Erwachsener/Kind)',
+    description: 'Events können jetzt einen zweiten Preis für Kinder/Jugendliche haben (Feld „Preis Kind" pro Event). Bei der Anmeldung – sowohl in der Mitglieder-App als auch über die öffentliche Gast-Anmeldung – lassen sich mit „+ Person hinzufügen" mehrere Teilnehmer in EINER Anmeldung erfassen, jeweils mit Auswahl „Erwachsener" oder „Kind". Der Gesamtbetrag wird live aus den Kategorien summiert und für die Zahlung übernommen. Ideal z. B. für Camps, bei denen ein Elternteil sich + die Kinder anmeldet.',
+    highlights: [
+      '👥 Mehrere Personen pro Anmeldung („+ Person hinzufügen")',
+      '🧒 Kategorie Erwachsener/Kind mit eigenem Preis pro Event',
+      '💶 Live-Gesamtbetrag + korrekte Stripe-Zahlung',
+    ],
+    details: 'Migration 225 (events.preis_kind, event_anmeldungen/event_gaeste: teilnehmer JSON + gesamt_betrag). events.js: Helper berechneTeilnehmer(), preis_kind in POST/PUT/oeffentlich, teilnehmer+gesamt_betrag in Mitglieds- und Gast-Anmeldung, create-payment-intent nutzt gesamt_betrag. Alte doppelte /anmelden-Route entfernt (überdeckte die vollständige Route). Frontend: Events.jsx (Feld Preis Kind), MemberEvents.jsx + EventGastAnmeldung.jsx (Teilnehmer-Repeater), EventPaymentCheckout.jsx (Betrag aus PaymentIntent).',
+    files: ['backend/routes/events.js', 'backend/migrations/225_event_teilnehmer_kategorien.sql', 'frontend/src/components/Events.jsx', 'frontend/src/components/MemberEvents.jsx', 'frontend/src/components/EventGastAnmeldung.jsx', 'frontend/src/components/EventPaymentCheckout.jsx'],
+  },
+  {
     version: '3.0.143',
     date: '2026-07-09',
     type: 'feature',

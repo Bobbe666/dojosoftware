@@ -11,8 +11,13 @@ const EventGastAnmeldung = () => {
   const [success, setSuccess] = useState(false);
 
   const [form, setForm] = useState({ vorname: '', nachname: '', email: '', telefon: '', anzahl: 1, bemerkung: '' });
+  const [teilnehmer, setTeilnehmer] = useState([{ vorname: '', nachname: '', kategorie: 'erwachsener' }]);
   const [bestellMengen, setBestellMengen] = useState({});
   const [submitting, setSubmitting] = useState(false);
+
+  const addTeilnehmer = () => setTeilnehmer(p => [...p, { vorname: '', nachname: '', kategorie: 'erwachsener' }]);
+  const removeTeilnehmer = (i) => setTeilnehmer(p => p.length > 1 ? p.filter((_, idx) => idx !== i) : p);
+  const updateTeilnehmer = (i, feld, wert) => setTeilnehmer(p => p.map((t, idx) => idx === i ? { ...t, [feld]: wert } : t));
 
   useEffect(() => {
     const load = async () => {
@@ -33,7 +38,13 @@ const EventGastAnmeldung = () => {
 
   const formatDatum = (d) => d ? new Date(d).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
 
-  const gesamtbetrag = event?.bestelloptionen?.reduce((sum, opt) => sum + (bestellMengen[opt.option_id] || 0) * parseFloat(opt.preis), 0) || 0;
+  const bestellSumme = event?.bestelloptionen?.reduce((sum, opt) => sum + (bestellMengen[opt.option_id] || 0) * parseFloat(opt.preis), 0) || 0;
+  const preisErwachsener = parseFloat(event?.teilnahmegebuehr || 0);
+  const preisKind = (event?.preis_kind != null && event?.preis_kind !== '') ? parseFloat(event.preis_kind) : preisErwachsener;
+  const preisFor = (k) => k === 'kind' ? preisKind : preisErwachsener;
+  const teilnahmeSumme = teilnehmer.reduce((s, t) => s + preisFor(t.kategorie), 0);
+  const gesamtbetrag = teilnahmeSumme + bestellSumme;
+  const hatTeilnahmegebuehr = preisErwachsener > 0 || preisKind > 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,10 +55,20 @@ const EventGastAnmeldung = () => {
         .filter(([, menge]) => menge > 0)
         .map(([option_id, menge]) => ({ option_id: parseInt(option_id), menge }));
 
+      const gueltigeTeilnehmer = teilnehmer
+        .filter(t => t.vorname.trim() || t.nachname.trim())
+        .map(t => ({ vorname: t.vorname.trim(), nachname: t.nachname.trim(), kategorie: t.kategorie }));
+
+      // Kontaktname: eingegeben, sonst erster Teilnehmer
+      const kontaktVorname = form.vorname.trim() || gueltigeTeilnehmer[0]?.vorname || 'Gast';
+      const kontaktNachname = form.nachname.trim() || gueltigeTeilnehmer[0]?.nachname || '–';
+
       await axios.post(`/api/events/${eventId}/gast-anmelden`, {
         ...form,
-        vorname: form.vorname.trim() || 'Gast',
-        nachname: form.nachname.trim() || '–',
+        vorname: kontaktVorname,
+        nachname: kontaktNachname,
+        anzahl: gueltigeTeilnehmer.length || 1,
+        teilnehmer: gueltigeTeilnehmer,
         bestellungen
       });
       setSuccess(true);
@@ -101,15 +122,45 @@ const EventGastAnmeldung = () => {
             <input className="ega-input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
           </div>
 
-          <div className="ega-grid-2">
-            <div className="ega-group">
-              <label className="ega-label">Telefon</label>
-              <input className="ega-input" value={form.telefon} onChange={e => setForm({ ...form, telefon: e.target.value })} />
-            </div>
-            <div className="ega-group">
-              <label className="ega-label">Anzahl Personen</label>
-              <input className="ega-input" type="number" min="1" max="20" value={form.anzahl} onChange={e => setForm({ ...form, anzahl: parseInt(e.target.value) || 1 })} />
-            </div>
+          <div className="ega-group">
+            <label className="ega-label">Telefon</label>
+            <input className="ega-input" value={form.telefon} onChange={e => setForm({ ...form, telefon: e.target.value })} />
+          </div>
+
+          <div className="ega-order-box">
+            <div className="ega-order-title">👥 Teilnehmer</div>
+            {teilnehmer.map((t, i) => (
+              <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', marginBottom: '10px', flexWrap: 'wrap' }}>
+                <div className="ega-group" style={{ flex: '1 1 120px', margin: 0 }}>
+                  {i === 0 && <label className="ega-label">Vorname</label>}
+                  <input className="ega-input" placeholder="Vorname" value={t.vorname}
+                    onChange={e => updateTeilnehmer(i, 'vorname', e.target.value)} />
+                </div>
+                <div className="ega-group" style={{ flex: '1 1 120px', margin: 0 }}>
+                  {i === 0 && <label className="ega-label">Nachname</label>}
+                  <input className="ega-input" placeholder="Nachname" value={t.nachname}
+                    onChange={e => updateTeilnehmer(i, 'nachname', e.target.value)} />
+                </div>
+                <div className="ega-group" style={{ flex: '0 1 140px', margin: 0 }}>
+                  {i === 0 && <label className="ega-label">Kategorie</label>}
+                  <select className="ega-input" value={t.kategorie} onChange={e => updateTeilnehmer(i, 'kategorie', e.target.value)}>
+                    <option value="erwachsener">Erwachsener{preisErwachsener > 0 ? ` · ${preisErwachsener.toFixed(2)} €` : ''}</option>
+                    <option value="kind">Kind{preisKind > 0 ? ` · ${preisKind.toFixed(2)} €` : ''}</option>
+                  </select>
+                </div>
+                {teilnehmer.length > 1 && (
+                  <button type="button" onClick={() => removeTeilnehmer(i)} className="ega-qty-btn"
+                    title="Person entfernen" style={{ flex: '0 0 auto' }}>✕</button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={addTeilnehmer} className="ega-qty-btn"
+              style={{ width: 'auto', padding: '8px 14px', borderRadius: '8px' }}>+ Person hinzufügen</button>
+            {hatTeilnahmegebuehr && teilnahmeSumme > 0 && (
+              <div className="ega-order-total">
+                <span>Teilnahmegebühr:</span><span className="u-text-accent">{teilnahmeSumme.toFixed(2)} €</span>
+              </div>
+            )}
           </div>
 
           {event.bestelloptionen?.length > 0 && (
@@ -127,9 +178,9 @@ const EventGastAnmeldung = () => {
                   </div>
                 </div>
               ))}
-              {gesamtbetrag > 0 && (
+              {bestellSumme > 0 && (
                 <div className="ega-order-total">
-                  <span>Gesamt:</span><span className="u-text-accent">{gesamtbetrag.toFixed(2)} €</span>
+                  <span>Bestellung:</span><span className="u-text-accent">{bestellSumme.toFixed(2)} €</span>
                 </div>
               )}
             </div>
@@ -139,6 +190,12 @@ const EventGastAnmeldung = () => {
             <label className="ega-label">Bemerkung (optional)</label>
             <textarea className="ega-input ega-input--textarea" rows="2" value={form.bemerkung} onChange={e => setForm({ ...form, bemerkung: e.target.value })} />
           </div>
+
+          {gesamtbetrag > 0 && (
+            <div className="ega-order-total" style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '8px' }}>
+              <span>Gesamt:</span><span className="u-text-accent">{gesamtbetrag.toFixed(2)} €</span>
+            </div>
+          )}
 
           {error && <div className="ega-error-box">{error}</div>}
 

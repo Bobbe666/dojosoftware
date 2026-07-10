@@ -32,6 +32,7 @@ const EventPaymentCheckout = () => {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [clientSecret, setClientSecret] = useState(null);
   const [publishableKey, setPublishableKey] = useState(null);
+  const [betrag, setBetrag] = useState(null); // tatsächlicher Betrag aus PaymentIntent (Mehr-Personen-Summe)
 
   // Payment Provider Status
   const [stripeEnabled, setStripeEnabled] = useState(false);
@@ -140,6 +141,7 @@ const EventPaymentCheckout = () => {
       if (response.data.success) {
         setClientSecret(response.data.clientSecret);
         setPublishableKey(response.data.publishableKey);
+        if (response.data.amount != null) setBetrag(parseFloat(response.data.amount));
       } else {
         setError(response.data.error || 'Fehler beim Erstellen der Zahlung');
       }
@@ -267,7 +269,7 @@ const EventPaymentCheckout = () => {
     );
   }
 
-  const gebuehr = parseFloat(event?.teilnahmegebuehr || 0);
+  const gebuehr = betrag != null ? betrag : parseFloat(event?.teilnahmegebuehr || 0);
 
   return (
     <div className="payment-checkout">

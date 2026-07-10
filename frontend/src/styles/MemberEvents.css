@@ -259,6 +259,24 @@
   justify-content: center;
 }
 
+/* Teilnehmer-Repeater Eingabefelder */
+.me-input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--ds-bg-elevated);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  outline: none;
+}
+.me-input:focus {
+  border-color: var(--ds-accent, #d4af37);
+}
+.me-input option {
+  background: #1a1a2e;
+  color: var(--text-primary);
+}
+
 /* increment qty button (gold) */
 .me-qty-btn-plus {
   width: 32px;

@@ -24,6 +24,7 @@ const MemberEvents = () => {
   const [bestellEvent, setBestellEvent] = useState(null);
   const [bestellMengen, setBestellMengen] = useState({}); // { option_id: menge }
   const [gaesteAnzahl, setGaesteAnzahl] = useState(0);
+  const [teilnehmer, setTeilnehmer] = useState([]); // [{ vorname, nachname, kategorie }]
   const [bestellFeedback, setBestellFeedback] = useState(null); // { type: 'success'|'error', text }
 
   useEffect(() => {
@@ -66,35 +67,59 @@ const MemberEvents = () => {
     }
   };
 
-  // Anmelden — direkt wenn keine Bestelloptionen, sonst Modal öffnen
+  const hatGebuehr = (event) => parseFloat(event?.teilnahmegebuehr || 0) > 0 || parseFloat(event?.preis_kind || 0) > 0;
+
+  // Anmelden — direkt wenn keine Optionen/Gebühr, sonst Modal öffnen
   const handleAnmeldenClick = (event) => {
     if (!memberData) return;
-    if (event.bestelloptionen && event.bestelloptionen.length > 0) {
+    const hatOptionen = event.bestelloptionen && event.bestelloptionen.length > 0;
+    if (hatOptionen || hatGebuehr(event)) {
       // Initialmengen: alle 0
       const initialMengen = {};
-      event.bestelloptionen.forEach(o => { initialMengen[o.option_id] = 0; });
+      (event.bestelloptionen || []).forEach(o => { initialMengen[o.option_id] = 0; });
       setBestellMengen(initialMengen);
       setBestellEvent(event);
       setBestellFeedback(null);
       setGaesteAnzahl(0);
+      // Teilnehmerliste mit dem Mitglied selbst vorbelegen
+      setTeilnehmer([{
+        vorname: memberData.vorname || '',
+        nachname: memberData.nachname || '',
+        kategorie: 'erwachsener'
+      }]);
       setShowBestellModal(true);
     } else {
       handleAnmelden(event.event_id, []);
     }
   };
 
-  const handleAnmelden = async (eventId, bestellungen) => {
+  const addTeilnehmer = () => setTeilnehmer(p => [...p, { vorname: '', nachname: '', kategorie: 'erwachsener' }]);
+  const removeTeilnehmer = (i) => setTeilnehmer(p => p.length > 1 ? p.filter((_, idx) => idx !== i) : p);
+  const updateTeilnehmer = (i, feld, wert) => setTeilnehmer(p => p.map((t, idx) => idx === i ? { ...t, [feld]: wert } : t));
+
+  const getTeilnahmeGesamt = () => {
+    if (!bestellEvent) return 0;
+    const pErw = parseFloat(bestellEvent.teilnahmegebuehr || 0);
+    const pKind = (bestellEvent.preis_kind != null && bestellEvent.preis_kind !== '') ? parseFloat(bestellEvent.preis_kind) : pErw;
+    return teilnehmer.reduce((s, t) => s + (t.kategorie === 'kind' ? pKind : pErw), 0);
+  };
+
+  const handleAnmelden = async (eventId, bestellungen, teilnehmerListe = []) => {
     if (!memberData) return;
     setActionLoading(eventId);
     setBestellFeedback(null);
     try {
+      const gueltigeTeilnehmer = (teilnehmerListe || [])
+        .filter(t => (t.vorname || '').trim() || (t.nachname || '').trim())
+        .map(t => ({ vorname: (t.vorname || '').trim(), nachname: (t.nachname || '').trim(), kategorie: t.kategorie === 'kind' ? 'kind' : 'erwachsener' }));
       const res = await fetchWithAuth(`${config.apiBaseUrl}/events/${eventId}/anmelden`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mitglied_id: memberData.mitglied_id,
           bestellungen,
-          gaeste_anzahl: gaesteAnzahl
+          gaeste_anzahl: gaesteAnzahl,
+          teilnehmer: gueltigeTeilnehmer
         })
       });
       const resData = await res.json();
@@ -116,7 +141,7 @@ const MemberEvents = () => {
     const bestellungen = Object.entries(bestellMengen)
       .filter(([, menge]) => menge > 0)
       .map(([option_id, menge]) => ({ option_id: parseInt(option_id), menge }));
-    handleAnmelden(bestellEvent.event_id, bestellungen);
+    handleAnmelden(bestellEvent.event_id, bestellungen, hatGebuehr(bestellEvent) ? teilnehmer : []);
   };
 
   const handleAbmelden = async (eventId) => {
@@ -439,7 +464,43 @@ const MemberEvents = () => {
               <button onClick={() => setShowBestellModal(false)} className="me-modal-close">✕</button>
             </div>
 
+            {/* Teilnehmer (Erwachsener/Kind) — bei Events mit Teilnahmegebühr */}
+            {hatGebuehr(bestellEvent) && (
+              <div className="me-bestell-section">
+                <p className="me-bestell-hint">👥 Teilnehmer — du kannst mehrere Personen anmelden:</p>
+                {teilnehmer.map((t, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
+                    <input className="me-input" placeholder="Vorname" value={t.vorname}
+                      onChange={e => updateTeilnehmer(i, 'vorname', e.target.value)}
+                      style={{ flex: '1 1 100px', minWidth: '90px' }} />
+                    <input className="me-input" placeholder="Nachname" value={t.nachname}
+                      onChange={e => updateTeilnehmer(i, 'nachname', e.target.value)}
+                      style={{ flex: '1 1 100px', minWidth: '90px' }} />
+                    <select className="me-input" value={t.kategorie}
+                      onChange={e => updateTeilnehmer(i, 'kategorie', e.target.value)}
+                      style={{ flex: '0 1 150px' }}>
+                      <option value="erwachsener">Erwachsener{parseFloat(bestellEvent.teilnahmegebuehr || 0) > 0 ? ` · ${parseFloat(bestellEvent.teilnahmegebuehr).toFixed(2)} €` : ''}</option>
+                      <option value="kind">Kind{(bestellEvent.preis_kind != null && bestellEvent.preis_kind !== '') ? ` · ${parseFloat(bestellEvent.preis_kind).toFixed(2)} €` : (parseFloat(bestellEvent.teilnahmegebuehr || 0) > 0 ? ` · ${parseFloat(bestellEvent.teilnahmegebuehr).toFixed(2)} €` : '')}</option>
+                    </select>
+                    {teilnehmer.length > 1 && (
+                      <button type="button" onClick={() => removeTeilnehmer(i)} className="me-qty-btn-minus" title="Person entfernen">✕</button>
+                    )}
+                  </div>
+                ))}
+                <button type="button" onClick={addTeilnehmer} className="me-btn-cancel" style={{ marginTop: '4px' }}>
+                  + Person hinzufügen
+                </button>
+                {getTeilnahmeGesamt() > 0 && (
+                  <div className="me-total-box" style={{ marginTop: '12px' }}>
+                    <span className="u-text-secondary">Teilnahmegebühr:</span>
+                    <strong className="u-text-accent">{getTeilnahmeGesamt().toFixed(2)} €</strong>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Bestelloptionen */}
+            {bestellEvent.bestelloptionen?.length > 0 && (
             <div className="me-bestell-section">
               <p className="me-bestell-hint">
                 Bitte wähle deine Bestellung (optional):
@@ -471,8 +532,10 @@ const MemberEvents = () => {
                 </div>
               ))}
             </div>
+            )}
 
-            {/* Gäste */}
+            {/* Gäste — nur bei Events ohne Teilnahmegebühr (sonst über Teilnehmerliste) */}
+            {!hatGebuehr(bestellEvent) && (
             <div className="me-guest-section">
               <div className="me-guest-row">
                 <span className="me-guest-label">👥 Gäste mitbringen</span>
@@ -486,12 +549,13 @@ const MemberEvents = () => {
               </div>
               {gaesteAnzahl > 0 && <p className="me-guest-hint">Die Bestellung oben gilt für dich + deine {gaesteAnzahl} Gast{gaesteAnzahl > 1 ? 'e' : ''}</p>}
             </div>
+            )}
 
             {/* Gesamtbetrag */}
-            {getBestellGesamtbetrag() > 0 && (
+            {(getBestellGesamtbetrag() + getTeilnahmeGesamt()) > 0 && (
               <div className="me-total-box">
-                <span className="u-text-secondary">Gesamtbetrag Bestellung:</span>
-                <strong className="u-text-accent">{getBestellGesamtbetrag().toFixed(2)} €</strong>
+                <span className="u-text-secondary">Gesamtbetrag:</span>
+                <strong className="u-text-accent">{(getBestellGesamtbetrag() + getTeilnahmeGesamt()).toFixed(2)} €</strong>
               </div>
             )}
 

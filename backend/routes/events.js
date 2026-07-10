@@ -98,6 +98,51 @@ function validateEventData(data) {
 }
 
 /**
+ * Berechnet den Gesamtbetrag einer Mehr-Personen-Anmeldung.
+ * teilnehmer: [{ vorname, nachname, kategorie: 'erwachsener'|'kind' }]
+ * Kind -> preis_kind (Fallback teilnahmegebuehr, falls kein Kinderpreis gesetzt),
+ * sonst -> teilnahmegebuehr (Erwachsenen-/Standardpreis).
+ * Gibt { teilnehmer, anzahl, gesamt } zurück. Bei leerer/fehlender Liste
+ * wird ein Standard-Teilnehmer mit der übergebenen Anzahl angenommen.
+ */
+function berechneTeilnehmer(rawTeilnehmer, teilnahmegebuehr, preisKind, fallbackAnzahl = 1) {
+  const erwachsenenPreis = Number(teilnahmegebuehr) || 0;
+  const kinderPreis = (preisKind !== null && preisKind !== undefined && preisKind !== '')
+    ? Number(preisKind)
+    : erwachsenenPreis;
+
+  let liste = Array.isArray(rawTeilnehmer) ? rawTeilnehmer : [];
+  liste = liste
+    .filter(t => t && (t.vorname || t.nachname))
+    .map(t => ({
+      vorname: (t.vorname || '').trim(),
+      nachname: (t.nachname || '').trim(),
+      kategorie: t.kategorie === 'kind' ? 'kind' : 'erwachsener'
+    }));
+
+  if (liste.length === 0) {
+    // Kein Teilnehmer-Array (alte Clients) -> anzahl × Erwachsenenpreis
+    const anzahl = Math.max(1, parseInt(fallbackAnzahl, 10) || 1);
+    return {
+      teilnehmer: null,
+      anzahl,
+      gesamt: +(anzahl * erwachsenenPreis).toFixed(2)
+    };
+  }
+
+  const gesamt = liste.reduce(
+    (sum, t) => sum + (t.kategorie === 'kind' ? kinderPreis : erwachsenenPreis),
+    0
+  );
+
+  return {
+    teilnehmer: liste,
+    anzahl: liste.length,
+    gesamt: +gesamt.toFixed(2)
+  };
+}
+
+/**
  * Berechnet verfügbare Plätze
  */
 function getAvailableSlots(event, anmeldungen) {
@@ -425,9 +470,9 @@ router.post('/', requireFeature('events'), (req, res) => {
   const query = `
     INSERT INTO events (
       titel, beschreibung, event_typ, datum, uhrzeit_beginn, uhrzeit_ende,
-      ort, raum_id, max_teilnehmer, teilnahmegebuehr, anmeldefrist, status,
+      ort, raum_id, max_teilnehmer, teilnahmegebuehr, preis_kind, anmeldefrist, status,
       trainer_ids, dojo_id, bild_url, anforderungen
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = [
@@ -441,6 +486,7 @@ router.post('/', requireFeature('events'), (req, res) => {
     eventData.raum_id || null,
     eventData.max_teilnehmer || null,
     eventData.teilnahmegebuehr || 0.00,
+    (eventData.preis_kind !== '' && eventData.preis_kind != null) ? eventData.preis_kind : null,
     eventData.anmeldefrist || null,
     eventData.status || 'geplant',
     eventData.trainer_ids ? eventData.trainer_ids.join(',') : null,
@@ -499,100 +545,11 @@ router.post('/', requireFeature('events'), (req, res) => {
 
 /**
  * POST /api/events/:id/anmelden
- * Meldet ein Mitglied für ein Event an
+ * ⚠️ Alte, einfache Anmelde-Route ENTFERNT (2026-07-10): Sie überdeckte als
+ * frühere Registrierung die vollständige Route weiter unten (Warteliste,
+ * Bestelloptionen, Zahlung, E-Mail, success-Flag, Teilnehmer-Kategorien).
+ * Aktive Route: siehe `router.post('/:id/anmelden', async ...)` weiter unten.
  */
-router.post('/:id/anmelden', (req, res) => {
-  const eventId = req.params.id;
-  const { mitglied_id, bemerkung } = req.body;
-
-  if (!mitglied_id) {
-    return res.status(400).json({ error: 'Mitglied-ID fehlt' });
-  }
-
-  // Prüfe ob Event existiert und nicht ausgebucht ist
-  const checkQuery = `
-    SELECT
-      e.*,
-      COUNT(DISTINCT ea.anmeldung_id) as anzahl_anmeldungen
-    FROM events e
-    LEFT JOIN event_anmeldungen ea ON e.event_id = ea.event_id
-      AND ea.status IN ('angemeldet', 'bestaetigt')
-    WHERE e.event_id = ?
-    GROUP BY e.event_id
-  `;
-
-  db.query(checkQuery, [eventId], (err, results) => {
-    if (err) {
-      logger.error('Fehler beim Prüfen des Events:', { error: err });
-      return res.status(500).json({
-        error: 'Fehler beim Prüfen des Events',
-        details: err.message
-      });
-    }
-
-    if (results.length === 0) {
-      return res.status(404).json({ error: 'Event nicht gefunden' });
-    }
-
-    const event = results[0];
-
-    // Prüfe Ausgebucht
-    if (event.max_teilnehmer && event.anzahl_anmeldungen >= event.max_teilnehmer) {
-      return res.status(400).json({
-        error: 'Event ist ausgebucht',
-        max_teilnehmer: event.max_teilnehmer,
-        aktuelle_anmeldungen: event.anzahl_anmeldungen
-      });
-    }
-
-    // Prüfe Anmeldefrist
-    if (event.anmeldefrist) {
-      const frist = new Date(event.anmeldefrist);
-      const heute = new Date();
-      if (heute > frist) {
-        return res.status(400).json({
-          error: 'Anmeldefrist ist abgelaufen',
-          anmeldefrist: event.anmeldefrist
-        });
-      }
-    }
-
-    // Erstelle Anmeldung
-    const insertQuery = `
-      INSERT INTO event_anmeldungen (event_id, mitglied_id, bemerkung, status)
-      VALUES (?, ?, ?, 'angemeldet')
-    `;
-
-    db.query(insertQuery, [eventId, mitglied_id, bemerkung || null], (err, result) => {
-      if (err) {
-        if (err.code === 'ER_DUP_ENTRY') {
-          return res.status(400).json({ error: 'Sie sind bereits für dieses Event angemeldet' });
-        }
-        logger.error('Fehler beim Anmelden:', { error: err });
-        return res.status(500).json({
-          error: 'Fehler beim Anmelden',
-          details: err.message
-        });
-      }
-
-      // Update Event Status wenn ausgebucht
-      if (event.max_teilnehmer && (event.anzahl_anmeldungen + 1) >= event.max_teilnehmer) {
-        db.query(
-          'UPDATE events SET status = "ausgebucht" WHERE event_id = ?',
-          [eventId],
-          (err) => {
-            if (err) logger.error('Fehler beim Update des Event-Status:', { error: err });
-          }
-        );
-      }
-
-      res.status(201).json({
-        message: 'Erfolgreich angemeldet',
-        anmeldung_id: result.insertId
-      });
-    });
-  });
-});
 
 /**
  * POST /api/events/:id/abmelden
@@ -721,6 +678,7 @@ router.put('/:id', requireFeature('events'), (req, res) => {
       raum_id = ?,
       max_teilnehmer = ?,
       teilnahmegebuehr = ?,
+      preis_kind = ?,
       anmeldefrist = ?,
       status = ?,
       trainer_ids = ?,
@@ -741,6 +699,7 @@ router.put('/:id', requireFeature('events'), (req, res) => {
     eventData.raum_id || null,
     eventData.max_teilnehmer || null,
     eventData.teilnahmegebuehr || 0.00,
+    (eventData.preis_kind !== '' && eventData.preis_kind != null) ? eventData.preis_kind : null,
     eventData.anmeldefrist || null,
     eventData.status || 'geplant',
     eventData.trainer_ids ? eventData.trainer_ids.join(',') : null,
@@ -893,7 +852,7 @@ router.delete('/:id', requireFeature('events'), (req, res) => {
  */
 router.post('/:id/anmelden', async (req, res) => {
   const eventId = parseInt(req.params.id);
-  const { mitglied_id, notizen, payment_intent_id, bezahlt, bestellungen, gaeste_anzahl } = req.body;
+  const { mitglied_id, notizen, payment_intent_id, bezahlt, bestellungen, gaeste_anzahl, teilnehmer } = req.body;
 
   if (!mitglied_id) {
     return res.status(400).json({ error: 'Mitglied-ID fehlt' });
@@ -968,11 +927,14 @@ router.post('/:id/anmelden', async (req, res) => {
 
     // 6. Erstelle Anmeldung (mit optionaler Zahlungsinformation)
     const istBezahlt = bezahlt || !!payment_intent_id;
+    // Mehr-Personen-Anmeldung (Erwachsener/Kind) → Teilnehmerliste + Gesamtbetrag
+    const teilnehmerInfo = berechneTeilnehmer(teilnehmer, event.teilnahmegebuehr, event.preis_kind, (parseInt(gaeste_anzahl) || 0) + 1);
     const [result] = await db.promise().query(
       `INSERT INTO event_anmeldungen
-       (event_id, mitglied_id, status, warteliste_position, anmeldedatum, bemerkung, bezahlt, bezahldatum, stripe_payment_intent_id, gaeste_anzahl)
-       VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)`,
-      [eventId, mitglied_id, status, wartelistePosition, notizen || null, istBezahlt ? 1 : 0, istBezahlt ? new Date() : null, payment_intent_id || null, parseInt(gaeste_anzahl) || 0]
+       (event_id, mitglied_id, status, warteliste_position, anmeldedatum, bemerkung, bezahlt, bezahldatum, stripe_payment_intent_id, gaeste_anzahl, teilnehmer, gesamt_betrag)
+       VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?)`,
+      [eventId, mitglied_id, status, wartelistePosition, notizen || null, istBezahlt ? 1 : 0, istBezahlt ? new Date() : null, payment_intent_id || null, parseInt(gaeste_anzahl) || 0,
+       teilnehmerInfo.teilnehmer ? JSON.stringify(teilnehmerInfo.teilnehmer) : null, teilnehmerInfo.gesamt]
     );
 
     logger.info(`Mitglied ${mitglied_id} für Event ${eventId} angemeldet (Status: ${status})`);
@@ -1364,7 +1326,19 @@ router.post('/:id/create-payment-intent', async (req, res) => {
 
     const member = memberRows[0];
     const stripe = require('stripe')(event.stripe_secret_key);
-    const amount = Math.round(parseFloat(event.teilnahmegebuehr) * 100); // In Cents
+
+    // Betrag aus der Anmeldung (Mehr-Personen-Summe) bevorzugen, sonst Flat-Gebühr
+    let betrag = parseFloat(event.teilnahmegebuehr);
+    if (anmeldung_id) {
+      const [anmRows] = await db.promise().query(
+        'SELECT gesamt_betrag FROM event_anmeldungen WHERE anmeldung_id = ?',
+        [anmeldung_id]
+      );
+      if (anmRows.length && anmRows[0].gesamt_betrag != null && parseFloat(anmRows[0].gesamt_betrag) > 0) {
+        betrag = parseFloat(anmRows[0].gesamt_betrag);
+      }
+    }
+    const amount = Math.round(betrag * 100); // In Cents
 
     // PaymentIntent erstellen
     const paymentIntent = await stripe.paymentIntents.create({
@@ -1385,14 +1359,14 @@ router.post('/:id/create-payment-intent', async (req, res) => {
       `INSERT INTO event_zahlungen (anmeldung_id, event_id, mitglied_id, betrag, zahlungsmethode, stripe_payment_intent_id, status)
        VALUES (?, ?, ?, ?, 'stripe', ?, 'ausstehend')
        ON DUPLICATE KEY UPDATE stripe_payment_intent_id = VALUES(stripe_payment_intent_id)`,
-      [anmeldung_id || 0, eventId, mitglied_id, event.teilnahmegebuehr, paymentIntent.id]
+      [anmeldung_id || 0, eventId, mitglied_id, betrag, paymentIntent.id]
     );
 
     res.json({
       success: true,
       clientSecret: paymentIntent.client_secret,
       publishableKey: event.stripe_publishable_key,
-      amount: event.teilnahmegebuehr
+      amount: betrag
     });
 
   } catch (error) {
@@ -2468,7 +2442,7 @@ router.get('/:id/oeffentlich', async (req, res) => {
   const eventId = parseInt(req.params.id);
   try {
     const [rows] = await db.promise().query(
-      `SELECT event_id, titel, beschreibung, datum, uhrzeit_beginn, uhrzeit_ende, ort, max_teilnehmer, teilnahmegebuehr, status
+      `SELECT event_id, titel, beschreibung, datum, uhrzeit_beginn, uhrzeit_ende, ort, max_teilnehmer, teilnahmegebuehr, preis_kind, status
        FROM events WHERE event_id = ?`,
       [eventId]
     );
@@ -2490,7 +2464,7 @@ router.get('/:id/oeffentlich', async (req, res) => {
  */
 router.post('/:id/gast-anmelden', async (req, res) => {
   const eventId = parseInt(req.params.id);
-  const { vorname, nachname, email, telefon, anzahl, bemerkung, bestellungen } = req.body;
+  const { vorname, nachname, email, telefon, anzahl, bemerkung, bestellungen, teilnehmer } = req.body;
 
   if (!vorname || !nachname) {
     return res.status(400).json({ error: 'Vor- und Nachname sind erforderlich' });
@@ -2498,16 +2472,20 @@ router.post('/:id/gast-anmelden', async (req, res) => {
 
   try {
     const [eventRows] = await db.promise().query(
-      'SELECT event_id, titel, status FROM events WHERE event_id = ?',
+      'SELECT event_id, titel, status, teilnahmegebuehr, preis_kind FROM events WHERE event_id = ?',
       [eventId]
     );
     if (eventRows.length === 0) return res.status(404).json({ error: 'Event nicht gefunden' });
     if (eventRows[0].status === 'abgesagt') return res.status(400).json({ error: 'Event wurde abgesagt' });
 
+    // Mehr-Personen-Anmeldung (Erwachsener/Kind) → Teilnehmerliste + Gesamtbetrag
+    const teilnehmerInfo = berechneTeilnehmer(teilnehmer, eventRows[0].teilnahmegebuehr, eventRows[0].preis_kind, parseInt(anzahl) || 1);
+
     const [result] = await db.promise().query(
-      `INSERT INTO event_gaeste (event_id, vorname, nachname, email, telefon, anzahl, bemerkung)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [eventId, vorname.trim(), nachname.trim(), email || null, telefon || null, parseInt(anzahl) || 1, bemerkung || null]
+      `INSERT INTO event_gaeste (event_id, vorname, nachname, email, telefon, anzahl, bemerkung, teilnehmer, gesamt_betrag)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [eventId, vorname.trim(), nachname.trim(), email || null, telefon || null, teilnehmerInfo.anzahl, bemerkung || null,
+       teilnehmerInfo.teilnehmer ? JSON.stringify(teilnehmerInfo.teilnehmer) : null, teilnehmerInfo.gesamt]
     );
 
     // Bestellungen speichern

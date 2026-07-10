@@ -54,6 +54,7 @@ const Events = () => {
     raum_id: '',
     max_teilnehmer: '',
     teilnahmegebuehr: '0.00',
+    preis_kind: '',
     anmeldefrist: '',
     status: 'geplant',
     trainer_ids: [],
@@ -1170,9 +1171,15 @@ const Events = () => {
                       placeholder="Leer = unbegrenzt" min="1" />
                   </div>
                   <div className="form-group">
-                    <label>Teilnahmegebühr (€)</label>
+                    <label>Teilnahmegebühr Erwachsener (€)</label>
                     <input type="number" step="0.01" value={newEvent.teilnahmegebuehr}
                       onChange={(e) => setNewEvent({ ...newEvent, teilnahmegebuehr: e.target.value })} />
+                  </div>
+                  <div className="form-group">
+                    <label>Preis Kind (€) <span style={{ opacity: 0.6, fontWeight: 400 }}>optional</span></label>
+                    <input type="number" step="0.01" value={newEvent.preis_kind}
+                      onChange={(e) => setNewEvent({ ...newEvent, preis_kind: e.target.value })}
+                      placeholder="Leer = wie Erwachsener" />
                   </div>
                   <div className="form-group full-width">
                     <label>Trainer</label>
@@ -1393,9 +1400,15 @@ const Events = () => {
                       onChange={(e) => setSelectedEvent({ ...selectedEvent, max_teilnehmer: e.target.value })} min="1" />
                   </div>
                   <div className="form-group">
-                    <label>Teilnahmegebühr (€)</label>
+                    <label>Teilnahmegebühr Erwachsener (€)</label>
                     <input type="number" step="0.01" value={selectedEvent.teilnahmegebuehr}
                       onChange={(e) => setSelectedEvent({ ...selectedEvent, teilnahmegebuehr: e.target.value })} />
+                  </div>
+                  <div className="form-group">
+                    <label>Preis Kind (€) <span style={{ opacity: 0.6, fontWeight: 400 }}>optional</span></label>
+                    <input type="number" step="0.01" value={selectedEvent.preis_kind || ''}
+                      onChange={(e) => setSelectedEvent({ ...selectedEvent, preis_kind: e.target.value })}
+                      placeholder="Leer = wie Erwachsener" />
                   </div>
                   <div className="form-group full-width">
                     <label>Trainer</label>
