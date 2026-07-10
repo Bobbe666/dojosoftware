@@ -4,6 +4,7 @@ const router = express.Router();
 const db = require('../db');
 const multer = require('multer');
 const csv = require('csv-parser');
+const iconv = require('iconv-lite');
 const fs = require('fs');
 const path = require('path');
 const { Readable } = require('stream');
@@ -140,9 +141,9 @@ router.post('/upload', authenticateToken, upload.single('csvFile'), async (req, 
   const startTime = Date.now();
 
   try {
-    // CSV-Datei lesen und parsen
+    // CSV-Datei lesen und parsen (encoding-robust: UTF-8, sonst CP850/Windows-1252)
     const rows = [];
-    const fileContent = fs.readFileSync(req.file.path, 'utf-8');
+    const fileContent = decodeCsvBuffer(fs.readFileSync(req.file.path));
 
     // BOM entfernen falls vorhanden
     const cleanContent = fileContent.replace(/^\uFEFF/, '');
@@ -190,19 +191,11 @@ router.post('/upload', authenticateToken, upload.single('csvFile'), async (req, 
         const geburtsdatum = convertDate(data.geburtsdatum);
         const eintrittsdatum = convertDate(data.eintrittsdatum) || new Date().toISOString().split('T')[0];
 
-        // Prüfen ob Mitglied bereits existiert (per Email oder Name+Geburtsdatum)
+        // Prüfen ob Mitglied bereits existiert — nur per Name + Geburtsdatum.
+        // NICHT per E-Mail: Geschwister/Kinder teilen sich oft die Eltern-E-Mail,
+        // sonst würde der 2., 3., ... mit gleicher Adresse fälschlich übersprungen.
         let existingMember = null;
-        if (data.email) {
-          const [existing] = await db.promise().query(
-            'SELECT mitglied_id FROM mitglieder WHERE dojo_id = ? AND email = ?',
-            [dojoId, data.email]
-          );
-          if (existing.length > 0) {
-            existingMember = existing[0];
-          }
-        }
-
-        if (!existingMember && geburtsdatum) {
+        if (geburtsdatum) {
           const [existing] = await db.promise().query(
             'SELECT mitglied_id FROM mitglieder WHERE dojo_id = ? AND vorname = ? AND nachname = ? AND geburtsdatum = ?',
             [dojoId, data.vorname, data.nachname, geburtsdatum]
@@ -287,6 +280,34 @@ router.post('/upload', authenticateToken, upload.single('csvFile'), async (req, 
 });
 
 // Hilfsfunktionen
+
+// CSV-Buffer robust zu String dekodieren.
+// Excel-Exporte aus deutschen Umgebungen sind oft NICHT UTF-8 ("CSV MS-DOS" = CP850,
+// "CSV Windows" = Windows-1252). Ohne Erkennung würden Umlaute (ä/ö/ü/ß) zu  werden.
+function decodeCsvBuffer(buffer) {
+  let buf = buffer;
+  // UTF-8 BOM entfernen (falls vorhanden)
+  if (buf.length >= 3 && buf[0] === 0xEF && buf[1] === 0xBB && buf[2] === 0xBF) {
+    buf = buf.slice(3);
+  }
+  // 1) Gültiges UTF-8? -> direkt verwenden
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+  } catch (_) {
+    // kein gültiges UTF-8 -> Legacy-8-Bit-Encoding erkennen
+  }
+  // 2) CP850 (OEM) vs. Windows-1252/Latin-1 anhand der High-Bytes unterscheiden:
+  //    CP850 kodiert Umlaute stark im Bereich 0x80-0x9F, Windows-1252/Latin-1 dagegen ab 0xA0.
+  let high = 0, oemRange = 0;
+  for (let i = 0; i < buf.length; i++) {
+    const b = buf[i];
+    if (b >= 0x80) high++;
+    if (b >= 0x80 && b <= 0x9F) oemRange++;
+  }
+  const encoding = (high > 0 && oemRange / high > 0.2) ? 'cp850' : 'win1252';
+  return iconv.decode(buf, encoding);
+}
+
 function convertDate(dateStr) {
   if (!dateStr) return null;
 
