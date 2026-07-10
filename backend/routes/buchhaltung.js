@@ -6142,7 +6142,7 @@ const ANLAGE_ORG_MAP = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3
 // ===================================================================
 // 📋 GET /api/buchhaltung/anlagevermögen
 // ===================================================================
-router.get('/anlageverm%C3%B6gen', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.get('/anlageverm%C3%B6gen', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const { organisation } = req.query;
     const of = buildOrgFilter(req, organisation);
@@ -6163,7 +6163,7 @@ router.get('/anlageverm%C3%B6gen', requireFeature('buchhaltung'), requireBuchhal
 // ===================================================================
 // 📋 GET /api/buchhaltung/anlagevermögen/:id/afa
 // ===================================================================
-router.get('/anlageverm%C3%B6gen/:id/afa', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.get('/anlageverm%C3%B6gen/:id/afa', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [anlage] = await dbQuery('SELECT * FROM anlage_register WHERE anlage_id = ?', [req.params.id]);
     if (!anlage) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6178,7 +6178,7 @@ router.get('/anlageverm%C3%B6gen/:id/afa', requireFeature('buchhaltung'), requir
 // ===================================================================
 // ➕ POST /api/buchhaltung/anlagevermögen
 // ===================================================================
-router.post('/anlageverm%C3%B6gen', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.post('/anlageverm%C3%B6gen', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const { organisation_name, bezeichnung, beschreibung, anlage_kategorie,
             kaufdatum, anschaffungskosten, restwert = 0,
@@ -6220,7 +6220,7 @@ router.post('/anlageverm%C3%B6gen', requireFeature('buchhaltung'), requireBuchha
 // ===================================================================
 // ✏️ PUT /api/buchhaltung/anlagevermögen/:id
 // ===================================================================
-router.put('/anlageverm%C3%B6gen/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.put('/anlageverm%C3%B6gen/:id', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [existing] = await dbQuery('SELECT dojo_id, organisation_name FROM anlage_register WHERE anlage_id = ?', [req.params.id]);
     if (!existing) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6261,7 +6261,7 @@ router.put('/anlageverm%C3%B6gen/:id', requireFeature('buchhaltung'), requireBuc
 // ===================================================================
 // 🗑️ DELETE /api/buchhaltung/anlagevermögen/:id
 // ===================================================================
-router.delete('/anlageverm%C3%B6gen/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.delete('/anlageverm%C3%B6gen/:id', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [row] = await dbQuery('SELECT dojo_id FROM anlage_register WHERE anlage_id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6278,7 +6278,7 @@ router.delete('/anlageverm%C3%B6gen/:id', requireFeature('buchhaltung'), require
 // 💳 KREDITOREN / LIEFERANTENAKTE
 // ===================================================================
 
-router.get('/kreditoren', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.get('/kreditoren', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const dojoId = req.buchhaltungDojoId;
     const orgFilter = req.query.organisation;
@@ -6300,7 +6300,7 @@ router.get('/kreditoren', requireFeature('buchhaltung'), requireBuchhaltungAcces
   }
 });
 
-router.post('/kreditoren', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.post('/kreditoren', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const { organisation_name, name, kurzname, adresse, email, telefon, ust_id, zahlungsziel_tage = 14, iban, bic, notizen } = req.body;
     if (!name) return res.status(400).json({ message: 'Name ist Pflichtfeld' });
@@ -6318,7 +6318,7 @@ router.post('/kreditoren', requireFeature('buchhaltung'), requireBuchhaltungAcce
   }
 });
 
-router.put('/kreditoren/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.put('/kreditoren/:id', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [row] = await dbQuery('SELECT dojo_id FROM kreditoren WHERE kreditor_id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6334,7 +6334,7 @@ router.put('/kreditoren/:id', requireFeature('buchhaltung'), requireBuchhaltungA
   }
 });
 
-router.delete('/kreditoren/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.delete('/kreditoren/:id', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [row] = await dbQuery('SELECT dojo_id FROM kreditoren WHERE kreditor_id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6351,7 +6351,7 @@ router.delete('/kreditoren/:id', requireFeature('buchhaltung'), requireBuchhaltu
 // ===================================================================
 
 // GET /offene-posten — listet unbezahlte Belege + externe Rechnungen
-router.get('/offene-posten', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.get('/offene-posten', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const dojoId = req.buchhaltungDojoId;
     const orgFilter = req.query.organisation;
@@ -6404,7 +6404,7 @@ router.get('/offene-posten', requireFeature('buchhaltung'), requireBuchhaltungAc
 });
 
 // POST /mahnungen — neue Mahnung erstellen
-router.post('/mahnungen', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.post('/mahnungen', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const { organisation_name, rechnung_id, mitglied_id, schuldner_name, offener_betrag,
             faelligkeitsdatum, mahnstufe = 1, mahngebuehr = 0, mahntext } = req.body;
@@ -6430,7 +6430,7 @@ router.post('/mahnungen', requireFeature('buchhaltung'), requireBuchhaltungAcces
 });
 
 // PUT /mahnungen/:id/versandt
-router.put('/mahnungen/:id/versandt', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.put('/mahnungen/:id/versandt', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [row] = await dbQuery('SELECT dojo_id FROM mahnungen WHERE mahnung_id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6445,7 +6445,7 @@ router.put('/mahnungen/:id/versandt', requireFeature('buchhaltung'), requireBuch
 });
 
 // PUT /mahnungen/:id/bezahlt
-router.put('/mahnungen/:id/bezahlt', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.put('/mahnungen/:id/bezahlt', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [row] = await dbQuery('SELECT dojo_id FROM mahnungen WHERE mahnung_id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6458,7 +6458,7 @@ router.put('/mahnungen/:id/bezahlt', requireFeature('buchhaltung'), requireBuchh
 });
 
 // DELETE (stornieren) /mahnungen/:id
-router.delete('/mahnungen/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.delete('/mahnungen/:id', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [row] = await dbQuery('SELECT dojo_id FROM mahnungen WHERE mahnung_id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6474,7 +6474,7 @@ router.delete('/mahnungen/:id', requireFeature('buchhaltung'), requireBuchhaltun
 // 🔁 WIEDERKEHRENDE BUCHUNGEN
 // ===================================================================
 
-router.get('/wiederkehrend', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.get('/wiederkehrend', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const dojoId = req.buchhaltungDojoId;
     const orgFilter = req.query.organisation;
@@ -6493,7 +6493,7 @@ router.get('/wiederkehrend', requireFeature('buchhaltung'), requireBuchhaltungAc
   }
 });
 
-router.post('/wiederkehrend', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.post('/wiederkehrend', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const { organisation_name, bezeichnung, buchungsart = 'ausgabe', betrag_netto, mwst_satz = 19,
             kategorie, beschreibung, lieferant_kunde, intervall = 'monatlich',
@@ -6520,7 +6520,7 @@ router.post('/wiederkehrend', requireFeature('buchhaltung'), requireBuchhaltungA
   }
 });
 
-router.put('/wiederkehrend/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.put('/wiederkehrend/:id', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [row] = await dbQuery('SELECT dojo_id FROM wiederkehrende_buchungen WHERE template_id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6541,7 +6541,7 @@ router.put('/wiederkehrend/:id', requireFeature('buchhaltung'), requireBuchhaltu
   }
 });
 
-router.delete('/wiederkehrend/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.delete('/wiederkehrend/:id', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [row] = await dbQuery('SELECT dojo_id FROM wiederkehrende_buchungen WHERE template_id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6554,7 +6554,7 @@ router.delete('/wiederkehrend/:id', requireFeature('buchhaltung'), requireBuchha
 });
 
 // POST /wiederkehrend/:id/ausfuehren — bucht genau dieses Template als Beleg
-router.post('/wiederkehrend/:id/ausfuehren', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.post('/wiederkehrend/:id/ausfuehren', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const [tmpl] = await dbQuery('SELECT * FROM wiederkehrende_buchungen WHERE template_id = ?', [req.params.id]);
     if (!tmpl) return res.status(404).json({ message: 'Nicht gefunden' });
@@ -6605,7 +6605,7 @@ function berechnenaechsteFaelligkeit(aktuell, intervall) {
 }
 
 // POST /wiederkehrend/ausfuehren-faellige — alle fälligen auto_ausfuehren=1 Templates buchen
-router.post('/wiederkehrend/ausfuehren-faellige', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+router.post('/wiederkehrend/ausfuehren-faellige', requireFeature('buchfuehrung'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const dojoId = req.buchhaltungDojoId;
     let sql = `SELECT * FROM wiederkehrende_buchungen WHERE aktiv=1 AND auto_ausfuehren=1 AND naechste_faelligkeit <= CURDATE()`;

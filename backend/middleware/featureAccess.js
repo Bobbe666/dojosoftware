@@ -92,6 +92,14 @@ function requireFeature(featureName) {
         }
       }
 
+      // Trial-Phase (noch nicht abgelaufen): ALLE Features freigeschaltet — volle Testphase.
+      // Deckt auch Features ab, die sonst über den plan_type-Fallback laufen (z.B. lernplattform),
+      // der für plan_type='trial' sonst nichts findet.
+      if (sub.status === 'trial') {
+        req.subscription = sub;
+        return next();
+      }
+
       // Feature-Check
       // feature_key → dojo_subscriptions Spaltenname
       const featureColumnMap = {

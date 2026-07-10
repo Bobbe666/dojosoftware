@@ -247,9 +247,11 @@ router.post('/register-dojo', async (req, res) => {
     // ===== COMMIT =====
     await connection.commit();
 
-    // Feature-Flags aus plan_feature_mapping für den gewählten Plan setzen.
-    // plan_type bleibt 'trial' — nur feature_* Spalten werden aktualisiert.
-    await syncPlanFeatures(dojo_id, planName, { updatePlanType: false });
+    // Trial = volle Testphase: ALLE Features freischalten (syncPlanFeatures mappt 'trial' → enterprise).
+    // plan_type bleibt 'trial' — nur die feature_* Spalten werden auf Enterprise-Niveau gesetzt,
+    // damit auch das Frontend (das die Flags liest) im Trial alles anzeigt. Der gewählte Plan
+    // (planName) greift erst bei der echten Aktivierung nach dem Trial.
+    await syncPlanFeatures(dojo_id, 'trial', { updatePlanType: false });
 
     // ===== Early Bird Promo Registrierung (im Backend – zuverlässig) =====
     try {
