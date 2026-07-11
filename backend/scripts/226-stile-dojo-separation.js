@@ -99,6 +99,18 @@ async function main() {
     }
   }
 
+  // --- 1c. UNIQUE(name) → UNIQUE(dojo_id,name) VOR der Duplizierung ---------
+  // Muss vor dem Einfügen der Kopien passieren, sonst verletzt die erste Kopie
+  // (gleicher Name, anderes Dojo) den alten globalen UNIQUE(name).
+  if (await indexExists('stile', 'name')) {
+    console.log('• UNIQUE(name) entfernen');
+    if (execute) await pool.query(`ALTER TABLE stile DROP INDEX name`);
+  }
+  if (!await indexExists('stile', 'uk_dojo_name')) {
+    console.log('• UNIQUE(dojo_id,name) anlegen');
+    if (execute) await pool.query(`ALTER TABLE stile ADD UNIQUE KEY uk_dojo_name (dojo_id, name)`);
+  }
+
   // --- Snapshot: genutzte Stile pro Copy-Dojo VOR jeder Duplizierung --------
   const plan = {};
   {
@@ -128,6 +140,10 @@ async function main() {
         console.log(`  Stil ${s.stil_id} "${s.name}": ${grads.length} Gürtel, ${anf.length} Anford., remap ${msd.n} msd + ${pr.n} Prüfungen`);
         totNewStile++; totGrad += grads.length; totMsd += msd.n; totPruef += pr.n;
         if (!execute) continue;
+
+        // Re-Run-Schutz: existiert die Kopie schon, überspringen
+        const [[dup]] = await conn.query('SELECT stil_id FROM stile WHERE dojo_id=? AND name=?', [D, s.name]);
+        if (dup) { console.log('    (Kopie existiert bereits – übersprungen)'); continue; }
 
         // 2a. neue stile-Zeile (Kopie, dojo_id=D)
         const [ins] = await conn.query(
@@ -183,13 +199,7 @@ async function main() {
     conn.release();
   }
 
-  // --- 3. UNIQUE(name) → UNIQUE(dojo_id,name) ------------------------------
-  if (execute) {
-    if (await indexExists('stile', 'name')) { await pool.query(`ALTER TABLE stile DROP INDEX name`); console.log('• UNIQUE(name) entfernt'); }
-    if (!await indexExists('stile', 'uk_dojo_name')) { await pool.query(`ALTER TABLE stile ADD UNIQUE KEY uk_dojo_name (dojo_id, name)`); console.log('• UNIQUE(dojo_id,name) angelegt'); }
-  } else {
-    console.log('\n• (DRY RUN) Danach: DROP INDEX name; ADD UNIQUE KEY uk_dojo_name (dojo_id,name)');
-  }
+  // (UNIQUE-Key-Umstellung erfolgt bereits in Schritt 1c vor der Duplizierung.)
 
   console.log(`\n${execute ? '✅ Migration abgeschlossen.' : 'ℹ️  DRY RUN – keine Änderungen geschrieben. Mit --execute ausführen (nach Backup).'}`);
   await pool.end();
