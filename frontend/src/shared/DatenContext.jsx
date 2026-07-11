@@ -37,7 +37,7 @@ export const DatenProvider = ({ children }) => {
           console.warn('⚠️ Fehler beim Laden der Trainer:', err.response?.status);
           return { data: [] };
         }),
-        apiClient.get('/stile?aktiv=true').catch((err) => {
+        apiClient.get(`/stile?aktiv=true${dojoParam ? '&' + dojoParam : ''}`).catch((err) => {
           console.warn('⚠️ Fehler beim Laden der Stile:', err.response?.status);
           return { data: [] };
         }),

@@ -6,6 +6,18 @@ const express = require('express');
 const logger = require('../../utils/logger');
 const db = require('../../db');
 const router = express.Router();
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
+
+// 🔒 Ownership-Guard für Stil-Statistiken per :id
+router.param('id', (req, res, next, id) => {
+  const own = getSecureDojoId(req);
+  if (!own) return next();
+  db.query('SELECT 1 FROM stile WHERE stil_id = ? AND dojo_id = ?', [parseInt(id, 10), own], (e, rows) => {
+    if (e) return res.status(500).json({ error: 'Ownership-Prüfung fehlgeschlagen' });
+    if (!rows.length) return res.status(404).json({ error: 'Stil nicht gefunden' });
+    next();
+  });
+});
 
 // GET /:id/statistiken - Erweiterte Stil-Statistiken
 router.get('/:id/statistiken', (req, res) => {
@@ -132,6 +144,9 @@ router.get('/:id/statistiken', (req, res) => {
 
 // GET /kategorien/uebersicht - Kategorie-Übersicht für alle Stile
 router.get('/kategorien/uebersicht', (req, res) => {
+  const own = getSecureDojoId(req);
+  const dojoCond = own ? ' AND s.dojo_id = ?' : '';
+  const qParams = own ? [own] : [];
   const query = `
     SELECT s.stil_id, s.name as stil_name, g.kategorie,
       COUNT(DISTINCT g.graduierung_id) as anzahl_graduierungen, COUNT(DISTINCT msd.mitglied_id) as anzahl_mitglieder
@@ -139,11 +154,11 @@ router.get('/kategorien/uebersicht', (req, res) => {
     LEFT JOIN graduierungen g ON s.stil_id = g.stil_id AND g.aktiv = 1
     LEFT JOIN mitglied_stil_data msd ON g.graduierung_id = msd.current_graduierung_id AND msd.stil_id = g.stil_id
     LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
-    WHERE s.aktiv = 1 GROUP BY s.stil_id, s.name, g.kategorie
+    WHERE s.aktiv = 1${dojoCond} GROUP BY s.stil_id, s.name, g.kategorie
     ORDER BY s.name ASC, CASE g.kategorie WHEN 'grundstufe' THEN 1 WHEN 'mittelstufe' THEN 2 WHEN 'oberstufe' THEN 3 WHEN 'dan' THEN 4 WHEN 'meister' THEN 5 ELSE 6 END
   `;
 
-  db.query(query, (error, results) => {
+  db.query(query, qParams, (error, results) => {
     if (error) return res.status(500).json({ error: 'Fehler beim Abrufen der Kategorie-Übersicht', details: error.message });
     res.json(results);
   });
@@ -151,6 +166,9 @@ router.get('/kategorien/uebersicht', (req, res) => {
 
 // GET /auswertungen/guertel-uebersicht - Komplette Gürtel-Übersicht
 router.get('/auswertungen/guertel-uebersicht', (req, res) => {
+  const gbOwn = getSecureDojoId(req);
+  const gbDojoCond = gbOwn ? ' AND s.dojo_id = ?' : '';
+  const gbParams = gbOwn ? [gbOwn] : [];
   const query = `
     SELECT s.stil_id, s.name as stil_name, g.graduierung_id, g.name as gurt_name, g.farbe_hex, g.farbe_sekundaer,
       g.kategorie, g.dan_grad, g.reihenfolge, m.mitglied_id, m.vorname, m.nachname, m.email,
@@ -160,11 +178,11 @@ router.get('/auswertungen/guertel-uebersicht', (req, res) => {
     LEFT JOIN graduierungen g ON s.stil_id = g.stil_id AND g.aktiv = 1
     LEFT JOIN mitglied_stil_data msd ON g.graduierung_id = msd.current_graduierung_id AND msd.stil_id = g.stil_id
     LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
-    WHERE s.aktiv = 1
+    WHERE s.aktiv = 1${gbDojoCond}
     ORDER BY s.reihenfolge ASC, s.name ASC, g.reihenfolge ASC, m.nachname ASC, m.vorname ASC
   `;
 
-  db.query(query, (error, results) => {
+  db.query(query, gbParams, (error, results) => {
     if (error) return res.status(500).json({ error: 'Fehler beim Abrufen der Gürtel-Übersicht', details: error.message });
 
     const stileMap = new Map();

@@ -1944,29 +1944,27 @@ router.post("/:id/stile", (req, res) => {
                 return res.json({ success: true, message: "Stile erfolgreich aktualisiert", stile: [] });
             }
 
-            // Zuordnung von Stil-IDs zu ENUM-Werten (basiert auf tatsächlichen DB-Daten)
-            const stilMapping = {
-                2: 'ShieldX',      // ShieldX
-                3: 'BJJ',          // BJJ
-                4: 'Kickboxen',    // Kickboxen
-                5: 'Karate',       // Enso Karate → wird als 'Karate' in ENUM gespeichert
-                7: 'Taekwon-Do',   // Taekwon-Do
-                8: 'BJJ'           // Brazilian Jiu-Jitsu → auch als BJJ
-            };
+            // 🔒 Dynamische Auflösung stil_id → Name (dojo-agnostisch; ersetzt hartes Mapping,
+            // das mit pro-Dojo-Stil-IDs brach). mitglied_stile.stil ist nach Migration VARCHAR.
+            db.query('SELECT stil_id, name FROM stile WHERE stil_id IN (?)', [stile], (nameErr, nameRows) => {
+              if (nameErr) {
+                logger.error('Fehler beim Auflösen der Stil-Namen:', nameErr);
+                return res.status(500).json({ error: "Fehler beim Auflösen der Stile" });
+              }
+              const idToName = {};
+              nameRows.forEach(r => { idToName[r.stil_id] = r.name; });
 
-            // Filter ungültige Stil-IDs und konvertiere zu ENUM-Werten
-            const validValues = stile
-                .filter(stil_id => stilMapping[stil_id]) // Nur bekannte IDs
-                .map(stil_id => [mitglied_id, stilMapping[stil_id]]);
+              // Filter ungültige Stil-IDs und konvertiere zu echten Stil-Namen
+              const validValues = stile
+                .filter(stil_id => idToName[stil_id])
+                .map(stil_id => [mitglied_id, idToName[stil_id]]);
 
-            if (validValues.length === 0) {
+              if (validValues.length === 0) {
                 return res.json({ success: true, message: "Keine gültigen Stile zum Hinzufügen", stile: [] });
-            }
+              }
 
-            const insertQuery = "INSERT INTO mitglied_stile (mitglied_id, stil) VALUES ?";
-            const insertValues = validValues;
-
-            db.query(insertQuery, [insertValues], (insertErr) => {
+              const insertQuery = "INSERT INTO mitglied_stile (mitglied_id, stil) VALUES ?";
+              db.query(insertQuery, [validValues], (insertErr) => {
                 if (insertErr) {
                     logger.error('Fehler beim Hinzufügen neuer Stile:', insertErr);
                     return res.status(500).json({ error: "Fehler beim Hinzufügen neuer Stile" });
@@ -2045,6 +2043,7 @@ router.post("/:id/stile", (req, res) => {
                         });
                     });
             });
+            }); // schließt Namens-Lookup (SELECT stil_id, name FROM stile ...)
         });
     });
 });
@@ -2057,22 +2056,14 @@ router.get("/:id/stile", (req, res) => {
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
     }
 
-    // Zuordnung von ENUM-Werten zu Stil-IDs und Namen (basiert auf tatsächlichen DB-Daten)
-    const stilMapping = {
-        'ShieldX': { stil_id: 2, stil_name: 'ShieldX', beschreibung: 'Moderne Selbstverteidigung mit realistischen Szenarien' },
-        'BJJ': { stil_id: 3, stil_name: 'BJJ', beschreibung: 'Brazilian Jiu-Jitsu - Bodenkampf und Grappling-Techniken' },
-        'Brazilian Jiu Jitsu': { stil_id: 3, stil_name: 'Brazilian Jiu Jitsu', beschreibung: 'Brazilian Jiu-Jitsu - Bodenkampf und Grappling-Techniken' },
-        'Kickboxen': { stil_id: 4, stil_name: 'Kickboxen', beschreibung: 'Moderne Kampfsportart kombiniert Boxing mit Fußtechniken' },
-        'Karate': { stil_id: 5, stil_name: 'Enso Karate', beschreibung: 'Traditionelle japanische Kampfkunst mit Fokus auf Schlag- und Tritttechniken' },
-        'Enso Karate': { stil_id: 5, stil_name: 'Enso Karate', beschreibung: 'Traditionelle japanische Kampfkunst mit Fokus auf Schlag- und Tritttechniken' },
-        'Taekwon-Do': { stil_id: 7, stil_name: 'Taekwon-Do', beschreibung: 'Koreanische Kampfkunst mit Betonung auf Fußtechniken und hohe Tritte' }
-    };
-
+    // 🔒 Auflösung des mitglied_stile-Namens auf den EIGENEN Dojo-Stil (kein hartes Mapping mehr)
     const query = `
-        SELECT ms.stil
+        SELECT s.stil_id, s.name, s.beschreibung
         FROM mitglied_stile ms
+        JOIN mitglieder m ON m.mitglied_id = ms.mitglied_id
+        JOIN stile s ON s.name = ms.stil AND s.dojo_id = m.dojo_id
         WHERE ms.mitglied_id = ?
-        ORDER BY ms.stil
+        ORDER BY s.name
     `;
 
     db.query(query, [mitglied_id], (err, results) => {
@@ -2081,20 +2072,13 @@ router.get("/:id/stile", (req, res) => {
             return res.status(500).json({ error: "Fehler beim Abrufen der Stile" });
         }
 
-        // Transformiere die ENUM-Werte zurück zu den erwarteten Objekten
-        const transformedResults = results.map(row => {
-            const stilInfo = stilMapping[row.stil];
-            if (!stilInfo) {
-                logger.warn('Stil nicht im Mapping gefunden', { stil: row.stil });
-                return null;
-            }
-            return {
-                stil_id: stilInfo.stil_id,
-                name: stilInfo.stil_name, // Frontend erwartet 'name', nicht 'stil_name'
-                stil_name: stilInfo.stil_name,
-                beschreibung: stilInfo.beschreibung
-            };
-        }).filter(Boolean);
+        // Direkt aus stile (dojo-scoped) aufgelöst
+        const transformedResults = results.map(row => ({
+            stil_id: row.stil_id,
+            name: row.name,
+            stil_name: row.name,
+            beschreibung: row.beschreibung
+        }));
 
         if (transformedResults.length === 0) {
             return res.json({
@@ -4210,21 +4194,12 @@ router.get("/:id/kurse", (req, res) => {
 
   logger.debug('📅 Lade Kurse für Mitglied ID ${mitgliedId}');
 
-  // Stil ENUM zu ID Mapping
-  const stilMapping = {
-    'ShieldX': { stil_id: 2, stil_name: 'ShieldX' },
-    'BJJ': { stil_id: 3, stil_name: 'BJJ' },
-    'Brazilian Jiu Jitsu': { stil_id: 3, stil_name: 'Brazilian Jiu Jitsu' },
-    'Kickboxen': { stil_id: 4, stil_name: 'Kickboxen' },
-    'Karate': { stil_id: 5, stil_name: 'Enso Karate' },
-    'Enso Karate': { stil_id: 5, stil_name: 'Enso Karate' },
-    'Taekwon-Do': { stil_id: 7, stil_name: 'Taekwon-Do' }
-  };
-
-  // Lade zuerst die Stile des Mitglieds
+  // 🔒 Stil-Namen des Mitglieds direkt auf eigene Dojo-Stil-IDs auflösen (kein hartes Mapping)
   const stileQuery = `
-    SELECT DISTINCT ms.stil
+    SELECT DISTINCT s.stil_id
     FROM mitglied_stile ms
+    JOIN mitglieder m ON m.mitglied_id = ms.mitglied_id
+    JOIN stile s ON s.name = ms.stil AND s.dojo_id = m.dojo_id
     WHERE ms.mitglied_id = ?
   `;
 
@@ -4239,17 +4214,8 @@ router.get("/:id/kurse", (req, res) => {
       return res.json([]);
     }
 
-    // Map ENUM stil values to stil_ids
-    const stilIds = stileResults
-      .map(s => {
-        const stilInfo = stilMapping[s.stil];
-        if (!stilInfo) {
-          logger.warn('Stil nicht im Mapping gefunden', { stil: s.stil });
-          return null;
-        }
-        return stilInfo.stil_id;
-      })
-      .filter(Boolean);
+    // stil_ids direkt aus der dojo-scoped Auflösung
+    const stilIds = stileResults.map(s => s.stil_id).filter(Boolean);
 
     logger.info('Mitglied hat Stile', { enums: stileResults.map(s => s.stil), ids: stilIds });
 

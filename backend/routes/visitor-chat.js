@@ -56,7 +56,7 @@ async function loadDojoKontext(dojoId) {
       ORDER BY FIELD(s.tag,'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'), s.uhrzeit_start
     `, [dojoId]);
 
-    const [stile] = await pool.query(`SELECT name, beschreibung FROM stile WHERE aktiv = 1`);
+    const [stile] = await pool.query(`SELECT name, beschreibung FROM stile WHERE aktiv = 1 AND dojo_id = ?`, [dojoId]);
 
     // Tarife als lesbaren Text formatieren
     const tarifeText = tarife

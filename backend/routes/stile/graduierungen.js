@@ -6,6 +6,29 @@ const express = require('express');
 const logger = require('../../utils/logger');
 const db = require('../../db');
 const router = express.Router();
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
+
+// 🔒 DOJO-OWNERSHIP-GUARDS (Cross-Tenant-Schutz für Gürtel):
+// Greifen automatisch für jede Route mit :stilId bzw. :graduierungId.
+// Super-Admin (own === null) darf alle.
+router.param('stilId', (req, res, next, stilId) => {
+  const own = getSecureDojoId(req);
+  if (!own) return next();
+  db.query('SELECT 1 FROM stile WHERE stil_id = ? AND dojo_id = ?', [parseInt(stilId, 10), own], (e, rows) => {
+    if (e) return res.status(500).json({ error: 'Ownership-Prüfung fehlgeschlagen' });
+    if (!rows.length) return res.status(404).json({ error: 'Stil nicht gefunden' });
+    next();
+  });
+});
+router.param('graduierungId', (req, res, next, gid) => {
+  const own = getSecureDojoId(req);
+  if (!own) return next();
+  db.query('SELECT 1 FROM graduierungen g JOIN stile s ON s.stil_id = g.stil_id WHERE g.graduierung_id = ? AND s.dojo_id = ?', [parseInt(gid, 10), own], (e, rows) => {
+    if (e) return res.status(500).json({ error: 'Ownership-Prüfung fehlgeschlagen' });
+    if (!rows.length) return res.status(404).json({ error: 'Graduierung nicht gefunden' });
+    next();
+  });
+});
 
 // POST /:stilId/graduierungen - Graduierung hinzufügen
 router.post('/:stilId/graduierungen', (req, res) => {

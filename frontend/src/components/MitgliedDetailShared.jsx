@@ -199,11 +199,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     staleTime: 60 * 60 * 1000,
   });
 
-  // Stile mit React Query (60 Min Cache)
+  // Stile mit React Query (60 Min Cache) — 🔒 Cache pro Dojo isoliert (sonst leakt Dojo A → B)
   const { data: stileQuery } = useQuery({
-    queryKey: ['stile'],
+    queryKey: ['stile', activeDojo?.id || 'own'],
     queryFn: async () => {
-      const res = await axios.get('/stile');
+      const res = await axios.get(`/stile${activeDojo?.id ? `?dojo_id=${activeDojo.id}` : ''}`);
       return res.data || [];
     },
     staleTime: 60 * 60 * 1000,
@@ -813,7 +813,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
   const fetchStile = async (signal = null) => {
     try {
-      const response = await axios.get('/stile', signal ? { signal } : {});
+      const response = await axios.get(`/stile${activeDojo?.id ? `?dojo_id=${activeDojo.id}` : ''}`, signal ? { signal } : {});
       const data = response.data;
       setStile(data);
       console.log('✅ Stile geladen:', data);

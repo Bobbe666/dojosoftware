@@ -6,6 +6,7 @@ const express = require('express');
 const logger = require('../../utils/logger');
 const db = require('../../db');
 const { cacheGet } = require('../../utils/simpleCache');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 const router = express.Router();
 
 // GET /test - Test-Endpunkt
@@ -27,7 +28,13 @@ router.get('/', cacheGet(120000), (req, res) => {
     }
 
     const { aktiv } = req.query;
-    const aktivFilter = aktiv === 'true' ? 'WHERE s.aktiv = 1' : '';
+    // 🔒 DOJO-FILTER: nur Stile des eigenen Dojos (Super-Admin (null) → alle)
+    const secureDojoId = getSecureDojoId(req);
+    const conds = [];
+    const params = [];
+    if (aktiv === 'true') conds.push('s.aktiv = 1');
+    if (secureDojoId) { conds.push('s.dojo_id = ?'); params.push(secureDojoId); }
+    const aktivFilter = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
 
     const stilQuery = `
       SELECT s.stil_id, s.name, s.beschreibung, s.aktiv, s.reihenfolge,
@@ -44,7 +51,7 @@ router.get('/', cacheGet(120000), (req, res) => {
       ORDER BY s.aktiv DESC, s.reihenfolge ASC, s.name ASC
     `;
 
-    connection.query(stilQuery, (stilError, stilRows) => {
+    connection.query(stilQuery, params, (stilError, stilRows) => {
       if (stilError) {
         logger.error('Fehler beim Abrufen der Stile:', { error: stilError });
         connection.release();
@@ -115,8 +122,13 @@ router.put('/reorder', (req, res) => {
       let hasError = false;
 
       stile.forEach((stil) => {
-        const updateQuery = `UPDATE stile SET reihenfolge = ?, aktualisiert_am = NOW() WHERE stil_id = ?`;
-        connection.query(updateQuery, [stil.reihenfolge, stil.stil_id], (updateError) => {
+        // 🔒 DOJO-SCOPE: nur eigene Stile umsortieren
+        const reorderDojoId = getSecureDojoId(req);
+        const updateQuery = reorderDojoId
+          ? `UPDATE stile SET reihenfolge = ?, aktualisiert_am = NOW() WHERE stil_id = ? AND dojo_id = ?`
+          : `UPDATE stile SET reihenfolge = ?, aktualisiert_am = NOW() WHERE stil_id = ?`;
+        const updateParams = reorderDojoId ? [stil.reihenfolge, stil.stil_id, reorderDojoId] : [stil.reihenfolge, stil.stil_id];
+        connection.query(updateQuery, updateParams, (updateError) => {
           if (updateError && !hasError) {
             hasError = true;
             connection.rollback(() => {
@@ -158,16 +170,20 @@ router.get('/:id', (req, res) => {
       return res.status(500).json({ error: 'Datenbankverbindung fehlgeschlagen', details: err.message });
     }
 
+    // 🔒 DOJO-FILTER: fremden Stil per ID nicht zugänglich machen
+    const secureDojoId = getSecureDojoId(req);
+    const dojoCond = secureDojoId ? ' AND s.dojo_id = ?' : '';
+    const stilParams = secureDojoId ? [stilId, secureDojoId] : [stilId];
     const stilQuery = `
       SELECT s.*, COUNT(DISTINCT msd.mitglied_id) as anzahl_mitglieder
       FROM stile s
       LEFT JOIN mitglied_stil_data msd ON s.stil_id = msd.stil_id
       LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
-      WHERE s.stil_id = ? AND s.aktiv = 1
+      WHERE s.stil_id = ? AND s.aktiv = 1${dojoCond}
       GROUP BY s.stil_id
     `;
 
-    connection.query(stilQuery, [stilId], (stilError, stilRows) => {
+    connection.query(stilQuery, stilParams, (stilError, stilRows) => {
       if (stilError) {
         connection.release();
         return res.status(500).json({ error: 'Fehler beim Abrufen des Stils', details: stilError.message });
@@ -233,13 +249,17 @@ router.get('/:stilId/graduierungen', (req, res) => {
     return res.status(400).json({ error: 'Ungültige Stil-ID' });
   }
 
+  // 🔒 DOJO-FILTER: nur Graduierungen eines Stils, der dem eigenen Dojo gehört
+  const secureDojoId = getSecureDojoId(req);
+  const ownCond = secureDojoId ? ' AND stil_id IN (SELECT stil_id FROM stile WHERE stil_id = ? AND dojo_id = ?)' : '';
+  const qParams = secureDojoId ? [stilId, stilId, secureDojoId] : [stilId];
   const query = `
     SELECT graduierung_id AS id, graduierung_id, name, reihenfolge, trainingsstunden_min, mindestzeit_monate,
       farbe_hex, farbe_sekundaer, kategorie, dan_grad, aktiv, erstellt_am, aktualisiert_am
-    FROM graduierungen WHERE stil_id = ? AND aktiv = 1 ORDER BY reihenfolge ASC
+    FROM graduierungen WHERE stil_id = ? AND aktiv = 1${ownCond} ORDER BY reihenfolge ASC
   `;
 
-  db.query(query, [stilId], (error, rows) => {
+  db.query(query, qParams, (error, rows) => {
     if (error) {
       logger.error('Fehler beim Abrufen der Graduierungen:', { error });
       return res.status(500).json({ error: 'Fehler beim Abrufen der Graduierungen', details: error.message });
@@ -256,14 +276,18 @@ router.post('/', (req, res) => {
   if (name.trim().length > 100) return res.status(400).json({ error: 'Stil-Name ist zu lang (max. 100 Zeichen)' });
   if (beschreibung && beschreibung.length > 500) return res.status(400).json({ error: 'Beschreibung ist zu lang (max. 500 Zeichen)' });
 
+  // 🔒 DOJO-SCOPE: Stil wird im eigenen Dojo angelegt (Super-Admin muss ?dojo_id=X mitgeben)
+  const secureDojoId = getSecureDojoId(req);
+  if (!secureDojoId) return res.status(400).json({ error: 'dojo_id erforderlich (kein Dojo-Kontext)' });
+
   db.getConnection((err, connection) => {
     if (err) {
       logger.error('DB-Verbindungsfehler:', { error: err });
       return res.status(500).json({ error: 'Datenbankverbindung fehlgeschlagen', details: err.message });
     }
 
-    const checkQuery = 'SELECT stil_id, aktiv FROM stile WHERE name = ?';
-    connection.query(checkQuery, [name.trim()], (checkError, existingRows) => {
+    const checkQuery = 'SELECT stil_id, aktiv FROM stile WHERE name = ? AND dojo_id = ?';
+    connection.query(checkQuery, [name.trim(), secureDojoId], (checkError, existingRows) => {
       if (checkError) {
         connection.release();
         return res.status(500).json({ error: 'Fehler beim Prüfen des Stil-Namens', details: checkError.message });
@@ -296,10 +320,10 @@ router.post('/', (req, res) => {
       }
 
       const insertQuery = `
-        INSERT INTO stile (name, beschreibung, aktiv, wartezeit_grundstufe, wartezeit_mittelstufe, wartezeit_oberstufe, wartezeit_schwarzgurt_traditionell, erstellt_am, aktualisiert_am)
-        VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        INSERT INTO stile (dojo_id, name, beschreibung, aktiv, wartezeit_grundstufe, wartezeit_mittelstufe, wartezeit_oberstufe, wartezeit_schwarzgurt_traditionell, erstellt_am, aktualisiert_am)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `;
-      connection.query(insertQuery, [name.trim(), beschreibung?.trim() || '', aktiv, wartezeit_grundstufe, wartezeit_mittelstufe, wartezeit_oberstufe, wartezeit_schwarzgurt_traditionell], (insertError, result) => {
+      connection.query(insertQuery, [secureDojoId, name.trim(), beschreibung?.trim() || '', aktiv, wartezeit_grundstufe, wartezeit_mittelstufe, wartezeit_oberstufe, wartezeit_schwarzgurt_traditionell], (insertError, result) => {
         if (insertError) {
           connection.release();
           return res.status(500).json({ error: 'Fehler beim Erstellen des Stils', details: insertError.message });
@@ -323,10 +347,15 @@ router.put('/:id', (req, res) => {
   if (!name || name.trim().length === 0) return res.status(400).json({ error: 'Stil-Name ist erforderlich' });
   if (name.trim().length > 100) return res.status(400).json({ error: 'Stil-Name ist zu lang (max. 100 Zeichen)' });
 
+  // 🔒 DOJO-SCOPE: nur eigenen Stil bearbeiten
+  const secureDojoId = getSecureDojoId(req);
+  const putCheckSql = secureDojoId ? 'SELECT stil_id FROM stile WHERE stil_id = ? AND dojo_id = ?' : 'SELECT stil_id FROM stile WHERE stil_id = ?';
+  const putCheckParams = secureDojoId ? [stilId, secureDojoId] : [stilId];
+
   db.getConnection((err, connection) => {
     if (err) return res.status(500).json({ error: 'Datenbankverbindung fehlgeschlagen', details: err.message });
 
-    connection.query('SELECT stil_id FROM stile WHERE stil_id = ?', [stilId], (checkError, existingRows) => {
+    connection.query(putCheckSql, putCheckParams, (checkError, existingRows) => {
       if (checkError) {
         connection.release();
         return res.status(500).json({ error: 'Fehler beim Prüfen des Stils', details: checkError.message });
@@ -385,10 +414,15 @@ router.delete('/:id', (req, res) => {
   const stilId = parseInt(req.params.id);
   if (!stilId || isNaN(stilId)) return res.status(400).json({ error: 'Ungültige Stil-ID' });
 
+  // 🔒 DOJO-SCOPE: nur eigenen Stil löschen (verhindert Deaktivieren fremder Stile)
+  const secureDojoId = getSecureDojoId(req);
+  const delCheckSql = secureDojoId ? 'SELECT stil_id FROM stile WHERE stil_id = ? AND dojo_id = ?' : 'SELECT stil_id FROM stile WHERE stil_id = ?';
+  const delCheckParams = secureDojoId ? [stilId, secureDojoId] : [stilId];
+
   db.getConnection((err, connection) => {
     if (err) return res.status(500).json({ error: 'Datenbankverbindung fehlgeschlagen', details: err.message });
 
-    connection.query('SELECT stil_id FROM stile WHERE stil_id = ?', [stilId], (checkError, existingRows) => {
+    connection.query(delCheckSql, delCheckParams, (checkError, existingRows) => {
       if (checkError) {
         connection.release();
         return res.status(500).json({ error: 'Fehler beim Prüfen des Stils', details: checkError.message });
