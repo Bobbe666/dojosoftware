@@ -1954,16 +1954,16 @@ router.post("/:id/stile", (req, res) => {
               const idToName = {};
               nameRows.forEach(r => { idToName[r.stil_id] = r.name; });
 
-              // Filter ungültige Stil-IDs und konvertiere zu echten Stil-Namen
+              // Filter ungültige Stil-IDs; speichere Name UND stil_id (normalisiert, rename-fest)
               const validValues = stile
                 .filter(stil_id => idToName[stil_id])
-                .map(stil_id => [mitglied_id, idToName[stil_id]]);
+                .map(stil_id => [mitglied_id, idToName[stil_id], stil_id]);
 
               if (validValues.length === 0) {
                 return res.json({ success: true, message: "Keine gültigen Stile zum Hinzufügen", stile: [] });
               }
 
-              const insertQuery = "INSERT INTO mitglied_stile (mitglied_id, stil) VALUES ?";
+              const insertQuery = "INSERT INTO mitglied_stile (mitglied_id, stil, stil_id) VALUES ?";
               db.query(insertQuery, [validValues], (insertErr) => {
                 if (insertErr) {
                     logger.error('Fehler beim Hinzufügen neuer Stile:', insertErr);
@@ -2056,12 +2056,13 @@ router.get("/:id/stile", (req, res) => {
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
     }
 
-    // 🔒 Auflösung des mitglied_stile-Namens auf den EIGENEN Dojo-Stil (kein hartes Mapping mehr)
+    // 🔒 Normalisiert: Auflösung über stil_id-FK (rename-fest); Fallback Name für Alt-Zeilen ohne stil_id
     const query = `
         SELECT s.stil_id, s.name, s.beschreibung
         FROM mitglied_stile ms
         JOIN mitglieder m ON m.mitglied_id = ms.mitglied_id
-        JOIN stile s ON s.name = ms.stil AND s.dojo_id = m.dojo_id
+        JOIN stile s ON (ms.stil_id IS NOT NULL AND s.stil_id = ms.stil_id)
+                     OR (ms.stil_id IS NULL AND s.name = ms.stil AND s.dojo_id = m.dojo_id)
         WHERE ms.mitglied_id = ?
         ORDER BY s.name
     `;
@@ -4194,12 +4195,13 @@ router.get("/:id/kurse", (req, res) => {
 
   logger.debug('📅 Lade Kurse für Mitglied ID ${mitgliedId}');
 
-  // 🔒 Stil-Namen des Mitglieds direkt auf eigene Dojo-Stil-IDs auflösen (kein hartes Mapping)
+  // 🔒 Normalisiert: Auflösung über stil_id-FK (rename-fest); Fallback Name für Alt-Zeilen
   const stileQuery = `
     SELECT DISTINCT s.stil_id
     FROM mitglied_stile ms
     JOIN mitglieder m ON m.mitglied_id = ms.mitglied_id
-    JOIN stile s ON s.name = ms.stil AND s.dojo_id = m.dojo_id
+    JOIN stile s ON (ms.stil_id IS NOT NULL AND s.stil_id = ms.stil_id)
+                 OR (ms.stil_id IS NULL AND s.name = ms.stil AND s.dojo_id = m.dojo_id)
     WHERE ms.mitglied_id = ?
   `;
 
