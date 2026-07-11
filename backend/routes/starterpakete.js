@@ -43,12 +43,15 @@ async function loadPaketMitPositionen(paketId, dojoId) {
 // ── GET /api/starterpakete/artikel-options ── Artikel für Dropdown ──
 router.get('/artikel-options', async (req, res) => {
   try {
+    // 🔒 DOJO-FILTER: nur eigene Artikel im Starterpaket-Dropdown (kein Cross-Dojo-Leak)
+    const dojoId = getSecureDojoId(req);
     const [rows] = await pool.query(
       `SELECT artikel_id, name, verkaufspreis_cent,
               hat_varianten, hat_preiskategorien,
               preis_kids_cent, preis_erwachsene_cent,
               varianten_groessen, groessen_kids, groessen_erwachsene
-       FROM artikel WHERE aktiv = 1 ORDER BY name ASC`
+       FROM artikel WHERE aktiv = 1 ${dojoId ? 'AND dojo_id = ?' : ''} ORDER BY name ASC`,
+      dojoId ? [dojoId] : []
     );
     const parseJ = v => { try { return v ? (typeof v === 'string' ? JSON.parse(v) : v) : []; } catch { return []; } };
     const artikel = rows.map(a => ({
@@ -74,9 +77,11 @@ router.post('/artikel-quick', async (req, res) => {
       return res.status(400).json({ error: 'name und verkaufspreis_cent sind Pflichtfelder' });
     }
 
-    const [[kat]] = await pool.query(
-      'SELECT id FROM artikelgruppen WHERE aktiv = 1 ORDER BY id ASC LIMIT 1'
-    );
+    // 🔒 DOJO-SCOPE: Kategorie des eigenen Dojos wählen + Artikel im eigenen Dojo anlegen
+    const dojoId = getSecureDojoId(req);
+    const [[kat]] = dojoId
+      ? await pool.query('SELECT id FROM artikelgruppen WHERE aktiv = 1 AND dojo_id = ? ORDER BY id ASC LIMIT 1', [dojoId])
+      : await pool.query('SELECT id FROM artikelgruppen WHERE aktiv = 1 ORDER BY id ASC LIMIT 1');
     if (!kat) return res.status(400).json({ error: 'Keine Artikelkategorie verfügbar' });
 
     const artikel_nummer = `ART-SP-${Date.now()}`;
@@ -85,7 +90,7 @@ router.post('/artikel-quick', async (req, res) => {
     const [result] = await pool.query(
       `INSERT INTO artikel (kategorie_id, name, verkaufspreis_cent, mwst_prozent, lagerbestand, artikel_nummer, aktiv, sichtbar_kasse, farbe_hex, dojo_id)
        VALUES (?, ?, ?, 19, 0, ?, 1, 0, '#FFFFFF', ?)`,
-      [kat.id, name, preis, artikel_nummer, req.user?.dojo_id || null]
+      [kat.id, name, preis, artikel_nummer, dojoId || null]
     );
 
     logger.info('Artikel Quick-Create', { name, preis, artikel_id: result.insertId });
