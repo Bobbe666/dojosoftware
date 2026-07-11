@@ -5,6 +5,16 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../db');
 const logger = require('../utils/logger');
+const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
+
+// 🔒 Ownership-Guard für Schreib-Routen: nur eigenes Dojo-Logo ändern (GET bleibt öffentlich,
+// da Logos auf öffentlichen Seiten angezeigt werden). War vorher unauth (Auto-Mount).
+const requireLogoOwnership = (req, res, next) => {
+  const own = getSecureDojoId(req);
+  if (own === null || String(own) === String(req.params.id)) return next();
+  return res.status(403).json({ error: 'Kein Zugriff auf dieses Dojo-Logo' });
+};
 
 // Multer Storage Configuration
 const storage = multer.diskStorage({
@@ -92,7 +102,7 @@ router.get('/:id/logos', (req, res) => {
 // =============================================================================
 // POST /api/dojos/:id/logos/:logoType - Upload a logo
 // =============================================================================
-router.post('/:id/logos/:logoType', upload.single('logo'), (req, res) => {
+router.post('/:id/logos/:logoType', authenticateToken, requireLogoOwnership, upload.single('logo'), (req, res) => {
   const dojoId = req.params.id;
   const logoType = req.params.logoType; // Aus URL-Parameter statt Body
   const uploadedBy = req.body.uploadedBy || null;
@@ -240,7 +250,7 @@ router.post('/:id/logos/:logoType', upload.single('logo'), (req, res) => {
 // =============================================================================
 // DELETE /api/dojos/:id/logos/:logoId - Delete a logo
 // =============================================================================
-router.delete('/:id/logos/:logoId', (req, res) => {
+router.delete('/:id/logos/:logoId', authenticateToken, requireLogoOwnership, (req, res) => {
   const dojoId = req.params.id;
   const logoId = req.params.logoId;
 

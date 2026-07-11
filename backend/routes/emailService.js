@@ -6,6 +6,12 @@ const router = express.Router();
 const emailService = require('../services/emailService');
 const db = require('../db');
 const logger = require('../utils/logger');
+const { authenticateToken } = require('../middleware/auth');
+
+// 🔒 SICHERHEIT: War unauthentifiziert erreichbar (manueller Mount /api/email-service
+// OHNE Auth + Auto-Mount). /send hätte anonymen Mailversand erlaubt (Spam/Phishing),
+// /settings die Mail-Konfiguration offengelegt. Ab jetzt Login-Pflicht für ALLE Routen.
+router.use(authenticateToken);
 
 // ===================================================================
 // E-MAIL KONFIGURATION

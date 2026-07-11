@@ -2620,6 +2620,7 @@ const skipFiles = [
   // 🔒 Manuell gemountet mit Auth — NICHT zusätzlich unauthentifiziert auto-mounten:
   "zehnerkarten.js",
   "dojo-banken.js",
+  "mitgliederDokumente.js",
   "sepa-mandate.js",
   "ical.js",
   "training.js",
