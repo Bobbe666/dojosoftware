@@ -422,9 +422,14 @@ router.delete('/notizen/:notiz_id', async (req, res) => {
 
 router.get('/kategorien', async (req, res) => {
   try {
-    const [results] = await pool.query(
-      'SELECT * FROM fortschritt_kategorien WHERE aktiv = TRUE ORDER BY reihenfolge'
-    );
+    // 🔒 Override-Muster: eigene Kategorien + globale Defaults (dojo_id NULL)
+    const dojoId = getSecureDojoId(req);
+    const [results] = dojoId
+      ? await pool.query(
+          'SELECT * FROM fortschritt_kategorien WHERE aktiv = TRUE AND (dojo_id = ? OR dojo_id IS NULL) ORDER BY reihenfolge',
+          [dojoId])
+      : await pool.query(
+          'SELECT * FROM fortschritt_kategorien WHERE aktiv = TRUE ORDER BY reihenfolge');
     res.json(results);
   } catch (err) {
     logger.error('Fehler beim Laden der Kategorien:', { error: err });

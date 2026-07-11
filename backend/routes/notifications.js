@@ -927,12 +927,20 @@ router.get('/recipients', authenticateToken, async (req, res) => {
 
 router.get('/templates', authenticateToken, async (req, res) => {
   try {
-    const templates = await new Promise((resolve, reject) => {
-      db.query('SELECT * FROM email_templates ORDER BY name', (err, results) => {
+    // 🔒 Override-Muster: eigene Vorlagen + globale Defaults (dojo_id NULL); pro Name die eigene bevorzugen
+    const dojoId = getSecureDojoId(req);
+    const rows = await new Promise((resolve, reject) => {
+      const sql = dojoId
+        ? 'SELECT * FROM email_templates WHERE dojo_id = ? OR dojo_id IS NULL ORDER BY name, (dojo_id IS NULL) ASC'
+        : 'SELECT * FROM email_templates ORDER BY name';
+      db.query(sql, dojoId ? [dojoId] : [], (err, results) => {
         if (err) reject(err);
         else resolve(results);
       });
     });
+    // Dedupe pro Name: dojo-eigene Zeile steht (dank ORDER BY) vor der globalen
+    const seen = new Set();
+    const templates = rows.filter(t => (seen.has(t.name) ? false : (seen.add(t.name), true)));
 
     res.json({ success: true, templates });
   } catch (error) {
@@ -944,12 +952,14 @@ router.get('/templates', authenticateToken, async (req, res) => {
 router.post('/templates', authenticateToken, async (req, res) => {
   try {
     const { name, subject, content, variables } = req.body;
-    
+    // 🔒 Dojo-eigene Vorlage anlegen (Copy-on-Write); Super-Admin (null) legt globalen Default an
+    const dojoId = getSecureDojoId(req);
+
     await new Promise((resolve, reject) => {
       db.query(`
-        INSERT INTO email_templates (name, subject, content, variables, created_at)
-        VALUES (?, ?, ?, ?, NOW())
-      `, [name, subject, content, JSON.stringify(variables || [])], (err, result) => {
+        INSERT INTO email_templates (dojo_id, name, subject, content, variables, created_at)
+        VALUES (?, ?, ?, ?, ?, NOW())
+      `, [dojoId, name, subject, content, JSON.stringify(variables || [])], (err, result) => {
         if (err) reject(err);
         else resolve(result);
       });
