@@ -6,7 +6,7 @@ const express = require('express');
 const logger = require('../utils/logger');
 const db = require('../db');
 const router = express.Router();
-const { formatDate } = require('./shared');
+const { formatDate } = require('./pruefungen/shared');
 const { sendToTdaEvents } = require('../utils/tdaSync');
 const { getSecureDojoId } = require('../utils/dojo-filter-helper');
 
