@@ -3,6 +3,25 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const PaymentProviderFactory = require('../services/PaymentProviderFactory');
+const { authenticateToken } = require('../middleware/auth');
+const { isSuperAdmin, getSecureDojoId } = require('../middleware/tenantSecurity');
+
+// 🔒 SICHERHEIT: Dieses Modul (Finanz-Cockpit inkl. Umsätze, Mitglieds-Finanzen und
+// Stripe-Refunds) war komplett unauthentifiziert und der Dojo-Scope kam aus
+// req.query.dojo_id — jeder anonyme Aufruf konnte per ?dojo_id=all alle Dojos lesen
+// und Erstattungen auslösen. Ab jetzt: Login-Pflicht + Mandanten-Zwang.
+router.use(authenticateToken);
+router.use((req, res, next) => {
+  // Super-Admin darf das Cross-Dojo-Cockpit frei nutzen (dojo_id/dojo_ids/all).
+  if (isSuperAdmin(req)) return next();
+  // Normale User: strikt auf das eigene Dojo aus dem JWT festnageln,
+  // alle client-seitigen dojo_id/dojo_ids-Parameter werden überschrieben/ignoriert.
+  const own = getSecureDojoId(req);
+  if (!own) return res.status(403).json({ success: false, error: 'Kein Zugriff' });
+  req.query.dojo_id = String(own);
+  delete req.query.dojo_ids;
+  next();
+});
 
 // ===== FINANZCOCKPIT STATISTIKEN =====
 // GET /api/finanzcockpit/stats - Hauptstatistiken

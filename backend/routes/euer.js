@@ -9,9 +9,20 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 
 // Alle Routes erfordern Authentifizierung
 router.use(authenticateToken);
+
+// 🔒 SICHERHEIT: Die EÜR-Routen nehmen :dojo_id aus der URL. Ohne Prüfung konnte ein
+// eingeloggter Dojo-Admin die Steuer-/EÜR-Daten eines FREMDEN Dojos abrufen (IDOR).
+// Guard erzwingt: nur eigenes Dojo (Super-Admin (own === null) darf alle).
+router.param('dojo_id', (req, res, next, dojoId) => {
+  const own = getSecureDojoId(req);
+  const target = parseInt(dojoId, 10);
+  if (own === null || own === target) return next();
+  return res.status(403).json({ error: 'Kein Zugriff auf dieses Dojo' });
+});
 
 /**
  * Helper: Führt eine Query aus und gibt ein Promise zurück
@@ -250,6 +261,8 @@ router.get('/dojo/:dojo_id', async (req, res) => {
  * Query-Parameter: jahr (default: aktuelles Jahr)
  */
 router.get('/tda', async (req, res) => {
+  // 🔒 TDA-weite Aggregation (dojo-übergreifend) nur für Super-Admin
+  if (!isSuperAdmin(req)) return res.status(403).json({ error: 'Nur für Super-Admin zugänglich' });
   const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
 
   // TDA Dojo-ID aus Einstellungen oder Standard
@@ -778,6 +791,8 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
  * Generiert EÜR als PDF für TDA International
  */
 router.get('/pdf/tda', async (req, res) => {
+  // 🔒 TDA-weite Aggregation (dojo-übergreifend) nur für Super-Admin
+  if (!isSuperAdmin(req)) return res.status(403).json({ error: 'Nur für Super-Admin zugänglich' });
   const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
   const TDA_DOJO_ID = 2;
 

@@ -24,7 +24,7 @@ router.get('/batch', async (req, res) => {
     const [stats, activities, tarife, zahlungszyklen] = await Promise.all([
       getDashboardStats(dojo_id),
       getRecentActivities(dojo_id),
-      getTarife(),
+      getTarife(dojo_id),
       getZahlungszyklen()
     ]);
 
@@ -102,9 +102,9 @@ async function getDashboardStats(dojo_id) {
       db.promise().query(`SELECT COUNT(*) as count FROM beitraege WHERE bezahlt = 0${dojoFilter}`).catch(() => [[]]),
       // Checkins: JOIN mit mitglieder für dojo_id
       db.promise().query(`SELECT COUNT(*) as count FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE c.checkin_time >= CURDATE() AND c.checkin_time < CURDATE() + INTERVAL 1 DAY AND c.status = 'active'${dojoJoinFilter}`).catch(() => [[]]),
-      db.promise().query('SELECT COUNT(*) as count FROM stile').catch(() => [[]]), // Global, kein Filter
-      db.promise().query('SELECT COUNT(*) as count FROM tarife').catch(() => [[]]), // Global, kein Filter
-      db.promise().query('SELECT COUNT(*) as count FROM zahlungszyklen').catch(() => [[]]), // Global, kein Filter
+      db.promise().query('SELECT COUNT(*) as count FROM stile').catch(() => [[]]), // TODO Phase 1: stile bekommt dojo_id
+      db.promise().query(`SELECT COUNT(*) as count FROM tarife WHERE 1=1${dojoFilter}`).catch(() => [[]]), // 🔒 dojo-gefiltert
+      db.promise().query('SELECT COUNT(*) as count FROM zahlungszyklen').catch(() => [[]]), // zahlungszyklen hat kein dojo_id (globale Referenz)
       db.promise().query(`SELECT COUNT(*) as count FROM pruefungstermin_vorlagen WHERE 1=1${dojoFilter}`).catch(() => [[]]), // Prüfungstermine
       db.promise().query(`SELECT COUNT(*) as count FROM ehemalige WHERE archiviert = FALSE${dojoFilter}`).catch(() => [[]]), // Ehemalige Mitglieder
       db.promise().query(`SELECT COUNT(*) as count FROM interessenten WHERE archiviert = FALSE${dojoFilter}`).catch(() => [[]]) // Interessenten
@@ -157,9 +157,18 @@ async function getRecentActivities(dojo_id) {
   }
 }
 
-async function getTarife() {
+async function getTarife(dojo_id) {
   try {
-    const [tarife] = await db.promise().query('SELECT * FROM tarife ORDER BY name ASC');
+    // 🔒 DOJO-FILTER: Tarifnamen/-preise dürfen nicht dojo-übergreifend geliefert werden.
+    let where = '';
+    if (dojo_id && dojo_id !== 'all' && String(dojo_id).includes(',')) {
+      const ids = String(dojo_id).split(',').map(i => parseInt(i, 10)).filter(i => !isNaN(i));
+      if (ids.length) where = ` WHERE dojo_id IN (${ids.join(',')})`;
+    } else if (dojo_id && dojo_id !== 'all') {
+      where = ` WHERE dojo_id = ${parseInt(dojo_id)}`;
+    }
+    // dojo_id === 'all' (nur Super-Admin, siehe /batch): kein Filter → alle Tarife
+    const [tarife] = await db.promise().query(`SELECT * FROM tarife${where} ORDER BY name ASC`);
     return tarife;
   } catch (error) {
     logger.error('Tarife Query Fehler:', error);

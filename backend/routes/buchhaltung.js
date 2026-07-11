@@ -1064,7 +1064,10 @@ const requireSuperAdmin = (req, res, next) => {
   const isSuperAdmin =
     req.user?.is_super_admin === true ||
     req.user?.rolle === 'super_admin' ||
-    req.user?.role === 'admin' ||
+    // 🔒 FIX: 'admin' ist NUR Super-Admin, wenn KEINE dojo_id gesetzt ist
+    // (kanonisch wie tenantSecurity.js). Vorher wurde jeder Dojo-Admin (role='admin'
+    // mit eigener dojo_id) auf ALLE Dojos hochgestuft → Cross-Tenant-Buchhaltungs-Leak.
+    (req.user?.role === 'admin' && !req.user?.dojo_id) ||
     req.user?.role === 'super_admin' ||
     (req.user?.username === 'admin' && req.user?.dojo_id === null);
   if (isSuperAdmin) { return next(); }
@@ -1076,7 +1079,10 @@ const requireBuchhaltungAccess = (req, res, next) => {
   const isSuperAdmin =
     req.user?.is_super_admin === true ||
     req.user?.rolle === 'super_admin' ||
-    req.user?.role === 'admin' ||
+    // 🔒 FIX: 'admin' ist NUR Super-Admin, wenn KEINE dojo_id gesetzt ist
+    // (kanonisch wie tenantSecurity.js). Vorher wurde jeder Dojo-Admin (role='admin'
+    // mit eigener dojo_id) auf ALLE Dojos hochgestuft → Cross-Tenant-Buchhaltungs-Leak.
+    (req.user?.role === 'admin' && !req.user?.dojo_id) ||
     req.user?.role === 'super_admin' ||
     (req.user?.username === 'admin' && req.user?.dojo_id === null);
   if (isSuperAdmin) {

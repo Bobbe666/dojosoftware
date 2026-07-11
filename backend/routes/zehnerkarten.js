@@ -3,6 +3,13 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const PaymentProviderFactory = require('../services/PaymentProviderFactory');
+const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
+
+// 🔒 SICHERHEIT: Alle 10er-Karten-Routen erfordern Login (dieser Router ist unter
+// /api gemountet, daher Auth hier im Router statt am Mount, um andere Routen nicht
+// zu treffen). Ohne diesen Guard waren Guthaben/Buchungen unauthentifiziert lesbar.
+router.use(authenticateToken);
 
 // Helper function to promisify db.query
 const query = (sql, params) => {
@@ -13,6 +20,24 @@ const query = (sql, params) => {
     });
   });
 };
+
+// 🔒 Cross-Tenant-Schutz: gehört das Mitglied zum Dojo des eingeloggten Users?
+// secureDojoId === null bedeutet Super-Admin (Zugriff auf alle Dojos).
+async function mitgliedInDojo(mitgliedId, secureDojoId) {
+  if (!secureDojoId) return true;
+  const rows = await query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitgliedId]);
+  return rows.length > 0 && Number(rows[0].dojo_id) === Number(secureDojoId);
+}
+
+// 🔒 Cross-Tenant-Schutz: gehört die 10er-Karte (via Mitglied) zum Dojo des Users?
+async function karteInDojo(karteId, secureDojoId) {
+  if (!secureDojoId) return true;
+  const rows = await query(
+    'SELECT m.dojo_id FROM zehnerkarten z JOIN mitglieder m ON z.mitglied_id = m.mitglied_id WHERE z.id = ?',
+    [karteId]
+  );
+  return rows.length > 0 && Number(rows[0].dojo_id) === Number(secureDojoId);
+}
 
 /**
  * Ruhepause-Verrechnung: bereits BEZAHLTE Mitgliedsbeiträge, deren Zahlungsdatum
@@ -61,6 +86,10 @@ async function computeRuhepauseVerrechnung(mitgliedId, kartenpreisCents) {
 router.get('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
   try {
     const { mitgliedId } = req.params;
+    const secureDojoId = getSecureDojoId(req);
+    if (!await mitgliedInDojo(mitgliedId, secureDojoId)) {
+      return res.status(404).json({ success: false, error: 'Mitglied nicht gefunden' });
+    }
 
     const sql = `
       SELECT
@@ -114,9 +143,15 @@ router.post('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
   try {
     const { mitgliedId } = req.params;
     const { tarif_id, gekauft_am, einheiten_gesamt = 10 } = req.body;
+    const secureDojoId = getSecureDojoId(req);
+    if (!await mitgliedInDojo(mitgliedId, secureDojoId)) {
+      return res.status(404).json({ success: false, error: 'Mitglied nicht gefunden' });
+    }
 
-    // Tarif-Details abrufen
-    const tarife = await query('SELECT * FROM tarife WHERE id = ?', [tarif_id]);
+    // Tarif-Details abrufen (dojo-gescoped: kein fremder Tarif)
+    const tarife = secureDojoId
+      ? await query('SELECT * FROM tarife WHERE id = ? AND dojo_id = ?', [tarif_id, secureDojoId])
+      : await query('SELECT * FROM tarife WHERE id = ?', [tarif_id]);
 
     if (tarife.length === 0) {
       return res.status(404).json({ success: false, error: 'Tarif nicht gefunden' });
@@ -176,6 +211,9 @@ router.post('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
 router.get('/zehnerkarten/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    if (!await karteInDojo(id, getSecureDojoId(req))) {
+      return res.status(404).json({ success: false, error: '10er-Karte nicht gefunden' });
+    }
 
     const sql = `
       SELECT
@@ -211,6 +249,9 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
   try {
     const { id } = req.params;
     const { buchungsdatum = new Date(), notiz = '' } = req.body;
+    if (!await karteInDojo(id, getSecureDojoId(req))) {
+      return res.status(404).json({ success: false, error: '10er-Karte nicht gefunden' });
+    }
 
     // 10er-Karte abrufen
     const zehnerkarten = await query(
@@ -319,6 +360,9 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
 router.get('/zehnerkarten/:id/buchungen', async (req, res) => {
   try {
     const { id } = req.params;
+    if (!await karteInDojo(id, getSecureDojoId(req))) {
+      return res.status(404).json({ success: false, error: '10er-Karte nicht gefunden' });
+    }
 
     const sql = `
       SELECT
@@ -350,7 +394,13 @@ router.get('/zehnerkarten/verrechnung-preview', async (req, res) => {
     if (!mitglied_id || !tarif_id) {
       return res.status(400).json({ success: false, error: 'mitglied_id und tarif_id erforderlich' });
     }
-    const tarife = await query('SELECT price_cents FROM tarife WHERE id = ?', [tarif_id]);
+    const secureDojoId = getSecureDojoId(req);
+    if (!await mitgliedInDojo(mitglied_id, secureDojoId)) {
+      return res.status(404).json({ success: false, error: 'Mitglied nicht gefunden' });
+    }
+    const tarife = secureDojoId
+      ? await query('SELECT price_cents FROM tarife WHERE id = ? AND dojo_id = ?', [tarif_id, secureDojoId])
+      : await query('SELECT price_cents FROM tarife WHERE id = ?', [tarif_id]);
     if (tarife.length === 0) return res.status(404).json({ success: false, error: 'Tarif nicht gefunden' });
     const v = await computeRuhepauseVerrechnung(mitglied_id, tarife[0].price_cents);
     res.json({ success: true, ...v });
@@ -388,6 +438,11 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
       });
     }
 
+    const secureDojoId = getSecureDojoId(req);
+    if (!await mitgliedInDojo(mitglied_id, secureDojoId)) {
+      return res.status(404).json({ success: false, error: 'Mitglied nicht gefunden' });
+    }
+
     // Doppelklick-/Doppel-Submit-Schutz: identische Lastschrift-Aufladung in den
     // letzten 90 Sekunden ablehnen (verhindert doppelte Karte + doppelte Abbuchung)
     if (zahlungsart === 'lastschrift') {
@@ -419,8 +474,10 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
 
     const mitglied = mitglieder[0];
 
-    // Tarif-Details abrufen
-    const tarife = await query('SELECT * FROM tarife WHERE id = ?', [tarif_id]);
+    // Tarif-Details abrufen (dojo-gescoped: kein fremder Tarif)
+    const tarife = secureDojoId
+      ? await query('SELECT * FROM tarife WHERE id = ? AND dojo_id = ?', [tarif_id, secureDojoId])
+      : await query('SELECT * FROM tarife WHERE id = ?', [tarif_id]);
 
     if (tarife.length === 0) {
       return res.status(404).json({ success: false, error: 'Tarif nicht gefunden' });
@@ -672,6 +729,9 @@ async function generateRechnungsnummer() {
 router.delete('/zehnerkarten/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    if (!await karteInDojo(id, getSecureDojoId(req))) {
+      return res.status(404).json({ success: false, error: '10er-Karte nicht gefunden' });
+    }
 
     // Prüfen ob Buchungen vorhanden
     const buchungen = await query(

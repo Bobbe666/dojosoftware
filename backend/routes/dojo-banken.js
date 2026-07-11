@@ -3,6 +3,18 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
+
+// 🔒 SICHERHEIT: Jede Route nimmt :dojoId aus der URL. Ohne Prüfung konnte ein
+// eingeloggter Dojo-Admin fremde IBAN/Bankdaten lesen UND ändern (IDOR).
+// Dieser Guard erzwingt zentral, dass der User nur auf sein eigenes Dojo zugreift
+// (Super-Admin (own === null) darf alle). Gilt für alle Read- und Write-Routen.
+router.param('dojoId', (req, res, next, dojoId) => {
+  const own = getSecureDojoId(req);           // null = Super-Admin, sonst parseInt(dojo_id)
+  const target = parseInt(dojoId, 10);
+  if (own === null || own === target) return next();
+  return res.status(403).json({ error: 'Kein Zugriff auf dieses Dojo' });
+});
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
