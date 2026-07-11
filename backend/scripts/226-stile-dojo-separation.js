@@ -35,19 +35,27 @@ async function indexExists(table, idx) {
 }
 
 // Original-Stile (dojo_id = ORIGIN oder noch NULL), die Dojo D real nutzt.
-async function stylesUsedByDojo(conn, D) {
+// hasDojoId=false (Dry-Run vor ADD COLUMN): dojo_id-Prädikate weglassen (Ergebnis identisch,
+// da vor der Migration ohnehin alle Stile global/Origin sind).
+async function stylesUsedByDojo(conn, D, hasDojoId) {
+  const sCond = hasDojoId ? '(s.dojo_id = ? OR s.dojo_id IS NULL) AND ' : '';
+  const s2Cond = hasDojoId ? 'AND (s2.dojo_id = ? OR s2.dojo_id IS NULL) ' : '';
+  const params = [];
+  if (hasDojoId) params.push(ORIGIN_DOJO);
+  params.push(D, D);
+  if (hasDojoId) params.push(ORIGIN_DOJO);
+  params.push(D);
   const [rows] = await conn.query(`
     SELECT s.stil_id, s.name FROM stile s
-     WHERE (s.dojo_id = ? OR s.dojo_id IS NULL)
-       AND s.stil_id IN (
+     WHERE ${sCond}s.stil_id IN (
         SELECT msd.stil_id FROM mitglied_stil_data msd
           JOIN mitglieder m ON m.mitglied_id=msd.mitglied_id WHERE m.dojo_id=?
         UNION SELECT p.stil_id FROM pruefungen p WHERE p.dojo_id=?
         UNION SELECT s2.stil_id FROM kurse k
-          JOIN stile s2 ON s2.name=k.stil AND (s2.dojo_id=? OR s2.dojo_id IS NULL)
+          JOIN stile s2 ON s2.name=k.stil ${s2Cond}
           WHERE k.dojo_id=? AND k.stil IS NOT NULL AND k.stil<>''
        )
-     ORDER BY s.stil_id`, [ORIGIN_DOJO, D, D, ORIGIN_DOJO, D]);
+     ORDER BY s.stil_id`, params);
   return rows;
 }
 
@@ -94,8 +102,9 @@ async function main() {
   // --- Snapshot: genutzte Stile pro Copy-Dojo VOR jeder Duplizierung --------
   const plan = {};
   {
+    const hasDojoId = await columnExists('stile', 'dojo_id');
     const conn = await pool.getConnection();
-    try { for (const D of COPY_DOJOS) plan[D] = await stylesUsedByDojo(conn, D); }
+    try { for (const D of COPY_DOJOS) plan[D] = await stylesUsedByDojo(conn, D, hasDojoId); }
     finally { conn.release(); }
   }
 
