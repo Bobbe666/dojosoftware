@@ -95,6 +95,13 @@ router.put('/:fortschritt_id', async (req, res) => {
     const [check] = await pool.query(checkQuery, checkParams);
     if (!check.length) return res.status(403).json({ error: 'Zugriff verweigert' });
 
+    // Alt-Werte VOR dem UPDATE lesen (für Historie)
+    const [oldRows] = await pool.query(
+      'SELECT mitglied_id, fortschritt_prozent, status FROM mitglieder_fortschritt WHERE fortschritt_id = ?',
+      [fortschritt_id]
+    );
+    const oldRow = oldRows[0] || {};
+
     await pool.query(`
       UPDATE mitglieder_fortschritt
       SET skill_name = ?, beschreibung = ?, fortschritt_prozent = ?, status = ?,
@@ -108,14 +115,9 @@ router.put('/:fortschritt_id', async (req, res) => {
         await pool.query(`
           INSERT INTO fortschritt_updates
           (fortschritt_id, mitglied_id, alter_fortschritt, neuer_fortschritt, alter_status, neuer_status, notiz, aktualisiert_von_name)
-          SELECT ?, mitglied_id,
-                 (SELECT fortschritt_prozent FROM mitglieder_fortschritt WHERE fortschritt_id = ?),
-                 ?,
-                 (SELECT status FROM mitglieder_fortschritt WHERE fortschritt_id = ?),
-                 ?, ?, ?
-          FROM mitglieder_fortschritt WHERE fortschritt_id = ?
-        `, [fortschritt_id, fortschritt_id, fortschritt_prozent, fortschritt_id,
-            status, `Slider geändert von ${updated_by_name}`, updated_by_name, fortschritt_id]);
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [fortschritt_id, oldRow.mitglied_id, oldRow.fortschritt_prozent, fortschritt_prozent,
+            oldRow.status, status, `Slider geändert von ${updated_by_name}`, updated_by_name]);
       } catch (histErr) {
         logger.error('Fehler beim Speichern der Historie:', { error: histErr });
       }

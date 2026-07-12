@@ -552,6 +552,7 @@ router.post('/import', async (req, res) => {
   let importiert = 0;
   let fehler = 0;
   let uebersprungen = 0; // Rücklastschriften werden nicht ins Kassenbuch importiert
+  let duplikate = 0;     // bereits im Kassenbuch vorhandene Buchungen
 
   try {
     // Aktuellen Kassenstand holen
@@ -560,6 +561,21 @@ router.post('/import', async (req, res) => {
       [secureDojoId]
     );
     let kassenstand = letzterEintrag?.kassenstand_nachher_cent || 0;
+
+    // 🔁 Serverseitige Duplikatsprüfung (analog /analyse): Hashes bereits gebuchter
+    // Kassenbuch-Einträge sammeln, damit ein erneuter Import derselben Datei nichts doppelt anlegt.
+    const [kassenbuchEintraege] = await pool.query(
+      `SELECT geschaeft_datum, betrag_cent, beschreibung FROM kassenbuch
+        WHERE dojo_id = ? AND geschaeft_datum >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)`,
+      [secureDojoId]
+    );
+    const kassenbuchHashes = new Set(
+      kassenbuchEintraege.map(e => hashTransaction(
+        (e.geschaeft_datum instanceof Date ? e.geschaeft_datum.toISOString().slice(0, 10) : String(e.geschaeft_datum).slice(0, 10)),
+        e.betrag_cent / 100,
+        e.beschreibung
+      ))
+    );
 
     const erfasstVon = req.user?.id || null;
     const erfasstVonName = req.user?.name || req.user?.email || 'Kontoauszug-Import';
@@ -574,6 +590,13 @@ router.post('/import', async (req, res) => {
         // → Admin legt sie manuell in der Rücklastschrift-Verwaltung an
         if (ruecklastschrift || typ === 'Rücklastschrift') {
           uebersprungen++;
+          continue;
+        }
+
+        // Duplikat-Check: gegen vorhandene Kassenbuch-Hashes + innerhalb dieses Batches
+        const txHash = hashTransaction(String(datum).slice(0, 10), parseFloat(betrag), beschreibung);
+        if (kassenbuchHashes.has(txHash)) {
+          duplikate++;
           continue;
         }
 
@@ -604,6 +627,7 @@ router.post('/import', async (req, res) => {
           ]
         );
 
+        kassenbuchHashes.add(txHash); // gegen Doppel innerhalb desselben Imports absichern
         kassenstand = kassenstandNachher;
         importiert++;
       } catch (txErr) {
@@ -613,12 +637,14 @@ router.post('/import', async (req, res) => {
     }
 
     const parts = [`${importiert} Transaktionen erfolgreich importiert`];
+    if (duplikate > 0) parts.push(`${duplikate} Duplikat(e) übersprungen (bereits im Kassenbuch)`);
     if (uebersprungen > 0) parts.push(`${uebersprungen} Rücklastschrift(en) übersprungen (bitte in Rücklastschrift-Verwaltung anlegen)`);
     if (fehler > 0) parts.push(`${fehler} Fehler`);
 
     res.json({
       success: true,
       importiert,
+      duplikate,
       uebersprungen,
       fehler,
       message: parts.join(', ')

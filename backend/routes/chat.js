@@ -738,6 +738,8 @@ router.get('/rooms/:id/reads-summary', async (req, res) => {
          GROUP_CONCAT(
            CASE
              WHEN r.member_type = 'mitglied' THEN CONCAT(m.vorname, ' ', m.nachname)
+             WHEN au.id IS NOT NULL
+               THEN COALESCE(NULLIF(TRIM(CONCAT(COALESCE(au.vorname,''), ' ', COALESCE(au.nachname,''))), ''), au.username, 'Admin')
              ELSE COALESCE(u.username, 'Admin')
            END
            ORDER BY r.read_at ASC
@@ -749,6 +751,7 @@ router.get('/rooms/:id/reads-summary', async (req, res) => {
          SELECT id FROM chat_messages WHERE room_id = ? ORDER BY sent_at DESC LIMIT 100
        ) recent ON r.message_id = recent.id
        LEFT JOIN mitglieder m ON r.member_type = 'mitglied' AND r.member_id = m.mitglied_id
+       LEFT JOIN admin_users au ON r.member_type != 'mitglied' AND r.member_id = au.id
        LEFT JOIN users u ON r.member_type != 'mitglied' AND r.member_id = u.id
        WHERE r.room_id = ?
        GROUP BY r.message_id`,
@@ -791,6 +794,8 @@ router.get('/announcements', async (req, res) => {
          cr.id AS room_id, cr.name AS room_name,
          CASE
            WHEN cm.sender_type = 'mitglied' THEN CONCAT(m.vorname, ' ', m.nachname)
+           WHEN au.id IS NOT NULL
+             THEN COALESCE(NULLIF(TRIM(CONCAT(COALESCE(au.vorname,''), ' ', COALESCE(au.nachname,''))), ''), au.username, 'Admin')
            ELSE COALESCE(u.username, 'Admin')
          END AS sender_name,
          EXISTS(
@@ -800,6 +805,7 @@ router.get('/announcements', async (req, res) => {
        FROM chat_messages cm
        JOIN chat_rooms cr ON cm.room_id = cr.id
        LEFT JOIN mitglieder m ON cm.sender_type = 'mitglied' AND cm.sender_id = m.mitglied_id
+       LEFT JOIN admin_users au ON cm.sender_type != 'mitglied' AND cm.sender_id = au.id
        LEFT JOIN users u ON cm.sender_type != 'mitglied' AND cm.sender_id = u.id
        WHERE cr.type = 'announcement'
          AND cr.dojo_id = ?

@@ -12,8 +12,12 @@ const PDFDocument = require('pdfkit');
 async function generateMitgliedschaftsvertragPDF(db, parameter = {}) {
   return new Promise((resolve, reject) => {
     try {
-      // Hole Dojo-Informationen aus der Datenbank
-      db.query('SELECT * FROM dojo LIMIT 1', async (err, dojoData) => {
+      // Hole Dojo-Informationen aus der Datenbank (mandantensicher: nach dojo_id)
+      const dojoSql = parameter.dojo_id
+        ? 'SELECT * FROM dojo WHERE id = ? LIMIT 1'
+        : 'SELECT * FROM dojo LIMIT 1';
+      const dojoParams = parameter.dojo_id ? [parameter.dojo_id] : [];
+      db.query(dojoSql, dojoParams, async (err, dojoData) => {
         if (err) {
           return reject(err);
         }
@@ -376,7 +380,7 @@ async function generateMitgliedschaftsvertragPDF(db, parameter = {}) {
         doc.font('Helvetica-Bold')
            .text('Kreditinstitut:', { continued: false })
            .font('Helvetica')
-           .text(mitglied.bank || '_'.repeat(40))
+           .text(mitglied.bankname || mitglied.bank || '_'.repeat(40))
            .moveDown(2);
 
         const sepaY = doc.y;

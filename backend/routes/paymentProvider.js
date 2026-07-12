@@ -440,8 +440,10 @@ router.post('/member/payment-intent', authenticateToken, async (req, res) => {
             );
         }
 
-        // Idempotency Key: verhindert Doppelabbuchung
-        const idempotencyKey = `pi-r${rechnung_id}-m${mitgliedId}-${Date.now()}`;
+        // Idempotency Key: verhindert Doppelabbuchung.
+        // MUSS stabil aus fachlichen Daten gebildet werden (Rechnung + Mitglied + Betrag),
+        // NICHT aus Date.now() — sonst erzeugt jeder Retry einen neuen Key = Doppelabbuchung.
+        const idempotencyKey = `pi-r${rechnung_id}-m${mitgliedId}-${amountCents}`;
 
         const piParams = {
             amount: amountCents,

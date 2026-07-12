@@ -353,7 +353,7 @@ async function handlePaymentSuccess(paymentId) {
              SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = 'gocardless'
              WHERE mitglied_id = ?
                AND bezahlt = 0
-             ORDER BY faellig_am ASC
+             ORDER BY zahlungsdatum ASC
              LIMIT 1`,
             [mitgliedId]
         );

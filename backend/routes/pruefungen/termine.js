@@ -397,7 +397,7 @@ router.get('/:id/umfrage', async (req, res) => {
     if (!terminRows.length) return res.status(404).json({ error: 'Termin nicht gefunden' });
 
     const { pruefungsdatum, stil_id, dojo_id } = terminRows[0];
-    const datum = pruefungsdatum ? pruefungsdatum.toISOString().split('T')[0] : null;
+    const datum = formatDate(pruefungsdatum);
     if (!datum) return res.json({ success: true, umfrage: null });
 
     const [kandidaten] = await pool.query(
@@ -646,10 +646,10 @@ router.get('/stundenplan-konflikt', async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT s.stundenplan_id, s.tag, s.uhrzeit_start, s.uhrzeit_ende,
-              k.name AS kurs_name, st.name AS stil_name
+              k.gruppenname AS kurs_name, st.name AS stil_name
        FROM stundenplan s
        JOIN kurse k ON s.kurs_id = k.kurs_id
-       LEFT JOIN stile st ON k.stil_id = st.stil_id
+       LEFT JOIN stile st ON k.stil = st.name
        WHERE k.dojo_id = ?
          AND s.typ = 'regulaer'
          AND s.tag = ELT(DAYOFWEEK(?), 'Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag')

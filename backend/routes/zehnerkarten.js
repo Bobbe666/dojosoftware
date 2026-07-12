@@ -521,7 +521,7 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
     if (zahlungsart === 'bar') {
       // Admin-Benachrichtigung erstellen — 🔒 nur Admins/Trainer des eigenen Dojos
       const admins = await query(
-        'SELECT mitglied_id FROM mitglieder WHERE (rolle = "admin" OR rolle = "trainer") AND dojo_id = ?',
+        'SELECT id AS mitglied_id FROM admin_users WHERE rolle IN ("admin", "trainer", "super_admin") AND aktiv = 1 AND dojo_id = ?',
         [mitglied.dojo_id]
       );
 
@@ -628,19 +628,24 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
           rechnungsnummer,
           rechnungsdatum,
           faelligkeitsdatum,
-          betrag_netto_cents,
-          mwst_prozent,
-          betrag_brutto_cents,
+          netto_betrag,
+          mwst_satz,
+          mwst_betrag,
+          brutto_betrag,
+          betrag,
+          gesamtsumme,
           status,
           zahlungsart
-        ) VALUES (?, ?, ?, DATE_ADD(?, INTERVAL 14 DAY), ?, 0, ?, 'offen', 'rechnung')`,
+        ) VALUES (?, ?, ?, DATE_ADD(?, INTERVAL 14 DAY), ?, 0, 0, ?, ?, ?, 'offen', 'rechnung')`,
         [
           mitglied_id,
           rechnungsnummer,
           heute,
           heute,
-          tarif.price_cents,
-          tarif.price_cents
+          tarif.price_cents / 100,
+          tarif.price_cents / 100,
+          tarif.price_cents / 100,
+          tarif.price_cents / 100
         ]
       );
 
@@ -650,17 +655,17 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
       await query(
         `INSERT INTO rechnungspositionen (
           rechnung_id,
-          position,
+          position_nr,
           bezeichnung,
           menge,
-          einzelpreis_cents,
-          gesamtpreis_cents
+          einzelpreis,
+          gesamtpreis
         ) VALUES (?, 1, ?, 1, ?, ?)`,
         [
           rechnungId,
           `10er-Karte: ${tarif.name}`,
-          tarif.price_cents,
-          tarif.price_cents
+          tarif.price_cents / 100,
+          tarif.price_cents / 100
         ]
       );
 

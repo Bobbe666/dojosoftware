@@ -136,57 +136,22 @@ async function generateAndSaveRechnungPDF(rechnungId) {
       bank_name: rechnung.bank_name
     };
 
-    // Berechne Endbetrag und Skonto
-    const calculateTotal = () => {
-      return positionen.reduce((sum, pos) => {
-        const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
-        const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
-        return sum + (bruttoPreis - rabattBetrag);
-      }, 0);
-    };
+    // Endbetrag für QR-Code aus dem Rechnungs-Datensatz (brutto_betrag/mwst_satz).
+    // Es gibt keine Rabatt-/Skonto-Spalten in rechnungen/rechnungspositionen.
+    const endbetrag = Number(rechnung.brutto_betrag) || 0;
 
-    const zwischensumme = calculateTotal();
-    const rabatt = Number(rechnung.rabatt_prozent) > 0
-      ? ((rechnung.rabatt_auf_betrag || zwischensumme) * Number(rechnung.rabatt_prozent)) / 100
-      : 0;
-    const summe = zwischensumme - rabatt;
-    const ust = (summe * 19) / 100;
-    const endbetrag = summe + ust;
-    const skonto = Number(rechnung.skonto_prozent) > 0
-      ? (endbetrag * Number(rechnung.skonto_prozent)) / 100
-      : 0;
-
-    const hasSkonto = Number(rechnung.skonto_prozent) > 0 && Number(rechnung.skonto_tage) > 0;
-    const betragMitSkonto = endbetrag - skonto;
-    const betragOhneSkonto = endbetrag;
-
-    if (bankDaten.iban && bankDaten.bic && bankDaten.kontoinhaber) {
+    if (bankDaten.iban && bankDaten.bic && bankDaten.kontoinhaber && endbetrag > 0) {
       const verwendungszweck = `Rechnung ${rechnung.rechnungsnummer}`;
 
-      // QR-Code mit Skonto (falls vorhanden)
-      if (hasSkonto) {
-        const epcStringMitSkonto = generateEPCQRCodeString(
-          bankDaten,
-          betragMitSkonto,
-          rechnung.rechnungsnummer,
-          verwendungszweck
-        );
-        if (epcStringMitSkonto) {
-          const qrMitSkonto = await generateQRCodeDataURI(epcStringMitSkonto);
-          if (qrMitSkonto) qrCodeDataURIs.push(qrMitSkonto);
-        }
-      }
-
-      // QR-Code ohne Skonto (immer)
-      const epcStringOhneSkonto = generateEPCQRCodeString(
+      const epcString = generateEPCQRCodeString(
         bankDaten,
-        betragOhneSkonto,
+        endbetrag,
         rechnung.rechnungsnummer,
         verwendungszweck
       );
-      if (epcStringOhneSkonto) {
-        const qrOhneSkonto = await generateQRCodeDataURI(epcStringOhneSkonto);
-        if (qrOhneSkonto) qrCodeDataURIs.push(qrOhneSkonto);
+      if (epcString) {
+        const qr = await generateQRCodeDataURI(epcString);
+        if (qr) qrCodeDataURIs.push(qr);
       }
     }
 

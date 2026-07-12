@@ -301,7 +301,7 @@ function MitgliedGutscheineTab({ mitgliedId, activeDojo }) {
           const wert_cent = Math.round(parseFloat(g.wert) * 100);
           const restbetrag_cent = Math.max(0, wert_cent - (g.verbraucht_cent || 0));
           const abgelaufen = g.gueltig_bis && new Date(g.gueltig_bis) < new Date();
-          const prozent = Math.round((restbetrag_cent / wert_cent) * 100);
+          const prozent = wert_cent > 0 ? Math.round((restbetrag_cent / wert_cent) * 100) : 0;
           return (
             <div key={g.id} style={{ borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', marginBottom: 10, padding: '14px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -557,7 +557,7 @@ const MitgliedschaftTab = ({
         axios.get('/beitraege', cfg),
         axios.get(`/rechnungen/ratenplan/${id}`, signal ? { signal } : {}).catch(() => null)
       ]);
-      setBeitraege(beitraegeRes.data);
+      setBeitraege(Array.isArray(beitraegeRes.data) ? beitraegeRes.data : []);
       if (ratenplanRes?.data?.success && ratenplanRes.data.plan) {
         setAktiverRatenplan(ratenplanRes.data.plan);
       } else {

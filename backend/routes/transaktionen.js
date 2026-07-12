@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db");
+const logger = require('../utils/logger');
 const router = express.Router();
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
@@ -23,24 +24,19 @@ router.get("/", (req, res) => {
 
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
 
+    // Tabelle transaktionen hat nur (id, mitglied_id, typ, betrag, status)
     const query = `
-        SELECT 
+        SELECT
             t.id,
             t.mitglied_id,
             t.typ,
             t.betrag,
             t.status,
-            t.faellig_am,
-            t.bezahlt_am,
-            t.zahlungsart,
-            t.mahnstufe,
-            t.letzte_mahnung,
-            t.erstellt_am,
             CONCAT(m.vorname, ' ', m.nachname) as mitglied_name
         FROM transaktionen t
         JOIN mitglieder m ON t.mitglied_id = m.mitglied_id
         ${whereClause}
-        ORDER BY t.erstellt_am DESC
+        ORDER BY t.id DESC
     `;
 
     db.query(query, queryParams, (err, results) => {
@@ -54,7 +50,7 @@ router.get("/", (req, res) => {
 
 // API: Neue Transaktion erstellen
 router.post("/", (req, res) => {
-    const { mitglied_id, typ, betrag, status, faellig_am, bezahlt_am, zahlungsart } = req.body;
+    const { mitglied_id, typ, betrag, status } = req.body;
     // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
     const secureDojoId = getSecureDojoId(req);
 
@@ -87,18 +83,15 @@ router.post("/", (req, res) => {
         }
 
         const insertQuery = `
-            INSERT INTO transaktionen (mitglied_id, typ, betrag, status, faellig_am, bezahlt_am, zahlungsart) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO transaktionen (mitglied_id, typ, betrag, status)
+            VALUES (?, ?, ?, ?)
         `;
 
         const values = [
             mitglied_id,
             typ,
             betrag,
-            status || 'offen',
-            faellig_am || null,
-            bezahlt_am || null,
-            zahlungsart || null
+            status || 'offen'
         ];
 
         db.query(insertQuery, values, (err, result) => {
@@ -111,10 +104,7 @@ router.post("/", (req, res) => {
                 mitglied_id,
                 typ,
                 betrag,
-                status: status || 'offen',
-                faellig_am,
-                bezahlt_am,
-                zahlungsart
+                status: status || 'offen'
             });
         });
     });
@@ -123,7 +113,8 @@ router.post("/", (req, res) => {
 // API: Transaktion aktualisieren
 router.put("/:id", (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { status, bezahlt_am, zahlungsart, mahnstufe, letzte_mahnung } = req.body;
+    // Tabelle transaktionen hat nur (id, mitglied_id, typ, betrag, status) → nur status aktualisierbar
+    const { status } = req.body;
     // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
     const secureDojoId = getSecureDojoId(req);
 
@@ -148,22 +139,6 @@ router.put("/:id", (req, res) => {
     if (status !== undefined) {
         updateFields.push('status = ?');
         updateValues.push(status);
-    }
-    if (bezahlt_am !== undefined) {
-        updateFields.push('bezahlt_am = ?');
-        updateValues.push(bezahlt_am);
-    }
-    if (zahlungsart !== undefined) {
-        updateFields.push('zahlungsart = ?');
-        updateValues.push(zahlungsart);
-    }
-    if (mahnstufe !== undefined) {
-        updateFields.push('mahnstufe = ?');
-        updateValues.push(mahnstufe);
-    }
-    if (letzte_mahnung !== undefined) {
-        updateFields.push('letzte_mahnung = ?');
-        updateValues.push(letzte_mahnung);
     }
 
     if (updateFields.length === 0) {

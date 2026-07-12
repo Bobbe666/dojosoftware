@@ -229,10 +229,17 @@ async function createRechnungForBeitrag(vertrag_id, mitglied_id, monat, jahr) {
 
     // Beträge berechnen
     const monatsbeitrag = parseFloat(vertrag.monatsbeitrag || vertrag.monatlicher_beitrag);
+    if (!(monatsbeitrag > 0)) {
+      logger.debug(`Vertrag #${vertrag_id} hat keinen gültigen monatsbeitrag – keine Rechnung erstellt`);
+      return null;
+    }
     const netto_betrag = monatsbeitrag / 1.19;
     const mwst_betrag = monatsbeitrag - netto_betrag;
 
-    const datum = `${jahr}-${String(monat).padStart(2, '0')}-${vertrag.faelligkeit_tag || 1}`;
+    // Fälligkeitstag auf gültigen Tag im Monat begrenzen (verhindert z.B. 2026-02-31)
+    const tageImMonat = new Date(jahr, monat, 0).getDate();
+    const faelligkeitTag = Math.min(Math.max(parseInt(vertrag.faelligkeit_tag, 10) || 1, 1), tageImMonat);
+    const datum = `${jahr}-${String(monat).padStart(2, '0')}-${String(faelligkeitTag).padStart(2, '0')}`;
     const faelligkeit = new Date(datum);
     faelligkeit.setDate(faelligkeit.getDate() + 14);
     const faelligkeitsdatum = faelligkeit.toISOString().slice(0, 10);
@@ -301,10 +308,12 @@ async function createRechnungForBeitrag(vertrag_id, mitglied_id, monat, jahr) {
       const dieserAufschlag = Math.min(aufschlag, offen);
 
       if (dieserAufschlag > 0) {
-        // Rechnungsbetrag erhöhen
+        // Rechnungsbetrag konsistent erhöhen (netto + mwst = brutto), Aufschlag ist brutto (19% MwSt)
+        const aufschlagNetto = dieserAufschlag / 1.19;
+        const aufschlagMwst = dieserAufschlag - aufschlagNetto;
         await queryAsync(
-          `UPDATE rechnungen SET betrag = betrag + ?, brutto_betrag = brutto_betrag + ? WHERE rechnung_id = ?`,
-          [dieserAufschlag, dieserAufschlag, rechnung_id]
+          `UPDATE rechnungen SET betrag = betrag + ?, brutto_betrag = brutto_betrag + ?, netto_betrag = netto_betrag + ?, mwst_betrag = mwst_betrag + ? WHERE rechnung_id = ?`,
+          [dieserAufschlag, dieserAufschlag, aufschlagNetto, aufschlagMwst, rechnung_id]
         );
 
         // Eigene Position für den Ratenanteil

@@ -105,7 +105,7 @@ router.post('/:id/archivieren', async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)`,
       [mitglied.mitglied_id, mitglied.dojo_id, mitglied.vorname, mitglied.nachname,
        mitglied.geburtsdatum, mitglied.strasse, mitglied.plz, mitglied.ort, mitglied.land || 'Deutschland',
-       mitglied.telefon, mitglied.email, mitglied.eintrittsdatum, mitglied.status, mitglied.notizen, mitglied.foto_pfad,
+       mitglied.telefon, mitglied.email, mitglied.eintrittsdatum, (mitglied.aktiv ? 'aktiv' : 'inaktiv'), mitglied.notizen, mitglied.foto_pfad,
        JSON.stringify(stilData), JSON.stringify(sepaMandate), JSON.stringify(pruefungen),
        userDataForArchive ? JSON.stringify(userDataForArchive) : null,
        archiviert_von || null, grund || 'Mitglied archiviert']);
@@ -120,7 +120,7 @@ router.post('/:id/archivieren', async (req, res) => {
     // 5. Abhängige Daten löschen
     const tablesToDelete = [
       'fortschritt_updates', 'mitglieder_meilensteine', 'trainings_notizen', 'pruefung_teilnehmer',
-      'event_anmeldungen', 'gruppen_mitglieder', 'verkaeufe', 'gesetzlicher_vertreter', 'beitraege',
+      'event_anmeldungen', 'gruppen_mitglieder', 'verkaeufe', 'gesetzlicher_vertreter',
       'anwesenheit', 'anwesenheit_protokoll', 'checkins', 'pruefungen', 'mitglieder_fortschritt',
       'stripe_payment_intents', 'mitglied_stil_data', 'mitglied_stile', 'mitglieder_ziele',
       'kurs_bewertungen', 'payment_provider_logs', 'mitglieder_dokumente', 'sepa_mandate'

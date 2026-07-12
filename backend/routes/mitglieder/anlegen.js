@@ -219,6 +219,7 @@ router.post("/",
                 gesundheitserklaerung_datum: memberData.vertrag_gesundheitserklaerung ? new Date() : null,
                 foto_einverstaendnis: memberData.vertrag_foto_einverstaendnis ? 1 : 0,
                 foto_einverstaendnis_datum: memberData.vertrag_foto_einverstaendnis ? new Date() : null,
+                vertragsbeginn: memberData.vertragsbeginn || new Date().toISOString().split('T')[0],
                 status: 'aktiv',
                 unterschrift_datum: new Date()
             };
@@ -261,6 +262,10 @@ router.post("/",
                             }
                             const tarif = tarifResults[0];
                             const tarifPreis = tarif.price_cents / 100;
+                            // Preis lebt im Vertrag: Monatsbeitrag am Hauptmitglied-Vertrag nachtragen
+                            db.query('UPDATE vertraege SET monatsbeitrag = ?, monatlicher_beitrag = ? WHERE id = ?', [tarifPreis, tarifPreis, vertragId], (updErr) => {
+                                if (updErr) logger.error('Fehler beim Setzen des Monatsbeitrags im Vertrag:', updErr);
+                            });
                             const vertragsbeginn = memberData.vertragsbeginn || new Date().toISOString().split('T')[0];
                             const vertragsende = memberData.vertragsende || null;
                             const mindestlaufzeit = tarif.mindestlaufzeit_monate || 12;
@@ -441,7 +446,7 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
                     let monatsbeitrag = tarifPreis;
 
                     if (rabattProzent > 0) {
-                        monatsbeitrag = Math.round((tarifPreis * (100 - rabattProzent)) * 100) / 100;
+                        monatsbeitrag = Math.round(tarifPreis * (100 - rabattProzent)) / 100;
                     }
 
                     const vertragData = {
@@ -567,8 +572,8 @@ async function createUserAccountIfNeeded(memberData, mitgliedId, callback) {
                     logger.warn(`Benutzername ${username} vergeben, nutze ${usernameFallback}`);
                     const hash2 = await bcrypt.hash(password, 10);
                     db.query(
-                        'INSERT IGNORE INTO users (username, email, password, role, mitglied_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-                        [usernameFallback, email, hash2, 'member', mitgliedId],
+                        'INSERT IGNORE INTO users (username, email, password, role, mitglied_id, dojo_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+                        [usernameFallback, email, hash2, 'member', mitgliedId, memberData.dojo_id ?? null],
                         (err2, res2) => {
                             if (err2) return callback(null, { warning: 'Fallback-Account fehlgeschlagen' });
                             logger.info(`✅ Fallback-Account erstellt: ${usernameFallback}`);
@@ -581,8 +586,8 @@ async function createUserAccountIfNeeded(memberData, mitgliedId, callback) {
                 // Neu erstellen
                 const hashedPassword = await bcrypt.hash(password, 10);
                 db.query(
-                    'INSERT INTO users (username, email, password, role, mitglied_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-                    [username, email, hashedPassword, 'member', mitgliedId],
+                    'INSERT INTO users (username, email, password, role, mitglied_id, dojo_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+                    [username, email, hashedPassword, 'member', mitgliedId, memberData.dojo_id ?? null],
                     (userErr, userResult) => {
                         if (userErr) {
                             logger.error('Fehler beim Erstellen des User-Accounts:', userErr);

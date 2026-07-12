@@ -468,7 +468,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       if (signal) config.signal = signal;
 
       const res = await axios.get(`/anwesenheit/${id}`, config);
-      setAnwesenheitsDaten(res.data);
+      setAnwesenheitsDaten(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
         return; // Request was cancelled, don't show error
@@ -2455,8 +2455,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
         try {
           const reader = new FileReader();
           reader.onload = () => {
-            const errorData = JSON.parse(reader.result);
-            alert(`❌ ${errorMessage}: ${errorData.details || errorData.error || 'Unbekannter Fehler'}`);
+            try {
+              const errorData = JSON.parse(reader.result);
+              alert(`❌ ${errorMessage}: ${errorData.details || errorData.error || 'Unbekannter Fehler'}`);
+            } catch {
+              alert(`❌ ${errorMessage}: ${error.message}`);
+            }
           };
           reader.readAsText(error.response.data);
         } catch {

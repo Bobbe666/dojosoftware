@@ -225,7 +225,7 @@ const VerbandsMitglieder = () => {
     setTypenLoading(true);
     try {
       const res = await api.get('/verbandsmitgliedschaften/mitgliedschaftstypen');
-      setMitgliedschaftstypen(res.data);
+      setMitgliedschaftstypen(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Fehler beim Laden der Mitgliedschaftstypen:', err);
     } finally {
@@ -304,7 +304,7 @@ const VerbandsMitglieder = () => {
   const loadVorteile = async () => {
     try {
       const res = await api.get('/verbandsmitgliedschaften/vorteile');
-      setVorteile(res.data);
+      setVorteile(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Fehler beim Laden der Vorteile:', err);
     }
@@ -630,7 +630,7 @@ const VerbandsMitglieder = () => {
   const loadSepaMandate = async (id) => {
     try {
       const res = await api.get(`/verbandsmitgliedschaften/${id}/sepa`);
-      setSepaMandate(res.data);
+      setSepaMandate(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Fehler beim Laden der SEPA-Mandate:', err);
     }
@@ -1041,7 +1041,7 @@ const VerbandsMitglieder = () => {
                         </div>
                         <p className="vm-typ-beschreibung">{typ.beschreibung || '-'}</p>
                         <div className="vm-typ-meta">
-                          <span><Euro size={14} className="vm-mr4" /><strong>{typ.preis_brutto?.toFixed(2)}€</strong> brutto ({typ.preis_netto}€ netto)</span>
+                          <span><Euro size={14} className="vm-mr4" /><strong>{parseFloat(typ.preis_brutto||0).toFixed(2)}€</strong> brutto ({parseFloat(typ.preis_netto||0).toFixed(2)}€ netto)</span>
                           <span><Percent size={14} className="vm-mr4" />{typ.steuersatz}% MwSt</span>
                           <span><Calendar size={14} className="vm-mr4" />{typ.laufzeit_monate} Monate Laufzeit</span>
                           <span>{typ.auto_verlaengerung ? '🔄 Auto-Verlängerung' : '📅 Einmalig'}</span>

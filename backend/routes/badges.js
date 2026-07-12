@@ -720,10 +720,10 @@ async function sendBadgeNotification(mitglied_id, badge_id) {
         m.vorname, m.nachname, m.email,
         b.name as badge_name, b.beschreibung as badge_beschreibung,
         b.icon as badge_icon, b.farbe as badge_farbe,
-        d.name as dojo_name
+        d.dojoname as dojo_name
       FROM mitglieder m
       JOIN badges b ON b.badge_id = ?
-      LEFT JOIN dojos d ON m.dojo_id = d.dojo_id
+      LEFT JOIN dojo d ON m.dojo_id = d.id
       WHERE m.mitglied_id = ?
     `;
 
@@ -760,7 +760,7 @@ async function sendBadgeNotification(mitglied_id, badge_id) {
           );
           // In-App: erscheint in der Benachrichtigungs-Glocke des Mitglieds
           db.query(
-            "INSERT INTO notifications (type, recipient, subject, message, created_at, `read`) VALUES ('push', ?, ?, ?, NOW(), FALSE)",
+            "INSERT INTO notifications (type, recipient, subject, message, status, created_at) VALUES ('push', ?, ?, ?, 'pending', NOW())",
             [
               data.email,
               `🏆 Neuer Badge: ${data.badge_name}`,

@@ -45,7 +45,7 @@ async function getDojoById(dojoId) {
 }
 
 async function getMailTransporter() {
-  const [[settings]] = await pool.query('SELECT * FROM email_einstellungen LIMIT 1');
+  const [[settings]] = await pool.query('SELECT * FROM email_settings LIMIT 1');
   if (!settings) throw new Error('E-Mail-Einstellungen fehlen');
   const transporter = nodemailer.createTransport({
     host: settings.smtp_host,
@@ -282,9 +282,9 @@ router.post('/:id/nochmal-abbuchen', async (req, res) => {
     // Neuen Beitrag anlegen
     const faellig = new Date().toISOString().slice(0, 10);
     const [result] = await pool.query(`
-      INSERT INTO beitraege (mitglied_id, betrag, beschreibung, zahlungsdatum, bezahlt, erstellt_am)
-      VALUES (?, ?, ?, ?, 0, NOW())
-    `, [oz.mitglied_id, oz.betrag, `Nachberechnung Rücklastschrift — ${oz.beschreibung}`, faellig]);
+      INSERT INTO beitraege (mitglied_id, dojo_id, betrag, beschreibung, zahlungsdatum, bezahlt)
+      VALUES (?, ?, ?, ?, ?, 0)
+    `, [oz.mitglied_id, dojoId, oz.betrag, `Nachberechnung Rücklastschrift — ${oz.beschreibung}`, faellig]);
 
     // Massnahme vermerken
     await pool.query('UPDATE offene_zahlungen SET massnahme = \'nochmal_abbuchen\' WHERE id = ?', [id]);
@@ -320,9 +320,9 @@ router.post('/:id/rechnung-stellen', async (req, res) => {
 
     // Aktiven Vertrag des Mitglieds lesen
     const [[vertrag]] = await pool.query(`
-      SELECT v.*, t.preis as monatsbeitrag, t.laufzeit_monate
+      SELECT v.*, t.price_cents AS tarif_price_cents, t.duration_months AS tarif_duration_months
       FROM vertraege v
-      LEFT JOIN tarife t ON v.tarif_id = t.tarif_id
+      LEFT JOIN tarife t ON v.tarif_id = t.id
       WHERE v.mitglied_id = ? AND v.status = 'aktiv'
       LIMIT 1
     `, [oz.mitglied_id]);
@@ -333,14 +333,14 @@ router.post('/:id/rechnung-stellen', async (req, res) => {
 
     // Verbleibende Monate berechnen
     const heute = new Date();
-    const vertragsende = vertrag.enddatum ? new Date(vertrag.enddatum) : null;
+    const vertragsende = vertrag.vertragsende ? new Date(vertrag.vertragsende) : null;
     let restmonate = 1;
     let restbetrag = parseFloat(oz.betrag);
     let beschreibung = `Rücklastschrift-Forderung — ${oz.beschreibung}`;
 
     if (vertragsende && vertragsende > heute) {
       restmonate = Math.ceil((vertragsende - heute) / (1000 * 60 * 60 * 24 * 30));
-      const monatsbeitrag = parseFloat(vertrag.monatsbeitrag || 0);
+      const monatsbeitrag = parseFloat(vertrag.monatsbeitrag || vertrag.monatlicher_beitrag || (vertrag.tarif_price_cents ? vertrag.tarif_price_cents / 100 : 0));
       restbetrag = monatsbeitrag > 0 ? monatsbeitrag * restmonate : parseFloat(oz.betrag);
       beschreibung = `Forderung Restlaufzeit (${restmonate} Monate): ${vertrag.bezeichnung || 'Mitgliedschaft'}`;
     }
@@ -353,12 +353,12 @@ router.post('/:id/rechnung-stellen', async (req, res) => {
     const rechnungsnummer = `RL-${dojoId}-${Date.now()}`;
     const [result] = await pool.query(`
       INSERT INTO rechnungen (
-        rechnungsnummer, mitglied_id, datum, faelligkeitsdatum,
+        rechnungsnummer, mitglied_id, dojo_id, datum, faelligkeitsdatum,
         betrag, netto_betrag, brutto_betrag,
         status, zahlungsart, art, beschreibung
-      ) VALUES (?, ?, CURDATE(), ?, ?, ?, ?, 'offen', 'ueberweisung', 'sonstiges', ?)
+      ) VALUES (?, ?, ?, CURDATE(), ?, ?, ?, ?, 'offen', 'ueberweisung', 'sonstiges', ?)
     `, [
-      rechnungsnummer, oz.mitglied_id, faelligStr,
+      rechnungsnummer, oz.mitglied_id, dojoId, faelligStr,
       restbetrag, restbetrag, restbetrag,
       beschreibung
     ]);
@@ -391,7 +391,9 @@ router.get('/:id/mahnbescheid-pdf', async (req, res) => {
 
   try {
     const [[oz]] = await pool.query(`
-      SELECT oz.*, m.vorname, m.nachname, m.anrede, m.email,
+      SELECT oz.*, m.vorname, m.nachname,
+             CASE m.geschlecht WHEN 'w' THEN 'Frau' WHEN 'm' THEN 'Herr' ELSE '' END AS anrede,
+             m.email,
              m.strasse, m.hausnummer, m.plz, m.ort
       FROM offene_zahlungen oz
       LEFT JOIN mitglieder m ON oz.mitglied_id = m.mitglied_id

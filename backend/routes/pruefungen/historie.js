@@ -87,7 +87,15 @@ router.post('/mitglied/:mitglied_id/historisch', (req, res) => {
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: ERROR_MESSAGES.GENERAL.SAVE_ERROR, error: err.message });
     }
 
-    db.query('UPDATE mitglied_stile SET current_graduierung_id = ?, letzte_pruefung = ? WHERE mitglied_id = ? AND stil_id = ?', [graduierung_nachher_id, pruefungsdatum, mitglied_id, stil_id], (updateErr) => {
+    const upsertStilDataQuery = `
+      INSERT INTO mitglied_stil_data (mitglied_id, stil_id, current_graduierung_id, letzte_pruefung, aktualisiert_am)
+      VALUES (?, ?, ?, ?, NOW())
+      ON DUPLICATE KEY UPDATE
+        current_graduierung_id = VALUES(current_graduierung_id),
+        letzte_pruefung = VALUES(letzte_pruefung),
+        aktualisiert_am = NOW()
+    `;
+    db.query(upsertStilDataQuery, [mitglied_id, stil_id, graduierung_nachher_id, pruefungsdatum], (updateErr) => {
       if (updateErr) logger.warn('Graduierung konnte nicht aktualisiert werden:', { error: updateErr.message });
       logger.info('Historische Prüfung erfolgreich hinzugefügt', { pruefung_id: result.insertId });
       res.json({ success: true, message: SUCCESS_MESSAGES.CRUD.CREATED, pruefung_id: result.insertId });

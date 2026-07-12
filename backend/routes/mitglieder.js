@@ -515,7 +515,7 @@ router.get("/filter/ohne-vertrag", (req, res) => {
   // 🔒 DOJO-FILTER: Baue WHERE-Clause
   let whereConditions = [
     "m.aktiv = 1",
-    "v.vertrag_id IS NULL"
+    "v.id IS NULL"
   ];
   let queryParams = [];
 
@@ -2946,10 +2946,10 @@ router.get("/:id/stil/:stil_id/training-analysis", async (req, res) => {
                 FROM graduierungen g2 
                 JOIN mitglied_stil_data msd ON msd.current_graduierung_id IS NOT NULL
                 WHERE g2.stil_id = ? AND g2.reihenfolge > (
-                    SELECT g3.reihenfolge 
-                    FROM graduierungen g3 
-                    WHERE g3.graduierung_id = msd.current_graduierung_id 
-                    AND msd.mitglied_id = ?
+                    SELECT g3.reihenfolge
+                    FROM graduierungen g3
+                    WHERE g3.graduierung_id = msd.current_graduierung_id
+                    AND msd.mitglied_id = ? AND msd.stil_id = ?
                 )
             )
         `,
@@ -2977,7 +2977,7 @@ router.get("/:id/stil/:stil_id/training-analysis", async (req, res) => {
             });
         }),
         new Promise((resolve, reject) => {
-            db.query(queries.nextGraduation, [stil_id, stil_id, mitglied_id], (err, results) => {
+            db.query(queries.nextGraduation, [stil_id, stil_id, mitglied_id, stil_id], (err, results) => {
                 if (err) reject(err);
                 else resolve(results[0] || null);
             });
@@ -3745,7 +3745,7 @@ router.post("/",
             const mindestlaufzeit = memberData.vertrag_mindestlaufzeit_monate || fetchedTarif.mindestlaufzeit_monate || 12;
             const startDate = new Date(vertragsbeginn);
             const endeDate = new Date(startDate.getFullYear(), startDate.getMonth() + mindestlaufzeit, 0);
-            const vertragsende = endeDate.toISOString().split('T')[0];
+            const vertragsende = `${endeDate.getFullYear()}-${String(endeDate.getMonth() + 1).padStart(2, '0')}-${String(endeDate.getDate()).padStart(2, '0')}`;
 
             const vertragData = {
                 mitglied_id: newMemberId,
@@ -3821,8 +3821,7 @@ router.post("/",
                         logger.warn('Tarif nicht gefunden für Beitragserstellung');
                         return callback();
                     }
-                    const vertragsbeginn = memberData.vertragsbeginn || new Date().toISOString().split('T')[0];
-                    generateInitialBeitraege(newMemberId, memberData.dojo_id, vertragsbeginn, tarifPreis, (memberData.aufnahmegebuehr_cents || 0), memberData.vertragsende || null, memberData.mindestlaufzeit_monate || 12)
+                    generateInitialBeitraege(newMemberId, memberData.dojo_id, vertragsbeginn, tarifPreis, (memberData.aufnahmegebuehr_cents || 0), vertragsende, mindestlaufzeit)
                         .then(() => logger.info(`💰 Beiträge für gesamte Laufzeit erstellt für Mitglied ${newMemberId}`))
                         .catch(e => logger.error('Fehler beim Erstellen der Beiträge:', e))
                         .finally(() => callback());
@@ -4016,7 +4015,7 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
             logger.info(`✅ Familienmitglied erstellt: ID ${newMemberId}`);
 
             // Vertrag für Familienmitglied erstellen (fm.tarif_id oder Fallback auf Hauptmitglied-Tarif)
-            const effectiveTarifId = fm.tarif_id || mainMemberData.tarif_id;
+            const effectiveTarifId = fm.tarif_id || mainMemberData.vertrag_tarif_id;
             if (effectiveTarifId) {
                 fm.tarif_id = effectiveTarifId; // normalisieren für den Block unten
                 // Erst Tarif-Details holen für korrekten Preis
@@ -4609,18 +4608,18 @@ router.post("/:id/archivieren", async (req, res) => {
       mitglied.telefon,
       mitglied.email,
       mitglied.eintrittsdatum,
-      mitglied.status,
+      (mitglied.aktiv ? 'aktiv' : 'inaktiv'),
       mitglied.notizen,
       mitglied.foto_pfad,
-      mitglied.tarif_id,
-      mitglied.zahlungszyklus_id,
+      mitglied.tarif_id ?? null,
+      mitglied.zahlungszyklus_id ?? null,
       mitglied.gekuendigt || false,
       mitglied.gekuendigt_am,
-      mitglied.kuendigungsgrund,
+      mitglied.kuendigungsgrund ?? null,
       mitglied.vereinsordnung_akzeptiert || false,
       mitglied.vereinsordnung_datum,
-      mitglied.security_question,
-      mitglied.security_answer,
+      mitglied.security_question ?? null,
+      mitglied.security_answer ?? null,
       JSON.stringify(stilData),
       JSON.stringify(sepaMandate),
       JSON.stringify(pruefungen),
@@ -4887,18 +4886,18 @@ router.post("/bulk-archivieren", async (req, res) => {
         mitglied.telefon,
         mitglied.email,
         mitglied.eintrittsdatum,
-        mitglied.status,
+        (mitglied.aktiv ? 'aktiv' : 'inaktiv'),
         mitglied.notizen,
         mitglied.foto_pfad,
-        mitglied.tarif_id,
-        mitglied.zahlungszyklus_id,
+        mitglied.tarif_id ?? null,
+        mitglied.zahlungszyklus_id ?? null,
         mitglied.gekuendigt || false,
         mitglied.gekuendigt_am,
-        mitglied.kuendigungsgrund,
+        mitglied.kuendigungsgrund ?? null,
         mitglied.vereinsordnung_akzeptiert || false,
         mitglied.vereinsordnung_datum,
-        mitglied.security_question,
-        mitglied.security_answer,
+        mitglied.security_question ?? null,
+        mitglied.security_answer ?? null,
         JSON.stringify(stilData),
         JSON.stringify(sepaMandate),
         JSON.stringify(pruefungen),
@@ -5146,7 +5145,7 @@ router.post("/:id/mitgliedsausweis", async (req, res) => {
       FROM mitglieder m
       LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
       LEFT JOIN stile s ON ms.stil = s.name
-      LEFT JOIN graduierungen g ON m.graduierung_id = g.id
+      LEFT JOIN graduierungen g ON m.graduierung_id = g.graduierung_id
       WHERE m.mitglied_id = ?
       ${secureDojoId ? 'AND m.dojo_id = ?' : ''}
       GROUP BY m.mitglied_id

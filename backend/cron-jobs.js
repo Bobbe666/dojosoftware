@@ -1098,7 +1098,7 @@ async function processVorlageTrigger() {
         let mitglieder = [];
         if (t.trigger_typ === 'geburtstag') {
           [mitglieder] = await pool.query(
-            `SELECT * FROM mitglieder WHERE dojo_id = ? AND MONTH(geburtsdatum) = ? AND DAY(geburtsdatum) = ? AND email IS NOT NULL AND email != '' AND status = 'aktiv'`,
+            `SELECT * FROM mitglieder WHERE dojo_id = ? AND MONTH(geburtsdatum) = ? AND DAY(geburtsdatum) = ? AND email IS NOT NULL AND email != '' AND aktiv = 1`,
             [t.dojo_id, monat, tag]
           );
         } else if (t.trigger_typ === 'mitglied_neu') {
@@ -1136,7 +1136,7 @@ async function processVorlageTrigger() {
           const tage = parseInt(t.trigger_typ.replace('inaktiv_', ''));
           [mitglieder] = await pool.query(
             `SELECT m.* FROM mitglieder m
-             WHERE m.dojo_id = ? AND m.status = 'aktiv'
+             WHERE m.dojo_id = ? AND m.aktiv = 1
              AND m.email IS NOT NULL AND m.email != ''
              AND DATEDIFF(CURDATE(), (
                SELECT MAX(a.datum) FROM anwesenheit a WHERE a.mitglied_id = m.mitglied_id
@@ -1227,6 +1227,7 @@ async function generateMonthlyBeitraege() {
                COALESCE(v.monatsbeitrag, v.monatlicher_beitrag) as monatsbeitrag,
                v.vertragsende, v.status,
                v.automatische_verlaengerung, v.verlaengerung_monate,
+               v.kuendigungsfrist_monate,
                v.kuendigung_eingegangen,
                v.ruhepause_von, v.ruhepause_bis,
                v.vertragsbeginn,

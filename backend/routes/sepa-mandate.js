@@ -260,14 +260,20 @@ router.put("/:mitglied_id/sepa-mandate/:mandat_id", authenticateToken, (req, res
     const dojoJoin = secureDojoId
         ? 'JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id AND m.dojo_id = ?'
         : '';
+    // ?? null verhindert undefined-Bind (mysql2 wirft sonst); COALESCE bewahrt bei
+    // Teil-Updates den bestehenden Wert (kein versehentliches Nullen von IBAN o.ä.).
     const params = secureDojoId
-        ? [iban, bic || '', bank_name, kontoinhaber, status, secureDojoId, mandat_id, mitglied_id]
-        : [iban, bic || '', bank_name, kontoinhaber, status, mandat_id, mitglied_id];
+        ? [iban ?? null, bic ?? null, bank_name ?? null, kontoinhaber ?? null, status ?? null, secureDojoId, mandat_id, mitglied_id]
+        : [iban ?? null, bic ?? null, bank_name ?? null, kontoinhaber ?? null, status ?? null, mandat_id, mitglied_id];
 
     const query = `
         UPDATE sepa_mandate sm
         ${dojoJoin}
-        SET sm.iban = ?, sm.bic = ?, sm.bankname = ?, sm.kontoinhaber = ?, sm.status = ?
+        SET sm.iban = COALESCE(?, sm.iban),
+            sm.bic = COALESCE(?, sm.bic),
+            sm.bankname = COALESCE(?, sm.bankname),
+            sm.kontoinhaber = COALESCE(?, sm.kontoinhaber),
+            sm.status = COALESCE(?, sm.status)
         WHERE sm.mandat_id = ? AND sm.mitglied_id = ?
     `;
 

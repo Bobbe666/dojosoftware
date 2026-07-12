@@ -65,7 +65,7 @@ const SepaTab = ({ token }) => {
       const response = await axios.post('/admin/sepa/batch/create', {
         ausfuehrungsdatum: batchDate
       }, { headers: { Authorization: `Bearer ${token}` } });
-      alert(`Batch erstellt: ${response.data.anzahl} Lastschriften, Gesamt: ${response.data.gesamtbetrag.toFixed(2)} EUR`);
+      alert(`Batch erstellt: ${response.data.anzahl} Lastschriften, Gesamt: ${parseFloat(response.data.gesamtbetrag || 0).toFixed(2)} EUR`);
       setShowNewBatchModal(false);
       loadData();
     } catch (error) {

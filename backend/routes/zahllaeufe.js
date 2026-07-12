@@ -121,7 +121,7 @@ router.get("/:id", (req, res) => {
     const query = `
         SELECT z.*, u.username as ersteller_username
         FROM zahllaeufe z
-        LEFT JOIN users u ON z.ersteller_user_id = u.user_id
+        LEFT JOIN users u ON z.ersteller_user_id = u.id
         WHERE z.zahllauf_id = ?${dojoFilter}
     `;
     const params = secureDojoId ? [id, secureDojoId] : [id];

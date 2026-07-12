@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db");
+const logger = require('../utils/logger');
 const puppeteer = require('puppeteer');
 const fs = require('fs').promises;
 const path = require('path');

@@ -663,7 +663,7 @@ router.post("/:id/dokument", async (req, res) => {
     let dojo = null;
     if (dojoId) {
       try {
-        const [dojos] = await pool.query('SELECT * FROM dojos WHERE dojo_id = ?', [dojoId]);
+        const [dojos] = await pool.query('SELECT * FROM dojo WHERE id = ?', [dojoId]);
         dojo = dojos[0] || null;
       } catch {}
     }

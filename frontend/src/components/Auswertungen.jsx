@@ -989,7 +989,7 @@ function Auswertungen({ embedTab } = {}) {
 
         {activeTab === 'mitglieder' && subTab === 'overview' && (() => {
           const ov = auswertungsData;
-          const s = ov.summary;
+          const s = ov.summary || {};
           const ma = ov.mitgliederAnalyse;
           const wa = ov.wachstumsAnalyse;
           const fin = ov.finanzielleAuswertung;
@@ -1196,7 +1196,7 @@ function Auswertungen({ embedTab } = {}) {
                   </div>
                   <div className="ov-card-body">
                     <ResponsiveContainer width="100%" height={190}>
-                      <BarChart data={ov.stilAnalyse.verteilung.filter(s => s.anzahl > 0)} margin={{ top: 5, right: 10, bottom: 40, left: -10 }}>
+                      <BarChart data={(ov.stilAnalyse?.verteilung || []).filter(s => s.anzahl > 0)} margin={{ top: 5, right: 10, bottom: 40, left: -10 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
                         <XAxis dataKey="name" stroke="var(--ds-border-strong)" tick={{ fontSize: 10, fill: 'var(--ds-text-muted)' }} angle={-35} textAnchor="end" />
                         <YAxis stroke="var(--ds-border-strong)" tick={{ fontSize: 11, fill: 'var(--ds-text-muted)' }} />

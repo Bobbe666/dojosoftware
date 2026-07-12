@@ -1006,48 +1006,5 @@ router.delete("/:id", (req, res) => {
     });
 });
 
-// GET /anwesenheit/:mitglied_id - Anwesenheitsdaten für ein bestimmtes Mitglied
-router.get("/:mitglied_id", (req, res) => {
-    const mitgliedId = parseInt(req.params.mitglied_id);
-
-    logger.debug('📊 Lade Anwesenheitsdaten für Mitglied ${mitgliedId}');
-
-    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
-    const dojoId = getSecureDojoId(req);
-
-    const query = `
-        SELECT
-            a.*,
-            s.tag as wochentag,
-            s.uhrzeit_start,
-            s.uhrzeit_ende,
-            k.gruppenname as kurs_name,
-            k.stil
-        FROM anwesenheit a
-        LEFT JOIN stundenplan s ON a.stundenplan_id = s.stundenplan_id
-        LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
-        LEFT JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
-        WHERE a.mitglied_id = ?
-        ${dojoId ? 'AND m.dojo_id = ?' : ''}
-        ORDER BY a.datum DESC, a.created_at DESC
-        LIMIT 100
-    `;
-
-    const queryParams = dojoId ? [mitgliedId, dojoId] : [mitgliedId];
-
-    db.query(query, queryParams, (err, results) => {
-        if (err) {
-            logger.error('Fehler beim Abrufen der Anwesenheitsdaten:', err);
-            return res.status(500).json({
-                error: "Fehler beim Abrufen der Anwesenheitsdaten",
-                details: err.message
-            });
-        }
-
-        logger.info('Anwesenheitseinträge gefunden', { count: results.length, mitglied_id: mitgliedId, dojo_id: dojoId });
-        res.json(results);
-    });
-});
-
 // Router exportieren
 module.exports = router;

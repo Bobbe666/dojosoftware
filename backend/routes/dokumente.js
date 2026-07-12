@@ -332,7 +332,7 @@ async function generateMitgliederlistePDFForDojo(db, dojoId, parameter = {}) {
     const query = `
       SELECT m.*
       FROM mitglieder m
-      WHERE m.status = 'aktiv'
+      WHERE m.aktiv = 1
       AND EXISTS (
         SELECT 1 FROM vertraege v
         WHERE v.mitglied_id = m.mitglied_id
@@ -785,11 +785,11 @@ async function generatePruefungsurkundePDF(db, parameter) {
     const queryParams = dojoId ? [mitgliedId, dojoId] : [mitgliedId];
     db.query(
       'SELECT m.vorname, m.nachname, m.geburtsdatum, g.name as guertel, g.farbe_hex, ' +
-      'p.datum as pruefungsdatum, p.bestanden ' +
+      'p.pruefungsdatum as pruefungsdatum, p.bestanden ' +
       'FROM mitglieder m ' +
-      'LEFT JOIN guertelgrade g ON m.guertel_id = g.id ' +
+      'LEFT JOIN graduierungen g ON m.graduierung_id = g.graduierung_id ' +
       'LEFT JOIN pruefungen p ON p.mitglied_id = m.mitglied_id ' +
-      'WHERE m.mitglied_id = ?' + dojoCond + ' ORDER BY p.datum DESC LIMIT 1',
+      'WHERE m.mitglied_id = ?' + dojoCond + ' ORDER BY p.pruefungsdatum DESC LIMIT 1',
       queryParams,
       (err, rows) => {
         if (err) return reject(err);

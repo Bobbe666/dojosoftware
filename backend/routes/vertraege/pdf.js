@@ -21,7 +21,7 @@ router.get('/:id/pdf', async (req, res) => {
 
     const vertragResults = await queryAsync(`
       SELECT v.*, m.vorname, m.nachname, m.email, m.geburtsdatum, m.strasse, m.hausnummer, m.plz, m.ort,
-        m.telefon, CASE WHEN m.geschlecht='w' THEN 'Frau' WHEN m.geschlecht='m' THEN 'Herr' ELSE '' END AS anrede, m.mitglied_id AS mitgliedsnummer, m.iban, m.bic, NULL AS bank, t.name as tarif_name
+        m.telefon, CASE WHEN m.geschlecht='w' THEN 'Frau' WHEN m.geschlecht='m' THEN 'Herr' ELSE '' END AS anrede, m.mitglied_id AS mitgliedsnummer, m.iban, m.bic, m.bankname AS bank, t.name as tarif_name
       FROM vertraege v
       LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
       LEFT JOIN tarife t ON v.tarif_id = t.id
@@ -49,7 +49,7 @@ router.get('/:id/pdf', async (req, res) => {
       monatsbeitrag: vertrag.monatsbeitrag, billing_cycle: vertrag.billing_cycle, payment_method: vertrag.payment_method,
       mindestlaufzeit_monate: vertrag.mindestlaufzeit_monate, kuendigungsfrist_monate: vertrag.kuendigungsfrist_monate,
       automatische_verlaengerung: vertrag.automatische_verlaengerung, verlaengerung_monate: vertrag.verlaengerung_monate,
-      tarifname: vertrag.tarif_name, aufnahmegebuehr: vertrag.aufnahmegebuehr || 0
+      tarifname: vertrag.tarif_name, aufnahmegebuehr: (vertrag.aufnahmegebuehr_cents || 0) / 100
     };
 
     let pdfBuffer;

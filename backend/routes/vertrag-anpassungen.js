@@ -214,7 +214,9 @@ router.post('/', authenticateToken, async (req, res) => {
     );
 
     const affected = await applyBeitraege(mitglied_id, gueltig_von, gueltig_bis, neuer_betrag);
-    await pool.query(`UPDATE mitglieder SET schueler_student = 1 WHERE mitglied_id = ?`, [mitglied_id]);
+    if (['schueler', 'student', 'azubi'].includes(typ)) {
+      await pool.query(`UPDATE mitglieder SET schueler_student = 1 WHERE mitglied_id = ?`, [mitglied_id]);
+    }
 
     const [[m]] = await pool.query(`SELECT email, vorname, nachname FROM mitglieder WHERE mitglied_id = ?`, [mitglied_id]);
     if (m?.email) {
@@ -514,7 +516,9 @@ router.put('/:id/genehmigen', authenticateToken, async (req, res) => {
       );
     } else {
       affected = await applyBeitraege(a.mitglied_id, a.gueltig_von, a.gueltig_bis, betrag);
-      await pool.query(`UPDATE mitglieder SET schueler_student = 1 WHERE mitglied_id = ?`, [a.mitglied_id]);
+      if (['schueler', 'student', 'azubi'].includes(a.typ)) {
+        await pool.query(`UPDATE mitglieder SET schueler_student = 1 WHERE mitglied_id = ?`, [a.mitglied_id]);
+      }
     }
 
     // Ausstehende Admin-Notification für diesen Antrag als gelesen markieren

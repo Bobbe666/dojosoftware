@@ -80,6 +80,13 @@ router.get('/', requireMember, async (req, res) => {
     if (category) { sql += ' AND cp.category = ?'; params.push(category); }
     sql += ' ORDER BY cp.created_at DESC LIMIT 100';
     const [rows] = await pool.query(sql, params);
+    // Kontaktdaten nur ausliefern, wenn der Ersteller sie freigegeben hat
+    for (const r of rows) {
+      if (!r.show_contact_info) {
+        r.contact_phone = null;
+        r.contact_email = null;
+      }
+    }
     // increment views happens client-side via separate call
     res.json({ success: true, posts: rows });
   } catch (err) {

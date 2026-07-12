@@ -4300,7 +4300,7 @@ router.get('/bank-import/steuerauswertung', requireFeature('kontoauszug'), requi
     let kleinunternehmer = false;
     if (dojoId) {
       const [dojoRows] = await pool.query(
-        'SELECT kleinunternehmer FROM dojo WHERE dojo_id = ?', [dojoId]
+        'SELECT kleinunternehmer FROM dojo WHERE id = ?', [dojoId]
       );
       kleinunternehmer = !!(dojoRows[0]?.kleinunternehmer);
     }
@@ -4612,10 +4612,10 @@ router.post('/bank-import/euer-uebertragen', requireFeature('kontoauszug'), requ
 
       // Optional: Beleg in buchhaltung_belege anlegen
       const buchungsart = parseFloat(tx.betrag) > 0 ? 'Einnahme' : 'Ausgabe';
-      const betragCent  = Math.round(Math.abs(parseFloat(tx.betrag)) * 100);
+      const betragBrutto = Math.abs(parseFloat(tx.betrag));
       await pool.query(`
         INSERT INTO buchhaltung_belege
-          (dojo_id, organisation_name, buchungsart, buchungsdatum, betrag_cent,
+          (dojo_id, organisation_name, buchungsart, buchungsdatum, betrag_brutto,
            beschreibung, kategorie, quelle, extern_ref_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'bank_import', ?)
         ON DUPLICATE KEY UPDATE beschreibung = VALUES(beschreibung)
@@ -4624,11 +4624,11 @@ router.post('/bank-import/euer-uebertragen', requireFeature('kontoauszug'), requ
         `Dojo ${dojoId}`,
         buchungsart,
         tx.buchungsdatum,
-        betragCent,
+        betragBrutto,
         tx.verwendungszweck?.substring(0, 200) || tx.eff_kategorie,
         tx.eff_kategorie,
         tx.transaktion_id,
-      ]).catch(() => {}); // Fehler ignorieren wenn Spalte extern_ref_id fehlt
+      ]).catch((e) => logger.error('EÜR-Beleg-Insert fehlgeschlagen:', { error: e.message })); // Fehler nicht mehr verschlucken
 
       uebertragen++;
     }
@@ -5461,14 +5461,14 @@ router.get('/offene-posten/altersliste', requireBuchhaltungAccess, async (req, r
   try {
     const pool = db.promise();
     const [rows] = await pool.query(
-      `SELECT r.rechnung_id, r.rechnungsnummer, r.erstellt_am, r.faellig_am,
+      `SELECT r.rechnung_id, r.rechnungsnummer, r.erstellt_am, r.faelligkeitsdatum,
               COALESCE(r.brutto_betrag, r.betrag) AS betrag,
               r.status, m.vorname, m.nachname, m.email,
-              DATEDIFF(?, COALESCE(r.faellig_am, r.erstellt_am)) AS tage_ueberfaellig
+              DATEDIFF(?, COALESCE(r.faelligkeitsdatum, r.erstellt_am)) AS tage_ueberfaellig
        FROM rechnungen r
        JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
        WHERE r.status IN ('offen','teilbezahlt')
-         AND r.storniert = 0 ${orgFilter}
+         AND r.storniert_am IS NULL ${orgFilter}
        ORDER BY tage_ueberfaellig DESC`,
       [today]
     );
@@ -5505,7 +5505,7 @@ router.get('/mahnungen/:id/pdf', requireBuchhaltungAccess, async (req, res) => {
   try {
     const pool = db.promise();
     const [[mahn]] = await pool.query(
-      `SELECT m.*, d.organisation_name AS dojo_name, d.strasse AS dojo_strasse,
+      `SELECT m.*, d.dojoname AS dojo_name, d.strasse AS dojo_strasse,
               d.plz AS dojo_plz, d.ort AS dojo_ort, d.email AS dojo_email,
               d.telefon AS dojo_telefon, d.iban AS dojo_iban, d.bic AS dojo_bic
        FROM mahnungen m
@@ -6099,7 +6099,7 @@ router.get('/einstellungen', requireBuchhaltungAccess, async (req, res) => {
   try {
     const rows = await new Promise((resolve, reject) =>
       db.query(
-        'SELECT kleinunternehmer, umsatzsteuerpflichtig, gemeinnuetzig, rechtsform, steuernummer, umsatzsteuer_id, finanzamt FROM dojo WHERE dojo_id = ?',
+        'SELECT kleinunternehmer, umsatzsteuerpflichtig, gemeinnuetzig, rechtsform, steuernummer, umsatzsteuer_id, finanzamt FROM dojo WHERE id = ?',
         [dojoId],
         (err, r) => err ? reject(err) : resolve(r)
       )
@@ -6397,11 +6397,11 @@ router.get('/offene-posten', requireFeature('buchfuehrung'), requireBuchhaltungA
         r.rechnungsnummer,
         COALESCE(r.brutto_betrag, r.betrag) AS betrag,
         r.erstellt_am AS beleg_datum,
-        r.faellig_am AS faelligkeitsdatum,
+        r.faelligkeitsdatum AS faelligkeitsdatum,
         m.vorname, m.nachname,
         m.dojo_id,
         CASE WHEN m.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END AS organisation_name,
-        DATEDIFF(CURDATE(), IFNULL(r.faellig_am, r.erstellt_am)) AS tage_ueberfaellig,
+        DATEDIFF(CURDATE(), IFNULL(r.faelligkeitsdatum, r.erstellt_am)) AS tage_ueberfaellig,
         COALESCE(mah.hoechste_stufe, 0) AS mahnstufe
       FROM rechnungen r
       JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
@@ -6409,7 +6409,7 @@ router.get('/offene-posten', requireFeature('buchfuehrung'), requireBuchhaltungA
         SELECT rechnung_id, MAX(mahnstufe) AS hoechste_stufe FROM mahnungen WHERE storniert=0 AND bezahlt_am IS NULL GROUP BY rechnung_id
       ) mah ON mah.rechnung_id = r.rechnung_id
       WHERE r.status IN ('offen','ueberfaellig')
-        ${dojoId ? 'AND m.dojo_id = ?' : (orgFilter && orgFilter !== 'alle') ? 'AND m.dojo_id = (SELECT dojo_id FROM mitglieder WHERE organisation_name = ? LIMIT 1)' : ''}
+        ${dojoId ? 'AND m.dojo_id = ?' : (orgFilter && orgFilter !== 'alle') ? "AND (CASE WHEN m.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END) = ?" : ''}
       ORDER BY tage_ueberfaellig DESC
     `, dojoId ? [dojoId] : (orgFilter && orgFilter !== 'alle' ? [orgFilter] : []));
 
@@ -6688,7 +6688,7 @@ router.get('/export/anlage-euer', requireBuchhaltungAccess, async (req, res) => 
     let rechtsform = '';
     if (dojoId) {
       const [einst] = await dbQuery(
-        'SELECT kleinunternehmer, steuernummer, finanzamt, rechtsform FROM dojo WHERE dojo_id = ?', [dojoId]
+        'SELECT kleinunternehmer, steuernummer, finanzamt, rechtsform FROM dojo WHERE id = ?', [dojoId]
       );
       kleinunternehmer = !!(einst?.kleinunternehmer);
       steuernummer     = einst?.steuernummer || '';

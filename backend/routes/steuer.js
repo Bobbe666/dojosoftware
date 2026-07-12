@@ -794,7 +794,7 @@ router.get('/euer/summary', async (req, res) => {
     let einnahmenRows = [];
     try {
       const [rows] = await pool.query(
-        `SELECT * FROM v_euer_einnahmen WHERE dojo_id = ? AND YEAR(datum) = ?`,
+        `SELECT *, betrag_brutto AS betrag_netto FROM v_euer_einnahmen WHERE dojo_id = ? AND YEAR(datum) = ?`,
         [dojoId, jahr]
       );
       einnahmenRows = rows;
@@ -855,7 +855,7 @@ router.get('/euer/summary', async (req, res) => {
     let ausgabenRows = [];
     try {
       const [rows] = await pool.query(
-        `SELECT * FROM v_euer_ausgaben WHERE dojo_id = ? AND YEAR(datum) = ?`,
+        `SELECT *, betrag_brutto AS betrag_netto FROM v_euer_ausgaben WHERE dojo_id = ? AND YEAR(datum) = ?`,
         [dojoId, jahr]
       );
       ausgabenRows = rows;
@@ -888,12 +888,12 @@ router.get('/euer/summary', async (req, res) => {
     let vorjahrAusgaben  = 0;
     try {
       const [[vjEin]] = await pool.query(
-        `SELECT COALESCE(SUM(betrag_netto), 0) AS gesamt FROM v_euer_einnahmen
+        `SELECT COALESCE(SUM(betrag_brutto), 0) AS gesamt FROM v_euer_einnahmen
          WHERE dojo_id = ? AND YEAR(datum) = ?`,
         [dojoId, vorjahr]
       );
       const [[vjAus]] = await pool.query(
-        `SELECT COALESCE(SUM(betrag_netto), 0) AS gesamt FROM v_euer_ausgaben
+        `SELECT COALESCE(SUM(betrag_brutto), 0) AS gesamt FROM v_euer_ausgaben
          WHERE dojo_id = ? AND YEAR(datum) = ?`,
         [dojoId, vorjahr]
       );

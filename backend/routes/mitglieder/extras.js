@@ -34,7 +34,7 @@ router.post("/:id/mitgliedsausweis", async (req, res) => {
       FROM mitglieder m
       LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
       LEFT JOIN stile s ON ms.stil = s.name
-      LEFT JOIN graduierungen g ON m.graduierung_id = g.id
+      LEFT JOIN graduierungen g ON m.graduierung_id = g.graduierung_id
       WHERE m.mitglied_id = ?
       GROUP BY m.mitglied_id
     `;

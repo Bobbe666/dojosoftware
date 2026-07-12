@@ -515,9 +515,9 @@ router.get('/:id/statistics', (req, res) => {
       (SELECT COUNT(*) FROM trainer WHERE dojo_id = ?) as trainer_anzahl,
       (SELECT COUNT(*) FROM vertraege WHERE dojo_id = ?) as vertraege_anzahl,
       (SELECT COALESCE(SUM(betrag), 0) FROM beitraege
-       WHERE dojo_id = ? AND YEAR(erstellt_am) = ?) as jahresumsatz,
+       WHERE dojo_id = ? AND YEAR(zahlungsdatum) = ?) as jahresumsatz,
       (SELECT COALESCE(SUM(betrag), 0) FROM beitraege
-       WHERE dojo_id = ? AND YEAR(erstellt_am) = ? - 1) as jahresumsatz_vorjahr,
+       WHERE dojo_id = ? AND YEAR(zahlungsdatum) = ? - 1) as jahresumsatz_vorjahr,
       (SELECT steuer_status FROM dojo WHERE id = ?) as steuer_status,
       (SELECT ust_satz FROM dojo WHERE id = ?) as ust_satz,
       (SELECT kleinunternehmer_grenze FROM dojo WHERE id = ?) as kleinunternehmer_grenze

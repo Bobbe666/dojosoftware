@@ -315,12 +315,19 @@ const sanitizeStrings = (fields) => {
 const validate = (...validators) => {
     return async (req, res, next) => {
         for (const validator of validators) {
-            await new Promise((resolve, reject) => {
-                validator(req, res, (err) => {
-                    if (err) reject(err);
-                    else resolve();
+            try {
+                await new Promise((resolve, reject) => {
+                    validator(req, res, (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
                 });
-            }).catch(next);
+            } catch (err) {
+                // Nach erstem Fehler abbrechen — next() nur einmal aufrufen
+                return next(err);
+            }
+            // Validator hat direkt geantwortet (z.B. res.status().json()) → nicht weiter next() rufen
+            if (res.headersSent) return;
         }
         next();
     };

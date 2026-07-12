@@ -157,8 +157,8 @@ router.put("/:id", authenticateToken, (req, res) => {
     'familien_id', 'rabatt_prozent', 'rabatt_grund',
     'vertreter1_typ', 'vertreter1_name', 'vertreter1_telefon', 'vertreter1_email',
     'vertreter2_typ', 'vertreter2_name', 'vertreter2_telefon', 'vertreter2_email',
-    'notizen', 'newsletter_abo', 'marketing_quelle', 'bevorzugte_trainingszeiten',
-    'online_portal_aktiv', 'kontostand', 'geworben_von_mitglied_id'
+    'notizen', 'newsletter_abo', 'marketing_quelle',
+    'online_portal_aktiv', 'geworben_von_mitglied_id'
   ];
 
   // Filtere nur erlaubte Felder

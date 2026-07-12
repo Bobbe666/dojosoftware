@@ -13,9 +13,13 @@ const logger = require('../utils/logger');
 function requireFeature(featureName) {
   return async (req, res, next) => {
     try {
-      // Super-Admin (id=1 oder username='admin') darf alles
+      // Super-Admin darf alles — primär über Rolle, mit Legacy-Fallbacks (nichts aussperren)
       const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
-      const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+      const isSuperAdmin =
+        req.user?.rolle === 'super_admin' ||
+        req.user?.role === 'super_admin' ||
+        userId == 1 ||
+        req.user?.username === 'admin';
 
       // Debug logging
       logger.debug('Feature Check Debug:', {
@@ -48,6 +52,8 @@ function requireFeature(featureName) {
                 s.feature_events, s.feature_multidojo, s.feature_api,
                 s.feature_kontoauszug, s.feature_social_media, s.feature_training, s.feature_todos,
                 s.feature_businessplan, s.feature_display,
+                s.feature_gutscheine, s.feature_urkunden_vorlagen, s.feature_messenger,
+                s.feature_whatsapp, s.feature_homepage_builder, s.feature_support,
                 s.trial_ends_at, s.subscription_ends_at,
                 d.dojoname as dojo_name, d.subdomain
          FROM dojo_subscriptions s

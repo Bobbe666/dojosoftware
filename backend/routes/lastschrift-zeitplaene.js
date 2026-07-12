@@ -628,6 +628,15 @@ async function ladeBeitraegeMitglieder(dojoId, monatEnde, zahlungszyklusFilter, 
         FROM mitglieder m
         INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
         INNER JOIN beitraege b ON m.mitglied_id = b.mitglied_id AND b.bezahlt = 0 AND b.zahlungsdatum <= ?
+            -- Ruhepause: Beitrag NICHT einziehen wenn er in den Pausezeitraum fällt (exakt wie manuelle Preview)
+            AND NOT EXISTS (
+                SELECT 1 FROM vertraege vr
+                WHERE vr.mitglied_id = m.mitglied_id
+                  AND vr.status = 'ruhepause'
+                  AND vr.ruhepause_von IS NOT NULL
+                  AND vr.ruhepause_bis IS NOT NULL
+                  AND b.zahlungsdatum BETWEEN vr.ruhepause_von AND vr.ruhepause_bis
+            )
             -- Nicht einziehen wenn bereits eine laufende/abgeschlossene Stripe-Transaktion für diesen Beitrag existiert
             AND NOT EXISTS (
                 SELECT 1 FROM stripe_lastschrift_transaktion slt2
@@ -644,6 +653,7 @@ async function ladeBeitraegeMitglieder(dojoId, monatEnde, zahlungszyklusFilter, 
                   )
             )
         WHERE m.dojo_id = ?
+          AND m.aktiv = 1
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND m.stripe_customer_id IS NOT NULL
           AND sm.stripe_payment_method_id IS NOT NULL

@@ -29,14 +29,15 @@ router.get('/qr/:mitglied_id', async (req, res) => {
     const dojoClause = secureDojoId ? ' AND m.dojo_id = ?' : '';
     const params = [mitgliedId, ...(secureDojoId ? [secureDojoId] : [])];
     const [rows] = await pool.query(
-      `SELECT m.mitglied_id, m.vorname, m.nachname, m.mitglieds_nr, m.dojo_id,
+      `SELECT m.mitglied_id, m.vorname, m.nachname, m.dojo_id,
               d.dojoname,
               GROUP_CONCAT(DISTINCT CONCAT(s.name, ': ', COALESCE(g.name, '?')) ORDER BY s.name SEPARATOR ' | ') AS graduierungen
        FROM mitglieder m
        LEFT JOIN dojo d ON m.dojo_id = d.id
        LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
        LEFT JOIN stile s ON ms.stil_id = s.stil_id
-       LEFT JOIN graduierungen g ON ms.graduierung_id = g.graduierung_id
+       LEFT JOIN mitglied_stil_data msd ON msd.mitglied_id = m.mitglied_id AND msd.stil_id = ms.stil_id
+       LEFT JOIN graduierungen g ON g.graduierung_id = msd.current_graduierung_id
        WHERE m.mitglied_id = ?${dojoClause}
        GROUP BY m.mitglied_id`,
       params
@@ -49,7 +50,7 @@ router.get('/qr/:mitglied_id', async (req, res) => {
     const m = rows[0];
     const qrData = JSON.stringify({
       id: m.mitglied_id,
-      nr: m.mitglieds_nr,
+      nr: m.mitglied_id,
       name: `${m.vorname} ${m.nachname}`,
       dojo: m.dojoname,
       grad: m.graduierungen,
@@ -81,7 +82,7 @@ router.get('/pass/:mitglied_id', async (req, res) => {
     const dojoClause = secureDojoId ? ' AND m.dojo_id = ?' : '';
     const params = [mitgliedId, ...(secureDojoId ? [secureDojoId] : [])];
     const [rows] = await pool.query(
-      `SELECT m.mitglied_id, m.vorname, m.nachname, m.mitglieds_nr,
+      `SELECT m.mitglied_id, m.vorname, m.nachname,
               m.geburtsdatum, m.eintrittsdatum,
               d.dojoname,
               GROUP_CONCAT(DISTINCT CONCAT(s.name, ': ', COALESCE(g.name, 'Anfänger')) ORDER BY s.name SEPARATOR '\n') AS graduierungen,
@@ -90,7 +91,8 @@ router.get('/pass/:mitglied_id', async (req, res) => {
        LEFT JOIN dojo d ON m.dojo_id = d.id
        LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
        LEFT JOIN stile s ON ms.stil_id = s.stil_id
-       LEFT JOIN graduierungen g ON ms.graduierung_id = g.graduierung_id
+       LEFT JOIN mitglied_stil_data msd ON msd.mitglied_id = m.mitglied_id AND msd.stil_id = ms.stil_id
+       LEFT JOIN graduierungen g ON g.graduierung_id = msd.current_graduierung_id
        WHERE m.mitglied_id = ?${dojoClause}
        GROUP BY m.mitglied_id`,
       params
@@ -105,7 +107,7 @@ router.get('/pass/:mitglied_id', async (req, res) => {
       success: true,
       pass: {
         mitglied_id: m.mitglied_id,
-        mitglieds_nr: m.mitglieds_nr,
+        mitglieds_nr: m.mitglied_id,
         vorname: m.vorname,
         nachname: m.nachname,
         dojo: m.dojoname,
@@ -141,7 +143,7 @@ router.get('/apple-pass', async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT m.mitglied_id, m.vorname, m.nachname, m.mitglieds_nr,
+      `SELECT m.mitglied_id, m.vorname, m.nachname,
               m.eintrittsdatum, m.dojo_id,
               d.dojoname,
               GROUP_CONCAT(DISTINCT CONCAT(s.name, ': ', COALESCE(g.name, 'Anfänger')) ORDER BY s.name SEPARATOR ' | ') AS graduierungen,
@@ -150,7 +152,8 @@ router.get('/apple-pass', async (req, res) => {
        LEFT JOIN dojo d ON m.dojo_id = d.id
        LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
        LEFT JOIN stile s ON ms.stil_id = s.stil_id
-       LEFT JOIN graduierungen g ON ms.graduierung_id = g.graduierung_id
+       LEFT JOIN mitglied_stil_data msd ON msd.mitglied_id = m.mitglied_id AND msd.stil_id = ms.stil_id
+       LEFT JOIN graduierungen g ON g.graduierung_id = msd.current_graduierung_id
        WHERE m.mitglied_id = ?
        GROUP BY m.mitglied_id`,
       [mitgliedId]
@@ -182,7 +185,7 @@ router.get('/apple-pass', async (req, res) => {
     await template.images.add('icon', icon58, '2x');
     await template.images.add('logo', logo);
 
-    const memberNr = String(m.mitglieds_nr || m.mitglied_id).padStart(5, '0');
+    const memberNr = String(m.mitglied_id).padStart(5, '0');
     const pass = template.createPass({
       serialNumber: `dojo-mitglied-${mitgliedId}`,
       description: 'Mitgliedskarte'

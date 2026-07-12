@@ -216,7 +216,12 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, url, events, active = true, dojo_id } = req.body;
-    const dojoId = dojo_id || req.user.dojo_id;
+    // 🔒 Dojo-ID aus Token erzwingen; Body-dojo_id nur für Super-Admin (getSecureDojoId === null)
+    const secureDojoId = getSecureDojoId(req);
+    const dojoId = secureDojoId !== null ? secureDojoId : dojo_id;
+    if (!dojoId) {
+      return res.status(400).json({ error: 'dojo_id fehlt' });
+    }
 
     // Validierung
     if (!name || !url || !events || !Array.isArray(events) || events.length === 0) {

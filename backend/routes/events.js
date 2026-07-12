@@ -501,7 +501,7 @@ router.post('/', requireFeature('events'), (req, res) => {
     (eventData.preis_kind !== '' && eventData.preis_kind != null) ? eventData.preis_kind : null,
     eventData.anmeldefrist || null,
     eventData.status || 'geplant',
-    eventData.trainer_ids ? eventData.trainer_ids.join(',') : null,
+    Array.isArray(eventData.trainer_ids) ? eventData.trainer_ids.join(',') : (eventData.trainer_ids || null),
     effectiveDojoId, // SICHERHEIT: Erzwungene dojo_id
     eventData.bild_url || null,
     eventData.anforderungen || null
@@ -521,7 +521,8 @@ router.post('/', requireFeature('events'), (req, res) => {
     // Automatische Benachrichtigung an alle Mitglieder senden
     try {
       const [mitglieder] = await db.promise().query(
-        'SELECT mitglied_id, email, vorname, nachname FROM mitglieder WHERE status = "aktiv"'
+        'SELECT mitglied_id, email, vorname, nachname FROM mitglieder WHERE aktiv = 1 AND dojo_id = ?',
+        [effectiveDojoId]
       );
 
       const notificationMessage = `Neues Event: ${eventData.titel} am ${eventData.datum}`;
@@ -529,15 +530,15 @@ router.post('/', requireFeature('events'), (req, res) => {
 
       // Erstelle Benachrichtigungen für alle aktiven Mitglieder
       for (const mitglied of mitglieder) {
+        if (!mitglied.email) continue;
         await db.promise().query(
-          `INSERT INTO notifications (mitglied_id, email, type, message, details, link, created_at)
-           VALUES (?, ?, 'event_neu', ?, ?, ?, NOW())`,
+          `INSERT INTO notifications (type, recipient, subject, message, status, dojo_id, created_at)
+           VALUES ('event_neu', ?, ?, ?, 'pending', ?, NOW())`,
           [
-            mitglied.mitglied_id,
             mitglied.email,
             notificationMessage,
             notificationDetails,
-            `/member/events`
+            effectiveDojoId
           ]
         );
       }
@@ -646,10 +647,10 @@ async function promoteNextFromWaitlist(eventId) {
       [nextInLine.anmeldung_id]
     );
 
-    // Warteliste-Positionen neu nummerieren
+    // Warteliste-Positionen neu nummerieren (multipleStatements ist AUS → zwei Queries)
+    await db.promise().query('SET @pos := 0');
     await db.promise().query(
-      `SET @pos := 0;
-       UPDATE event_anmeldungen
+      `UPDATE event_anmeldungen
        SET warteliste_position = (@pos := @pos + 1)
        WHERE event_id = ? AND status = 'warteliste'
        ORDER BY warteliste_position ASC`,
@@ -723,7 +724,7 @@ router.put('/:id', requireFeature('events'), (req, res) => {
     (eventData.preis_kind !== '' && eventData.preis_kind != null) ? eventData.preis_kind : null,
     eventData.anmeldefrist || null,
     eventData.status || 'geplant',
-    eventData.trainer_ids ? eventData.trainer_ids.join(',') : null,
+    Array.isArray(eventData.trainer_ids) ? eventData.trainer_ids.join(',') : (eventData.trainer_ids || null),
     eventData.bild_url || null,
     eventData.anforderungen || null,
     eventId
@@ -1559,10 +1560,10 @@ router.post('/:id/warteliste/promote', requireFeature('events'), async (req, res
       [nextInLine.anmeldung_id]
     );
 
-    // Warteliste-Positionen neu nummerieren
+    // Warteliste-Positionen neu nummerieren (multipleStatements ist AUS → zwei Queries)
+    await db.promise().query('SET @pos := 0');
     await db.promise().query(
-      `SET @pos := 0;
-       UPDATE event_anmeldungen
+      `UPDATE event_anmeldungen
        SET warteliste_position = (@pos := @pos + 1)
        WHERE event_id = ? AND status = 'warteliste'
        ORDER BY warteliste_position ASC`,
@@ -1765,8 +1766,8 @@ router.get('/:id/nachrichten', async (req, res) => {
       `SELECT en.*,
         CASE
           WHEN en.verfasser_typ = 'mitglied' THEN (SELECT CONCAT(vorname, ' ', nachname) FROM mitglieder WHERE mitglied_id = en.verfasser_id)
-          WHEN en.verfasser_typ = 'admin' THEN (SELECT CONCAT(vorname, ' ', nachname) FROM admins WHERE id = en.verfasser_id)
-          WHEN en.verfasser_typ = 'trainer' THEN (SELECT name FROM trainer WHERE id = en.verfasser_id)
+          WHEN en.verfasser_typ = 'admin' THEN (SELECT CONCAT(vorname, ' ', nachname) FROM admin_users WHERE id = en.verfasser_id)
+          WHEN en.verfasser_typ = 'trainer' THEN (SELECT CONCAT(vorname, ' ', nachname) FROM trainer WHERE trainer_id = en.verfasser_id)
           ELSE 'Unbekannt'
         END as verfasser_name
        FROM event_nachrichten en
@@ -1838,7 +1839,7 @@ router.delete('/:id/nachrichten/:nachrichtId', async (req, res) => {
       return res.status(403).json({ error: 'Keine Berechtigung' });
     }
 
-    if (!is_admin && rows[0].verfasser_id !== verfasser_id) {
+    if (!is_admin && Number(rows[0].verfasser_id) !== Number(verfasser_id)) {
       return res.status(403).json({ error: 'Keine Berechtigung zum Löschen' });
     }
 
@@ -2150,7 +2151,8 @@ router.get('/stats/dashboard', requireFeature('events'), async (req, res) => {
       ),
       // Offene Zahlungen
       db.promise().query(
-        `SELECT COUNT(*) as count, COALESCE(SUM(e.teilnahmegebuehr), 0) as summe
+        `SELECT COUNT(*) as count,
+                COALESCE(SUM(COALESCE(ea.gesamt_betrag, e.teilnahmegebuehr * (1 + COALESCE(ea.gaeste_anzahl, 0)))), 0) as summe
          FROM event_anmeldungen ea
          JOIN events e ON ea.event_id = e.event_id
          WHERE ea.bezahlt = 0 AND ea.status IN ('angemeldet', 'bestaetigt')
@@ -2173,7 +2175,7 @@ router.get('/stats/dashboard', requireFeature('events'), async (req, res) => {
       ),
       // Einnahmen (bezahlte Anmeldungen)
       db.promise().query(
-        `SELECT COALESCE(SUM(e.teilnahmegebuehr), 0) as gesamt,
+        `SELECT COALESCE(SUM(COALESCE(ea.gesamt_betrag, e.teilnahmegebuehr * (1 + COALESCE(ea.gaeste_anzahl, 0)))), 0) as gesamt,
                 COUNT(*) as anzahl_bezahlt
          FROM event_anmeldungen ea
          JOIN events e ON ea.event_id = e.event_id
@@ -2273,7 +2275,7 @@ router.post('/:id/send-reminder', requireFeature('events'), async (req, res) => 
         try {
           await sendPaymentReminderEmail(dojoId, row.email, {
             memberName: `${row.vorname} ${row.nachname}`,
-            amount: event.preis || 0,
+            amount: event.teilnahmegebuehr || 0,
             dueDate: event.datum,
             invoiceNumber: `EVENT-${eventId}-${row.mitglied_id}`,
             reminderLevel: 1

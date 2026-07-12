@@ -1207,7 +1207,7 @@ const RechnungErstellen = () => {
     );
 
     // Berechne aktuellen Preis
-    let aktuellerPreis = art.verkaufspreis_cent / 100;
+    let aktuellerPreis = (parseFloat(art.verkaufspreis_cent) || 0) / 100;
     if (hasPreiskategorien && selectedVariante.preiskategorie === 'kids' && art.preis_kids_cent) {
       aktuellerPreis = art.preis_kids_cent / 100;
     } else if (hasPreiskategorien && selectedVariante.preiskategorie === 'erwachsene' && art.preis_erwachsene_cent) {
@@ -1322,7 +1322,7 @@ const RechnungErstellen = () => {
 
             <div className="varianten-preis">
               <span>Preis:</span>
-              <span className="preis-wert">{aktuellerPreis.toFixed(2)}€</span>
+              <span className="preis-wert">{(parseFloat(aktuellerPreis) || 0).toFixed(2)}€</span>
             </div>
           </div>
 

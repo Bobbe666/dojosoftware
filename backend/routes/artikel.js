@@ -200,12 +200,14 @@ router.post('/kategorien', (req, res) => {
     return res.status(400).json({ error: 'Name ist erforderlich' });
   }
 
+  // Artikel referenzieren artikelgruppen (nicht artikel_kategorien!) -> hier konsistent einfügen.
+  // Neue Kategorien sind Top-Level (parent_id = NULL), damit sie in GET /kategorien erscheinen.
   const query = `
-    INSERT INTO artikel_kategorien (name, beschreibung, farbe_hex, icon, reihenfolge, dojo_id)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO artikelgruppen (name, beschreibung, farbe, icon, sortierung, dojo_id, parent_id, aktiv)
+    VALUES (?, ?, ?, ?, ?, ?, NULL, TRUE)
   `;
 
-  db.query(query, [name, beschreibung, farbe_hex || '#3B82F6', icon || 'package', reihenfolge || 0, dojoId], 
+  db.query(query, [name, beschreibung, farbe_hex || '#3B82F6', icon || 'package', reihenfolge || 0, dojoId],
     (error, results) => {
       if (error) {
         logger.error('Fehler beim Erstellen der Kategorie:', { error: error });
@@ -214,8 +216,8 @@ router.post('/kategorien', (req, res) => {
         }
         return res.status(500).json({ error: 'Fehler beim Erstellen der Kategorie' });
       }
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         kategorie_id: results.insertId,
         message: 'Kategorie erfolgreich erstellt' 
       });
@@ -1349,7 +1351,7 @@ router.get('/stats/overview', (req, res) => {
   }
   const queries = {
     gesamt: ['SELECT COUNT(*) as anzahl FROM artikel WHERE aktiv = TRUE AND dojo_id = ?', [dojoId]],
-    kategorien: ['SELECT COUNT(*) as anzahl FROM artikel_kategorien WHERE aktiv = TRUE AND dojo_id = ?', [dojoId]],
+    kategorien: ['SELECT COUNT(*) as anzahl FROM artikelgruppen WHERE aktiv = TRUE AND parent_id IS NULL AND dojo_id = ?', [dojoId]],
     ausverkauft: ['SELECT COUNT(*) as anzahl FROM artikel WHERE aktiv = TRUE AND lager_tracking = TRUE AND lagerbestand = 0 AND dojo_id = ?', [dojoId]],
     nachbestellen: ['SELECT COUNT(*) as anzahl FROM artikel WHERE aktiv = TRUE AND lager_tracking = TRUE AND lagerbestand <= mindestbestand AND lagerbestand > 0 AND dojo_id = ?', [dojoId]],
     lagerwert: ['SELECT SUM(lagerbestand * einkaufspreis_cent) as wert_cent FROM artikel WHERE aktiv = TRUE AND lager_tracking = TRUE AND dojo_id = ?', [dojoId]]

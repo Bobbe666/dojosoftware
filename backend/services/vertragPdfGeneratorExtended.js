@@ -387,7 +387,7 @@ const generatePage2_SEPA = (doc, dojo, mitglied, vertrag) => {
   drawTableRow(doc, margin, currentY, labelWidth, valueWidth, rowHeight, 'BIC:', mitglied.bic || '');
   currentY += rowHeight;
 
-  drawTableRow(doc, margin, currentY, labelWidth, valueWidth, rowHeight, 'Kreditinstitut:', mitglied.bank || '');
+  drawTableRow(doc, margin, currentY, labelWidth, valueWidth, rowHeight, 'Kreditinstitut:', mitglied.bankname || mitglied.bank || '');
   currentY += rowHeight + 20;
 
   // ========================================

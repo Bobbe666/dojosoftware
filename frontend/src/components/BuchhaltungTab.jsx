@@ -265,7 +265,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       const res = await axios.get('/buchhaltung/kategorien', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setKategorien(res.data);
+      setKategorien(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Kategorien laden fehlgeschlagen:', err);
     }
@@ -466,7 +466,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
         headers: { Authorization: `Bearer ${token}` },
         params: selectedOrg !== 'alle' ? { organisation: selectedOrg } : {}
       });
-      setKreditoren(res.data);
+      setKreditoren(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       setError(err.response?.data?.message || 'Fehler beim Laden der Kreditoren');
     } finally { setKreditorenLoading(false); }
@@ -572,7 +572,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
         headers: { Authorization: `Bearer ${token}` },
         params: selectedOrg !== 'alle' ? { organisation: selectedOrg } : {}
       });
-      setWiederkehrend(res.data);
+      setWiederkehrend(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       setError(err.response?.data?.message || 'Fehler beim Laden der Templates');
     } finally { setWiederkehrendLoading(false); }
@@ -1354,7 +1354,11 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
         buchungsart: ocr.buchungsart || f.buchungsart,
         mwst_satz: ocr.mwst_satz || f.mwst_satz,
       }));
-      setQuickPositionen(ocr.positionen || []);
+      setQuickPositionen((ocr.positionen || []).map(p => ({
+        ...p,
+        betrag: parseFloat(p.betrag) || 0,
+        mwst_satz: parseFloat(p.mwst_satz) || 0,
+      })));
       setQuickOcrDone(true);
     } catch {
       // OCR fehlgeschlagen — User füllt manuell aus
@@ -1373,7 +1377,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   // Betriebssumme aus ausgewählten Positionen berechnen
   const quickBetriebsSumme = quickPositionen
     .filter(p => p.typ === 'betrieb')
-    .reduce((sum, p) => sum + p.betrag, 0);
+    .reduce((sum, p) => sum + (parseFloat(p.betrag) || 0), 0);
 
   const openQuickCapture = () => {
     setQuickFile(null);
@@ -1439,7 +1443,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
         beschreibung: beschreibung.substring(0, 200),
         // Positionen-Notiz für Transparenz
         notizen: privatPositionen.length > 0
-          ? `Privat nicht übernommen: ${privatPositionen.map(p => `${p.beschreibung} (${p.betrag.toFixed(2)} €)`).join(', ')}`
+          ? `Privat nicht übernommen: ${privatPositionen.map(p => `${p.beschreibung} (${(parseFloat(p.betrag) || 0).toFixed(2)} €)`).join(', ')}`
           : undefined,
       };
 
@@ -2668,7 +2672,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                           fontFamily: 'monospace', fontSize: 13, fontWeight: 600, flexShrink: 0, minWidth: 60, textAlign: 'right',
                           color: pos.typ === 'privat' ? 'var(--text-muted)' : 'var(--text-primary)',
                         }}>
-                          {pos.betrag.toFixed(2)} €
+                          {(parseFloat(pos.betrag) || 0).toFixed(2)} €
                         </span>
                       </div>
                     ))}
@@ -2714,7 +2718,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
                       <span style={{ color: '#ef4444' }}>Privat (wird nicht gebucht):</span>
                       <span style={{ fontFamily: 'monospace', color: '#ef4444' }}>
-                        − {quickPositionen.filter(p => p.typ === 'privat').reduce((s, p) => s + p.betrag, 0).toFixed(2)} €
+                        − {quickPositionen.filter(p => p.typ === 'privat').reduce((s, p) => s + (parseFloat(p.betrag) || 0), 0).toFixed(2)} €
                       </span>
                     </div>
                   )}

@@ -717,7 +717,7 @@ router.put('/:id', (req, res) => {
       SELECT p.*, m.vorname, m.nachname, s.name as stil_name,
         g_nachher.name as graduierung_nachher, g_nachher.farbe_hex
       FROM pruefungen p
-      INNER JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
+      LEFT JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
       INNER JOIN stile s ON p.stil_id = s.stil_id
       INNER JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
       WHERE p.pruefung_id = ?
@@ -733,27 +733,38 @@ router.put('/:id', (req, res) => {
 
       const pruefung = selectResults[0];
 
+      // Null-Guard: externe Kandidaten (mitglied_id NULL) oder keine Zeile
+      if (!pruefung) {
+        return res.json({
+          success: true,
+          message: SUCCESS_MESSAGES.CRUD.UPDATED
+        });
+      }
+
       // Wenn Prüfung auf "bestanden" gesetzt wurde, aktualisiere letzte_pruefung + Gürtel-Bestand
       if (updateData.bestanden === true || updateData.bestanden === 1) {
-        const updateStilDataQuery = `
-          INSERT INTO mitglied_stil_data (
-            mitglied_id, stil_id, current_graduierung_id, letzte_pruefung, aktualisiert_am
-          ) VALUES (?, ?, ?, ?, NOW())
-          ON DUPLICATE KEY UPDATE
-            current_graduierung_id = VALUES(current_graduierung_id),
-            letzte_pruefung = VALUES(letzte_pruefung),
-            aktualisiert_am = NOW()
-        `;
+        // mitglied_stil_data nur für interne Mitglieder (externe haben keine mitglied_id)
+        if (pruefung.mitglied_id) {
+          const updateStilDataQuery = `
+            INSERT INTO mitglied_stil_data (
+              mitglied_id, stil_id, current_graduierung_id, letzte_pruefung, aktualisiert_am
+            ) VALUES (?, ?, ?, ?, NOW())
+            ON DUPLICATE KEY UPDATE
+              current_graduierung_id = VALUES(current_graduierung_id),
+              letzte_pruefung = VALUES(letzte_pruefung),
+              aktualisiert_am = NOW()
+          `;
 
-        db.query(
-          updateStilDataQuery,
-          [pruefung.mitglied_id, pruefung.stil_id, pruefung.graduierung_nachher_id, pruefung.pruefungsdatum],
-          (stilDataErr) => {
-            if (stilDataErr) {
-              logger.error('Fehler beim Aktualisieren von mitglied_stil_data:', { error: stilDataErr });
+          db.query(
+            updateStilDataQuery,
+            [pruefung.mitglied_id, pruefung.stil_id, pruefung.graduierung_nachher_id, pruefung.pruefungsdatum],
+            (stilDataErr) => {
+              if (stilDataErr) {
+                logger.error('Fehler beim Aktualisieren von mitglied_stil_data:', { error: stilDataErr });
+              }
             }
-          }
-        );
+          );
+        }
 
         // Gürtel-Bestand abziehen (fire-and-forget, inkl. Zwischengurt bei Doppelprüfung)
         guertelBestandAbziehen(db.promise(), pruefung.graduierung_nachher_id, pruefung.gurtlaenge, pruefung.dojo_id);

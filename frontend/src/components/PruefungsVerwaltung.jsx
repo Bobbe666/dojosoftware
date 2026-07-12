@@ -3576,13 +3576,13 @@ const PruefungsVerwaltung = () => {
                   {neuerTermin.pruefungsgebuehr && parseFloat(neuerTermin.pruefungsgebuehr) > 0 && neuerTermin.zahlungsart === 'rechnung' && (
                     <div className="pv3-zahlungsart-info pv3-zahlungsart-info--rechnung">
                       <span className="pv3-zahlungsart-info-icon">💶</span>
-                      <span>Bei Zulassung wird automatisch eine <strong>offene Rechnung</strong> über {parseFloat(neuerTermin.pruefungsgebuehr).toFixed(2)} € erstellt — der Kunde zahlt per Überweisung.</span>
+                      <span>Bei Zulassung wird automatisch eine <strong>offene Rechnung</strong> über {(parseFloat(neuerTermin.pruefungsgebuehr)||0).toFixed(2)} € erstellt — der Kunde zahlt per Überweisung.</span>
                     </div>
                   )}
                   {neuerTermin.pruefungsgebuehr && parseFloat(neuerTermin.pruefungsgebuehr) > 0 && neuerTermin.zahlungsart === 'lastschrift' && (
                     <div className="pv3-zahlungsart-info pv3-zahlungsart-info--lastschrift">
                       <span className="pv3-zahlungsart-info-icon">📄</span>
-                      <span>Bei Zulassung wird ein <strong>Rechnungsbeleg</strong> über {parseFloat(neuerTermin.pruefungsgebuehr).toFixed(2)} € erstellt — Einzug erfolgt über den Lastschriftlauf.</span>
+                      <span>Bei Zulassung wird ein <strong>Rechnungsbeleg</strong> über {(parseFloat(neuerTermin.pruefungsgebuehr)||0).toFixed(2)} € erstellt — Einzug erfolgt über den Lastschriftlauf.</span>
                     </div>
                   )}
                 </div>
@@ -3853,13 +3853,13 @@ const PruefungsVerwaltung = () => {
             {editTermin.pruefungsgebuehr && parseFloat(editTermin.pruefungsgebuehr) > 0 && editTermin.zahlungsart === 'rechnung' && (
               <div className="pv3-zahlungsart-info pv3-zahlungsart-info--rechnung" style={{ marginTop: '0.5rem' }}>
                 <span className="pv3-zahlungsart-info-icon">💶</span>
-                <span>Bei Zulassung wird automatisch eine <strong>offene Rechnung</strong> über {parseFloat(editTermin.pruefungsgebuehr).toFixed(2)} € erstellt — der Kunde zahlt per Überweisung.</span>
+                <span>Bei Zulassung wird automatisch eine <strong>offene Rechnung</strong> über {(parseFloat(editTermin.pruefungsgebuehr)||0).toFixed(2)} € erstellt — der Kunde zahlt per Überweisung.</span>
               </div>
             )}
             {editTermin.pruefungsgebuehr && parseFloat(editTermin.pruefungsgebuehr) > 0 && editTermin.zahlungsart === 'lastschrift' && (
               <div className="pv3-zahlungsart-info pv3-zahlungsart-info--lastschrift" style={{ marginTop: '0.5rem' }}>
                 <span className="pv3-zahlungsart-info-icon">📄</span>
-                <span>Bei Zulassung wird ein <strong>Rechnungsbeleg</strong> über {parseFloat(editTermin.pruefungsgebuehr).toFixed(2)} € erstellt — Einzug erfolgt über den Lastschriftlauf.</span>
+                <span>Bei Zulassung wird ein <strong>Rechnungsbeleg</strong> über {(parseFloat(editTermin.pruefungsgebuehr)||0).toFixed(2)} € erstellt — Einzug erfolgt über den Lastschriftlauf.</span>
               </div>
             )}
 

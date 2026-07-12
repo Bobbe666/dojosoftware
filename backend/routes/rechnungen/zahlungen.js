@@ -29,13 +29,13 @@ router.post('/:id/zahlung', (req, res) => {
     ? `SELECT r.betrag as rechnung_betrag,
               COALESCE((SELECT SUM(z.betrag) FROM zahlungen z WHERE z.rechnung_id = r.rechnung_id), 0) as bereits_gezahlt
        FROM rechnungen r
-       JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
-       WHERE r.rechnung_id = ? AND m.dojo_id = ?`
+       LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+       WHERE r.rechnung_id = ? AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))`
     : `SELECT r.betrag as rechnung_betrag,
               COALESCE((SELECT SUM(z.betrag) FROM zahlungen z WHERE z.rechnung_id = r.rechnung_id), 0) as bereits_gezahlt
        FROM rechnungen r
        WHERE r.rechnung_id = ?`;
-  const rechnungParams = secureDojoId ? [id, secureDojoId] : [id];
+  const rechnungParams = secureDojoId ? [id, secureDojoId, secureDojoId] : [id];
 
   db.query(rechnungQuery, rechnungParams, (rErr, rResults) => {
     if (rErr) {

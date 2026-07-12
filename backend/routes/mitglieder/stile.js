@@ -457,7 +457,7 @@ router.get('/:id/stil/:stil_id/training-analysis', (req, res) => {
         JOIN mitglied_stil_data msd ON msd.current_graduierung_id IS NOT NULL
         WHERE g2.stil_id = ? AND g2.reihenfolge > (
           SELECT g3.reihenfolge FROM graduierungen g3
-          WHERE g3.graduierung_id = msd.current_graduierung_id AND msd.mitglied_id = ?
+          WHERE g3.graduierung_id = msd.current_graduierung_id AND msd.mitglied_id = ? AND msd.stil_id = ?
         )
       )
     `,
@@ -480,7 +480,7 @@ router.get('/:id/stil/:stil_id/training-analysis', (req, res) => {
       });
     }),
     new Promise((resolve, reject) => {
-      db.query(queries.nextGraduation, [stil_id, stil_id, mitglied_id], (err, results) => {
+      db.query(queries.nextGraduation, [stil_id, stil_id, mitglied_id, stil_id], (err, results) => {
         if (err) reject(err); else resolve(results[0] || null);
       });
     }),

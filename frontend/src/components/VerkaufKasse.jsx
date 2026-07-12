@@ -885,7 +885,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
               <div className="artikel-info">
                 <div className="artikel-name">{artikel.name}</div>
                 <div className="artikel-preis">
-                  {artikel.verkaufspreis_euro.toFixed(2)}€
+                  {(artikel.verkaufspreis_euro ?? 0).toFixed(2)}€
                   {hatVarianten && artikel.hat_preiskategorien && (
                     <span className="preis-hinweis"> (ab)</span>
                   )}
@@ -1130,12 +1130,12 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
 
           <div className="summe-row">
             <span>Netto:</span>
-            <span>{(gesamtNetto * (effektivSumme / warenkorbSummeEuro || 1)).toFixed(2)}€</span>
+            <span>{(gesamtNetto * (warenkorbSummeEuro > 0 ? effektivSumme / warenkorbSummeEuro : 0)).toFixed(2)}€</span>
           </div>
           {Object.keys(steuerBerechnung).sort().map(mwstSatz => (
             <div key={mwstSatz} className="summe-row tax">
               <span>MwSt. {parseFloat(mwstSatz).toFixed(0)}%:</span>
-              <span>{(steuerBerechnung[mwstSatz].steuer * (effektivSumme / warenkorbSummeEuro || 1)).toFixed(2)}€</span>
+              <span>{(steuerBerechnung[mwstSatz].steuer * (warenkorbSummeEuro > 0 ? effektivSumme / warenkorbSummeEuro : 0)).toFixed(2)}€</span>
             </div>
           ))}
           <div className="summe-row total">

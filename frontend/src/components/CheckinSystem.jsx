@@ -239,10 +239,10 @@ const CheckinSystem = () => {
       const nameParts = scannedValue.split(/[\s,]+/);
       if (nameParts.length >= 2) {
         member = members.find(m =>
-          (m.vorname.toLowerCase() === nameParts[0].toLowerCase() &&
-           m.nachname.toLowerCase() === nameParts[1].toLowerCase()) ||
-          (m.nachname.toLowerCase() === nameParts[0].toLowerCase() &&
-           m.vorname.toLowerCase() === nameParts[1].toLowerCase())
+          (m.vorname?.toLowerCase() === nameParts[0].toLowerCase() &&
+           m.nachname?.toLowerCase() === nameParts[1].toLowerCase()) ||
+          (m.nachname?.toLowerCase() === nameParts[0].toLowerCase() &&
+           m.vorname?.toLowerCase() === nameParts[1].toLowerCase())
         );
       }
     }
@@ -539,9 +539,9 @@ const CheckinSystem = () => {
   };
 
   // Filter members based on search - nur für Suche, nicht für Klick
-  const filteredMembers = members.filter(member => 
-    member.vorname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.nachname.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMembers = members.filter(member =>
+    member.vorname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.nachname?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Check if member is already checked in

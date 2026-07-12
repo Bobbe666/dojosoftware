@@ -237,7 +237,7 @@ router.put('/:id',
     const secureDojoId = getSecureDojoId(req);
     const updateFields = req.body;
 
-    const allowedFields = ['stil_id', 'gurtfarbe', 'letzte_pruefung', 'vorname', 'nachname', 'email', 'telefon', 'telefon_mobil', 'strasse', 'hausnummer', 'plz', 'ort', 'gewicht', 'vertreter1_typ', 'vertreter1_name', 'vertreter1_telefon', 'vertreter1_email', 'vertreter2_typ', 'vertreter2_name', 'vertreter2_telefon', 'vertreter2_email'];
+    const allowedFields = ['stil_id', 'gurtfarbe', 'vorname', 'nachname', 'email', 'telefon', 'telefon_mobil', 'strasse', 'hausnummer', 'plz', 'ort', 'gewicht', 'vertreter1_typ', 'vertreter1_name', 'vertreter1_telefon', 'vertreter1_email', 'vertreter2_typ', 'vertreter2_name', 'vertreter2_telefon', 'vertreter2_email'];
     const setClause = [];
     const values = [];
 

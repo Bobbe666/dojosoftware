@@ -200,8 +200,8 @@ router.put("/mahnungen/:mahnung_id/versandt", (req, res) => {
     const secureDojoId = getSecureDojoId(req);
 
     const query = secureDojoId
-        ? `UPDATE mahnungen SET versandt = 1 WHERE mahnung_id = ? AND dojo_id = ?`
-        : `UPDATE mahnungen SET versandt = 1 WHERE mahnung_id = ?`;
+        ? `UPDATE mahnungen SET versandt_am = NOW() WHERE mahnung_id = ? AND dojo_id = ?`
+        : `UPDATE mahnungen SET versandt_am = NOW() WHERE mahnung_id = ?`;
     const params = secureDojoId ? [mahnung_id, secureDojoId] : [mahnung_id];
 
     db.query(query, params, (err, result) => {
@@ -595,7 +595,7 @@ router.get("/beitraege/:beitrag_id/mahnung-vorschau/:mahnstufe", async (req, res
 // Hilfsfunktion: SMTP-Transporter erstellen
 async function createMailTransporter() {
     return new Promise((resolve, reject) => {
-        const query = `SELECT * FROM email_einstellungen LIMIT 1`;
+        const query = `SELECT * FROM email_settings LIMIT 1`;
         db.query(query, (err, results) => {
             if (err || results.length === 0) {
                 return reject(new Error('E-Mail-Einstellungen nicht gefunden'));
@@ -665,8 +665,8 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
             }
 
             // 24h-Cooldown: gleiche Mahnung nicht zweimal am selben Tag senden
-            if (mahnungData.versandt) {
-                const lastSent = mahnungData.versandt_am || mahnungData.mahndatum;
+            if (mahnungData.versandt_am) {
+                const lastSent = mahnungData.versandt_am;
                 if (lastSent) {
                     const hoursSince = (Date.now() - new Date(lastSent).getTime()) / 3600000;
                     if (hoursSince < 24) {
@@ -752,8 +752,8 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
                         // E-Mail senden
                         await transporter.sendMail(mailOptions);
 
-                        // Mahnung als versendet markieren
-                        const updateQuery = `UPDATE mahnungen SET versandt = 1, versand_art = 'email' WHERE mahnung_id = ?`;
+                        // Mahnung als versendet markieren (reales Schema: versandt_am / versandt_per)
+                        const updateQuery = `UPDATE mahnungen SET versandt_am = NOW(), versandt_per = 'email' WHERE mahnung_id = ?`;
                         db.query(updateQuery, [mahnung_id]);
 
                         // Audit-Log in notifications-Tabelle

@@ -444,38 +444,44 @@ router.get('/payments/:checkoutId', authenticateToken, async (req, res) => {
  */
 router.post('/webhook', async (req, res) => {
     try {
-        const { event_type, id, status, transaction_id, transaction_code, checkout_reference } = req.body;
+        const { event_type, id, status } = req.body;
 
         logger.info('SumUp Webhook empfangen:', {
             eventType: event_type,
             checkoutId: id,
-            status,
-            transactionId: transaction_id
+            status
         });
 
-        // Zahlung in DB finden und aktualisieren
-        if (id && status) {
-            const updateQuery = `
-                UPDATE sumup_payments
-                SET status = ?,
-                    transaction_id = ?,
-                    transaction_code = ?,
-                    updated_at = NOW()
-                    ${status === 'PAID' ? ', paid_at = NOW()' : ''}
-                WHERE checkout_id = ?
-            `;
+        // 🔒 SICHERHEIT: Dem Webhook-Body wird NICHT vertraut (keine Signatur-Prüfung
+        // verfügbar). Wir lösen die Zahlung ausschließlich über die eigene, gespeicherte
+        // checkout_id auf, ermitteln so das zugehörige Dojo (Scope) und re-verifizieren
+        // den Status AUTORITATIV über die SumUp-API mit den eigenen Dojo-Credentials.
+        // Ein beliebiger POST mit status=PAID kann so keine Zahlung mehr als bezahlt markieren.
+        if (id) {
+            const payment = await new Promise((resolve, reject) => {
+                db.query(
+                    'SELECT checkout_id, dojo_id FROM sumup_payments WHERE checkout_id = ?',
+                    [id],
+                    (err, results) => err ? reject(err) : resolve(results[0] || null)
+                );
+            });
 
-            db.query(
-                updateQuery,
-                [status, transaction_id || null, transaction_code || null, id],
-                (err, result) => {
-                    if (err) {
-                        logger.error('SumUp Webhook DB Fehler:', { error: err.message });
-                    } else if (result.affectedRows > 0) {
-                        logger.info('SumUp Zahlung aktualisiert:', { checkoutId: id, status });
-                    }
+            if (!payment) {
+                logger.warn('SumUp Webhook: unbekannte checkout_id, ignoriert:', { checkoutId: id });
+            } else {
+                try {
+                    // Provider mit den Credentials des OWNER-Dojos → autoritative Statusabfrage
+                    const provider = await createProvider(payment.dojo_id);
+                    const result = await provider.getCheckoutStatus(id);
+                    logger.info('SumUp Zahlung autoritativ re-verifiziert:', {
+                        checkoutId: id,
+                        dojoId: payment.dojo_id,
+                        status: result.status
+                    });
+                } catch (verifyErr) {
+                    logger.error('SumUp Webhook Verifikation fehlgeschlagen:', { error: verifyErr.message, checkoutId: id });
                 }
-            );
+            }
         }
 
         // SumUp erwartet 200 OK

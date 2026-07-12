@@ -849,9 +849,11 @@ router.get('/tresen/:datum', async (req, res) => {
         // Gruppiere nach Mitglied (nimm den neuesten Check-in pro Mitglied)
         const memberMap = new Map();
         checkins.forEach(c => {
-            if (!memberMap.has(c.mitglied_id) || 
-                new Date(c.checkin_time) > new Date(memberMap.get(c.mitglied_id).checkin_time)) {
-                memberMap.set(c.mitglied_id, c);
+            // Gäste (mitglied_id NULL) dürfen nicht zusammengefasst werden → eigener Key pro Check-in
+            const key = c.ist_gast ? `gast_${c.checkin_id}` : c.mitglied_id;
+            if (!memberMap.has(key) ||
+                new Date(c.checkin_time) > new Date(memberMap.get(key).checkin_time)) {
+                memberMap.set(key, c);
             }
         });
         

@@ -511,12 +511,36 @@ router.post('/push/send', authenticateToken, async (req, res) => {
     // Sende Push-Notification an jeden Empfänger via Web Push
     for (const recipient of recipients) {
       try {
-        // Push-Subscriptions des Empfängers laden
-        const [subscriptions] = await pool.query(
-          `SELECT endpoint, p256dh_key, auth_key FROM push_subscriptions
-           WHERE user_id = ? AND is_active = TRUE`,
-          [recipient]
-        );
+        // recipients sind E-Mails -> auf push_subscriptions.user_id (mitglied_id bzw. users.id) mappen
+        let userIds = [];
+        if (typeof recipient === 'string' && recipient.includes('@')) {
+          const params = dojo_id
+            ? [recipient, dojo_id, recipient, dojo_id]
+            : [recipient, recipient];
+          const memberWhere = dojo_id ? 'AND dojo_id = ?' : '';
+          const userWhere = dojo_id ? 'AND dojo_id = ?' : '';
+          const [idRows] = await pool.query(
+            `SELECT mitglied_id AS id FROM mitglieder WHERE LOWER(email) = LOWER(?) ${memberWhere}
+             UNION
+             SELECT id FROM users WHERE LOWER(email) = LOWER(?) ${userWhere}`,
+            params
+          );
+          userIds = idRows.map(r => r.id).filter(v => v != null);
+        } else if (recipient != null) {
+          // Fallback: Empfänger ist bereits eine numerische ID
+          userIds = [recipient];
+        }
+
+        // Push-Subscriptions des/der aufgelösten Empfänger laden
+        let subscriptions = [];
+        if (userIds.length) {
+          const [subs] = await pool.query(
+            `SELECT endpoint, p256dh_key, auth_key FROM push_subscriptions
+             WHERE user_id IN (?) AND is_active = TRUE`,
+            [userIds]
+          );
+          subscriptions = subs;
+        }
 
         const pushPayload = JSON.stringify({
           title,
@@ -1094,8 +1118,8 @@ router.put('/member/:id/read', authenticateToken, async (req, res) => {
 
     await new Promise((resolve, reject) => {
       const sql = secureDojoId
-        ? 'UPDATE notifications SET `read` = TRUE WHERE id = ? AND dojo_id = ?'
-        : 'UPDATE notifications SET `read` = TRUE WHERE id = ?';
+        ? "UPDATE notifications SET status = 'read' WHERE id = ? AND dojo_id = ?"
+        : "UPDATE notifications SET status = 'read' WHERE id = ?";
       const args = secureDojoId ? [id, secureDojoId] : [id];
       db.query(sql, args, (err, result) => {
         if (err) reject(err);

@@ -70,43 +70,47 @@ const calculateNetto = (bruttoBetrag, mwstProzent) => {
   return Math.round(bruttoBetrag / (1 + (mwstProzent / 100)));
 };
 
-// Kassenstand abrufen
-const getKassenstand = () => {
+// Kassenstand abrufen (pro Dojo gefiltert)
+const getKassenstand = (dojoId = null) => {
   return new Promise((resolve, reject) => {
-    const query = `
-      SELECT kassenstand_nachher_cent 
-      FROM kassenbuch 
-      WHERE geschaeft_datum = CURDATE() 
-      ORDER BY eintrag_timestamp DESC 
-      LIMIT 1
+    let query = `
+      SELECT kassenstand_nachher_cent
+      FROM kassenbuch
+      WHERE geschaeft_datum = CURDATE()
     `;
-    
-    db.query(query, (error, results) => {
+    const params = [];
+    if (dojoId) {
+      query += ' AND dojo_id = ?';
+      params.push(dojoId);
+    }
+    query += ' ORDER BY eintrag_timestamp DESC LIMIT 1';
+
+    db.query(query, params, (error, results) => {
       if (error) return reject(error);
-      
+
       const kassenstand = results.length > 0 ? results[0].kassenstand_nachher_cent : 0;
       resolve(kassenstand);
     });
   });
 };
 
-// Kassenbuch-Eintrag erstellen
-const createKassenbuchEintrag = (bewegungsart, betrag_cent, beschreibung, verkauf_id = null) => {
+// Kassenbuch-Eintrag erstellen (dojo_id-gebunden)
+const createKassenbuchEintrag = (bewegungsart, betrag_cent, beschreibung, verkauf_id = null, dojoId = null) => {
   return new Promise((resolve, reject) => {
-    getKassenstand().then(kassenstandVorher => {
-      const kassenstandNachher = bewegungsart === 'einnahme' ? 
-        kassenstandVorher + betrag_cent : 
+    getKassenstand(dojoId).then(kassenstandVorher => {
+      const kassenstandNachher = bewegungsart === 'einnahme' ?
+        kassenstandVorher + betrag_cent :
         kassenstandVorher - betrag_cent;
-      
+
       const query = `
         INSERT INTO kassenbuch (
-          geschaeft_datum, bewegungsart, betrag_cent, beschreibung,
+          dojo_id, geschaeft_datum, bewegungsart, betrag_cent, beschreibung,
           verkauf_id, kassenstand_vorher_cent, kassenstand_nachher_cent
-        ) VALUES (CURDATE(), ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, CURDATE(), ?, ?, ?, ?, ?, ?)
       `;
-      
+
       db.query(query, [
-        bewegungsart, betrag_cent, beschreibung, verkauf_id,
+        dojoId ?? null, bewegungsart, betrag_cent, beschreibung, verkauf_id,
         kassenstandVorher, kassenstandNachher
       ], (error, results) => {
         if (error) return reject(error);
@@ -342,13 +346,31 @@ router.post('/', async (req, res) => {
         }
       }
 
+      // Lagerbestand dekrementieren (nur echte, bestandsgeführte Artikel ohne Varianten;
+      // Varianten-Bestand liegt pro Größe in varianten_bestand-JSON → hier nicht angefasst)
+      for (const item of artikelDetails) {
+        if (item.artikel_id && item.lager_tracking && !item.hat_varianten) {
+          await new Promise((resolve, reject) => {
+            connection.query(
+              `UPDATE artikel SET lagerbestand = lagerbestand - ? WHERE artikel_id = ?`,
+              [item.menge, item.artikel_id],
+              (error, results) => {
+                if (error) return reject(error);
+                resolve(results);
+              }
+            );
+          });
+        }
+      }
+
       // Kassenbuch-Eintrag (nur bei Barzahlung)
       if (zahlungsart === 'bar') {
         await createKassenbuchEintrag(
           'einnahme',
           brutto_gesamt_cent,
           `Verkauf - Bon: ${bonNummer}`,
-          verkauf_id
+          verkauf_id,
+          effectiveDojoId
         );
       }
 
@@ -775,7 +797,7 @@ router.get('/:id', (req, res) => {
 // =====================================================================================
 
 // POST /api/verkaeufe/:id/storno - Verkauf stornieren
-router.post('/:id/storno', (req, res) => {
+router.post('/:id/storno', async (req, res) => {
   const { storno_grund, storno_von } = req.body;
   // 🔒 Tenant-Scope: nur eigener Dojo-Verkauf (Super-Admin = null → voller Zugriff)
   const secureDojoId = getSecureDojoId(req);
@@ -784,92 +806,81 @@ router.post('/:id/storno', (req, res) => {
     return res.status(400).json({ error: 'Storno-Grund erforderlich' });
   }
 
-  // Transaction für Stornierung
-  db.beginTransaction((transError) => {
-    if (transError) {
-      logger.error('Transaction-Fehler:', { error: transError });
-      return res.status(500).json({ error: 'Transaction-Fehler' });
-    }
+  const cq = (conn, sql, params) => new Promise((resolve, reject) => {
+    conn.query(sql, params, (error, results) => error ? reject(error) : resolve(results));
+  });
 
-    // Verkauf als storniert markieren
-    const stornoQuery = `
-      UPDATE verkaeufe
-      SET storniert = TRUE, storno_grund = ?, storno_timestamp = NOW()
-      WHERE verkauf_id = ? AND storniert = FALSE${secureDojoId ? ' AND dojo_id = ?' : ''}
-    `;
-    const stornoParams = secureDojoId ? [storno_grund, req.params.id, secureDojoId] : [storno_grund, req.params.id];
+  let connection;
+  try {
+    // 🔧 Verbindung aus dem Pool (db ist ein Pool → kein db.beginTransaction!)
+    connection = await new Promise((resolve, reject) => {
+      db.getConnection((error, conn) => error ? reject(error) : resolve(conn));
+    });
 
-    db.query(stornoQuery, stornoParams, (error, results) => {
-      if (error) {
-        db.rollback();
-        logger.error('Fehler beim Stornieren:', { error: error });
-        return res.status(500).json({ error: 'Fehler beim Stornieren' });
-      }
-      
+    await new Promise((resolve, reject) => {
+      connection.beginTransaction(error => error ? reject(error) : resolve());
+    });
+
+    try {
+      // Verkauf als storniert markieren
+      const stornoQuery = `
+        UPDATE verkaeufe
+        SET storniert = TRUE, storno_grund = ?, storno_timestamp = NOW()
+        WHERE verkauf_id = ? AND storniert = FALSE${secureDojoId ? ' AND dojo_id = ?' : ''}
+      `;
+      const stornoParams = secureDojoId ? [storno_grund, req.params.id, secureDojoId] : [storno_grund, req.params.id];
+
+      const results = await cq(connection, stornoQuery, stornoParams);
+
       if (results.affectedRows === 0) {
-        db.rollback();
+        await new Promise((resolve) => connection.rollback(() => resolve()));
+        connection.release();
         return res.status(404).json({ error: 'Verkauf nicht gefunden oder bereits storniert' });
       }
-      
+
       // Verkaufsdetails für Kassenbuch abrufen
-      const detailQuery = `
-        SELECT brutto_gesamt_cent, zahlungsart, bon_nummer
-        FROM verkaeufe 
-        WHERE verkauf_id = ?
-      `;
-      
-      db.query(detailQuery, [req.params.id], (detailError, detailResults) => {
-        if (detailError) {
-          db.rollback();
-          logger.error('Fehler beim Abrufen der Verkaufsdetails:', { error: detailError });
-          return res.status(500).json({ error: 'Fehler beim Abrufen der Verkaufsdetails' });
-        }
-        
-        const verkaufDetail = detailResults[0];
-        
-        // Kassenbuch-Eintrag für Stornierung (nur bei Barzahlung)
-        if (verkaufDetail.zahlungsart === 'bar') {
-          createKassenbuchEintrag(
-            'ausgabe',
-            verkaufDetail.brutto_gesamt_cent,
-            `Stornierung - Bon: ${verkaufDetail.bon_nummer} - Grund: ${storno_grund}`,
-            req.params.id
-          ).then(() => {
-            db.commit((commitError) => {
-              if (commitError) {
-                db.rollback();
-                logger.error('Commit-Fehler:', { error: commitError });
-                return res.status(500).json({ error: 'Commit-Fehler' });
-              }
-              res.json({ 
-                success: true, 
-                message: 'Verkauf erfolgreich storniert',
-                storno_grund 
-              });
-            });
-          }).catch(kassenbuchError => {
-            db.rollback();
-            logger.error('Kassenbuch-Fehler bei Stornierung:', { error: kassenbuchError });
-            res.status(500).json({ error: 'Kassenbuch-Fehler bei Stornierung' });
-          });
-        } else {
-          // Kein Kassenbuch-Eintrag bei Kartenzahlung
-          db.commit((commitError) => {
-            if (commitError) {
-              db.rollback();
-              logger.error('Commit-Fehler:', { error: commitError });
-              return res.status(500).json({ error: 'Commit-Fehler' });
-            }
-            res.json({ 
-              success: true, 
-              message: 'Verkauf erfolgreich storniert',
-              storno_grund 
-            });
-          });
-        }
+      const detailResults = await cq(
+        connection,
+        `SELECT brutto_gesamt_cent, zahlungsart, bon_nummer, dojo_id
+         FROM verkaeufe
+         WHERE verkauf_id = ?`,
+        [req.params.id]
+      );
+      const verkaufDetail = detailResults[0];
+
+      // Kassenbuch-Eintrag für Stornierung (nur bei Barzahlung)
+      if (verkaufDetail.zahlungsart === 'bar') {
+        await createKassenbuchEintrag(
+          'ausgabe',
+          verkaufDetail.brutto_gesamt_cent,
+          `Stornierung - Bon: ${verkaufDetail.bon_nummer} - Grund: ${storno_grund}`,
+          req.params.id,
+          verkaufDetail.dojo_id ?? secureDojoId ?? null
+        );
+      }
+
+      await new Promise((resolve, reject) => {
+        connection.commit(error => error ? reject(error) : resolve());
       });
-    });
-  });
+      connection.release();
+
+      res.json({
+        success: true,
+        message: 'Verkauf erfolgreich storniert',
+        storno_grund
+      });
+    } catch (innerError) {
+      await new Promise((resolve) => connection.rollback(() => resolve()));
+      connection.release();
+      throw innerError;
+    }
+  } catch (error) {
+    if (connection) {
+      try { connection.release(); } catch (e) { /* bereits released */ }
+    }
+    logger.error('Fehler beim Stornieren:', { error: error });
+    res.status(500).json({ error: 'Fehler beim Stornieren' });
+  }
 });
 
 // =====================================================================================

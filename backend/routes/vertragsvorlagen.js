@@ -352,10 +352,10 @@ router.get('/:id/preview', async (req, res) => {
                d.plz as dojo_plz, d.ort as dojo_ort, d.telefon as dojo_telefon,
                d.email as dojo_email, d.internet as dojo_internet
         FROM mitglieder m
-        LEFT JOIN vertraege v ON m.id = v.mitglied_id
+        LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id
         LEFT JOIN dojo d ON m.dojo_id = d.id
         WHERE m.dojo_id = ? AND v.id IS NOT NULL
-        ORDER BY v.erstellt_am DESC
+        ORDER BY v.created_at DESC
         LIMIT 1
       `, [template.dojo_id]);
 

@@ -34,7 +34,9 @@ async function ladePosten(mitgliedId, jahr, umfang, einzel) {
     [mitgliedId, ...(jahr ? [jahr] : []), ...(einzel && einzel.typ === 'beitrag' ? [einzel.id] : [])]
   );
   let rechnungen = [];
-  if (!nurBeitraege) {
+  // Rechnungen laden, wenn Umfang 'alle' ODER gezielt eine einzelne Rechnung angefragt wurde
+  // (sonst würde eine Einzel-Quittung vom Typ 'rechnung' bei Default-Umfang leer bleiben)
+  if (!nurBeitraege || (einzel && einzel.typ === 'rechnung')) {
     [rechnungen] = await pool.query(
       `SELECT 'rechnung' AS typ, rechnung_id AS id, COALESCE(gesamtsumme, betrag) AS betrag,
               DATE_FORMAT(bezahlt_am, '%Y-%m-%d') AS datum, zahlungsart, beschreibung, art

@@ -2275,7 +2275,7 @@ const MemberDashboard = () => {
             )}
 
             {/* Familienrabatt */}
-            {memberData.rabatt_prozent && memberData.rabatt_grund && (
+            {memberData.rabatt_prozent > 0 && memberData.rabatt_grund && (
               <div className="md-info-card">
                 <div className="mb-icon-lg">👨‍👩‍👧‍👦</div>
                 <div>
@@ -2456,7 +2456,7 @@ const MemberDashboard = () => {
                       <div className="md-result-date-text">
                         📅 {new Date(result.pruefungsdatum).toLocaleDateString('de-DE')}
                       </div>
-                      {result.punktzahl && result.max_punktzahl && (
+                      {result.punktzahl != null && result.max_punktzahl != null && (
                         <div className="md-result-score-text">
                           Punktzahl: {result.punktzahl} / {result.max_punktzahl}
                         </div>
@@ -2884,7 +2884,7 @@ const MemberDashboard = () => {
 
               {/* Gebühr & Anmeldefrist */}
               <div className="md-modal-fee-grid">
-                {selectedExam.pruefungsgebuehr && (
+                {selectedExam.pruefungsgebuehr > 0 && (
                   <div className="md-modal-fee-card">
                     <div className="mb-label-xs">
                       💰 Prüfungsgebühr

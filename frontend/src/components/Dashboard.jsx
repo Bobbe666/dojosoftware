@@ -355,6 +355,7 @@ function Dashboard() {
 
   // Formatiere Zahlen für bessere Lesbarkeit
   const formatNumber = (num) => {
+    if (num == null) return '0';
     if (num === 0) return '0';
     return num.toLocaleString('de-DE');
   };

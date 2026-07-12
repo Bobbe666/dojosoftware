@@ -104,28 +104,15 @@ router.get('/naechste-nummer', (req, res) => {
   const tag = String(datumObj.getDate()).padStart(2, '0');
   const datumPrefix = `${jahr}/${monat}/${tag}`;
 
-  let checkQuery;
-  let checkParams;
-
-  if (secureDojoId) {
-    // Kundendojo: Nur eigene Rechnungen zählen
-    checkQuery = `
-      SELECT COUNT(*) AS count
-      FROM rechnungen r
-      LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
-      WHERE YEAR(r.datum) = ? AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))
-    `;
-    checkParams = [jahr, secureDojoId, secureDojoId];
-  } else {
-    // Super-Admin: Alle Rechnungen + Verband-Zahlungen (plattformweite Nummerierung)
-    checkQuery = `
-      SELECT
-        (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
-        (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
-      AS count
-    `;
-    checkParams = [jahr, jahr];
-  }
+  // Einheitlich GLOBAL zählen (konsistent mit POST / und rechnungAutomation),
+  // damit die Vorschau der tatsächlich vergebenen Nummer entspricht.
+  const checkQuery = `
+    SELECT
+      (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
+      (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
+    AS count
+  `;
+  const checkParams = [jahr, jahr];
 
   db.query(checkQuery, checkParams, (err, results) => {
     if (err) {
@@ -295,25 +282,15 @@ router.post('/', (req, res) => {
       return res.status(403).json({ success: false, error: 'Mitglied nicht gefunden oder kein Zugriff' });
     }
 
-  // Zähle Rechnungen — dojo-spezifisch für normale Dojos, global für Super-Admin
-  let checkQuery, checkParams;
-  if (secureDojoId) {
-    checkQuery = `
-      SELECT COUNT(*) AS count
-      FROM rechnungen r
-      LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
-      WHERE YEAR(r.datum) = ? AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))
-    `;
-    checkParams = [jahr, secureDojoId, secureDojoId];
-  } else {
-    checkQuery = `
-      SELECT
-        (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
-        (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
-      AS count
-    `;
-    checkParams = [jahr, jahr];
-  }
+  // Zähle Rechnungen — einheitlich GLOBAL (rechnungsnummer ist plattformweit eindeutig,
+  // vgl. lexoffice_invoice_mappings). Pro-Dojo-Zählung würde dojoübergreifende Duplikate erzeugen.
+  const checkQuery = `
+    SELECT
+      (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
+      (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
+    AS count
+  `;
+  const checkParams = [jahr, jahr];
 
   db.query(checkQuery, checkParams, (checkErr, checkResults) => {
     if (checkErr) {
@@ -552,9 +529,10 @@ router.put('/:id/archivieren', (req, res) => {
     query = `
       UPDATE rechnungen SET archiviert = ?
       WHERE rechnung_id = ?
-        AND mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)
+        AND (mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)
+             OR (mitglied_id IS NULL AND dojo_id = ?))
     `;
-    params = [archiviert ? 1 : 0, id, secureDojoId];
+    params = [archiviert ? 1 : 0, id, secureDojoId, secureDojoId];
   } else {
     query = `UPDATE rechnungen SET archiviert = ? WHERE rechnung_id = ?`;
     params = [archiviert ? 1 : 0, id];
@@ -627,9 +605,10 @@ router.delete('/:id', (req, res) => {
     query = `
       DELETE FROM rechnungen
       WHERE rechnung_id = ?
-        AND mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)
+        AND (mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)
+             OR (mitglied_id IS NULL AND dojo_id = ?))
     `;
-    params = [id, secureDojoId];
+    params = [id, secureDojoId, secureDojoId];
   } else {
     query = `DELETE FROM rechnungen WHERE rechnung_id = ?`;
     params = [id];

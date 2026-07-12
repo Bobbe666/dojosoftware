@@ -269,7 +269,7 @@ export default function PublicShop() {
                     <div className="public-shop-artikel-info">
                       <div className="public-shop-artikel-name">{art.name}</div>
                       <div className="public-shop-artikel-preis">
-                        {art.preis.toFixed(2)}€
+                        {parseFloat(art.preis || 0).toFixed(2)}€
                         {hatVarianten && art.hat_preiskategorien && (
                           <span className="public-shop-preis-hinweis"> (ab)</span>
                         )}
@@ -309,7 +309,7 @@ export default function PublicShop() {
                         className={`public-shop-variante-btn ${selectedVariante.preiskategorie === 'kids' ? 'selected' : ''}`}
                         onClick={() => setSelectedVariante(v => ({ ...v, preiskategorie: 'kids' }))}
                       >
-                        Kids — {selectedArtikel.preis_kids_euro.toFixed(2)} €
+                        Kids — {parseFloat(selectedArtikel.preis_kids_euro || 0).toFixed(2)} €
                       </button>
                     )}
                     {selectedArtikel.preis_erwachsene_euro && (
@@ -317,7 +317,7 @@ export default function PublicShop() {
                         className={`public-shop-variante-btn ${selectedVariante.preiskategorie === 'erwachsene' ? 'selected' : ''}`}
                         onClick={() => setSelectedVariante(v => ({ ...v, preiskategorie: 'erwachsene' }))}
                       >
-                        Erwachsene — {selectedArtikel.preis_erwachsene_euro.toFixed(2)} €
+                        Erwachsene — {parseFloat(selectedArtikel.preis_erwachsene_euro || 0).toFixed(2)} €
                       </button>
                     )}
                   </div>

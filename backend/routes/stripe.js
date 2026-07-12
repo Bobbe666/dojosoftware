@@ -565,6 +565,16 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
       );
     });
 
+    // 🔒 Idempotenz: bereits verarbeitete Events NICHT erneut ausführen
+    const [processedRows] = await db.promise().query(
+      "SELECT processed FROM stripe_webhooks WHERE stripe_event_id = ?",
+      [event.id]
+    );
+    if (processedRows[0] && processedRows[0].processed) {
+      logger.info("Stripe Webhook bereits verarbeitet, überspringe:", event.id);
+      return res.json({ received: true, duplicate: true });
+    }
+
     // Event verarbeiten
     switch (event.type) {
       case "checkout.session.completed":
@@ -605,6 +615,12 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
         await handleRefundObject(event.data.object, null);
         break;
     }
+
+    // 🔒 Idempotenz: Event als verarbeitet markieren
+    await db.promise().query(
+      "UPDATE stripe_webhooks SET processed = 1, processed_at = NOW() WHERE stripe_event_id = ?",
+      [event.id]
+    );
 
     res.json({ received: true });
   } catch (error) {
@@ -672,14 +688,14 @@ async function handleCheckoutComplete(session) {
   // Event-Zahlung oder Shop-Bestellung aktualisieren
   if (session.metadata?.event_anmeldung_id) {
     await db.promise().query(
-      "UPDATE event_anmeldungen SET bezahlt = 1, bezahlt_am = NOW(), stripe_session_id = ? WHERE id = ?",
-      [session.id, session.metadata.event_anmeldung_id]
+      "UPDATE event_anmeldungen SET bezahlt = 1, bezahldatum = NOW(), stripe_payment_intent_id = ? WHERE anmeldung_id = ?",
+      [session.payment_intent || session.id, session.metadata.event_anmeldung_id]
     );
   }
   if (session.metadata?.bestellung_id) {
     await db.promise().query(
-      "UPDATE shop_bestellungen SET status = bezahlt, stripe_session_id = ? WHERE id = ?",
-      [session.id, session.metadata.bestellung_id]
+      "UPDATE shop_bestellungen SET status = 'bezahlt', bezahlt = 1, bezahlt_am = NOW(), stripe_payment_intent_id = ? WHERE id = ?",
+      [session.payment_intent || session.id, session.metadata.bestellung_id]
     );
   }
 }
@@ -698,8 +714,18 @@ async function handleInvoicePaid(invoice) {
   logger.info("Rechnung bezahlt:", invoice.id);
   if (invoice.subscription) {
     try {
+      // Dojo über den Stripe-Kunden ermitteln, um die richtige Per-Dojo-Stripe-Instanz zu laden
+      const [[mrow]] = await db.promise().query(
+        "SELECT mitglied_id, dojo_id FROM mitglieder WHERE stripe_customer_id = ? LIMIT 1",
+        [invoice.customer]
+      );
+      if (!mrow) {
+        logger.warn("invoice.paid: kein Mitglied zu Stripe-Kunde " + invoice.customer + " gefunden");
+        return;
+      }
+      const { stripe } = await getStripeForDojo(mrow.dojo_id);
       const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-      const mitgliedId = subscription.metadata && subscription.metadata.mitglied_id;
+      const mitgliedId = (subscription.metadata && subscription.metadata.mitglied_id) || mrow.mitglied_id;
       if (mitgliedId) {
         await db.promise().query(
           "UPDATE mitglieder SET stripe_subscription_status = 'active', aktiv = 1 WHERE mitglied_id = ?",
