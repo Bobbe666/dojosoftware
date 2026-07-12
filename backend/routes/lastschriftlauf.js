@@ -1515,17 +1515,28 @@ router.get("/stripe/status", async (req, res) => {
         // 🔒 dojo_id sicher aus JWT (Super-Admin = null → alle Dojos); kein Query-Spoofing
         const dojoId = getSecureDojoId(req);
 
-        // Prüfe Stripe-Konfiguration (mind. ein Dojo mit Stripe-Key)
-        const dojoQuery = dojoId
-            ? 'SELECT stripe_secret_key, stripe_publishable_key FROM dojo WHERE id = ?'
-            : 'SELECT stripe_secret_key, stripe_publishable_key FROM dojo WHERE stripe_secret_key IS NOT NULL AND stripe_secret_key != "" LIMIT 1';
-        const dojoResult = await queryAsync(dojoQuery, dojoId ? [dojoId] : []);
-
-        if (dojoResult.length === 0) {
-            return res.json({ stripe_configured: false, message: 'Stripe nicht konfiguriert' });
+        // Prüfe Stripe-Konfiguration.
+        // 🔒 Tenant-spezifisch: normaler User → nur SEIN Dojo. Super-Admin (dojoId=null)
+        //    → aggregiert per COUNT über alle Dojos, NICHT den Key des ersten Dojos raten.
+        let stripeConfigured;
+        if (dojoId) {
+            const dojoResult = await queryAsync(
+                'SELECT stripe_secret_key, stripe_publishable_key FROM dojo WHERE id = ?',
+                [dojoId]
+            );
+            if (dojoResult.length === 0) {
+                return res.json({ stripe_configured: false, message: 'Stripe nicht konfiguriert' });
+            }
+            stripeConfigured = !!(dojoResult[0].stripe_secret_key && dojoResult[0].stripe_publishable_key);
+        } else {
+            // Super-Admin: ist mindestens EIN Dojo vollständig konfiguriert?
+            const cfg = await queryAsync(
+                `SELECT COUNT(*) AS n FROM dojo
+                 WHERE stripe_secret_key IS NOT NULL AND stripe_secret_key != ''
+                   AND stripe_publishable_key IS NOT NULL AND stripe_publishable_key != ''`
+            );
+            stripeConfigured = (cfg[0]?.n || 0) > 0;
         }
-
-        const stripeConfigured = !!(dojoResult[0].stripe_secret_key && dojoResult[0].stripe_publishable_key);
 
         // Zähle Mitglieder mit/ohne Stripe Setup (alle Dojos bei Super-Admin)
         const countQuery = dojoId ? `

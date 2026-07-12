@@ -484,7 +484,7 @@ async function processUpload(req, res) {
       );
       const kassenbuchHashes = new Set(
         kassenbuchEintraege.map(e => hashTransaction(
-          e.geschaeft_datum.toISOString().slice(0, 10),
+          (e.geschaeft_datum instanceof Date ? e.geschaeft_datum.toISOString().slice(0, 10) : String(e.geschaeft_datum).slice(0, 10)),
           e.betrag_cent / 100,
           e.beschreibung
         ))

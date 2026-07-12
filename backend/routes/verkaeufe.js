@@ -194,11 +194,11 @@ router.post('/', async (req, res) => {
             artikel_id, name, artikel_nummer, verkaufspreis_cent,
             mwst_prozent, lagerbestand, lager_tracking, hat_varianten, varianten_bestand
           FROM artikel
-          WHERE artikel_id = ? AND aktiv = TRUE
+          WHERE artikel_id = ? AND aktiv = TRUE AND (? IS NULL OR dojo_id = ?)
         `;
 
         const artikelResult = await new Promise((resolve, reject) => {
-          connection.query(artikelQuery, [item.artikel_id], (error, results) => {
+          connection.query(artikelQuery, [item.artikel_id, effectiveDojoId, effectiveDojoId], (error, results) => {
             if (error) return reject(error);
             resolve(results);
           });
@@ -374,16 +374,16 @@ router.post('/', async (req, res) => {
           }
           await new Promise((resolve, reject) => {
             connection.query(
-              `UPDATE artikel SET varianten_bestand = ? WHERE artikel_id = ?`,
-              [JSON.stringify(vb), item.artikel_id],
+              `UPDATE artikel SET varianten_bestand = ? WHERE artikel_id = ? AND (? IS NULL OR dojo_id = ?)`,
+              [JSON.stringify(vb), item.artikel_id, effectiveDojoId, effectiveDojoId],
               (error, results) => error ? reject(error) : resolve(results)
             );
           });
         } else {
           await new Promise((resolve, reject) => {
             connection.query(
-              `UPDATE artikel SET lagerbestand = lagerbestand - ? WHERE artikel_id = ?`,
-              [item.menge, item.artikel_id],
+              `UPDATE artikel SET lagerbestand = lagerbestand - ? WHERE artikel_id = ? AND (? IS NULL OR dojo_id = ?)`,
+              [item.menge, item.artikel_id, effectiveDojoId, effectiveDojoId],
               (error, results) => error ? reject(error) : resolve(results)
             );
           });

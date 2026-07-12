@@ -181,8 +181,16 @@ router.post('/stripe/webhook', express.raw({type: 'application/json'}), async (r
         const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
         const event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
 
-        // Get dojoId from metadata if available
-        const dojoId = event.data?.object?.metadata?.dojo_id || 1;
+        // Get dojoId from metadata — NICHT auf Dojo 1 defaulten (Fehlattribution!)
+        const dojoIdRaw = event.data?.object?.metadata?.dojo_id;
+        const dojoId = dojoIdRaw ? parseInt(dojoIdRaw, 10) : null;
+        if (!dojoId) {
+            logger.warn('Stripe Webhook ohne dojo_id in Metadata — übersprungen', {
+                eventType: event.type,
+                eventId: event.id
+            });
+            return res.json({ received: true, skipped: 'no dojo_id in metadata' });
+        }
         const provider = await PaymentProviderFactory.getProvider(dojoId);
 
         if (provider.constructor.name === 'StripeDataevProvider') {

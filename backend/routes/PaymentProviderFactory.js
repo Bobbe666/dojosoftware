@@ -1,9 +1,15 @@
 const db = require('../db');
+const logger = require('../utils/logger');
 const StripeDataevProvider = require('./StripeDataevProvider');
 const ManualSepaProvider = require('./ManualSepaProvider');
 
 class PaymentProviderFactory {
     static async getProvider(dojoId = null) {
+        // Ohne gültige dojoId hart fehlschlagen — niemals ein beliebiges Dojo
+        // (und dessen Stripe/DATEV-Credentials) verwenden.
+        if (!dojoId) {
+            throw new Error('PaymentProviderFactory.getProvider: dojoId erforderlich');
+        }
         try {
             const dojoConfig = await this.getDojoConfig(dojoId);
             switch (dojoConfig.payment_provider) {
@@ -16,36 +22,27 @@ class PaymentProviderFactory {
             }
         } catch (error) {
             logger.error('PaymentProviderFactory: Error getting provider:', error);
-            // Fallback to manual SEPA
-            const fallbackConfig = { payment_provider: 'manual_sepa', id: dojoId || 1 };
+            // Fallback nur für DIESES Dojo auf manual_sepa — kein Fremd-Dojo.
+            const fallbackConfig = { payment_provider: 'manual_sepa', id: dojoId };
             return new ManualSepaProvider(fallbackConfig);
         }
     }
 
     static async getDojoConfig(dojoId = null) {
+        // Ohne gültige dojoId hart fehlschlagen — kein "erstes Dojo" (LIMIT 1),
+        // sonst würden fremde Stripe/DATEV-Credentials verwendet.
+        if (!dojoId) {
+            throw new Error('PaymentProviderFactory.getDojoConfig: dojoId erforderlich');
+        }
         return new Promise((resolve, reject) => {
-            let query;
-            let params = [];
-
-            if (dojoId) {
-                query = `
-                    SELECT id, payment_provider, stripe_secret_key, stripe_publishable_key,
-                           datev_api_key, datev_consultant_number, datev_client_number,
-                           dojoname as name, sepa_glaeubiger_id
-                    FROM dojo
-                    WHERE id = ?
-                `;
-                params = [dojoId];
-            } else {
-                // Default to first dojo if no ID specified
-                query = `
-                    SELECT id, payment_provider, stripe_secret_key, stripe_publishable_key,
-                           datev_api_key, datev_consultant_number, datev_client_number,
-                           dojoname as name, sepa_glaeubiger_id
-                    FROM dojo
-                    LIMIT 1
-                `;
-            }
+            const query = `
+                SELECT id, payment_provider, stripe_secret_key, stripe_publishable_key,
+                       datev_api_key, datev_consultant_number, datev_client_number,
+                       dojoname as name, sepa_glaeubiger_id
+                FROM dojo
+                WHERE id = ?
+            `;
+            const params = [dojoId];
 
             db.query(query, params, (err, results) => {
                 if (err) {
@@ -54,11 +51,8 @@ class PaymentProviderFactory {
                 }
 
                 if (results.length === 0) {
-                    return resolve({
-                        id: 1,
-                        payment_provider: 'manual_sepa',
-                        name: 'Default Dojo'
-                    });
+                    // Kein Dojo mit dieser id — nicht auf ein Default-Dojo ausweichen.
+                    return reject(new Error(`PaymentProviderFactory: Dojo ${dojoId} nicht gefunden`));
                 }
 
                 const config = results[0];

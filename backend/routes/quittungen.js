@@ -191,9 +191,12 @@ router.get('/pdf', async (req, res) => {
 
     const html = buildQuittungHtml({ dojo: dojo || {}, mitglied, posten, jahr, umfang, einzel, summe });
     await acquirePdfSlot();                 // max. 2 PDFs gleichzeitig (Überlast-Schutz)
-    const browser = await getPdfBrowser();
-    const page = await browser.newPage();
+    // Browser-/Page-Acquisition INNERHALB des try, damit releasePdfSlot() im finally
+    // auch bei Puppeteer-Fehlern immer läuft (sonst Slot-Leak → Endpoint hängt dauerhaft).
+    let page = null;
     try {
+      const browser = await getPdfBrowser();
+      page = await browser.newPage();
       // data:-URL goto = zuverlässiger UTF-8-Fix für Puppeteer (Umlaute).
       // domcontentloaded statt load: reines HTML ohne externe Assets → schneller fertig.
       await page.goto('data:text/html;charset=UTF-8,' + encodeURIComponent(html), { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -204,7 +207,7 @@ router.get('/pdf', async (req, res) => {
       res.setHeader('Cache-Control', 'no-store');
       res.send(Buffer.from(pdf));
     } finally {
-      await page.close().catch(() => {});
+      if (page) await page.close().catch(() => {});
       releasePdfSlot();
     }
   } catch (e) {

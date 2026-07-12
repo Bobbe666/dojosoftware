@@ -244,8 +244,12 @@ router.put('/:id/status', requireAdmin, async (req, res) => {
 // ── POST /:id/view — View-Counter ─────────────────────────────────────────────
 
 router.post('/:id/view', async (req, res) => {
-  await pool.query('UPDATE community_posts SET views = views + 1 WHERE id = ?', [req.params.id]);
-  res.json({ success: true });
+  try {
+    await pool.query('UPDATE community_posts SET views = views + 1 WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

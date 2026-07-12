@@ -1,5 +1,6 @@
 const db = require('../db');
 const logger = require('../utils/logger');
+const { isSuperAdmin: isSuperAdminReq } = require('../middleware/tenantSecurity');
 
 /**
  * Feature-Toggle Middleware
@@ -13,18 +14,15 @@ const logger = require('../utils/logger');
 function requireFeature(featureName) {
   return async (req, res, next) => {
     try {
-      // Super-Admin darf alles — primär über Rolle, mit Legacy-Fallbacks (nichts aussperren)
-      const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
-      const isSuperAdmin =
-        req.user?.rolle === 'super_admin' ||
-        req.user?.role === 'super_admin' ||
-        userId == 1 ||
-        req.user?.username === 'admin';
+      // Super-Admin darf alles — kanonische Prüfung (role=super_admin ODER admin ohne dojo_id).
+      // Keine losen Fallbacks (userId==1 / username==='admin') mehr — die ließen jeden
+      // User mit Username 'admin' alle Feature-Gates umgehen.
+      const isSuperAdmin = isSuperAdminReq(req);
 
       // Debug logging
       logger.debug('Feature Check Debug:', {
         feature: featureName,
-        userId,
+        userId: req.user?.id || req.user?.user_id || req.user?.admin_id,
         username: req.user?.username,
         isSuperAdmin,
         userObject: req.user

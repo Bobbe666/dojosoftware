@@ -1437,7 +1437,11 @@ try {
 // Routen (auth, public, visitor-chat, promo, onboarding, saas-stripe, buddy) bleiben unberührt.
 app.use('/api', (req, res, next) => {
   const url = req.originalUrl || req.url || '';
-  if (url.startsWith('/api/public') || /\/webhook/i.test(url)) return next();
+  const path = url.split('?')[0];
+  // Öffentliche Routen + eingehende Zahlungs-Webhooks (Pfad endet exakt auf /webhook,
+  // signaturbasiert). /api/webhooks (Zapier-CRUD, self-authed) ist bewusst NICHT dabei;
+  // künftige Pfade wie /api/x/webhook-settings werden nicht mehr fälschlich freigegeben.
+  if (path.startsWith('/api/public') || path.endsWith('/webhook')) return next();
   return authenticateToken(req, res, next);
 });
 
@@ -2908,12 +2912,10 @@ app.post('/api/errors/report', (req, res) => {
 // =============================================
 
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
-
-// 404 Handler - einheitliches Format
-app.use(notFoundHandler);
-
-// Globaler Error Handler - einheitliches Format
-app.use(errorHandler);
+// ⚠️ notFoundHandler + errorHandler werden BEWUSST erst ganz am Ende registriert
+// (nach ALLEN Route-Mounts, s.u. vor dem Socket-Setup). Früher standen sie hier und
+// verdeckten die danach gemounteten Routen (training, eltern-zugang, public/eltern,
+// /site/:slug) mit einem 404. NICHT wieder hierher verschieben.
 
 // =============================================
 // CRON JOBS
@@ -3160,6 +3162,12 @@ try {
   logger.error('Fehler beim Laden der Route', { route: 'homepage', error: error.message });
 }
 
+// =============================================
+// 404 & ERROR HANDLER — NACH allen Route-Mounts!
+// =============================================
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 // ─── Visitor Chat Socket Events ───────────────────────────────────────────────
 // Besucher: treten einem Session-Room bei (token-basiert, kein JWT)
 // Staff: treten einem Dojo-Room bei (JWT optional, dojo_id aus Query)
@@ -3171,9 +3179,28 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Staff tritt Dojo-Room bei (für Echtzeit-Benachrichtigungen)
+  // Staff tritt Dojo-Room bei — 🔒 nur mit gültigem JWT (liegt im Socket-Handshake,
+  // ChatContext verbindet mit auth:{token}) UND passender dojo_id. Verhindert, dass ein
+  // anonymer Socket den Live-Chat (Name/E-Mail/Nachrichten) eines fremden Dojos mithört.
   socket.on('visitor-chat:staff-join', ({ dojoId }) => {
-    const room = dojoId ? `visitor-dojo:${dojoId}` : 'visitor-super-admin';
+    let decoded = null;
+    try {
+      const jwtLib = require('jsonwebtoken');
+      const { JWT_SECRET } = require('./middleware/auth');
+      decoded = jwtLib.verify(socket.handshake?.auth?.token || '', JWT_SECRET);
+    } catch (_) { decoded = null; }
+    if (!decoded) return; // kein/ungültiges Token → kein Room-Join
+    const role = decoded.role || decoded.rolle;
+    const isSuper = role === 'super_admin' || (role === 'admin' && !decoded.dojo_id);
+    const reqDojo = dojoId ? parseInt(dojoId, 10) : null;
+    let room;
+    if (isSuper) {
+      room = reqDojo ? `visitor-dojo:${reqDojo}` : 'visitor-super-admin';
+    } else if (reqDojo && Number(decoded.dojo_id) === reqDojo) {
+      room = `visitor-dojo:${reqDojo}`;
+    } else {
+      return; // Fremd-Dojo → verweigern
+    }
     socket.join(room);
     logger.info('Staff joined visitor chat room', { room, socketId: socket.id });
   });

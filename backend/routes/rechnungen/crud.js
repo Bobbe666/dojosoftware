@@ -419,6 +419,19 @@ router.put('/:id', async (req, res) => {
         return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden oder kein Zugriff' });
       }
 
+      // 🔒 SICHERHEIT: neue mitglied_id gegen eigenes Dojo prüfen, sonst könnte die
+      // Rechnung einem Mitglied eines FREMDEN Dojos zugeordnet werden.
+      // (Super-Admin: secureDojoId null → keine Einschränkung; extern-Rechnung: mitglied_id null → ok)
+      if (secureDojoId && mitglied_id) {
+        const [mCheck] = await pool.query(
+          `SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?`,
+          [mitglied_id, secureDojoId]
+        );
+        if (mCheck.length === 0) {
+          return res.status(403).json({ success: false, error: 'Mitglied nicht im eigenen Dojo' });
+        }
+      }
+
       // Beträge aus Positionen neu berechnen
       const mwst_satz_num = parseFloat(mwst_satz || 19.0);
       let netto_betrag = 0;

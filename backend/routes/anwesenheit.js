@@ -913,66 +913,42 @@ router.post("/batch", async (req, res) => {
         }
     }
 
-    // Transaction starten
-    db.beginTransaction((err) => {
-        if (err) {
-            logger.error('Fehler beim Starten der Transaction:', { error: err });
-            return res.status(500).json({ error: "Transaction-Fehler" });
+    // Transaction starten (db ist ein Pool → dedizierte Connection holen, kein db.beginTransaction!)
+    let conn;
+    try {
+        conn = await db.promise().getConnection();
+        await conn.beginTransaction();
+
+        const query = `
+            INSERT INTO anwesenheit (mitglied_id, stundenplan_id, datum, anwesend, erstellt_am)
+            VALUES (?, ?, ?, ?, NOW())
+            ON DUPLICATE KEY UPDATE
+                anwesend = VALUES(anwesend),
+                erstellt_am = NOW()
+        `;
+
+        for (const eintrag of eintraege) {
+            const { mitglied_id, anwesend } = eintrag;
+            const anwesend_value = anwesend === true || anwesend === 1 || anwesend === '1' ? 1 : 0;
+            await conn.query(query, [mitglied_id, stundenplan_id, datum, anwesend_value]);
         }
 
-        let completed = 0;
-        let errors = [];
+        await conn.commit();
+        conn.release();
 
-        eintraege.forEach((eintrag, index) => {
-            const { mitglied_id, anwesend, bemerkung } = eintrag;
-            const anwesend_value = anwesend === true || anwesend === 1 || anwesend === '1' ? 1 : 0;
-
-            const query = `
-                INSERT INTO anwesenheit (mitglied_id, stundenplan_id, datum, anwesend, erstellt_am)
-                VALUES (?, ?, ?, ?, NOW())
-                ON DUPLICATE KEY UPDATE
-                    anwesend = VALUES(anwesend),
-                    erstellt_am = NOW()
-            `;
-
-            db.query(query, [mitglied_id, stundenplan_id, datum, anwesend_value], (update_err) => {
-                completed++;
-
-                if (update_err) {
-                    errors.push({ mitglied_id, error: update_err.message });
-                }
-
-                // Wenn alle Einträge verarbeitet wurden
-                if (completed === eintraege.length) {
-                    if (errors.length > 0) {
-                        db.rollback(() => {
-                            logger.error('Batch-Update fehlgeschlagen, Rollback durchgeführt');
-                            res.status(500).json({ 
-                                error: "Batch-Update fehlgeschlagen", 
-                                errors: errors 
-                            });
-                        });
-                    } else {
-                        db.commit((commit_err) => {
-                            if (commit_err) {
-                                db.rollback(() => {
-                                    logger.error('Commit fehlgeschlagen, Rollback durchgeführt');
-                                    res.status(500).json({ error: "Commit fehlgeschlagen" });
-                                });
-                            } else {
-
-                                res.json({ 
-                                    success: true, 
-                                    message: `${eintraege.length} Anwesenheiten erfolgreich aktualisiert`,
-                                    processed: eintraege.length
-                                });
-                            }
-                        });
-                    }
-                }
-            });
+        res.json({
+            success: true,
+            message: `${eintraege.length} Anwesenheiten erfolgreich aktualisiert`,
+            processed: eintraege.length
         });
-    });
+    } catch (err) {
+        if (conn) {
+            try { await conn.rollback(); } catch (rbErr) { /* ignore */ }
+            conn.release();
+        }
+        logger.error('Batch-Update fehlgeschlagen, Rollback durchgeführt:', { error: err });
+        res.status(500).json({ error: "Batch-Update fehlgeschlagen", details: err.message });
+    }
 });
 
 // Anwesenheit löschen (unverändert)

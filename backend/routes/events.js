@@ -647,10 +647,11 @@ async function promoteNextFromWaitlist(eventId) {
       [nextInLine.anmeldung_id]
     );
 
-    // Warteliste-Positionen neu nummerieren (multipleStatements ist AUS → zwei Queries)
-    await db.promise().query('SET @pos := 0');
+    // Warteliste-Positionen neu nummerieren — EIN Statement, damit @pos connection-lokal
+    // in derselben Query lebt (getrennte Pool-Queries könnten auf anderer Connection landen → NULL).
     await db.promise().query(
       `UPDATE event_anmeldungen
+       CROSS JOIN (SELECT @pos := 0) AS init
        SET warteliste_position = (@pos := @pos + 1)
        WHERE event_id = ? AND status = 'warteliste'
        ORDER BY warteliste_position ASC`,
@@ -1560,10 +1561,11 @@ router.post('/:id/warteliste/promote', requireFeature('events'), async (req, res
       [nextInLine.anmeldung_id]
     );
 
-    // Warteliste-Positionen neu nummerieren (multipleStatements ist AUS → zwei Queries)
-    await db.promise().query('SET @pos := 0');
+    // Warteliste-Positionen neu nummerieren — EIN Statement, damit @pos connection-lokal
+    // in derselben Query lebt (getrennte Pool-Queries könnten auf anderer Connection landen → NULL).
     await db.promise().query(
       `UPDATE event_anmeldungen
+       CROSS JOIN (SELECT @pos := 0) AS init
        SET warteliste_position = (@pos := @pos + 1)
        WHERE event_id = ? AND status = 'warteliste'
        ORDER BY warteliste_position ASC`,

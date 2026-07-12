@@ -9,6 +9,19 @@ const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity'
 const enc = require('../services/encryptionService');
 const router = express.Router();
 
+// 🔒 Rollen-Helper (Mitglieds-Tokens haben role='member')
+const ADMIN_ROLES = ['admin', 'super_admin'];
+const STAFF_ROLES = ['admin', 'super_admin', 'trainer'];
+const userRole = (req) => req.user?.rolle || req.user?.role;
+const isStaff = (req) => STAFF_ROLES.includes(userRole(req));
+const requireAdminRole = (req, res) => {
+  if (!ADMIN_ROLES.includes(userRole(req))) {
+    res.status(403).json({ success: false, message: 'Admin-Berechtigung erforderlich' });
+    return false;
+  }
+  return true;
+};
+
 // VAPID konfigurieren für Web Push
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
@@ -95,19 +108,22 @@ const getNotificationSettings = async () => {
 router.get('/dashboard', authenticateToken, async (req, res) => {
   try {
     const settings = await getNotificationSettings();
-    
+    // 🔒 Dojo-Scope: Super-Admin (null) sieht alle, sonst nur eigenes Dojo
+    const secureDojoId = getSecureDojoId(req);
+    const dojoCond = secureDojoId ? ' AND dojo_id = ?' : '';
+
     // Statistiken sammeln
     const stats = await new Promise((resolve, reject) => {
       db.query(`
-        SELECT 
+        SELECT
           COUNT(*) as total_notifications,
           COUNT(CASE WHEN status = 'sent' THEN 1 END) as sent_notifications,
           COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_notifications,
           COUNT(CASE WHEN type = 'email' THEN 1 END) as email_notifications,
           COUNT(CASE WHEN type = 'push' THEN 1 END) as push_notifications
-        FROM notifications 
-        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-      `, (err, results) => {
+        FROM notifications
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)${dojoCond}
+      `, secureDojoId ? [secureDojoId] : [], (err, results) => {
         if (err) reject(err);
         else resolve(results[0]);
       });
@@ -116,10 +132,11 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     // Letzte Benachrichtigungen
     const recentNotifications = await new Promise((resolve, reject) => {
       db.query(`
-        SELECT * FROM notifications 
-        ORDER BY created_at DESC 
+        SELECT * FROM notifications
+        ${secureDojoId ? 'WHERE dojo_id = ?' : ''}
+        ORDER BY created_at DESC
         LIMIT 10
-      `, (err, results) => {
+      `, secureDojoId ? [secureDojoId] : [], (err, results) => {
         if (err) reject(err);
         else resolve(results);
       });
@@ -173,7 +190,25 @@ router.get('/notification-timeline', authenticateToken, async (req, res) => {
 
 router.get('/settings', authenticateToken, async (req, res) => {
   try {
+    // 🔒 Globale SMTP/Push-Settings nur für Super-Admin
+    if (!isSuperAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Kein Zugriff' });
+    }
     const settings = await getNotificationSettings();
+    // 🔒 SMTP-Passwort NIE ausliefern
+    if (settings && settings.email_config) {
+      try {
+        const cfg = typeof settings.email_config === 'string'
+          ? JSON.parse(settings.email_config)
+          : settings.email_config;
+        if (cfg && typeof cfg === 'object') {
+          cfg.smtp_password = '';
+          settings.email_config = JSON.stringify(cfg);
+        }
+      } catch (_) {
+        settings.email_config = '{}';
+      }
+    }
     res.json({ success: true, settings });
   } catch (error) {
     logger.error('Settings Fehler:', { error: error });
@@ -183,6 +218,10 @@ router.get('/settings', authenticateToken, async (req, res) => {
 
 router.put('/settings', authenticateToken, async (req, res) => {
   try {
+    // 🔒 Globale SMTP/Push-Settings nur für Super-Admin
+    if (!isSuperAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Kein Zugriff' });
+    }
     const {
       email_enabled,
       push_enabled,
@@ -245,8 +284,10 @@ router.put('/settings', authenticateToken, async (req, res) => {
 
 router.post('/email/test', authenticateToken, async (req, res) => {
   try {
+    // 🔒 Nur Admin/Super-Admin darf Mails versenden (kein Mitglied)
+    if (!requireAdminRole(req, res)) return;
     const { test_email, test_subject, test_message } = req.body;
-    
+
     if (!emailTransporter) {
       return res.status(400).json({ 
         success: false, 
@@ -291,6 +332,8 @@ router.post('/email/test', authenticateToken, async (req, res) => {
 
 router.post('/email/send', authenticateToken, async (req, res) => {
   try {
+    // 🔒 Nur Admin/Super-Admin darf Massen-Mails versenden (kein Mitglied)
+    if (!requireAdminRole(req, res)) return;
     const { recipients, subject, message, template_type } = req.body;
     const dojoId = req.user?.dojo_id || null;
     const adminId = req.user?.user_id || req.user?.admin_id || null;
@@ -411,6 +454,9 @@ router.post('/push/subscribe', authenticateToken, async (req, res) => {
 // Push-Notification senden
 router.post('/push/send', authenticateToken, async (req, res) => {
   try {
+    // 🔒 Nur Admin/Super-Admin darf Push/Ankündigungen senden (kein Mitglied).
+    // Damit ist auch sender_type='admin' im Ankündigungs-Chat serverseitig gedeckt.
+    if (!requireAdminRole(req, res)) return;
     const { recipients, title, message, data, icon, badge, url, send_to_chat } = req.body;
 
     if (!title || !message) {
@@ -636,17 +682,34 @@ router.get('/push/subscriptions', authenticateToken, async (req, res) => {
 router.delete('/push/subscribe/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    
-    await new Promise((resolve, reject) => {
-      db.query(`
-        UPDATE push_subscriptions 
-        SET is_active = FALSE, updated_at = NOW()
-        WHERE id = ?
-      `, [id], (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
+    // 🔒 Ownership/Dojo-Scope statt beliebiger Fremd-Deaktivierung (IDOR)
+    const secureDojoId = getSecureDojoId(req); // null = Super-Admin
+    const admin = ADMIN_ROLES.includes(userRole(req));
+    const ownUserId = req.user?.mitglied_id || req.user?.user_id || req.user?.id || null;
+
+    let sql, args;
+    if (admin && !secureDojoId) {
+      // Super-Admin: jede Subscription
+      sql = 'UPDATE push_subscriptions SET is_active = FALSE, updated_at = NOW() WHERE id = ?';
+      args = [id];
+    } else if (admin) {
+      // Dojo-Admin: nur Subscriptions im eigenen Dojo (user_id kann users.id ODER mitglied_id sein)
+      sql = `UPDATE push_subscriptions ps
+             LEFT JOIN users u ON ps.user_id = u.id
+             LEFT JOIN mitglieder m ON ps.user_id = m.mitglied_id
+             SET ps.is_active = FALSE, ps.updated_at = NOW()
+             WHERE ps.id = ? AND (u.dojo_id = ? OR m.dojo_id = ?)`;
+      args = [id, secureDojoId, secureDojoId];
+    } else {
+      // Mitglied/Trainer: nur eigene Subscription
+      sql = 'UPDATE push_subscriptions SET is_active = FALSE, updated_at = NOW() WHERE id = ? AND user_id = ?';
+      args = [id, ownUserId];
+    }
+
+    const [result] = await pool.query(sql, args);
+    if (!result || result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Push-Subscription nicht gefunden' });
+    }
 
     res.json({ success: true, message: 'Push-Subscription erfolgreich deaktiviert' });
   } catch (error) {
@@ -923,6 +986,9 @@ router.get('/recipients', authenticateToken, async (req, res) => {
 
     // Prüfe ob users Tabelle existiert und hole Admin-Daten
     try {
+      // 🔒 Nur Admins des eigenen Dojos (Super-Admin = null = alle)
+      const adminDojoFilter = secureDojoId ? 'AND dojo_id = ?' : '';
+      const adminDojoParams = secureDojoId ? [secureDojoId] : [];
       adminEmails = await new Promise((resolve, reject) => {
         db.query(`
           SELECT DISTINCT
@@ -934,8 +1000,9 @@ router.get('/recipients', authenticateToken, async (req, res) => {
             AND email IS NOT NULL
             AND email != ''
             AND email != 'NULL'
+            ${adminDojoFilter}
           ORDER BY username
-        `, (err, results) => {
+        `, adminDojoParams, (err, results) => {
           if (err) {
             logger.error('Admin query error:', { error: err });
             resolve([]); // Leeres Array bei Fehler
@@ -1025,6 +1092,10 @@ router.post('/templates', authenticateToken, async (req, res) => {
 router.get('/member/:email', authenticateToken, async (req, res) => {
   try {
     const { email } = req.params;
+    // 🔒 Mitglied darf nur eigene Benachrichtigungen lesen; Staff nur eigenes Dojo
+    if (!isStaff(req) && String(email).toLowerCase() !== String(req.user?.email || '').toLowerCase()) {
+      return res.status(403).json({ success: false, message: 'Kein Zugriff' });
+    }
     const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
     const dojoCond = secureDojoId ? ' AND dojo_id = ?' : '';
     const qParams = secureDojoId ? [email, secureDojoId] : [email];
@@ -1063,6 +1134,13 @@ router.get('/member/:email', authenticateToken, async (req, res) => {
 router.get('/member/:id/confirmed', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    // 🔒 Mitglied darf nur eigene bestätigte Benachrichtigungen lesen
+    if (!isStaff(req)) {
+      const ownId = req.user?.mitglied_id || req.user?.id;
+      if (String(id) !== String(ownId)) {
+        return res.status(403).json({ success: false, message: 'Kein Zugriff' });
+      }
+    }
     const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
     const dojoCond = secureDojoId ? ' AND n.dojo_id = ?' : '';
     const qParams = secureDojoId ? [id.toString(), secureDojoId] : [id.toString()];
@@ -1141,6 +1219,8 @@ router.put('/member/:id/read', authenticateToken, async (req, res) => {
 // Hole ungelesene Admin-Benachrichtigungen
 router.get('/admin/unread', authenticateToken, async (req, res) => {
   try {
+    // 🔒 Admin-Alerts (Registrierungs-PII) nur für Admin/Super-Admin
+    if (!requireAdminRole(req, res)) return;
     const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
     const dojoCond = secureDojoId ? ' AND dojo_id = ?' : '';
     const qParams = secureDojoId ? [secureDojoId] : [];
@@ -1172,6 +1252,8 @@ router.get('/admin/unread', authenticateToken, async (req, res) => {
 // Erstcheck: Vollständige Registrierungsdaten für einen Admin-Alert laden
 router.get('/admin/registration-check/:email', authenticateToken, async (req, res) => {
   try {
+    // 🔒 Liefert entschlüsselte Gesundheitsdaten + IBAN → nur Admin/Super-Admin
+    if (!requireAdminRole(req, res)) return;
     const { email } = req.params;
 
     // 🔒 Dojo-Scope über tarife.dojo_id (registrierungen hat keine dojo_id-Spalte)
@@ -1329,6 +1411,10 @@ router.post('/admin/test-registration', authenticateToken, async (req, res) => {
 // MIGRATION-ENDPUNKT: Fixe notifications Tabelle
 router.post('/admin/migrate', authenticateToken, async (req, res) => {
   try {
+    // 🔒 DDL (ALTER TABLE) nur für Super-Admin
+    if (!isSuperAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Kein Zugriff' });
+    }
     logger.debug('🔧 Starting notifications table migration...');
 
     // Add 'admin_alert' to type enum

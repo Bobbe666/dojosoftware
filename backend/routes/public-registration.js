@@ -894,14 +894,19 @@ router.delete('/register/family/member/:id', async (req, res) => {
     // Mitglied löschen
     await queryAsync('DELETE FROM registrierungen WHERE id = ?', [id]);
 
-    // Positionen neu berechnen
-    await queryAsync(`
-      SET @pos = 1;
-      UPDATE registrierungen
-      SET familie_position = (@pos := @pos + 1) - 1
+    // Positionen neu berechnen (keine User-Variablen / Multi-Statements → in JS neu vergeben)
+    const verbleibende = await queryAsync(`
+      SELECT id FROM registrierungen
       WHERE familien_session_id = ?
-      ORDER BY familie_position ASC;
+      ORDER BY familie_position ASC, id ASC
     `, [hauptmitglied[0].familien_session_id]);
+
+    for (let i = 0; i < verbleibende.length; i++) {
+      await queryAsync(
+        'UPDATE registrierungen SET familie_position = ? WHERE id = ?',
+        [i + 1, verbleibende[i].id]
+      );
+    }
 
     res.json({
       success: true,
@@ -1141,10 +1146,16 @@ router.get('/tarife', async (req, res) => {
       if (dojos.length > 0) dojoId = dojos[0].id;
     }
 
-    let query;
-    let params;
-    if (dojoId) {
-      query = `
+    // 🔒 Ohne gültigen Tenant-Kontext KEINE Tarife ausliefern (sonst Cross-Tenant-Leak aller Dojos)
+    if (!dojoId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Kein gültiger Dojo-Kontext (X-Tenant-Subdomain fehlt oder unbekannt)',
+        data: []
+      });
+    }
+
+    const query = `
         SELECT id, name, price_cents, currency, duration_months, billing_cycle, payment_method,
                altersgruppe, mindestlaufzeit_monate, aufnahmegebuehr_cents, nur_familienmitglied
         FROM tarife
@@ -1152,18 +1163,7 @@ router.get('/tarife', async (req, res) => {
           AND nur_familienmitglied = ?
         ORDER BY altersgruppe ASC, price_cents ASC
       `;
-      params = [dojoId, familyContext ? 1 : 0];
-    } else {
-      query = `
-        SELECT id, name, price_cents, currency, duration_months, billing_cycle, payment_method,
-               altersgruppe, mindestlaufzeit_monate, aufnahmegebuehr_cents, nur_familienmitglied
-        FROM tarife
-        WHERE active = 1 AND (ist_archiviert IS NULL OR ist_archiviert = 0)
-          AND nur_familienmitglied = ?
-        ORDER BY altersgruppe ASC, price_cents ASC
-      `;
-      params = [familyContext ? 1 : 0];
-    }
+    const params = [dojoId, familyContext ? 1 : 0];
 
     const tarife = await queryAsync(query, params);
 

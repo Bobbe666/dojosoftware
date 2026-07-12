@@ -9,7 +9,7 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { sendBadgeEmail } = require('../services/emailService');
-const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 
 // Debug: Log alle Badges-Requests
 router.use((req, res, next) => {
@@ -206,6 +206,8 @@ router.get('/', (req, res) => {
  * Neuen Badge erstellen
  */
 router.post('/', (req, res) => {
+  // 🔒 badges ist ein GLOBALER Katalog (keine dojo_id) → nur Super-Admin darf ihn verwalten
+  if (!isSuperAdmin(req)) return res.status(403).json({ error: 'Nur Super-Admin darf den Badge-Katalog verwalten' });
   const { name, beschreibung, icon, farbe, kategorie, kriterium_typ, kriterium_wert, aktiv } = req.body;
 
   if (!name || !icon || !farbe || !kategorie) {
@@ -244,6 +246,7 @@ router.post('/', (req, res) => {
  * Badge bearbeiten
  */
 router.put('/:badge_id', (req, res) => {
+  if (!isSuperAdmin(req)) return res.status(403).json({ error: 'Nur Super-Admin darf den Badge-Katalog verwalten' });
   const { badge_id } = req.params;
   const { name, beschreibung, icon, farbe, kategorie, kriterium_typ, kriterium_wert, aktiv } = req.body;
 
@@ -293,6 +296,7 @@ router.put('/:badge_id', (req, res) => {
  * Badge loeschen (oder deaktivieren)
  */
 router.delete('/:badge_id', (req, res) => {
+  if (!isSuperAdmin(req)) return res.status(403).json({ error: 'Nur Super-Admin darf den Badge-Katalog verwalten' });
   const { badge_id } = req.params;
   const { permanent } = req.query;
 

@@ -99,8 +99,7 @@ router.get('/rechnung/:id', authenticateToken, async (req, res) => {
 
         const [rows] = await pool.query(
             `SELECT r.rechnung_id, r.rechnungsnummer, r.rechnungsdatum, r.faelligkeitsdatum,
-                    r.gesamtsumme, r.betrag, r.status, r.art, r.beschreibung,
-                    r.positionen
+                    r.gesamtsumme, r.betrag, r.status, r.art, r.beschreibung
              FROM rechnungen r
              JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
              WHERE r.rechnung_id = ?
@@ -111,13 +110,22 @@ router.get('/rechnung/:id', authenticateToken, async (req, res) => {
 
         if (!rows.length) return res.status(404).json({ error: 'Rechnung nicht gefunden' });
 
+        // Positionen separat laden (Spalte rechnungen.positionen existiert nicht)
+        const [positionen] = await pool.query(
+            `SELECT position_nr, bezeichnung, artikelnummer, menge, einzelpreis, gesamtpreis, mwst_satz, beschreibung
+             FROM rechnungspositionen
+             WHERE rechnung_id = ?
+             ORDER BY position_nr ASC`,
+            [rechnungId]
+        );
+
         const r = rows[0];
         res.json({
             success: true,
             rechnung: {
                 ...r,
                 gesamtbetrag: parseFloat(r.gesamtsumme || r.betrag || 0),
-                positionen: r.positionen ? (typeof r.positionen === 'string' ? JSON.parse(r.positionen) : r.positionen) : []
+                positionen: positionen || []
             }
         });
     } catch (error) {
