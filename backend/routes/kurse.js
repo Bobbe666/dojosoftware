@@ -4,19 +4,17 @@ const logger = require("../utils/logger");
 
 const router = express.Router();
 const { cacheGet } = require('../utils/simpleCache');
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 
 // Alle Kurse abrufen
 router.get("/", cacheGet(120000), (req, res) => {
-    // Basis: dojo_id aus JWT/Tenant-Middleware
-    let dojoId = req.tenant?.dojo_id || req.dojo_id;
-    // Super-Admin kann über Query-Param ein spezifisches Dojo filtern
-    if ((dojoId === null || dojoId === undefined) && req.query.dojo_id) {
-        dojoId = parseInt(req.query.dojo_id, 10);
-    }
+    // 🔒 dojo_id STRIKT aus JWT (getSecureDojoId): normaler Admin = eigenes Dojo,
+    // Super-Admin = null (alle) bzw. optional ?dojo_id (nur Super-Admin darf das).
+    // Vorher: req.tenant?.dojo_id || req.dojo_id → ohne Subdomain-Header undefined
+    // → fälschlich als Super-Admin behandelt → CROSS-TENANT-LECK (fremde Kurse sichtbar).
+    let dojoId = getSecureDojoId(req);
 
-    // Super-Admin (dojo_id = null): Kann Kurse aller zentral verwalteten Dojos sehen
-    // Normaler Admin: Muss dojo_id haben
-    if (dojoId === undefined && !req.user) {
+    if (!req.user) {
         return res.status(403).json({ error: 'No tenant' });
     }
 
@@ -220,8 +218,11 @@ router.get("/", cacheGet(120000), (req, res) => {
 
 // Neuen Kurs hinzufügen
 router.post("/", (req, res) => {
-    const dojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id ||
-                   (req.body.dojo_id ? parseInt(req.body.dojo_id, 10) : null);
+    // 🔒 dojo_id aus JWT; Super-Admin darf Ziel-Dojo optional per Body/Query angeben.
+    let dojoId = getSecureDojoId(req);
+    if (dojoId === null && isSuperAdmin(req) && req.body.dojo_id) {
+        dojoId = parseInt(req.body.dojo_id, 10);
+    }
     if (!dojoId) {
         return res.status(403).json({ error: 'No tenant' });
     }
@@ -279,7 +280,7 @@ router.get('/:id/auslastung', async (req, res) => {
   const kursId = parseInt(req.params.id, 10);
   if (isNaN(kursId)) return res.status(400).json({ error: 'Ungültige ID' });
 
-  const dojoId = req.tenant?.dojo_id ?? req.dojo_id ?? null;
+  const dojoId = getSecureDojoId(req); // 🔒 JWT-basiert (null nur für Super-Admin)
 
   try {
     const whereExtra = (dojoId !== null && dojoId !== undefined) ? ' AND k.dojo_id = ?' : '';
@@ -305,11 +306,10 @@ router.get('/:id/auslastung', async (req, res) => {
 
 // Kurs löschen
 router.delete("/:id", (req, res) => {
-    const dojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id ||
-                   (req.query.dojo_id ? parseInt(req.query.dojo_id, 10) : null);
-    const isSuperAdmin = req.user && req.user.dojo_id === null;
+    const dojoId = getSecureDojoId(req); // 🔒 JWT-basiert
+    const superAdmin = isSuperAdmin(req);
 
-    if (!dojoId && !isSuperAdmin) {
+    if (!dojoId && !superAdmin) {
         return res.status(403).json({ error: 'No tenant' });
     }
 
@@ -320,10 +320,10 @@ router.delete("/:id", (req, res) => {
     }
 
     // Nur den Kurs selbst löschen — Anwesenheit & Stundenplan bleiben erhalten
-    const query = (isSuperAdmin && !dojoId)
+    const query = (superAdmin && !dojoId)
         ? `DELETE FROM kurse WHERE kurs_id = ?`
         : `DELETE FROM kurse WHERE kurs_id = ? AND dojo_id = ?`;
-    const queryParams = (isSuperAdmin && !dojoId) ? [id] : [id, dojoId];
+    const queryParams = (superAdmin && !dojoId) ? [id] : [id, dojoId];
 
     db.query(query, queryParams, (err, result) => {
         if (err) {
@@ -358,11 +358,10 @@ router.delete("/:id", (req, res) => {
 
 // Kurs aktualisieren (PUT)
 router.put("/:id", (req, res) => {
-    const dojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id ||
-                   (req.query.dojo_id ? parseInt(req.query.dojo_id, 10) : null);
-    const isSuperAdmin = req.user && req.user.dojo_id === null;
+    const dojoId = getSecureDojoId(req); // 🔒 JWT-basiert
+    const superAdmin = isSuperAdmin(req);
 
-    if (!dojoId && !isSuperAdmin) {
+    if (!dojoId && !superAdmin) {
         return res.status(403).json({ error: 'No tenant' });
     }
 
@@ -383,10 +382,10 @@ router.put("/:id", (req, res) => {
         return res.status(400).json({ error: "Gruppenname, Stil und mindestens ein Trainer sind erforderlich" });
     }
 
-    const checkQuery = (isSuperAdmin && !dojoId)
+    const checkQuery = (superAdmin && !dojoId)
         ? `SELECT kurs_id FROM kurse WHERE kurs_id = ?`
         : `SELECT kurs_id FROM kurse WHERE kurs_id = ? AND dojo_id = ?`;
-    const checkParams = (isSuperAdmin && !dojoId) ? [id] : [id, dojoId];
+    const checkParams = (superAdmin && !dojoId) ? [id] : [id, dojoId];
 
     db.query(checkQuery, checkParams, (err, results) => {
         if (err) {
@@ -398,10 +397,10 @@ router.put("/:id", (req, res) => {
             return res.status(404).json({ error: "Kurs nicht gefunden oder keine Berechtigung" });
         }
 
-        const updateQuery = (isSuperAdmin && !dojoId)
+        const updateQuery = (superAdmin && !dojoId)
             ? `UPDATE kurse SET gruppenname = ?, stil = ?, trainer_ids = ?, raum_id = ?, min_alter = ?, max_alter = ?, min_graduierung_id = ?, max_graduierung_id = ? WHERE kurs_id = ?`
             : `UPDATE kurse SET gruppenname = ?, stil = ?, trainer_ids = ?, raum_id = ?, min_alter = ?, max_alter = ?, min_graduierung_id = ?, max_graduierung_id = ? WHERE kurs_id = ? AND dojo_id = ?`;
-        const updateParams = (isSuperAdmin && !dojoId)
+        const updateParams = (superAdmin && !dojoId)
             ? [gruppenname, stil, JSON.stringify(trainers), raum_id || null, min_alter, max_alter, min_graduierung_id, max_graduierung_id, id]
             : [gruppenname, stil, JSON.stringify(trainers), raum_id || null, min_alter, max_alter, min_graduierung_id, max_graduierung_id, id, dojoId];
 

@@ -5,7 +5,7 @@
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('./auth');
 
-const MAINTENANCE_MODE = false;
+const MAINTENANCE_MODE = true;
 const MAINTENANCE_MESSAGE =
   'Wartungsarbeiten: Wir führen heute umfangreiche Updates durch und sind in Kürze wieder für Sie da. Vielen Dank für Ihre Geduld.';
 
