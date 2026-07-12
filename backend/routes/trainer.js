@@ -797,6 +797,14 @@ router.put('/:id/zugaenge', async (req, res) => {
   }
   const pool = db.promise();
   try {
+    // 🔒 Ownership: Trainer muss existieren; für normale User im eigenen Dojo.
+    // Verhindert Anlegen von Logins/Chat-Räumen für Fremd-Trainer (Rechte-Eskalation).
+    const [ownerRows] = await pool.query(
+      `SELECT trainer_id FROM trainer WHERE trainer_id = ?${dojoId ? ' AND dojo_id = ?' : ''} LIMIT 1`,
+      dojoId ? [id, dojoId] : [id]
+    );
+    if (ownerRows.length === 0) return res.status(404).json({ error: 'Trainer nicht gefunden' });
+
     await pool.query(
       `INSERT INTO trainer_zugaenge (trainer_id, dojo_id, app_type, email, username, passwort)
        VALUES (?, ?, ?, ?, ?, ?)

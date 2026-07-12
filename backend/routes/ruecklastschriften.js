@@ -546,14 +546,15 @@ router.put('/:id/status', async (req, res) => {
   }
 
   try {
-    await pool.query(`
+    const [updRes] = await pool.query(`
       UPDATE offene_zahlungen SET status = ?, notizen = ?, bearbeitet_am = NOW()
       WHERE id = ? AND dojo_id = ?
     `, [status, notizen || null, id, dojoId]);
 
+    // 🔒 Nur wenn der Datensatz dem eigenen Dojo gehört (affectedRows>0), sonst kein Fremd-Reset
     // Zahlungsproblem-Flag zurücksetzen wenn erledigt
-    if (status === 'erledigt' || status === 'storniert') {
-      const [[oz]] = await pool.query('SELECT mitglied_id FROM offene_zahlungen WHERE id = ?', [id]);
+    if ((status === 'erledigt' || status === 'storniert') && updRes.affectedRows > 0) {
+      const [[oz]] = await pool.query('SELECT mitglied_id FROM offene_zahlungen WHERE id = ? AND dojo_id = ?', [id, dojoId]);
       if (oz?.mitglied_id) {
         // Prüfen ob noch andere offene Probleme
         const [[andere]] = await pool.query(
@@ -561,7 +562,7 @@ router.put('/:id/status', async (req, res) => {
           [oz.mitglied_id]
         );
         if (andere.cnt === 0) {
-          await pool.query('UPDATE mitglieder SET zahlungsproblem = 0 WHERE mitglied_id = ?', [oz.mitglied_id]).catch(() => {});
+          await pool.query('UPDATE mitglieder SET zahlungsproblem = 0 WHERE mitglied_id = ? AND dojo_id = ?', [oz.mitglied_id, dojoId]).catch(() => {});
         }
       }
     }

@@ -353,20 +353,33 @@ router.post("/", async (req, res) => {
                 markedCount = updateResult.affectedRows;
 
                 // Rechnungen und Verkaeufe auf bezahlt/eingezogen setzen
+                // 🔒 Dojo-Isolation: nur eigene (JOIN mitglieder m ... AND m.dojo_id=?); Super-Admin ohne Filter
                 if (markedCount > 0) {
                     await queryAsync(
-                        `UPDATE rechnungen r JOIN beitraege b ON b.rechnung_id = r.rechnung_id
-                         SET r.status = 'bezahlt', r.bezahlt_am = CURDATE()
-                         WHERE b.beitrag_id IN (${placeholders}) AND b.rechnung_id IS NOT NULL
-                           AND r.status NOT IN ('bezahlt','storniert')`,
-                        validIds
+                        effectiveDojoId
+                        ? `UPDATE rechnungen r JOIN beitraege b ON b.rechnung_id = r.rechnung_id
+                             JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+                           SET r.status = 'bezahlt', r.bezahlt_am = CURDATE()
+                           WHERE b.beitrag_id IN (${placeholders}) AND b.rechnung_id IS NOT NULL
+                             AND r.status NOT IN ('bezahlt','storniert') AND m.dojo_id = ?`
+                        : `UPDATE rechnungen r JOIN beitraege b ON b.rechnung_id = r.rechnung_id
+                           SET r.status = 'bezahlt', r.bezahlt_am = CURDATE()
+                           WHERE b.beitrag_id IN (${placeholders}) AND b.rechnung_id IS NOT NULL
+                             AND r.status NOT IN ('bezahlt','storniert')`,
+                        effectiveDojoId ? [...validIds, effectiveDojoId] : validIds
                     );
                     await queryAsync(
-                        `UPDATE verkaeufe v JOIN beitraege b ON b.magicline_description LIKE CONCAT('%Bon: ', v.bon_nummer, '%')
-                         SET v.zahlungsstatus = 'eingezogen'
-                         WHERE b.beitrag_id IN (${placeholders}) AND v.zahlungsart = 'lastschrift'
-                           AND v.zahlungsstatus IN ('offen','in_einzug')`,
-                        validIds
+                        effectiveDojoId
+                        ? `UPDATE verkaeufe v JOIN beitraege b ON b.magicline_description LIKE CONCAT('%Bon: ', v.bon_nummer, '%')
+                             JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+                           SET v.zahlungsstatus = 'eingezogen'
+                           WHERE b.beitrag_id IN (${placeholders}) AND v.zahlungsart = 'lastschrift'
+                             AND v.zahlungsstatus IN ('offen','in_einzug') AND m.dojo_id = ?`
+                        : `UPDATE verkaeufe v JOIN beitraege b ON b.magicline_description LIKE CONCAT('%Bon: ', v.bon_nummer, '%')
+                           SET v.zahlungsstatus = 'eingezogen'
+                           WHERE b.beitrag_id IN (${placeholders}) AND v.zahlungsart = 'lastschrift'
+                             AND v.zahlungsstatus IN ('offen','in_einzug')`,
+                        effectiveDojoId ? [...validIds, effectiveDojoId] : validIds
                     );
                 }
             }
@@ -429,10 +442,10 @@ router.post("/:id/abschliessen", async (req, res) => {
     const scopeDojoId = secureDojoId || dojo_id || null;
 
     try {
-        // Zahllauf auf abgeschlossen setzen
+        // Zahllauf auf abgeschlossen setzen — 🔒 nur eigenes Dojo (Super-Admin scopeDojoId null → ohne Filter)
         await queryAsync(
-            `UPDATE zahllaeufe SET status = 'abgeschlossen', abgeschlossen_am = NOW() WHERE zahllauf_id = ?`,
-            [id]
+            `UPDATE zahllaeufe SET status = 'abgeschlossen', abgeschlossen_am = NOW() WHERE zahllauf_id = ?${scopeDojoId ? ' AND dojo_id = ?' : ''}`,
+            scopeDojoId ? [id, scopeDojoId] : [id]
         );
 
         let markedCount = 0;

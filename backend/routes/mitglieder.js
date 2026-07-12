@@ -3380,7 +3380,10 @@ router.get("/:id/sepa-mandate/archiv", (req, res) => {
 // ✅ SEPA-Mandat als PDF herunterladen + DOJO-FILTER (KRITISCH!)
 router.get("/:id/sepa-mandate/download", async (req, res) => {
     const { id } = req.params;
-    const { mandate_id, dojo_id } = req.query;
+    const { mandate_id } = req.query;
+
+    // 🔒 SICHERHEIT: Dojo-Scope IMMER aus Token (nie aus Query!) - null = Super-Admin = alle
+    const secureDojoId = getSecureDojoId(req);
 
     try {
         let query;
@@ -3394,9 +3397,9 @@ router.get("/:id/sepa-mandate/download", async (req, res) => {
             whereConditions = ['sm.mandat_id = ?', 'sm.mitglied_id = ?'];
             queryParams = [mandate_id, id];
 
-            if (dojo_id && dojo_id !== 'all') {
+            if (secureDojoId) {
                 whereConditions.push('m.dojo_id = ?');
-                queryParams.push(parseInt(dojo_id));
+                queryParams.push(secureDojoId);
             }
 
             query = `
@@ -3413,9 +3416,9 @@ router.get("/:id/sepa-mandate/download", async (req, res) => {
             whereConditions = ['sm.mitglied_id = ?', 'sm.status = \'aktiv\''];
             queryParams = [id];
 
-            if (dojo_id && dojo_id !== 'all') {
+            if (secureDojoId) {
                 whereConditions.push('m.dojo_id = ?');
-                queryParams.push(parseInt(dojo_id));
+                queryParams.push(secureDojoId);
             }
 
             query = `
@@ -4238,6 +4241,10 @@ router.get('/notification-recipients', async (req, res) => {
   try {
 
     const db = require('../db');
+    // 🔒 SICHERHEIT: Dojo-Scope aus Token (null = Super-Admin = alle Dojos)
+    const secureDojoId = getSecureDojoId(req);
+    const dojoFilterSql = secureDojoId ? ' AND dojo_id = ?' : '';
+    const dojoFilterParams = secureDojoId ? [secureDojoId] : [];
     let memberEmails = [];
     let trainerEmails = [];
     let personalEmails = [];
@@ -4246,17 +4253,18 @@ router.get('/notification-recipients', async (req, res) => {
     try {
       memberEmails = await new Promise((resolve, reject) => {
         db.query(`
-          SELECT DISTINCT 
-            COALESCE(email, '') as email, 
-            CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name, 
+          SELECT DISTINCT
+            COALESCE(email, '') as email,
+            CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name,
             'mitglied' as type
-          FROM mitglieder 
-          WHERE email IS NOT NULL 
-            AND email != '' 
+          FROM mitglieder
+          WHERE email IS NOT NULL
+            AND email != ''
             AND email != 'NULL'
             AND email LIKE '%@%'
+            ${dojoFilterSql}
           ORDER BY name
-        `, (err, results) => {
+        `, dojoFilterParams, (err, results) => {
           if (err) {
 
             resolve([]);
@@ -4279,13 +4287,14 @@ router.get('/notification-recipients', async (req, res) => {
             COALESCE(email, '') as email, 
             CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name, 
             'trainer' as type
-          FROM trainer 
-          WHERE email IS NOT NULL 
-            AND email != '' 
+          FROM trainer
+          WHERE email IS NOT NULL
+            AND email != ''
             AND email != 'NULL'
             AND email LIKE '%@%'
+            ${dojoFilterSql}
           ORDER BY name
-        `, (err, results) => {
+        `, dojoFilterParams, (err, results) => {
           if (err) {
 
             resolve([]);
@@ -4308,13 +4317,14 @@ router.get('/notification-recipients', async (req, res) => {
             COALESCE(email, '') as email, 
             CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name, 
             'personal' as type
-          FROM personal 
-          WHERE email IS NOT NULL 
-            AND email != '' 
+          FROM personal
+          WHERE email IS NOT NULL
+            AND email != ''
             AND email != 'NULL'
             AND email LIKE '%@%'
+            ${dojoFilterSql}
           ORDER BY name
-        `, (err, results) => {
+        `, dojoFilterParams, (err, results) => {
           if (err) {
 
             resolve([]);
@@ -5026,14 +5036,17 @@ router.post("/bulk-archivieren", async (req, res) => {
  * Ruft alle archivierten Mitglieder ab
  */
 router.get("/archiv", (req, res) => {
-  const { dojo_id, limit = 100, offset = 0 } = req.query;
+  const { limit = 100, offset = 0 } = req.query;
+
+  // 🔒 SICHERHEIT: Dojo-Scope aus Token erzwingen (null = Super-Admin = alle)
+  const secureDojoId = getSecureDojoId(req);
 
   let whereClause = '';
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereClause = 'WHERE dojo_id = ?';
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `

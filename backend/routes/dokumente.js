@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const { generateMitgliedschaftsvertragPDF } = require('../services/vertragPdfGenerator');
 const { authenticateToken } = require('../middleware/auth');
-const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 const logger = require('../utils/logger');
 
 // =====================================================
@@ -87,9 +87,14 @@ router.get('/zentrale/stats', authenticateToken, async (req, res) => {
 router.get('/:id', (req, res) => {
   const { id } = req.params;
 
-  const query = 'SELECT * FROM dokumente WHERE id = ?';
+  // 🔒 SICHERHEIT: Dojo-Scope aus Token erzwingen (null = Super-Admin = alle)
+  const dojoId = getSecureDojoId(req);
+  const query = dojoId
+    ? 'SELECT * FROM dokumente WHERE id = ? AND dojo_id = ?'
+    : 'SELECT * FROM dokumente WHERE id = ?';
+  const params = dojoId ? [id, dojoId] : [id];
 
-  req.db.query(query, [id], (err, results) => {
+  req.db.query(query, params, (err, results) => {
     if (err) {
       logger.error('Fehler beim Abrufen des Dokuments:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
@@ -116,6 +121,15 @@ router.post('/generate', authenticateToken, async (req, res) => {
   try {
     const dojoId = getSecureDojoId(req);
 
+    // 🔒 SICHERHEIT: Dojo-Scope für ALLE Report-Typen erzwingen (nicht body-dojo_id vertrauen).
+    // Generatoren lesen teils dojoId (camelCase), teils dojo_id (snake_case) → beide setzen.
+    // Super-Admin (dojoId=null) behält Body-Parameter (kann optional dojo_id/dojoId setzen).
+    const secureParameter = { ...(parameter || {}) };
+    if (dojoId) {
+      secureParameter.dojoId = dojoId;
+      secureParameter.dojo_id = dojoId;
+    }
+
     // Generiere eindeutigen Dateinamen
     const timestamp = Date.now();
     const dateiname = `${typ}_${timestamp}.pdf`;
@@ -132,25 +146,25 @@ router.post('/generate', authenticateToken, async (req, res) => {
     let pdfBuffer;
     switch (typ) {
       case 'mitgliederliste':
-        pdfBuffer = await generateMitgliederlistePDF(req.db, { ...parameter, dojoId });
+        pdfBuffer = await generateMitgliederlistePDF(req.db, secureParameter);
         break;
       case 'anwesenheit':
-        pdfBuffer = await generateAnwesenheitPDF(req.db, parameter);
+        pdfBuffer = await generateAnwesenheitPDF(req.db, secureParameter);
         break;
       case 'beitraege':
-        pdfBuffer = await generateBeitraegePDF(req.db, parameter);
+        pdfBuffer = await generateBeitraegePDF(req.db, secureParameter);
         break;
       case 'statistiken':
-        pdfBuffer = await generateStatistikenPDF(req.db, parameter);
+        pdfBuffer = await generateStatistikenPDF(req.db, secureParameter);
         break;
       case 'pruefungen':
-        pdfBuffer = await generatePruefungsurkundePDF(req.db, parameter);
+        pdfBuffer = await generatePruefungsurkundePDF(req.db, secureParameter);
         break;
       case 'vertrag':
-        pdfBuffer = await generateMitgliedschaftsvertragPDF(req.db, parameter);
+        pdfBuffer = await generateMitgliedschaftsvertragPDF(req.db, secureParameter);
         break;
       default:
-        pdfBuffer = await generateCustomPDF(req.db, parameter);
+        pdfBuffer = await generateCustomPDF(req.db, secureParameter);
     }
 
     // Speichere PDF-Datei
@@ -200,6 +214,11 @@ router.post('/generate', authenticateToken, async (req, res) => {
 // =====================================================
 router.post('/generate-all-dojos', authenticateToken, async (req, res) => {
   const { typ, name, parameter, target_dojo_ids } = req.body;
+
+  // 🔒 SICHERHEIT: Nur Super-Admin darf Dokumente über alle/mehrere Dojos erzeugen
+  if (!isSuperAdmin(req)) {
+    return res.status(403).json({ error: 'Nur Super-Admin darf dojoübergreifende Dokumente erstellen' });
+  }
 
   if (!typ || !name) {
     return res.status(400).json({ error: 'Typ und Name sind erforderlich' });
@@ -465,10 +484,16 @@ router.get('/:id/download', authenticateToken, (req, res) => {
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
 
-  // Hole Dokument-Info für Dateipfad
-  const selectQuery = 'SELECT * FROM dokumente WHERE id = ?';
+  // 🔒 SICHERHEIT: Dojo-Scope aus Token erzwingen (null = Super-Admin = alle)
+  const dojoId = getSecureDojoId(req);
 
-  req.db.query(selectQuery, [id], (err, results) => {
+  // Hole Dokument-Info für Dateipfad
+  const selectQuery = dojoId
+    ? 'SELECT * FROM dokumente WHERE id = ? AND dojo_id = ?'
+    : 'SELECT * FROM dokumente WHERE id = ?';
+  const selectParams = dojoId ? [id, dojoId] : [id];
+
+  req.db.query(selectQuery, selectParams, (err, results) => {
     if (err) {
       logger.error('Fehler beim Abrufen des Dokuments:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
@@ -480,10 +505,13 @@ router.delete('/:id', (req, res) => {
 
     const dokument = results[0];
 
-    // Soft-Delete: Status auf 'geloescht' setzen
-    const updateQuery = 'UPDATE dokumente SET status = "geloescht" WHERE id = ?';
+    // Soft-Delete: Status auf 'geloescht' setzen (Dojo-Scope beibehalten)
+    const updateQuery = dojoId
+      ? 'UPDATE dokumente SET status = "geloescht" WHERE id = ? AND dojo_id = ?'
+      : 'UPDATE dokumente SET status = "geloescht" WHERE id = ?';
+    const updateParams = dojoId ? [id, dojoId] : [id];
 
-    req.db.query(updateQuery, [id], (updateErr) => {
+    req.db.query(updateQuery, updateParams, (updateErr) => {
       if (updateErr) {
         logger.error('Fehler beim Löschen des Dokuments:', { error: updateErr });
         return res.status(500).json({ error: 'Fehler beim Löschen' });
@@ -751,14 +779,18 @@ async function generatePruefungsurkundePDF(db, parameter) {
   return new Promise((resolve, reject) => {
     const mitgliedId = parameter && parameter.mitglied_id;
     if (!mitgliedId) return resolve(generatePlaceholderPDF('Pruefungsurkunde (keine mitglied_id angegeben)'));
+    // 🔒 SICHERHEIT: Dojo-Scope erzwingen (frei wählbare mitglied_id → Cross-Tenant-Schutz)
+    const dojoId = parameter && parameter.dojo_id;
+    const dojoCond = dojoId ? ' AND m.dojo_id = ?' : '';
+    const queryParams = dojoId ? [mitgliedId, dojoId] : [mitgliedId];
     db.query(
       'SELECT m.vorname, m.nachname, m.geburtsdatum, g.name as guertel, g.farbe_hex, ' +
       'p.datum as pruefungsdatum, p.bestanden ' +
       'FROM mitglieder m ' +
       'LEFT JOIN guertelgrade g ON m.guertel_id = g.id ' +
       'LEFT JOIN pruefungen p ON p.mitglied_id = m.mitglied_id ' +
-      'WHERE m.mitglied_id = ? ORDER BY p.datum DESC LIMIT 1',
-      [mitgliedId],
+      'WHERE m.mitglied_id = ?' + dojoCond + ' ORDER BY p.datum DESC LIMIT 1',
+      queryParams,
       (err, rows) => {
         if (err) return reject(err);
         if (!rows || rows.length === 0) return resolve(generatePlaceholderPDF('Mitglied nicht gefunden'));

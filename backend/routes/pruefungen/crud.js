@@ -844,13 +844,19 @@ router.post('/:pruefung_id/teilnahme-bestaetigen', (req, res) => {
     });
   }
 
+  // 🔒 Tenant-Isolation: nur Prüfungen des eigenen Dojos
+  const secureDojoId = getSecureDojoId(req);
+  const checkParams = [pruefung_id, mitglied_id];
+  let dojoCond = '';
+  if (secureDojoId) { dojoCond = ' AND dojo_id = ?'; checkParams.push(secureDojoId); }
+
   const checkQuery = `
     SELECT pruefung_id, mitglied_id, status, teilnahme_bestaetigt
     FROM pruefungen
-    WHERE pruefung_id = ? AND mitglied_id = ?
+    WHERE pruefung_id = ? AND mitglied_id = ?${dojoCond}
   `;
 
-  db.query(checkQuery, [pruefung_id, mitglied_id], (checkErr, checkResults) => {
+  db.query(checkQuery, checkParams, (checkErr, checkResults) => {
     if (checkErr) {
       logger.error('Fehler beim Prüfen der Prüfung:', { error: checkErr });
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -884,10 +890,12 @@ router.post('/:pruefung_id/teilnahme-bestaetigen', (req, res) => {
       SET teilnahme_bestaetigt = TRUE,
           teilnahme_bestaetigt_am = NOW(),
           aktualisiert_am = NOW()
-      WHERE pruefung_id = ?
+      WHERE pruefung_id = ?${dojoCond}
     `;
+    const updateParams = [pruefung_id];
+    if (secureDojoId) updateParams.push(secureDojoId);
 
-    db.query(updateQuery, [pruefung_id], (updateErr) => {
+    db.query(updateQuery, updateParams, (updateErr) => {
       if (updateErr) {
         logger.error('Fehler beim Bestätigen der Teilnahme:', { error: updateErr });
         return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({

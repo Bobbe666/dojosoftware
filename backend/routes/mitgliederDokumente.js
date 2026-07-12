@@ -3,6 +3,7 @@ const db = require("../db");
 const puppeteer = require('puppeteer');
 const fs = require('fs').promises;
 const path = require('path');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const router = express.Router();
 
 // Helper: Create documents directory if it doesn't exist
@@ -221,6 +222,9 @@ router.post('/:id/dokumente/generate', async (req, res) => {
 // List all documents for a member (including invoices)
 router.get('/:id/dokumente', async (req, res) => {
   const mitgliedId = req.params.id;
+  // 🔒 SICHERHEIT: Dojo-Scope aus Token (null = Super-Admin = alle)
+  const secureDojoId = getSecureDojoId(req);
+  const dojoFilter = secureDojoId ? ' AND m.dojo_id = ?' : '';
   try {
     // Query für normale Dokumente
     const dokumenteQuery = `
@@ -234,8 +238,9 @@ router.get('/:id/dokumente', async (req, res) => {
         vv.template_type,
         'dokument' AS typ
       FROM mitglied_dokumente md
+      JOIN mitglieder m ON md.mitglied_id = m.mitglied_id
       LEFT JOIN vertragsvorlagen vv ON md.vorlage_id = vv.id
-      WHERE md.mitglied_id = ?
+      WHERE md.mitglied_id = ?${dojoFilter}
     `;
 
     // Query für Rechnungen
@@ -253,17 +258,21 @@ router.get('/:id/dokumente', async (req, res) => {
         r.betrag,
         r.status
       FROM rechnungen r
-      WHERE r.mitglied_id = ?
+      JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      WHERE r.mitglied_id = ?${dojoFilter}
     `;
 
+    const dokumenteParams = secureDojoId ? [mitgliedId, secureDojoId] : [mitgliedId];
+    const rechnungenParams = secureDojoId ? [mitgliedId, secureDojoId] : [mitgliedId];
+
     // Beide Queries parallel ausführen
-    db.query(dokumenteQuery, [mitgliedId], (err1, dokumente) => {
+    db.query(dokumenteQuery, dokumenteParams, (err1, dokumente) => {
       if (err1) {
         logger.error('Fehler beim Laden der Dokumente:', { error: err1 });
         return res.status(500).json({ error: 'Fehler beim Laden der Dokumente' });
       }
 
-      db.query(rechnungenQuery, [mitgliedId], (err2, rechnungen) => {
+      db.query(rechnungenQuery, rechnungenParams, (err2, rechnungen) => {
         if (err2) {
           logger.error('Fehler beim Laden der Rechnungen:', { error: err2 });
           return res.status(500).json({ error: 'Fehler beim Laden der Rechnungen' });
@@ -287,14 +296,20 @@ router.get('/:id/dokumente', async (req, res) => {
 // Download a document
 router.get('/:id/dokumente/:dokumentId/download', async (req, res) => {
   const { id: mitgliedId, dokumentId } = req.params;
+  // 🔒 SICHERHEIT: Dojo-Scope aus Token (null = Super-Admin = alle)
+  const secureDojoId = getSecureDojoId(req);
+  const dojoFilter = secureDojoId ? ' AND m.dojo_id = ?' : '';
   try {
     // Get document info from database
     const query = `
-      SELECT * FROM mitglied_dokumente
-      WHERE id = ? AND mitglied_id = ?
+      SELECT md.* FROM mitglied_dokumente md
+      JOIN mitglieder m ON md.mitglied_id = m.mitglied_id
+      WHERE md.id = ? AND md.mitglied_id = ?${dojoFilter}
     `;
 
-    db.query(query, [dokumentId, mitgliedId], async (err, results) => {
+    const queryParams = secureDojoId ? [dokumentId, mitgliedId, secureDojoId] : [dokumentId, mitgliedId];
+
+    db.query(query, queryParams, async (err, results) => {
       if (err) {
         logger.error('Fehler beim Laden des Dokuments:', { error: err });
         return res.status(500).json({ error: 'Fehler beim Laden des Dokuments' });
@@ -338,14 +353,20 @@ router.get('/:id/dokumente/:dokumentId/download', async (req, res) => {
 // Delete a document (admin only)
 router.delete('/:id/dokumente/:dokumentId', async (req, res) => {
   const { id: mitgliedId, dokumentId } = req.params;
+  // 🔒 SICHERHEIT: Dojo-Scope aus Token (null = Super-Admin = alle)
+  const secureDojoId = getSecureDojoId(req);
+  const dojoFilter = secureDojoId ? ' AND m.dojo_id = ?' : '';
   try {
     // Get document info
     const selectQuery = `
-      SELECT * FROM mitglied_dokumente
-      WHERE id = ? AND mitglied_id = ?
+      SELECT md.* FROM mitglied_dokumente md
+      JOIN mitglieder m ON md.mitglied_id = m.mitglied_id
+      WHERE md.id = ? AND md.mitglied_id = ?${dojoFilter}
     `;
 
-    db.query(selectQuery, [dokumentId, mitgliedId], async (err, results) => {
+    const selectParams = secureDojoId ? [dokumentId, mitgliedId, secureDojoId] : [dokumentId, mitgliedId];
+
+    db.query(selectQuery, selectParams, async (err, results) => {
       if (err) {
         logger.error('Fehler beim Laden des Dokuments:', { error: err });
         return res.status(500).json({ error: 'Fehler beim Laden des Dokuments' });

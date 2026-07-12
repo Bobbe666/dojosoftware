@@ -553,15 +553,17 @@ router.post('/guest', async (req, res) => {
     const grund = validGruende.includes(gast_grund) ? gast_grund : 'probetraining';
 
     const checkinTime = new Date();
+    const secureDojoId = getSecureDojoId(req); // 🔒 Gast-Check-in dem eigenen Dojo zuordnen (sonst tenant-übergreifend sichtbar)
 
     // Gast-Check-in erstellen (mitglied_id = NULL)
     const result = await queryAsync(
       `INSERT INTO checkins
-       (mitglied_id, stundenplan_id, checkin_time, checkin_method, status,
+       (mitglied_id, dojo_id, stundenplan_id, checkin_time, checkin_method, status,
         ist_gast, gast_vorname, gast_nachname, gast_email, gast_telefon, gast_grund,
         created_at, updated_at)
-       VALUES (NULL, ?, ?, ?, 'active', 1, ?, ?, ?, ?, ?, NOW(), NOW())`,
+       VALUES (NULL, ?, ?, ?, ?, 'active', 1, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
+        secureDojoId || null,
         stundenplan_id || null,
         checkinTime,
         checkin_method || 'manual',
@@ -644,7 +646,7 @@ router.get('/today', async (req, res) => {
     // 🔒 Dojo-Filter: Super-Admin kann dojo_id via Query übergeben
     const secureDojoId = getSecureDojoId(req);
     const dojoFilter = secureDojoId
-      ? `AND (m.dojo_id = ${secureDojoId} OR (c.ist_gast = 1 AND c.mitglied_id IS NULL))`
+      ? `AND (m.dojo_id = ${secureDojoId} OR (c.ist_gast = 1 AND c.dojo_id = ${secureDojoId}))`
       : '';
 
     const query = `
@@ -765,7 +767,7 @@ router.get('/tresen/:datum', async (req, res) => {
         const isToday = datum === new Date().toISOString().split('T')[0];
         const statusFilter = isToday ? `AND c.status = 'active'` : `AND c.status IN ('active', 'completed', 'checked_out')`;
 
-        const dojoFilter = secureDojoId ? 'AND (m.dojo_id = ? OR c.ist_gast = 1)' : '';
+        const dojoFilter = secureDojoId ? 'AND (m.dojo_id = ? OR (c.ist_gast = 1 AND c.dojo_id = ?))' : '';
         const checkinsQuery = `
             SELECT
                 c.checkin_id,
@@ -802,7 +804,7 @@ router.get('/tresen/:datum', async (req, res) => {
             ORDER BY c.checkin_time DESC
         `;
 
-        const queryParams = secureDojoId ? [datum, secureDojoId] : [datum];
+        const queryParams = secureDojoId ? [datum, secureDojoId, secureDojoId] : [datum];
 
         logger.debug('Führe Query aus mit Datum: ${datum}');
         let checkins;
@@ -1258,10 +1260,10 @@ router.get('/course-avg', async (req, res) => {
         SELECT DATE(checkin_time) as day, COUNT(*) as daily_count
         FROM checkins
         WHERE stundenplan_id = ? AND checkin_time >= DATE_SUB(NOW(), INTERVAL 8 WEEK)
-          AND status = 'active' AND mitglied_id IS NOT NULL
+          AND status = 'active' AND mitglied_id IS NOT NULL${dojoId ? ' AND dojo_id = ?' : ''}
         GROUP BY DATE(checkin_time)
       ) sub
-    `, [stundenplan_id]);
+    `, dojoId ? [stundenplan_id, dojoId] : [stundenplan_id]);
     res.json({ success: true, avg: Math.round(rows[0]?.avg_count || 0), sessions: rows[0]?.sessions || 0 });
   } catch (err) {
     res.status(500).json({ error: err.message });

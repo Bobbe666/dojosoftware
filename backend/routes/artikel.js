@@ -232,8 +232,8 @@ router.get('/', (req, res) => {
   const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
   const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
 
-  // Hole dojo_id aus verschiedenen Quellen (Tenant, Query-Parameter, User-Token)
-  const dojoId = req.tenant?.dojo_id || req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+  // 🔒 Sichere dojo_id aus JWT (kein Query-Parameter-Spoofing durch normale User)
+  const dojoId = getSecureDojoId(req);
 
   // Tenant check (Super-Admin darf ohne dojo_id)
   if (!isSuperAdmin && !dojoId) {
@@ -1039,8 +1039,8 @@ router.delete('/:id', (req, res) => {
   const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
   const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
 
-  // Hole dojo_id aus verschiedenen Quellen
-  const dojoId = req.tenant?.dojo_id || req.query.dojo_id || req.dojo_id || req.user?.dojo_id || (isSuperAdmin ? 2 : null);
+  // 🔒 Sichere dojo_id aus JWT (kein Query-Parameter-Spoofing; Super-Admin via getSecureDojoId)
+  const dojoId = getSecureDojoId(req);
 
   if (!isSuperAdmin && !dojoId) {
     return res.status(403).json({ error: 'No tenant' });
@@ -1404,7 +1404,7 @@ const BESTELL_SPECS_ENTERPRISE_CHECK = async (req, res, next) => {
 // GET /api/artikel/:id/bestell-specs
 router.get('/:id/bestell-specs', BESTELL_SPECS_ENTERPRISE_CHECK, async (req, res) => {
   const artikelId = parseInt(req.params.id);
-  const dojoId = req.tenant?.dojo_id;
+  const dojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
   try {
     const where = dojoId ? 'artikel_id = ? AND dojo_id = ?' : 'artikel_id = ?';
     const params = dojoId ? [artikelId, dojoId] : [artikelId];
@@ -1424,31 +1424,40 @@ router.get('/:id/bestell-specs', BESTELL_SPECS_ENTERPRISE_CHECK, async (req, res
 // PUT /api/artikel/:id/bestell-specs
 router.put('/:id/bestell-specs', BESTELL_SPECS_ENTERPRISE_CHECK, async (req, res) => {
   const artikelId = parseInt(req.params.id);
-  const dojoId = req.tenant?.dojo_id || 2;
+  const secureDojoId = getSecureDojoId(req); // null = Super-Admin
   const {
     lieferant_id, modell_bezeichnung, artikel_nr_lieferant, farbe, wkf,
     material_specs, stickerei_specs, label_specs, verpackung_specs,
     mass_tabelle, bemerkungen, foto_urls
   } = req.body;
 
-  const data = {
-    artikel_id: artikelId,
-    dojo_id: dojoId,
-    lieferant_id: lieferant_id || null,
-    modell_bezeichnung: modell_bezeichnung || null,
-    artikel_nr_lieferant: artikel_nr_lieferant || null,
-    farbe: farbe || 'Weiß',
-    wkf: wkf ? 1 : 0,
-    material_specs: material_specs ? JSON.stringify(material_specs) : null,
-    stickerei_specs: stickerei_specs ? JSON.stringify(stickerei_specs) : null,
-    label_specs: label_specs ? JSON.stringify(label_specs) : null,
-    verpackung_specs: verpackung_specs ? JSON.stringify(verpackung_specs) : null,
-    mass_tabelle: mass_tabelle ? JSON.stringify(mass_tabelle) : null,
-    bemerkungen: bemerkungen || null,
-    foto_urls: foto_urls ? JSON.stringify(foto_urls) : null,
-  };
-
   try {
+    // 🔒 Artikel-Ownership: Artikel muss existieren; für normale User im eigenen Dojo.
+    // dojo_id für den Write kommt vom Artikel selbst (kein hardcoded Fallback).
+    const [artRows] = await db.promise().query(
+      `SELECT dojo_id FROM artikel WHERE artikel_id = ?${secureDojoId ? ' AND dojo_id = ?' : ''} LIMIT 1`,
+      secureDojoId ? [artikelId, secureDojoId] : [artikelId]
+    );
+    if (!artRows.length) return res.status(404).json({ error: 'Artikel nicht gefunden' });
+    const dojoId = artRows[0].dojo_id;
+
+    const data = {
+      artikel_id: artikelId,
+      dojo_id: dojoId,
+      lieferant_id: lieferant_id || null,
+      modell_bezeichnung: modell_bezeichnung || null,
+      artikel_nr_lieferant: artikel_nr_lieferant || null,
+      farbe: farbe || 'Weiß',
+      wkf: wkf ? 1 : 0,
+      material_specs: material_specs ? JSON.stringify(material_specs) : null,
+      stickerei_specs: stickerei_specs ? JSON.stringify(stickerei_specs) : null,
+      label_specs: label_specs ? JSON.stringify(label_specs) : null,
+      verpackung_specs: verpackung_specs ? JSON.stringify(verpackung_specs) : null,
+      mass_tabelle: mass_tabelle ? JSON.stringify(mass_tabelle) : null,
+      bemerkungen: bemerkungen || null,
+      foto_urls: foto_urls ? JSON.stringify(foto_urls) : null,
+    };
+
     await db.promise().query(
       `INSERT INTO artikel_bestell_specs SET ? ON DUPLICATE KEY UPDATE
         lieferant_id=VALUES(lieferant_id), modell_bezeichnung=VALUES(modell_bezeichnung),

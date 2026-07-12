@@ -49,14 +49,17 @@ const loadDojoLogo = async (dojoId) => {
 // GET /api/vertragsvorlagen - Alle Vorlagen für ein Dojo abrufen
 router.get('/', async (req, res) => {
   try {
-    const { dojo_id, template_type, aktiv } = req.query;
+    const { template_type, aktiv } = req.query;
+
+    // 🔒 SICHERHEIT: Dojo-Scope aus Token erzwingen (null = Super-Admin = alle)
+    const secureDojoId = getSecureDojoId(req);
 
     let whereConditions = [];
     let queryParams = [];
 
-    if (dojo_id) {
+    if (secureDojoId) {
       whereConditions.push('dojo_id = ?');
-      queryParams.push(parseInt(dojo_id));
+      queryParams.push(secureDojoId);
     }
 
     if (template_type) {
@@ -111,6 +114,12 @@ router.get('/:id', async (req, res) => {
     if (vorlagen.length === 0) {
       return res.status(404).json({ error: 'Vorlage nicht gefunden' });
     }
+
+    // 🔒 SICHERHEIT: Vorlage muss zum eigenen Dojo gehören (Cross-Tenant-Schutz)
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId && Number(vorlagen[0].dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Vorlage nicht gefunden' });
+    }
     res.json({ success: true, data: vorlagen[0] });
   } catch (err) {
     logger.error('Fehler beim Abrufen der Vorlage:', { error: err });
@@ -122,7 +131,6 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const {
-      dojo_id,
       name,
       beschreibung,
       grapesjs_html,
@@ -135,6 +143,10 @@ router.post('/', async (req, res) => {
       is_default,
       available_placeholders
     } = req.body;
+
+    // 🔒 SICHERHEIT: dojo_id aus Token erzwingen (Super-Admin darf Body-dojo_id nutzen)
+    const secureDojoId = getSecureDojoId(req);
+    const dojo_id = secureDojoId || (req.body.dojo_id ? parseInt(req.body.dojo_id, 10) : null);
 
     if (!dojo_id || !name) {
       return res.status(400).json({
@@ -220,6 +232,12 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Vorlage nicht gefunden' });
     }
 
+    // 🔒 SICHERHEIT: Vorlage muss zum eigenen Dojo gehören (Cross-Tenant-Schutz)
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId && Number(existing[0].dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Vorlage nicht gefunden' });
+    }
+
     const dojo_id = existing[0].dojo_id;
 
     // Wenn is_default = true, setze alle anderen Vorlagen desselben Typs auf false
@@ -282,7 +300,12 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await queryAsync('DELETE FROM vertragsvorlagen WHERE id = ?', [id]);
+    // 🔒 SICHERHEIT: Nur eigene Dojo-Vorlagen löschen (null = Super-Admin = alle)
+    const secureDojoId = getSecureDojoId(req);
+    const result = await queryAsync(
+      `DELETE FROM vertragsvorlagen WHERE id = ?${secureDojoId ? ' AND dojo_id = ?' : ''}`,
+      secureDojoId ? [id, secureDojoId] : [id]
+    );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Vorlage nicht gefunden' });
@@ -888,9 +911,15 @@ router.get('/:id/download', async (req, res) => {
     if (vorlage.length === 0) {
       return res.status(404).json({ error: 'Vorlage nicht gefunden' });
     }
-    
+
     const template = vorlage[0];
-    
+
+    // 🔒 SICHERHEIT: Vorlage muss zum eigenen Dojo gehören (Cross-Tenant-Schutz)
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId && Number(template.dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Vorlage nicht gefunden' });
+    }
+
     // HTML mit Platzhaltern erstellen (ohne Mitgliedsdaten)
     const htmlContent = template.grapesjs_html || '';
     const cssContent = template.grapesjs_css || '';
@@ -948,7 +977,11 @@ router.get('/:id/download', async (req, res) => {
 router.post('/:id/copy', async (req, res) => {
   try {
     const { id } = req.params;
-    const { target_dojo_id } = req.body;
+
+    // 🔒 SICHERHEIT: Dojo-Scope aus Token (null = Super-Admin)
+    const secureDojoId = getSecureDojoId(req);
+    // Normale User dürfen nur ins eigene Dojo kopieren; Super-Admin frei via Body
+    const target_dojo_id = secureDojoId || (req.body.target_dojo_id ? parseInt(req.body.target_dojo_id, 10) : null);
 
     if (!target_dojo_id) {
       return res.status(400).json({ error: 'target_dojo_id ist erforderlich' });
@@ -964,6 +997,11 @@ router.post('/:id/copy', async (req, res) => {
     }
 
     const template = original[0];
+
+    // 🔒 SICHERHEIT: Quell-Vorlage muss zum eigenen Dojo gehören (Cross-Tenant-Schutz)
+    if (secureDojoId && Number(template.dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Vorlage nicht gefunden' });
+    }
 
     // Prüfen ob Ziel-Dojo existiert
     const targetDojo = await queryAsync('SELECT id FROM dojo WHERE id = ?', [target_dojo_id]);

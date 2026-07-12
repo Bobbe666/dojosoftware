@@ -368,29 +368,39 @@ router.put('/:id', (req, res) => {
 
   // Positionen aktualisieren (falls gesendet)
   if (positionen && Array.isArray(positionen)) {
-    // Alte Positionen löschen
-    db.query('DELETE FROM artikel_bestellung_positionen WHERE bestellung_id = ?', [bestellungId], (error) => {
-      if (error) logger.error('Fehler beim Löschen alter Positionen:', error);
+    // 🔒 Ownership: Bestellung muss zum Dojo gehören, bevor Positionen ersetzt werden (IDOR-Schutz)
+    db.query(
+      'SELECT bestellung_id FROM artikel_bestellungen WHERE bestellung_id = ? AND dojo_id = ?',
+      [bestellungId, dojoId],
+      (ownErr, ownRows) => {
+        if (ownErr) { logger.error('Fehler bei Ownership-Prüfung (Positionen):', ownErr); return; }
+        if (!ownRows || ownRows.length === 0) return; // fremde Bestellung → keine Positionen ändern
 
-      if (positionen.length > 0) {
-        const positionValues = positionen.map((p, idx) => [
-          bestellungId,
-          p.artikel_id,
-          JSON.stringify(p.groessen_mengen || {}),
-          0,
-          Math.round((p.stueckpreis_euro || 0) * 100),
-          0,
-          p.bemerkung || null,
-          idx
-        ]);
+        // Alte Positionen löschen
+        db.query('DELETE FROM artikel_bestellung_positionen WHERE bestellung_id = ?', [bestellungId], (error) => {
+          if (error) logger.error('Fehler beim Löschen alter Positionen:', error);
 
-        db.query(`
-          INSERT INTO artikel_bestellung_positionen
-          (bestellung_id, artikel_id, groessen_mengen, gesamt_menge, stueckpreis_cent, positions_preis_cent, bemerkung, sortierung)
-          VALUES ?
-        `, [positionValues]);
+          if (positionen.length > 0) {
+            const positionValues = positionen.map((p, idx) => [
+              bestellungId,
+              p.artikel_id,
+              JSON.stringify(p.groessen_mengen || {}),
+              0,
+              Math.round((p.stueckpreis_euro || 0) * 100),
+              0,
+              p.bemerkung || null,
+              idx
+            ]);
+
+            db.query(`
+              INSERT INTO artikel_bestellung_positionen
+              (bestellung_id, artikel_id, groessen_mengen, gesamt_menge, stueckpreis_cent, positions_preis_cent, bemerkung, sortierung)
+              VALUES ?
+            `, [positionValues]);
+          }
+        });
       }
-    });
+    );
   }
 
   res.json({ success: true, message: 'Bestellung aktualisiert' });

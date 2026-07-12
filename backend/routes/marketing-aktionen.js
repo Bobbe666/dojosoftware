@@ -516,18 +516,20 @@ router.delete('/posts/:id', async (req, res) => {
     const { id } = req.params;
     const dojoId = getDojoId(req);
 
-    // Media-Dateien abrufen und löschen
+    // 🔒 ZUERST Ownership prüfen — sonst werden fremde Media-Dateien gelöscht (IDOR)
+    const [ownRows] = await req.db.query(
+      'SELECT id FROM marketing_posts WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
+    );
+    if (ownRows.length === 0) {
+      return res.status(404).json({ error: 'Post nicht gefunden' });
+    }
+
+    // Media-Dateien abrufen (vor DELETE — evtl. FK-Cascade auf marketing_post_media)
     const [mediaFiles] = await req.db.query(
       'SELECT file_path FROM marketing_post_media WHERE post_id = ?',
       [id]
     );
-
-    for (const media of mediaFiles) {
-      const filePath = path.join(__dirname, '..', media.file_path);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
 
     const [result] = await req.db.query(
       'DELETE FROM marketing_posts WHERE id = ? AND dojo_id = ?',
@@ -536,6 +538,13 @@ router.delete('/posts/:id', async (req, res) => {
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Post nicht gefunden' });
+    }
+
+    for (const media of mediaFiles) {
+      const filePath = path.join(__dirname, '..', media.file_path);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
 
     res.json({ message: 'Post erfolgreich gelöscht' });

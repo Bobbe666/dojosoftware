@@ -395,10 +395,16 @@ router.post('/:pruefung_id/gelesen', (req, res) => {
   const pruefung_id = parseInt(req.params.pruefung_id);
   if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
 
+  // 🔒 Tenant-Isolation: nur Prüfungen des eigenen Dojos
+  const secureDojoId = getSecureDojoId(req);
+  const gelesenParams = [pruefung_id];
+  let gelesenDojoCond = '';
+  if (secureDojoId) { gelesenDojoCond = ' AND dojo_id = ?'; gelesenParams.push(secureDojoId); }
+
   db.query(
     `UPDATE pruefungen SET benachrichtigung_gelesen = 1, benachrichtigung_gelesen_am = NOW()
-     WHERE pruefung_id = ? AND (benachrichtigung_gelesen = 0 OR benachrichtigung_gelesen IS NULL)`,
-    [pruefung_id],
+     WHERE pruefung_id = ? AND (benachrichtigung_gelesen = 0 OR benachrichtigung_gelesen IS NULL)${gelesenDojoCond}`,
+    gelesenParams,
     (err) => {
       if (err) return res.status(500).json({ error: 'Fehler beim Speichern der Lesebestätigung', details: err.message });
       res.json({ success: true });
@@ -466,7 +472,13 @@ router.post('/:pruefung_id/teilnahme-bestaetigen', (req, res) => {
     return res.status(403).json({ error: 'Keine Berechtigung für diese Prüfung' });
   }
 
-  db.query('SELECT pruefung_id, mitglied_id, status, teilnahme_bestaetigt FROM pruefungen WHERE pruefung_id = ? AND mitglied_id = ?', [pruefung_id, mitglied_id], (checkErr, checkResults) => {
+  // 🔒 Tenant-Isolation: nur Prüfungen des eigenen Dojos
+  const secureDojoId = getSecureDojoId(req);
+  const checkParams = [pruefung_id, mitglied_id];
+  let bestDojoCond = '';
+  if (secureDojoId) { bestDojoCond = ' AND dojo_id = ?'; checkParams.push(secureDojoId); }
+
+  db.query(`SELECT pruefung_id, mitglied_id, status, teilnahme_bestaetigt FROM pruefungen WHERE pruefung_id = ? AND mitglied_id = ?${bestDojoCond}`, checkParams, (checkErr, checkResults) => {
     if (checkErr) return res.status(500).json({ error: 'Fehler beim Prüfen der Prüfung', details: checkErr.message });
     if (checkResults.length === 0) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
 
@@ -474,7 +486,9 @@ router.post('/:pruefung_id/teilnahme-bestaetigen', (req, res) => {
     if (pruefung.status !== 'geplant') return res.status(400).json({ error: 'Prüfung ist nicht im Status "geplant"' });
     if (pruefung.teilnahme_bestaetigt) return res.status(400).json({ error: 'Teilnahme wurde bereits bestätigt' });
 
-    db.query('UPDATE pruefungen SET teilnahme_bestaetigt = TRUE, teilnahme_bestaetigt_am = NOW(), aktualisiert_am = NOW() WHERE pruefung_id = ?', [pruefung_id], (updateErr) => {
+    const updateParams = [pruefung_id];
+    if (secureDojoId) updateParams.push(secureDojoId);
+    db.query(`UPDATE pruefungen SET teilnahme_bestaetigt = TRUE, teilnahme_bestaetigt_am = NOW(), aktualisiert_am = NOW() WHERE pruefung_id = ?${bestDojoCond}`, updateParams, (updateErr) => {
       if (updateErr) return res.status(500).json({ error: 'Fehler beim Bestätigen der Teilnahme', details: updateErr.message });
       res.json({ success: true, message: 'Teilnahme erfolgreich bestätigt', pruefung_id, teilnahme_bestaetigt_am: new Date() });
     });

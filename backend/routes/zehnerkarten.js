@@ -519,9 +519,10 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
     let zusatzInfo = {};
 
     if (zahlungsart === 'bar') {
-      // Admin-Benachrichtigung erstellen
+      // Admin-Benachrichtigung erstellen — 🔒 nur Admins/Trainer des eigenen Dojos
       const admins = await query(
-        'SELECT mitglied_id FROM mitglieder WHERE rolle = "admin" OR rolle = "trainer"'
+        'SELECT mitglied_id FROM mitglieder WHERE (rolle = "admin" OR rolle = "trainer") AND dojo_id = ?',
+        [mitglied.dojo_id]
       );
 
       const notificationText = `Barzahlung erforderlich: ${mitglied.vorname} ${mitglied.nachname} möchte eine ${tarif.name} für ${(tarif.price_cents / 100).toFixed(2)} EUR bar bezahlen.`;

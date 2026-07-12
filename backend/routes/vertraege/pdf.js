@@ -11,11 +11,13 @@ const { generateCompleteVertragPDF } = require('../../services/vertragPdfGenerat
 const { generatePDFWithDefaultTemplate } = require('../../services/templatePdfGenerator');
 const { generateKuendigungsbestaetigungPDF } = require('../../utils/kuendigungsbestaetigungPdfGenerator');
 const { queryAsync, ensureDocumentsDir } = require('./shared');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 
 // GET /:id/pdf - Vertrag als PDF herunterladen
 router.get('/:id/pdf', async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
     const vertragResults = await queryAsync(`
       SELECT v.*, m.vorname, m.nachname, m.email, m.geburtsdatum, m.strasse, m.hausnummer, m.plz, m.ort,
@@ -23,8 +25,8 @@ router.get('/:id/pdf', async (req, res) => {
       FROM vertraege v
       LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
       LEFT JOIN tarife t ON v.tarif_id = t.id
-      WHERE v.id = ?
-    `, [id]);
+      WHERE v.id = ? ${secureDojoId !== null ? 'AND v.dojo_id = ?' : ''}
+    `, secureDojoId !== null ? [id, secureDojoId] : [id]);
 
     if (vertragResults.length === 0) return res.status(404).json({ error: 'Vertrag nicht gefunden' });
 
@@ -72,6 +74,7 @@ router.get('/:id/pdf', async (req, res) => {
 router.get('/:id/kuendigungsbestaetigung', async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
     const vertragResults = await queryAsync(`
       SELECT v.*, m.vorname, m.nachname, m.email, m.geburtsdatum, m.strasse, m.hausnummer, m.plz, m.ort,
@@ -79,8 +82,8 @@ router.get('/:id/kuendigungsbestaetigung', async (req, res) => {
       FROM vertraege v
       LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
       LEFT JOIN tarife t ON v.tarif_id = t.id
-      WHERE v.id = ?
-    `, [id]);
+      WHERE v.id = ? ${secureDojoId !== null ? 'AND v.dojo_id = ?' : ''}
+    `, secureDojoId !== null ? [id, secureDojoId] : [id]);
 
     if (vertragResults.length === 0) return res.status(404).json({ error: 'Vertrag nicht gefunden' });
 
@@ -126,14 +129,15 @@ router.post('/:id/kuendigungsbestaetigung/speichern', async (req, res) => {
   try {
     const { id } = req.params;
     const { send_email } = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
     const vertragResults = await queryAsync(`
       SELECT v.*, m.vorname, m.nachname, m.email, m.geburtsdatum, m.strasse, m.hausnummer, m.plz, m.ort,
         m.telefon, m.anrede, m.mitgliedsnummer
       FROM vertraege v
       LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-      WHERE v.id = ?
-    `, [id]);
+      WHERE v.id = ? ${secureDojoId !== null ? 'AND v.dojo_id = ?' : ''}
+    `, secureDojoId !== null ? [id, secureDojoId] : [id]);
 
     if (vertragResults.length === 0) return res.status(404).json({ error: 'Vertrag nicht gefunden' });
 

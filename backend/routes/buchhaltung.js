@@ -1474,7 +1474,7 @@ router.get('/euer/verkauf-detail/:id', requireBuchhaltungAccess, (req, res) => {
   if (!verkaufId) return res.status(400).json({ message: 'Ungültige Verkauf-ID' });
 
   db.query(`
-    SELECT v.bon_nummer, v.verkauf_datum, v.zahlungsart,
+    SELECT v.bon_nummer, v.verkauf_datum, v.zahlungsart, v.dojo_id,
            COALESCE(v.kunde_name, m.vorname, '') as kunde_vorname,
            COALESCE(m.nachname, '') as kunde_nachname,
            v.brutto_gesamt_cent / 100 as gesamt,
@@ -1488,6 +1488,7 @@ router.get('/euer/verkauf-detail/:id', requireBuchhaltungAccess, (req, res) => {
   `, [verkaufId], (err, rows) => {
     if (err) return res.status(500).json({ message: err.message });
     if (!rows.length) return res.status(404).json({ message: 'Verkauf nicht gefunden' });
+    if (!checkDojoOwnership(req, res, rows[0].dojo_id)) return;
     res.json({
       bon_nummer: rows[0].bon_nummer,
       datum: rows[0].verkauf_datum,
@@ -2809,12 +2810,15 @@ router.post('/bank-import/upload', requireFeature('kontoauszug'), requireBuchhal
     for (const tx of parseResult.transaktionen) {
       const hashKey = generateTransactionHash(tx.buchungsdatum, tx.betrag, tx.verwendungszweck);
 
-      // Prüfe auf Duplikat
+      // Prüfe auf Duplikat (dojo-gescoped, damit Fremd-Hash keine Kollision auslöst; Super-Admin ohne dojoId ungescoped)
       const existingCheck = await new Promise((resolve, reject) => {
-        db.query('SELECT transaktion_id FROM bank_transaktionen WHERE hash_key = ?', [hashKey], (err, results) => {
-          if (err) reject(err);
-          else resolve(results);
-        });
+        db.query(
+          `SELECT transaktion_id FROM bank_transaktionen WHERE hash_key = ?${dojoId ? ' AND dojo_id = ?' : ''}`,
+          dojoId ? [hashKey, dojoId] : [hashKey],
+          (err, results) => {
+            if (err) reject(err);
+            else resolve(results);
+          });
       });
 
       if (existingCheck.length > 0) {
@@ -3326,6 +3330,10 @@ router.get('/bank-import/aehnliche/:id', requireFeature('kontoauszug'), requireB
     });
     if (!txRows.length) return res.status(404).json({ anzahl: 0 });
     const tx = txRows[0];
+    // Tenant-Isolation: fremde Transaktion nicht offenbaren (Super-Admin: buchhaltungDojoId null → kein Filter)
+    if (req.buchhaltungDojoId != null && Number(tx.dojo_id) !== Number(req.buchhaltungDojoId)) {
+      return res.status(404).json({ anzahl: 0 });
+    }
     if (!tx.auftraggeber_empfaenger) return res.json({ anzahl: 0, auftraggeber: '' });
 
     const pattern = tx.auftraggeber_empfaenger.substring(0, 50).replace(/[%_\\]/g, '\\$&');
@@ -3572,6 +3580,7 @@ router.post('/bank-import/rechnung-verknuepfen/:id', requireFeature('kontoauszug
 
     const rechnung = rechnungResult[0];
     const tx = txResult[0];
+    if (!checkDojoOwnership(req, res, tx.dojo_id)) return;
 
     // Update Bank-Transaktion (Verknüpfung, KEIN neuer Beleg!)
     await new Promise((resolve, reject) => {
@@ -3678,6 +3687,11 @@ router.post('/bank-import/batch-zuordnen', requireFeature('kontoauszug'), requir
         }
 
         const transaction = txResult[0];
+        // Tenant-Isolation: nur eigene Transaktionen (Super-Admin: buchhaltungDojoId null → alles)
+        if (req.buchhaltungDojoId != null && Number(transaction.dojo_id) !== Number(req.buchhaltungDojoId)) {
+          results.push({ id: tx.id, success: false, message: 'Nicht gefunden oder bereits zugeordnet' });
+          continue;
+        }
         const buchungsart = transaction.betrag > 0 ? 'einnahme' : 'ausgabe';
         const jahr = new Date(transaction.buchungsdatum).getFullYear();
         const belegNummer = await generateBelegNummer(transaction.dojo_id, jahr);
@@ -4185,8 +4199,11 @@ router.post('/bank-import/alle-vorschlaege-annehmen', requireFeature('kontoauszu
 // ===================================================================
 router.delete('/bank-import/transaktion/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
   const transaktionId = req.params.id;
+  // Tenant-Isolation: Dojo-Admin nur eigene; Super-Admin (buchhaltungDojoId null) ohne Filter
+  const dojoGuardSql = req.buchhaltungDojoId != null ? ' AND dojo_id = ?' : '';
+  const dojoGuardParams = req.buchhaltungDojoId != null ? [req.buchhaltungDojoId] : [];
 
-  db.query('DELETE FROM bank_transaktionen WHERE transaktion_id = ? AND beleg_id IS NULL', [transaktionId], (err, result) => {
+  db.query(`DELETE FROM bank_transaktionen WHERE transaktion_id = ? AND beleg_id IS NULL${dojoGuardSql}`, [transaktionId, ...dojoGuardParams], (err, result) => {
     if (err) {
       console.error('Transaktion-Löschen-Fehler:', err);
       return res.status(500).json({ message: 'Fehler beim Löschen' });
@@ -4205,16 +4222,19 @@ router.delete('/bank-import/transaktion/:id', requireFeature('kontoauszug'), req
 // ===================================================================
 router.delete('/bank-import/import/:importId', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
   const importId = req.params.importId;
+  // Tenant-Isolation: Dojo-Admin nur eigene; Super-Admin (buchhaltungDojoId null) ohne Filter
+  const dojoGuardSql = req.buchhaltungDojoId != null ? ' AND dojo_id = ?' : '';
+  const dojoGuardParams = req.buchhaltungDojoId != null ? [req.buchhaltungDojoId] : [];
 
   // Lösche nur Transaktionen ohne Beleg-Verknüpfung
-  db.query('DELETE FROM bank_transaktionen WHERE import_id = ? AND beleg_id IS NULL', [importId], (err, result) => {
+  db.query(`DELETE FROM bank_transaktionen WHERE import_id = ? AND beleg_id IS NULL${dojoGuardSql}`, [importId, ...dojoGuardParams], (err, result) => {
     if (err) {
       console.error('Import-Löschen-Fehler:', err);
       return res.status(500).json({ message: 'Fehler beim Löschen' });
     }
 
     // Update Historie
-    db.query('DELETE FROM bank_import_historie WHERE import_id = ?', [importId], () => {
+    db.query(`DELETE FROM bank_import_historie WHERE import_id = ?${dojoGuardSql}`, [importId, ...dojoGuardParams], () => {
       res.json({
         message: `${result.affectedRows} Transaktionen gelöscht`,
         deleted: result.affectedRows

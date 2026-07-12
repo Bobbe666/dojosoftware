@@ -328,7 +328,8 @@ router.get('/', async (req, res) => {
 
       try {
         // ✅ GEÄNDERT: Nur aktive Check-ins von heute + JOIN mit mitglieder für dojo_id Filter
-        const dojoJoinFilter = (dojo_id && dojo_id !== 'all') ? ` AND m.dojo_id = ${parseInt(dojo_id)}` : '';
+        // 🔒 secureDojoId statt undefinierter dojo_id (sonst zählte der Fallback globale Check-ins)
+        const dojoJoinFilter = secureDojoId ? ` AND m.dojo_id = ${secureDojoId}` : '';
         const [checkinResult1] = await db.promise().query(
           `SELECT COUNT(*) as count FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE c.checkin_time >= CURDATE() AND c.checkin_time < CURDATE() + INTERVAL 1 DAY AND c.status = 'active'${dojoJoinFilter}`
         );
@@ -337,10 +338,11 @@ router.get('/', async (req, res) => {
       } catch (e1) {
         logger.warn('⚠️ Check-ins (aktiv) failed, trying all:', e1.message);
 
-        // Fallback: Alle Check-ins von heute
+        // Fallback: Alle Check-ins von heute — 🔒 weiterhin dojo-gescoped
         try {
+          const dojoJoinFilterFb = secureDojoId ? ` AND m.dojo_id = ${secureDojoId}` : '';
           const [checkinResult2] = await db.promise().query(
-            `SELECT COUNT(*) as count FROM checkins WHERE checkin_time >= CURDATE() AND checkin_time < CURDATE() + INTERVAL 1 DAY`
+            `SELECT COUNT(*) as count FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE c.checkin_time >= CURDATE() AND c.checkin_time < CURDATE() + INTERVAL 1 DAY${dojoJoinFilterFb}`
           );
           logger.debug('Check-ins (Fallback) gezählt', { count: checkinResult2[0]?.count });
           stats.checkins_heute = checkinResult2[0]?.count || 0;

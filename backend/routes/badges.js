@@ -83,15 +83,19 @@ router.get('/admin/awarded', (req, res) => {
 router.get('/training/:mitglied_id', (req, res) => {
   const { mitglied_id } = req.params;
 
+  // 🔒 Dojo-Isolation: Mitglied muss zum eigenen Dojo gehören (Super-Admin=null → alle)
+  const secureDojoId = getSecureDojoId(req);
   const query = `
     SELECT mt.*, s.name as stil_name
     FROM manuelle_trainingsstunden mt
+    JOIN mitglieder m ON m.mitglied_id = mt.mitglied_id
     LEFT JOIN stile s ON mt.stil_id = s.stil_id
-    WHERE mt.mitglied_id = ?
+    WHERE mt.mitglied_id = ?${secureDojoId ? ' AND m.dojo_id = ?' : ''}
     ORDER BY mt.datum DESC
   `;
+  const params = secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id];
 
-  db.query(query, [mitglied_id], (err, results) => {
+  db.query(query, params, (err, results) => {
     if (err) {
       logger.error('Fehler beim Laden der manuellen Trainingsstunden:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
@@ -337,15 +341,19 @@ router.delete('/:badge_id', (req, res) => {
 router.get('/mitglied/:mitglied_id', (req, res) => {
   const { mitglied_id } = req.params;
 
+  // 🔒 Dojo-Isolation: Mitglied muss zum eigenen Dojo gehören (Super-Admin=null → alle)
+  const secureDojoId = getSecureDojoId(req);
   const query = `
     SELECT mb.*, b.name, b.beschreibung, b.icon, b.farbe, b.kategorie
     FROM mitglieder_badges mb
     JOIN badges b ON mb.badge_id = b.badge_id
-    WHERE mb.mitglied_id = ?
+    JOIN mitglieder m ON m.mitglied_id = mb.mitglied_id
+    WHERE mb.mitglied_id = ?${secureDojoId ? ' AND m.dojo_id = ?' : ''}
     ORDER BY mb.verliehen_am DESC
   `;
+  const params = secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id];
 
-  db.query(query, [mitglied_id], (err, results) => {
+  db.query(query, params, (err, results) => {
     if (err) {
       logger.error('Fehler beim Laden der Mitglieder-Badges:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
@@ -358,9 +366,18 @@ router.get('/mitglied/:mitglied_id', (req, res) => {
  * POST /api/badges/mitglied/:mitglied_id/:badge_id
  * Badge an Mitglied verleihen
  */
-router.post('/mitglied/:mitglied_id/:badge_id', (req, res) => {
+router.post('/mitglied/:mitglied_id/:badge_id', async (req, res) => {
   const { mitglied_id, badge_id } = req.params;
   const { verliehen_von_id, verliehen_von_name, kommentar, send_email } = req.body;
+
+  // 🔒 SICHERHEIT: Mitglied muss zum eigenen Dojo gehören (Write-IDOR-Schutz)
+  const secureDojoId = getSecureDojoId(req);
+  if (secureDojoId) {
+    const [ownRows] = await db.promise().query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
+    if (ownRows.length === 0 || Number(ownRows[0].dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+  }
 
   const query = `
     INSERT INTO mitglieder_badges
@@ -401,9 +418,16 @@ router.post('/mitglied/:mitglied_id/:badge_id', (req, res) => {
 router.delete('/mitglied/:mitglied_id/:badge_id', (req, res) => {
   const { mitglied_id, badge_id } = req.params;
 
+  // 🔒 Dojo-Isolation: Nur Badges eigener Mitglieder entfernen (Super-Admin=null → alle)
+  const secureDojoId = getSecureDojoId(req);
+  const delQuery = secureDojoId
+    ? 'DELETE mb FROM mitglieder_badges mb JOIN mitglieder m ON m.mitglied_id = mb.mitglied_id WHERE mb.mitglied_id = ? AND mb.badge_id = ? AND m.dojo_id = ?'
+    : 'DELETE FROM mitglieder_badges WHERE mitglied_id = ? AND badge_id = ?';
+  const delParams = secureDojoId ? [mitglied_id, badge_id, secureDojoId] : [mitglied_id, badge_id];
+
   db.query(
-    'DELETE FROM mitglieder_badges WHERE mitglied_id = ? AND badge_id = ?',
-    [mitglied_id, badge_id],
+    delQuery,
+    delParams,
     (err, result) => {
       if (err) {
         logger.error('Fehler beim Entfernen des Badges:', { error: err });
@@ -576,6 +600,19 @@ router.post('/admin/award-pending', async (req, res) => {
     return res.status(400).json({ error: 'Keine Badges zum Verleihen angegeben' });
   }
 
+  // 🔒 SICHERHEIT: Alle betroffenen Mitglieder müssen zum eigenen Dojo gehören (Write-IDOR-Schutz)
+  const secureDojoId = getSecureDojoId(req);
+  if (secureDojoId) {
+    const mitgliedIds = [...new Set(awards.map(a => a.mitglied_id))];
+    const [ownRows] = await db.promise().query(
+      'SELECT mitglied_id FROM mitglieder WHERE mitglied_id IN (?) AND dojo_id = ?',
+      [mitgliedIds, secureDojoId]
+    );
+    if (ownRows.length !== mitgliedIds.length) {
+      return res.status(403).json({ error: 'Mitglied gehört nicht zu deinem Dojo' });
+    }
+  }
+
   const values = awards.map(a => [
     a.mitglied_id,
     a.badge_id,
@@ -624,6 +661,8 @@ router.post('/admin/award-pending', async (req, res) => {
  * E-Mail-Benachrichtigungen fuer nicht benachrichtigte Badges senden
  */
 router.post('/admin/send-notifications', async (req, res) => {
+  // 🔒 Dojo-Isolation: Nur eigene Mitglieder benachrichtigen (Super-Admin=null → alle)
+  const secureDojoId = getSecureDojoId(req);
   // Finde alle Badges die noch nicht benachrichtigt wurden
   const query = `
     SELECT mb.mitglied_id, mb.badge_id
@@ -631,12 +670,13 @@ router.post('/admin/send-notifications', async (req, res) => {
     JOIN mitglieder m ON mb.mitglied_id = m.mitglied_id
     WHERE mb.benachrichtigt = FALSE
     AND m.email IS NOT NULL
-    AND m.email != ''
+    AND m.email != ''${secureDojoId ? ' AND m.dojo_id = ?' : ''}
     ORDER BY mb.verliehen_am DESC
     LIMIT 100
   `;
+  const params = secureDojoId ? [secureDojoId] : [];
 
-  db.query(query, async (err, results) => {
+  db.query(query, params, async (err, results) => {
     if (err) {
       logger.error('Fehler beim Laden der nicht benachrichtigten Badges:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });

@@ -399,6 +399,10 @@ router.post('/:dojoId/init-defaults', async (req, res) => {
 // POST /api/dojo-banken/migrate - Migriere Bankdaten von dojo Tabelle zu dojo_banken
 router.post('/migrate', async (req, res) => {
   try {
+    // 🔒 Cross-Tenant-Schutz: Migration betrifft ALLE Dojos (liest/schreibt global) → nur Super-Admin
+    if (getSecureDojoId(req) !== null) {
+      return res.status(403).json({ error: 'Nur Super-Admin' });
+    }
     logger.debug('🔄 Starte Migration der Bankdaten...');
     
     // Prüfe und migriere Bankdaten für jedes Dojo

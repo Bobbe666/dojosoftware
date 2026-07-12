@@ -155,6 +155,20 @@ router.delete('/:fortschritt_id', async (req, res) => {
 router.get('/:fortschritt_id/history', async (req, res) => {
   const { fortschritt_id } = req.params;
   try {
+    const dojoId = getSecureDojoId(req);
+
+    // 🔒 Sicherheitsprüfung: Eintrag gehört zu einem Mitglied des anfragenden Dojos
+    let checkQuery, checkParams;
+    if (dojoId) {
+      checkQuery = 'SELECT 1 FROM mitglieder_fortschritt mf JOIN mitglieder m ON mf.mitglied_id = m.mitglied_id WHERE mf.fortschritt_id = ? AND m.dojo_id = ?';
+      checkParams = [fortschritt_id, dojoId];
+    } else {
+      checkQuery = 'SELECT 1 FROM mitglieder_fortschritt WHERE fortschritt_id = ?';
+      checkParams = [fortschritt_id];
+    }
+    const [check] = await pool.query(checkQuery, checkParams);
+    if (!check.length) return res.status(403).json({ error: 'Zugriff verweigert' });
+
     const [results] = await pool.query(`
       SELECT fu.*, mf.skill_name, CONCAT(m.vorname, ' ', m.nachname) as mitglied_name
       FROM fortschritt_updates fu

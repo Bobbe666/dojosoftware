@@ -5,7 +5,7 @@ const webpush = require('web-push');
 const db = require('../db');
 const pool = db.promise(); // Promise-basierte API von mysql2
 const { authenticateToken } = require('../middleware/auth');
-const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 const enc = require('../services/encryptionService');
 const router = express.Router();
 
@@ -704,13 +704,22 @@ router.get('/history', authenticateToken, async (req, res) => {
 router.delete('/history/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
 
-    await new Promise((resolve, reject) => {
-      db.query('DELETE FROM notifications WHERE id = ?', [id], (err, result) => {
+    const result = await new Promise((resolve, reject) => {
+      const sql = secureDojoId
+        ? 'DELETE FROM notifications WHERE id = ? AND dojo_id = ?'
+        : 'DELETE FROM notifications WHERE id = ?';
+      const args = secureDojoId ? [id, secureDojoId] : [id];
+      db.query(sql, args, (err, result) => {
         if (err) reject(err);
         else resolve(result);
       });
     });
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Benachrichtigung nicht gefunden' });
+    }
 
     res.json({ success: true, message: 'Benachrichtigung erfolgreich gelöscht' });
   } catch (error) {
@@ -723,10 +732,15 @@ router.delete('/history/:id', authenticateToken, async (req, res) => {
 router.delete('/history/bulk/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
 
-    // Hole zuerst Subject und Timestamp der Benachrichtigung
+    // Hole zuerst Subject und Timestamp der Benachrichtigung (dojo-gescopt)
     const notification = await new Promise((resolve, reject) => {
-      db.query('SELECT subject, created_at FROM notifications WHERE id = ?', [id], (err, results) => {
+      const sql = secureDojoId
+        ? 'SELECT subject, created_at FROM notifications WHERE id = ? AND dojo_id = ?'
+        : 'SELECT subject, created_at FROM notifications WHERE id = ?';
+      const args = secureDojoId ? [id, secureDojoId] : [id];
+      db.query(sql, args, (err, results) => {
         if (err) reject(err);
         else resolve(results[0]);
       });
@@ -736,16 +750,18 @@ router.delete('/history/bulk/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Benachrichtigung nicht gefunden' });
     }
 
-    // Lösche alle Benachrichtigungen mit gleichem Subject und Timestamp
+    // Lösche alle Benachrichtigungen mit gleichem Subject und Timestamp (nur eigenes Dojo)
     const result = await new Promise((resolve, reject) => {
-      db.query(
-        'DELETE FROM notifications WHERE subject = ? AND created_at = ?',
-        [notification.subject, notification.created_at],
-        (err, result) => {
-          if (err) reject(err);
-          else resolve(result);
-        }
-      );
+      const sql = secureDojoId
+        ? 'DELETE FROM notifications WHERE subject = ? AND created_at = ? AND dojo_id = ?'
+        : 'DELETE FROM notifications WHERE subject = ? AND created_at = ?';
+      const args = secureDojoId
+        ? [notification.subject, notification.created_at, secureDojoId]
+        : [notification.subject, notification.created_at];
+      db.query(sql, args, (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
     });
 
     res.json({
@@ -985,16 +1001,19 @@ router.post('/templates', authenticateToken, async (req, res) => {
 router.get('/member/:email', authenticateToken, async (req, res) => {
   try {
     const { email } = req.params;
+    const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
+    const dojoCond = secureDojoId ? ' AND dojo_id = ?' : '';
+    const qParams = secureDojoId ? [email, secureDojoId] : [email];
 
-    // Hole Benachrichtigungen für dieses Mitglied
+    // Hole Benachrichtigungen für dieses Mitglied (dojo-gescopt gegen IDOR)
     const notifications = await new Promise((resolve, reject) => {
       db.query(`
         SELECT * FROM notifications
         WHERE recipient = ? AND type = 'push'
-          AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)${dojoCond}
         ORDER BY created_at DESC
         LIMIT 50
-      `, [email], (err, results) => {
+      `, qParams, (err, results) => {
         if (err) {
 
           resolve([]);
@@ -1020,6 +1039,9 @@ router.get('/member/:email', authenticateToken, async (req, res) => {
 router.get('/member/:id/confirmed', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
+    const dojoCond = secureDojoId ? ' AND n.dojo_id = ?' : '';
+    const qParams = secureDojoId ? [id.toString(), secureDojoId] : [id.toString()];
 
     const notifications = await new Promise((resolve, reject) => {
       db.query(`
@@ -1034,9 +1056,9 @@ router.get('/member/:id/confirmed', authenticateToken, async (req, res) => {
         WHERE n.recipient = ?
           AND n.type = 'push'
           AND n.requires_confirmation = TRUE
-          AND n.confirmed_at IS NOT NULL
+          AND n.confirmed_at IS NOT NULL${dojoCond}
         ORDER BY n.confirmed_at DESC
-      `, [id.toString()], (err, results) => {
+      `, qParams, (err, results) => {
         if (err) {
           logger.error('Fehler beim Laden der bestätigten Benachrichtigungen:', { error: err });
           resolve([]);
@@ -1068,13 +1090,14 @@ router.get('/member/:id/confirmed', authenticateToken, async (req, res) => {
 router.put('/member/:id/read', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
 
     await new Promise((resolve, reject) => {
-      db.query(`
-        UPDATE notifications
-        SET read = TRUE
-        WHERE id = ?
-      `, [id], (err, result) => {
+      const sql = secureDojoId
+        ? 'UPDATE notifications SET `read` = TRUE WHERE id = ? AND dojo_id = ?'
+        : 'UPDATE notifications SET `read` = TRUE WHERE id = ?';
+      const args = secureDojoId ? [id, secureDojoId] : [id];
+      db.query(sql, args, (err, result) => {
         if (err) reject(err);
         else resolve(result);
       });
@@ -1094,12 +1117,15 @@ router.put('/member/:id/read', authenticateToken, async (req, res) => {
 // Hole ungelesene Admin-Benachrichtigungen
 router.get('/admin/unread', authenticateToken, async (req, res) => {
   try {
+    const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
+    const dojoCond = secureDojoId ? ' AND dojo_id = ?' : '';
+    const qParams = secureDojoId ? [secureDojoId] : [];
     const notifications = await new Promise((resolve, reject) => {
       db.query(`
         SELECT * FROM notifications
-        WHERE type = 'admin_alert' AND status = 'unread'
+        WHERE type = 'admin_alert' AND status = 'unread'${dojoCond}
         ORDER BY created_at DESC
-      `, (err, results) => {
+      `, qParams, (err, results) => {
         if (err) {
           logger.error('Fehler beim Abrufen der Admin-Benachrichtigungen:', { error: err });
           resolve([]);
@@ -1208,13 +1234,14 @@ router.get('/admin/registration-check/:email', authenticateToken, async (req, re
 router.put('/admin/:id/read', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
 
     await new Promise((resolve, reject) => {
-      db.query(`
-        UPDATE notifications
-        SET status = 'read'
-        WHERE id = ? AND type = 'admin_alert'
-      `, [id], (err, result) => {
+      const sql = secureDojoId
+        ? "UPDATE notifications SET status = 'read' WHERE id = ? AND type = 'admin_alert' AND dojo_id = ?"
+        : "UPDATE notifications SET status = 'read' WHERE id = ? AND type = 'admin_alert'";
+      const args = secureDojoId ? [id, secureDojoId] : [id];
+      db.query(sql, args, (err, result) => {
         if (err) reject(err);
         else resolve(result);
       });
@@ -1331,6 +1358,10 @@ router.post('/admin/migrate', authenticateToken, async (req, res) => {
 // DEBUG-ENDPUNKT: Prüfe Tabelle notifications
 router.get('/admin/debug', authenticateToken, async (req, res) => {
   try {
+    // 🔒 Debug legt PII/Struktur ALLER Dojos offen → nur Super-Admin
+    if (!isSuperAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Kein Zugriff' });
+    }
     // Prüfe ob Tabelle existiert
     const tableExists = await new Promise((resolve, reject) => {
       db.query(`
@@ -1392,21 +1423,25 @@ router.post('/member/mark-read', authenticateToken, async (req, res) => {
   try {
     const { email, ids } = req.body;
     if (!email) return res.status(400).json({ success: false, message: 'email fehlt' });
+    const secureDojoId = getSecureDojoId(req); // null = Super-Admin = alle Dojos
+    const dojoCond = secureDojoId ? ' AND dojo_id = ?' : '';
 
     await new Promise((resolve, reject) => {
       if (ids && ids.length) {
+        const args = secureDojoId ? [email, secureDojoId, ids] : [email, ids];
         db.query(
           `UPDATE notifications SET status = 'read'
-           WHERE recipient = ? AND type = 'push' AND (requires_confirmation IS NULL OR requires_confirmation = 0)
+           WHERE recipient = ? AND type = 'push' AND (requires_confirmation IS NULL OR requires_confirmation = 0)${dojoCond}
              AND id IN (?)`,
-          [email, ids],
+          args,
           (err) => err ? reject(err) : resolve()
         );
       } else {
+        const args = secureDojoId ? [email, secureDojoId] : [email];
         db.query(
           `UPDATE notifications SET status = 'read'
-           WHERE recipient = ? AND type = 'push' AND (requires_confirmation IS NULL OR requires_confirmation = 0)`,
-          [email],
+           WHERE recipient = ? AND type = 'push' AND (requires_confirmation IS NULL OR requires_confirmation = 0)${dojoCond}`,
+          args,
           (err) => err ? reject(err) : resolve()
         );
       }

@@ -567,12 +567,17 @@ router.post('/', requireFeature('events'), (req, res) => {
  * POST /api/events/:id/abmelden
  * Meldet ein Mitglied von einem Event ab
  */
-router.post('/:id/abmelden', (req, res) => {
+router.post('/:id/abmelden', async (req, res) => {
   const eventId = req.params.id;
   const { mitglied_id } = req.body;
 
   if (!mitglied_id) {
     return res.status(400).json({ error: 'Mitglied-ID fehlt' });
+  }
+
+  // 🔒 Tenant-Isolation: mitglied_id aus Body muss zum eigenen Dojo gehören
+  if (!(await canAccessMember(req.user, mitglied_id))) {
+    return res.status(403).json({ error: 'Keine Berechtigung für dieses Mitglied' });
   }
 
   const query = `
@@ -892,6 +897,11 @@ router.post('/:id/anmelden', async (req, res) => {
   }
 
   try {
+    // 🔒 Tenant-Isolation: mitglied_id aus Body muss zum eigenen Dojo gehören
+    if (!(await canAccessMember(req.user, mitglied_id))) {
+      return res.status(403).json({ error: 'Keine Berechtigung für dieses Mitglied' });
+    }
+
     // 1. Prüfe ob Event existiert und ob noch Plätze frei sind
     const [eventRows] = await db.promise().query(
       'SELECT * FROM events WHERE event_id = ?',
@@ -1032,6 +1042,11 @@ router.delete('/:id/anmelden', async (req, res) => {
   }
 
   try {
+    // 🔒 Tenant-Isolation: mitglied_id aus Body muss zum eigenen Dojo gehören
+    if (!(await canAccessMember(req.user, mitglied_id))) {
+      return res.status(403).json({ error: 'Keine Berechtigung für dieses Mitglied' });
+    }
+
     // 1. Prüfe ob Anmeldung existiert
     const [rows] = await db.promise().query(
       'SELECT * FROM event_anmeldungen WHERE event_id = ? AND mitglied_id = ?',
@@ -1781,6 +1796,7 @@ router.post('/:id/nachrichten', async (req, res) => {
   }
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const [result] = await db.promise().query(
       `INSERT INTO event_nachrichten (event_id, verfasser_id, verfasser_typ, nachricht)
        VALUES (?, ?, ?, ?)`,
@@ -2312,6 +2328,7 @@ router.post('/:id/bestelloptionen', async (req, res) => {
   }
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const [result] = await db.promise().query(
       'INSERT INTO event_bestelloptionen (event_id, name, beschreibung, preis, einheit, reihenfolge) VALUES (?, ?, ?, ?, ?, ?)',
       [eventId, name, beschreibung || null, parseFloat(preis) || 0, einheit || 'Stk', reihenfolge || 0]
@@ -2337,6 +2354,7 @@ router.put('/:id/bestelloptionen/:optId', async (req, res) => {
   const { name, beschreibung, preis, einheit, reihenfolge } = req.body;
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const [result] = await db.promise().query(
       'UPDATE event_bestelloptionen SET name=?, beschreibung=?, preis=?, einheit=?, reihenfolge=? WHERE option_id=? AND event_id=?',
       [name, beschreibung || null, parseFloat(preis) || 0, einheit || 'Stk', reihenfolge || 0, optId, eventId]
@@ -2360,6 +2378,7 @@ router.delete('/:id/bestelloptionen/:optId', async (req, res) => {
   const optId = parseInt(req.params.optId);
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const [result] = await db.promise().query(
       'DELETE FROM event_bestelloptionen WHERE option_id=? AND event_id=?',
       [optId, eventId]

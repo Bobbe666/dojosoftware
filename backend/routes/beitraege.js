@@ -79,21 +79,31 @@ router.post("/", (req, res) => {
         return res.status(400).json({ error: "Dojo-ID erforderlich" });
     }
 
-    const query = `
+    // 🔒 Tenant-Isolation: Mitglied muss zum eigenen Dojo gehören (kein Fremd-Beitrag)
+    db.query('SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?', [mitglied_id, secureDojoId], (mErr, mRows) => {
+      if (mErr) {
+        logger.error('Fehler beim Prüfen des Mitglieds:', mErr);
+        return res.status(500).json({ error: 'Datenbankfehler', details: mErr.message });
+      }
+      if (!mRows || mRows.length === 0) {
+        return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+      }
+
+      const query = `
         INSERT INTO beitraege (mitglied_id, betrag, zahlungsart, zahlungsdatum, bezahlt, dojo_id)
         VALUES (?, ?, ?, ?, ?, ?)
-    `;
+      `;
 
-    const params = [
+      const params = [
         mitglied_id,
         betrag,
         zahlungsart || 'ueberweisung',
         zahlungsdatum || new Date().toISOString().split('T')[0],
         bezahlt ? 1 : 0,
         secureDojoId
-    ];
+      ];
 
-    db.query(query, params, (err, result) => {
+      db.query(query, params, (err, result) => {
         if (err) {
             logger.error('Fehler beim Erstellen des Beitrags:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
@@ -115,6 +125,7 @@ router.post("/", (req, res) => {
             beitrag_id: result.insertId,
             message: 'Beitrag erfolgreich erstellt'
         });
+      });
     });
 });
 

@@ -80,13 +80,24 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { typ, kontext_typ, kontext_id, jahr, ziel_wert, notizen } = req.body;
 
+    // 🔒 Tenant-Isolation: Nicht-Super-Admin darf nur EIGENE Dojo-Ziele schreiben
+    const secureDojoId = getSecureDojoId(req);
+    const superAdmin = isSuperAdmin(req);
+    let effKontextTyp = kontext_typ || 'global';
+    let effKontextId = kontext_id || null;
+    if (!superAdmin) {
+      if (!secureDojoId) return res.status(403).json({ error: 'Kein Dojo-Kontext' });
+      effKontextTyp = 'dojo';
+      effKontextId = secureDojoId;
+    }
+
     const [result] = await db.promise().query(`
       INSERT INTO entwicklungsziele (typ, kontext_typ, kontext_id, jahr, ziel_wert, notizen, created_by)
       VALUES (?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         ziel_wert = VALUES(ziel_wert),
         notizen = VALUES(notizen)
-    `, [typ, kontext_typ || 'global', kontext_id || null, jahr, ziel_wert, notizen, req.user.id]);
+    `, [typ, effKontextTyp, effKontextId, jahr, ziel_wert, notizen, req.user.id]);
 
     res.json({ success: true, id: result.insertId });
   } catch (error) {
@@ -103,8 +114,18 @@ router.post('/batch', authenticateToken, requireAdmin, async (req, res) => {
 
     const { ziele } = req.body;
 
+    // 🔒 Tenant-Isolation: Nicht-Super-Admin darf nur EIGENE Dojo-Ziele schreiben
+    const secureDojoId = getSecureDojoId(req);
+    const superAdmin = isSuperAdmin(req);
+    if (!superAdmin && !secureDojoId) {
+      await connection.rollback();
+      return res.status(403).json({ error: 'Kein Dojo-Kontext' });
+    }
+
     for (const ziel of ziele) {
-      const kontextId = ziel.kontext_id || null;
+      // Nicht-Super-Admin: kontext_typ/kontext_id auf eigenes Dojo erzwingen
+      const effKontextTyp = superAdmin ? (ziel.kontext_typ || 'global') : 'dojo';
+      const kontextId = superAdmin ? (ziel.kontext_id || null) : secureDojoId;
       // NULL-sicheres UPSERT: ON DUPLICATE KEY UPDATE versagt bei NULL-Spalten im Unique-Index
       // Deshalb: erst UPDATE mit <=> (NULL-safe), dann INSERT wenn kein Row gefunden
       const [upd] = await connection.query(`
@@ -112,13 +133,13 @@ router.post('/batch', authenticateToken, requireAdmin, async (req, res) => {
         SET ziel_wert = ?, notizen = ?
         WHERE typ = ? AND kontext_typ = ? AND kontext_id <=> ? AND jahr = ?
       `, [ziel.ziel_wert, ziel.notizen || null,
-          ziel.typ, ziel.kontext_typ || 'global', kontextId, ziel.jahr]);
+          ziel.typ, effKontextTyp, kontextId, ziel.jahr]);
 
       if (upd.affectedRows === 0) {
         await connection.query(`
           INSERT INTO entwicklungsziele (typ, kontext_typ, kontext_id, jahr, ziel_wert, notizen, created_by)
           VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [ziel.typ, ziel.kontext_typ || 'global', kontextId,
+        `, [ziel.typ, effKontextTyp, kontextId,
             ziel.jahr, ziel.ziel_wert, ziel.notizen || null, req.user.id]);
       }
     }
@@ -137,7 +158,18 @@ router.post('/batch', authenticateToken, requireAdmin, async (req, res) => {
 // Ziel löschen
 router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    await db.promise().query('DELETE FROM entwicklungsziele WHERE id = ?', [req.params.id]);
+    // 🔒 Tenant-Isolation: Nicht-Super-Admin darf nur EIGENE Dojo-Ziele löschen
+    const secureDojoId = getSecureDojoId(req);
+    const superAdmin = isSuperAdmin(req);
+    if (superAdmin) {
+      await db.promise().query('DELETE FROM entwicklungsziele WHERE id = ?', [req.params.id]);
+    } else {
+      if (!secureDojoId) return res.status(403).json({ error: 'Kein Dojo-Kontext' });
+      await db.promise().query(
+        "DELETE FROM entwicklungsziele WHERE id = ? AND kontext_typ = 'dojo' AND kontext_id = ?",
+        [req.params.id, secureDojoId]
+      );
+    }
     res.json({ success: true });
   } catch (error) {
     logger.error('Fehler beim Löschen:', { error: error });

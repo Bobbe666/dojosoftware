@@ -90,12 +90,17 @@ router.get("/", async (req, res) => {
         const { monat, jahr, bank_id } = req.query;
         logger.debug('📦 Starting SEPA batch file generation...', { monat, jahr, bank_id });
 
-        // Hole Bankdaten wenn bank_id angegeben
+        // 🔒 DOJO-SCOPE: SEPA-Lauf nur für das eigene Dojo (Super-Admin: aus gewählter Bank).
+        // Ohne Scope würde die CSV IBAN/BIC/Mandat ALLER Dojos exportieren.
+        const secureDojoId = getSecureDojoId(req);
+
+        // Hole Bankdaten wenn bank_id angegeben — 🔒 nur eigene Bank (sonst leaked fremde IBAN/Gläubiger-ID)
         let selectedBank = null;
         if (bank_id) {
-            const bankQuery = 'SELECT * FROM dojo_banken WHERE id = ? AND ist_aktiv = 1';
+            const bankQuery = `SELECT * FROM dojo_banken WHERE id = ? AND ist_aktiv = 1${secureDojoId ? ' AND dojo_id = ?' : ''}`;
+            const bankParams = secureDojoId ? [bank_id, secureDojoId] : [bank_id];
             const bankResult = await new Promise((resolve, reject) => {
-                db.query(bankQuery, [bank_id], (err, results) => {
+                db.query(bankQuery, bankParams, (err, results) => {
                     if (err) reject(err);
                     else resolve(results);
                 });
@@ -106,9 +111,6 @@ router.get("/", async (req, res) => {
             }
         }
 
-        // 🔒 DOJO-SCOPE: SEPA-Lauf nur für das eigene Dojo (Super-Admin: aus gewählter Bank).
-        // Ohne Scope würde die CSV IBAN/BIC/Mandat ALLER Dojos exportieren.
-        const secureDojoId = getSecureDojoId(req);
         const scopeDojoId = secureDojoId || (selectedBank ? selectedBank.dojo_id : null);
         if (!scopeDojoId) {
             return res.status(400).json({ error: 'Kein Dojo-Kontext für den SEPA-Lauf — bitte bank_id angeben' });

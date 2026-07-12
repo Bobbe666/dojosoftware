@@ -31,41 +31,63 @@ router.post("/", (req, res) => {
     });
   }
 
-  const sql = `
-    INSERT INTO anwesenheit_protokoll 
-    (mitglied_id, stundenplan_id, datum, status, bemerkung, erstellt_am)
-    VALUES ?
-    ON DUPLICATE KEY UPDATE
-      status = VALUES(status),
-      bemerkung = VALUES(bemerkung),
-      erstellt_am = CURRENT_TIMESTAMP
-  `;
+  const doInsert = () => {
+    const sql = `
+      INSERT INTO anwesenheit_protokoll
+      (mitglied_id, stundenplan_id, datum, status, bemerkung, erstellt_am)
+      VALUES ?
+      ON DUPLICATE KEY UPDATE
+        status = VALUES(status),
+        bemerkung = VALUES(bemerkung),
+        erstellt_am = CURRENT_TIMESTAMP
+    `;
 
-  const werte = eintraege.map((eintrag) => [
-    eintrag.mitglied_id,
-    eintrag.stundenplan_id,
-    eintrag.datum,
-    eintrag.status || "anwesend",
-    eintrag.bemerkung || null,
-    new Date()
-  ]);
+    const werte = eintraege.map((eintrag) => [
+      eintrag.mitglied_id,
+      eintrag.stundenplan_id,
+      eintrag.datum,
+      eintrag.status || "anwesend",
+      eintrag.bemerkung || null,
+      new Date()
+    ]);
 
-  db.query(sql, [werte], (err, result) => {
-    if (err) {
-      logger.error('Fehler beim Einfügen der Anwesenheitsprotokolle:', { error: err });
-      return res.status(500).json({ 
-        error: "Fehler beim Speichern der Anwesenheitsprotokolle",
-        details: err.message 
+    db.query(sql, [werte], (err, result) => {
+      if (err) {
+        logger.error('Fehler beim Einfügen der Anwesenheitsprotokolle:', { error: err });
+        return res.status(500).json({
+          error: "Fehler beim Speichern der Anwesenheitsprotokolle",
+          details: err.message
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Anwesenheitsprotokolle gespeichert",
+        inserted: result.affectedRows,
+        entries_processed: eintraege.length
       });
-    }
-
-    res.status(200).json({ 
-      success: true,
-      message: "Anwesenheitsprotokolle gespeichert", 
-      inserted: result.affectedRows,
-      entries_processed: eintraege.length
     });
-  });
+  };
+
+  // 🔒 Ownership: Alle betroffenen Mitglieder müssen zum Dojo des Users gehören
+  // (Super-Admin secureDojoId=null → keine Einschränkung).
+  const secureDojoId = getSecureDojoId(req);
+  if (!secureDojoId) return doInsert();
+  const mitgliedIds = [...new Set(eintraege.map(e => e.mitglied_id))];
+  db.query(
+    'SELECT mitglied_id FROM mitglieder WHERE mitglied_id IN (?) AND dojo_id = ?',
+    [mitgliedIds, secureDojoId],
+    (err, rows) => {
+      if (err) {
+        logger.error('Fehler bei Dojo-Prüfung (Anwesenheit POST):', { error: err });
+        return res.status(500).json({ error: "Fehler beim Speichern der Anwesenheitsprotokolle" });
+      }
+      if (rows.length !== mitgliedIds.length) {
+        return res.status(403).json({ error: "Mitglied gehört nicht zu deinem Dojo" });
+      }
+      doInsert();
+    }
+  );
 });
 
 // GET: Anwesenheiten für Kursstunde + Datum abrufen - Verbessert
@@ -155,8 +177,11 @@ router.get("/statistiken/:stundenplan_id/:datum", (req, res) => {
     return res.status(400).json({ error: "Ungültige Stundenplan-ID" });
   }
 
+  const secureDojoId = getSecureDojoId(req); // null = Super-Admin
+
+  const runStats = () => {
   const sql = `
-    SELECT 
+    SELECT
       -- Basis-Statistiken
       COUNT(*) as total_eintraege,
       SUM(CASE WHEN ap.status = 'anwesend' THEN 1 ELSE 0 END) as anwesend_count,
@@ -242,6 +267,24 @@ router.get("/statistiken/:stundenplan_id/:datum", (req, res) => {
       }
     });
   });
+  };
+
+  // 🔒 Ownership: Stundenplan muss zum Dojo des Users gehören (via kurse.dojo_id)
+  if (!secureDojoId) return runStats();
+  db.query(
+    'SELECT k.dojo_id FROM stundenplan s LEFT JOIN kurse k ON s.kurs_id = k.kurs_id WHERE s.stundenplan_id = ?',
+    [stundenplan_id],
+    (err, rows) => {
+      if (err) {
+        logger.error('Fehler bei Dojo-Prüfung (Statistiken):', { error: err });
+        return res.status(500).json({ error: "Fehler beim Abrufen der Statistiken" });
+      }
+      if (rows.length === 0 || rows[0].dojo_id !== secureDojoId) {
+        return res.status(404).json({ error: "Kursstunde nicht gefunden" });
+      }
+      runStats();
+    }
+  );
 });
 
 // NEU: Übersicht aller Anwesenheiten mit JOINs & erweiterten Filtern
@@ -250,6 +293,13 @@ router.get("/uebersicht", (req, res) => {
 
   const where = [];
   const values = [];
+
+  // 🔒 Dojo-Isolation: Nur eigene Mitglieder (Super-Admin secureDojoId=null → alle)
+  const secureDojoId = getSecureDojoId(req);
+  if (secureDojoId) {
+    where.push("m.dojo_id = ?");
+    values.push(secureDojoId);
+  }
 
   // Filter aufbauen
   if (kurs_id) {
@@ -363,8 +413,14 @@ router.get("/trend/:mitglied_id", (req, res) => {
     return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
   }
 
+  // 🔒 Dojo-Isolation: Nur Mitglieder des eigenen Dojos (Super-Admin=null → alle)
+  const secureDojoId = getSecureDojoId(req);
+  const dojoCond = secureDojoId
+    ? ' AND EXISTS (SELECT 1 FROM mitglieder m WHERE m.mitglied_id = ap.mitglied_id AND m.dojo_id = ?)'
+    : '';
+
   const sql = `
-    SELECT 
+    SELECT
       DATE(ap.datum) as datum,
       WEEK(ap.datum) as kalenderwoche,
       YEAR(ap.datum) as jahr,
@@ -378,12 +434,13 @@ router.get("/trend/:mitglied_id", (req, res) => {
       ) as anwesenheitsquote
     FROM anwesenheit_protokoll ap
     WHERE ap.mitglied_id = ?
-      AND ap.datum >= DATE_SUB(CURDATE(), INTERVAL ? WEEK)
+      AND ap.datum >= DATE_SUB(CURDATE(), INTERVAL ? WEEK)${dojoCond}
     GROUP BY WEEK(ap.datum), YEAR(ap.datum)
     ORDER BY jahr DESC, kalenderwoche DESC
   `;
 
-  db.query(sql, [mitglied_id, wochen], (err, results) => {
+  const trendParams = secureDojoId ? [mitglied_id, wochen, secureDojoId] : [mitglied_id, wochen];
+  db.query(sql, trendParams, (err, results) => {
     if (err) {
       logger.error('Fehler beim Abrufen des Anwesenheitstrends:', { error: err });
       return res.status(500).json({ 
@@ -424,8 +481,12 @@ router.get("/pruefung/:mitglied_id", (req, res) => {
     return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
   }
 
+  // 🔒 Dojo-Isolation: Nur Mitglieder des eigenen Dojos (Super-Admin=null → alle)
+  const secureDojoId = getSecureDojoId(req);
+  const pruefDojoCond = secureDojoId ? ' AND m.dojo_id = ?' : '';
+
   const sql = `
-    SELECT 
+    SELECT
       m.mitglied_id,
       CONCAT(m.vorname, ' ', m.nachname) as full_name,
       m.gurtfarbe,
@@ -457,11 +518,11 @@ router.get("/pruefung/:mitglied_id", (req, res) => {
     )
     LEFT JOIN stundenplan s ON ap.stundenplan_id = s.stundenplan_id
     LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
-    WHERE m.mitglied_id = ?
+    WHERE m.mitglied_id = ?${pruefDojoCond}
     GROUP BY m.mitglied_id, k.stil, k.kurs_id
   `;
 
-  const params = [monate, mitglied_id];
+  const params = secureDojoId ? [monate, mitglied_id, secureDojoId] : [monate, mitglied_id];
 
   db.query(sql, params, (err, results) => {
     if (err) {

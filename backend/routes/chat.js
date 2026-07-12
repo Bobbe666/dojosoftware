@@ -425,11 +425,19 @@ router.delete('/rooms/:id/leave', async (req, res) => {
   try {
     const { sender_id, sender_type } = getSenderInfo(req);
     const room_id = parseInt(req.params.id);
-    // Statt DELETE: archived=1 setzen — damit taucht der Raum nicht wieder auf (LEFT JOIN + COALESCE)
+    // 🔒 Raum muss zum Dojo des Users gehören (Super-Admin: dojo_id null = alle).
+    const isSuperAdmin = req.user.dojo_id === null || req.user.dojo_id === undefined;
+    if (!isSuperAdmin) {
+      const [roomCheck] = await pool.query(
+        `SELECT id FROM chat_rooms WHERE id = ? AND dojo_id = ?`,
+        [room_id, req.user.dojo_id]
+      );
+      if (!roomCheck[0]) return res.status(404).json({ success: false, message: 'Raum nicht gefunden' });
+    }
+    // 🔒 Nur bestehende Mitgliedschaft archivieren — kein INSERT (würde ACL aushebeln)
     await pool.query(
-      `INSERT INTO chat_room_members (room_id, member_id, member_type, archived)
-       VALUES (?, ?, ?, 1)
-       ON DUPLICATE KEY UPDATE archived = 1`,
+      `UPDATE chat_room_members SET archived = 1
+       WHERE room_id = ? AND member_id = ? AND member_type = ?`,
       [room_id, sender_id, sender_type]
     );
     res.json({ success: true });

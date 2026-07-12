@@ -6,22 +6,29 @@ const express = require('express');
 const logger = require('../../utils/logger');
 const router = express.Router();
 const { queryAsync } = require('./shared');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 
 // GET /dokumente/:dojo_id - AGB und Datenschutz für ein Dojo abrufen
 router.get('/dokumente/:dojo_id', async (req, res) => {
   try {
+    const secureDojoId = getSecureDojoId(req);
     const { dojo_id } = req.params;
     const { aktiv_nur } = req.query;
 
     let whereClause = '';
     let queryParams = [];
 
-    if (dojo_id === 'all') {
-      whereClause = aktiv_nur === 'true' ? 'WHERE aktiv = TRUE' : '';
+    if (secureDojoId !== null) {
+      // 🔒 Normaler User: nur eigenes Dojo, URL-Param wird ignoriert
+      whereClause = 'WHERE vd.dojo_id = ?';
+      queryParams.push(secureDojoId);
+      if (aktiv_nur === 'true') whereClause += ' AND vd.aktiv = TRUE';
+    } else if (dojo_id === 'all') {
+      whereClause = aktiv_nur === 'true' ? 'WHERE vd.aktiv = TRUE' : '';
     } else {
-      whereClause = 'WHERE dojo_id = ?';
+      whereClause = 'WHERE vd.dojo_id = ?';
       queryParams.push(parseInt(dojo_id));
-      if (aktiv_nur === 'true') whereClause += ' AND aktiv = TRUE';
+      if (aktiv_nur === 'true') whereClause += ' AND vd.aktiv = TRUE';
     }
 
     const dokumente = await queryAsync(`
@@ -43,7 +50,10 @@ router.get('/dokumente/:dojo_id', async (req, res) => {
 // POST /dokumente - Neues Dokument/Version erstellen
 router.post('/dokumente', async (req, res) => {
   try {
-    const { dojo_id, dokumenttyp, version, titel, inhalt, gueltig_ab, gueltig_bis, aktiv, erstellt_von } = req.body;
+    const secureDojoId = getSecureDojoId(req);
+    const { dokumenttyp, version, titel, inhalt, gueltig_ab, gueltig_bis, aktiv, erstellt_von } = req.body;
+    // 🔒 dojo_id aus JWT erzwingen; nur Super-Admin darf Ziel-Dojo im Body wählen
+    const dojo_id = secureDojoId !== null ? secureDojoId : req.body.dojo_id;
 
     if (!dojo_id || !dokumenttyp || !version || !titel || !inhalt || !gueltig_ab) {
       return res.status(400).json({
@@ -76,12 +86,14 @@ router.post('/dokumente', async (req, res) => {
 router.put('/dokumente/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { titel, inhalt, gueltig_ab, gueltig_bis, aktiv, dojo_id } = req.body;
+    const { titel, inhalt, gueltig_ab, gueltig_bis, aktiv } = req.body;
 
-    if (dojo_id) {
-      const dokCheck = await queryAsync(`SELECT id, dojo_id FROM vertragsdokumente WHERE id = ?`, [id]);
-      if (dokCheck.length === 0) return res.status(404).json({ error: 'Dokument nicht gefunden' });
-      if (dokCheck[0].dojo_id !== parseInt(dojo_id)) return res.status(403).json({ error: 'Keine Berechtigung' });
+    // 🔒 Ownership IMMER prüfen (Dojo des Datensatzes gegen JWT)
+    const secureDojoId = getSecureDojoId(req);
+    const dokCheck = await queryAsync(`SELECT id, dojo_id FROM vertragsdokumente WHERE id = ?`, [id]);
+    if (dokCheck.length === 0) return res.status(404).json({ error: 'Dokument nicht gefunden' });
+    if (secureDojoId !== null && dokCheck[0].dojo_id !== secureDojoId) {
+      return res.status(404).json({ error: 'Dokument nicht gefunden' });
     }
 
     const updates = [];
@@ -115,14 +127,24 @@ router.post('/dokumente/:id/copy', async (req, res) => {
 
     if (!target_dojo_id) return res.status(400).json({ error: 'target_dojo_id ist erforderlich' });
 
+    const secureDojoId = getSecureDojoId(req);
+
     const original = await queryAsync(`SELECT * FROM vertragsdokumente WHERE id = ?`, [id]);
     if (original.length === 0) return res.status(404).json({ error: 'Dokument nicht gefunden' });
 
     const doc = original[0];
 
+    // 🔒 Quell-Dojo gegen JWT prüfen (Super-Admin: alle)
+    if (secureDojoId !== null && doc.dojo_id !== secureDojoId) {
+      return res.status(404).json({ error: 'Dokument nicht gefunden' });
+    }
+
+    // 🔒 Ziel-Dojo: normaler User darf nur ins eigene Dojo kopieren
+    const targetDojoId = secureDojoId !== null ? secureDojoId : parseInt(target_dojo_id);
+
     const existing = await queryAsync(`
       SELECT id FROM vertragsdokumente WHERE dojo_id = ? AND dokumenttyp = ? AND version = ?
-    `, [target_dojo_id, doc.dokumenttyp, doc.version]);
+    `, [targetDojoId, doc.dokumenttyp, doc.version]);
 
     if (existing.length > 0) {
       return res.status(400).json({ error: `Dokument "${doc.titel}" (Version ${doc.version}) existiert bereits im Ziel-Dojo` });
@@ -131,7 +153,7 @@ router.post('/dokumente/:id/copy', async (req, res) => {
     const result = await queryAsync(`
       INSERT INTO vertragsdokumente (dojo_id, dokumenttyp, version, titel, inhalt, gueltig_ab, gueltig_bis, aktiv)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [target_dojo_id, doc.dokumenttyp, doc.version, doc.titel, doc.inhalt, doc.gueltig_ab, doc.gueltig_bis, doc.aktiv]);
+    `, [targetDojoId, doc.dokumenttyp, doc.version, doc.titel, doc.inhalt, doc.gueltig_ab, doc.gueltig_bis, doc.aktiv]);
 
     res.json({ success: true, message: `Dokument "${doc.titel}" erfolgreich kopiert`, data: { id: result.insertId } });
   } catch (err) {
@@ -143,6 +165,10 @@ router.post('/dokumente/:id/copy', async (req, res) => {
 // POST /dokumente/import-from-dojos - Dokumente aus Dojo-Tabelle importieren
 router.post('/dokumente/import-from-dojos', async (req, res) => {
   try {
+    // 🔒 Bulk-Import über ALLE Dojos → nur Super-Admin
+    if (getSecureDojoId(req) !== null) {
+      return res.status(403).json({ error: 'Nur Super-Admin' });
+    }
     const dojos = await queryAsync(`
       SELECT id, dojoname, agb_text, dsgvo_text, dojo_regeln_text, hausordnung_text,
         haftungsausschluss_text, widerrufsbelehrung_text, impressum_text, vertragsbedingungen_text

@@ -21,23 +21,23 @@ const queryAsync = (sql, params = []) => {
 // clause/checkinClause sind leere Strings wenn kein Filter nötig
 async function getSecureDojoFilter(req) {
   const userDojoId = req.user?.dojo_id;
-  const userRole   = req.user?.rolle;
+  const userRole   = req.user?.rolle || req.user?.role;
   const userId     = req.user?.id;
-  const isSuperAdmin = userRole === 'super_admin';
-
-  // Expliziter dojo_id Query-Param hat immer Vorrang
-  const q = req.query.dojo_id;
-  if (q && q !== 'all') {
-    const id = parseInt(q, 10);
-    return {
-      clause:        'AND dojo_id = ?',
-      params:        [id],
-      checkinClause: 'AND mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)',
-      checkinParams: [id]
-    };
-  }
+  // 🔒 Super-Admin-Definition konsistent mit tenantSecurity.isSuperAdmin
+  const isSuperAdmin = userRole === 'super_admin' || (userRole === 'admin' && !userDojoId);
 
   if (isSuperAdmin) {
+    // 🔒 Nur Super-Admins dürfen ein Dojo per Query-Param wählen
+    const q = req.query.dojo_id;
+    if (q && q !== 'all') {
+      const id = parseInt(q, 10);
+      return {
+        clause:        'AND dojo_id = ?',
+        params:        [id],
+        checkinClause: 'AND mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)',
+        checkinParams: [id]
+      };
+    }
     // Super-Admin: eigene Dojo-Zuweisungen aus admin_user_dojos laden
     if (userId) {
       const rows = await queryAsync(
@@ -342,10 +342,10 @@ router.get('/complete', async (req, res) => {
                 s.name,
                 COUNT(k.kurs_id) as anzahl
             FROM stile s
-            LEFT JOIN kurse k ON s.name = k.stil
+            LEFT JOIN kurse k ON s.name = k.stil ${dF.replace('dojo_id', 'k.dojo_id')}
             GROUP BY s.stil_id, s.name
             ORDER BY anzahl DESC
-        `);
+        `, dP);
 
         // Finanzielle Daten (Durchschnittsbeitrag aus Tarifen)
         // Echte monatliche Einnahmen: Summe aller aktiven Vertragsbeträge
@@ -415,10 +415,10 @@ router.get('/complete', async (req, res) => {
                 COUNT(DISTINCT ms.mitglied_id) as anzahl
             FROM stile s
             LEFT JOIN mitglied_stile ms ON s.stil_id = ms.mitglied_stil_id
-            WHERE ms.mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE aktiv = 1)
+            WHERE ms.mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE aktiv = 1 ${dF})
             GROUP BY s.stil_id, s.name
             ORDER BY anzahl DESC
-        `).catch(() => []);
+        `, dP).catch(() => []);
 
         // Graduierungen (Top 5 häufigste Gurte)
         const graduierungsStats = await queryAsync(`
@@ -822,11 +822,13 @@ router.post('/break-even', async (req, res) => {
             ]
         };
         // In Datenbank speichern
+        const beDojoId = req.user?.dojo_id || null; // 🔒 Break-Even pro Dojo speichern (war global → Fremd-Dojo las fremde Werte)
         await queryAsync(
             `INSERT INTO break_even_berechnungen
-            (fixkosten, variable_kosten, durchschnittsbeitrag, break_even_mitglieder, break_even_umsatz, sicherheitspuffer_prozent)
-            VALUES (?, ?, ?, ?, ?, ?)`,
+            (dojo_id, fixkosten, variable_kosten, durchschnittsbeitrag, break_even_mitglieder, break_even_umsatz, sicherheitspuffer_prozent)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
+                beDojoId,
                 JSON.stringify(fixkosten),
                 JSON.stringify(variableKosten),
                 durchschnittsbeitrag,
@@ -847,8 +849,12 @@ router.post('/break-even', async (req, res) => {
 // GET /api/auswertungen/break-even/latest - Letzte Break-Even-Berechnung laden
 router.get('/break-even/latest', async (req, res) => {
     try {
+        const beDojoId = req.user?.dojo_id || null; // 🔒 nur eigenes Dojo (Super-Admin: neuestes gesamt)
         const result = await queryAsync(
-            'SELECT * FROM break_even_berechnungen ORDER BY erstellt_am DESC LIMIT 1'
+            beDojoId
+              ? 'SELECT * FROM break_even_berechnungen WHERE dojo_id = ? ORDER BY erstellt_am DESC LIMIT 1'
+              : 'SELECT * FROM break_even_berechnungen ORDER BY erstellt_am DESC LIMIT 1',
+            beDojoId ? [beDojoId] : []
         );
 
         if (result.length === 0) {
