@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../db');
 const logger = require('../utils/logger');
 const { JWT_SECRET } = require('../middleware/auth');
+const { MAINTENANCE_MODE, MAINTENANCE_MESSAGE, isOurTeam } = require('../middleware/maintenance');
 const auditLog = require('../services/auditLogService');
 const { sanitizeStrings } = require('../middleware/validation');
 const { cacheGet } = require('../utils/simpleCache');
@@ -390,6 +391,11 @@ router.post('/login',
           finanzen_app_access: isAdmin ? (user.finanzen_app_access !== 0) : false,
           iat: Math.floor(Date.now() / 1000)
         };
+
+        // 🔧 WARTUNGSMODUS: nur unser Team (Super-Admin + Dojo 3) darf sich einloggen
+        if (MAINTENANCE_MODE && !isOurTeam(tokenPayload)) {
+          return res.status(503).json({ maintenance: true, success: false, message: MAINTENANCE_MESSAGE });
+        }
 
         const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: "30d" });
 

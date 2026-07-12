@@ -303,6 +303,11 @@ const writeAuditMiddleware = require('./middleware/writeAuditMiddleware');
 app.use('/api', writeAuditMiddleware);
 logger.success('Write-Audit-Logging aktiviert', { coverage: 'POST/PUT/PATCH/DELETE auf /api/*' });
 
+// 🔧 WARTUNGSMODUS: blockt alle /api-Zugriffe außer für unser Team (Super-Admin + Dojo 3);
+// Login-/Webhook-Endpunkte bleiben offen (Fremd-Logins blockt der Login-Handler separat).
+const { maintenanceGate } = require('./middleware/maintenance');
+app.use('/api', maintenanceGate);
+
 // API Documentation — nur in Development
 if (isDev && swaggerUi && swaggerSpec) {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
