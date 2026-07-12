@@ -350,7 +350,9 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       const artikelListe = warenkorb.map(item => ({
         artikel_id: item.artikel_id,
         menge: item.menge,
-        einzelpreis_cent: Math.round((item.verkaufspreis_euro || 0) * 100)
+        einzelpreis_cent: Math.round((item.verkaufspreis_euro || 0) * 100),
+        // Varianten-Key im Bestand-Format `${groesse}|${farbe}|` → Backend zieht die richtige Größe ab
+        varianten_key: item.variante ? `${item.variante.groesse || ''}|${item.variante.farbe || ''}|` : null
       }));
       // Manuellen Rabatt inline berechnen (TDZ-sicher bei Vite-Prod-Build)
       const _base = warenkorb.reduce((s, i) => s + (i.verkaufspreis_euro || 0) * i.menge, 0);
@@ -434,7 +436,8 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         artikel: warenkorb.map(item => ({
           artikel_id: item.artikel_id,
           menge: item.menge,
-          einzelpreis_cent: Math.round((item.verkaufspreis_euro || 0) * 100)
+          einzelpreis_cent: Math.round((item.verkaufspreis_euro || 0) * 100),
+          varianten_key: item.variante ? `${item.variante.groesse || ''}|${item.variante.farbe || ''}|` : null
         })),
         zahlungsart: 'sumup',
         gegeben_cent: null,

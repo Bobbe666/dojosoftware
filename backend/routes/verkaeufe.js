@@ -210,12 +210,20 @@ router.post('/', async (req, res) => {
 
         const artikelData = artikelResult[0];
 
-        // Lagerbestand prüfen (Varianten-Artikel: Summe aller Varianten-Bestände)
+        // Lagerbestand prüfen. Bei Varianten mit konkreter Größe (varianten_key aus der Kasse)
+        // wird der Bestand DIESER Größe geprüft; sonst Summe aller Varianten (bzw. lagerbestand).
         let variantenBestand = {};
         try { variantenBestand = JSON.parse(artikelData.varianten_bestand || '{}'); } catch (e) { variantenBestand = {}; }
-        const effectiveLagerbestand = (artikelData.hat_varianten && Object.keys(variantenBestand).length > 0)
-          ? Object.values(variantenBestand).reduce((sum, v) => sum + (v?.bestand || 0), 0)
-          : (artikelData.lagerbestand || 0);
+        let effectiveLagerbestand;
+        if (artikelData.hat_varianten && item.varianten_key) {
+          const v = variantenBestand[item.varianten_key];
+          effectiveLagerbestand = (v && typeof v === 'object') ? (v.bestand || 0)
+            : (typeof v === 'number' ? v : 0);
+        } else if (artikelData.hat_varianten && Object.keys(variantenBestand).length > 0) {
+          effectiveLagerbestand = Object.values(variantenBestand).reduce((sum, v) => sum + (v?.bestand || 0), 0);
+        } else {
+          effectiveLagerbestand = (artikelData.lagerbestand || 0);
+        }
 
         if (artikelData.lager_tracking && effectiveLagerbestand < item.menge) {
           throw new Error(`Nicht genügend Lagerbestand für "${artikelData.name}" (verfügbar: ${effectiveLagerbestand}, benötigt: ${item.menge})`);
@@ -350,10 +358,10 @@ router.post('/', async (req, res) => {
       for (const item of artikelDetails) {
         if (!item.artikel_id || !item.lager_tracking) continue;
         if (item.hat_varianten) {
-          // Varianten-Bestand liegt pro Größe im varianten_bestand-JSON. Nur sicher
-          // dekrementierbar, wenn die verkaufte Größe im Payload mitkommt
-          // (item.variante/item.groesse). Fehlt sie → kein Abzug (kein Raten).
-          const varKey = item.variante || item.groesse || item.varianten_wahl || null;
+          // Varianten-Bestand liegt pro Größe/Farbe im varianten_bestand-JSON, indiziert
+          // mit dem Key `${groesse}|${farbe}|` (identisch zu ArtikelVerwaltung). Die Kasse
+          // schickt diesen Key als item.varianten_key mit. Fehlt er → kein Abzug (kein Raten).
+          const varKey = item.varianten_key || null;
           if (!varKey) continue;
           let vb = {};
           try { vb = JSON.parse(item.varianten_bestand || '{}'); } catch (e) { continue; }
