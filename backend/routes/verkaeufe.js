@@ -346,18 +346,37 @@ router.post('/', async (req, res) => {
         }
       }
 
-      // Lagerbestand dekrementieren (nur echte, bestandsgeführte Artikel ohne Varianten;
-      // Varianten-Bestand liegt pro Größe in varianten_bestand-JSON → hier nicht angefasst)
+      // Lagerbestand dekrementieren.
       for (const item of artikelDetails) {
-        if (item.artikel_id && item.lager_tracking && !item.hat_varianten) {
+        if (!item.artikel_id || !item.lager_tracking) continue;
+        if (item.hat_varianten) {
+          // Varianten-Bestand liegt pro Größe im varianten_bestand-JSON. Nur sicher
+          // dekrementierbar, wenn die verkaufte Größe im Payload mitkommt
+          // (item.variante/item.groesse). Fehlt sie → kein Abzug (kein Raten).
+          const varKey = item.variante || item.groesse || item.varianten_wahl || null;
+          if (!varKey) continue;
+          let vb = {};
+          try { vb = JSON.parse(item.varianten_bestand || '{}'); } catch (e) { continue; }
+          if (vb[varKey] && typeof vb[varKey] === 'object') {
+            vb[varKey].bestand = Math.max(0, (vb[varKey].bestand || 0) - item.menge);
+          } else if (typeof vb[varKey] === 'number') {
+            vb[varKey] = Math.max(0, vb[varKey] - item.menge);
+          } else {
+            continue; // unbekannte Variante → nicht anfassen
+          }
+          await new Promise((resolve, reject) => {
+            connection.query(
+              `UPDATE artikel SET varianten_bestand = ? WHERE artikel_id = ?`,
+              [JSON.stringify(vb), item.artikel_id],
+              (error, results) => error ? reject(error) : resolve(results)
+            );
+          });
+        } else {
           await new Promise((resolve, reject) => {
             connection.query(
               `UPDATE artikel SET lagerbestand = lagerbestand - ? WHERE artikel_id = ?`,
               [item.menge, item.artikel_id],
-              (error, results) => {
-                if (error) return reject(error);
-                resolve(results);
-              }
+              (error, results) => error ? reject(error) : resolve(results)
             );
           });
         }

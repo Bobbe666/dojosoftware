@@ -227,9 +227,11 @@ router.post('/register-dojo', async (req, res) => {
       logger.info(`Verbandsmitglied ${verbandsMitglieder[0].id} automatisch mit Dojo ${dojo_id} verknüpft`);
     }
 
-    // ===== 4. ERSTELLE INITIALE DATEN =====
-    // HINWEIS: Für lokale DB auskommentiert, da Stile/Gürtel/Tarife global sind
-    // await initializeDojoDefaults(connection, dojo_id);
+    // ===== 4. KEINE INITIALEN DATEN (Policy) =====
+    // Neue Dojos/Subdomains starten KOMPLETT LEER — keine Default-Stile/Gürtel/Tarife.
+    // Der Inhaber legt Inhalte selbst an (dojo-gescoped). Der frühere Seed
+    // (initializeDojoDefaults) wurde entfernt: er nutzte nicht-existente Tabellen
+    // (gurte, zahlungszyklen) + falsche tarife-Spalten (preis/laufzeit_typ).
 
     // ===== 5. AUDIT-LOG =====
     const [subscription] = await connection.query(
@@ -363,76 +365,6 @@ router.post('/register-dojo', async (req, res) => {
   }
 });
 
-// ============================================
-// 3. HILFSFUNKTION: Initiale Daten f\u00fcr neues Dojo
-// ============================================
-async function initializeDojoDefaults(connection, dojo_id) {
-  logger.debug('📦 Erstelle Standard-Daten f\u00fcr Dojo ${dojo_id}...');
-
-  // --- STANDARD-STILE ---
-  const defaultStile = [
-    'Karate',
-    'Judo',
-    'Taekwondo',
-    'Aikido',
-    'Kung Fu',
-    'Kickboxen',
-    'Brazilian Jiu-Jitsu',
-    'Krav Maga'
-  ];
-
-  for (const stil of defaultStile) {
-    await connection.query(
-      'INSERT INTO stile (name, dojo_id) VALUES (?, ?)',
-      [stil, dojo_id]
-    );
-  }
-
-  // --- STANDARD-G\u00dcRTEL (Karate-System) ---
-  const defaultGurte = [
-    { name: '9. Kyu (Wei\u00dfgurt)', farbe: 'Wei\u00df', reihenfolge: 1 },
-    { name: '8. Kyu (Gelbgurt)', farbe: 'Gelb', reihenfolge: 2 },
-    { name: '7. Kyu (Orangegurt)', farbe: 'Orange', reihenfolge: 3 },
-    { name: '6. Kyu (Gr\u00fcngurt)', farbe: 'Gr\u00fcn', reihenfolge: 4 },
-    { name: '5. Kyu (Blaugurt)', farbe: 'Blau', reihenfolge: 5 },
-    { name: '4. Kyu (Brauner Gurt 1)', farbe: 'Braun', reihenfolge: 6 },
-    { name: '3. Kyu (Brauner Gurt 2)', farbe: 'Braun', reihenfolge: 7 },
-    { name: '2. Kyu (Brauner Gurt 3)', farbe: 'Braun', reihenfolge: 8 },
-    { name: '1. Kyu (Brauner Gurt 4)', farbe: 'Braun', reihenfolge: 9 },
-    { name: '1. Dan (Schwarzgurt)', farbe: 'Schwarz', reihenfolge: 10 },
-    { name: '2. Dan (Schwarzgurt)', farbe: 'Schwarz', reihenfolge: 11 },
-    { name: '3. Dan (Schwarzgurt)', farbe: 'Schwarz', reihenfolge: 12 }
-  ];
-
-  for (const gurt of defaultGurte) {
-    await connection.query(
-      'INSERT INTO gurte (name, farbe, reihenfolge, dojo_id) VALUES (?, ?, ?, ?)',
-      [gurt.name, gurt.farbe, gurt.reihenfolge, dojo_id]
-    );
-  }
-
-  // --- STANDARD-TARIFE ---
-  await connection.query(
-    `INSERT INTO tarife (dojo_id, name, preis, laufzeit_typ, beschreibung) VALUES
-     (?, 'Monatsbeitrag Erwachsene', 50.00, 'monatlich', 'Standardbeitrag f\u00fcr erwachsene Mitglieder'),
-     (?, 'Monatsbeitrag Kinder', 35.00, 'monatlich', 'Erm\u00e4\u00dfigter Beitrag f\u00fcr Kinder bis 14 Jahre'),
-     (?, 'Monatsbeitrag Jugend', 40.00, 'monatlich', 'Beitrag f\u00fcr Jugendliche 14-18 Jahre'),
-     (?, '10er-Karte', 100.00, 'einmalig', 'Flexibles Training - 10 Einheiten g\u00fcltig 3 Monate')`,
-    [dojo_id, dojo_id, dojo_id, dojo_id]
-  );
-
-  // --- STANDARD-ZAHLUNGSZYKLEN ---
-  await connection.query(
-    `INSERT INTO zahlungszyklen (dojo_id, name, intervall) VALUES
-     (?, 'Monatlich', 'monatlich'),
-     (?, 'Viertelj\u00e4hrlich', 'quartalsweise'),
-     (?, 'Halbj\u00e4hrlich', 'halbjaehrlich'),
-     (?, 'J\u00e4hrlich', 'jaehrlich')`,
-    [dojo_id, dojo_id, dojo_id, dojo_id]
-  );
-
-  logger.info('Standard-Daten erstellt f\u00fcr Dojo ${dojo_id}');
-}
 
 // ============================================
 // 4. GET PLAN DETAILS (f\u00fcr Pricing-Page)

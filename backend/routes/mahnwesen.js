@@ -146,9 +146,11 @@ router.post("/mahnungen", (req, res) => {
     const secureDojoId = getSecureDojoId(req);
 
     // Prüfe ob Beitrag existiert, nicht bezahlt ist und zum richtigen Dojo gehört
-    const checkQuery = secureDojoId
-        ? `SELECT bezahlt FROM beitraege WHERE beitrag_id = ? AND dojo_id = ?`
-        : `SELECT bezahlt FROM beitraege WHERE beitrag_id = ?`;
+    const checkSelect = `SELECT b.bezahlt, b.mitglied_id, b.betrag, b.dojo_id, b.zahlungsdatum,
+             CONCAT(m.vorname, ' ', m.nachname) AS schuldner_name
+             FROM beitraege b JOIN mitglieder m ON m.mitglied_id = b.mitglied_id
+             WHERE b.beitrag_id = ?`;
+    const checkQuery = secureDojoId ? `${checkSelect} AND b.dojo_id = ?` : checkSelect;
     const checkParams = secureDojoId ? [beitrag_id, secureDojoId] : [beitrag_id];
 
     db.query(checkQuery, checkParams, (checkErr, checkResults) => {
@@ -165,14 +167,22 @@ router.post("/mahnungen", (req, res) => {
             return res.status(400).json({ error: 'Beitrag ist bereits bezahlt' });
         }
 
-        // Erstelle Mahnung
+        // Erstelle Mahnung (reales mahnungen-Schema: beitrag_id via Migration ergänzt)
+        const b = checkResults[0];
         const query = `
-            INSERT INTO mahnungen (beitrag_id, mahnstufe, mahndatum, mahngebuehr, versandt, versand_art)
-            VALUES (?, ?, CURDATE(), ?, 0, ?)
+            INSERT INTO mahnungen
+              (beitrag_id, mitglied_id, dojo_id, schuldner_name, offener_betrag,
+               faelligkeitsdatum, mahnstufe, mahngebuehr, versandt_per, erstellt_am)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         `;
 
         const params = [
             beitrag_id,
+            b.mitglied_id,
+            b.dojo_id,
+            b.schuldner_name,
+            b.betrag,
+            b.zahlungsdatum,
             mahnstufe,
             mahngebuehr || 0,
             versand_art || 'email'
@@ -403,13 +413,13 @@ router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
                 m.mitglied_id,
                 m.vorname,
                 m.nachname,
-                m.anrede,
+                CASE WHEN m.geschlecht='w' THEN 'Frau' WHEN m.geschlecht='m' THEN 'Herr' ELSE '' END AS anrede,
                 m.strasse,
                 m.hausnummer,
                 m.plz,
                 m.ort,
                 m.email,
-                m.mitgliedsnummer
+                m.mitglied_id AS mitgliedsnummer
             FROM mahnungen mah
             JOIN beitraege b ON mah.beitrag_id = b.beitrag_id
             JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
@@ -469,7 +479,7 @@ router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
                             mahnung: {
                                 mahnstufe: mahnungData.mahnstufe,
                                 mahngebuehr: mahnungData.mahngebuehr,
-                                mahndatum: mahnungData.mahndatum
+                                mahndatum: mahnungData.erstellt_am
                             },
                             dojo: dojo,
                             mahnstufeSettings: mahnstufeSettings
@@ -507,13 +517,13 @@ router.get("/beitraege/:beitrag_id/mahnung-vorschau/:mahnstufe", async (req, res
                 m.mitglied_id,
                 m.vorname,
                 m.nachname,
-                m.anrede,
+                CASE WHEN m.geschlecht='w' THEN 'Frau' WHEN m.geschlecht='m' THEN 'Herr' ELSE '' END AS anrede,
                 m.strasse,
                 m.hausnummer,
                 m.plz,
                 m.ort,
                 m.email,
-                m.mitgliedsnummer
+                m.mitglied_id AS mitgliedsnummer
             FROM beitraege b
             JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
             WHERE b.beitrag_id = ?
@@ -635,13 +645,13 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
                 m.mitglied_id,
                 m.vorname,
                 m.nachname,
-                m.anrede,
+                CASE WHEN m.geschlecht='w' THEN 'Frau' WHEN m.geschlecht='m' THEN 'Herr' ELSE '' END AS anrede,
                 m.strasse,
                 m.hausnummer,
                 m.plz,
                 m.ort,
                 m.email,
-                m.mitgliedsnummer
+                m.mitglied_id AS mitgliedsnummer
             FROM mahnungen mah
             JOIN beitraege b ON mah.beitrag_id = b.beitrag_id
             JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
@@ -709,7 +719,7 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
                             mahnung: {
                                 mahnstufe: mahnungData.mahnstufe,
                                 mahngebuehr: mahnungData.mahngebuehr,
-                                mahndatum: mahnungData.mahndatum
+                                mahndatum: mahnungData.erstellt_am
                             },
                             dojo: dojo
                         };
@@ -872,7 +882,7 @@ router.post("/mahnlauf", async (req, res) => {
                     b.dojo_id,
                     DATEDIFF(CURDATE(), b.zahlungsdatum) as tage_ueberfaellig,
                     COALESCE(MAX(mah.mahnstufe), 0) as aktuelle_mahnstufe,
-                    MAX(mah.mahndatum) as letzte_mahnung,
+                    MAX(mah.erstellt_am) as letzte_mahnung,
                     m.vorname,
                     m.nachname,
                     m.email
@@ -958,12 +968,14 @@ router.post("/mahnlauf", async (req, res) => {
                         } else {
                             // Erstelle echte Mahnung
                             const insertQuery = `
-                                INSERT INTO mahnungen (beitrag_id, mahnstufe, mahndatum, mahngebuehr, versandt, versand_art)
-                                VALUES (?, ?, CURDATE(), ?, 0, 'pending')
+                                INSERT INTO mahnungen
+                                  (beitrag_id, mitglied_id, dojo_id, schuldner_name, offener_betrag,
+                                   faelligkeitsdatum, mahnstufe, mahngebuehr, versandt_per, erstellt_am)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
                             `;
 
                             await new Promise((resolve, reject) => {
-                                db.query(insertQuery, [beitrag.beitrag_id, naechsteStufeNr, naechsteStufe.mahngebuehr], (err, result) => {
+                                db.query(insertQuery, [beitrag.beitrag_id, beitrag.mitglied_id, beitrag.dojo_id, `${beitrag.vorname} ${beitrag.nachname}`, beitrag.betrag, beitrag.zahlungsdatum, naechsteStufeNr, naechsteStufe.mahngebuehr], (err, result) => {
                                     if (err) reject(err);
                                     else resolve(result);
                                 });

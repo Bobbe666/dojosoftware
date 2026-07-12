@@ -292,6 +292,9 @@ router.post('/', (req, res) => {
   `;
   const checkParams = [jahr, jahr];
 
+  // Rechnungsnummer-Race: rechnungsnummer hat einen UNIQUE-Index. Bei parallelem POST
+  // schlägt der zweite INSERT mit ER_DUP_ENTRY fehl → Nummer neu zählen und erneut versuchen.
+  const attemptInsert = (triesLeft) => {
   db.query(checkQuery, checkParams, (checkErr, checkResults) => {
     if (checkErr) {
       logger.error('Fehler beim Prüfen der Rechnungsnummer:', { error: checkErr });
@@ -319,6 +322,9 @@ router.post('/', (req, res) => {
 
     db.query(insertQuery, values, (insertErr, insertResult) => {
       if (insertErr) {
+        if (insertErr.code === 'ER_DUP_ENTRY' && triesLeft > 0) {
+          return attemptInsert(triesLeft - 1);
+        }
         logger.error('Fehler beim Erstellen der Rechnung:', { error: insertErr });
         return res.status(500).json({ success: false, error: insertErr.message });
       }
@@ -382,6 +388,8 @@ router.post('/', (req, res) => {
         });
     });
   }); // checkQuery
+  }; // attemptInsert
+  attemptInsert(5);
   }); // dojoCheckQuery
 });
 

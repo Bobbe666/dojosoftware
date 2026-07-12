@@ -92,8 +92,9 @@ router.delete('/:id', async (req, res) => {
   try {
     const dojoId = getSecureDojoId(req);
     if (!dojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt' });
-    const [tarife] = await pool.query('SELECT COUNT(*) as count FROM tarife WHERE laufzeit_id = ?', [req.params.id]);
-    if (tarife[0].count > 0) return res.status(400).json({ error: 'Laufzeit wird noch von Tarifen verwendet.' });
+    // Hinweis: laufzeiten wird von keiner Tabelle per FK referenziert (tarife hat kein laufzeit_id;
+    // andere Tabellen nutzen nur lose *_monate-Ints). Der frühere In-Use-Guard prüfte eine
+    // nicht existente Spalte (tarife.laufzeit_id) → warf immer 500. Löschen ist dojo-gescoped sicher.
     const [result] = await pool.query(
       'DELETE FROM laufzeiten WHERE laufzeit_id = ? AND dojo_id = ?',
       [req.params.id, dojoId]

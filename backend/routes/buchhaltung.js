@@ -2982,12 +2982,12 @@ const runAutoMatching = async (transaktionId, dojoId) => {
         if (mitgliedMatch && isEinnahme) {
           const beitraege = await new Promise((resolve) => {
             db.query(`
-              SELECT b.beitrag_id, b.betrag, b.monat, b.jahr,
-                     m.mitglieder_nr, m.vorname, m.nachname
+              SELECT b.beitrag_id, b.betrag, MONTH(b.zahlungsdatum) AS monat, YEAR(b.zahlungsdatum) AS jahr,
+                     m.magicline_customer_number AS mitglieder_nr, m.vorname, m.nachname
               FROM beitraege b
               JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
-              WHERE m.mitglieder_nr LIKE ? AND ABS(b.betrag - ?) < 1 AND b.bezahlt = 0
-              ORDER BY b.faelligkeit ASC
+              WHERE m.magicline_customer_number LIKE ? AND ABS(b.betrag - ?) < 1 AND b.bezahlt = 0
+              ORDER BY b.zahlungsdatum ASC
               LIMIT 1
             `, [`%${mitgliedMatch[1]}%`, betrag], (err, results) => {
               resolve(err ? [] : results);
@@ -3022,14 +3022,14 @@ const runAutoMatching = async (transaktionId, dojoId) => {
         for (const name of nameWords) {
           const mitglieder = await new Promise((resolve) => {
             db.query(`
-              SELECT b.beitrag_id, b.betrag, b.monat, b.jahr,
-                     m.mitglieder_nr, m.vorname, m.nachname
+              SELECT b.beitrag_id, b.betrag, MONTH(b.zahlungsdatum) AS monat, YEAR(b.zahlungsdatum) AS jahr,
+                     m.magicline_customer_number AS mitglieder_nr, m.vorname, m.nachname
               FROM beitraege b
               JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
               WHERE (m.nachname LIKE ? OR m.vorname LIKE ?)
                 AND ABS(b.betrag - ?) < 1
                 AND b.bezahlt = 0
-              ORDER BY b.faelligkeit ASC
+              ORDER BY b.zahlungsdatum ASC
               LIMIT 1
             `, [`%${name}%`, `%${name}%`, betrag], (err, results) => {
               resolve(err ? [] : results);
