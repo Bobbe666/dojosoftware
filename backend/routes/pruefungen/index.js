@@ -25,6 +25,7 @@ const timerRoutes = require('./timer');
 const db = require('../../db');
 const logger = require('../../utils/logger');
 const { ERROR_MESSAGES, HTTP_STATUS } = require('../../utils/constants');
+const { getSecureDojoId } = require('../../utils/dojo-filter-helper');
 
 // ============================================================================
 // Sub-Router einbinden (WICHTIG: Reihenfolge beachten!)
@@ -66,7 +67,14 @@ router.get('/termine/:datum/pdf', (req, res) => {
   const { datum } = req.params;
   const { stil_id, dojo_id } = req.query;
 
-  logger.debug('PDF-Anfrage:', { datum, stil_id, dojo_id });
+  // 🔒 Dojo-ID aus Token erzwingen (Super-Admin darf via Query wählen)
+  const secureDojoId = getSecureDojoId(req);
+  const effectiveDojoId = secureDojoId || dojo_id;
+  if (!effectiveDojoId) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'dojo_id ist erforderlich' });
+  }
+
+  logger.debug('PDF-Anfrage:', { datum, stil_id, dojo_id: effectiveDojoId });
 
   const query = `
     SELECT
@@ -98,7 +106,7 @@ router.get('/termine/:datum/pdf', (req, res) => {
     ORDER BY m.nachname, m.vorname
   `;
 
-  db.query(query, [datum, stil_id, dojo_id], (err, results) => {
+  db.query(query, [datum, stil_id, effectiveDojoId], (err, results) => {
     if (err) {
       logger.error('Fehler beim Laden der Prüfungsteilnehmer:', { error: err });
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({

@@ -475,7 +475,8 @@ async function processUpload(req, res) {
     if (secureDojoId) {
       const pool = db.promise();
       const [zahllaeufe] = await pool.query(
-        `SELECT zahllauf_id, buchungsnummer, betrag, geplanter_einzug FROM zahllaeufe WHERE status = 'abgeschlossen' ORDER BY geplanter_einzug DESC LIMIT 50`
+        `SELECT zahllauf_id, buchungsnummer, betrag, geplanter_einzug FROM zahllaeufe WHERE status = 'abgeschlossen' AND dojo_id = ? ORDER BY geplanter_einzug DESC LIMIT 50`,
+        [secureDojoId]
       );
       const [kassenbuchEintraege] = await pool.query(
         `SELECT geschaeft_datum, betrag_cent, beschreibung FROM kassenbuch WHERE dojo_id = ? AND geschaeft_datum >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)`,

@@ -203,14 +203,18 @@ router.post("/mahnungen", (req, res) => {
 // API: Mahnung als versendet markieren
 router.put("/mahnungen/:mahnung_id/versandt", (req, res) => {
     const { mahnung_id } = req.params;
+    // 🔒 Tenant-Scope: nur eigene Mahnung (Super-Admin = null → alle)
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `
-        UPDATE mahnungen
-        SET versandt = 1
-        WHERE mahnung_id = ?
-    `;
+    const query = secureDojoId
+        ? `UPDATE mahnungen mah
+           JOIN beitraege b ON mah.beitrag_id = b.beitrag_id
+           SET mah.versandt = 1
+           WHERE mah.mahnung_id = ? AND b.dojo_id = ?`
+        : `UPDATE mahnungen SET versandt = 1 WHERE mahnung_id = ?`;
+    const params = secureDojoId ? [mahnung_id, secureDojoId] : [mahnung_id];
 
-    db.query(query, [mahnung_id], (err, result) => {
+    db.query(query, params, (err, result) => {
         if (err) {
             logger.error('Fehler beim Aktualisieren der Mahnung:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
@@ -395,6 +399,7 @@ router.post("/mahnstufen-einstellungen", (req, res) => {
 // API: Mahnung als PDF generieren
 router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
     const { mahnung_id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
     try {
         // Hole Mahnung mit allen Details
@@ -433,6 +438,11 @@ router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
 
             const mahnungData = mahnungResults[0];
 
+            // 🔒 Tenant-Check: nur eigene Dojo-Mahnung (Super-Admin = null → voller Zugriff)
+            if (secureDojoId && Number(mahnungData.dojo_id) !== Number(secureDojoId)) {
+                return res.status(404).json({ error: 'Mahnung nicht gefunden' });
+            }
+
             // Hole Dojo-Daten
             const dojoQuery = `SELECT * FROM dojo WHERE id = ?`;
             db.query(dojoQuery, [mahnungData.dojo_id || 1], async (dojoErr, dojoResults) => {
@@ -443,9 +453,9 @@ router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
 
                 const dojo = dojoResults[0] || {};
 
-                // Hole Mahnstufen-Einstellungen
-                const stufenQuery = `SELECT * FROM mahnstufen_einstellungen WHERE stufe = ?`;
-                db.query(stufenQuery, [mahnungData.mahnstufe], async (stufenErr, stufenResults) => {
+                // Hole Mahnstufen-Einstellungen (dojo-scoped → kein Config-Bleed)
+                const stufenQuery = `SELECT * FROM mahnstufen_einstellungen WHERE stufe = ? AND dojo_id = ?`;
+                db.query(stufenQuery, [mahnungData.mahnstufe, mahnungData.dojo_id || 1], async (stufenErr, stufenResults) => {
                     const mahnstufeSettings = stufenResults?.[0] || {};
 
                     try {
@@ -497,6 +507,7 @@ router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
 // API: Vorschau-PDF fuer Beitrag generieren (ohne Mahnung zu erstellen)
 router.get("/beitraege/:beitrag_id/mahnung-vorschau/:mahnstufe", async (req, res) => {
     const { beitrag_id, mahnstufe } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
     try {
         // Hole Beitrag mit Mitglied-Daten
@@ -525,14 +536,19 @@ router.get("/beitraege/:beitrag_id/mahnung-vorschau/:mahnstufe", async (req, res
 
             const beitragData = beitragResults[0];
 
-            // Hole Dojo und Mahnstufen-Einstellungen
+            // 🔒 Tenant-Check: nur eigenen Dojo-Beitrag (Super-Admin = null → voller Zugriff)
+            if (secureDojoId && Number(beitragData.dojo_id) !== Number(secureDojoId)) {
+                return res.status(404).json({ error: 'Beitrag nicht gefunden' });
+            }
+
+            // Hole Dojo und Mahnstufen-Einstellungen (dojo-scoped → kein Config-Bleed)
             const dojoQuery = `SELECT * FROM dojo WHERE id = ?`;
-            const stufenQuery = `SELECT * FROM mahnstufen_einstellungen WHERE stufe = ?`;
+            const stufenQuery = `SELECT * FROM mahnstufen_einstellungen WHERE stufe = ? AND dojo_id = ?`;
 
             db.query(dojoQuery, [beitragData.dojo_id || 1], (dojoErr, dojoResults) => {
                 const dojo = dojoResults?.[0] || {};
 
-                db.query(stufenQuery, [mahnstufe], async (stufenErr, stufenResults) => {
+                db.query(stufenQuery, [mahnstufe, beitragData.dojo_id || 1], async (stufenErr, stufenResults) => {
                     const mahnstufeSettings = stufenResults?.[0] || {};
                     const mahngebuehr = mahnstufeSettings.mahngebuehr || 0;
 
@@ -615,6 +631,7 @@ async function createMailTransporter() {
 router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
     const { mahnung_id } = req.params;
     const { mitPdf } = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
     try {
         // Hole Mahnung mit allen Details
@@ -648,6 +665,11 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
 
             const mahnungData = mahnungResults[0];
 
+            // 🔒 Tenant-Check: nur eigene Dojo-Mahnung (Super-Admin = null → voller Zugriff)
+            if (secureDojoId && Number(mahnungData.dojo_id) !== Number(secureDojoId)) {
+                return res.status(404).json({ error: 'Mahnung nicht gefunden' });
+            }
+
             if (!mahnungData.email) {
                 return res.status(400).json({ error: 'Mitglied hat keine E-Mail-Adresse' });
             }
@@ -666,14 +688,14 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
                 // Kein verwertbarer Zeitstempel: erneuten Versand erlauben
             }
 
-            // Hole Dojo und Mahnstufen-Einstellungen
+            // Hole Dojo und Mahnstufen-Einstellungen (dojo-scoped → kein Config-Bleed)
             const dojoQuery = `SELECT * FROM dojo WHERE id = ?`;
-            const stufenQuery = `SELECT * FROM mahnstufen_einstellungen WHERE stufe = ?`;
+            const stufenQuery = `SELECT * FROM mahnstufen_einstellungen WHERE stufe = ? AND dojo_id = ?`;
 
             db.query(dojoQuery, [mahnungData.dojo_id || 1], async (dojoErr, dojoResults) => {
                 const dojo = dojoResults?.[0] || {};
 
-                db.query(stufenQuery, [mahnungData.mahnstufe], async (stufenErr, stufenResults) => {
+                db.query(stufenQuery, [mahnungData.mahnstufe, mahnungData.dojo_id || 1], async (stufenErr, stufenResults) => {
                     const mahnstufeSettings = stufenResults?.[0] || {};
 
                     try {

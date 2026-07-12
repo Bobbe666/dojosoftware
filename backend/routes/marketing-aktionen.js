@@ -13,6 +13,7 @@ const path = require('path');
 const fs = require('fs');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const { requireFeature } = require('../middleware/featureAccess');
+const { authenticateToken } = require('../middleware/auth');
 
 // =============================================================================
 // MULTER CONFIGURATION für Media Uploads
@@ -59,7 +60,11 @@ const getDojoId = (req) => {
 // =============================================================================
 router.use((req, res, next) => {
   if (req.path === '/accounts/callback') return next();
-  requireFeature('social_media')(req, res, next);
+  // 🔒 Erst echte Authentifizierung, dann Feature-Gate
+  authenticateToken(req, res, (authErr) => {
+    if (authErr) return next(authErr);
+    requireFeature('social_media')(req, res, next);
+  });
 });
 
 // =============================================================================

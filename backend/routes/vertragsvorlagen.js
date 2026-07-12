@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { generateVertragsvorlagePdf, replacePlaceholders } = require('../utils/vertragsvorlagenPdfGenerator');
 const { buildContractMap, resolveContractPlaceholders, insertDojoLogo } = require('../utils/vertragPlaceholders');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -305,6 +306,12 @@ router.get('/:id/preview', async (req, res) => {
     }
 
     const template = vorlagen[0];
+
+    // 🔒 SICHERHEIT: Vorlage muss zum eigenen Dojo gehören (Cross-Tenant-Schutz)
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId && Number(template.dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Vorlage nicht gefunden' });
+    }
 
     // Versuche, echte Daten zu laden (erstes Mitglied mit Vertrag für dieses Dojo)
     let sampleData;
@@ -714,12 +721,23 @@ router.get('/:id/generate-pdf', async (req, res) => {
     }
     const template = vorlagen[0];
 
+    // 🔒 SICHERHEIT: Vorlage muss zum eigenen Dojo gehören (Cross-Tenant-Schutz)
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId && Number(template.dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Vorlage nicht gefunden' });
+    }
+
     // Mitgliedsdaten laden
     const mitglieder = await queryAsync('SELECT * FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
     if (mitglieder.length === 0) {
       return res.status(404).json({ error: 'Mitglied nicht gefunden' });
     }
     const mitglied = mitglieder[0];
+
+    // 🔒 SICHERHEIT: Mitglied muss zum eigenen Dojo gehören (frei wählbare mitglied_id)
+    if (secureDojoId && Number(mitglied.dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
 
     // Dojo-Daten laden
     const dojos = await queryAsync('SELECT * FROM dojo WHERE id = ?', [mitglied.dojo_id]);
@@ -1005,6 +1023,12 @@ router.get('/:id/generate-pdf-tiptap', async (req, res) => {
     if (vorlagen.length === 0) return res.status(404).json({ error: 'Vorlage nicht gefunden' });
     const template = vorlagen[0];
 
+    // 🔒 SICHERHEIT: Vorlage muss zum eigenen Dojo gehören (Cross-Tenant-Schutz)
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId && Number(template.dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Vorlage nicht gefunden' });
+    }
+
     if (!template.tiptap_html) {
       return res.status(400).json({ error: 'Diese Vorlage hat keinen TipTap-Inhalt' });
     }
@@ -1018,6 +1042,10 @@ router.get('/:id/generate-pdf-tiptap', async (req, res) => {
     if (mitglied_id) {
       const mitglieder = await queryAsync('SELECT * FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
       if (mitglieder.length > 0) mitglied = mitglieder[0];
+      // 🔒 SICHERHEIT: Mitglied muss zum eigenen Dojo gehören (frei wählbare mitglied_id)
+      if (mitglied && secureDojoId && Number(mitglied.dojo_id) !== Number(secureDojoId)) {
+        return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+      }
     }
 
     // Vertrag (optional)

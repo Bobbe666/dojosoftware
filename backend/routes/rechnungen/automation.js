@@ -8,10 +8,12 @@ const db = require('../../db');
 const logger = require('../../utils/logger');
 const { createRechnungForBeitrag } = require('../../utils/rechnungAutomation');
 const { createRechnungenFromBeitraege, syncRechnungStatus } = require('../../services/rechnungAutomationFromBeitraege');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 
 // POST /generate-monthly - Monatliche Rechnungen für alle 'invoice' Verträge erstellen
 router.post('/generate-monthly', async (req, res) => {
   const { monat, jahr } = req.body;
+  const secureDojoId = getSecureDojoId(req);
 
   if (!monat || !jahr) {
     return res.status(400).json({ success: false, error: 'Monat und Jahr erforderlich' });
@@ -19,14 +21,18 @@ router.post('/generate-monthly', async (req, res) => {
 
   try {
     // Alle aktiven Verträge mit payment_method='invoice' laden
+    // 🔒 Tenant-Scope: nur eigenes Dojo (Super-Admin = null → alle Dojos)
     const vertraegeQuery = `
       SELECT v.id, v.mitglied_id, v.payment_method
       FROM vertraege v
+      JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
       WHERE v.status = 'aktiv'
         AND v.payment_method = 'invoice'
+        ${secureDojoId ? 'AND m.dojo_id = ?' : ''}
     `;
+    const vertraegeParams = secureDojoId ? [secureDojoId] : [];
 
-    db.query(vertraegeQuery, async (err, vertraege) => {
+    db.query(vertraegeQuery, vertraegeParams, async (err, vertraege) => {
       if (err) {
         logger.error('Fehler beim Laden der Verträge:', { error: err });
         return res.status(500).json({ success: false, error: err.message });
@@ -77,8 +83,9 @@ router.post('/generate-monthly', async (req, res) => {
 // POST /auto-create - Erstellt Rechnungen für offene Lastschrift-Beiträge
 router.post('/auto-create', async (req, res) => {
   try {
-    const { dojo_id } = req.body;
-    const result = await createRechnungenFromBeitraege(dojo_id);
+    // 🔒 dojo_id NIE aus dem Body – immer aus dem JWT (Super-Admin = null → alle Dojos)
+    const secureDojoId = getSecureDojoId(req);
+    const result = await createRechnungenFromBeitraege(secureDojoId);
     res.json({ success: true, ...result });
   } catch (error) {
     logger.error('Fehler bei automatischer Rechnungserstellung:', { error: error });
@@ -90,6 +97,19 @@ router.post('/auto-create', async (req, res) => {
 router.post('/:id/sync-status', async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
+    // 🔒 Ownership prüfen: Rechnung muss zum eigenen Dojo gehören
+    const [own] = await db.promise().query(
+      `SELECT COALESCE(m.dojo_id, r.dojo_id) AS resolved_dojo_id
+       FROM rechnungen r
+       LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+       WHERE r.rechnung_id = ?`,
+      [id]
+    );
+    if (own.length === 0) return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden' });
+    if (secureDojoId && Number(own[0].resolved_dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden' });
+    }
     const result = await syncRechnungStatus(id);
     res.json({ success: true, ...result });
   } catch (error) {

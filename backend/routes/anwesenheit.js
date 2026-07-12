@@ -98,6 +98,21 @@ router.get("/kurs/:stundenplan_id/:datum", async (req, res) => {
             [stundenplan_id]
         );
 
+        // 🔒 SICHERHEIT: Stundenplan/Kurs muss zum eigenen Dojo des Anfragenden gehören
+        // (sonst könnte man fremde Kurs-Mitgliederlisten über beliebige stundenplan_id abrufen)
+        if (dojoId && !allowWithoutDojo) {
+            const [[kursDojo]] = await pool.query(
+                'SELECT k.dojo_id FROM stundenplan s LEFT JOIN kurse k ON s.kurs_id = k.kurs_id WHERE s.stundenplan_id = ?',
+                [stundenplan_id]
+            );
+            const effectiveDojo = (spInfo && spInfo.typ === 'sonder')
+                ? spInfo.sonder_dojo_id
+                : (kursDojo ? kursDojo.dojo_id : null);
+            if (effectiveDojo && Number(effectiveDojo) !== Number(dojoId)) {
+                return res.status(403).json({ success: false, error: 'Kein Zugriff auf diesen Kurs' });
+            }
+        }
+
         if (spInfo && spInfo.typ === 'sonder') {
             const sonderDojoId = spInfo.sonder_dojo_id;
             if (!sonderDojoId && !allowWithoutDojo) {
@@ -780,7 +795,7 @@ router.get("/:mitglied_id", (req, res) => {
 });
 
 // Anwesenheit eintragen (erweitert für stundenplan_id)
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
     // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
     const dojoId = getSecureDojoId(req);
@@ -794,9 +809,17 @@ router.post("/", (req, res) => {
 
     const mitglied_id_num = parseInt(mitglied_id, 10);
     const stundenplan_id_num = stundenplan_id ? parseInt(stundenplan_id, 10) : null;
-    
+
     if (isNaN(mitglied_id_num)) {
         return res.status(400).json({ error: "Ungültige Mitglieds-ID." });
+    }
+
+    // 🔒 SICHERHEIT: Mitglied muss zum eigenen Dojo gehören (Write-IDOR-Schutz)
+    if (dojoId) {
+        const [ownRows] = await db.promise().query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitglied_id_num]);
+        if (ownRows.length === 0 || Number(ownRows[0].dojo_id) !== Number(dojoId)) {
+            return res.status(404).json({ error: "Mitglied nicht gefunden" });
+        }
     }
 
     // Mit stundenplan_id für bessere Kurs-Zuordnung
@@ -848,8 +871,10 @@ router.post("/", (req, res) => {
 });
 
 // 🆕 NEU: Batch-Update für mehrere Anwesenheiten
-router.post("/batch", (req, res) => {
+router.post("/batch", async (req, res) => {
     const { eintraege, stundenplan_id, datum } = req.body;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     if (!Array.isArray(eintraege) || eintraege.length === 0) {
         return res.status(400).json({ error: "Keine Einträge übermittelt." });
@@ -857,6 +882,33 @@ router.post("/batch", (req, res) => {
 
     if (!stundenplan_id || !datum) {
         return res.status(400).json({ error: "stundenplan_id und datum sind erforderlich." });
+    }
+
+    // 🔒 SICHERHEIT: Stundenplan/Kurs UND alle Mitglieder müssen zum eigenen Dojo gehören (Write-IDOR)
+    if (dojoId) {
+        try {
+            const pool = db.promise();
+            const [[kursDojo]] = await pool.query(
+                'SELECT k.dojo_id FROM stundenplan s LEFT JOIN kurse k ON s.kurs_id = k.kurs_id WHERE s.stundenplan_id = ?',
+                [parseInt(stundenplan_id, 10)]
+            );
+            if (kursDojo && kursDojo.dojo_id && Number(kursDojo.dojo_id) !== Number(dojoId)) {
+                return res.status(403).json({ error: "Kein Zugriff auf diesen Kurs" });
+            }
+            const memberIds = eintraege.map(e => parseInt(e.mitglied_id, 10)).filter(Boolean);
+            if (memberIds.length > 0) {
+                const [validRows] = await pool.query(
+                    'SELECT mitglied_id FROM mitglieder WHERE mitglied_id IN (?) AND dojo_id = ?',
+                    [memberIds, dojoId]
+                );
+                if (validRows.length !== memberIds.length) {
+                    return res.status(403).json({ error: "Mindestens ein Mitglied gehört nicht zum eigenen Dojo" });
+                }
+            }
+        } catch (checkErr) {
+            logger.error('Fehler beim Ownership-Check (batch):', { error: checkErr });
+            return res.status(500).json({ error: "Fehler bei der Sicherheitsprüfung" });
+        }
     }
 
     // Transaction starten
@@ -930,9 +982,14 @@ router.delete("/:id", (req, res) => {
         return res.status(400).json({ error: "Ungültige Anwesenheits-ID" });
     }
 
-    const query = "DELETE FROM anwesenheit WHERE id = ?";
+    // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Write-IDOR-Schutz)
+    const dojoId = getSecureDojoId(req);
+    const query = dojoId
+        ? "DELETE a FROM anwesenheit a JOIN mitglieder m ON m.mitglied_id = a.mitglied_id WHERE a.id = ? AND m.dojo_id = ?"
+        : "DELETE FROM anwesenheit WHERE id = ?";
+    const params = dojoId ? [id, dojoId] : [id];
 
-    db.query(query, [id], (err, result) => {
+    db.query(query, params, (err, result) => {
         if (err) {
             logger.error('Fehler beim Löschen der Anwesenheit:', { error: err });
             return res.status(500).json({ error: "Fehler beim Löschen der Anwesenheit", details: err.message });

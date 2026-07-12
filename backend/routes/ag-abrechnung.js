@@ -46,28 +46,47 @@ router.post('/configs', authenticateToken, async (req, res) => {
 
 router.put('/configs/:id', authenticateToken, async (req, res) => {
   try {
+    const secureDojoId = getSecureDojoId(req);
     const b = req.body;
     const felder = ['mitglied_id', 'bezeichnung', 'artikelnummer', 'wochentag', 'stunden_pro_tag', 'preis_pro_stunde', 'mwst_satz', 'bundesland', 'empfaenger_email', 'auto_versand', 'aktiv', 'gueltig_ab', 'gueltig_bis'];
     const sets = [], params = [];
     for (const f of felder) if (b[f] !== undefined) { sets.push(`${f} = ?`); params.push(typeof b[f] === 'boolean' ? (b[f] ? 1 : 0) : b[f]); }
     if (!sets.length) return res.json({ success: true });
     params.push(req.params.id);
-    await pool.query(`UPDATE ag_abrechnung_config SET ${sets.join(', ')} WHERE id = ?`, params);
+    // 🔒 Tenant-Scope: nur eigene Config (Super-Admin = null → kein Filter)
+    let dojoClause = '';
+    if (secureDojoId) { dojoClause = ' AND dojo_id = ?'; params.push(secureDojoId); }
+    const [r] = await pool.query(`UPDATE ag_abrechnung_config SET ${sets.join(', ')} WHERE id = ?${dojoClause}`, params);
+    if (r.affectedRows === 0) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
     res.json({ success: true });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 router.delete('/configs/:id', authenticateToken, async (req, res) => {
-  try { await pool.query('DELETE FROM ag_abrechnung_config WHERE id = ?', [req.params.id]); res.json({ success: true }); }
+  try {
+    const secureDojoId = getSecureDojoId(req);
+    // 🔒 Tenant-Scope: nur eigene Config löschen
+    const [r] = await pool.query(
+      `DELETE FROM ag_abrechnung_config WHERE id = ?${secureDojoId ? ' AND dojo_id = ?' : ''}`,
+      secureDojoId ? [req.params.id, secureDojoId] : [req.params.id]
+    );
+    if (r.affectedRows === 0) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+    res.json({ success: true });
+  }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 // ── Vorschau der Unterrichtstage (ohne Speichern) ────────────────────────────
 router.get('/vorschau', authenticateToken, async (req, res) => {
   try {
+    const secureDojoId = getSecureDojoId(req);
     const { config_id, jahr, monat } = req.query;
     const [[config]] = await pool.query('SELECT * FROM ag_abrechnung_config WHERE id = ?', [config_id]);
     if (!config) return res.status(404).json({ success: false, error: 'Konfiguration nicht gefunden' });
+    // 🔒 Tenant-Check: Config muss zum eigenen Dojo gehören
+    if (secureDojoId && Number(config.dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ success: false, error: 'Konfiguration nicht gefunden' });
+    }
     const tage = await ag.berechneUnterrichtstage(pool, config, parseInt(jahr), parseInt(monat));
     res.json({ success: true, tage, anzahl: tage.length, betrag_netto: +(tage.length * config.stunden_pro_tag * config.preis_pro_stunde).toFixed(2) });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
@@ -93,9 +112,14 @@ router.get('/laeufe', authenticateToken, async (req, res) => {
 // Entwurf für config+jahr+monat anlegen (manuell)
 router.post('/entwurf', authenticateToken, async (req, res) => {
   try {
+    const secureDojoId = getSecureDojoId(req);
     const { config_id, jahr, monat } = req.body;
     const [[config]] = await pool.query('SELECT * FROM ag_abrechnung_config WHERE id = ?', [config_id]);
     if (!config) return res.status(404).json({ success: false, error: 'Konfiguration nicht gefunden' });
+    // 🔒 Tenant-Check: Config muss zum eigenen Dojo gehören
+    if (secureDojoId && Number(config.dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ success: false, error: 'Konfiguration nicht gefunden' });
+    }
     const lauf = await ag.erstelleEntwurf(pool, config, parseInt(jahr), parseInt(monat));
     res.json({ success: true, lauf });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
@@ -104,9 +128,19 @@ router.post('/entwurf', authenticateToken, async (req, res) => {
 // Tage eines Entwurfs anpassen (Variante B: Häkchenliste)
 router.put('/lauf/:id/tage', authenticateToken, async (req, res) => {
   try {
+    const secureDojoId = getSecureDojoId(req);
     const tage = Array.isArray(req.body.tage) ? req.body.tage : [];
-    await pool.query("UPDATE ag_abrechnung_lauf SET tage = ?, anzahl_tage = ? WHERE id = ? AND status = 'entwurf'",
-      [JSON.stringify(tage), tage.length, req.params.id]);
+    // 🔒 Tenant-Scope: nur Läufe eigener Configs (Super-Admin = null → kein Filter)
+    const dojoClause = secureDojoId
+      ? ' AND config_id IN (SELECT id FROM ag_abrechnung_config WHERE dojo_id = ?)'
+      : '';
+    const params = secureDojoId
+      ? [JSON.stringify(tage), tage.length, req.params.id, secureDojoId]
+      : [JSON.stringify(tage), tage.length, req.params.id];
+    const [r] = await pool.query(
+      `UPDATE ag_abrechnung_lauf SET tage = ?, anzahl_tage = ? WHERE id = ? AND status = 'entwurf'${dojoClause}`,
+      params);
+    if (r.affectedRows === 0) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
     res.json({ success: true, anzahl: tage.length });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -114,6 +148,17 @@ router.put('/lauf/:id/tage', authenticateToken, async (req, res) => {
 // Entwurf bestätigen → Rechnung erzeugen
 router.post('/lauf/:id/bestaetigen', authenticateToken, async (req, res) => {
   try {
+    const secureDojoId = getSecureDojoId(req);
+    // 🔒 Tenant-Check: Lauf muss zu einer Config des eigenen Dojos gehören (verhindert Fremd-Rechnung)
+    if (secureDojoId) {
+      const [[lauf]] = await pool.query(
+        `SELECT c.dojo_id FROM ag_abrechnung_lauf l JOIN ag_abrechnung_config c ON l.config_id = c.id WHERE l.id = ?`,
+        [parseInt(req.params.id)]
+      );
+      if (!lauf || Number(lauf.dojo_id) !== Number(secureDojoId)) {
+        return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+      }
+    }
     const r = await ag.erzeugeRechnung(pool, parseInt(req.params.id));
     res.json({ success: true, ...r });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }

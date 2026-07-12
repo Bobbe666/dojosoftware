@@ -4,7 +4,7 @@ const db = require("../db"); // MySQL-Datenbankanbindung importieren
 const auditLog = require("../services/auditLogService");
 const { generateInitialBeitraege, generateMissingBeitraege } = require('./vertraege/shared');
 const { generateMonthlyBeitraege } = require('../cron-jobs'); // für regenerate-all und regenerate/:id
-const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
@@ -215,6 +215,11 @@ router.delete("/:beitrag_id", (req, res) => {
  */
 router.post("/regenerate-all", async (req, res) => {
     try {
+        // 🔒 Systemweite Regenerierung (alle Dojos) nur für Super-Admins.
+        //    Dojo-Admins nutzen /regenerate/:vertrag_id für ihre eigenen Verträge.
+        if (!isSuperAdmin(req)) {
+            return res.status(403).json({ error: 'Nur für Super-Admins' });
+        }
         const result = await generateMonthlyBeitraege();
 
         auditLog.log({
@@ -248,6 +253,18 @@ router.post("/regenerate-all", async (req, res) => {
 router.post("/regenerate/:vertrag_id", async (req, res) => {
     try {
         const { vertrag_id } = req.params;
+        const secureDojoId = getSecureDojoId(req);
+
+        // 🔒 Tenant-Check: Vertrag muss zum eigenen Dojo gehören (Super-Admin = null → voller Zugriff)
+        if (secureDojoId) {
+            const ownRows = await queryAsync(
+                `SELECT m.dojo_id FROM vertraege v JOIN mitglieder m ON v.mitglied_id = m.mitglied_id WHERE v.id = ?`,
+                [parseInt(vertrag_id)]
+            );
+            if (ownRows.length === 0 || Number(ownRows[0].dojo_id) !== Number(secureDojoId)) {
+                return res.status(404).json({ error: 'Vertrag nicht gefunden' });
+            }
+        }
 
         const result = await generateMissingBeitraege(parseInt(vertrag_id));
 

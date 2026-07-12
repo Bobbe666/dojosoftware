@@ -140,6 +140,17 @@ router.post('/', async (req, res) => {
     // Beitrag, Rechnung und Verkauf zurücksetzen
     // Explizite beitrag_id hat Vorrang; sonst suchen wir den passenden bezahlten Lastschrift-Beitrag
     let reversedBeitragId = beitrag_id || null;
+    // 🔒 Tenant-Check: body-beitrag_id nur akzeptieren, wenn er zum eigenen Dojo gehört
+    //    (verhindert das Zurücksetzen fremder Zahlungen)
+    if (reversedBeitragId) {
+      const [ownRows] = await pool.query(
+        `SELECT b.beitrag_id FROM beitraege b
+         JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+         WHERE b.beitrag_id = ? AND m.dojo_id = ?`,
+        [reversedBeitragId, dojoId]
+      );
+      if (ownRows.length === 0) reversedBeitragId = null; // fremder Beitrag → ignorieren
+    }
     if (!reversedBeitragId && mitglied_id) {
       const [matchRows] = await pool.query(`
         SELECT b.beitrag_id FROM beitraege b

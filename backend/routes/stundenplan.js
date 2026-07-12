@@ -94,11 +94,15 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    // Get standort_id from the selected kurs
-    const [kursRows] = await db.promise().query('SELECT standort_id FROM kurse WHERE kurs_id = ?', [kurs_id]);
+    // 🔒 Get standort_id + dojo_id from the selected kurs, verify Ownership
+    const secureDojoId = getSecureDojoId(req);
+    const [kursRows] = await db.promise().query('SELECT standort_id, dojo_id FROM kurse WHERE kurs_id = ?', [kurs_id]);
 
     if (kursRows.length === 0) {
       return res.status(400).json({ error: "Kurs nicht gefunden" });
+    }
+    if (secureDojoId && Number(kursRows[0].dojo_id) !== Number(secureDojoId)) {
+      return res.status(403).json({ error: "Keine Berechtigung für diesen Kurs" });
     }
 
     const standort_id = kursRows[0].standort_id;
@@ -159,12 +163,27 @@ router.put("/:id", async (req, res) => {
   }
 
   const sql = `
-    UPDATE stundenplan 
+    UPDATE stundenplan
     SET tag = ?, uhrzeit_start = ?, uhrzeit_ende = ?, kurs_id = ?, raum_id = ?
     WHERE stundenplan_id = ?
   `;
 
   try {
+    // 🔒 Ownership: neuer kurs_id + bestehender Eintrag müssen zum Dojo gehören
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId) {
+      const [kursRows] = await db.promise().query('SELECT dojo_id FROM kurse WHERE kurs_id = ?', [kurs_id]);
+      if (kursRows.length === 0) return res.status(400).json({ error: "Kurs nicht gefunden" });
+      if (Number(kursRows[0].dojo_id) !== Number(secureDojoId)) {
+        return res.status(403).json({ error: "Keine Berechtigung für diesen Kurs" });
+      }
+      const [existing] = await db.promise().query(
+        'SELECT s.stundenplan_id FROM stundenplan s JOIN kurse k ON s.kurs_id = k.kurs_id WHERE s.stundenplan_id = ? AND k.dojo_id = ?',
+        [id, secureDojoId]
+      );
+      if (existing.length === 0) return res.status(404).json({ error: "Stundenplan-Eintrag nicht gefunden" });
+    }
+
     const [result] = await db.promise().query(sql, [
       tag,
       uhrzeit_start,
@@ -210,10 +229,15 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
 
-  const sql = "DELETE FROM stundenplan WHERE stundenplan_id = ?";
+  // 🔒 Dojo-Scope über kurse.dojo_id
+  const secureDojoId = getSecureDojoId(req);
+  const sql = secureDojoId
+    ? "DELETE s FROM stundenplan s JOIN kurse k ON s.kurs_id = k.kurs_id WHERE s.stundenplan_id = ? AND k.dojo_id = ?"
+    : "DELETE FROM stundenplan WHERE stundenplan_id = ?";
+  const params = secureDojoId ? [id, secureDojoId] : [id];
 
   try {
-    const [result] = await db.promise().query(sql, [id]);
+    const [result] = await db.promise().query(sql, params);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Stundenplan-Eintrag nicht gefunden" });
@@ -231,6 +255,17 @@ router.get("/member/:mitglied_id/termine", async (req, res) => {
   const { mitglied_id } = req.params;
 
   try {
+    // 🔒 Ownership: Mitglied muss zum Dojo gehören; Member nur eigene Termine
+    const secureDojoId = getSecureDojoId(req);
+    if (req.user?.mitglied_id && Number(req.user.mitglied_id) !== Number(mitglied_id)) {
+      return res.status(403).json({ error: "Keine Berechtigung" });
+    }
+    const [mRows] = await db.promise().query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
+    if (mRows.length === 0) return res.json([]);
+    if (secureDojoId && Number(mRows[0].dojo_id) !== Number(secureDojoId)) {
+      return res.status(403).json({ error: "Keine Berechtigung" });
+    }
+
     // 1. Hole Anwesenheitshistorie des Mitglieds (welche Kurse besucht das Mitglied?)
     const [anwesenheitRows] = await db.promise().query(`
       SELECT DISTINCT stundenplan_id

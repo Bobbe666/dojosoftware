@@ -13,6 +13,7 @@ const path = require('path');
 const fs = require('fs');
 const { authenticateToken } = require('../middleware/auth');
 const { requireFeature } = require('../middleware/featureAccess');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const logger = require('../utils/logger');
 
 // ── Multer Bild-Upload Konfiguration ─────────────────────────────────────────
@@ -318,15 +319,16 @@ router.get('/', (req, res) => {
 
 // GET /api/artikel/kasse - Artikel für Kassensystem optimiert
 router.get('/kasse', (req, res) => {
-  // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
-  const dojoId = req.tenant?.dojo_id || req.query.dojo_id || req.user?.dojo_id;
-  const showAll = !dojoId || dojoId === 'all' || dojoId === 'null';
+  // 🔒 Tenant check: Dojo-ID aus Token erzwingen (Super-Admin darf via Query/Tenant wählen)
+  const secureDojoId = getSecureDojoId(req);
+  const dojoId = secureDojoId || req.tenant?.dojo_id || null;
 
-  let query;
-  let params;
+  let params = [];
+  let dojoCond = '';
+  if (dojoId) { dojoCond = ' AND a.dojo_id = ?'; params.push(dojoId); }
 
-  // Artikel haben kein dojo_id - alle Artikel anzeigen
-  query = `
+  // Artikel sind dojo-gebunden (a.dojo_id)
+  const query = `
     SELECT
       a.artikel_id,
       a.name,
@@ -360,10 +362,9 @@ router.get('/kasse', (req, res) => {
     LEFT JOIN artikelgruppen kat ON a.kategorie_id = kat.id
     LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
     LEFT JOIN verband_artikel_rabatte var ON a.artikel_id = var.artikel_id AND var.aktiv = 1 AND var.gilt_fuer_mitglieder = 1
-    WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE
+    WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE${dojoCond}
     ORDER BY kat.sortierung ASC, a.name ASC
   `;
-  params = [];
 
   db.query(query, params, (error, results) => {
     if (error) {
@@ -1111,11 +1112,19 @@ router.post('/:id/bild', bildUpload.single('bild'), async (req, res) => {
 
   const bild_url = `/uploads/artikel/${req.file.filename}`;
 
+  // 🔒 Dojo-Scope
+  const secureDojoId = getSecureDojoId(req);
+  const updSql = secureDojoId
+    ? 'UPDATE artikel SET bild_url = ? WHERE artikel_id = ? AND dojo_id = ?'
+    : 'UPDATE artikel SET bild_url = ? WHERE artikel_id = ?';
+  const updParams = secureDojoId ? [bild_url, artikelId, secureDojoId] : [bild_url, artikelId];
+
   try {
-    await db.promise().query(
-      'UPDATE artikel SET bild_url = ? WHERE artikel_id = ?',
-      [bild_url, artikelId]
-    );
+    const [result] = await db.promise().query(updSql, updParams);
+    if (result.affectedRows === 0) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+      return res.status(404).json({ error: 'Artikel nicht gefunden' });
+    }
     res.json({ success: true, bild_url });
   } catch (err) {
     try { fs.unlinkSync(req.file.path); } catch (_) {}
@@ -1127,17 +1136,23 @@ router.post('/:id/bild', bildUpload.single('bild'), async (req, res) => {
 // DELETE /api/artikel/:id/bild - Artikelbild löschen
 router.delete('/:id/bild', async (req, res) => {
   const artikelId = parseInt(req.params.id);
+  // 🔒 Dojo-Scope
+  const secureDojoId = getSecureDojoId(req);
+  const selSql = secureDojoId
+    ? 'SELECT bild_url FROM artikel WHERE artikel_id = ? AND dojo_id = ?'
+    : 'SELECT bild_url FROM artikel WHERE artikel_id = ?';
+  const selParams = secureDojoId ? [artikelId, secureDojoId] : [artikelId];
   try {
-    const [[artikel]] = await db.promise().query(
-      'SELECT bild_url FROM artikel WHERE artikel_id = ?', [artikelId]
-    );
+    const [[artikel]] = await db.promise().query(selSql, selParams);
+    if (!artikel) return res.status(404).json({ error: 'Artikel nicht gefunden' });
     if (artikel?.bild_url) {
       const filePath = path.join(__dirname, '../../', artikel.bild_url);
       try { fs.unlinkSync(filePath); } catch (_) {}
     }
-    await db.promise().query(
-      'UPDATE artikel SET bild_url = NULL, bild_base64 = NULL WHERE artikel_id = ?', [artikelId]
-    );
+    const updSql = secureDojoId
+      ? 'UPDATE artikel SET bild_url = NULL, bild_base64 = NULL WHERE artikel_id = ? AND dojo_id = ?'
+      : 'UPDATE artikel SET bild_url = NULL, bild_base64 = NULL WHERE artikel_id = ?';
+    await db.promise().query(updSql, selParams);
     res.json({ success: true });
   } catch (err) {
     logger.error('Fehler beim Löschen des Artikelbilds:', { error: err.message });

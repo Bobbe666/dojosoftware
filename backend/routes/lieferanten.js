@@ -36,8 +36,8 @@ router.get('/', (req, res) => {
   const isSuperAdmin = !req.user?.dojo_id && (req.user?.rolle === 'admin' || req.user?.role === 'admin');
   if (!dojoId && !isSuperAdmin) return res.status(400).json({ success: false, message: 'Dojo-ID fehlt' });
 
-  // alle=1 → jeder Admin darf alle aktiven Lieferanten sehen (z. B. für Bestellvorlagen)
-  const showAll = isSuperAdmin || req.query.alle === '1';
+  // 🔒 Nur Super-Admin darf dojoübergreifend sehen; alle=1 umging bisher die Tenant-Isolation
+  const showAll = isSuperAdmin;
 
   const sql = showAll
     ? 'SELECT *, (SELECT dojoname FROM dojo WHERE id = l.dojo_id) AS dojo_name FROM lieferanten l WHERE aktiv = 1 ORDER BY firmenname ASC'

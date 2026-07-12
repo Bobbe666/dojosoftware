@@ -786,10 +786,11 @@ router.get('/:id/historie', (req, res) => {
   db.query(`
     SELECT h.*, u.name AS benutzer_name_full
     FROM artikel_bestellung_historie h
+    JOIN artikel_bestellungen b ON h.bestellung_id = b.bestellung_id
     LEFT JOIN users u ON h.benutzer_id = u.id
-    WHERE h.bestellung_id = ?
+    WHERE h.bestellung_id = ? AND b.dojo_id = ?
     ORDER BY h.zeitstempel DESC
-  `, [bestellungId], (error, results) => {
+  `, [bestellungId, dojoId], (error, results) => {
     if (error) {
       logger.error('Fehler beim Abrufen der Historie:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen der Historie' });

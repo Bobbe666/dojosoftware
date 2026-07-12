@@ -38,6 +38,23 @@ async function getMitgliedId(user) {
   return null;
 }
 
+// 🔒 Tenant-Ownership-Helfer: Super-Admin (secureDojoId=null) → immer true
+async function mitgliedGehoertZuDojo(mitglied_id, secureDojoId) {
+  if (!secureDojoId) return true;
+  const [[mem]] = await pool.query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
+  return !!mem && Number(mem.dojo_id) === Number(secureDojoId);
+}
+
+async function anpassungGehoertZuDojo(a, secureDojoId) {
+  if (!secureDojoId) return true;
+  let recDojo = a?.dojo_id ?? null;
+  if (recDojo == null && a?.mitglied_id) {
+    const [[mem]] = await pool.query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [a.mitglied_id]);
+    recDojo = mem?.dojo_id ?? null;
+  }
+  return recDojo != null && Number(recDojo) === Number(secureDojoId);
+}
+
 const TYP_LABELS = {
   schueler: 'Schüler', student: 'Student', azubi: 'Azubi',
   rentner: 'Rentner', sonstiges: 'Sonstiges', ruhepause: 'Ruhepause', kuendigung: 'Kündigung'
@@ -139,6 +156,10 @@ function berechneKuendigungsdatum(vertrag, heute = new Date()) {
 // ── GET /mitglied/:id  (Admin: alle Anpassungen eines Mitglieds) ──────────
 router.get('/mitglied/:id', authenticateToken, async (req, res) => {
   try {
+    const secureDojoId = getSecureDojoId(req);
+    if (!(await mitgliedGehoertZuDojo(parseInt(req.params.id), secureDojoId))) {
+      return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+    }
     const [rows] = await pool.query(
       `SELECT * FROM vertrag_anpassungen WHERE mitglied_id = ? ORDER BY erstellt_am DESC`,
       [parseInt(req.params.id)]
@@ -152,6 +173,10 @@ router.get('/mitglied/:id', authenticateToken, async (req, res) => {
 // ── GET /mitglied/:id/mail-log  (Admin: gesendete Mails eines Mitglieds, rechtssicher) ──
 router.get('/mitglied/:id/mail-log', authenticateToken, async (req, res) => {
   try {
+    const secureDojoId = getSecureDojoId(req);
+    if (!(await mitgliedGehoertZuDojo(parseInt(req.params.id), secureDojoId))) {
+      return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+    }
     const [rows] = await pool.query(
       `SELECT id, typ, betreff, empfaenger, status, gesendet_am, html, text_inhalt
        FROM mitglied_mail_log WHERE mitglied_id = ? ORDER BY gesendet_am DESC`,
@@ -174,6 +199,11 @@ router.post('/', authenticateToken, async (req, res) => {
 
     if (!mitglied_id || !typ || !neuer_betrag || !gueltig_von || !gueltig_bis) {
       return res.status(400).json({ success: false, error: 'Pflichtfelder fehlen' });
+    }
+
+    // 🔒 Mitglied muss zum eigenen Dojo gehören (verhindert Beiträge fremder Mitglieder zu ändern)
+    if (!(await mitgliedGehoertZuDojo(mitglied_id, dojoId))) {
+      return res.status(404).json({ success: false, error: 'Mitglied nicht gefunden' });
     }
 
     const [ins] = await pool.query(
@@ -376,9 +406,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { typ, neuer_betrag, gueltig_von, gueltig_bis, grund } = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
     const [[a]] = await pool.query(`SELECT * FROM vertrag_anpassungen WHERE id = ?`, [id]);
     if (!a) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+    if (!(await anpassungGehoertZuDojo(a, secureDojoId))) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
 
     const updTyp = typ || a.typ;
     const updBetrag = neuer_betrag != null ? parseFloat(neuer_betrag) : a.neuer_betrag;
@@ -411,8 +443,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
 router.post('/:id/neu-anwenden', authenticateToken, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    const secureDojoId = getSecureDojoId(req);
     const [[a]] = await pool.query(`SELECT * FROM vertrag_anpassungen WHERE id = ?`, [id]);
     if (!a) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+    if (!(await anpassungGehoertZuDojo(a, secureDojoId))) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
     if (a.status !== 'genehmigt') return res.status(400).json({ success: false, error: 'Nur genehmigte Anpassungen können angewendet werden.' });
 
     const affected = await applyBeitraege(a.mitglied_id, a.gueltig_von, a.gueltig_bis, a.neuer_betrag);
@@ -427,9 +461,11 @@ router.put('/:id/genehmigen', authenticateToken, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { neuer_betrag, anmerkung_admin } = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
     const [[a]] = await pool.query(`SELECT * FROM vertrag_anpassungen WHERE id = ?`, [id]);
     if (!a) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+    if (!(await anpassungGehoertZuDojo(a, secureDojoId))) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
 
     const betrag = neuer_betrag || a.neuer_betrag;
     await pool.query(
@@ -543,9 +579,11 @@ router.put('/:id/ablehnen', authenticateToken, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { anmerkung_admin } = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
     const [[a]] = await pool.query(`SELECT * FROM vertrag_anpassungen WHERE id = ?`, [id]);
     if (!a) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+    if (!(await anpassungGehoertZuDojo(a, secureDojoId))) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
 
     await pool.query(
       `UPDATE vertrag_anpassungen SET status='abgelehnt', anmerkung_admin=? WHERE id=?`,

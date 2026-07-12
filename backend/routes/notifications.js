@@ -583,14 +583,19 @@ router.post('/push/send', authenticateToken, async (req, res) => {
 // Push-Subscriptions verwalten
 router.get('/push/subscriptions', authenticateToken, async (req, res) => {
   try {
+    // 🔒 Dojo-Scope über users→mitglieder.dojo_id
+    const secureDojoId = getSecureDojoId(req);
+    const dojoJoin = secureDojoId ? 'INNER JOIN mitglieder m ON u.mitglied_id = m.mitglied_id AND m.dojo_id = ?' : '';
+    const params = secureDojoId ? [secureDojoId] : [];
     const subscriptions = await new Promise((resolve, reject) => {
       db.query(`
-        SELECT ps.*, u.username, u.email 
+        SELECT ps.*, u.username, u.email
         FROM push_subscriptions ps
         LEFT JOIN users u ON ps.user_id = u.id
+        ${dojoJoin}
         WHERE ps.is_active = TRUE
         ORDER BY ps.created_at DESC
-      `, (err, results) => {
+      `, params, (err, results) => {
         if (err) reject(err);
         else resolve(results);
       });
@@ -1119,15 +1124,20 @@ router.get('/admin/registration-check/:email', authenticateToken, async (req, re
   try {
     const { email } = req.params;
 
+    // 🔒 Dojo-Scope über tarife.dojo_id (registrierungen hat keine dojo_id-Spalte)
+    const secureDojoId = getSecureDojoId(req);
+    const regDojoCond = secureDojoId ? ' AND t.dojo_id = ?' : '';
+    const regParams = secureDojoId ? [email, secureDojoId] : [email];
+
     const [regRows] = await pool.query(`
       SELECT r.*,
              t.name AS tarif_name, t.price_cents, t.duration_months
       FROM registrierungen r
       LEFT JOIN tarife t ON r.tarif_id = t.id
-      WHERE r.email = ?
+      WHERE r.email = ?${regDojoCond}
       ORDER BY r.created_at DESC
       LIMIT 1
-    `, [email]);
+    `, regParams);
 
     if (regRows.length === 0) {
       return res.status(404).json({ success: false, error: 'Keine Registrierung gefunden' });
@@ -1136,10 +1146,12 @@ router.get('/admin/registration-check/:email', authenticateToken, async (req, re
     const reg = regRows[0];
 
     // Mitglied in mitglieder-Tabelle nachschlagen (falls bereits angelegt)
+    const mitgliedDojoCond = secureDojoId ? ' AND dojo_id = ?' : '';
+    const mitgliedParams = secureDojoId ? [email, secureDojoId] : [email];
     const [mitgliedRows] = await pool.query(`
       SELECT mitglied_id, status, mitgliedsnummer
-      FROM mitglieder WHERE email = ? LIMIT 1
-    `, [email]);
+      FROM mitglieder WHERE email = ?${mitgliedDojoCond} LIMIT 1
+    `, mitgliedParams);
 
     const mitglied = mitgliedRows[0] || null;
 

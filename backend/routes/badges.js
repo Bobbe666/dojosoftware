@@ -104,12 +104,21 @@ router.get('/training/:mitglied_id', (req, res) => {
  * POST /api/badges/training/:mitglied_id
  * Manuelle Trainingsstunden hinzufuegen
  */
-router.post('/training/:mitglied_id', (req, res) => {
+router.post('/training/:mitglied_id', async (req, res) => {
   const { mitglied_id } = req.params;
   const { stunden, datum, grund, stil_id, erstellt_von_id, erstellt_von_name } = req.body;
 
   if (!stunden || !datum || !grund) {
     return res.status(400).json({ error: 'Stunden, Datum und Grund sind erforderlich' });
+  }
+
+  // 🔒 SICHERHEIT: Mitglied muss zum eigenen Dojo gehören (Write-IDOR-Schutz)
+  const secureDojoId = getSecureDojoId(req);
+  if (secureDojoId) {
+    const [ownRows] = await db.promise().query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
+    if (ownRows.length === 0 || Number(ownRows[0].dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
   }
 
   const query = `
@@ -142,7 +151,14 @@ router.post('/training/:mitglied_id', (req, res) => {
 router.delete('/training/:id', (req, res) => {
   const { id } = req.params;
 
-  db.query('DELETE FROM manuelle_trainingsstunden WHERE id = ?', [id], (err, result) => {
+  // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Write-IDOR-Schutz)
+  const secureDojoId = getSecureDojoId(req);
+  const delQuery = secureDojoId
+    ? 'DELETE mt FROM manuelle_trainingsstunden mt JOIN mitglieder m ON m.mitglied_id = mt.mitglied_id WHERE mt.id = ? AND m.dojo_id = ?'
+    : 'DELETE FROM manuelle_trainingsstunden WHERE id = ?';
+  const delParams = secureDojoId ? [id, secureDojoId] : [id];
+
+  db.query(delQuery, delParams, (err, result) => {
     if (err) {
       logger.error('Fehler beim Loeschen der manuellen Trainingsstunden:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });

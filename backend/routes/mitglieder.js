@@ -154,6 +154,17 @@ function canAccessDojo(req, targetDojoId) {
   return isSuperAdmin || userDojoId === targetDojoId;
 }
 
+/**
+ * 🔒 SICHERHEIT: Prüft ob ein Mitglied zum Dojo des Anfragenden gehört.
+ * @returns {Promise<boolean>} true wenn Zugriff erlaubt (Super-Admin = immer true)
+ */
+async function checkMitgliedOwnership(mitglied_id, secureDojoId) {
+  if (!secureDojoId) return true; // Super-Admin (null) = voller Zugriff
+  const [rows] = await db.promise().query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
+  if (!rows || rows.length === 0) return false;
+  return Number(rows[0].dojo_id) === Number(secureDojoId);
+}
+
 // Mock-Daten wurden entfernt - verwende immer echte Datenbank
 
 // ✅ NEU: API für Anwesenheit – aktive Mitglieder nach Stil filtern + DOJO-FILTER
@@ -321,6 +332,8 @@ router.get("/all", (req, res) => {
 // ✅ API: Mitglied über Email abrufen (für MemberDashboard)
 router.get("/by-email/:email", (req, res) => {
     const { email } = req.params;
+    // 🔒 SICHERHEIT: Dojo-Scope erzwingen (sonst Cross-Tenant-Leak inkl. IBAN)
+    const secureDojoId = getSecureDojoId(req);
 
     const query = `
         SELECT
@@ -386,10 +399,12 @@ router.get("/by-email/:email", (req, res) => {
         FROM mitglieder m
         LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
         WHERE m.email = ?
+        ${secureDojoId ? 'AND m.dojo_id = ?' : ''}
         GROUP BY m.mitglied_id
     `;
 
-    db.query(query, [email], (err, result) => {
+    const queryParams = secureDojoId ? [email, secureDojoId] : [email];
+    db.query(query, queryParams, (err, result) => {
         if (err) {
             logger.error('Fehler beim Abrufen des Mitglieds über Email:', err);
             return res.status(500).json({ error: "Fehler beim Abrufen der Mitgliedsdaten" });
@@ -2534,6 +2549,11 @@ router.post("/:id/stile", async (req, res) => {
 
     const pool = db.promise();
     try {
+        // 🔒 SICHERHEIT: Ownership-Check (Cross-Tenant-Schutz)
+        const secureDojoId = getSecureDojoId(req);
+        if (!(await checkMitgliedOwnership(mitglied_id, secureDojoId))) {
+            return res.status(404).json({ error: "Mitglied nicht gefunden" });
+        }
         // Stil-Namen aus DB laden (kein hardcodiertes Mapping mehr)
         let stilRows = [];
         if (stile.length > 0) {
@@ -2589,6 +2609,9 @@ router.get("/:id/stile", (req, res) => {
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
     }
 
+    // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Read-IDOR-Schutz)
+    const secureDojoId = getSecureDojoId(req);
+
     // Zuordnung von ENUM-Werten zu Stil-IDs und Namen (basiert auf tatsächlichen DB-Daten)
     const stilMapping = {
         'ShieldX': { stil_id: 2, stil_name: 'ShieldX', beschreibung: 'Moderne Selbstverteidigung mit realistischen Szenarien' },
@@ -2606,11 +2629,13 @@ router.get("/:id/stile", (req, res) => {
     const query = `
         SELECT ms.stil, ms.ist_hauptstil
         FROM mitglied_stile ms
+        JOIN mitglieder m ON m.mitglied_id = ms.mitglied_id
         WHERE ms.mitglied_id = ?
+        ${secureDojoId ? 'AND m.dojo_id = ?' : ''}
         ORDER BY ms.ist_hauptstil DESC, ms.stil
     `;
 
-    db.query(query, [mitglied_id], (err, results) => {
+    db.query(query, secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id], (err, results) => {
         if (err) {
             logger.error('Fehler beim Abrufen der Mitglied-Stile:', err);
             return res.status(500).json({ error: "Fehler beim Abrufen der Stile" });
@@ -2703,6 +2728,11 @@ router.post("/:id/stile/hauptstil", async (req, res) => {
     }
     const pool = db.promise();
     try {
+        // 🔒 SICHERHEIT: Ownership-Check (Cross-Tenant-Schutz)
+        const secureDojoId = getSecureDojoId(req);
+        if (!(await checkMitgliedOwnership(mitglied_id, secureDojoId))) {
+            return res.status(404).json({ error: "Mitglied nicht gefunden" });
+        }
         await pool.query(
             'UPDATE mitglied_stile SET ist_hauptstil = 0 WHERE mitglied_id = ?',
             [mitglied_id]
@@ -2719,13 +2749,19 @@ router.post("/:id/stile/hauptstil", async (req, res) => {
 });
 
 // 🆕 API: Stilspezifische Daten für ein Mitglied verwalten (Graduierung, letzte Prüfung, etc.)
-router.post("/:id/stil/:stil_id/data", (req, res) => {
+router.post("/:id/stil/:stil_id/data", async (req, res) => {
     const mitglied_id = parseInt(req.params.id, 10);
     const stil_id = parseInt(req.params.stil_id, 10);
     const { current_graduierung_id, letzte_pruefung, naechste_pruefung, anmerkungen } = req.body;
 
     if (isNaN(mitglied_id) || isNaN(stil_id)) {
         return res.status(400).json({ error: "Ungültige Mitglieds- oder Stil-ID" });
+    }
+
+    // 🔒 SICHERHEIT: Ownership-Check (Cross-Tenant-Schutz)
+    const secureDojoId = getSecureDojoId(req);
+    if (!(await checkMitgliedOwnership(mitglied_id, secureDojoId))) {
+        return res.status(404).json({ error: "Mitglied nicht gefunden" });
     }
 
     // ISO-Datetime-Strings auf YYYY-MM-DD kürzen (MySQL DATE-Spalten akzeptieren kein 'T...')
@@ -2786,16 +2822,22 @@ router.post("/:id/stil/:stil_id/data", (req, res) => {
 });
 
 // 🆕 API: Stilspezifische Daten für ein Mitglied abrufen
-router.get("/:id/stil/:stil_id/data", (req, res) => {
+router.get("/:id/stil/:stil_id/data", async (req, res) => {
     const mitglied_id = parseInt(req.params.id, 10);
     const stil_id = parseInt(req.params.stil_id, 10);
-    
+
     if (isNaN(mitglied_id) || isNaN(stil_id)) {
         return res.status(400).json({ error: "Ungültige Mitglieds- oder Stil-ID" });
     }
 
+    // 🔒 SICHERHEIT: Ownership-Check (Read-IDOR-Schutz)
+    const secureDojoId = getSecureDojoId(req);
+    if (!(await checkMitgliedOwnership(mitglied_id, secureDojoId))) {
+        return res.status(404).json({ error: "Mitglied nicht gefunden" });
+    }
+
     const query = `
-        SELECT 
+        SELECT
             msd.*,
             g.name as graduierung_name,
             g.farbe_hex,
@@ -2860,12 +2902,18 @@ router.get("/:id/stil/:stil_id/data", (req, res) => {
 });
 
 // 🆕 API: Trainingsstunden-Analyse für ein Mitglied und Stil
-router.get("/:id/stil/:stil_id/training-analysis", (req, res) => {
+router.get("/:id/stil/:stil_id/training-analysis", async (req, res) => {
     const mitglied_id = parseInt(req.params.id, 10);
     const stil_id = parseInt(req.params.stil_id, 10);
-    
+
     if (isNaN(mitglied_id) || isNaN(stil_id)) {
         return res.status(400).json({ error: "Ungültige Mitglieds- oder Stil-ID" });
+    }
+
+    // 🔒 SICHERHEIT: Ownership-Check (Read-IDOR-Schutz)
+    const secureDojoId = getSecureDojoId(req);
+    if (!(await checkMitgliedOwnership(mitglied_id, secureDojoId))) {
+        return res.status(404).json({ error: "Mitglied nicht gefunden" });
     }
 
     // Multi-Query für komplexe Analyse
@@ -2980,6 +3028,11 @@ router.put("/:id/stil/:stil_id/guertellaenge", async (req, res) => {
 
     const pool = db.promise();
     try {
+        // 🔒 SICHERHEIT: Ownership-Check (Cross-Tenant-Schutz)
+        const secureDojoId = getSecureDojoId(req);
+        if (!(await checkMitgliedOwnership(mitglied_id, secureDojoId))) {
+            return res.status(404).json({ error: "Mitglied nicht gefunden" });
+        }
         const [existing] = await pool.query(
             'SELECT 1 FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?',
             [mitglied_id, stil_id]
@@ -3423,8 +3476,11 @@ router.post("/check-duplicate", (req, res) => {
         return res.status(400).json({ error: "Vorname, Nachname und Geburtsdatum sind erforderlich" });
     }
 
+    // 🔒 SICHERHEIT: Dojo-Scope erzwingen (sonst Enumeration fremder Mitglieder)
+    const secureDojoId = getSecureDojoId(req);
+
     const query = `
-        SELECT 
+        SELECT
             mitglied_id,
             vorname,
             nachname,
@@ -3433,15 +3489,17 @@ router.post("/check-duplicate", (req, res) => {
             email,
             aktiv,
             eintrittsdatum
-        FROM mitglieder 
-        WHERE LOWER(vorname) = LOWER(?) 
-        AND LOWER(nachname) = LOWER(?) 
+        FROM mitglieder
+        WHERE LOWER(vorname) = LOWER(?)
+        AND LOWER(nachname) = LOWER(?)
         AND geburtsdatum = ?
         ${geschlecht ? 'AND geschlecht = ?' : ''}
+        ${secureDojoId ? 'AND dojo_id = ?' : ''}
         ORDER BY eintrittsdatum DESC
     `;
 
     const params = geschlecht ? [vorname, nachname, geburtsdatum, geschlecht] : [vorname, nachname, geburtsdatum];
+    if (secureDojoId) params.push(secureDojoId);
 
     db.query(query, params, (err, results) => {
         if (err) {
@@ -3480,6 +3538,13 @@ router.post("/",
     (req, res) => {
 
     const memberData = req.body;
+
+    // 🔒 SICHERHEIT: dojo_id NICHT aus Body übernehmen, sondern aus JWT erzwingen.
+    // Super-Admin (null) darf per Body ein Ziel-Dojo wählen.
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId) {
+        memberData.dojo_id = secureDojoId;
+    }
 
     // 🔄 DOKUMENTAKZEPTANZEN: Kopiere Daten vom Vertrag auch in mitglieder-Tabelle (für Auswertungen!)
     // Frontend sendet: vertrag_agb_akzeptiert, Backend braucht: agb_akzeptiert + agb_akzeptiert_am
@@ -3527,7 +3592,7 @@ router.post("/",
 
         // 1. Bestehende Mitgliederdaten holen (für familien_id und Vertreter-Info)
         db.query(
-            'SELECT mitglied_id, familien_id, vorname, nachname, email, telefon FROM mitglieder WHERE mitglied_id = ?',
+            'SELECT mitglied_id, familien_id, vorname, nachname, email, telefon, dojo_id FROM mitglieder WHERE mitglied_id = ?',
             [existingMemberId],
             (err, existingMemberRows) => {
                 if (err || existingMemberRows.length === 0) {
@@ -3536,6 +3601,12 @@ router.post("/",
                 }
 
                 const existingMember = existingMemberRows[0];
+
+                // 🔒 SICHERHEIT: Ownership-Check – bestehendes Mitglied muss zum eigenen Dojo gehören
+                if (secureDojoId && Number(existingMember.dojo_id) !== Number(secureDojoId)) {
+                    return res.status(404).json({ error: "Bestehendes Mitglied nicht gefunden" });
+                }
+
                 let familienId = existingMember.familien_id;
 
                 // 2. Falls kein familien_id vorhanden, verwende mitglied_id als familien_id
@@ -4276,7 +4347,7 @@ router.get('/notification-recipients', async (req, res) => {
 // ============================================================================
 // PUT /:id/graduierung - Graduierung eines Mitglieds aktualisieren
 // ============================================================================
-router.put("/:id/graduierung", (req, res) => {
+router.put("/:id/graduierung", async (req, res) => {
   const mitglied_id = parseInt(req.params.id);
   let { stil_id, graduierung_id, pruefungsdatum } = req.body;
 
@@ -4284,6 +4355,12 @@ router.put("/:id/graduierung", (req, res) => {
     return res.status(400).json({
       error: "Fehlende Parameter: mitglied_id, stil_id und graduierung_id sind erforderlich"
     });
+  }
+
+  // 🔒 SICHERHEIT: Ownership-Check (Cross-Tenant-Schutz)
+  const secureDojoId = getSecureDojoId(req);
+  if (!(await checkMitgliedOwnership(mitglied_id, secureDojoId))) {
+    return res.status(404).json({ error: "Mitglied nicht gefunden" });
   }
 
   // Konvertiere ISO-Timestamp zu MySQL DATE Format (YYYY-MM-DD)
@@ -4356,6 +4433,9 @@ router.put("/:id/graduierung", (req, res) => {
 router.get('/:id/birthday-check', (req, res) => {
   const mitgliedId = req.params.id;
 
+  // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Read-IDOR-Schutz)
+  const secureDojoId = getSecureDojoId(req);
+
   const query = `
     SELECT
       mitglied_id,
@@ -4375,9 +4455,10 @@ router.get('/:id/birthday-check', (req, res) => {
       END as hat_heute_geburtstag
     FROM mitglieder
     WHERE mitglied_id = ?
+    ${secureDojoId ? 'AND dojo_id = ?' : ''}
   `;
 
-  db.query(query, [mitgliedId], (err, results) => {
+  db.query(query, secureDojoId ? [mitgliedId, secureDojoId] : [mitgliedId], (err, results) => {
     if (err) {
       logger.error('Fehler beim Geburtstags-Check:', { error: err });
       return res.status(500).json({
@@ -4418,6 +4499,8 @@ router.get('/:id/birthday-check', (req, res) => {
 router.post("/:id/archivieren", async (req, res) => {
   const mitgliedId = parseInt(req.params.id);
   const { grund, archiviert_von } = req.body;
+  // 🔒 SICHERHEIT: Dojo-Scope für destruktive Archivierung
+  const secureDojoId = getSecureDojoId(req);
 
   logger.debug('📦 Archivierung von Mitglied ${mitgliedId} gestartet...');
 
@@ -4440,6 +4523,14 @@ router.post("/:id/archivieren", async (req, res) => {
     }
 
     const mitglied = mitgliedRows[0];
+
+    // 🔒 SICHERHEIT: Ownership-Check vor destruktiven DELETEs (Cross-Tenant-Schutz)
+    if (secureDojoId && Number(mitglied.dojo_id) !== Number(secureDojoId)) {
+      await conn.rollback();
+      conn.release();
+      conn = null;
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
 
     // 2. Hole Stil-Daten
     const [stilData] = await conn.query(
@@ -4663,6 +4754,8 @@ router.post("/:id/archivieren", async (req, res) => {
  */
 router.post("/bulk-archivieren", async (req, res) => {
   const { mitglied_ids, grund, archiviert_von } = req.body;
+  // 🔒 SICHERHEIT: Dojo-Scope für destruktive Bulk-Archivierung
+  const secureDojoId = getSecureDojoId(req);
 
   // Validierung
   if (!mitglied_ids || !Array.isArray(mitglied_ids) || mitglied_ids.length === 0) {
@@ -4704,6 +4797,18 @@ router.post("/bulk-archivieren", async (req, res) => {
       }
 
       const mitglied = mitgliedRows[0];
+
+      // 🔒 SICHERHEIT: Ownership-Check vor destruktiven DELETEs (Cross-Tenant-Schutz)
+      if (secureDojoId && Number(mitglied.dojo_id) !== Number(secureDojoId)) {
+        await conn.rollback();
+        conn.release();
+        conn = null;
+        results.failed.push({
+          mitglied_id: mitgliedId,
+          error: 'Mitglied nicht gefunden'
+        });
+        continue;
+      }
 
       // 2. Hole Stil-Daten
       const [stilData] = await conn.query(
@@ -4960,9 +5065,11 @@ router.get("/archiv", (req, res) => {
 router.get("/archiv/:archivId", (req, res) => {
   const archivId = parseInt(req.params.archivId);
 
-  const query = 'SELECT * FROM archiv_mitglieder WHERE archiv_id = ?';
+  // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Archiv enthält IBAN/SEPA-Mandate)
+  const secureDojoId = getSecureDojoId(req);
+  const query = `SELECT * FROM archiv_mitglieder WHERE archiv_id = ?${secureDojoId ? ' AND dojo_id = ?' : ''}`;
 
-  db.query(query, [archivId], (err, results) => {
+  db.query(query, secureDojoId ? [archivId, secureDojoId] : [archivId], (err, results) => {
     if (err) {
       logger.error('Fehler beim Abrufen des Archiv-Eintrags:', err);
       return res.status(500).json({ error: "Fehler beim Abrufen des Archiv-Eintrags" });
@@ -5009,6 +5116,9 @@ router.post("/:id/mitgliedsausweis", async (req, res) => {
 
   logger.debug('[Mitgliedsausweis] Generiere PDF für Mitglied ${mitglied_id}');
 
+  // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Cross-Tenant-Schutz)
+  const secureDojoId = getSecureDojoId(req);
+
   try {
     // 1. Mitgliedsdaten abrufen
     const mitgliedQuery = `
@@ -5025,10 +5135,11 @@ router.post("/:id/mitgliedsausweis", async (req, res) => {
       LEFT JOIN stile s ON ms.stil = s.name
       LEFT JOIN graduierungen g ON m.graduierung_id = g.id
       WHERE m.mitglied_id = ?
+      ${secureDojoId ? 'AND m.dojo_id = ?' : ''}
       GROUP BY m.mitglied_id
     `;
 
-    db.query(mitgliedQuery, [mitglied_id], async (err, results) => {
+    db.query(mitgliedQuery, secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id], async (err, results) => {
       if (err) {
         logger.error('[Mitgliedsausweis] Datenbankfehler beim Laden des Mitglieds:', { error: err });
         return res.status(500).json({ error: "Fehler beim Laden der Mitgliedsdaten" });
@@ -5090,6 +5201,9 @@ router.get("/:id/kurse", (req, res) => {
 
   logger.debug('📅 Lade Kurse für Mitglied ID ${mitgliedId}');
 
+  // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Read-IDOR-Schutz)
+  const secureDojoId = getSecureDojoId(req);
+
   // Stil ENUM zu ID Mapping
   const stilMapping = {
     'ShieldX': { stil_id: 2, stil_name: 'ShieldX' },
@@ -5105,10 +5219,12 @@ router.get("/:id/kurse", (req, res) => {
   const stileQuery = `
     SELECT DISTINCT ms.stil
     FROM mitglied_stile ms
+    JOIN mitglieder m ON m.mitglied_id = ms.mitglied_id
     WHERE ms.mitglied_id = ?
+    ${secureDojoId ? 'AND m.dojo_id = ?' : ''}
   `;
 
-  db.query(stileQuery, [mitgliedId], (err, stileResults) => {
+  db.query(stileQuery, secureDojoId ? [mitgliedId, secureDojoId] : [mitgliedId], (err, stileResults) => {
     if (err) {
       logger.error('Fehler beim Laden der Mitglieds-Stile:', err);
       return res.status(500).json({ error: "Fehler beim Laden der Stile" });

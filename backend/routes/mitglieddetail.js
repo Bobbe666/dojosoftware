@@ -290,10 +290,13 @@ router.post("/:id/foto", authenticateToken, upload.single('foto'), (req, res) =>
 
   // Speichere den relativen Pfad in der Datenbank
   const fotoPfad = `uploads/mitglieder/${req.file.filename}`;
-  
-  const updateQuery = "UPDATE mitglieder SET foto_pfad = ? WHERE mitglied_id = ?";
 
-  db.query(updateQuery, [fotoPfad, id], (err, result) => {
+  // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Cross-Tenant-Schutz)
+  const dojoId = req.dojo_id;
+  const updateQuery = `UPDATE mitglieder SET foto_pfad = ? WHERE mitglied_id = ?${dojoId ? ' AND dojo_id = ?' : ''}`;
+  const updateParams = dojoId ? [fotoPfad, id, dojoId] : [fotoPfad, id];
+
+  db.query(updateQuery, updateParams, (err, result) => {
     if (err) {
       logger.error('Fehler beim Speichern des Foto-Pfads für Mitglied ${id}:', { error: err });
       // Lösche die hochgeladene Datei bei DB-Fehler
@@ -324,9 +327,12 @@ router.post("/:id/foto", authenticateToken, upload.single('foto'), (req, res) =>
 router.delete("/:id/foto", authenticateToken, (req, res) => {
   const { id } = req.params;
 
+  // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Cross-Tenant-Schutz)
+  const dojoId = req.dojo_id;
+
   // Hole den aktuellen Foto-Pfad
-  const selectQuery = "SELECT foto_pfad FROM mitglieder WHERE mitglied_id = ?";
-  db.query(selectQuery, [id], (err, results) => {
+  const selectQuery = `SELECT foto_pfad FROM mitglieder WHERE mitglied_id = ?${dojoId ? ' AND dojo_id = ?' : ''}`;
+  db.query(selectQuery, dojoId ? [id, dojoId] : [id], (err, results) => {
     if (err) {
       logger.error('Fehler beim Abrufen des Foto-Pfads für Mitglied ${id}:', { error: err });
       return res.status(500).json({ error: "Fehler beim Abrufen des Fotos" });
@@ -352,8 +358,8 @@ router.delete("/:id/foto", authenticateToken, (req, res) => {
     });
     
     // Entferne den Pfad aus der Datenbank
-    const updateQuery = "UPDATE mitglieder SET foto_pfad = NULL WHERE mitglied_id = ?";
-    db.query(updateQuery, [id], (err, result) => {
+    const updateQuery = `UPDATE mitglieder SET foto_pfad = NULL WHERE mitglied_id = ?${dojoId ? ' AND dojo_id = ?' : ''}`;
+    db.query(updateQuery, dojoId ? [id, dojoId] : [id], (err, result) => {
       if (err) {
         logger.error('Fehler beim Entfernen des Foto-Pfads für Mitglied ${id}:', { error: err });
         return res.status(500).json({ error: "Fehler beim Entfernen des Fotos" });
@@ -374,6 +380,17 @@ router.post("/:id/pdf", authenticateToken, async (req, res) => {
 
   try {
     logger.debug('📄 Starte PDF-Generierung für Mitglied ${id}...');
+
+    // 🔒 SICHERHEIT: Ownership-Check vor PDF-Generierung (Cross-Tenant-Schutz)
+    const dojoId = req.dojo_id;
+    if (dojoId) {
+      const [ownRows] = await db.promise().query(
+        'SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [id]
+      );
+      if (ownRows.length === 0 || Number(ownRows[0].dojo_id) !== Number(dojoId)) {
+        return res.status(404).json({ error: "Mitglied nicht gefunden" });
+      }
+    }
 
     // PDF generieren
     const pdfBuffer = await generateMitgliedDetailPDF(id, { save_to_db });
@@ -410,10 +427,13 @@ router.put("/:id/archive-allergie", authenticateToken, (req, res) => {
     return res.status(400).json({ error: "Allergie-ID fehlt" });
   }
 
-  // Hole aktuelles Mitglied mit allergien und allergien_archiv
-  const selectQuery = "SELECT allergien, allergien_archiv FROM mitglieder WHERE mitglied_id = ?";
+  // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Gesundheitsdaten Art. 9 DSGVO)
+  const dojoId = req.dojo_id;
 
-  db.query(selectQuery, [id], (err, results) => {
+  // Hole aktuelles Mitglied mit allergien und allergien_archiv
+  const selectQuery = `SELECT allergien, allergien_archiv FROM mitglieder WHERE mitglied_id = ?${dojoId ? ' AND dojo_id = ?' : ''}`;
+
+  db.query(selectQuery, dojoId ? [id, dojoId] : [id], (err, results) => {
     if (err) {
       logger.error('Fehler beim Abrufen des Mitglieds ${id}:', { error: err });
       return res.status(500).json({ error: "Fehler beim Abrufen des Mitglieds" });
@@ -471,9 +491,9 @@ router.put("/:id/archive-allergie", authenticateToken, (req, res) => {
       ? allergien.map(a => a.value).join('; ')
       : '';
 
-    const updateQuery = "UPDATE mitglieder SET allergien = ?, allergien_archiv = ? WHERE mitglied_id = ?";
+    const updateQuery = `UPDATE mitglieder SET allergien = ?, allergien_archiv = ? WHERE mitglied_id = ?${dojoId ? ' AND dojo_id = ?' : ''}`;
 
-    db.query(updateQuery, [allergienString, JSON.stringify(archiv), id], (err, result) => {
+    db.query(updateQuery, dojoId ? [allergienString, JSON.stringify(archiv), id, dojoId] : [allergienString, JSON.stringify(archiv), id], (err, result) => {
       if (err) {
         logger.error('Fehler beim Archivieren der Allergie für Mitglied ${id}:', { error: err });
         return res.status(500).json({ error: "Fehler beim Archivieren der Allergie" });

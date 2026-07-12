@@ -1122,19 +1122,21 @@ router.get('/beitragsvergleich', async (req, res) => {
 // GET /api/auswertungen/demographics - Demografische Daten
 router.get('/demographics', async (req, res) => {
     try {
+        // 🔒 Tenant-Filter (Super-Admin ohne Zuweisung → kein Filter)
+        const f = await getSecureDojoFilter(req);
         const demographicsQuery = `
-            SELECT 
-                CASE 
+            SELECT
+                CASE
                     WHEN DATEDIFF(CURDATE(), geburtsdatum) / 365.25 < 18 THEN 'Unter 18'
                     ELSE 'Über 18'
                 END as altersgruppe,
                 COUNT(*) as anzahl
-            FROM mitglieder 
-            WHERE status = 'aktiv'
+            FROM mitglieder
+            WHERE status = 'aktiv' ${f.clause}
             GROUP BY altersgruppe
         `;
 
-        const demographics = await queryAsync(demographicsQuery);
+        const demographics = await queryAsync(demographicsQuery, f.params);
 
         res.json({
             success: true,
@@ -1150,16 +1152,19 @@ router.get('/demographics', async (req, res) => {
 // GET /api/auswertungen/financial - Finanzielle Übersicht
 router.get('/financial', async (req, res) => {
     try {
+        // 🔒 Tenant-Filter (Super-Admin ohne Zuweisung → kein Filter)
+        const f = await getSecureDojoFilter(req);
         const financialQuery = `
-            SELECT 
+            SELECT
                 SUM(CASE WHEN status = 'aktiv' THEN 1 ELSE 0 END) as aktive_mitglieder,
                 SUM(CASE WHEN status = 'inaktiv' THEN 1 ELSE 0 END) as inaktive_mitglieder,
                 SUM(CASE WHEN eintrittsdatum >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as neue_mitglieder_letzten_monat,
                 SUM(CASE WHEN kuendigungsdatum >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as kuendigungen_letzten_monat
             FROM mitglieder
+            WHERE 1=1 ${f.clause}
         `;
 
-        const financial = await queryAsync(financialQuery);
+        const financial = await queryAsync(financialQuery, f.params);
 
         res.json({
             success: true,

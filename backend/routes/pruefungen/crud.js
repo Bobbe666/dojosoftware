@@ -489,6 +489,13 @@ router.get('/:id', (req, res) => {
     });
   }
 
+  // 🔒 Dojo-Filter: Member nur eigene, Admin nur eigenes Dojo
+  const secureDojoId = getSecureDojoId(req);
+  const queryParams = [pruefung_id];
+  let dojoCond = '';
+  if (secureDojoId) { dojoCond += ' AND p.dojo_id = ?'; queryParams.push(secureDojoId); }
+  if (req.user?.mitglied_id) { dojoCond += ' AND p.mitglied_id = ?'; queryParams.push(req.user.mitglied_id); }
+
   const query = `
     SELECT
       p.*,
@@ -508,10 +515,10 @@ router.get('/:id', (req, res) => {
     INNER JOIN dojo d ON p.dojo_id = d.id
     LEFT JOIN graduierungen g_vorher ON p.graduierung_vorher_id = g_vorher.graduierung_id
     INNER JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
-    WHERE p.pruefung_id = ?
+    WHERE p.pruefung_id = ?${dojoCond}
   `;
 
-  db.query(query, [pruefung_id], (err, results) => {
+  db.query(query, queryParams, (err, results) => {
     if (err) {
       logger.error('Fehler beim Abrufen der Prüfung:', { error: err, pruefung_id });
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -539,6 +546,10 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   const pruefungData = req.body;
+
+  // 🔒 Dojo-ID immer aus Token erzwingen (Super-Admin darf via body wählen)
+  const secureDojoId = getSecureDojoId(req);
+  if (secureDojoId) pruefungData.dojo_id = secureDojoId;
 
   const errors = validatePruefungData(pruefungData);
   if (errors.length > 0) {
@@ -674,13 +685,17 @@ router.put('/:id', (req, res) => {
 
   setClause.push('aktualisiert_am = NOW()');
 
+  // 🔒 Dojo-Scope: nur eigene Prüfung aktualisierbar
+  const secureDojoId = getSecureDojoId(req);
+  let dojoCond = '';
+  values.push(pruefung_id);
+  if (secureDojoId) { dojoCond = ' AND dojo_id = ?'; values.push(secureDojoId); }
+
   const updateQuery = `
     UPDATE pruefungen
     SET ${setClause.join(', ')}
-    WHERE pruefung_id = ?
+    WHERE pruefung_id = ?${dojoCond}
   `;
-
-  values.push(pruefung_id);
 
   db.query(updateQuery, values, (err, result) => {
     if (err) {
@@ -768,9 +783,14 @@ router.delete('/:id', (req, res) => {
     });
   }
 
-  const deleteQuery = 'DELETE FROM pruefungen WHERE pruefung_id = ?';
+  // 🔒 Dojo-Scope: nur eigene Prüfung löschbar
+  const secureDojoId = getSecureDojoId(req);
+  const deleteParams = [pruefung_id];
+  let dojoCond = '';
+  if (secureDojoId) { dojoCond = ' AND dojo_id = ?'; deleteParams.push(secureDojoId); }
+  const deleteQuery = `DELETE FROM pruefungen WHERE pruefung_id = ?${dojoCond}`;
 
-  db.query(deleteQuery, [pruefung_id], (err, result) => {
+  db.query(deleteQuery, deleteParams, (err, result) => {
     if (err) {
       logger.error('Fehler beim Löschen der Prüfung:', { error: err, pruefung_id });
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -898,13 +918,18 @@ router.post('/:id/graduierung-aktualisieren', (req, res) => {
     });
   }
 
+  // 🔒 Dojo-Scope
+  const secureDojoId = getSecureDojoId(req);
+  const selectParams = [pruefung_id];
+  let dojoCond = '';
+  if (secureDojoId) { dojoCond = ' AND dojo_id = ?'; selectParams.push(secureDojoId); }
   const selectQuery = `
     SELECT mitglied_id, stil_id, graduierung_nachher_id, pruefungsdatum, bestanden
     FROM pruefungen
-    WHERE pruefung_id = ?
+    WHERE pruefung_id = ?${dojoCond}
   `;
 
-  db.query(selectQuery, [pruefung_id], (err, results) => {
+  db.query(selectQuery, selectParams, (err, results) => {
     if (err) {
       logger.error('Fehler beim Abrufen der Prüfung:', { error: err });
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -981,6 +1006,9 @@ router.post('/:id/status-aendern', (req, res) => {
     });
   }
 
+  // 🔒 Dojo-Scope
+  const secureDojoId = getSecureDojoId(req);
+
   db.getConnection((err, connection) => {
     if (err) {
       logger.error('Fehler beim Holen der Verbindung:', { error: err });
@@ -997,19 +1025,31 @@ router.post('/:id/status-aendern', (req, res) => {
         });
       }
 
+      const updateParams = [bestanden, pruefung_id];
+      let dojoCond = '';
+      if (secureDojoId) { dojoCond = ' AND dojo_id = ?'; updateParams.push(secureDojoId); }
       const updatePruefungQuery = `
         UPDATE pruefungen
         SET bestanden = ?, aktualisiert_am = NOW()
-        WHERE pruefung_id = ?
+        WHERE pruefung_id = ?${dojoCond}
       `;
 
-      connection.query(updatePruefungQuery, [bestanden, pruefung_id], (updateErr) => {
+      connection.query(updatePruefungQuery, updateParams, (updateErr, updateResult) => {
         if (updateErr) {
           return connection.rollback(() => {
             connection.release();
             logger.error('Fehler beim Aktualisieren der Prüfung:', { error: updateErr });
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
               error: ERROR_MESSAGES.GENERAL.UPDATE_ERROR
+            });
+          });
+        }
+
+        if (updateResult.affectedRows === 0) {
+          return connection.rollback(() => {
+            connection.release();
+            res.status(HTTP_STATUS.NOT_FOUND).json({
+              error: ERROR_MESSAGES.RESOURCE.PRUEFUNG_NOT_FOUND
             });
           });
         }
@@ -1114,6 +1154,13 @@ router.get('/:id/urkunde/download', async (req, res) => {
     });
   }
 
+  // 🔒 Dojo-Scope: Member nur eigene, Admin nur eigenes Dojo
+  const secureDojoId = getSecureDojoId(req);
+  const queryParams = [pruefung_id];
+  let dojoCond = '';
+  if (secureDojoId) { dojoCond += ' AND p.dojo_id = ?'; queryParams.push(secureDojoId); }
+  if (req.user?.mitglied_id) { dojoCond += ' AND p.mitglied_id = ?'; queryParams.push(req.user.mitglied_id); }
+
   try {
     const query = `
       SELECT
@@ -1126,10 +1173,10 @@ router.get('/:id/urkunde/download', async (req, res) => {
       INNER JOIN stile s ON p.stil_id = s.stil_id
       INNER JOIN dojo d ON p.dojo_id = d.id
       INNER JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
-      WHERE p.pruefung_id = ? AND p.bestanden = 1
+      WHERE p.pruefung_id = ? AND p.bestanden = 1${dojoCond}
     `;
 
-    db.query(query, [pruefung_id], async (err, results) => {
+    db.query(query, queryParams, async (err, results) => {
       if (err) {
         logger.error('Fehler beim Abrufen der Prüfungsdaten:', { error: err });
         return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -1225,7 +1272,12 @@ router.get('/:id/bewertungen', (req, res) => {
     return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
   }
 
-  db.query('SELECT einzelbewertungen FROM pruefungen WHERE pruefung_id = ?', [pruefung_id], (err, results) => {
+  const secureDojoId = getSecureDojoId(req);
+  const selectParams = [pruefung_id];
+  let dojoCond = '';
+  if (secureDojoId) { dojoCond = ' AND dojo_id = ?'; selectParams.push(secureDojoId); }
+
+  db.query(`SELECT einzelbewertungen FROM pruefungen WHERE pruefung_id = ?${dojoCond}`, selectParams, (err, results) => {
     if (err) {
       logger.error('Fehler beim Laden der Bewertungen:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
@@ -1263,8 +1315,14 @@ router.post('/:id/bewertungen', (req, res) => {
     return res.status(400).json({ error: 'bewertungen muss ein Array sein' });
   }
 
+  // 🔒 Dojo-Scope
+  const secureDojoId = getSecureDojoId(req);
+  const loadParams = [pruefung_id];
+  let dojoCond = '';
+  if (secureDojoId) { dojoCond = ' AND dojo_id = ?'; loadParams.push(secureDojoId); }
+
   // Lade graduierung_nachher_id um Kategorie-Mapping zu ermöglichen
-  db.query('SELECT graduierung_nachher_id FROM pruefungen WHERE pruefung_id = ?', [pruefung_id], (err, results) => {
+  db.query(`SELECT graduierung_nachher_id FROM pruefungen WHERE pruefung_id = ?${dojoCond}`, loadParams, (err, results) => {
     if (err) {
       logger.error('Fehler beim Laden der Prüfung:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
@@ -1374,8 +1432,14 @@ router.put('/:id/graduierung', (req, res) => {
     return res.status(400).json({ error: 'graduierung_nachher_id ist erforderlich' });
   }
 
+  // 🔒 Dojo-Scope
+  const secureDojoId = getSecureDojoId(req);
+  const selectParams = [pruefung_id];
+  let dojoCond = '';
+  if (secureDojoId) { dojoCond = ' AND dojo_id = ?'; selectParams.push(secureDojoId); }
+
   // Prüfe ob die Prüfung existiert und im Status 'geplant' ist
-  db.query('SELECT * FROM pruefungen WHERE pruefung_id = ?', [pruefung_id], (err, results) => {
+  db.query(`SELECT * FROM pruefungen WHERE pruefung_id = ?${dojoCond}`, selectParams, (err, results) => {
     if (err) {
       logger.error('Fehler beim Prüfen der Prüfung:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler', details: err.message });

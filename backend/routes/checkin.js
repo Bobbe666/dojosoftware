@@ -60,12 +60,13 @@ const generateQRData = (memberId) => {
 // HELPER FUNCTION: Multi-Course Check-in Logic (extracted)
 // ============================================
 
-const performMultiCourseCheckin = async (mitglied_id, stundenplan_ids, checkin_method, checkinDateOverride) => {
+const performMultiCourseCheckin = async (mitglied_id, stundenplan_ids, checkin_method, checkinDateOverride, secureDojoId) => {
 
   // 1. Verify member exists
+  // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Cross-Tenant-Schutz, Write-IDOR)
   const members = await queryAsync(
-    'SELECT mitglied_id, vorname, nachname, aktiv, gekuendigt, gekuendigt_am FROM mitglieder WHERE mitglied_id = ?',
-    [mitglied_id]
+    'SELECT mitglied_id, vorname, nachname, aktiv, gekuendigt, gekuendigt_am FROM mitglieder WHERE mitglied_id = ?' + (secureDojoId ? ' AND dojo_id = ?' : ''),
+    secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id]
   );
 
   if (members.length === 0) {
@@ -244,10 +245,11 @@ router.post('/', async (req, res) => {
     
     // Vorhandene Multi-Course-Logik wiederverwenden
     const result = await performMultiCourseCheckin(
-      mitglied_id, 
+      mitglied_id,
       [stundenplan_id],  // Array mit einem Element
       checkin_type || 'manual',
-      checkinDate
+      checkinDate,
+      getSecureDojoId(req)  // 🔒 SICHERHEIT: Dojo-Scope
     );
     
     const { member, checkinTime, checkinResults } = result;
@@ -368,13 +370,16 @@ router.get('/member-graduierungen/:mitgliedId', async (req, res) => {
   try {
     const mid = parseInt(req.params.mitgliedId, 10);
     if (!mid) return res.json({ success: true, grades: [] });
+    // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Read-IDOR-Schutz)
+    const secureDojoId = getSecureDojoId(req);
     const grades = await queryAsync(
       `SELECT s.name AS stil_name, g.reihenfolge AS stufe
        FROM mitglied_stil_data msd
        JOIN graduierungen g ON g.graduierung_id = msd.current_graduierung_id
        JOIN stile s ON s.stil_id = msd.stil_id
-       WHERE msd.mitglied_id = ?`,
-      [mid]
+       JOIN mitglieder m ON m.mitglied_id = msd.mitglied_id
+       WHERE msd.mitglied_id = ?${secureDojoId ? ' AND m.dojo_id = ?' : ''}`,
+      secureDojoId ? [mid, secureDojoId] : [mid]
     );
     res.json({ success: true, grades });
   } catch (error) {
@@ -421,6 +426,8 @@ router.get('/probetrainings-today', async (req, res) => {
 router.post('/multi-course', async (req, res) => {
   try {
     const { mitglied_id, stundenplan_ids, checkin_method } = req.body;
+    // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Cross-Tenant-Schutz, Write-IDOR)
+    const secureDojoId = getSecureDojoId(req);
 
     // Basic validation
     if (!mitglied_id) {
@@ -436,8 +443,8 @@ router.post('/multi-course', async (req, res) => {
 
       // Hole Mitgliedsdaten
       const members = await queryAsync(
-        'SELECT mitglied_id, vorname, nachname, aktiv, gekuendigt, gekuendigt_am FROM mitglieder WHERE mitglied_id = ?',
-        [mitglied_id]
+        'SELECT mitglied_id, vorname, nachname, aktiv, gekuendigt, gekuendigt_am FROM mitglieder WHERE mitglied_id = ?' + (secureDojoId ? ' AND dojo_id = ?' : ''),
+        secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id]
       );
 
       if (members.length === 0) {
@@ -493,7 +500,7 @@ router.post('/multi-course', async (req, res) => {
       });
     }
 
-    const result = await performMultiCourseCheckin(mitglied_id, stundenplan_ids, checkin_method);
+    const result = await performMultiCourseCheckin(mitglied_id, stundenplan_ids, checkin_method, undefined, secureDojoId);
     const { member, checkinTime, checkinResults } = result;
 
     const successCount = checkinResults.filter(r => r.status === 'erfolg').length;
@@ -697,6 +704,8 @@ router.get('/today', async (req, res) => {
 router.get('/today-member/:mitglied_id', async (req, res) => {
   try {
     const { mitglied_id } = req.params;
+    // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Read-IDOR-Schutz)
+    const secureDojoId = getSecureDojoId(req);
 
     const query = `
       SELECT
@@ -708,14 +717,16 @@ router.get('/today-member/:mitglied_id', async (req, res) => {
         s.kurs_id,
         k.gruppenname as kurs_name
       FROM checkins c
+      JOIN mitglieder m ON m.mitglied_id = c.mitglied_id
       LEFT JOIN stundenplan s ON c.stundenplan_id = s.stundenplan_id
       LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
       WHERE c.mitglied_id = ?
         AND DATE(c.checkin_time) = CURDATE()
+        ${secureDojoId ? 'AND m.dojo_id = ?' : ''}
       ORDER BY c.checkin_time DESC
     `;
 
-    const checkins = await queryAsync(query, [mitglied_id]);
+    const checkins = await queryAsync(query, secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id]);
 
     // stundenplan_ids: nur aktive Check-ins blockieren neue Anmeldungen
     // completed/cancelled Einträge werden als "war schon da" zurückgegeben, blockieren aber nicht
@@ -902,6 +913,8 @@ router.get('/tresen/:datum', async (req, res) => {
 router.post('/tresen/batch-checkin', async (req, res) => {
     try {
         const { mitglieder_ids, datum } = req.body;
+        // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Cross-Tenant-Schutz, Write-IDOR)
+        const secureDojoId = getSecureDojoId(req);
 
         if (!Array.isArray(mitglieder_ids) || mitglieder_ids.length === 0) {
             return res.status(400).json({ error: 'Keine Mitglied-IDs übermittelt' });
@@ -913,10 +926,10 @@ router.post('/tresen/batch-checkin', async (req, res) => {
         // Für jedes Mitglied: Finde zugehörigen Stundenplan und checke ein
         for (const mitglied_id of mitglieder_ids) {
             try {
-                // Stundenplan_id aus anwesenheit Tabelle holen
+                // Stundenplan_id aus anwesenheit Tabelle holen (mit Dojo-Scope)
                 const anwesenheitResult = await queryAsync(
-                    'SELECT stundenplan_id FROM anwesenheit WHERE mitglied_id = ? AND datum = ? AND anwesend = 1',
-                    [mitglied_id, datum]
+                    'SELECT a.stundenplan_id FROM anwesenheit a JOIN mitglieder m ON m.mitglied_id = a.mitglied_id WHERE a.mitglied_id = ? AND a.datum = ? AND a.anwesend = 1' + (secureDojoId ? ' AND m.dojo_id = ?' : ''),
+                    secureDojoId ? [mitglied_id, datum, secureDojoId] : [mitglied_id, datum]
                 );
 
                 if (anwesenheitResult.length === 0) {
@@ -976,10 +989,13 @@ router.post('/checkout', async (req, res) => {
       });
     }
     
+    // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Cross-Tenant-Schutz, Write-IDOR)
+    const secureDojoId = getSecureDojoId(req);
+
     // Get checkin info
     const checkins = await queryAsync(
-      'SELECT c.*, m.vorname, m.nachname FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE c.checkin_id = ?',
-      [checkin_id]
+      'SELECT c.*, m.vorname, m.nachname FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE c.checkin_id = ?' + (secureDojoId ? ' AND m.dojo_id = ?' : ''),
+      secureDojoId ? [checkin_id, secureDojoId] : [checkin_id]
     );
     
     if (checkins.length === 0) {
@@ -1088,10 +1104,13 @@ router.get('/qr/:id', async (req, res) => {
       });
     }
     
+    // 🔒 SICHERHEIT: Dojo-Scope erzwingen (Read-IDOR-Schutz, Name+Email)
+    const secureDojoId = getSecureDojoId(req);
+
     // Get member info
     const members = await queryAsync(
-      'SELECT mitglied_id, vorname, nachname, email, gurtfarbe FROM mitglieder WHERE mitglied_id = ? AND aktiv = 1',
-      [memberId]
+      'SELECT mitglied_id, vorname, nachname, email, gurtfarbe FROM mitglieder WHERE mitglied_id = ? AND aktiv = 1' + (secureDojoId ? ' AND dojo_id = ?' : ''),
+      secureDojoId ? [memberId, secureDojoId] : [memberId]
     );
     
     if (members.length === 0) {

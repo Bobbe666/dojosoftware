@@ -704,6 +704,16 @@ router.get('/rooms/:id/reads-summary', async (req, res) => {
         [room_id, sender_id, sender_type]
       );
       if (!access[0]) return res.status(403).json({ message: 'Kein Zugriff' });
+    } else {
+      // 🔒 Admin darf nur Räume des eigenen Dojos einsehen (Super-Admin = null → alle)
+      const adminDojoId = getSecureDojoId(req);
+      if (adminDojoId) {
+        const [roomRows] = await pool.query(
+          `SELECT id FROM chat_rooms WHERE id = ? AND dojo_id = ?`,
+          [room_id, adminDojoId]
+        );
+        if (!roomRows[0]) return res.status(403).json({ message: 'Kein Zugriff' });
+      }
     }
 
     // Gesamtzahl Mitglieder im Raum (für "X von Y gelesen")

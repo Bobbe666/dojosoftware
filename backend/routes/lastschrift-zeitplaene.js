@@ -219,6 +219,12 @@ router.put("/:id", async (req, res) => {
             return res.status(404).json({ error: "Zeitplan nicht gefunden" });
         }
 
+        // 🔒 Tenant-Check: nur eigenen Zeitplan ändern (Super-Admin = null → voller Zugriff)
+        const callerDojoId = getSecureDojoId(req);
+        if (callerDojoId && Number(existing[0].dojo_id) !== Number(callerDojoId)) {
+            return res.status(404).json({ error: "Zeitplan nicht gefunden" });
+        }
+
         const updateQuery = `
             UPDATE lastschrift_zeitplaene SET
                 name = COALESCE(?, name),
@@ -267,10 +273,12 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        // 🔒 Tenant-Scope: nur eigenen Zeitplan löschen (Super-Admin = null → voller Zugriff)
+        const callerDojoId = getSecureDojoId(req);
 
         const result = await queryAsync(
-            "DELETE FROM lastschrift_zeitplaene WHERE zeitplan_id = ?",
-            [id]
+            `DELETE FROM lastschrift_zeitplaene WHERE zeitplan_id = ?${callerDojoId ? ' AND dojo_id = ?' : ''}`,
+            callerDojoId ? [id, callerDojoId] : [id]
         );
 
         if (result.affectedRows === 0) {

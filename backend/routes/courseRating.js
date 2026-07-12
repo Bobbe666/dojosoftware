@@ -3,6 +3,10 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db.js');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { authenticateToken } = require('../middleware/auth');
+
+// 🔒 Alle Routen erfordern Authentifizierung (bisher nur durch Mount-Reihenfolge geschützt)
+router.use(authenticateToken);
 
 // Hilfsfunktion: mitglied_id aus req.user ermitteln
 const getMitgliedId = async (req) => {

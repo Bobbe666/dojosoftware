@@ -601,9 +601,11 @@ router.post('/manueller-einzug', async (req, res) => {
   try {
     const pool = db.promise();
 
+    // 🔒 Tenant-Scope: Mitglied muss zum eigenen Dojo gehören (verhindert Fremd-SEPA-Einzug)
     const [[mitglied]] = await pool.query(
-      'SELECT mitglied_id, vorname, nachname, email, stripe_customer_id FROM mitglieder WHERE mitglied_id = ?',
-      [mitglied_id]
+      `SELECT mitglied_id, vorname, nachname, email, stripe_customer_id FROM mitglieder
+       WHERE mitglied_id = ?${secureDojoId ? ' AND dojo_id = ?' : ''}`,
+      secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id]
     );
 
     if (!mitglied) return res.status(404).json({ error: 'Mitglied nicht gefunden' });
@@ -612,10 +614,11 @@ router.post('/manueller-einzug', async (req, res) => {
     }
 
     const placeholders = verkauf_ids.map(() => '?').join(',');
+    // 🔒 Nur Verkäufe des eigenen Dojos einziehen
     const [verkaeufe] = await pool.query(
       `SELECT verkauf_id, bon_nummer, brutto_gesamt_cent FROM verkaeufe
-       WHERE verkauf_id IN (${placeholders}) AND mitglied_id = ? AND zahlungsstatus = 'offen'`,
-      [...verkauf_ids, mitglied_id]
+       WHERE verkauf_id IN (${placeholders}) AND mitglied_id = ? AND zahlungsstatus = 'offen'${secureDojoId ? ' AND dojo_id = ?' : ''}`,
+      [...verkauf_ids, mitglied_id, ...(secureDojoId ? [secureDojoId] : [])]
     );
 
     if (!verkaeufe.length) return res.status(400).json({ error: 'Keine offenen Verkäufe gefunden' });
@@ -654,9 +657,12 @@ router.post('/manueller-einzug', async (req, res) => {
     });
 
     const newStatus = paymentIntent.status === 'succeeded' ? 'eingezogen' : 'in_einzug';
+    // 🔒 Nur die tatsächlich eingezogenen (eigenen) Verkäufe aktualisieren
+    const eingezogenIds = verkaeufe.map(v => v.verkauf_id);
+    const updPlaceholders = eingezogenIds.map(() => '?').join(',');
     await pool.query(
-      `UPDATE verkaeufe SET zahlungsstatus = ?, stripe_payment_intent_id = ? WHERE verkauf_id IN (${placeholders})`,
-      [newStatus, paymentIntent.id, ...verkauf_ids]
+      `UPDATE verkaeufe SET zahlungsstatus = ?, stripe_payment_intent_id = ? WHERE verkauf_id IN (${updPlaceholders})`,
+      [newStatus, paymentIntent.id, ...eingezogenIds]
     );
 
     res.json({
@@ -694,19 +700,21 @@ router.post('/naechster-lauf', async (req, res) => {
 
 // GET /api/verkaeufe/:id - Einzelnen Verkauf mit Positionen abrufen
 router.get('/:id', (req, res) => {
-  // Verkaufs-Kopfdaten
+  // 🔒 Tenant-Scope: nur eigener Dojo-Verkauf (Super-Admin = null → voller Zugriff)
+  const secureDojoId = getSecureDojoId(req);
   const verkaufQuery = `
-    SELECT 
+    SELECT
       v.*,
       m.vorname, m.nachname
     FROM verkaeufe v
     LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-    WHERE v.verkauf_id = ?
+    WHERE v.verkauf_id = ?${secureDojoId ? ' AND v.dojo_id = ?' : ''}
   `;
-  
+  const verkaufParams = secureDojoId ? [req.params.id, secureDojoId] : [req.params.id];
+
   // Verkaufs-Positionen
   const positionenQuery = `
-    SELECT 
+    SELECT
       vp.*,
       a.bild_url
     FROM verkauf_positionen vp
@@ -714,10 +722,10 @@ router.get('/:id', (req, res) => {
     WHERE vp.verkauf_id = ?
     ORDER BY vp.position_nummer ASC
   `;
-  
+
   Promise.all([
     new Promise((resolve, reject) => {
-      db.query(verkaufQuery, [req.params.id], (error, results) => {
+      db.query(verkaufQuery, verkaufParams, (error, results) => {
         if (error) return reject(error);
         resolve(results);
       });
@@ -732,7 +740,7 @@ router.get('/:id', (req, res) => {
     if (verkaufResults.length === 0) {
       return res.status(404).json({ error: 'Verkauf nicht gefunden' });
     }
-    
+
     const verkauf = verkaufResults[0];
     const positionen = positionenResults.map(pos => ({
       ...pos,
@@ -741,7 +749,7 @@ router.get('/:id', (req, res) => {
       mwst_euro: pos.mwst_cent / 100,
       brutto_euro: pos.brutto_cent / 100
     }));
-    
+
     const result = {
       ...verkauf,
       brutto_gesamt_euro: verkauf.brutto_gesamt_cent / 100,
@@ -769,26 +777,29 @@ router.get('/:id', (req, res) => {
 // POST /api/verkaeufe/:id/storno - Verkauf stornieren
 router.post('/:id/storno', (req, res) => {
   const { storno_grund, storno_von } = req.body;
-  
+  // 🔒 Tenant-Scope: nur eigener Dojo-Verkauf (Super-Admin = null → voller Zugriff)
+  const secureDojoId = getSecureDojoId(req);
+
   if (!storno_grund) {
     return res.status(400).json({ error: 'Storno-Grund erforderlich' });
   }
-  
+
   // Transaction für Stornierung
   db.beginTransaction((transError) => {
     if (transError) {
       logger.error('Transaction-Fehler:', { error: transError });
       return res.status(500).json({ error: 'Transaction-Fehler' });
     }
-    
+
     // Verkauf als storniert markieren
     const stornoQuery = `
-      UPDATE verkaeufe 
+      UPDATE verkaeufe
       SET storniert = TRUE, storno_grund = ?, storno_timestamp = NOW()
-      WHERE verkauf_id = ? AND storniert = FALSE
+      WHERE verkauf_id = ? AND storniert = FALSE${secureDojoId ? ' AND dojo_id = ?' : ''}
     `;
-    
-    db.query(stornoQuery, [storno_grund, req.params.id], (error, results) => {
+    const stornoParams = secureDojoId ? [storno_grund, req.params.id, secureDojoId] : [storno_grund, req.params.id];
+
+    db.query(stornoQuery, stornoParams, (error, results) => {
       if (error) {
         db.rollback();
         logger.error('Fehler beim Stornieren:', { error: error });
@@ -952,19 +963,21 @@ router.get('/stats/kassenstand', (req, res) => {
 
 // GET /api/verkaeufe/:id/kassenbon - Kassenbon als Text abrufen
 router.get('/:id/kassenbon', (req, res) => {
-  // Verkaufs-Kopfdaten
+  // 🔒 Tenant-Scope: nur eigener Dojo-Verkauf (Super-Admin = null → voller Zugriff)
+  const secureDojoId = getSecureDojoId(req);
   const verkaufQuery = `
-    SELECT 
+    SELECT
       v.*,
       m.vorname, m.nachname
     FROM verkaeufe v
     LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-    WHERE v.verkauf_id = ?
+    WHERE v.verkauf_id = ?${secureDojoId ? ' AND v.dojo_id = ?' : ''}
   `;
-  
+  const verkaufParams = secureDojoId ? [req.params.id, secureDojoId] : [req.params.id];
+
   // Verkaufs-Positionen
   const positionenQuery = `
-    SELECT 
+    SELECT
       vp.*,
       a.bild_url
     FROM verkauf_positionen vp
@@ -972,10 +985,10 @@ router.get('/:id/kassenbon', (req, res) => {
     WHERE vp.verkauf_id = ?
     ORDER BY vp.position_nummer ASC
   `;
-  
+
   Promise.all([
     new Promise((resolve, reject) => {
-      db.query(verkaufQuery, [req.params.id], (error, results) => {
+      db.query(verkaufQuery, verkaufParams, (error, results) => {
         if (error) return reject(error);
         resolve(results);
       });

@@ -62,7 +62,8 @@ router.post('/upload', requireMember, upload.array('images', 5), (req, res) => {
 // ── GET / — aktive Posts des Dojos ───────────────────────────────────────────
 
 router.get('/', requireMember, async (req, res) => {
-  const dojoId   = req.query.dojo_id;
+  // 🔒 Dojo-ID aus Token erzwingen (Super-Admin ohne Dojo darf via Query wählen)
+  const dojoId   = req.user.dojo_id || req.query.dojo_id;
   const category = req.query.category; // optional filter
   if (!dojoId) return res.status(400).json({ error: 'dojo_id fehlt' });
   try {
@@ -89,7 +90,8 @@ router.get('/', requireMember, async (req, res) => {
 // ── GET /admin — alle Posts inkl. pending (Admin) ─────────────────────────────
 
 router.get('/admin', requireAdmin, async (req, res) => {
-  const dojoId = req.query.dojo_id;
+  // 🔒 Dojo-ID aus Token erzwingen (Super-Admin darf via Query wählen)
+  const dojoId = req.user.dojo_id || req.query.dojo_id;
   if (!dojoId) return res.status(400).json({ error: 'dojo_id fehlt' });
   try {
     const [rows] = await pool.query(`
@@ -118,8 +120,12 @@ router.post('/', requireMember, async (req, res) => {
     expires_at,
   } = req.body;
 
-  if (!dojo_id || !category || !title || !description)
-    return res.status(400).json({ error: 'dojo_id, category, title, description erforderlich' });
+  if (!category || !title || !description)
+    return res.status(400).json({ error: 'category, title, description erforderlich' });
+
+  // 🔒 Dojo-ID aus Token erzwingen (Super-Admin darf via Body wählen)
+  const effectiveDojoId = req.user.dojo_id || dojo_id;
+  if (!effectiveDojoId) return res.status(400).json({ error: 'dojo_id fehlt' });
 
   const mitgliedId = req.user.mitglied_id || req.user.id;
   if (!mitgliedId) return res.status(400).json({ error: 'Mitglied-ID nicht ermittelbar' });
@@ -135,7 +141,7 @@ router.post('/', requireMember, async (req, res) => {
          status, expires_at)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'pending',?)
     `, [
-      dojo_id, mitgliedId, category, title, description,
+      effectiveDojoId, mitgliedId, category, title, description,
       images ? JSON.stringify(images) : null,
       price || null, price_type || null, item_condition || null,
       training_style || null, training_days || null, training_time || null, training_level || null,
@@ -197,6 +203,10 @@ router.delete('/:id', requireMember, async (req, res) => {
   if (!post) return res.status(404).json({ error: 'Nicht gefunden' });
   const isAdmin = role === 'admin' || role === 'super_admin';
   if (post.mitglied_id !== mitgliedId && !isAdmin) return res.status(403).json({ error: 'Kein Zugriff' });
+  // 🔒 Admin darf nur eigenes Dojo moderieren (Super-Admin ohne Dojo = voller Zugriff)
+  if (isAdmin && req.user.dojo_id && Number(post.dojo_id) !== Number(req.user.dojo_id)) {
+    return res.status(403).json({ error: 'Kein Zugriff' });
+  }
   await pool.query('DELETE FROM community_posts WHERE id = ?', [req.params.id]);
   res.json({ success: true });
 });
@@ -208,6 +218,12 @@ router.put('/:id/status', requireAdmin, async (req, res) => {
   if (!['active', 'rejected', 'closed'].includes(status))
     return res.status(400).json({ error: 'Ungültiger Status' });
   try {
+    // 🔒 Ownership: Admin darf nur Posts des eigenen Dojos moderieren
+    const [[post]] = await pool.query('SELECT dojo_id FROM community_posts WHERE id = ?', [req.params.id]);
+    if (!post) return res.status(404).json({ error: 'Nicht gefunden' });
+    if (req.user.dojo_id && Number(post.dojo_id) !== Number(req.user.dojo_id)) {
+      return res.status(403).json({ error: 'Kein Zugriff' });
+    }
     await pool.query(
       'UPDATE community_posts SET status=?, rejection_reason=? WHERE id=?',
       [status, rejection_reason || null, req.params.id]

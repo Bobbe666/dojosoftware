@@ -409,10 +409,12 @@ router.get('/payments', authenticateToken, async (req, res) => {
 router.get('/payments/:checkoutId', authenticateToken, async (req, res) => {
     try {
         const { checkoutId } = req.params;
+        // 🔒 Tenant-Scope: nur eigene Dojo-Zahlung (Super-Admin = null → voller Zugriff)
+        const secureDojoId = getSecureDojoId(req);
 
         db.query(
-            'SELECT * FROM sumup_payments WHERE checkout_id = ?',
-            [checkoutId],
+            `SELECT * FROM sumup_payments WHERE checkout_id = ?${secureDojoId ? ' AND dojo_id = ?' : ''}`,
+            secureDojoId ? [checkoutId, secureDojoId] : [checkoutId],
             (err, results) => {
                 if (err) {
                     logger.error('SumUp Zahlung DB Fehler:', { error: err.message });

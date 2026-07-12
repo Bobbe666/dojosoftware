@@ -221,6 +221,7 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
+  const secureDojoId = getSecureDojoId(req);
   const {
     datum,
     betrag,
@@ -272,13 +273,23 @@ router.put('/:id', async (req, res) => {
 
     params.push(id);
 
+    // 🔒 Tenant-Scope: nur eigene Dojo-Ausgabe (Super-Admin = null → kein Filter)
+    let dojoClause = '';
+    if (secureDojoId) {
+      dojoClause = ' AND dojo_id = ?';
+      params.push(secureDojoId);
+    }
+
     const query = `
       UPDATE kassenbuch
       SET ${updateFields.join(', ')}
-      WHERE eintrag_id = ? AND bewegungsart = 'ausgabe'
+      WHERE eintrag_id = ? AND bewegungsart = 'ausgabe'${dojoClause}
     `;
 
-    await queryAsync(query, params);
+    const updResult = await queryAsync(query, params);
+    if (updResult.affectedRows === 0) {
+      return res.status(404).json({ error: 'Ausgabe nicht gefunden' });
+    }
 
     res.json({
       success: true,
@@ -297,14 +308,17 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
+  const secureDojoId = getSecureDojoId(req);
 
   try {
+    // 🔒 Tenant-Scope: nur eigene Dojo-Ausgabe (Super-Admin = null → kein Filter)
     const query = `
       DELETE FROM kassenbuch
-      WHERE eintrag_id = ? AND bewegungsart = 'ausgabe'
+      WHERE eintrag_id = ? AND bewegungsart = 'ausgabe'${secureDojoId ? ' AND dojo_id = ?' : ''}
     `;
+    const delParams = secureDojoId ? [id, secureDojoId] : [id];
 
-    const result = await queryAsync(query, [id]);
+    const result = await queryAsync(query, delParams);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Ausgabe nicht gefunden' });

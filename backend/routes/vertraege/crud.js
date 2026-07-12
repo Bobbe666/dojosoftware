@@ -123,6 +123,12 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: "dojo_id ist erforderlich - jeder Vertrag MUSS einem Dojo zugeordnet sein", required: ['mitglied_id', 'dojo_id'] });
     }
 
+    // 🔒 Tenant-Check: body-dojo_id gegen den Aufrufer prüfen (Super-Admin = null → jedes Dojo)
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId && parseInt(dojo_id) !== Number(secureDojoId)) {
+      return res.status(403).json({ error: 'Keine Berechtigung für dieses Dojo' });
+    }
+
     const memberCheck = await queryAsync(`SELECT mitglied_id, dojo_id FROM mitglieder WHERE mitglied_id = ?`, [mitglied_id]);
     if (memberCheck.length === 0) return res.status(404).json({ error: 'Mitglied nicht gefunden' });
     if (memberCheck[0].dojo_id !== parseInt(dojo_id)) {

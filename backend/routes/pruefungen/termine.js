@@ -505,6 +505,12 @@ router.get('/:id/anmeldungen', async (req, res) => {
     );
     if (!ptv) return res.status(404).json({ error: 'Termin nicht gefunden' });
 
+    // 🔒 Dojo-Ownership prüfen
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId && Number(ptv.dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Termin nicht gefunden' });
+    }
+
     // Externe Anmeldungen
     const extern = await queryAsync(`
       SELECT pa.id, pa.vorname, pa.nachname, pa.aktueller_gurt, pa.angestrebter_gurt,
@@ -562,6 +568,18 @@ router.put('/:terminId/anmeldungen/:id', async (req, res) => {
   }
 
   try {
+    // 🔒 Dojo-Ownership des Termins prüfen
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId) {
+      const [ownTermin] = await queryAsync(
+        'SELECT dojo_id FROM pruefungstermin_vorlagen WHERE termin_id = ? LIMIT 1',
+        [termin_id]
+      );
+      if (!ownTermin || Number(ownTermin.dojo_id) !== Number(secureDojoId)) {
+        return res.status(404).json({ error: 'Termin nicht gefunden' });
+      }
+    }
+
     const fields = [];
     const values = [];
 

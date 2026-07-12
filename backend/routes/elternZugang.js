@@ -34,6 +34,11 @@ router.post('/', async (req, res) => {
   if (!secureDojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
   const token = crypto.randomBytes(32).toString('hex');
   try {
+    // 🔒 SICHERHEIT: mitglied_id muss zum eigenen Dojo gehören (Cross-Tenant-Schutz)
+    const [ownRows] = await pool.query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
+    if (ownRows.length === 0 || Number(ownRows[0].dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
     const [r] = await pool.query(
       'INSERT INTO eltern_zugang (eltern_email, eltern_name, mitglied_id, dojo_id, token, aktiv) VALUES (?, ?, ?, ?, ?, 1)',
       [eltern_email, eltern_name || null, mitglied_id, secureDojoId, token]

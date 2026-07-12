@@ -125,6 +125,12 @@ router.post('/', async (req, res) => {
   try {
     const data = req.body;
 
+    // 🔒 SICHERHEIT: dojo_id aus JWT erzwingen, nicht aus Body (Super-Admin darf Body-Wert)
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId) {
+      data.dojo_id = secureDojoId;
+    }
+
     const query = `
       INSERT INTO ehemalige (
         urspruengliches_mitglied_id, dojo_id, vorname, nachname, geburtsdatum, geschlecht,

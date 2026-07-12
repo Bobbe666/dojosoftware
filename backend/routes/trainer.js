@@ -70,6 +70,9 @@ router.post("/", (req, res) => {
         return res.status(400).json({ error: "Vorname und Nachname erforderlich." });
     }
 
+    // 🔒 Dojo-ID immer aus Token (Super-Admin darf via body wählen)
+    const dojoId = getSecureDojoId(req) || req.body.dojo_id || null;
+
     db.getConnection((err, connection) => {
         if (err) {
             logger.error('Datenbankverbindungsfehler:', { error: err });
@@ -83,10 +86,10 @@ router.post("/", (req, res) => {
                 return res.status(500).json({ error: "Fehler beim Hinzufügen des Trainers", details: err.sqlMessage });
             }
 
-            // Trainer einfügen (ohne Stile)
+            // Trainer einfügen (ohne Stile), dojo_id aus Token
             connection.query(
-                "INSERT INTO trainer (vorname, nachname, email, telefon) VALUES (?, ?, ?, ?)",
-                [vorname, nachname, email || '', telefon || ''],
+                "INSERT INTO trainer (vorname, nachname, email, telefon, dojo_id) VALUES (?, ?, ?, ?, ?)",
+                [vorname, nachname, email || '', telefon || '', dojoId],
                 (err, result) => {
                     if (err) {
                         connection.rollback(() => connection.release());
@@ -150,9 +153,9 @@ router.put("/:id", (req, res) => {
         return res.status(400).json({ error: "Vorname und Nachname erforderlich." });
     }
 
-    // Dojo-Sicherheit: Trainer muss zum eigenen Dojo gehören (oder kein Dojo haben = Altdaten)
-    const dojoId = req.user?.dojo_id || req.dojo_id;
-    const dojoCheck = dojoId ? ' AND (dojo_id = ? OR dojo_id IS NULL)' : '';
+    // 🔒 Dojo-Sicherheit: Trainer muss zum eigenen Dojo gehören (NULL-Schlupfloch geschlossen)
+    const dojoId = getSecureDojoId(req);
+    const dojoCheck = dojoId ? ' AND dojo_id = ?' : '';
     const checkParams = dojoId ? [trainerId, dojoId] : [trainerId];
 
     db.getConnection((err, connection) => {
@@ -225,6 +228,9 @@ router.put("/:id", (req, res) => {
 router.delete("/:id", (req, res) => {
     const trainerId = req.params.id;
 
+    // 🔒 Dojo-Sicherheit: Trainer muss zum eigenen Dojo gehören
+    const secureDojoId = getSecureDojoId(req);
+
     db.getConnection((err, connection) => {
         if (err) {
             logger.error('Fehler bei der Datenbankverbindung:', { error: err });
@@ -237,6 +243,15 @@ router.delete("/:id", (req, res) => {
                 logger.error('Fehler beim Starten der Transaktion:', { error: err });
                 return res.status(500).json({ error: "Fehler beim Löschen des Trainers", details: err.sqlMessage });
             }
+
+            // Schritt 0: Ownership prüfen
+            const ownCheck = secureDojoId ? ' AND dojo_id = ?' : '';
+            const ownParams = secureDojoId ? [trainerId, secureDojoId] : [trainerId];
+            connection.query(`SELECT trainer_id FROM trainer WHERE trainer_id = ?${ownCheck}`, ownParams, (ownErr, ownRows) => {
+                if (ownErr || ownRows.length === 0) {
+                    connection.rollback(() => connection.release());
+                    return res.status(404).json({ error: "Trainer nicht gefunden" });
+                }
 
             // Schritt 1: Trainer-Stile löschen
             connection.query("DELETE FROM trainer_stile WHERE trainer_id = ?", [trainerId], (err) => {
@@ -266,6 +281,7 @@ router.delete("/:id", (req, res) => {
                     });
                 });
             });
+            }); // end ownCheck
         });
     });
 });
@@ -684,10 +700,23 @@ router.post("/:id/dokument", async (req, res) => {
 });
 
 // GET /:id/dokument/:filename — PDF herunterladen
-router.get("/:id/dokument/:filename", (req, res) => {
-  const { filename } = req.params;
+router.get("/:id/dokument/:filename", async (req, res) => {
+  const { id, filename } = req.params;
   // Sicherheit: nur alphanumerisch + underscore + punkt
   if (!/^[\w.-]+\.pdf$/.test(filename)) return res.status(400).json({ error: 'Ungültiger Dateiname' });
+
+  // 🔒 Ownership: Dokument muss zum Trainer + Dojo gehören (verhindert Zugriff nur per Dateiname)
+  const dojoId = getSecureDojoId(req);
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT id FROM trainer_dokumente WHERE pdf_dateiname = ? AND trainer_id = ?${dojoId ? ' AND dojo_id = ?' : ''} LIMIT 1`,
+      dojoId ? [filename, id, dojoId] : [filename, id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Datei nicht gefunden' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Fehler beim Laden des Dokuments' });
+  }
+
   const filepath = path.join(DOKUMENTE_DIR, filename);
   if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Datei nicht gefunden' });
   res.setHeader('Content-Type', 'application/pdf');

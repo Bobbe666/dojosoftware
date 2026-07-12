@@ -9,6 +9,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const logger = require('../../utils/logger');
 const { queryAsync } = require('./shared');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 const { sendEmailForDojo } = require('../../services/emailService');
 const { bannerUrlFor, renderEmail, getDojoMailTheme } = require('../../services/emailLayout');
 const QRCode = require('qrcode');
@@ -337,6 +338,7 @@ function buildRechnungHTML(rechnung, positionen, qr = null, opts = {}) {
 // GET /:id/vorschau - HTML-Vorschau für Rechnung (zum Anzeigen/Drucken)
 router.get('/:id/vorschau', (req, res) => {
   const { id } = req.params;
+  const secureDojoId = getSecureDojoId(req);
 
   // Lade Rechnung mit allen Details
   const rechnungQuery = `
@@ -375,6 +377,11 @@ router.get('/:id/vorschau', (req, res) => {
 
     const rechnung = rechnungResults[0];
 
+    // 🔒 Tenant-Check: nur eigene Dojo-Rechnung (Super-Admin = null → voller Zugriff)
+    if (secureDojoId && Number(rechnung.resolved_dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).send('Rechnung nicht gefunden');
+    }
+
     // Lade Positionen
     const positionenQuery = `SELECT * FROM rechnungspositionen WHERE rechnung_id = ? ORDER BY position_nr`;
 
@@ -400,11 +407,15 @@ router.get('/:id/vorschau', (req, res) => {
 // GET /:id/pdf - PDF-Download für Rechnung (aus gespeichertem Dokument)
 router.get('/:id/pdf', async (req, res) => {
   const { id } = req.params;
+  const secureDojoId = getSecureDojoId(req);
 
   try {
     // Hole Rechnungsnummer für Suche
     const rechnungResults = await queryAsync(
-      'SELECT rechnungsnummer, mitglied_id FROM rechnungen WHERE rechnung_id = ?',
+      `SELECT r.rechnungsnummer, r.mitglied_id, COALESCE(m.dojo_id, r.dojo_id) AS resolved_dojo_id
+       FROM rechnungen r
+       LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+       WHERE r.rechnung_id = ?`,
       [id]
     );
 
@@ -412,6 +423,11 @@ router.get('/:id/pdf', async (req, res) => {
       return res.status(404).json({ error: 'Rechnung nicht gefunden' });
     }
     const rechnung = rechnungResults[0];
+
+    // 🔒 Tenant-Check: nur eigene Dojo-Rechnung (Super-Admin = null → voller Zugriff)
+    if (secureDojoId && Number(rechnung.resolved_dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Rechnung nicht gefunden' });
+    }
 
     // Suche nach gespeichertem PDF in mitglied_dokumente
     const dokumentResults = await queryAsync(
@@ -469,7 +485,7 @@ router.get('/:id/pdf', async (req, res) => {
 // POST /:id/email-senden - Rechnung als PDF per E-Mail versenden
 router.post('/:id/email-senden', async (req, res) => {
   const { id } = req.params;
-  const { an_email } = req.body; // optionale Override-Adresse
+  const secureDojoId = getSecureDojoId(req);
 
   try {
     const puppeteer = require('puppeteer');
@@ -493,11 +509,17 @@ router.post('/:id/email-senden', async (req, res) => {
     if (results.length === 0) return res.status(404).json({ error: 'Rechnung nicht gefunden' });
     const rechnung = results[0];
 
+    // 🔒 Tenant-Check: nur eigene Dojo-Rechnung (Super-Admin = null → voller Zugriff)
+    if (secureDojoId && Number(rechnung.resolved_dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Rechnung nicht gefunden' });
+    }
+
     const positionen = await queryAsync(
       'SELECT * FROM rechnungspositionen WHERE rechnung_id = ? ORDER BY position_nr', [id]
     );
 
-    const zielEmail = an_email || rechnung.empfaenger_email;
+    // 🔒 Nur an die hinterlegte Empfänger-Mail senden – keine body-gesteuerte Fremdadresse
+    const zielEmail = rechnung.empfaenger_email;
     if (!zielEmail) return res.status(400).json({ error: 'Keine E-Mail-Adresse hinterlegt' });
 
     const dojoId = rechnung.resolved_dojo_id;
@@ -563,10 +585,21 @@ router.post('/:id/email-senden', async (req, res) => {
 router.patch('/:id/empfaenger-email', async (req, res) => {
   const { id } = req.params;
   const { email } = req.body;
+  const secureDojoId = getSecureDojoId(req);
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
   try {
-    const rows = await queryAsync('SELECT mitglied_id FROM rechnungen WHERE rechnung_id = ?', [id]);
+    const rows = await queryAsync(
+      `SELECT r.mitglied_id, COALESCE(m.dojo_id, r.dojo_id) AS resolved_dojo_id
+       FROM rechnungen r
+       LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+       WHERE r.rechnung_id = ?`,
+      [id]
+    );
     if (rows.length === 0) return res.status(404).json({ error: 'Rechnung nicht gefunden' });
+    // 🔒 Tenant-Check: verhindert Überschreiben fremder Mitglieds-Mail
+    if (secureDojoId && Number(rows[0].resolved_dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Rechnung nicht gefunden' });
+    }
     if (rows[0].mitglied_id) {
       await queryAsync('UPDATE mitglieder SET email = ? WHERE mitglied_id = ?', [email, rows[0].mitglied_id]);
     } else {
@@ -582,16 +615,30 @@ router.patch('/:id/empfaenger-email', async (req, res) => {
 router.patch('/:id/positionen-kategorien', async (req, res) => {
   const { id } = req.params;
   const { buchungskategorie_default, positionen_kategorien } = req.body;
+  const secureDojoId = getSecureDojoId(req);
   try {
+    // 🔒 Tenant-Check: Ownership der Rechnung prüfen
+    const own = await queryAsync(
+      `SELECT COALESCE(m.dojo_id, r.dojo_id) AS resolved_dojo_id
+       FROM rechnungen r
+       LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+       WHERE r.rechnung_id = ?`,
+      [id]
+    );
+    if (own.length === 0) return res.status(404).json({ error: 'Rechnung nicht gefunden' });
+    if (secureDojoId && Number(own[0].resolved_dojo_id) !== Number(secureDojoId)) {
+      return res.status(404).json({ error: 'Rechnung nicht gefunden' });
+    }
     await queryAsync(
       'UPDATE rechnungen SET buchungskategorie_default = ? WHERE rechnung_id = ?',
       [buchungskategorie_default || null, id]
     );
     if (Array.isArray(positionen_kategorien)) {
       for (const pos of positionen_kategorien) {
+        // 🔒 nur Positionen dieser Rechnung ändern (keine fremden position_id)
         await queryAsync(
-          'UPDATE rechnungspositionen SET buchungskategorie = ? WHERE position_id = ?',
-          [pos.buchungskategorie || null, pos.position_id]
+          'UPDATE rechnungspositionen SET buchungskategorie = ? WHERE position_id = ? AND rechnung_id = ?',
+          [pos.buchungskategorie || null, pos.position_id, id]
         );
       }
     }

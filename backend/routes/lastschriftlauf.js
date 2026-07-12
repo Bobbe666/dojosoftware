@@ -579,7 +579,8 @@ router.get("/missing-mandates", (req, res) => {
 router.get("/debug-member", async (req, res) => {
     try {
         const { name, mitglied_id } = req.query;
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 dojo_id sicher aus JWT (Super-Admin = null → alle Dojos); kein Query-Spoofing
+        const dojoId = getSecureDojoId(req);
         const monat = parseInt(req.query.monat) || (new Date().getMonth() + 1);
         const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
         const lastDay = new Date(jahr, monat, 0).getDate();
@@ -652,7 +653,8 @@ router.get("/debug-member", async (req, res) => {
  */
 router.get("/not-in-run", async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 dojo_id sicher aus JWT (Super-Admin = null → alle Dojos); kein Query-Spoofing
+        const dojoId = getSecureDojoId(req);
         const monat = parseInt(req.query.monat) || (new Date().getMonth() + 1);
         const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
         const lastDayNIR = new Date(jahr, monat, 0).getDate();
@@ -1508,7 +1510,8 @@ router.post("/ratenplan-mark-collected", async (req, res) => {
  */
 router.get("/stripe/status", async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 dojo_id sicher aus JWT (Super-Admin = null → alle Dojos); kein Query-Spoofing
+        const dojoId = getSecureDojoId(req);
 
         // Prüfe Stripe-Konfiguration (mind. ein Dojo mit Stripe-Key)
         const dojoQuery = dojoId
@@ -1574,15 +1577,16 @@ router.post("/stripe/setup-customer", async (req, res) => {
         }
 
         // Lade Mitglied mit SEPA-Daten
+        // 🔒 Tenant-Scope: nur eigenes Dojo-Mitglied (Super-Admin = null → voller Zugriff)
         const mitgliedQuery = `
             SELECT
                 m.mitglied_id, m.vorname, m.nachname, m.email, m.stripe_customer_id,
                 sm.iban, sm.kontoinhaber, sm.stripe_payment_method_id
             FROM mitglieder m
             LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
-            WHERE m.mitglied_id = ?
+            WHERE m.mitglied_id = ?${dojoId ? ' AND m.dojo_id = ?' : ''}
         `;
-        const mitgliedResult = await queryAsync(mitgliedQuery, [mitglied_id]);
+        const mitgliedResult = await queryAsync(mitgliedQuery, dojoId ? [mitglied_id, dojoId] : [mitglied_id]);
 
         if (mitgliedResult.length === 0) {
             return res.status(404).json({ error: 'Mitglied nicht gefunden' });
@@ -2293,6 +2297,11 @@ router.post("/stripe/retry-single", async (req, res) => {
         );
 
         if (!origTrans) {
+            return res.status(404).json({ error: 'Transaktion nicht gefunden' });
+        }
+        // 🔒 Tenant-Check: nur eigene Dojo-Transaktion erneut einziehen (verhindert Fremd-SEPA-Abbuchung)
+        const secureDojoId = getSecureDojoId(req);
+        if (secureDojoId && Number(origTrans.dojo_id) !== Number(secureDojoId)) {
             return res.status(404).json({ error: 'Transaktion nicht gefunden' });
         }
         if (origTrans.status !== 'failed') {

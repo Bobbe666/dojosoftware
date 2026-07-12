@@ -411,6 +411,7 @@ router.put('/:pruefung_id/admin-status', (req, res) => {
   const pruefung_id = parseInt(req.params.pruefung_id);
   if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
 
+  const secureDojoId = getSecureDojoId(req);
   const { mitglied_antwort, teilnahme_bestaetigt } = req.body;
 
   // Valide Werte prüfen
@@ -439,8 +440,10 @@ router.put('/:pruefung_id/admin-status', (req, res) => {
   if (felder.length === 0) return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
 
   werte.push(pruefung_id);
+  let whereSql = 'WHERE pruefung_id = ?';
+  if (secureDojoId) { whereSql += ' AND dojo_id = ?'; werte.push(secureDojoId); }
   db.query(
-    `UPDATE pruefungen SET ${felder.join(', ')} WHERE pruefung_id = ?`,
+    `UPDATE pruefungen SET ${felder.join(', ')} ${whereSql}`,
     werte,
     (err, result) => {
       if (err) return res.status(500).json({ error: 'Fehler beim Aktualisieren', details: err.message });
@@ -489,11 +492,17 @@ router.post('/antwort', (req, res) => {
     ? JSON.stringify(alternative_termine)
     : null;
 
+  const secureDojoId = getSecureDojoId(req);
+  const antwortParams = [antwort, alternativeJson, pruefung_id];
+  let antwortWhere = 'WHERE pruefung_id = ?';
+  if (secureDojoId) { antwortWhere += ' AND dojo_id = ?'; antwortParams.push(secureDojoId); }
+
   db.query(
-    'UPDATE pruefungen SET mitglied_antwort = ?, mitglied_antwort_am = NOW(), alternative_termine = ? WHERE pruefung_id = ?',
-    [antwort, alternativeJson, pruefung_id],
-    (err) => {
+    `UPDATE pruefungen SET mitglied_antwort = ?, mitglied_antwort_am = NOW(), alternative_termine = ? ${antwortWhere}`,
+    antwortParams,
+    (err, result) => {
       if (err) return res.status(500).json({ error: 'Fehler beim Speichern der Antwort.' });
+      if (result.affectedRows === 0) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
 
       // Notification als confirmed markieren
       if (notification_id) {
@@ -789,11 +798,16 @@ router.post('/lastschrift-zustimmung', (req, res) => {
   if (!pruefung_id || zugestimmt === undefined) {
     return res.status(400).json({ error: 'pruefung_id und zugestimmt erforderlich.' });
   }
+  const secureDojoId = getSecureDojoId(req);
+  const lsParams = [zugestimmt ? 1 : 0, pruefung_id];
+  let lsWhere = 'WHERE pruefung_id = ?';
+  if (secureDojoId) { lsWhere += ' AND dojo_id = ?'; lsParams.push(secureDojoId); }
   db.query(
-    'UPDATE pruefungen SET lastschrift_zugestimmt = ?, lastschrift_zugestimmt_am = NOW() WHERE pruefung_id = ?',
-    [zugestimmt ? 1 : 0, pruefung_id],
-    (err) => {
+    `UPDATE pruefungen SET lastschrift_zugestimmt = ?, lastschrift_zugestimmt_am = NOW() ${lsWhere}`,
+    lsParams,
+    (err, result) => {
       if (err) return res.status(500).json({ error: 'Fehler beim Speichern.' });
+      if (result.affectedRows === 0) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
       if (notification_id) {
         db.query(
           "UPDATE notifications SET status = 'read', confirmed_at = NOW() WHERE id = ?",

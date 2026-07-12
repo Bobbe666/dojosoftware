@@ -53,6 +53,18 @@ const canAccessEvent = async (user, eventDojoId) => {
 };
 
 /**
+ * 🔒 Lädt ein Event und prüft Dojo-Zugriff. Sendet bei Fehler 404/403 und gibt null,
+ * sonst die Event-Zeile (mind. dojo_id). Zentral für Tenant-Isolation pro Event-ID.
+ */
+const loadEventWithAccess = async (req, res, eventId) => {
+  const [rows] = await db.promise().query('SELECT * FROM events WHERE event_id = ?', [eventId]);
+  if (rows.length === 0) { res.status(404).json({ error: 'Event nicht gefunden' }); return null; }
+  const ok = await canAccessEvent(req.user, rows[0].dojo_id);
+  if (!ok) { res.status(403).json({ error: 'Keine Berechtigung für dieses Event' }); return null; }
+  return rows[0];
+};
+
+/**
  * Prüft ob User Zugriff auf Mitglied-Daten hat
  */
 const canAccessMember = async (user, mitgliedId) => {
@@ -666,6 +678,10 @@ router.put('/:id', requireFeature('events'), (req, res) => {
   const eventId = req.params.id;
   const eventData = req.body;
 
+  // 🔒 Tenant-Isolation: normaler User nur eigenes Dojo, Super-Admin alle
+  const effectiveDojoId = enforceDojo(req);
+  const dojoCond = effectiveDojoId ? ' AND dojo_id = ?' : '';
+
   const query = `
     UPDATE events SET
       titel = ?,
@@ -685,7 +701,7 @@ router.put('/:id', requireFeature('events'), (req, res) => {
       bild_url = ?,
       anforderungen = ?,
       updated_at = CURRENT_TIMESTAMP
-    WHERE event_id = ?
+    WHERE event_id = ?${dojoCond}
   `;
 
   const params = [
@@ -707,6 +723,7 @@ router.put('/:id', requireFeature('events'), (req, res) => {
     eventData.anforderungen || null,
     eventId
   ];
+  if (effectiveDojoId) params.push(effectiveDojoId);
 
   db.query(query, params, (err, result) => {
     if (err) {
@@ -733,6 +750,9 @@ router.put('/anmeldungen/:anmeldung_id', (req, res) => {
   const anmeldungId = req.params.anmeldung_id;
   const { status, bezahlt, bemerkung } = req.body;
 
+  // 🔒 Tenant-Isolation über das zugehörige Event
+  const effectiveDojoId = enforceDojo(req);
+
   let query = 'UPDATE event_anmeldungen SET updated_at = CURRENT_TIMESTAMP';
   const params = [];
 
@@ -753,6 +773,10 @@ router.put('/anmeldungen/:anmeldung_id', (req, res) => {
 
   query += ' WHERE anmeldung_id = ?';
   params.push(anmeldungId);
+  if (effectiveDojoId) {
+    query += ' AND event_id IN (SELECT event_id FROM events WHERE dojo_id = ?)';
+    params.push(effectiveDojoId);
+  }
 
   db.query(query, params, (err, result) => {
     if (err) {
@@ -783,6 +807,14 @@ router.put('/anmeldungen/:anmeldung_id', (req, res) => {
 router.delete('/:id', requireFeature('events'), (req, res) => {
   const eventId = req.params.id;
   const force = req.query.force === 'true';
+
+  // 🔒 Tenant-Isolation: Zugriff auf das Event vorab prüfen
+  const effectiveDojoId = enforceDojo(req);
+  const accessCond = effectiveDojoId ? ' AND dojo_id = ?' : '';
+  const accessParams = effectiveDojoId ? [eventId, effectiveDojoId] : [eventId];
+  db.query(`SELECT event_id FROM events WHERE event_id = ?${accessCond}`, accessParams, (accErr, accRows) => {
+    if (accErr) return res.status(500).json({ error: 'Fehler beim Prüfen des Events', details: accErr.message });
+    if (accRows.length === 0) return res.status(404).json({ error: 'Event nicht gefunden' });
 
   // Prüfe ob Anmeldungen existieren
   db.query(
@@ -839,6 +871,7 @@ router.delete('/:id', requireFeature('events'), (req, res) => {
       }
     }
   );
+  }); // end access check
 });
 
 // ============================================================================
@@ -1036,6 +1069,17 @@ router.get('/member/:mitglied_id', async (req, res) => {
   const mitgliedId = parseInt(req.params.mitglied_id);
 
   try {
+    // 🔒 Zugriff auf Mitglied prüfen (eigenes Mitglied oder gleiches Dojo)
+    const hasAccess = await canAccessMember(req.user, mitgliedId);
+    if (!hasAccess && req.user.mitglied_id != mitgliedId) {
+      return res.status(403).json({ error: 'Keine Berechtigung für dieses Mitglied' });
+    }
+
+    // 🔒 Events nur aus dem Dojo des Mitglieds
+    const [mrows] = await db.promise().query('SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?', [mitgliedId]);
+    if (mrows.length === 0) return res.json({ success: true, events: [] });
+    const memberDojoId = mrows[0].dojo_id;
+
     const query = `
       SELECT
         e.*,
@@ -1057,11 +1101,12 @@ router.get('/member/:mitglied_id', async (req, res) => {
       LEFT JOIN raeume r ON e.raum_id = r.id
       WHERE e.status NOT IN ('abgeschlossen', 'abgesagt')
         AND e.datum >= CURDATE()
+        AND e.dojo_id = ?
       GROUP BY e.event_id
       ORDER BY e.datum ASC, e.uhrzeit_beginn ASC
     `;
 
-    const [rows] = await db.promise().query(query, [mitgliedId]);
+    const [rows] = await db.promise().query(query, [mitgliedId, memberDojoId]);
 
     // Bestelloptionen und eigene Bestellungen nachladen
     for (const event of rows) {
@@ -1120,6 +1165,14 @@ router.post('/:id/admin-anmelden', async (req, res) => {
     }
 
     const event = eventRows[0];
+
+    // 🔒 Tenant-Isolation: Zugriff auf Event + Mitglied prüfen
+    if (!(await canAccessEvent(req.user, event.dojo_id))) {
+      return res.status(403).json({ error: 'Keine Berechtigung für dieses Event' });
+    }
+    if (!(await canAccessMember(req.user, mitglied_id))) {
+      return res.status(403).json({ error: 'Keine Berechtigung für dieses Mitglied' });
+    }
 
     // 2. Prüfe ob Mitglied existiert
     const [memberRows] = await db.promise().query(
@@ -1210,13 +1263,16 @@ router.put('/anmeldung/:id/bezahlt', async (req, res) => {
   const anmeldungId = parseInt(req.params.id);
 
   try {
+    // 🔒 Tenant-Isolation über das zugehörige Event
+    const effectiveDojoId = enforceDojo(req);
+    let sql = `UPDATE event_anmeldungen SET bezahlt = true, bezahldatum = NOW() WHERE anmeldung_id = ?`;
+    const params = [anmeldungId];
+    if (effectiveDojoId) {
+      sql += ' AND event_id IN (SELECT event_id FROM events WHERE dojo_id = ?)';
+      params.push(effectiveDojoId);
+    }
     // Aktualisiere Bezahlt-Status
-    const [result] = await db.promise().query(
-      `UPDATE event_anmeldungen
-       SET bezahlt = true, bezahldatum = NOW()
-       WHERE anmeldung_id = ?`,
-      [anmeldungId]
-    );
+    const [result] = await db.promise().query(sql, params);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Anmeldung nicht gefunden' });
@@ -1439,6 +1495,7 @@ router.get('/:id/warteliste', async (req, res) => {
   const eventId = parseInt(req.params.id);
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const [rows] = await db.promise().query(
       `SELECT ea.*, m.vorname, m.nachname, m.email
        FROM event_anmeldungen ea
@@ -1464,6 +1521,7 @@ router.post('/:id/warteliste/promote', requireFeature('events'), async (req, res
   const eventId = parseInt(req.params.id);
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     // Nächsten auf der Warteliste finden
     const [waitlistRows] = await db.promise().query(
       `SELECT ea.*, m.email FROM event_anmeldungen ea
@@ -1532,6 +1590,7 @@ router.get('/:id/dateien', async (req, res) => {
   const eventId = parseInt(req.params.id);
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const [rows] = await db.promise().query(
       'SELECT * FROM event_dateien WHERE event_id = ? ORDER BY hochgeladen_am DESC',
       [eventId]
@@ -1561,6 +1620,7 @@ router.post('/:id/bild', eventUpload.single('bild'), async (req, res) => {
   }
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const relativePath = `/uploads/events/${eventId}/${req.file.filename}`;
     await db.promise().query(
       'UPDATE events SET bild_url = ? WHERE event_id = ?',
@@ -1581,6 +1641,7 @@ router.post('/:id/dateien', requireFeature('events'), eventUpload.single('datei'
   }
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const { beschreibung } = req.body;
     const dateityp = req.file.mimetype.startsWith('image/') ? 'bild' :
                      req.file.mimetype.includes('pdf') ? 'dokument' : 'sonstiges';
@@ -1612,12 +1673,17 @@ router.get('/:id/dateien/:dateiId/download', async (req, res) => {
 
   try {
     const [rows] = await db.promise().query(
-      'SELECT * FROM event_dateien WHERE datei_id = ?',
+      'SELECT ed.*, e.dojo_id FROM event_dateien ed JOIN events e ON ed.event_id = e.event_id WHERE ed.datei_id = ?',
       [dateiId]
     );
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Datei nicht gefunden' });
+    }
+
+    // 🔒 Tenant-Isolation: Datei nur bei Zugriff auf zugehöriges Event
+    if (!(await canAccessEvent(req.user, rows[0].dojo_id))) {
+      return res.status(403).json({ error: 'Keine Berechtigung für diese Datei' });
     }
 
     const datei = rows[0];
@@ -1638,12 +1704,17 @@ router.delete('/:id/dateien/:dateiId', requireFeature('events'), async (req, res
 
   try {
     const [rows] = await db.promise().query(
-      'SELECT dateipfad FROM event_dateien WHERE datei_id = ?',
+      'SELECT ed.dateipfad, e.dojo_id FROM event_dateien ed JOIN events e ON ed.event_id = e.event_id WHERE ed.datei_id = ?',
       [dateiId]
     );
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Datei nicht gefunden' });
+    }
+
+    // 🔒 Tenant-Isolation
+    if (!(await canAccessEvent(req.user, rows[0].dojo_id))) {
+      return res.status(403).json({ error: 'Keine Berechtigung für diese Datei' });
     }
 
     // Datei vom Filesystem löschen
@@ -1674,6 +1745,7 @@ router.get('/:id/nachrichten', async (req, res) => {
   const eventId = parseInt(req.params.id);
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const [rows] = await db.promise().query(
       `SELECT en.*,
         CASE
@@ -1737,12 +1809,17 @@ router.delete('/:id/nachrichten/:nachrichtId', async (req, res) => {
   try {
     // Prüfe Berechtigung
     const [rows] = await db.promise().query(
-      'SELECT verfasser_id FROM event_nachrichten WHERE nachricht_id = ?',
+      'SELECT en.verfasser_id, e.dojo_id FROM event_nachrichten en JOIN events e ON en.event_id = e.event_id WHERE en.nachricht_id = ?',
       [nachrichtId]
     );
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Nachricht nicht gefunden' });
+    }
+
+    // 🔒 Tenant-Isolation: nur Nachrichten aus erreichbaren Events
+    if (!(await canAccessEvent(req.user, rows[0].dojo_id))) {
+      return res.status(403).json({ error: 'Keine Berechtigung' });
     }
 
     if (!is_admin && rows[0].verfasser_id !== verfasser_id) {
@@ -1771,6 +1848,7 @@ router.get('/:id/export/csv', requireFeature('events'), async (req, res) => {
   const eventId = parseInt(req.params.id);
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const [event] = await db.promise().query('SELECT titel FROM events WHERE event_id = ?', [eventId]);
     const [rows] = await db.promise().query(
       `SELECT m.vorname, m.nachname, m.email, m.telefon,
@@ -1821,6 +1899,7 @@ router.get('/:id/export/pdf', requireFeature('events'), async (req, res) => {
   const eventId = parseInt(req.params.id);
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const PDFDocument = require('pdfkit');
     const doc = new PDFDocument({ margin: 50 });
 
@@ -2029,12 +2108,12 @@ END:VEVENT
  * Event-Statistiken für Admin-Dashboard
  */
 router.get('/stats/dashboard', requireFeature('events'), async (req, res) => {
-  const { dojo_id } = req.query;
-
   try {
-    let dojoFilter = dojo_id ? 'AND e.dojo_id = ?' : '';
-    let dojoFilterPlain = dojo_id ? 'AND dojo_id = ?' : '';
-    const params = dojo_id ? [dojo_id] : [];
+    // 🔒 Tenant-Isolation: normaler User nur eigenes Dojo, Super-Admin optional via Query/alle
+    const effectiveDojoId = enforceDojo(req);
+    let dojoFilter = effectiveDojoId ? 'AND e.dojo_id = ?' : '';
+    let dojoFilterPlain = effectiveDojoId ? 'AND dojo_id = ?' : '';
+    const params = effectiveDojoId ? [effectiveDojoId] : [];
 
     const [
       [activeEvents],
@@ -2157,15 +2236,9 @@ router.post('/:id/send-reminder', requireFeature('events'), async (req, res) => 
   const eventId = parseInt(req.params.id);
 
   try {
-    // Event-Details laden
-    const [events] = await db.promise().query(
-      `SELECT * FROM events WHERE id = ?`,
-      [eventId]
-    );
-    if (events.length === 0) {
-      return res.status(404).json({ error: 'Event nicht gefunden' });
-    }
-    const event = events[0];
+    // 🔒 Event-Details laden + Tenant-Isolation
+    const event = await loadEventWithAccess(req, res, eventId);
+    if (!event) return;
 
     // Unbezahlte Teilnehmer laden
     const [rows] = await db.promise().query(
@@ -2309,6 +2382,7 @@ router.get('/:id/bestellungen/summary', async (req, res) => {
   const eventId = parseInt(req.params.id);
 
   try {
+    if (!(await loadEventWithAccess(req, res, eventId))) return; // 🔒 Tenant-Isolation
     const [rows] = await db.promise().query(
       `SELECT
          bo.option_id,
