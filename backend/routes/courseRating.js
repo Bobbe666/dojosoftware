@@ -5,8 +5,9 @@ const db = require('../db.js');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const { authenticateToken } = require('../middleware/auth');
 
-// 🔒 Alle Routen erfordern Authentifizierung (bisher nur durch Mount-Reihenfolge geschützt)
-router.use(authenticateToken);
+// 🔒 Auth erfolgt zentral über den globalen /api-Auth-Gate (server.js ~1438).
+// KEIN router.use(authenticateToken) hier: dieser Router ist an bare '/api' gemountet,
+// ein router.use würde durchlaufende Requests (Webhooks/Public) fälschlich mit 401 blocken.
 
 // Hilfsfunktion: mitglied_id aus req.user ermitteln
 const getMitgliedId = async (req) => {
