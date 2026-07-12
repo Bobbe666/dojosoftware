@@ -760,12 +760,16 @@ router.get('/stripe-suche', authenticateToken, async (req, res) => {
         const name = (req.query.name || '').trim();
         if (!name || name.length < 2) return res.status(400).json({ error: 'name Parameter erforderlich (min. 2 Zeichen)' });
 
+        // 🔒 DOJO-FILTER: nur eigene Mitglieder (Super-Admin (null) → alle)
+        const secureDojoId = getSecureDojoId(req);
+        const like = `%${name}%`;
         const [rows] = await pool.query(
             `SELECT mitglied_id, vorname, nachname, email, dojo_id
              FROM mitglieder
-             WHERE vorname LIKE ? OR nachname LIKE ? OR CONCAT(vorname,' ',nachname) LIKE ?
+             WHERE (vorname LIKE ? OR nachname LIKE ? OR CONCAT(vorname,' ',nachname) LIKE ?)
+             ${secureDojoId ? 'AND dojo_id = ?' : ''}
              ORDER BY nachname, vorname LIMIT 20`,
-            [`%${name}%`, `%${name}%`, `%${name}%`]
+            secureDojoId ? [like, like, like, secureDojoId] : [like, like, like]
         );
         res.json({ treffer: rows.length, mitglieder: rows });
     } catch (err) {
@@ -787,6 +791,12 @@ router.get('/stripe-abgleich/:mitglied_id', authenticateToken, async (req, res) 
             [mitgliedId]
         );
         if (!mitglied) return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+
+        // 🔒 Ownership: fremdes Mitglied nicht abgleichbar (Super-Admin (null) → alle)
+        const secureDojoId = getSecureDojoId(req);
+        if (secureDojoId && Number(mitglied.dojo_id) !== Number(secureDojoId)) {
+            return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+        }
 
         const dojoId = mitglied.dojo_id;
         const provider = await PaymentProviderFactory.getProvider(dojoId);

@@ -158,6 +158,8 @@ router.get("/:quelle/:id/transaktionen", async (req, res) => {
         const { quelle, id } = req.params;
 
         if (quelle === 'stripe') {
+            // 🔒 DOJO-FILTER: nur Transaktionen eigener Mitglieder (Super-Admin (null) → alle)
+            const secureDojoId = getSecureDojoId(req);
             // Stripe-Transaktionen aus stripe_lastschrift_transaktion
             const query = `
                 SELECT
@@ -177,11 +179,12 @@ router.get("/:quelle/:id/transaktionen", async (req, res) => {
                 WHERE t.batch_id = (
                     SELECT batch_id FROM stripe_lastschrift_batch WHERE id = ?
                 )
+                ${secureDojoId ? 'AND m.dojo_id = ?' : ''}
                 ORDER BY m.nachname, m.vorname
             `;
 
             const transaktionen = await new Promise((resolve, reject) => {
-                db.query(query, [id], (err, results) => {
+                db.query(query, secureDojoId ? [id, secureDojoId] : [id], (err, results) => {
                     if (err) {
                         if (err.code === 'ER_NO_SUCH_TABLE') {
                             return resolve([]);
@@ -420,6 +423,11 @@ router.post("/:id/abschliessen", async (req, res) => {
         db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
     });
 
+    // 🔒 DOJO-SCOPE: Normal-User immer eigenes Dojo (Body-dojo_id ignorieren);
+    // Super-Admin (null) darf die Body-dojo_id verwenden.
+    const secureDojoId = getSecureDojoId(req);
+    const scopeDojoId = secureDojoId || dojo_id || null;
+
     try {
         // Zahllauf auf abgeschlossen setzen
         await queryAsync(
@@ -430,8 +438,12 @@ router.post("/:id/abschliessen", async (req, res) => {
         let markedCount = 0;
 
         if (Array.isArray(beitrag_ids) && beitrag_ids.length > 0) {
-            // Explizite Beitrag-IDs mitgegeben
-            const validIds = beitrag_ids.filter(v => Number.isInteger(Number(v)));
+            // Explizite Beitrag-IDs mitgegeben — 🔒 auf eigenes Dojo filtern (Cross-Tenant-Schutz)
+            let validIds = beitrag_ids.filter(v => Number.isInteger(Number(v))).map(Number);
+            if (scopeDojoId && validIds.length > 0) {
+                const own = await queryAsync(`SELECT beitrag_id FROM beitraege WHERE beitrag_id IN (?) AND dojo_id = ?`, [validIds, scopeDojoId]);
+                validIds = own.map(r => r.beitrag_id);
+            }
             if (validIds.length > 0) {
                 const placeholders = validIds.map(() => '?').join(',');
                 const upd = await queryAsync(
@@ -470,9 +482,9 @@ router.post("/:id/abschliessen", async (req, res) => {
             const monatStart = `${jahr}-${String(monat).padStart(2, '0')}-01`;
             const lastDay = new Date(jahr, monat, 0).getDate();
             const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-            const dojoFilter = dojo_id ? 'AND m.dojo_id = ?' : '';
-            const params = dojo_id
-                ? [id, monatStart, monatEnde, dojo_id]
+            const dojoFilter = scopeDojoId ? 'AND m.dojo_id = ?' : '';
+            const params = scopeDojoId
+                ? [id, monatStart, monatEnde, scopeDojoId]
                 : [id, monatStart, monatEnde];
 
             const upd = await queryAsync(`
@@ -495,11 +507,11 @@ router.post("/:id/abschliessen", async (req, res) => {
                   AND b.zahlungsdatum >= ? AND b.zahlungsdatum <= ?
                   AND p.gebuehr_bezahlt = 0
                   ${dojoFilter}
-            `, dojo_id ? [monatStart, monatEnde, dojo_id] : [monatStart, monatEnde]);
+            `, scopeDojoId ? [monatStart, monatEnde, scopeDojoId] : [monatStart, monatEnde]);
         }
 
         // Starterpaket-Bestellungen 'in_einzug' → 'bezahlt' (Bank hat bestätigt)
-        const spDojoId = dojo_id || null;
+        const spDojoId = scopeDojoId || null;
         const spSql2 = spDojoId
             ? `UPDATE starterpaket_bestellungen SET status = 'bezahlt', zahllauf_id = ? WHERE status = 'in_einzug' AND dojo_id = ?`
             : `UPDATE starterpaket_bestellungen SET status = 'bezahlt', zahllauf_id = ? WHERE status = 'in_einzug'`;
@@ -605,6 +617,8 @@ router.delete("/:id", (req, res) => {
  * GET /api/zahllaeufe/statistiken
  */
 router.get("/stats/overview", (req, res) => {
+    // 🔒 DOJO-FILTER: nur eigene Zahlläufe (Super-Admin (null) → alle)
+    const secureDojoId = getSecureDojoId(req);
     const query = `
         SELECT
             COUNT(*) as gesamt,
@@ -613,9 +627,10 @@ router.get("/stats/overview", (req, res) => {
             SUM(betrag) as gesamtbetrag,
             SUM(anzahl_buchungen) as gesamt_buchungen
         FROM zahllaeufe
+        ${secureDojoId ? 'WHERE dojo_id = ?' : ''}
     `;
 
-    db.query(query, (err, results) => {
+    db.query(query, secureDojoId ? [secureDojoId] : [], (err, results) => {
         if (err) {
             logger.error('Fehler beim Abrufen der Statistiken:', err);
             return res.status(500).json({
