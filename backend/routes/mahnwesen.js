@@ -207,10 +207,7 @@ router.put("/mahnungen/:mahnung_id/versandt", (req, res) => {
     const secureDojoId = getSecureDojoId(req);
 
     const query = secureDojoId
-        ? `UPDATE mahnungen mah
-           JOIN beitraege b ON mah.beitrag_id = b.beitrag_id
-           SET mah.versandt = 1
-           WHERE mah.mahnung_id = ? AND b.dojo_id = ?`
+        ? `UPDATE mahnungen SET versandt = 1 WHERE mahnung_id = ? AND dojo_id = ?`
         : `UPDATE mahnungen SET versandt = 1 WHERE mahnung_id = ?`;
     const params = secureDojoId ? [mahnung_id, secureDojoId] : [mahnung_id];
 
