@@ -76,12 +76,13 @@ class StripeDataevProvider {
         return new Promise((resolve, reject) => {
             const query = `
                 INSERT INTO stripe_payment_intents (
-                    mitglied_id, stripe_payment_intent_id, amount, currency, status,
+                    dojo_id, mitglied_id, stripe_payment_intent_id, amount, currency, status,
                     mandate_reference, description, metadata
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
             const params = [
+                this.dojoConfig?.id || null, // 🔒 dojo_id setzen (war NULL → brach dojo-gefilterte Reads/Refunds)
                 mitgliedId,
                 paymentIntent.id,
                 Math.round(amount * 100), // Store in cents

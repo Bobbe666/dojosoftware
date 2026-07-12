@@ -1431,6 +1431,16 @@ try {
     });
 }
 
+// 🔒 GLOBALER AUTH-GATE (intentional, ersetzt den bisher akzidentellen zehnerkarten-Gate).
+// Alles ab hier gemountete erfordert ein Token — AUSSER öffentliche Pfade (/api/public/*)
+// und Webhooks (signaturbasiert, kommen unauthentifiziert). Vorher gemountete öffentliche
+// Routen (auth, public, visitor-chat, promo, onboarding, saas-stripe, buddy) bleiben unberührt.
+app.use('/api', (req, res, next) => {
+  const url = req.originalUrl || req.url || '';
+  if (url.startsWith('/api/public') || /\/webhook/i.test(url)) return next();
+  return authenticateToken(req, res, next);
+});
+
 // 10ER-KARTEN ROUTES
 try {
   const zehnerkartenRoutes = require('./routes/zehnerkarten');

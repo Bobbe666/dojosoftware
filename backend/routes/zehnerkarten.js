@@ -6,10 +6,10 @@ const PaymentProviderFactory = require('../services/PaymentProviderFactory');
 const { authenticateToken } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
-// 🔒 SICHERHEIT: Alle 10er-Karten-Routen erfordern Login (dieser Router ist unter
-// /api gemountet, daher Auth hier im Router statt am Mount, um andere Routen nicht
-// zu treffen). Ohne diesen Guard waren Guthaben/Buchungen unauthentifiziert lesbar.
-router.use(authenticateToken);
+// 🔒 SICHERHEIT: 10er-Karten erfordern Login. Auth kommt jetzt vom globalen Auth-Gate
+// in server.js (direkt vor dem /api-Mount dieses Routers) — KEIN router.use(authenticateToken)
+// mehr hier, weil dieser Router unter /api-Root läuft und sonst durchlaufende Requests
+// (u.a. Webhooks) fälschlich mit 401 blockte.
 
 // Helper function to promisify db.query
 const query = (sql, params) => {
