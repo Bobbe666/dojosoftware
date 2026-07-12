@@ -106,6 +106,14 @@ router.get("/", async (req, res) => {
             }
         }
 
+        // 🔒 DOJO-SCOPE: SEPA-Lauf nur für das eigene Dojo (Super-Admin: aus gewählter Bank).
+        // Ohne Scope würde die CSV IBAN/BIC/Mandat ALLER Dojos exportieren.
+        const secureDojoId = getSecureDojoId(req);
+        const scopeDojoId = secureDojoId || (selectedBank ? selectedBank.dojo_id : null);
+        if (!scopeDojoId) {
+            return res.status(400).json({ error: 'Kein Dojo-Kontext für den SEPA-Lauf — bitte bank_id angeben' });
+        }
+
         // Query für alle aktiven Verträge mit SEPA-Mandat (inkl. offene Rechnungen + aktiver Ratenplan)
         const query = `
             SELECT
@@ -145,6 +153,7 @@ router.get("/", async (req, res) => {
               AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND sm.mandatsreferenz IS NOT NULL
               AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
+              AND m.dojo_id = ?
             GROUP BY v.id, v.mitglied_id, v.monatsbeitrag, v.billing_cycle, v.vertragsbeginn,
                      m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
                      sm.bankname, m.zahlungsmethode, t.name, t.price_cents,
@@ -153,7 +162,7 @@ router.get("/", async (req, res) => {
             ORDER BY m.nachname, m.vorname
         `;
 
-        const results = await queryAsync(query);
+        const results = await queryAsync(query, [scopeDojoId]);
 
         // Marketing-Artikel-Bestellungen für SEPA-Mitglieder ebenfalls einziehen
         const maOrders = await queryAsync(`
@@ -167,7 +176,8 @@ router.get("/", async (req, res) => {
             WHERE mb.status = 'offen'
               AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND sm.mandatsreferenz IS NOT NULL
-        `);
+              AND m.dojo_id = ?
+        `, [scopeDojoId]);
         const maRows = maOrders.map(ma => ({
             mandatsreferenz: ma.mandatsreferenz,
             iban: ma.iban,
@@ -196,7 +206,8 @@ router.get("/", async (req, res) => {
             WHERE sb.status = 'offen'
               AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND sm.mandatsreferenz IS NOT NULL
-        `);
+              AND m.dojo_id = ?
+        `, [scopeDojoId]);
 
         const spRows = spOrders.map(sp => ({
             mandatsreferenz: sp.mandatsreferenz,
@@ -285,18 +296,25 @@ router.get("/xml", async (req, res) => {
     try {
         logger.debug('📦 Starting SEPA XML generation (PAIN.008.001.02)...');
 
-        // Hole Dojo-Daten fuer Glaeubigerr-Informationen
+        // 🔒 DOJO-SCOPE: SEPA-XML nur fürs eigene Dojo (Super-Admin: ?dojo_id=). Gläubiger =
+        // dieses Dojo, nicht global. Ohne Scope würden IBAN/Mandate ALLER Dojos exportiert.
+        const secureDojoId = getSecureDojoId(req);
+        const scopeDojoId = secureDojoId || parseInt(req.query.dojo_id) || null;
+        if (!scopeDojoId) {
+            return res.status(400).json({ error: 'Kein Dojo-Kontext für SEPA-XML — bitte dojo_id angeben' });
+        }
+
+        // Hole Dojo-Daten fuer Glaeubigerr-Informationen (eigenes Dojo)
         const dojoQuery = `
             SELECT
                 dojoname, inhaber, strasse, hausnummer, plz, ort,
                 sepa_glaeubiger_id, iban, bic, bank_iban, bank_bic
             FROM dojo
-            WHERE ist_aktiv = TRUE
-            ORDER BY ist_hauptdojo DESC
+            WHERE id = ? AND ist_aktiv = TRUE
             LIMIT 1
         `;
 
-        db.query(dojoQuery, (dojoErr, dojoResults) => {
+        db.query(dojoQuery, [scopeDojoId], (dojoErr, dojoResults) => {
             if (dojoErr) {
                 logger.error('Dojo data error:', dojoErr);
                 return res.status(500).json({
@@ -362,13 +380,14 @@ router.get("/xml", async (req, res) => {
                   AND sm.mandatsreferenz IS NOT NULL
                   AND m.iban IS NOT NULL
                   AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
+                  AND m.dojo_id = ?
                 GROUP BY v.id, v.mitglied_id, v.monatsbeitrag,
                          m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
                          t.name, t.price_cents, sm.mandatsreferenz, sm.glaeubiger_id, sm.erstellungsdatum
                 ORDER BY m.nachname, m.vorname
             `;
 
-            db.query(query, (err, results) => {
+            db.query(query, [scopeDojoId], (err, results) => {
                 if (err) {
                     logger.error('Database error:', err);
                     return res.status(500).json({

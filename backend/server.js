@@ -308,6 +308,13 @@ logger.success('Write-Audit-Logging aktiviert', { coverage: 'POST/PUT/PATCH/DELE
 const { maintenanceGate } = require('./middleware/maintenance');
 app.use('/api', maintenanceGate);
 
+// 🔒 Wiederverwendbarer Super-Admin-Gate (NACH authenticateToken einsetzen)
+const { isSuperAdmin: _isSuperAdminGate } = require('./middleware/tenantSecurity');
+const requireSuperAdminGate = (req, res, next) => {
+  if (_isSuperAdminGate(req)) return next();
+  return res.status(403).json({ message: 'Nur für Super-Admin zugänglich' });
+};
+
 // API Documentation — nur in Development
 if (isDev && swaggerUi && swaggerSpec) {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -725,7 +732,7 @@ try {
 // ADMINS ROUTES (Admin-Benutzerverwaltung & Passwort-Management)
 try {
   const adminsRoutes = require('./routes/admins');
-  app.use('/api/admins', authenticateToken, adminsRoutes);
+  app.use('/api/admins', authenticateToken, requireSuperAdminGate, adminsRoutes); // 🔒 Priv-Escalation: nur Super-Admin
   logger.success('Route gemountet', { path: '/api/admins' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1648,7 +1655,7 @@ try {
 // 5. VERTRÄGE (für Beitragsverwaltung) - MODULAR REFACTORED
 try {
   const vertraegeRouter = require(path.join(__dirname, "routes", "vertraege"));
-  app.use("/api/vertraege", vertraegeRouter);
+  app.use("/api/vertraege", authenticateToken, vertraegeRouter); // 🔒 war unauth (Vertrags-PDFs mit IBAN öffentlich)
   logger.success('Route gemountet', { path: '/api/vertraege', file: 'vertraege/index.js' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -2071,7 +2078,7 @@ try {
 // 10.5 VERBANDSMITGLIEDSCHAFTEN - TDA International Dojo & Einzelmitgliedschaften - MODULAR REFACTORED
 try {
   const verbandsmitgliedschaftenRouter = require(path.join(__dirname, "routes", "verbandsmitgliedschaften"));
-  app.use("/api/verbandsmitgliedschaften", verbandsmitgliedschaftenRouter);
+  app.use("/api/verbandsmitgliedschaften", authenticateToken, requireSuperAdminGate, verbandsmitgliedschaftenRouter); // 🔒 verband-global: nur Super-Admin
   logger.success('Route gemountet', { path: '/api/verbandsmitgliedschaften', file: 'verbandsmitgliedschaften/index.js' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -2150,7 +2157,7 @@ try {
   const dokumenteRouter = require(path.join(__dirname, "routes", "dokumente.js"));
 
   // Middleware um DB-Connection zu den Routes zu geben
-  app.use("/api/dokumente", (req, res, next) => {
+  app.use("/api/dokumente", authenticateToken, (req, res, next) => { // 🔒 war unauth (GET/DELETE /:id ohne Auth)
     req.db = db;
     next();
   }, dokumenteRouter);

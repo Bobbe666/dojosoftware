@@ -10,6 +10,14 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { authenticateToken } = require('../middleware/auth');
+
+// 🔒 SICHERHEIT: War komplett unauthentifiziert (Buddy-Gruppen aller Dojos lesbar +
+// unauth Writes/Deletes). Auth für ALLE Routen außer den öffentlichen Einladungs-Token-Routen.
+router.use((req, res, next) => {
+  if (req.path.startsWith('/invitation/')) return next(); // öffentliche Einladungsannahme per Token
+  return authenticateToken(req, res, next);
+});
 
 // =============================================================================
 // EMAIL CONFIGURATION

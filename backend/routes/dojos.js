@@ -4,6 +4,17 @@
 const express = require('express');
 const logger = require('../utils/logger');
 const router = express.Router();
+const { isSuperAdmin } = require('../middleware/tenantSecurity');
+
+// 🔒 SICHERHEIT: Plattform-Verwaltung. GET / (Dojo-Liste, dojo-isoliert) bleibt für
+// Auth-User offen (Dojo-Switcher/Chat); ALLE anderen Routen (api-token, GET/PUT/DELETE /:id,
+// redistribute, statistics/gesamt, POST /) nur für Super-Admin — verhindert Cross-Tenant-
+// Zugriff auf fremde API-Tokens/Bankdaten und Dojo-Manipulation.
+router.use((req, res, next) => {
+  if (req.method === 'GET' && (req.path === '/' || req.path === '')) return next();
+  if (isSuperAdmin(req)) return next();
+  return res.status(403).json({ message: 'Nur für Super-Admin zugänglich' });
+});
 
 // =====================================================
 // GET /api/dojos - Alle Dojos abrufen

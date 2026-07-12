@@ -4,6 +4,11 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require("../db");
 const { getSecureDojoId } = require("../middleware/tenantSecurity");
+const { authenticateToken } = require('../middleware/auth');
+
+// 🔒 SICHERHEIT: War per Auto-Mount UNAUTHENTIFIZIERT erreichbar (Anwesenheits-/Namensdaten
+// aller Dojos + unauth Schreiben). Ab jetzt Login-Pflicht.
+router.use(authenticateToken);
 
 // POST: Anwesenheit speichern (mehrere Einträge) - Verbessert
 router.post("/", (req, res) => {
