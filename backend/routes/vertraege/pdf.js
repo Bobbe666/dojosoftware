@@ -21,7 +21,7 @@ router.get('/:id/pdf', async (req, res) => {
 
     const vertragResults = await queryAsync(`
       SELECT v.*, m.vorname, m.nachname, m.email, m.geburtsdatum, m.strasse, m.hausnummer, m.plz, m.ort,
-        m.telefon, m.anrede, m.mitgliedsnummer, m.iban, m.bic, m.bank, t.name as tarif_name
+        m.telefon, CASE WHEN m.geschlecht='w' THEN 'Frau' WHEN m.geschlecht='m' THEN 'Herr' ELSE '' END AS anrede, m.mitgliedsnummer, m.iban, m.bic, m.bank, t.name as tarif_name
       FROM vertraege v
       LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
       LEFT JOIN tarife t ON v.tarif_id = t.id
@@ -78,7 +78,7 @@ router.get('/:id/kuendigungsbestaetigung', async (req, res) => {
 
     const vertragResults = await queryAsync(`
       SELECT v.*, m.vorname, m.nachname, m.email, m.geburtsdatum, m.strasse, m.hausnummer, m.plz, m.ort,
-        m.telefon, m.anrede, m.mitgliedsnummer, t.name as tarif_name
+        m.telefon, CASE WHEN m.geschlecht='w' THEN 'Frau' WHEN m.geschlecht='m' THEN 'Herr' ELSE '' END AS anrede, m.mitgliedsnummer, t.name as tarif_name
       FROM vertraege v
       LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
       LEFT JOIN tarife t ON v.tarif_id = t.id
@@ -133,7 +133,7 @@ router.post('/:id/kuendigungsbestaetigung/speichern', async (req, res) => {
 
     const vertragResults = await queryAsync(`
       SELECT v.*, m.vorname, m.nachname, m.email, m.geburtsdatum, m.strasse, m.hausnummer, m.plz, m.ort,
-        m.telefon, m.anrede, m.mitgliedsnummer
+        m.telefon, CASE WHEN m.geschlecht='w' THEN 'Frau' WHEN m.geschlecht='m' THEN 'Herr' ELSE '' END AS anrede, m.mitgliedsnummer
       FROM vertraege v
       LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
       WHERE v.id = ? ${secureDojoId !== null ? 'AND v.dojo_id = ?' : ''}
