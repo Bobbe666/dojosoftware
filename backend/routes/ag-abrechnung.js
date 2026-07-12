@@ -13,7 +13,8 @@ const ag = require('../services/agAbrechnung');
 // dojo-Filter: Super-Admin (null) sieht alles, sonst nur eigenes Dojo
 function dojoFilter(req) {
   const id = getSecureDojoId(req);
-  return id ? { sql: ' WHERE dojo_id = ?', params: [id] } : { sql: '', params: [] };
+  // Alias c. (ag_abrechnung_config) — die Query joint mitglieder, dojo_id wäre sonst mehrdeutig
+  return id ? { sql: ' WHERE c.dojo_id = ?', params: [id] } : { sql: '', params: [] };
 }
 
 // ── Konfigurationen ──────────────────────────────────────────────────────────
