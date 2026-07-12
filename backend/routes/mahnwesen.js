@@ -93,17 +93,12 @@ router.get("/mahnungen", (req, res) => {
     let queryParams = [];
 
     if (mitglied_id) {
-        whereConditions.push('b.mitglied_id = ?');
+        whereConditions.push('mah.mitglied_id = ?');
         queryParams.push(mitglied_id);
     }
 
-    if (beitrag_id) {
-        whereConditions.push('mah.beitrag_id = ?');
-        queryParams.push(beitrag_id);
-    }
-
     if (secureDojoId) {
-        whereConditions.push('b.dojo_id = ?');
+        whereConditions.push('mah.dojo_id = ?');
         queryParams.push(secureDojoId);
     }
 
@@ -111,25 +106,23 @@ router.get("/mahnungen", (req, res) => {
         ? `WHERE ${whereConditions.join(' AND ')}`
         : '';
 
+    // Query auf das tatsächliche mahnungen-Schema (mitglied_id/dojo_id/versandt_am direkt)
     const query = `
         SELECT
             mah.mahnung_id,
-            mah.beitrag_id,
             mah.mahnstufe,
-            mah.mahndatum,
+            mah.faelligkeitsdatum,
             mah.mahngebuehr,
-            mah.versandt,
-            mah.versand_art,
-            b.betrag as beitrag_betrag,
-            b.zahlungsdatum as beitrag_faellig_am,
-            CONCAT(m.vorname, ' ', m.nachname) as mitglied_name,
+            mah.offener_betrag AS beitrag_betrag,
+            mah.versandt_am,
+            mah.versandt_per,
+            COALESCE(mah.schuldner_name, CONCAT(m.vorname, ' ', m.nachname)) AS mitglied_name,
             m.email,
-            b.mitglied_id
+            mah.mitglied_id
         FROM mahnungen mah
-        JOIN beitraege b ON mah.beitrag_id = b.beitrag_id
-        JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+        LEFT JOIN mitglieder m ON mah.mitglied_id = m.mitglied_id
         ${whereClause}
-        ORDER BY mah.mahndatum DESC
+        ORDER BY mah.erstellt_am DESC
     `;
 
     db.query(query, queryParams, (err, results) => {

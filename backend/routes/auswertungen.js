@@ -1132,7 +1132,7 @@ router.get('/demographics', async (req, res) => {
                 END as altersgruppe,
                 COUNT(*) as anzahl
             FROM mitglieder
-            WHERE status = 'aktiv' ${f.clause}
+            WHERE aktiv = 1 ${f.clause}
             GROUP BY altersgruppe
         `;
 
@@ -1156,10 +1156,10 @@ router.get('/financial', async (req, res) => {
         const f = await getSecureDojoFilter(req);
         const financialQuery = `
             SELECT
-                SUM(CASE WHEN status = 'aktiv' THEN 1 ELSE 0 END) as aktive_mitglieder,
-                SUM(CASE WHEN status = 'inaktiv' THEN 1 ELSE 0 END) as inaktive_mitglieder,
+                SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktive_mitglieder,
+                SUM(CASE WHEN aktiv = 0 THEN 1 ELSE 0 END) as inaktive_mitglieder,
                 SUM(CASE WHEN eintrittsdatum >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as neue_mitglieder_letzten_monat,
-                SUM(CASE WHEN kuendigungsdatum >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as kuendigungen_letzten_monat
+                SUM(CASE WHEN gekuendigt_am >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as kuendigungen_letzten_monat
             FROM mitglieder
             WHERE 1=1 ${f.clause}
         `;
