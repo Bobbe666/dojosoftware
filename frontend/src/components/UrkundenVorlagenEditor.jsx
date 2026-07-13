@@ -11,10 +11,10 @@ const FELD_TYPEN = [
   { key: 'name',     label: 'Name',         sample: 'Max Mustermann' },
   { key: 'grad',     label: 'Grad',         sample: '8. Kyu (Gelbgurt)' },
   { key: 'datum',    label: 'Datum',        sample: '28. Juni 2026' },
-  { key: 'ort',      label: 'Ort',          sample: 'Vilsbiburg' },
+  { key: 'ort',      label: 'Ort',          sample: 'Musterstadt' },
   { key: 'nummer',   label: 'Urkunden-Nr.', sample: '20260628-00001' },
-  { key: 'pruefer1', label: 'Prüfer 1',     sample: 'Sascha Schreiner' },
-  { key: 'pruefer2', label: 'Prüfer 2',     sample: 'Stefan Jeschke' },
+  { key: 'pruefer1', label: 'Prüfer 1',     sample: 'Max Mustermann' },
+  { key: 'pruefer2', label: 'Prüfer 2',     sample: 'Erika Musterfrau' },
   { key: 'freitext', label: 'Freitext',     sample: 'Freitext' },
 ];
 const feldLabel = (k) => (FELD_TYPEN.find(f => f.key === k) || {}).label || k;
