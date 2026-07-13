@@ -535,6 +535,58 @@ function initCronJobs() {
     }
   });
 
+  // 🔒 Täglicher Sicherheits-/Integritäts-Check (05:00) — Alarm-Mail nur bei rotem Ergebnis
+  cron.schedule('0 5 * * *', async () => {
+    try {
+      const jwt = require('jsonwebtoken');
+      const { JWT_SECRET } = require('./middleware/auth');
+      const { runSecurityChecks } = require('./routes/admin/security-checks');
+      const saToken = 'Bearer ' + jwt.sign({ id: 1, role: 'super_admin' }, JWT_SECRET, { expiresIn: '3m' });
+      const result = await runSecurityChecks(saToken);
+
+      if (result.summary.overall !== 'fail') {
+        logger.info(`ℹ️ Sicherheits-Check täglich: ${result.summary.overall} (${result.summary.warn} Warnung(en))`);
+        return; // nur bei FAIL/CHECK-FEHLER alarmieren
+      }
+
+      const problems = result.categories.flatMap(c => c.checks)
+        .filter(c => c.status === 'fail' || c.status === 'error');
+
+      const [[emailSettings]] = await db.promise().query('SELECT * FROM email_settings WHERE id = 1');
+      if (!emailSettings || !emailSettings.aktiv || !emailSettings.smtp_host) {
+        logger.warn(`⚠️ Sicherheits-Check FAIL, aber E-Mail nicht konfiguriert. Probleme: ${problems.map(p => p.label).join('; ')}`);
+        return;
+      }
+      const transporter = nodemailer.createTransport({
+        host: emailSettings.smtp_host, port: emailSettings.smtp_port || 587,
+        secure: !!emailSettings.smtp_secure,
+        auth: { user: emailSettings.smtp_user, pass: emailSettings.smtp_password }
+      });
+      const rows = problems.map(p =>
+        `<tr><td style="color:#ef4444;font-weight:bold">✕ ${p.label}</td><td>${p.value ?? ''}</td><td>${p.detail || ''}</td></tr>`
+      ).join('');
+      const html = `
+        <h2 style="color:#ef4444">🔴 Sicherheits-/Integritäts-Alarm — DojoSoftware</h2>
+        <p style="color:#999">${new Date().toLocaleString('de-DE')}</p>
+        <p>Der tägliche Selbst-Check hat <b>${problems.length} kritische(s) Problem(e)</b> gefunden:</p>
+        <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+          <tr style="background:#333;color:#fff"><th>Check</th><th>Wert</th><th>Details</th></tr>
+          ${rows}
+        </table>
+        <p style="margin-top:1.2rem"><a href="https://dojo.tda-intl.org/dashboard">→ Lizenzen-Dashboard → System → Integrität</a></p>
+      `;
+      await transporter.sendMail({
+        from: `"DojoSoftware Security" <${emailSettings.smtp_user}>`,
+        to: emailSettings.default_from_email || emailSettings.smtp_user,
+        subject: `🔴 Sicherheits-Alarm: ${problems.length} Problem(e) im täglichen Check`,
+        html
+      });
+      logger.error(`🔴 Sicherheits-Check FAIL — Alarm-Mail gesendet (${problems.length} Probleme)`);
+    } catch (error) {
+      logger.error('❌ Sicherheits-Check Cron Fehler', { error: error.message });
+    }
+  });
+
   cron.schedule('30 8 * * *', async () => {
     try {
       logger.info('📅 Event-Erinnerungen Cron-Job gestartet');
