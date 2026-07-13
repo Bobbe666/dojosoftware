@@ -131,6 +131,9 @@ async function runConfigChecks() {
 }
 
 // ── 4) MODUL-/ENDPOINT-HEALTH (interner Selbst-Ping, SEQUENZIELL) ──────────
+// NUR leichtgewichtige Endpunkte pingen. Schwere Aggregat-Endpunkte (auswertungen/complete,
+// buchhaltung/offene-posten, dashboard/batch) sind bewusst NICHT dabei: sie halten eine
+// DB-Verbindung lange und würden bei jedem Health-Check unnötig Last erzeugen (Pool-Risiko).
 const HEALTH_ENDPOINTS = [
   ['Mitglieder', '/api/mitglieder?limit=1'],
   ['Kurse', '/api/kurse'],
@@ -139,9 +142,6 @@ const HEALTH_ENDPOINTS = [
   ['Verträge', '/api/vertraege'],
   ['Rechnungen', '/api/rechnungen'],
   ['Mahnwesen', '/api/mahnwesen/mahnungen'],
-  ['Buchhaltung', '/api/buchhaltung/offene-posten'],
-  ['Auswertungen', '/api/auswertungen/complete'],
-  ['Dashboard', '/api/dashboard/batch'],
   ['Verkäufe', '/api/verkaeufe'],
   ['Notifications', '/api/notifications/dashboard'],
 ];

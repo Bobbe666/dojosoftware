@@ -8,6 +8,10 @@ const db = require('../../db');
 const router = express.Router();
 const { requireSuperAdmin } = require('./shared');
 
+// Disk-Space ändert sich langsam → 5-Min-Cache, damit checkDiskSpace('/') (~1-2s Dateisystem-Stat)
+// nicht bei jedem global-stats-Aufruf die Response blockiert.
+let _diskCache = null, _diskCacheAt = 0;
+
 // GET /global-stats - Aggregierte Statistiken über alle Dojos
 router.get('/global-stats', requireSuperAdmin, async (req, res) => {
   try {
@@ -53,21 +57,26 @@ router.get('/global-stats', requireSuperAdmin, async (req, res) => {
     stats.payments = beitraegeStats[0];
     stats.top_dojos = topDojos;
 
-    // Server-Speicherplatz
-    try {
-      const checkDiskSpace = require('check-disk-space').default;
-      const diskInfo = await checkDiskSpace('/');
-      const totalBytes = diskInfo.size || 0;
-      const freeBytes = diskInfo.free || 0;
-      const usedBytes = totalBytes - freeBytes;
-      stats.storage = {
-        total_gb: (totalBytes / (1024 * 1024 * 1024)).toFixed(1),
-        used_gb: (usedBytes / (1024 * 1024 * 1024)).toFixed(1),
-        available_gb: (freeBytes / (1024 * 1024 * 1024)).toFixed(1),
-        percent_used: totalBytes > 0 ? Math.round((usedBytes / totalBytes) * 100) : 0
-      };
-    } catch (diskError) {
-      stats.storage = { total_gb: '0', used_gb: '0', available_gb: '0', percent_used: 0 };
+    // Server-Speicherplatz (5-Min-Cache — checkDiskSpace ist ~1-2s langsam)
+    if (_diskCache && (Date.now() - _diskCacheAt) < 5 * 60 * 1000) {
+      stats.storage = _diskCache;
+    } else {
+      try {
+        const checkDiskSpace = require('check-disk-space').default;
+        const diskInfo = await checkDiskSpace('/');
+        const totalBytes = diskInfo.size || 0;
+        const freeBytes = diskInfo.free || 0;
+        const usedBytes = totalBytes - freeBytes;
+        stats.storage = {
+          total_gb: (totalBytes / (1024 * 1024 * 1024)).toFixed(1),
+          used_gb: (usedBytes / (1024 * 1024 * 1024)).toFixed(1),
+          available_gb: (freeBytes / (1024 * 1024 * 1024)).toFixed(1),
+          percent_used: totalBytes > 0 ? Math.round((usedBytes / totalBytes) * 100) : 0
+        };
+        _diskCache = stats.storage; _diskCacheAt = Date.now();
+      } catch (diskError) {
+        stats.storage = { total_gb: '0', used_gb: '0', available_gb: '0', percent_used: 0 };
+      }
     }
 
     res.json({ success: true, stats, timestamp: new Date().toISOString() });
