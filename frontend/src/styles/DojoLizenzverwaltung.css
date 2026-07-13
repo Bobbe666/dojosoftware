@@ -136,7 +136,8 @@
   border: 1px solid var(--ds-border);
   border-radius: 10px;
   overflow-x: auto;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  row-gap: 0.3rem;
   scrollbar-width: none;
 }
 .lizenz-nav-tabs::-webkit-scrollbar { display: none; }

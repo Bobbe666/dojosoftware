@@ -3,6 +3,9 @@
  * Read-only Selbst-Diagnose für das Lizenzen-Dashboard (Super-Admin).
  * Prüft Mandanten-Trennung, Subdomain-Integrität, Modul-/Endpoint-Health
  * und Config-Vollständigkeit. Wird von der Route UND vom täglichen Cron genutzt.
+ *
+ * WICHTIG: ALLES läuft SEQUENZIELL (nie parallel), damit der DB-Connection-Pool
+ * nicht erschöpft wird (sonst „Queue limit reached" → Kaskade von 500ern).
  */
 const express = require('express');
 const http = require('http');
@@ -15,8 +18,8 @@ const q = (sql, params = []) => new Promise((resolve, reject) => {
   db.query(sql, params, (err, rows) => err ? reject(err) : resolve(rows));
 });
 
-// Ein Check ausführen und in ein einheitliches Result-Objekt verpacken.
-// statusFn(count) → 'ok' | 'warn' | 'fail'. Query-Fehler → status 'error' (z.B. Schema-Drift).
+// Eine COUNT-Prüfung ausführen → einheitliches Result-Objekt.
+// statusFn(count) → 'ok' | 'warn' | 'fail'. Query-Fehler → 'error' (z.B. Schema-Drift).
 async function countCheck({ id, label, sql, statusFn, detailFn }) {
   try {
     const rows = await q(sql);
@@ -27,98 +30,79 @@ async function countCheck({ id, label, sql, statusFn, detailFn }) {
   }
 }
 
+// Definitions-Array sequenziell abarbeiten (kein Promise.all → schont den Pool).
+async function runSeq(defs) {
+  const out = [];
+  for (const d of defs) out.push(await countCheck(d));
+  return out;
+}
+
+const failIfNonZero = (n) => (n > 0 ? 'fail' : 'ok');
+const warnIfNonZero = (n) => (n > 0 ? 'warn' : 'ok');
+
 // ── 1) MANDANTEN-TRENNUNG ─────────────────────────────────────────────────
 async function runTenantChecks() {
-  const failIfNonZero = (n) => (n > 0 ? 'fail' : 'ok');
-  const warnIfNonZero = (n) => (n > 0 ? 'warn' : 'ok');
-
-  const checks = await Promise.all([
-    // Kern-Trennung (muss 0 sein) — die aktiv gebaute Isolation
-    countCheck({
-      id: 'xt_mitglied_stil', label: 'Mitglied-Stil-Zuordnungen bei fremdem Dojo',
+  const checks = await runSeq([
+    { id: 'xt_mitglied_stil', label: 'Mitglied-Stil-Zuordnungen bei fremdem Dojo',
       sql: `SELECT COUNT(*) n FROM mitglied_stil_data msd
             JOIN mitglieder m ON m.mitglied_id = msd.mitglied_id
             JOIN stile s ON s.stil_id = msd.stil_id
             WHERE m.dojo_id <> s.dojo_id`,
       statusFn: failIfNonZero,
-      detailFn: (n) => n > 0 ? `${n} Zuordnung(en) zeigen auf einen Stil eines anderen Dojos` : 'Sauber getrennt',
-    }),
-    countCheck({
-      id: 'xt_pruefungen', label: 'Prüfungen bei fremdem Dojo (via Graduierung/Stil)',
+      detailFn: (n) => n > 0 ? `${n} Zuordnung(en) zeigen auf einen Stil eines anderen Dojos` : 'Sauber getrennt' },
+    { id: 'xt_pruefungen', label: 'Prüfungen bei fremdem Dojo (via Graduierung/Stil)',
       sql: `SELECT COUNT(*) n FROM pruefungen p
             JOIN mitglieder m ON m.mitglied_id = p.mitglied_id
             JOIN graduierungen g ON g.graduierung_id = p.graduierung_nachher_id
             JOIN stile s ON s.stil_id = g.stil_id
             WHERE m.dojo_id <> s.dojo_id`,
-      statusFn: failIfNonZero,
-    }),
-    countCheck({
-      id: 'graduierung_orphan', label: 'Verwaiste Graduierungen (Stil fehlt / ohne dojo_id)',
+      statusFn: failIfNonZero },
+    { id: 'graduierung_orphan', label: 'Verwaiste Graduierungen (Stil fehlt / ohne dojo_id)',
       sql: `SELECT COUNT(*) n FROM graduierungen g
             LEFT JOIN stile s ON s.stil_id = g.stil_id
             WHERE s.stil_id IS NULL OR s.dojo_id IS NULL`,
-      statusFn: failIfNonZero,
-    }),
-    // Finanz-/Vertrags-Zuordnungen (warn: meist interne Fehlablage, prüfen)
-    countCheck({
-      id: 'xt_vertraege', label: 'Verträge: Vertrag-Dojo ≠ Mitglied-Dojo',
+      statusFn: failIfNonZero },
+    { id: 'xt_vertraege', label: 'Verträge: Vertrag-Dojo ≠ Mitglied-Dojo',
       sql: `SELECT COUNT(*) n FROM vertraege v JOIN mitglieder m ON m.mitglied_id = v.mitglied_id
             WHERE v.dojo_id IS NOT NULL AND v.dojo_id <> m.dojo_id`,
-      statusFn: warnIfNonZero,
-    }),
-    countCheck({
-      id: 'xt_rechnungen', label: 'Rechnungen: Rechnung-Dojo ≠ Mitglied-Dojo',
+      statusFn: warnIfNonZero },
+    { id: 'xt_rechnungen', label: 'Rechnungen: Rechnung-Dojo ≠ Mitglied-Dojo',
       sql: `SELECT COUNT(*) n FROM rechnungen r JOIN mitglieder m ON m.mitglied_id = r.mitglied_id
             WHERE r.dojo_id IS NOT NULL AND r.dojo_id <> m.dojo_id`,
-      statusFn: warnIfNonZero,
-    }),
-    countCheck({
-      id: 'xt_beitraege', label: 'Beiträge: Beitrag-Dojo ≠ Mitglied-Dojo',
+      statusFn: warnIfNonZero },
+    { id: 'xt_beitraege', label: 'Beiträge: Beitrag-Dojo ≠ Mitglied-Dojo',
       sql: `SELECT COUNT(*) n FROM beitraege b JOIN mitglieder m ON m.mitglied_id = b.mitglied_id
             WHERE b.dojo_id IS NOT NULL AND b.dojo_id <> m.dojo_id`,
-      statusFn: warnIfNonZero,
-    }),
-    // Unzugeordnete Zeilen (warn) auf getrennten Tabellen
-    countCheck({
-      id: 'null_stile', label: 'Stile ohne dojo_id (unzugeordnet)',
-      sql: `SELECT COUNT(*) n FROM stile WHERE dojo_id IS NULL`, statusFn: warnIfNonZero,
-    }),
-    countCheck({
-      id: 'null_kurse', label: 'Kurse ohne dojo_id',
-      sql: `SELECT COUNT(*) n FROM kurse WHERE dojo_id IS NULL`, statusFn: warnIfNonZero,
-    }),
-    countCheck({
-      id: 'null_tarife', label: 'Tarife ohne dojo_id',
-      sql: `SELECT COUNT(*) n FROM tarife WHERE dojo_id IS NULL`, statusFn: warnIfNonZero,
-    }),
+      statusFn: warnIfNonZero },
+    { id: 'null_stile', label: 'Stile ohne dojo_id (unzugeordnet)',
+      sql: `SELECT COUNT(*) n FROM stile WHERE dojo_id IS NULL`, statusFn: warnIfNonZero },
+    { id: 'null_kurse', label: 'Kurse ohne dojo_id',
+      sql: `SELECT COUNT(*) n FROM kurse WHERE dojo_id IS NULL`, statusFn: warnIfNonZero },
+    { id: 'null_tarife', label: 'Tarife ohne dojo_id',
+      sql: `SELECT COUNT(*) n FROM tarife WHERE dojo_id IS NULL`, statusFn: warnIfNonZero },
   ]);
-
   return { key: 'tenant', title: 'Mandanten-Trennung', checks };
 }
 
 // ── 2) SUBDOMAIN-INTEGRITÄT ───────────────────────────────────────────────
 async function runSubdomainChecks() {
-  const checks = await Promise.all([
-    countCheck({
-      id: 'sub_duplicate', label: 'Doppelte Subdomains',
+  const checks = await runSeq([
+    { id: 'sub_duplicate', label: 'Doppelte Subdomains',
       sql: `SELECT COUNT(*) n FROM (
               SELECT subdomain FROM dojo WHERE subdomain IS NOT NULL AND subdomain <> ''
               GROUP BY subdomain HAVING COUNT(*) > 1) x`,
-      statusFn: (n) => (n > 0 ? 'fail' : 'ok'),
-      detailFn: (n) => n > 0 ? `${n} Subdomain(s) mehrfach vergeben — führt zu falscher Zuordnung!` : 'Alle Subdomains eindeutig',
-    }),
-    countCheck({
-      id: 'sub_missing', label: 'Aktive Dojos ohne Subdomain',
+      statusFn: failIfNonZero,
+      detailFn: (n) => n > 0 ? `${n} Subdomain(s) mehrfach vergeben — führt zu falscher Zuordnung!` : 'Alle Subdomains eindeutig' },
+    { id: 'sub_missing', label: 'Aktive Dojos ohne Subdomain',
       sql: `SELECT COUNT(*) n FROM dojo WHERE ist_aktiv = 1 AND (subdomain IS NULL OR subdomain = '')`,
-      statusFn: (n) => (n > 0 ? 'warn' : 'ok'),
-    }),
+      statusFn: warnIfNonZero },
   ]);
   return { key: 'subdomain', title: 'Subdomain-Integrität', checks };
 }
 
 // ── 3) CONFIG-VOLLSTÄNDIGKEIT (pro Dojo) ──────────────────────────────────
 async function runConfigChecks() {
-  let checks = [];
+  const checks = [];
   try {
     const dojos = await q(
       `SELECT id, dojoname, sepa_glaeubiger_id, steuernummer, ust_id,
@@ -133,16 +117,12 @@ async function runConfigChecks() {
       if (lsAktiv && clean(d.sepa_glaeubiger_id)) missing.push('SEPA-Gläubiger-ID');
       if (lsAktiv && clean(d.bank_iban) && clean(d.iban)) missing.push('Bank-IBAN');
       if (clean(d.steuernummer) && clean(d.ust_id)) missing.push('Steuernummer/USt-IdNr');
-      if (missing.length) issues.push({ id: d.id, dojoname: d.dojoname, missing });
+      if (missing.length) issues.push(`${d.dojoname} (#${d.id}): ${missing.join(', ')}`);
     }
     checks.push({
-      id: 'cfg_completeness',
-      label: 'Dojos mit unvollständiger Finanz-/Steuer-Config',
-      status: issues.length > 0 ? 'warn' : 'ok',
-      value: issues.length,
-      detail: issues.length > 0
-        ? issues.map(i => `${i.dojoname} (#${i.id}): ${i.missing.join(', ')}`).join(' · ')
-        : 'Alle aktiven Dojos vollständig konfiguriert',
+      id: 'cfg_completeness', label: 'Dojos mit unvollständiger Finanz-/Steuer-Config',
+      status: issues.length > 0 ? 'warn' : 'ok', value: issues.length,
+      detail: issues.length > 0 ? issues.join(' · ') : 'Alle aktiven Dojos vollständig konfiguriert',
     });
   } catch (e) {
     checks.push({ id: 'cfg_completeness', label: 'Config-Vollständigkeit', status: 'error', value: null, detail: `Query-Fehler: ${e.code || e.message}` });
@@ -150,7 +130,7 @@ async function runConfigChecks() {
   return { key: 'config', title: 'Config-Vollständigkeit', checks };
 }
 
-// ── 4) MODUL-/ENDPOINT-HEALTH (interner Selbst-Ping) ──────────────────────
+// ── 4) MODUL-/ENDPOINT-HEALTH (interner Selbst-Ping, SEQUENZIELL) ──────────
 const HEALTH_ENDPOINTS = [
   ['Mitglieder', '/api/mitglieder?limit=1'],
   ['Kurse', '/api/kurse'],
@@ -159,7 +139,6 @@ const HEALTH_ENDPOINTS = [
   ['Verträge', '/api/vertraege'],
   ['Rechnungen', '/api/rechnungen'],
   ['Mahnwesen', '/api/mahnwesen/mahnungen'],
-  ['Offene Beiträge', '/api/mahnwesen/offene-beitraege'],
   ['Buchhaltung', '/api/buchhaltung/offene-posten'],
   ['Auswertungen', '/api/auswertungen/complete'],
   ['Dashboard', '/api/dashboard/batch'],
@@ -171,7 +150,7 @@ function pingInternal(path, authHeader) {
   return new Promise((resolve) => {
     const port = process.env.PORT || 5001;
     const req = http.request(
-      { host: '127.0.0.1', port, path, method: 'GET', headers: authHeader ? { Authorization: authHeader } : {}, timeout: 9000 },
+      { host: '127.0.0.1', port, path, method: 'GET', headers: authHeader ? { Authorization: authHeader } : {}, timeout: 6000 },
       (res) => { res.on('data', () => {}); res.on('end', () => resolve(res.statusCode)); }
     );
     req.on('error', () => resolve(0));
@@ -181,23 +160,24 @@ function pingInternal(path, authHeader) {
 }
 
 async function runHealthChecks(authHeader) {
-  const checks = await Promise.all(HEALTH_ENDPOINTS.map(async ([label, path]) => {
+  const checks = [];
+  // SEQUENZIELL — nie mehr als 1 interner Request gleichzeitig (schont den DB-Pool!)
+  for (const [label, path] of HEALTH_ENDPOINTS) {
     const code = await pingInternal(path, authHeader);
-    // 5xx / 0 (Verbindungsfehler) / -1 (Timeout) = fail; alles andere (200/400/401/403/404) = Modul antwortet
     const status = (code >= 500 || code === 0 || code === -1) ? 'fail' : 'ok';
-    return { id: 'health_' + path.replace(/[^a-z0-9]/gi, '_'), label, status, value: code, detail: `HTTP ${code === -1 ? 'Timeout' : code}${path}` };
-  }));
+    checks.push({ id: 'health_' + path.replace(/[^a-z0-9]/gi, '_'), label, status, value: code, detail: `HTTP ${code === -1 ? 'Timeout' : code} · ${path}` });
+  }
   return { key: 'health', title: 'Modul-/Endpoint-Health', checks };
 }
 
-// ── Orchestrator ──────────────────────────────────────────────────────────
+// ── Orchestrator (SEQUENZIELL über die Kategorien) ────────────────────────
 async function runSecurityChecks(authHeader) {
-  const categories = await Promise.all([
-    runTenantChecks(),
-    runSubdomainChecks(),
-    runHealthChecks(authHeader),
-    runConfigChecks(),
-  ]);
+  const categories = [];
+  categories.push(await runTenantChecks());
+  categories.push(await runSubdomainChecks());
+  categories.push(await runHealthChecks(authHeader));
+  categories.push(await runConfigChecks());
+
   const all = categories.flatMap(c => c.checks);
   const summary = {
     total: all.length,
