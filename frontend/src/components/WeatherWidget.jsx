@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Cloud, Sun, CloudRain, CloudSnow, Wind, Thermometer, Droplets } from 'lucide-react';
+import { useDojoContext } from '../context/DojoContext';
 
 // WMO Weather Code → Icons & Labels
 const mapWeatherCode = (code) => {
@@ -28,6 +30,10 @@ const getTrainingMotivation = (condition) => {
 };
 
 const WeatherWidget = ({ compact = false }) => {
+  const { activeDojo } = useDojoContext();
+  // Wetter kommt vom Backend-Proxy (Standort = Dojo-Ort, nie hartcodiert).
+  const activeDojoId = (typeof activeDojo === 'object' && activeDojo?.id) ? activeDojo.id : null;
+
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,16 +43,13 @@ const WeatherWidget = ({ compact = false }) => {
     setError(null);
 
     try {
-      // Open-Meteo API — kostenlos, kein API-Key nötig
-      // Koordinaten: Vilsbiburg (48.4456°N, 12.3594°E)
-      const res = await fetch(
-        'https://api.open-meteo.com/v1/forecast' +
-        '?latitude=48.4456&longitude=12.3594' +
-        '&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m' +
-        '&wind_speed_unit=kmh&timezone=Europe%2FBerlin'
-      );
-      if (!res.ok) throw new Error('API nicht erreichbar');
-      const data = await res.json();
+      const { data } = await axios.get('/weather', activeDojoId ? { params: { dojo_id: activeDojoId } } : undefined);
+      if (!data?.success || !data.current) {
+        // Kein Standort hinterlegt / nicht gefunden → kein fremder Ort, einfach nichts anzeigen.
+        setError('Wetterdaten nicht verfügbar');
+        setWeather(null);
+        return;
+      }
       const c = data.current;
       const mapped = mapWeatherCode(c.weather_code);
 
@@ -55,22 +58,12 @@ const WeatherWidget = ({ compact = false }) => {
         humidity: Math.round(c.relative_humidity_2m),
         windSpeed: Math.round(c.wind_speed_10m),
         ...mapped,
-        location: 'Vilsbiburg',
+        location: data.location || '',
         lastUpdate: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
       });
     } catch (err) {
       setError('Wetterdaten nicht verfügbar');
-      setWeather({
-        temperature: '–',
-        humidity: '–',
-        windSpeed: '–',
-        condition: 'cloudy',
-        icon: Cloud,
-        color: '#6B7280',
-        description: 'Keine Verbindung',
-        location: 'Vilsbiburg',
-        lastUpdate: '–',
-      });
+      setWeather(null);
     } finally {
       setLoading(false);
     }
@@ -78,7 +71,8 @@ const WeatherWidget = ({ compact = false }) => {
 
   useEffect(() => {
     loadWeather();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDojoId]);
 
   if (loading) {
     return (

@@ -1513,6 +1513,10 @@ try {
     });
 }
 
+// WEATHER ROUTE (Wetter am Dojo-Standort — Backend-Proxy wegen Frontend-CSP)
+app.use('/api/weather', authenticateToken, require('./routes/weather'));
+logger.success('Route geladen', { path: '/api/weather' });
+
 // FINANZAEMTER ROUTES (Statische Liste aller deutschen Finanzämter — keine Auth erforderlich)
 app.use('/api/finanzaemter', require('./routes/finanzaemter'));
 logger.success('Route geladen', { path: '/api/finanzaemter' });
