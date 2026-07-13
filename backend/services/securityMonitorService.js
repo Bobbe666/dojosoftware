@@ -5,6 +5,14 @@
 
 const db = require('../db');
 
+// Interne/lokale IPs sind NIE Angreifer — Alerts dafür wären nur Selbst-Rauschen
+// (z.B. Health-Polls, App-eigene Requests). Wichtig gegen den Alert-Storm-Bug:
+// interner Traffic darf weder geloggt noch über checkAndBlockIP gezählt werden.
+const INTERNAL_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1', 'localhost', 'unknown', '']);
+function isInternalIP(ip) {
+  return ip == null || INTERNAL_IPS.has(String(ip).trim());
+}
+
 // Patterns für Angriffserkennung
 const SQL_INJECTION_PATTERNS = [
   /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE)\b.*\b(FROM|INTO|SET|TABLE|DATABASE)\b)/i,
@@ -112,8 +120,12 @@ const securityMonitorService = {
         await this.notifyAdmin(alertData, result.insertId);
       }
 
-      // Bei wiederholten Angriffen: IP blockieren
-      if (ip_address) {
+      // Bei wiederholten Angriffen: IP blockieren.
+      // WICHTIG (Fix gegen Alert-Storm/Endlos-Rekursion): NICHT zählen für
+      //  - interne IPs (Selbst-Rauschen),
+      //  - die Block-Benachrichtigung selbst (alert_type 'other' bzw. blocked/resolved) —
+      //    sonst triggert der Block-Alert erneut checkAndBlockIP → self-replizierende Flut.
+      if (ip_address && !isInternalIP(ip_address) && alert_type !== 'other' && !blocked && !resolved) {
         await this.checkAndBlockIP(ip_address, alert_type);
       }
 
@@ -177,6 +189,9 @@ const securityMonitorService = {
    */
   async checkAndBlockIP(ip_address, alert_type) {
     try {
+      // Interne IPs niemals zählen/blocken (Schutz gegen Selbst-Amplifikation)
+      if (isInternalIP(ip_address)) return;
+
       // Zähle Alerts für diese IP in den letzten 15 Minuten
       const [alerts] = await db.promise().query(
         `SELECT COUNT(*) as count FROM security_alerts

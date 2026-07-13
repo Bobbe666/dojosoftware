@@ -329,9 +329,10 @@ const logUnauthorizedAccess = async (req, res, next) => {
   const originalStatus = res.status.bind(res);
 
   res.status = function(code) {
-    if (code === 401 || code === 403) {
-      const ip = getClientIP(req);
-
+    const ip = getClientIP(req);
+    // Interne/vertrauenswürdige IPs (z.B. Health-Polls von 127.0.0.1) NICHT loggen —
+    // sonst erzeugt jeder 401 auf /api/health einen Alert und speist den Alert-Storm.
+    if ((code === 401 || code === 403) && !TRUSTED_IPS.includes(ip)) {
       securityMonitorService.logAlert({
         alert_type: 'unauthorized_access',
         severity: 'low',
