@@ -692,10 +692,12 @@ router.post('/erinnerung-ohne-antwort', async (req, res) => {
     let query = `
       SELECT p.pruefung_id, p.mitglied_id, p.pruefungsdatum, p.pruefungszeit, p.pruefungsort,
              m.email, m.vorname, m.nachname, m.dojo_id,
+             d.dojoname,
              g_vor.name AS graduierung_vorher, g_nach.name AS graduierung_nachher,
              s.name AS stil_name
       FROM pruefungen p
       JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
+      LEFT JOIN dojo d ON m.dojo_id = d.id
       LEFT JOIN graduierungen g_vor ON p.graduierung_vorher_id = g_vor.graduierung_id
       LEFT JOIN graduierungen g_nach ON p.graduierung_nachher_id = g_nach.graduierung_id
       LEFT JOIN stile s ON p.stil_id = s.stil_id
@@ -770,11 +772,11 @@ router.post('/erinnerung-ohne-antwort', async (req, res) => {
               </div>
               <p><strong>Bitte melde dich an oder teile mit, ob du zur Prüfung kommen kannst.</strong><br>
               Du kannst direkt in der Mitglieder-App antworten.</p>
-              <p style="font-size:13px;color:#666;margin-bottom:0;">Kampfkunstschule Schreiner</p>
+              <p style="font-size:13px;color:#666;margin-bottom:0;">${kandidat.dojoname || 'Dein Dojo'}</p>
             </div>
           </div>
         `;
-        const emailText = `Hallo ${kandidat.vorname},\n\nErinnerung: Du wurdest zur Gürtelprüfung am ${wochentag}, ${datumFormatiert}${zeitInfo} zugelassen.\nBitte antworte ob du kommen kannst.\n\nKampfkunstschule Schreiner`;
+        const emailText = `Hallo ${kandidat.vorname},\n\nErinnerung: Du wurdest zur Gürtelprüfung am ${wochentag}, ${datumFormatiert}${zeitInfo} zugelassen.\nBitte antworte ob du kommen kannst.\n\n${kandidat.dojoname || 'Dein Dojo'}`;
 
         sendEmailForDojo({
           to:      kandidat.email,

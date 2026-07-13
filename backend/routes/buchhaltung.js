@@ -5799,7 +5799,7 @@ router.post('/bilanz/stammdaten', requireBuchhaltungAccess, (req, res) => {
   if (!dojoId) {
     dojoId = organisation === 'TDA International' ? 2 : organisation === 'Kampfkunstschule Schreiner' ? 3 : 1;
   }
-  const orgName = organisation || 'Kampfkunstschule Schreiner';
+  const orgName = organisation || (dojoId === 2 ? 'TDA International' : dojoId === 3 ? 'Kampfkunstschule Schreiner' : 'Dojo');
   const userId = req.user?.user_id || req.user?.id || 1;
 
   const sql = `
@@ -6213,7 +6213,7 @@ router.post('/anlageverm%C3%B6gen', requireFeature('buchfuehrung'), requireBuchh
       return res.status(400).json({ message: 'Pflichtfelder fehlen' });
 
     const dojoId = req.buchhaltungDojoId || ANLAGE_ORG_MAP[organisation_name] || null;
-    const orgName = organisation_name || (dojoId === 2 ? 'TDA International' : 'Kampfkunstschule Schreiner');
+    const orgName = organisation_name || (dojoId === 2 ? 'TDA International' : dojoId === 3 ? 'Kampfkunstschule Schreiner' : 'Dojo');
 
     const ins = await dbQuery(
       `INSERT INTO anlage_register (dojo_id, organisation_name, bezeichnung, beschreibung,
@@ -6400,7 +6400,7 @@ router.get('/offene-posten', requireFeature('buchfuehrung'), requireBuchhaltungA
         r.faelligkeitsdatum AS faelligkeitsdatum,
         m.vorname, m.nachname,
         m.dojo_id,
-        CASE WHEN m.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END AS organisation_name,
+        CASE WHEN m.dojo_id = 2 THEN 'TDA International' WHEN m.dojo_id = 3 THEN 'Kampfkunstschule Schreiner' ELSE COALESCE((SELECT dojoname FROM dojo WHERE id = m.dojo_id),'Dojo') END AS organisation_name,
         DATEDIFF(CURDATE(), IFNULL(r.faelligkeitsdatum, r.erstellt_am)) AS tage_ueberfaellig,
         COALESCE(mah.hoechste_stufe, 0) AS mahnstufe
       FROM rechnungen r
@@ -6409,7 +6409,7 @@ router.get('/offene-posten', requireFeature('buchfuehrung'), requireBuchhaltungA
         SELECT rechnung_id, MAX(mahnstufe) AS hoechste_stufe FROM mahnungen WHERE storniert=0 AND bezahlt_am IS NULL GROUP BY rechnung_id
       ) mah ON mah.rechnung_id = r.rechnung_id
       WHERE r.status IN ('offen','ueberfaellig')
-        ${dojoId ? 'AND m.dojo_id = ?' : (orgFilter && orgFilter !== 'alle') ? "AND (CASE WHEN m.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END) = ?" : ''}
+        ${dojoId ? 'AND m.dojo_id = ?' : (orgFilter && orgFilter !== 'alle') ? "AND (CASE WHEN m.dojo_id = 2 THEN 'TDA International' WHEN m.dojo_id = 3 THEN 'Kampfkunstschule Schreiner' ELSE COALESCE((SELECT dojoname FROM dojo WHERE id = m.dojo_id),'Dojo') END) = ?" : ''}
       ORDER BY tage_ueberfaellig DESC
     `, dojoId ? [dojoId] : (orgFilter && orgFilter !== 'alle' ? [orgFilter] : []));
 
@@ -6868,7 +6868,7 @@ router.get('/export/anlage-euer', requireBuchhaltungAccess, async (req, res) => 
     // ── Kopfzeile ───────────────────────────────
     addTitle(`Anlage EÜR ${jahr} — Einnahmen-Überschuss-Rechnung (§ 4 Abs. 3 EStG)`);
     addBlank();
-    addMeta('Organisation:', orgFilter || (dojoId === 2 ? 'TDA International' : 'Kampfkunstschule Schreiner'));
+    addMeta('Organisation:', orgFilter || (dojoId === 2 ? 'TDA International' : dojoId === 3 ? 'Kampfkunstschule Schreiner' : 'Dojo'));
     addMeta('Steuernummer:', steuernummer || '(bitte eintragen)');
     addMeta('Finanzamt:', finanzamt || '(bitte eintragen)');
     addMeta('Veranlagungsjahr:', String(jahr));
@@ -7027,7 +7027,7 @@ router.get('/export/anlage-euer', requireBuchhaltungAccess, async (req, res) => 
     });
 
     // -- Response senden
-    const orgName = orgFilter || (dojoId === 2 ? 'TDA' : 'Schreiner');
+    const orgName = orgFilter || (dojoId === 2 ? 'TDA' : dojoId === 3 ? 'Schreiner' : 'Dojo');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="AnlageEUeR_${jahr}_${orgName}.xlsx"`);
     await workbook.xlsx.write(res);

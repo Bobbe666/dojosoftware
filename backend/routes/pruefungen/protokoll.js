@@ -245,7 +245,7 @@ router.post('/:id/protokoll/ins-dashboard', async (req, res) => {
         </div>
         <div style="text-align:right;">
           <div style="font-size:12pt;font-weight:800;color:#1a1a1a;">Prüfungsprotokoll — ${pruef.stil_name || ''}</div>
-          <div style="font-size:9pt;color:#555;margin-top:1px;">${pruef.dojoname || 'Kampfkunstschule Schreiner'} &nbsp;·&nbsp; ${datumLang}</div>
+          <div style="font-size:9pt;color:#555;margin-top:1px;">${pruef.dojoname || 'Dojo'} &nbsp;·&nbsp; ${datumLang}</div>
           ${pruef.pruefungsort ? `<div style="font-size:8.5pt;color:#888;">${pruef.pruefungsort}</div>` : ''}
         </div>
       </div>
@@ -295,7 +295,7 @@ router.post('/:id/protokoll/ins-dashboard', async (req, res) => {
       </div>
 
       <div style="margin-top:16px;padding-top:8px;border-top:1px solid #e0e0e0;text-align:center;font-size:7pt;color:#bbb;">
-        ${pruef.dojoname || 'Kampfkunstschule Schreiner'} · Mitglied der Tiger &amp; Dragon Association – International · Ausgestellt am ${datumKurz}
+        ${pruef.dojoname || 'Dojo'} · Mitglied der Tiger &amp; Dragon Association – International · Ausgestellt am ${datumKurz}
       </div>
     </div>`;
 

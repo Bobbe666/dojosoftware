@@ -919,7 +919,7 @@ const PruefungsVerwaltung = () => {
           </div>
           <div style="text-align:right;">
             <div style="font-size:13pt;font-weight:800;color:#1a1a1a;line-height:1.2;">Prüfungsprotokoll — ${termin.stil_name || ''}</div>
-            <div style="font-size:9.5pt;color:#555;margin-top:1px;">Kampfkunstschule Schreiner &nbsp;·&nbsp; ${datumLang}</div>
+            <div style="font-size:9.5pt;color:#555;margin-top:1px;">${activeDojo?.dojoname || 'Dojo'} &nbsp;·&nbsp; ${datumLang}</div>
             ${(termin.ort || termin.zeit) ? `<div style="font-size:8.5pt;color:#888;">${[termin.ort, termin.zeit ? termin.zeit + ' Uhr' : ''].filter(Boolean).join(' · ')}</div>` : ''}
           </div>
         </div>
@@ -1033,7 +1033,7 @@ const PruefungsVerwaltung = () => {
 
         <!-- Fußzeile -->
         <div style="margin-top:20px;padding-top:10px;border-top:1px solid #e0e0e0;text-align:center;font-size:7pt;color:#bbb;">
-          Kampfkunstschule Schreiner · Mitglied der Tiger &amp; Dragon Association – International · Ausgestellt am ${datumKurz}
+          ${activeDojo?.dojoname || 'Dojo'} · Mitglied der Tiger &amp; Dragon Association – International · Ausgestellt am ${datumKurz}
         </div>
       </div>
     `;

@@ -27,7 +27,6 @@ import {
   Store
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
 import '../styles/MitgliedDetail.css';
 import MemberHeader from './MemberHeader.jsx';
 import UmfragePopup from './UmfragePopup.jsx';
@@ -1791,15 +1790,19 @@ const MemberDashboard = () => {
             <div className="mitgliedsausweis" ref={ausweisRef}>
               <div className="ausweis-title">
                 <span className="title-jp">格闘技学校</span>
-                <span className="title-de">Kampfkunstschule Schreiner</span>
+                <span className="title-de">{activeDojo?.dojoname || memberData?.dojo_name || 'Dojo'}</span>
               </div>
               <div className="ausweis-body">
                 <div className="ausweis-left">
-                  <img
-                    src={dojoLogo}
-                    alt="Kampfkunstschule Schreiner"
-                    className="ausweis-logo"
-                  />
+                  {activeDojo?.logo_url ? (
+                    <img
+                      src={`${config.apiBaseUrl.replace('/api', '')}${activeDojo.logo_url}`}
+                      alt={activeDojo?.dojoname || 'Dojo'}
+                      className="ausweis-logo"
+                    />
+                  ) : (
+                    <div className="ausweis-logo ausweis-logo-placeholder"><span>道場</span></div>
+                  )}
                 </div>
                 <div className="ausweis-center">
                   <div className="ausweis-kanji">武道</div>
@@ -1847,7 +1850,9 @@ const MemberDashboard = () => {
               </div>
               <div className="ausweis-footer">
                 <div className="ausweis-motto">心技体 — Shin Gi Tai</div>
-                <div className="ausweis-website">www.tda-vib.de</div>
+                {activeDojo?.subdomain && (
+                  <div className="ausweis-website">{activeDojo.subdomain}.dojo.tda-intl.org</div>
+                )}
               </div>
             </div>
 

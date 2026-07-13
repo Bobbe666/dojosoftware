@@ -245,7 +245,7 @@ function buildVereinbarungHtml(trainer, dojo, params) {
     : '____________________. Dan / Schwarzgurt';
   const trainerSteuer = trainer?.steuer_id || '____________________';
 
-  const dojoName = dojo?.dojoname || dojo?.name || 'Kampfkunstschule Schreiner';
+  const dojoName = dojo?.dojoname || dojo?.name || 'Dojo';
   const dojoInhaber = dojo?.inhaber || '____________________';
   const dojoAnschrift = [dojo?.strasse, dojo?.hausnummer, dojo?.plz, dojo?.ort].filter(Boolean).join(', ') || '____________________';
   const dojoSteuernr = dojo?.steuernummer || '____________________';
@@ -489,7 +489,7 @@ function buildInfoblattHtml(trainer, dojo) {
   const trainerName = trainer?.vorname && trainer?.nachname
     ? `${trainer.vorname} ${trainer.nachname}`
     : '____________________';
-  const dojoName = dojo?.dojoname || dojo?.name || 'Kampfkunstschule Schreiner';
+  const dojoName = dojo?.dojoname || dojo?.name || 'Dojo';
   const today = new Date().toLocaleDateString('de-DE');
 
   const logoTag = LOGO_B64

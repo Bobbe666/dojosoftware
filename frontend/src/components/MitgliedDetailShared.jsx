@@ -22,7 +22,6 @@ import '../styles/Buttons.css';
 // import "../styles/DojoEdit.css";
 import "../styles/MitgliedDetail.css";
 import "../styles/MitgliedDetailShared.css";
-import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
 
 // Extrahierte Tab-Komponenten
 import {
@@ -148,6 +147,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     if (!dojoId) return 'Kein Dojo';
     const dojo = dojos.find(d => d.id === parseInt(dojoId));
     return dojo ? dojo.dojoname : `Dojo ${dojoId}`;
+  };
+
+  // Dojo-Objekt des Mitglieds für den Ausweis (nie fremdes Branding zeigen)
+  const getAusweisDojo = (dojoId) => {
+    const d = dojos?.find(x => x.id === parseInt(dojoId));
+    if (d) return d;
+    return (typeof activeDojo === 'object' && activeDojo) ? activeDojo : null;
   };
 
   // State for dynamically resolved member ID
@@ -2748,18 +2754,22 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   {/* Header mit Titel */}
                   <div className="ausweis-title">
                     <span className="title-jp">格闘技学校</span>
-                    <span className="title-de">Kampfkunstschule Schreiner</span>
+                    <span className="title-de">{getAusweisDojo(mitglied?.dojo_id)?.dojoname || getDojoName(mitglied?.dojo_id)}</span>
                   </div>
 
                   {/* Hauptbereich: Logo links, Daten mitte, Foto+QR rechts */}
                   <div className="ausweis-body">
                     {/* Linke Seite: Großes Logo */}
                     <div className="ausweis-left">
-                      <img
-                        src={dojoLogo}
-                        alt="Kampfkunstschule Schreiner"
-                        className="ausweis-logo"
-                      />
+                      {getAusweisDojo(mitglied?.dojo_id)?.logo_url ? (
+                        <img
+                          src={`${config.apiBaseUrl.replace('/api', '')}${getAusweisDojo(mitglied?.dojo_id).logo_url}`}
+                          alt={getAusweisDojo(mitglied?.dojo_id)?.dojoname || 'Dojo'}
+                          className="ausweis-logo"
+                        />
+                      ) : (
+                        <div className="ausweis-logo ausweis-logo-placeholder"><span>道場</span></div>
+                      )}
                     </div>
 
                     {/* Mitte: Name und Infos */}
@@ -2813,7 +2823,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   {/* Footer */}
                   <div className="ausweis-footer">
                     <div className="ausweis-motto">心技体 — Shin Gi Tai</div>
-                    <div className="ausweis-website">www.kampfkunstschule-schreiner.de</div>
+                    {getAusweisDojo(mitglied?.dojo_id)?.subdomain && (
+                      <div className="ausweis-website">{getAusweisDojo(mitglied?.dojo_id).subdomain}.dojo.tda-intl.org</div>
+                    )}
                   </div>
                 </div>
 

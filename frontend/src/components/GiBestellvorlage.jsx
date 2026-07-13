@@ -54,9 +54,9 @@ const LT_EMPTY = {
 
 const EMPTY = {
   model: '188', modelName: '', artikelNr: '',
-  besteller: 'Kampfkunstschule Schreiner',
+  besteller: '',
   lieferantId: '', lieferantFreitext: '',
-  ansprechpartnerBesteller: 'Sascha Schreiner',
+  ansprechpartnerBesteller: '',
   ansprechpartnerLieferant: '',
   bestelldatum: new Date().toLocaleDateString('de-DE'),
   lieferdatum: '', projekt: '', farbe: 'Weiß', wkf: false,

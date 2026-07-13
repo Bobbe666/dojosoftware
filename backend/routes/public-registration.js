@@ -2035,13 +2035,28 @@ router.post('/probetraining', async (req, res) => {
       true,
     ]);
 
+    // Dojo-Kontaktdaten für dynamisches Branding der Bestätigungsmail (nie fremdes Dojo zeigen)
+    const _drows = await queryAsync(
+      'SELECT dojoname, strasse, hausnummer, plz, ort, telefon, email, subdomain FROM dojo WHERE id = ?',
+      [parseInt(dojo_id)]
+    );
+    const dojoInfo = _drows[0] || {};
+    const dojoNameP = dojoInfo.dojoname || 'Dein Dojo';
+    const dojoAdr = [
+      [dojoInfo.strasse, dojoInfo.hausnummer].filter(Boolean).join(' '),
+      [dojoInfo.plz, dojoInfo.ort].filter(Boolean).join(' '),
+    ].filter(Boolean).join(', ');
+    const dojoTel = (dojoInfo.telefon || '').trim();
+    const dojoMail = (dojoInfo.email || '').trim();
+    const dojoStundenplan = dojoInfo.subdomain ? `https://${dojoInfo.subdomain}.dojo.tda-intl.org/stundenplan` : '';
+
     // E-Mail an Anmelder
     if (email) {
       const bestaetigung_html = `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a">
           <div style="background:#1a1a1a;padding:32px;text-align:center">
             <div style="font-size:3rem;color:#c9a227;font-family:serif">武</div>
-            <h1 style="color:#ffffff;font-size:1.4rem;margin:12px 0 0;font-weight:400;letter-spacing:0.05em">Kampfkunstschule Schreiner</h1>
+            <h1 style="color:#ffffff;font-size:1.4rem;margin:12px 0 0;font-weight:400;letter-spacing:0.05em">${dojoNameP}</h1>
           </div>
           <div style="padding:32px;background:#fff;border:1px solid #e5e5e5;border-top:none">
             <h2 style="color:#1a1a1a;font-size:1.3rem;margin:0 0 16px">Dein Probetraining ist vorgemerkt!</h2>
@@ -2057,26 +2072,26 @@ router.post('/probetraining', async (req, res) => {
             <p style="color:#444;line-height:1.7">
               <strong>Du kannst jederzeit einfach zur gewünschten Trainingsstunde vorbeikommen</strong> — eine weitere Bestätigung ist nicht nötig. Wir erwarten dich!
             </p>
-            <p style="color:#444;line-height:1.7">Bei Fragen erreichst du uns unter:</p>
+            ${(dojoTel || dojoMail || dojoAdr) ? `<p style="color:#444;line-height:1.7">Bei Fragen erreichst du uns unter:</p>
             <p style="margin:0;color:#444">
-              📞 <a href="tel:+4915752461776" style="color:#c9a227">+49 157 52461776</a><br>
-              ✉️ <a href="mailto:info@tda-vib.de" style="color:#c9a227">info@tda-vib.de</a><br>
-              📍 Ohmstr. 14, 84137 Vilsbiburg
-            </p>
-            <div style="margin-top:32px;text-align:center">
-              <a href="https://tda-vib.de/stundenplan" style="background:#c9a227;color:#fff;padding:12px 28px;text-decoration:none;font-weight:600;display:inline-block">Stundenplan ansehen</a>
-            </div>
+              ${dojoTel ? `📞 <a href="tel:${dojoTel.replace(/\s+/g, '')}" style="color:#c9a227">${dojoTel}</a><br>` : ''}
+              ${dojoMail ? `✉️ <a href="mailto:${dojoMail}" style="color:#c9a227">${dojoMail}</a><br>` : ''}
+              ${dojoAdr ? `📍 ${dojoAdr}` : ''}
+            </p>` : ''}
+            ${dojoStundenplan ? `<div style="margin-top:32px;text-align:center">
+              <a href="${dojoStundenplan}" style="background:#c9a227;color:#fff;padding:12px 28px;text-decoration:none;font-weight:600;display:inline-block">Stundenplan ansehen</a>
+            </div>` : ''}
           </div>
           <div style="padding:16px;text-align:center;font-size:0.8rem;color:#999">
-            Kampfkunstschule Schreiner · Ohmstr. 14 · 84137 Vilsbiburg
+            ${dojoNameP}${dojoAdr ? ` · ${dojoAdr}` : ''}
           </div>
         </div>`;
 
       sendEmailForDojo({
         to: email.trim(),
-        subject: `Probetraining vorgemerkt – Kampfkunstschule Schreiner`,
+        subject: `Probetraining vorgemerkt – ${dojoNameP}`,
         html: bestaetigung_html,
-        text: `Hallo ${vorname},\n\ndein Probetraining ist vorgemerkt! Kurs: ${interessiert_an || '–'}\n\nDu kannst jederzeit zur gewünschten Trainingsstunde vorbeikommen.\n\nBei Fragen: info@tda-vib.de | +49 157 52461776\n\nKampfkunstschule Schreiner · Ohmstr. 14 · 84137 Vilsbiburg`,
+        text: `Hallo ${vorname},\n\ndein Probetraining ist vorgemerkt! Kurs: ${interessiert_an || '–'}\n\nDu kannst jederzeit zur gewünschten Trainingsstunde vorbeikommen.\n\n${(dojoTel || dojoMail) ? `Bei Fragen: ${[dojoMail, dojoTel].filter(Boolean).join(' | ')}\n\n` : ''}${dojoNameP}${dojoAdr ? ` · ${dojoAdr}` : ''}`,
       }, parseInt(dojo_id)).catch(err => logger.warn('Bestätigungs-Mail fehlgeschlagen:', err.message));
     }
 

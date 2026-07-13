@@ -71,9 +71,9 @@ const LT_EMPTY = {
 const EMPTY = {
   _typ: 'kickbox',
   model: 'kickbox', modelName: '', artikelNr: '',
-  besteller: 'Kampfkunstschule Schreiner',
+  besteller: '',
   lieferantId: '', lieferantFreitext: '',
-  ansprechpartnerBesteller: 'Sascha Schreiner',
+  ansprechpartnerBesteller: '',
   ansprechpartnerLieferant: '',
   bestelldatum: new Date().toLocaleDateString('de-DE'),
   lieferdatum: '', projekt: '', farbe: 'Schwarz', wkf: false,
