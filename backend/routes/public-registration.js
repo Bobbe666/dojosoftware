@@ -2095,9 +2095,10 @@ router.post('/probetraining', async (req, res) => {
       }, parseInt(dojo_id)).catch(err => logger.warn('Bestätigungs-Mail fehlgeschlagen:', err.message));
     }
 
-    // Benachrichtigung ans Dojo
+    // Benachrichtigung ans Dojo — an die Dojo-eigene E-Mail (NICHT hart Schreiner!),
+    // sonst landen fremde Interessenten in Schreiners Postfach. Fallback = Plattform-Betreiber.
     sendEmailForDojo({
-      to: 'info@tda-vib.de',
+      to: dojoMail || 'info@tda-intl.com',
       subject: `Neue Probetraining-Anmeldung: ${vorname} ${nachname}`,
       html: `<div style="font-family:sans-serif;max-width:500px"><h2>Neue Probetraining-Anmeldung</h2><table style="width:100%;border-collapse:collapse"><tr><td style="padding:6px 0;color:#666">Name</td><td><strong>${vorname} ${nachname}</strong></td></tr><tr><td style="padding:6px 0;color:#666">Geburtsdatum</td><td>${geburtsdatum} (${age} Jahre)</td></tr><tr><td style="padding:6px 0;color:#666">E-Mail</td><td>${email || '–'}</td></tr><tr><td style="padding:6px 0;color:#666">Telefon</td><td>${telefon || '–'}</td></tr><tr><td style="padding:6px 0;color:#666">Kurs</td><td>${interessiert_an || '–'}</td></tr>${erziehungsberechtigte_name ? `<tr><td style="padding:6px 0;color:#666">Erziehungsber.</td><td>${erziehungsberechtigte_name}${erziehungsberechtigte_telefon ? ` · ${erziehungsberechtigte_telefon}` : ''}</td></tr>` : ''}</table><p style="margin-top:16px;color:#666">In Dojosoftware unter <strong>Interessenten</strong> eingetragen.</p></div>`,
       text: `Neue Probetraining-Anmeldung\n\nName: ${vorname} ${nachname}\nGeburtsdatum: ${geburtsdatum} (${age} J.)\nE-Mail: ${email || '–'}\nTelefon: ${telefon || '–'}\nKurs: ${interessiert_an || '–'}${erziehungsberechtigte_name ? `\nErziehungsber.: ${erziehungsberechtigte_name}` : ''}`,
