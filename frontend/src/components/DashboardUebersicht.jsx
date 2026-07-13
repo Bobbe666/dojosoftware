@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { useDojoContext } from '../context/DojoContext';
 import StilErinnerungBanner from './StilErinnerungBanner';
+import WeatherWidget from './WeatherWidget';
 import './DashboardUebersicht.css';
 
 function withDojoParam(url, activeDojo) {
@@ -149,6 +150,9 @@ export default function DashboardUebersicht() {
     <div className="du-wrap">
       {/* ── Stil-Erinnerungen ── */}
       {activeDojo?.id && <StilErinnerungBanner dojoId={activeDojo.id} />}
+
+      {/* ── Wetter am Dojo-Standort ── */}
+      <WeatherWidget compact />
 
       {/* ── KPI Grid ── */}
       <div>

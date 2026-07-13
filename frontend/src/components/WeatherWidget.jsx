@@ -85,6 +85,9 @@ const WeatherWidget = ({ compact = false }) => {
     );
   }
 
+  // Kein Standort/keine Daten → Widget einfach ausblenden (statt Fehlerbox im Dashboard)
+  if (!weather) return null;
+
   if (error && !weather) {
     return (
       <div className={`weather-widget ${compact ? 'compact' : ''}`}>
