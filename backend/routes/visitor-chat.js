@@ -37,8 +37,9 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 // ─── Dojo-Kontext für AI laden ────────────────────────────────────────────────
 async function loadDojoKontext(dojoId) {
   try {
-    const [[dojo]] = await pool.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
+    const [[dojo]] = await pool.query('SELECT dojoname, ort FROM dojo WHERE id = ?', [dojoId]);
     const dojoName = dojo?.dojoname || 'Kampfkunstschule';
+    const dojoOrt = dojo?.ort || '';
     const [[chatConfig]] = await pool.query('SELECT * FROM visitor_chat_config WHERE dojo_id = ?', [dojoId]);
 
     const [tarife] = await pool.query(`
@@ -83,6 +84,7 @@ async function loadDojoKontext(dojoId) {
 
     return {
       dojoName,
+      ort: dojoOrt,
       tarifeText,
       stundenplanText,
       stileText,
@@ -118,7 +120,7 @@ Du beantwortest Fragen von Interessenten und Mitgliedern auf Deutsch – kurz, f
 Du bist eine KI (kein Mensch) und machst daraus kein Geheimnis: Stelle dich in deiner ERSTEN Antwort kurz mit Namen vor und weise dezent darauf hin, dass gerade die KI antwortet und ein Mensch aus dem Team bei Bedarf übernimmt. Danach nicht mehr wiederholen.
 
 ## Unsere Kampfkünste
-${kontext.stileText || '- Kickboxen, Taekwondo, Karate, ShieldX Selbstverteidigung, MMA, Grappling'}
+${kontext.stileText || 'Informationen auf Anfrage'}
 
 ## Trainingszeiten (Stundenplan)
 ${kontext.stundenplanText || 'Informationen auf Anfrage'}
@@ -128,7 +130,7 @@ ${kontext.tarifeText || 'Informationen auf Anfrage'}
 
 ## Wichtige Infos
 - Probetraining: kostenlos und jederzeit möglich, einfach vorbeikommen
-- Trainingsort: Vilsbiburg (genaue Adresse auf der Website unter "Über uns")
+- Trainingsort: ${kontext.ort ? `${kontext.ort} (genaue Adresse auf der Website unter „Über uns")` : 'genaue Adresse auf der Website unter „Über uns"'}
 - Vertragsfragen: Mindestlaufzeit je nach Tarif, Kündigung schriftlich mit entsprechender Frist
 - Es gibt weitere Möglichkeiten und Konditionen, die man gerne vor Ort besprechen kann – erwähne das kurz wenn es thematisch passt, ohne Details zu nennen
 - Bei Fragen, die du nicht sicher beantworten kannst (komplexe Themen, Terminvereinbarungen, Bestätigung einer Anmeldung, individuelle Konditionen): sage klar und freundlich zu, dass sich jemand vom Team persönlich darum kümmert und meldet – hier im Chat und per E-Mail. Falls noch keine E-Mail-Adresse vorliegt, bitte freundlich darum, damit das Team antworten kann. Empfiehl NIEMALS anzurufen oder per Telefon zu kontaktieren, nenne auch keine Telefonnummer.
