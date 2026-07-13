@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -17,11 +18,10 @@ const queryAsync = (sql, params = []) => {
 // GET /api/raeume - Alle Räume abrufen
 router.get('/', async (req, res) => {
     try {
-        const dojoId = req.tenant?.dojo_id || req.dojo_id;
-
-        if (dojoId === undefined && !req.user) {
-            return res.status(403).json({ error: 'No tenant' });
-        }
+        // 🔒 Sicheres Tenant-Scoping aus dem JWT. Normaler User → nur eigenes Dojo.
+        // Super-Admin (null) → ggf. Subdomain-Scope, sonst alle Räume (Alle-Standorte-Ansicht).
+        const secureDojoId = getSecureDojoId(req);
+        const dojoId = secureDojoId != null ? secureDojoId : (req.tenant?.dojo_id ?? null);
 
         const { standort_id } = req.query;
 
@@ -33,13 +33,12 @@ router.get('/', async (req, res) => {
         `;
         let params = [];
 
-        if (dojoId === null || dojoId === undefined) {
-            query += ` WHERE r.dojo_id NOT IN (
-                SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
-            )`;
-        } else {
+        if (dojoId != null) {
             query += ' WHERE r.dojo_id = ?';
             params.push(dojoId);
+        } else {
+            // Super-Admin ohne Subdomain-Scope: alle Räume (kein gefährlicher NOT-IN-Fallback mehr)
+            query += ' WHERE 1=1';
         }
 
         if (standort_id && standort_id !== 'all') {
@@ -60,8 +59,8 @@ router.get('/', async (req, res) => {
 // POST /api/raeume - Neuen Raum erstellen
 router.post('/', async (req, res) => {
     try {
-        const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id ||
-                            (req.body.dojo_id ? parseInt(req.body.dojo_id, 10) : null);
+        const _raumDojoId = getSecureDojoId(req) ?? (req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id ||
+                            (req.body.dojo_id ? parseInt(req.body.dojo_id, 10) : null));
         if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
@@ -137,7 +136,7 @@ router.post('/', async (req, res) => {
 // PUT /api/raeume/:id - Raum aktualisieren
 router.put('/:id', async (req, res) => {
     try {
-        const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
+        const _raumDojoId = getSecureDojoId(req) ?? (req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id);
         if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
@@ -198,7 +197,7 @@ router.put('/:id', async (req, res) => {
 // PUT /api/raeume/:id/reihenfolge - Reihenfolge ändern
 router.put('/:id/reihenfolge', async (req, res) => {
     try {
-        const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
+        const _raumDojoId = getSecureDojoId(req) ?? (req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id);
         if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
@@ -219,7 +218,7 @@ router.put('/:id/reihenfolge', async (req, res) => {
 // DELETE /api/raeume/:id - Raum löschen
 router.delete('/:id', async (req, res) => {
     try {
-        const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
+        const _raumDojoId = getSecureDojoId(req) ?? (req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id);
         if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
@@ -256,7 +255,7 @@ router.delete('/:id', async (req, res) => {
 // GET /api/raeume/stats - Statistiken für Räume
 router.get('/stats', async (req, res) => {
     try {
-        const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
+        const _raumDojoId = getSecureDojoId(req) ?? (req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id);
         if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
