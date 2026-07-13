@@ -1343,7 +1343,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           <div className="gv-grid3">
             <div className="gv-field">
               <label className="gv-label">Schriftzug / Text</label>
-              <input className="gv-input" value={form.stickereiSchriftzug} onChange={f('stickereiSchriftzug')} placeholder="z. B. Kampfkunstschule Schreiner · TDA" />
+              <input className="gv-input" value={form.stickereiSchriftzug} onChange={f('stickereiSchriftzug')} placeholder="z. B. Dein Dojo · TDA" />
             </div>
             <div className="gv-field">
               <label className="gv-label">Garnfarben</label>
@@ -1549,7 +1549,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
           </div>
           <div className="gv-field" style={{ marginTop: '0.65rem' }}>
             <label className="gv-label">Label-Text auf Karton</label>
-            <input className="gv-input" value={spez.verp_label || ''} onChange={fSpez('verp_label')} placeholder="z. B. KARATE-GI · Gr. XXX · Art. Nr. XXXX · Kampfkunstschule Schreiner" />
+            <input className="gv-input" value={spez.verp_label || ''} onChange={fSpez('verp_label')} placeholder="z. B. KARATE-GI · Gr. XXX · Art. Nr. XXXX · Dein Dojo" />
           </div>
           <div className="gv-field" style={{ marginTop: '0.5rem' }}>
             <label className="gv-label">Verpackungs-Bemerkung</label>
@@ -1612,7 +1612,7 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
             </div>
             <div className="gv-field">
               <label className="gv-label">Zusatztext auf Label</label>
-              <input className="gv-input" value={spez.labelZusatz || ''} onChange={fSpez('labelZusatz')} placeholder="z. B. Made exclusively for KKS Schreiner" />
+              <input className="gv-input" value={spez.labelZusatz || ''} onChange={fSpez('labelZusatz')} placeholder="z. B. Made exclusively for Dein Dojo" />
             </div>
             <div className="gv-field">
               <label className="gv-label">Label-Sprachen</label>
@@ -1881,14 +1881,16 @@ export default function GiBestellvorlage({ artikel = null, vorlage = null, onClo
 //  PDF-HTML-GENERATOR
 // ═══════════════════════════════════════════════════════
 export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungId = null, lang = 'de') {
+  // Besteller-Dojo als dynamischer Titel/Signatur (kein hartes Fremd-Branding)
+  const org = (form.besteller || '').trim() || 'Dojo';
   // Bilingual PDF: alle Labels immer auf Deutsch und Englisch
   const T = {
-    docTitle:       'Karate-Gi Bestellvorlage – Kampfkunstschule Schreiner',
+    docTitle:       `Karate-Gi Bestellvorlage – ${org}`,
     h1:             'Karate-Gi',
-    sub:            'Bestellvorlage · Kampfkunstschule Schreiner  ·  Order Form · Martial Arts School Schreiner',
+    sub:            `Bestellvorlage · ${org}  ·  Order Form`,
     nr:             'Nr. / No.',
     datum:          'Datum / Date:',
-    pageHeader:     'Karate-Gi Bestellvorlage / Order Form – Kampfkunstschule Schreiner',
+    pageHeader:     `Karate-Gi Bestellvorlage / Order Form – ${org}`,
     tolerance:      'Toleranz ±1,5 cm / Tolerance ±1.5 cm',
     selectedModel:  '← Gewähltes Modell / Selected Model',
     // Sections
@@ -1986,7 +1988,7 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
     labelSeam:    'Seitennaht / Side seam',
     labelWaist:   'Hosenbund (innen) / Waistband (inside)',
     labelExtra:   'Zusatztext auf Label / Additional text on label',
-    labelExtraHint: 'z. B. Made exclusively for Kampfkunstschule Schreiner · TDA',
+    labelExtraHint: `z. B. Made exclusively for ${org} · TDA`,
     // Signature
     qty:         'Gesamtmenge / Total Quantity',
     orderVal:    'Auftragswert (netto) / Order Value (net)',
@@ -1994,7 +1996,7 @@ export function buildPdfHtml(form, origin, eingebetteteDateien = [], bestellungI
     pcs:         'Stück / pcs',
     sigDate:     'Datum &amp; Ort / Date &amp; Place',
     sigBuyer:    'Unterschrift Besteller / Buyer\'s Signature',
-    sigBuyerSub: 'Kampfkunstschule Schreiner',
+    sigBuyerSub: org,
     sigSupplier: 'Bestätigung Lieferant / Supplier Confirmation',
     sigStamp:    'Stempel + Unterschrift / Stamp + Signature',
     // Sections 4+

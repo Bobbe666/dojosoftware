@@ -35,8 +35,9 @@ router.get('/bootstrap', authenticateToken, async (req, res) => {
     const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
     const isSuper = userId == 1 || req.user?.username === 'admin';
     const isAdmin = ['admin', 'super_admin'].includes(role);
+    // Trainer/Admins haben immer ihre dojo_id; nur ein Super-Admin ohne ?dojo_id käme ohne Kontext.
+    // KEIN hartes Schreiner-Default (3) mehr — sonst lädt fremdes Branding. Dann neutraler Bootstrap.
     let dojoId = req.user?.dojo_id || (req.query.dojo_id ? parseInt(req.query.dojo_id) : null);
-    if (!dojoId) dojoId = 3; // Super-Admin ohne Dojo-Kontext → Default (Schreiner)
 
     // Enterprise-Gate: Admins/Super-Admin immer; Trainer nur wenn Dojo freigeschaltet
     if (!isAdmin && !isSuper) {
