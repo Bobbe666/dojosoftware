@@ -4,6 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const db = require('../db');
 const { sendWelcomeEmail, sendVerificationEmail } = require('../services/emailTemplates');
+const { sendMitgliederAnleitung } = require('../services/onboardingEmails');
 const crypto = require('crypto');
 const saasSettings = require('../services/saasSettingsService');
 const { syncPlanFeatures } = require('../middleware/featureAccess');
@@ -314,6 +315,14 @@ router.post('/register-dojo', async (req, res) => {
       logger.info(`Willkommens-Email gesendet an ${owner_email}`);
     } catch (emailErr) {
       logger.warn(`Willkommens-Email konnte nicht gesendet werden: ${emailErr.message}`);
+    }
+
+    // Kurzanleitung "Mitglieder anlegen" senden (nicht blockierend)
+    try {
+      await sendMitgliederAnleitung({ to: owner_email, name: owner_name, dojoName: dojo_name });
+      logger.info(`Mitglieder-Anleitung gesendet an ${owner_email}`);
+    } catch (anleitungErr) {
+      logger.warn(`Mitglieder-Anleitung konnte nicht gesendet werden: ${anleitungErr.message}`);
     }
 
     // Verifikations-Email senden
