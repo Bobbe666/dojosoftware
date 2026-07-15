@@ -208,7 +208,7 @@ const ClubMemberLogin = () => {
       <div className="login-split-layout">
         {/* Linke Seite - Großes Club-Logo */}
         <div className="login-branding club-branding">
-          <div className={`branding-content${tenant ? ' has-cobrand' : ''}`}>
+          <div className={`branding-content${subdomain ? ' has-cobrand' : ''}`}>
             <img
               src={clubLogo}
               alt={clubName}
@@ -217,7 +217,7 @@ const ClubMemberLogin = () => {
             <h1 className="branding-title">{clubName}</h1>
             <p className="branding-subtitle">Willkommen bei {clubName}</p>
 
-            {tenant && (
+            {subdomain && (
               <div className="powered-by-club">
                 <div className="powered-by">
                   <span className="powered-by-line" />

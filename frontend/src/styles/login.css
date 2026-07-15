@@ -1048,7 +1048,14 @@
   margin-bottom: 1.25rem !important;
 }
 
-/* Kompaktes Branding-Panel, damit Logo + Name + "läuft mit" komplett sichtbar sind */
+/* Kompaktes Branding-Panel, damit Logo + Name + "läuft mit" komplett sichtbar sind.
+   Gilt für ALLE Dojo-Subdomains (auch mit rundem Standard-Logo). */
+.branding-content.has-cobrand .branding-logo {
+  width: 240px;
+  height: 240px;
+  margin-bottom: 1.25rem;
+}
+
 .branding-content.has-cobrand .branding-title {
   font-size: 2rem;
   margin-bottom: 0.4rem;
@@ -1057,6 +1064,13 @@
 .branding-content.has-cobrand .branding-subtitle {
   font-size: 1.05rem;
   margin-bottom: 1.1rem;
+}
+
+@media (max-width: 968px) {
+  .branding-content.has-cobrand .branding-logo {
+    width: 180px;
+    height: 180px;
+  }
 }
 
 /* Abstand des "läuft mit"-Blocks im Branding-Panel */
