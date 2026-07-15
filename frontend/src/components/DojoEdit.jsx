@@ -6,6 +6,7 @@ import AdminVerwaltung from './AdminVerwaltung';
 import MessengerKonfiguration from './MessengerKonfiguration';
 import WhatsAppKonfiguration from './WhatsAppKonfiguration';
 import DojoLogos from './DojoLogos';
+import MitgliederAppShare from './MitgliederAppShare';
 import RaumVerwaltung from './RaumVerwaltung';
 import { useDojoContext } from '../context/DojoContext';
 import { useAuth } from '../context/AuthContext';
@@ -34,6 +35,7 @@ const SECTIONS = [
   { key: 'vertraege', label: 'Verträge',             icon: '📄' },
   { key: 'digital',   label: 'Digital & Komm.',      icon: '💻', sub: [
     { key: 'fs-email',        label: 'E-Mail' },
+    { key: 'fs-mitglieder-app', label: 'Mitglieder-App' },
     { key: 'fs-probetraining', label: 'Probetraining' },
     { key: 'fs-messenger',    label: 'Messenger' },
     { key: 'fs-whatsapp',     label: 'WhatsApp' },
@@ -1334,6 +1336,13 @@ const DojoEdit = () => {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Mitglieder-App teilen */}
+              <div className="form-section" id="fs-mitglieder-app" style={{display: subVisible('fs-mitglieder-app') ? 'block' : 'none'}}>
+                <h3>📱 Mitglieder-App teilen</h3>
+                <p className="de-subtext-mb">Ihre Mitglieder erreichen ihren persönlichen Bereich als installierbare App – teilen Sie einfach Link oder QR-Code. Keine eigene Domain nötig.</p>
+                <MitgliederAppShare subdomain={subdomain} dojoName={formData.dojoname} />
               </div>
 
               {/* Probetraining */}
