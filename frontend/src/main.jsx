@@ -123,6 +123,10 @@ fetchCsrfToken().then(() => {
 import { initPublicTheme } from './utils/dsTheme';
 initPublicTheme();
 
+// PWA-Branding pro Dojo: Homescreen-Name + Icon der Schule (statt „DojoSoftware")
+import { initDojoPwaBranding } from './utils/pwaBranding';
+initDojoPwaBranding();
+
 // Globaler Request Interceptor - Session-Auth mit JWT-Fallback
 axios.interceptors.request.use(
   (reqConfig) => {
