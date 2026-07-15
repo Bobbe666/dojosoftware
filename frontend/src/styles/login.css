@@ -1109,6 +1109,15 @@
   border-radius: 999px;
   background: var(--primary-alpha-10);
   border: 1px solid var(--primary-alpha-30);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+a.powered-by-brand:hover {
+  background: var(--primary-alpha-30);
+  border-color: var(--ds-accent-50);
+  transform: translateY(-1px);
 }
 
 .powered-by-logo {

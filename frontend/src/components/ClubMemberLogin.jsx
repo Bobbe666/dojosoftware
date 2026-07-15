@@ -224,12 +224,18 @@ const ClubMemberLogin = () => {
                   <span className="powered-by-text">läuft mit</span>
                   <span className="powered-by-line" />
                 </div>
-                <div className="powered-by-brand">
+                <a
+                  href="https://tda-intl.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="powered-by-brand"
+                  title="DojoSoftware von TDA – mehr erfahren"
+                >
                   <img src={dojoLogo} alt="DojoSoftware" className="powered-by-logo" />
                   <span className="powered-by-name">
                     DojoSoftware <span className="powered-by-tda">· by TDA</span>
                   </span>
-                </div>
+                </a>
               </div>
             )}
           </div>
