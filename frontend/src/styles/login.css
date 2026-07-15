@@ -1038,19 +1038,41 @@
    Kreis-Beschnitt, damit Schriftzug/Ränder vollständig sichtbar bleiben.
    Überschreibt gezielt den runden Standard-Logo-Look. */
 .club-member-login .club-logo-plate {
-  border-radius: 36px !important;
+  width: 240px !important;
+  height: 240px !important;
+  border-radius: 28px !important;
   background: #ffffff !important;
   border: 4px solid var(--ds-accent-50) !important;
-  padding: 34px !important;
+  padding: 20px !important;
   box-shadow: 0 12px 44px rgba(0, 0, 0, 0.45) !important;
+  margin-bottom: 1.25rem !important;
+}
+
+/* Kompaktes Branding-Panel, damit Logo + Name + "läuft mit" komplett sichtbar sind */
+.branding-content.has-cobrand .branding-title {
+  font-size: 2rem;
+  margin-bottom: 0.4rem;
+}
+
+.branding-content.has-cobrand .branding-subtitle {
+  font-size: 1.05rem;
+  margin-bottom: 1.1rem;
 }
 
 /* Abstand des "läuft mit"-Blocks im Branding-Panel */
 .powered-by-club {
-  margin-top: 0.25rem;
+  margin-top: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+@media (max-width: 968px) {
+  .club-member-login .club-logo-plate {
+    width: 180px !important;
+    height: 180px !important;
+    padding: 14px !important;
+  }
 }
 
 /* "── läuft mit ──" Trenner */

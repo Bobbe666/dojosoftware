@@ -208,7 +208,7 @@ const ClubMemberLogin = () => {
       <div className="login-split-layout">
         {/* Linke Seite - Großes Club-Logo */}
         <div className="login-branding club-branding">
-          <div className="branding-content">
+          <div className={`branding-content${tenant ? ' has-cobrand' : ''}`}>
             <img
               src={clubLogo}
               alt={clubName}
