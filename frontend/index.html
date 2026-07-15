@@ -37,9 +37,9 @@
     <meta name="apple-mobile-web-app-title" content="DojoSoftware" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-
-    <!-- Dynamisches PWA-Manifest pro Dojo (Backend liefert Name/Icons je Subdomain) -->
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- PWA-Manifest wird zur Laufzeit pro Dojo-Subdomain injiziert (utils/pwaBranding.js),
+         damit Vite die dynamische Backend-Route /manifest.webmanifest nicht zu einem
+         gehashten Asset umschreibt. -->
 
     <!-- ── Schriften (für Theme-Auswahl) ──────────────────────────────── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

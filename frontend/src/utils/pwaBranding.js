@@ -40,6 +40,11 @@ export async function initDojoPwaBranding() {
   const sub = detectSubdomain();
   if (!sub) return;
 
+  // Dynamisches Web-Manifest (Android-PWA) pro Subdomain verlinken.
+  // Zur Laufzeit gesetzt, damit Vite die Backend-Route nicht zu einem
+  // gehashten Asset umschreibt. Same-origin → CSP-konform.
+  upsertLink('manifest', '/manifest.webmanifest');
+
   // Schulname öffentlich holen (ohne Login)
   let dojoName = null;
   try {
