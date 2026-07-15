@@ -1376,6 +1376,61 @@ router.get('/dojo/:subdomain', async (req, res) => {
   }
 });
 
+// GET /api/public/manifest - Dynamisches PWA-Manifest pro Dojo-Subdomain.
+// Nginx (wildcard-dojo.conf) mappt /manifest.webmanifest hierher und reicht
+// die Subdomain als X-Tenant-Subdomain-Header durch. Installierte App zeigt so
+// Schulname + (falls hinterlegt) Schul-Logo statt "DojoSoftware".
+router.get('/manifest', async (req, res) => {
+  const sub = String(req.headers['x-tenant-subdomain'] || '').toLowerCase().trim();
+
+  let name = 'DojoSoftware';
+  let logoUrl = null;
+  if (sub) {
+    try {
+      const rows = await queryAsync(
+        'SELECT dojoname, logo_url FROM dojo WHERE subdomain = ? AND ist_aktiv = 1 LIMIT 1',
+        [sub]
+      );
+      if (rows.length) {
+        name = (rows[0].dojoname && rows[0].dojoname.trim()) || name;
+        logoUrl = (rows[0].logo_url && rows[0].logo_url.trim()) || null;
+      }
+    } catch (err) {
+      logger.warn('Manifest: Dojo-Lookup fehlgeschlagen', { sub, error: err?.message });
+    }
+  }
+
+  const icons = logoUrl
+    ? [
+        { src: logoUrl, sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: logoUrl, sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: logoUrl, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ]
+    : [
+        { src: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ];
+
+  const manifest = {
+    name,
+    short_name: name.length > 24 ? name.slice(0, 24).trim() : name,
+    description: `Mitgliederbereich von ${name}`,
+    start_url: '/',
+    scope: '/',
+    display: 'standalone',
+    orientation: 'portrait-primary',
+    background_color: '#0f0f23',
+    theme_color: '#0f0f23',
+    lang: 'de',
+    icons,
+  };
+
+  res.set('Content-Type', 'application/manifest+json; charset=utf-8');
+  res.set('Cache-Control', 'public, max-age=300');
+  res.json(manifest);
+});
+
 // POST /api/public/mitglied-anlegen - Neues Mitglied öffentlich anlegen
 router.post('/mitglied-anlegen', async (req, res) => {
   try {
