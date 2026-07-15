@@ -6,6 +6,7 @@ import { useDojoContext } from '../context/DojoContext';
 import { CURRENT_VERSION } from '../version.js';
 import config from '../config/config.js';
 import dojoLogo from '../assets/dojo-logo.png';
+import { getTenantBranding } from '../config/tenantBranding';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/login.css';
@@ -192,8 +193,14 @@ const ClubMemberLogin = () => {
     );
   }
 
-  const clubName = dojoData?.dojoname || 'Dojo';
-  const clubLogo = dojoData?.logo_url || defaultLogo;
+  // Co-Branding pro Subdomain (z.B. Nenad's Karateschule) – nur für hinterlegte Schulen
+  const tenant = getTenantBranding();
+
+  const clubName = dojoData?.dojoname || tenant?.name || 'Dojo';
+  // Priorität: in der App hinterlegtes Logo → mitgeliefertes Schul-Logo → Standard
+  const clubLogo = dojoData?.logo_url || tenant?.logo || defaultLogo;
+  // Schul-Logos mit Textrand (z.B. Nenad) dürfen NICHT rund beschnitten werden
+  const useLogoPlate = !dojoData?.logo_url && !!tenant?.logo;
 
   return (
     <div className="login-container club-member-login">
@@ -202,9 +209,29 @@ const ClubMemberLogin = () => {
         {/* Linke Seite - Großes Club-Logo */}
         <div className="login-branding club-branding">
           <div className="branding-content">
-            <img src={clubLogo} alt={clubName} className="branding-logo club-logo-large" />
+            <img
+              src={clubLogo}
+              alt={clubName}
+              className={`branding-logo club-logo-large${useLogoPlate ? ' club-logo-plate' : ''}`}
+            />
             <h1 className="branding-title">{clubName}</h1>
             <p className="branding-subtitle">Willkommen bei {clubName}</p>
+
+            {tenant && (
+              <div className="powered-by-club">
+                <div className="powered-by">
+                  <span className="powered-by-line" />
+                  <span className="powered-by-text">läuft mit</span>
+                  <span className="powered-by-line" />
+                </div>
+                <div className="powered-by-brand">
+                  <img src={dojoLogo} alt="DojoSoftware" className="powered-by-logo" />
+                  <span className="powered-by-name">
+                    DojoSoftware <span className="powered-by-tda">· by TDA</span>
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

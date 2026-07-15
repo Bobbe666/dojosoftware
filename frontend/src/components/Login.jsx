@@ -7,7 +7,6 @@ import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/login.css';
 import dojoLogo from '../assets/dojo-logo.png';
-import { getTenantBranding } from '../config/tenantBranding';
 import '../styles/Buttons.css';
 
 const Login = () => {
@@ -24,7 +23,6 @@ const Login = () => {
 
   const { login, logout, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const tenant = getTenantBranding();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -131,36 +129,13 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          {tenant ? (
-            <>
-              <div className="tenant-logo-wrap">
-                <img src={tenant.logo} alt={tenant.name} className="tenant-logo-image" />
-              </div>
-              <h1 className="tenant-name">{tenant.name}</h1>
-
-              <div className="powered-by">
-                <span className="powered-by-line" />
-                <span className="powered-by-text">läuft mit</span>
-                <span className="powered-by-line" />
-              </div>
-              <div className="powered-by-brand">
-                <img src={dojoLogo} alt="DojoSoftware" className="powered-by-logo" />
-                <span className="powered-by-name">
-                  DojoSoftware <span className="powered-by-tda">· by TDA</span>
-                </span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="japanese-title">Tiger & Dragon Association – International</div>
-              <div className="logo">
-                <div className="logo-circle">
-                  <img src={dojoLogo} alt="Dojo Logo" className="logo-image" />
-                </div>
-                <h1 className="title">DojoSoftware</h1>
-              </div>
-            </>
-          )}
+          <div className="japanese-title">Tiger & Dragon Association – International</div>
+          <div className="logo">
+            <div className="logo-circle">
+              <img src={dojoLogo} alt="Dojo Logo" className="logo-image" />
+            </div>
+            <h1 className="title">DojoSoftware</h1>
+          </div>
           <div className="security-badge">
             <Shield size={14} />
             <span>Sicher verschlüsselt</span>
