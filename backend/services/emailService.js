@@ -275,7 +275,9 @@ const sendEmailForDojo = async (options, dojoId) => {
       subject: safeSubject,
       text: options.text,
       html: options.html,
-      attachments: options.attachments || []
+      attachments: options.attachments || [],
+      // Archiv-Hints für den zentralen Interzeptor (utils/globalMailCopy.js)
+      __dojoId: dojoId, __typ: options.archiveTyp, __archiveName: options.archiveName
     };
 
     // Reply-To hinzufügen wenn vorhanden
@@ -285,14 +287,7 @@ const sendEmailForDojo = async (options, dojoId) => {
 
     const info = await transporter.sendMail(mailOptions);
     logger.info('✅ E-Mail erfolgreich versendet', { messageId: info.messageId, dojoId, mode: settings.mode });
-
-    // Kopie am Kundenaccount ablegen (fire-and-forget, stört Versand nie)
-    archiveEmail({
-      dojoId,
-      to: options.to, name: options.archiveName, subject: options.subject,
-      html: options.html, text: options.text, typ: options.archiveTyp,
-      messageId: info.messageId
-    }).catch(() => {});
+    // Archivierung erfolgt zentral im nodemailer-Interzeptor (globalMailCopy.js)
 
     return {
       success: true,
@@ -386,7 +381,9 @@ const sendEmail = async (options) => {
       subject: safeSubject,
       text: options.text,
       html: options.html,
-      attachments: options.attachments || []
+      attachments: options.attachments || [],
+      // Archiv-Hints für den zentralen Interzeptor (utils/globalMailCopy.js)
+      __dojoId: options.archiveDojoId, __typ: options.archiveTyp, __archiveName: options.archiveName
     };
 
     if (options.replyTo) mailOptions.replyTo = options.replyTo;
@@ -394,14 +391,7 @@ const sendEmail = async (options) => {
 
     const info = await transporter.sendMail(mailOptions);
     logger.info('✅ E-Mail erfolgreich versendet:', { data: info.messageId });
-
-    // Kopie am Kundenaccount ablegen (dojo_id via archiveDojoId ODER Empfänger-Mail)
-    archiveEmail({
-      dojoId: options.archiveDojoId,
-      to: options.to, name: options.archiveName, subject: options.subject,
-      html: options.html, text: options.text, typ: options.archiveTyp,
-      messageId: info.messageId
-    }).catch(() => {});
+    // Archivierung erfolgt zentral im nodemailer-Interzeptor (globalMailCopy.js)
 
     return {
       success: true,

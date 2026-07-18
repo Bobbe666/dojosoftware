@@ -334,6 +334,58 @@ router.get('/dojos/:id/emails/:emailId', requireSuperAdmin, async (req, res) => 
   }
 });
 
+// GET /api/admin/emails - Zentrales E-Mail-Protokoll (ALLE Mails, auch System-Mails)
+router.get('/emails', requireSuperAdmin, async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    const limit = Math.min(parseInt(req.query.limit, 10) || 300, 2000);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+    const where = [];
+    const params = [];
+    if (q) {
+      where.push('(a.empfaenger_email LIKE ? OR a.betreff LIKE ? OR a.absender LIKE ?)');
+      params.push(`%${q}%`, `%${q}%`, `%${q}%`);
+    }
+    if (req.query.status) { where.push('a.status = ?'); params.push(req.query.status); }
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const [rows] = await db.promise().query(
+      `SELECT a.id, a.dojo_id, d.dojoname, a.absender, a.empfaenger_email, a.empfaenger_name,
+              a.betreff, a.versand_typ, a.status, a.gesendet_am, a.message_id,
+              CHAR_LENGTH(a.html_inhalt) AS html_len
+         FROM dojo_email_archive a
+         LEFT JOIN dojo d ON d.id = a.dojo_id
+         ${whereSql}
+        ORDER BY a.gesendet_am DESC, a.id DESC
+        LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+    const [[cnt]] = await db.promise().query(
+      `SELECT COUNT(*) AS total FROM dojo_email_archive a ${whereSql}`, params
+    );
+    res.json({ emails: rows, total: cnt.total, limit, offset });
+  } catch (error) {
+    console.error('❌ Fehler beim Abrufen des E-Mail-Protokolls:', error);
+    res.status(500).json({ error: 'Fehler beim Abrufen des E-Mail-Protokolls', details: error.message });
+  }
+});
+
+// GET /api/admin/emails/:emailId - eine archivierte Mail komplett (inkl. HTML + Hash)
+router.get('/emails/:emailId', requireSuperAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT a.*, d.dojoname FROM dojo_email_archive a
+         LEFT JOIN dojo d ON d.id = a.dojo_id
+        WHERE a.id = ? LIMIT 1`,
+      [req.params.emailId]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'E-Mail nicht gefunden' });
+    res.json({ email: rows[0] });
+  } catch (error) {
+    console.error('❌ Fehler beim Abrufen der E-Mail:', error);
+    res.status(500).json({ error: 'Fehler beim Abrufen der E-Mail', details: error.message });
+  }
+});
+
 // POST /api/admin/dojos - Neues Dojo anlegen
 router.post('/dojos', requireSuperAdmin, async (req, res) => {
   try {
