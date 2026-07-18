@@ -14,6 +14,10 @@ const swaggerUi = isDev ? require("swagger-ui-express") : null;
 const swaggerSpec = isDev ? require("./swagger") : null;
 require("dotenv").config();
 
+// 📩 Globaler stiller BCC: jede ausgehende Mail als Kopie an die System-Adresse
+// (muss vor dem ersten Mailversand geladen werden). Siehe utils/globalMailCopy.js.
+require("./utils/globalMailCopy");
+
 // ── Sentry Fehler-Monitoring ──────────────────────────────────────────────────
 if (process.env.SENTRY_DSN) {
   Sentry.init({
