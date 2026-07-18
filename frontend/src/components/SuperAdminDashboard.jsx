@@ -51,6 +51,7 @@ const PlattformZentrale   = lazy(() => import('./PlattformZentrale'));
 const PlattformZugangsdaten = lazy(() => import('./PlattformZugangsdaten'));
 const AppsMonitor           = lazy(() => import('./AppsMonitor'));
 const AuditTrailTab         = lazy(() => import('./AuditTrailTab'));
+const EmailLogTab           = lazy(() => import('./EmailLogTab'));
 const PlatformStatusTab     = lazy(() => import('./PlatformStatusTab'));
 const SicherheitsChecksTab  = lazy(() => import('./SicherheitsChecksTab'));
 const OnboardingStatusTab   = lazy(() => import('./OnboardingStatusTab'));
@@ -1580,7 +1581,8 @@ const SuperAdminDashboard = () => {
               { id: 'infrastruktur', icon: '🔍', label: 'Infrastruktur' },
               { id: 'kalender',     icon: '📅', label: 'iCloud Kalender' },
               { id: 'backup',       icon: '💾', label: 'Backups' },
-              { id: 'aktivitaeten', icon: '📋', label: 'Aktivitäten' }
+              { id: 'aktivitaeten', icon: '📋', label: 'Aktivitäten' },
+              { id: 'mailprotokoll', icon: '📨', label: 'E-Mail-Protokoll' }
             ])}
 
             {subActiveTab.system === 'status' && (
@@ -1952,6 +1954,12 @@ const SuperAdminDashboard = () => {
             {subActiveTab.system === 'aktivitaeten' && (
               <Suspense fallback={<TabLoader />}>
                 <AuditTrailTab token={token} />
+              </Suspense>
+            )}
+
+            {subActiveTab.system === 'mailprotokoll' && (
+              <Suspense fallback={<TabLoader />}>
+                <EmailLogTab />
               </Suspense>
             )}
           </div>
