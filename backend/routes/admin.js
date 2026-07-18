@@ -369,6 +369,51 @@ router.get('/emails', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/emails/verify - Integrität der Hash-Kette prüfen (Revisionssicherheit)
+router.get('/emails/verify', requireSuperAdmin, async (req, res) => {
+  try {
+    const { contentHashOf, recordHashOf } = require('../services/emailArchive');
+    const [rows] = await db.promise().query(
+      `SELECT id, absender, empfaenger_email, kopie_cc, kopie_bcc, betreff, html_inhalt,
+              text_inhalt, message_id, inhalt_hash, prev_hash, record_hash, gesendet_am
+         FROM dojo_email_archive WHERE record_hash IS NOT NULL ORDER BY id ASC`
+    );
+    let prev = 'GENESIS';
+    let checked = 0;
+    const problems = [];
+    for (const r of rows) {
+      const ch = contentHashOf({
+        from: r.absender, to: r.empfaenger_email, cc: r.kopie_cc, bcc: r.kopie_bcc,
+        subject: r.betreff, html: r.html_inhalt, text: r.text_inhalt, messageId: r.message_id,
+      });
+      if (ch !== r.inhalt_hash) problems.push({ id: r.id, art: 'inhalt', msg: 'Inhalt wurde nachträglich verändert' });
+      if ((r.prev_hash || 'GENESIS') !== prev) problems.push({ id: r.id, art: 'kette', msg: 'Kettenbruch – Eintrag fehlt/verschoben' });
+      if (recordHashOf(r.prev_hash, r.inhalt_hash) !== r.record_hash) problems.push({ id: r.id, art: 'record', msg: 'record_hash ungültig' });
+      prev = r.record_hash;
+      checked++;
+    }
+    res.json({ ok: problems.length === 0, checked, problems: problems.slice(0, 100), geprueft_am: new Date() });
+  } catch (error) {
+    console.error('❌ Fehler bei der Archiv-Prüfung:', error);
+    res.status(500).json({ error: 'Prüfung fehlgeschlagen', details: error.message });
+  }
+});
+
+// GET /api/admin/emails/export - vollständiger Export (JSON) für revisionssichere Ablage
+router.get('/emails/export', requireSuperAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT * FROM dojo_email_archive ORDER BY id ASC`
+    );
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="email-archiv-export.json"`);
+    res.end(JSON.stringify({ exportiert_am: new Date(), anzahl: rows.length, emails: rows }, null, 2));
+  } catch (error) {
+    console.error('❌ Fehler beim Archiv-Export:', error);
+    res.status(500).json({ error: 'Export fehlgeschlagen', details: error.message });
+  }
+});
+
 // GET /api/admin/emails/:emailId - eine archivierte Mail komplett (inkl. HTML + Hash)
 router.get('/emails/:emailId', requireSuperAdmin, async (req, res) => {
   try {

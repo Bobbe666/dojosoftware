@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Mail, Search, RefreshCw, X, ShieldCheck } from 'lucide-react';
+import { Mail, Search, RefreshCw, X, ShieldCheck, Download, CheckCircle2, AlertTriangle } from 'lucide-react';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
@@ -12,6 +12,29 @@ export default function EmailLogTab() {
   const [q, setQ] = useState('');
   const [selected, setSelected] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState(null);
+
+  const verify = async () => {
+    setVerifying(true); setVerifyResult(null);
+    try {
+      const r = await fetchWithAuth(`${config.apiBaseUrl}/admin/emails/verify`);
+      setVerifyResult(await r.json());
+    } catch (e) {
+      setVerifyResult({ ok: false, error: e.message });
+    } finally { setVerifying(false); }
+  };
+
+  const exportJson = async () => {
+    try {
+      const r = await fetchWithAuth(`${config.apiBaseUrl}/admin/emails/export`);
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'email-archiv-export.json'; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { alert('Export fehlgeschlagen: ' + e.message); }
+  };
 
   const load = useCallback(async (query = '') => {
     setLoading(true);
@@ -76,7 +99,30 @@ export default function EmailLogTab() {
         <button className="btn-secondary" onClick={() => load(q)} style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
           <RefreshCw size={14} /> Aktualisieren
         </button>
+        <button className="btn-secondary" onClick={verify} disabled={verifying} style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <ShieldCheck size={14} /> {verifying ? 'Prüfe…' : 'Integrität prüfen'}
+        </button>
+        <button className="btn-secondary" onClick={exportJson} style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Download size={14} /> Export
+        </button>
       </div>
+
+      {verifyResult && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 0.8rem', padding: '10px 14px', borderRadius: 8, fontSize: 13,
+          background: verifyResult.ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+          border: `1px solid ${verifyResult.ok ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'}`,
+          color: verifyResult.ok ? '#4ade80' : '#f87171'
+        }}>
+          {verifyResult.ok ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+          {verifyResult.error
+            ? `Prüfung fehlgeschlagen: ${verifyResult.error}`
+            : verifyResult.ok
+              ? `Hash-Kette intakt – ${verifyResult.checked} Einträge geprüft, keine Manipulation. (${new Date(verifyResult.geprueft_am).toLocaleString('de-DE')})`
+              : `⚠️ ${verifyResult.problems?.length || 0} Problem(e) gefunden bei ${verifyResult.checked} geprüften Einträgen: ` +
+                (verifyResult.problems || []).slice(0, 5).map(p => `#${p.id} ${p.msg}`).join('; ')}
+        </div>
+      )}
 
       <p style={{ fontSize: 12.5, color: 'var(--text-3,#9ca3af)', margin: '0 0 0.8rem' }}>
         Jede vom System versendete E-Mail wird hier vollständig, mit Zeitstempel und Integritäts-Hash (SHA-256) gespeichert – ansehbar und abrufbar.
