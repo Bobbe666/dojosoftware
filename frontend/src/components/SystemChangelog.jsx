@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.146',
+    date: '2026-07-19',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Coach-App: Offline, Installation, Bottom-Nav & native Dialoge',
+    description: 'Reifegrad-Ausbau der Trainer-App: Stunden/Anfragen werden für den Offline-Fall zwischengespeichert (zuletzt geladener Stand statt leerer Liste), es gibt einen Installations-Hinweis (inkl. iOS-Anleitung, Voraussetzung für Push) und die Push-Aktivierung direkt im Dashboard. Neue untere Navigationsleiste für schnelle Einhandbedienung, native Bestätigungs-Dialoge statt Browser-Popups, Zeitzonen-Bug bei „Heute/Morgen“ behoben und externe App-Links zentral konfigurierbar.',
+    highlights: [
+      '📴 Offline-Zwischenspeicher für Stunden & Vertretungsanfragen (Workbox NetworkFirst)',
+      '📲 Installations-Banner (Android + iOS-Anleitung) & Push-Aktivierung im Dashboard',
+      '🧭 Untere Navigationsleiste + native Bestätigungs-Dialoge',
+      '🕒 Zeitzonen-Fix „Heute/Morgen“ (lokal statt UTC), App-Links per Env konfigurierbar',
+    ],
+    details: 'Coach-App (dojo-coach, nicht versioniert): vite.config.js runtimeCaching (GET /api, NetworkFirst, 5s Timeout); components/InstallPrompt.jsx (beforeinstallprompt + iOS-Standalone-Erkennung, dismissbar); components/ConfirmProvider.jsx (promise-basiertes useConfirm-Modal) ersetzt window.confirm in VertretungSuchen; components/BottomNav.jsx + Shell-Integration in App.jsx; Dashboard.jsx nutzt config.js (APP_URLS, Env-Override) statt hartcodierter URLs, plus Install-/Push-Banner; VertretungSuchen heuteISO/morgenISO auf lokale Zeit; styles.css (bottomnav/install-banner/modal/btn-danger). Coach-App v1.2.0. Kein Backend-Change.',
+    files: ['dojo-coach/vite.config.js', 'dojo-coach/src/components/InstallPrompt.jsx', 'dojo-coach/src/components/ConfirmProvider.jsx', 'dojo-coach/src/components/BottomNav.jsx', 'dojo-coach/src/config.js', 'dojo-coach/src/pages/Dashboard.jsx', 'dojo-coach/src/modules/VertretungSuchen.jsx'],
+  },
+  {
     version: '3.0.145',
     date: '2026-07-19',
     type: 'feature',
