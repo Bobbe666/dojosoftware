@@ -1,4 +1,4 @@
-const { authenticateToken } = require("../middleware/auth");
+const { authenticateToken, hasPermission } = require("../middleware/auth");
 const express = require("express");
 const logger = require('../utils/logger');
 const db = require("../db"); // Verbindung zur DB importieren
@@ -728,7 +728,7 @@ router.get("/filter/tarif-abweichung", (req, res) => {
 // ✅ API: Vorschau der Beitragserhöhung (welche Mitglieder, alte/neue Beträge)
 router.get("/filter/tarif-abweichung/vorschau", (req, res) => {
   const role = req.user?.rolle;
-  if (role !== 'admin' && role !== 'super_admin') return res.status(403).json({ error: 'Nur für Admins' });
+  if (!hasPermission(req, 'finanzen', 'lesen')) return res.status(403).json({ error: 'Keine Finanz-Berechtigung' });
 
   const { typ, erhoehung, erhoehungProzent } = req.query;
   const betrag  = parseFloat(erhoehung) || 0;
@@ -815,8 +815,8 @@ router.get("/filter/tarif-abweichung/vorschau", (req, res) => {
 // ✅ API: Beiträge massenweise erhöhen (absolut, prozentual oder kombiniert, gedeckelt am Tarif-Preis)
 router.put("/filter/tarif-abweichung/massenerhohung", (req, res) => {
   const role = req.user?.rolle;
-  if (role !== 'admin' && role !== 'super_admin') {
-    return res.status(403).json({ error: 'Nur für Admins' });
+  if (!hasPermission(req, 'finanzen', 'bearbeiten')) {
+    return res.status(403).json({ error: 'Keine Finanz-Berechtigung' });
   }
 
   const { erhoehung, erhoehungProzent, typ, ausschluss } = req.body;
@@ -909,8 +909,8 @@ router.put("/filter/tarif-abweichung/massenerhohung", (req, res) => {
 // ✅ API: Beitragserhöhung terminieren + Mitglieder per E-Mail & Push informieren
 router.post("/filter/tarif-abweichung/terminierung", async (req, res) => {
   const role = req.user?.rolle;
-  if (role !== 'admin' && role !== 'super_admin') {
-    return res.status(403).json({ error: 'Nur für Admins' });
+  if (!hasPermission(req, 'finanzen', 'bearbeiten')) {
+    return res.status(403).json({ error: 'Keine Finanz-Berechtigung' });
   }
 
   const { erhoehung, erhoehungProzent, typ, vorlage, gueltigAb, grund, ausschluss, schritte: schritteRaw } = req.body;
@@ -1174,8 +1174,8 @@ router.post("/filter/tarif-abweichung/terminierung", async (req, res) => {
 // ✅ API: Terminierte Beitragserhöhung stornieren (pending Terminierungen zurücksetzen)
 router.delete("/filter/tarif-abweichung/terminierung", async (req, res) => {
   const role = req.user?.rolle;
-  if (role !== 'admin' && role !== 'super_admin') {
-    return res.status(403).json({ error: 'Nur für Admins' });
+  if (!hasPermission(req, 'finanzen', 'loeschen')) {
+    return res.status(403).json({ error: 'Keine Finanz-Berechtigung' });
   }
 
   const secureDojoId = getSecureDojoId(req);
@@ -1244,8 +1244,8 @@ router.delete("/filter/tarif-abweichung/terminierung", async (req, res) => {
 // ✅ API: Test-Mail an Admin senden (Vorschau der Beitragserhöhungs-E-Mail)
 router.post("/filter/tarif-abweichung/test-mail", async (req, res) => {
   const role = req.user?.rolle;
-  if (role !== 'admin' && role !== 'super_admin') {
-    return res.status(403).json({ error: 'Nur für Admins' });
+  if (!hasPermission(req, 'finanzen', 'lesen')) {
+    return res.status(403).json({ error: 'Keine Finanz-Berechtigung' });
   }
 
   const { erhoehung, erhoehungProzent, typ, vorlage, gueltigAb, grund } = req.body;
@@ -1315,8 +1315,8 @@ router.post("/filter/tarif-abweichung/test-mail", async (req, res) => {
 // ✅ API: Mitglieder über Beitragserhöhung per E-Mail informieren
 router.post("/filter/tarif-abweichung/benachrichtigung", async (req, res) => {
   const role = req.user?.rolle;
-  if (role !== 'admin' && role !== 'super_admin') {
-    return res.status(403).json({ error: 'Nur für Admins' });
+  if (!hasPermission(req, 'finanzen', 'bearbeiten')) {
+    return res.status(403).json({ error: 'Keine Finanz-Berechtigung' });
   }
 
   const { erhoehung, erhoehungProzent, typ, vorlage, gueltigAb, grund, ausschluss, sendPush } = req.body;

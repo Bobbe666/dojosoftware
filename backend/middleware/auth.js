@@ -96,17 +96,22 @@ const requireTrainer = (req, res, next) => {
  * @param {string} bereich  z.B. 'finanzen', 'mitglieder', 'pruefungen'
  * @param {string} aktion   'lesen' | 'erstellen' | 'bearbeiten' | 'loeschen' | 'exportieren'
  */
-const requirePermission = (bereich, aktion = 'lesen') => (req, res, next) => {
+/**
+ * Boolean-Variante der Rechteprüfung (für Inline-Checks in Routen).
+ * super_admin/admin → immer true (Bypass); sonst berechtigungen[bereich][aktion].
+ */
+const hasPermission = (req, bereich, aktion = 'lesen') => {
   const role = req.user?.rolle || req.user?.role;
-  // Betreiber-Rollen: voller Zugriff (kein Lockout)
-  if (role === 'super_admin' || role === 'admin') return next();
-
+  if (role === 'super_admin' || role === 'admin') return true;
   let perms = req.user?.berechtigungen;
   if (typeof perms === 'string') {
     try { perms = JSON.parse(perms); } catch { perms = null; }
   }
-  if (perms && perms[bereich] && perms[bereich][aktion] === true) return next();
+  return !!(perms && perms[bereich] && perms[bereich][aktion] === true);
+};
 
+const requirePermission = (bereich, aktion = 'lesen') => (req, res, next) => {
+  if (hasPermission(req, bereich, aktion)) return next();
   return res.status(403).json({
     message: `Keine Berechtigung für ${bereich}/${aktion}`,
     permission_required: `${bereich}.${aktion}`
@@ -118,5 +123,6 @@ module.exports = {
   requireAdmin,
   requireTrainer,
   requirePermission,
+  hasPermission,
   JWT_SECRET
 };

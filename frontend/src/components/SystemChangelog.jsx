@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.149',
+    date: '2026-07-19',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 3: Rechteprüfung auch bei Tariferhöhungen',
+    description: 'Die serverseitige Rechteprüfung wird über die Buchhaltung hinaus ausgeweitet: Tariferhöhungs-Aktionen (Vorschau, Massenerhöhung, Terminierung anlegen/löschen, Benachrichtigungen) verlangen jetzt Finanz-Rechte statt eines pauschalen Admin-Checks. Inhaber/Admins haben weiterhin vollen Zugriff; ein Kassenwart oder Dojoleiter kann diese Finanzaktionen jetzt ebenfalls ausführen, Trainer/Prüfer/Rezeption nicht. Rein additiv — niemand verliert bestehenden Zugriff.',
+    highlights: [
+      '💶 Tariferhöhungen an das Recht „Finanzen“ gebunden (lesen/bearbeiten/löschen)',
+      '➕ Additiv: Admin/Super-Admin unverändert, granulare Finanz-Rollen erhalten Zugang',
+    ],
+    details: 'middleware/auth.js: neuer Boolean-Helfer hasPermission(req, bereich, aktion) (requirePermission nutzt ihn nun). routes/mitglieder.js: 6 Inline-Checks der /filter/tarif-abweichung/*-Routen von „role !== admin“ auf hasPermission(finanzen, lesen|bearbeiten|loeschen) umgestellt. OFFEN (Phase 4): Enforcement auf Prüfungen/Events/Mitglieder-CRUD — diese Routen sind nicht einheitlich gegatet, brauchen Gates pro Route (sorgfältig, da teils bisher ungegatet).',
+    files: ['backend/middleware/auth.js', 'backend/routes/mitglieder.js'],
+  },
+  {
     version: '3.0.148',
     date: '2026-07-19',
     type: 'feature',
