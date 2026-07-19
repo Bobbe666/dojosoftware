@@ -10,6 +10,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db');
+const { requireStaffPermission } = require('../../middleware/auth');
 const pool = db.promise();
 const logger = require('../../utils/logger');
 const { getSecureDojoId } = require('../../utils/dojo-filter-helper');
@@ -41,7 +42,7 @@ router.get('/:id/protokoll', async (req, res) => {
 
 // ── POST /:id/protokoll ───────────────────────────────────────────────────────
 // Trainer-Protokoll erstellen / aktualisieren
-router.post('/:id/protokoll', async (req, res) => {
+router.post('/:id/protokoll', requireStaffPermission('pruefungen','bearbeiten'), async (req, res) => {
   const pruefung_id = parseInt(req.params.id);
   if (!pruefung_id) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
 
@@ -82,7 +83,7 @@ router.post('/:id/protokoll', async (req, res) => {
 
 // ── POST /:id/protokoll/senden ────────────────────────────────────────────────
 // Gespeichertes Trainer-Protokoll per E-Mail an das Mitglied senden
-router.post('/:id/protokoll/senden', async (req, res) => {
+router.post('/:id/protokoll/senden', requireStaffPermission('pruefungen','bearbeiten'), async (req, res) => {
   const pruefung_id = parseInt(req.params.id);
   if (!pruefung_id) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
 
@@ -114,7 +115,7 @@ router.post('/:id/protokoll/senden', async (req, res) => {
 
 // ── POST /:id/protokoll/ins-dashboard ─────────────────────────────────────────
 // Holt Prüfungsdaten aus DB, generiert HTML-Protokoll, speichert es für das Mitglied
-router.post('/:id/protokoll/ins-dashboard', async (req, res) => {
+router.post('/:id/protokoll/ins-dashboard', requireStaffPermission('pruefungen','bearbeiten'), async (req, res) => {
   const pruefung_id = parseInt(req.params.id);
   if (!pruefung_id) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
 

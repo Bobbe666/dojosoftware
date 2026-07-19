@@ -7,7 +7,7 @@ const express = require('express');
 const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireStaffPermission } = require('../middleware/auth');
 const { requireFeature } = require('../middleware/featureAccess');
 const { sendEventRegistrationEmail, sendPaymentReminderEmail } = require('../services/emailTemplates');
 
@@ -447,7 +447,7 @@ router.get('/mitglied/:mitglied_id', async (req, res) => {
  * ADMIN-ROUTE: Feature-Flag erforderlich
  * SICHERHEIT: dojo_id wird erzwungen für normale User
  */
-router.post('/', requireFeature('events'), (req, res) => {
+router.post('/', requireFeature('events'), requireStaffPermission('events','erstellen'), (req, res) => {
   const eventData = req.body;
 
   // SICHERHEIT: dojo_id erzwingen - normale User können nur für ihr Dojo erstellen
@@ -681,7 +681,7 @@ async function promoteNextFromWaitlist(eventId) {
  * Aktualisiert ein Event
  * ADMIN-ROUTE: Feature-Flag erforderlich
  */
-router.put('/:id', requireFeature('events'), (req, res) => {
+router.put('/:id', requireFeature('events'), requireStaffPermission('events','bearbeiten'), (req, res) => {
   const eventId = req.params.id;
   const eventData = req.body;
 
@@ -811,7 +811,7 @@ router.put('/anmeldungen/:anmeldung_id', (req, res) => {
  * Löscht ein Event
  * ADMIN-ROUTE: Feature-Flag erforderlich
  */
-router.delete('/:id', requireFeature('events'), (req, res) => {
+router.delete('/:id', requireFeature('events'), requireStaffPermission('events','loeschen'), (req, res) => {
   const eventId = req.params.id;
   const force = req.query.force === 'true';
 
@@ -1162,7 +1162,7 @@ router.get('/member/:mitglied_id', async (req, res) => {
  * POST /api/events/:id/admin-anmelden
  * Admin fügt Mitglied zu Event hinzu (umgeht alle Validierungen)
  */
-router.post('/:id/admin-anmelden', async (req, res) => {
+router.post('/:id/admin-anmelden', requireStaffPermission('events','bearbeiten'), async (req, res) => {
   const eventId = parseInt(req.params.id);
   const { mitglied_id, bemerkung, bezahlt, bestellungen } = req.body;
 
@@ -1276,7 +1276,7 @@ router.post('/:id/admin-anmelden', async (req, res) => {
  * PUT /api/events/anmeldung/:id/bezahlt
  * Admin markiert eine Anmeldung als bezahlt
  */
-router.put('/anmeldung/:id/bezahlt', async (req, res) => {
+router.put('/anmeldung/:id/bezahlt', requireStaffPermission('events','bearbeiten'), async (req, res) => {
   const anmeldungId = parseInt(req.params.id);
 
   try {
@@ -1534,7 +1534,7 @@ router.get('/:id/warteliste', async (req, res) => {
  * POST /api/events/:id/warteliste/promote
  * Befördert nächsten von Warteliste (Admin)
  */
-router.post('/:id/warteliste/promote', requireFeature('events'), async (req, res) => {
+router.post('/:id/warteliste/promote', requireFeature('events'), requireStaffPermission('events','bearbeiten'), async (req, res) => {
   const eventId = parseInt(req.params.id);
 
   try {

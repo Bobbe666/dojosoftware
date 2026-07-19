@@ -5,6 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db');
+const { requireStaffPermission } = require('../../middleware/auth');
 const logger = require('../../utils/logger');
 const { ERROR_MESSAGES, SUCCESS_MESSAGES, HTTP_STATUS } = require('../../utils/constants');
 const { getSecureDojoId } = require('../../utils/dojo-filter-helper');
@@ -64,7 +65,7 @@ router.get('/mitglied/:mitglied_id/historie', (req, res) => {
 });
 
 // POST /mitglied/:mitglied_id/historisch - Historische Prüfung hinzufügen
-router.post('/mitglied/:mitglied_id/historisch', (req, res) => {
+router.post('/mitglied/:mitglied_id/historisch', requireStaffPermission('pruefungen','erstellen'), (req, res) => {
   const mitglied_id = parseInt(req.params.mitglied_id);
   const secureDojoId = getSecureDojoId(req);
   const { stil_id, graduierung_vorher_id, graduierung_nachher_id, pruefungsdatum, pruefungsort, historisch_bemerkung, pruefer_name } = req.body;
@@ -104,7 +105,7 @@ router.post('/mitglied/:mitglied_id/historisch', (req, res) => {
 });
 
 // DELETE /historisch/:pruefung_id - Historische Prüfung löschen
-router.delete('/historisch/:pruefung_id', (req, res) => {
+router.delete('/historisch/:pruefung_id', requireStaffPermission('pruefungen','loeschen'), (req, res) => {
   const pruefung_id = parseInt(req.params.pruefung_id);
   const secureDojoId = getSecureDojoId(req);
 

@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.153',
+    date: '2026-07-19',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 7: Events an Rechte gebunden (neue Rolle Turnierleiter) + Prüfungen komplett',
+    description: 'Neuer Rechtebereich „Events“: das Anlegen, Bearbeiten, Löschen und Verwalten von Veranstaltungen (Admin-Anmeldung, Bezahlt-Markierung, Warteliste) verlangt jetzt das Events-Recht. Turnierleiter und Dojoleiter dürfen Events verwalten, Trainer/Kassenwart nicht — die Event-Anmeldung der Mitglieder bleibt selbstverständlich offen. Außerdem sind die letzten Prüfungs-Routen (Protokolle, historische Prüfungen) abgesichert. Lokal end-to-end getestet.',
+    highlights: [
+      '🏆 Event-Verwaltung nur mit Events-Recht (Turnierleiter/Dojoleiter/Admin)',
+      '🆕 Rechtebereich „Events“ in allen Rollen hinterlegt',
+      '🎓 Prüfungs-Protokolle & Historie abgesichert — Prüfungs-Domäne vollständig',
+      '✅ Lokal verifiziert: member/admin/turnierleiter durch, trainer/kassenwart 🔒',
+    ],
+    details: 'admins.js getRollenBerechtigungen: neue events-Area in allen 12 Rollen-Matrizen (turnierleiter/dojoleiter/admin voll, trainer/rezeption/mitarbeiter nur lesen, kassenwart/pruefer none). events.js: POST / (erstellen), PUT/DELETE /:id, admin-anmelden, anmeldung/bezahlt, warteliste/promote mit requireStaffPermission(events,…) zusätzlich zu requireFeature(events). pruefungen/historie.js (historisch POST/DELETE) + protokoll.js (protokoll POST/senden/ins-dashboard) mit requireStaffPermission(pruefungen,…). Member-Routen (anmelden/abmelden/payment) offen. OFFEN Phase 8: Kurse (stundenplan, Trainer-Policy klären), Area verkauf/shop, Alt-UI-Reste, Elternzugang/Mitglied.',
+    files: ['backend/routes/admins.js', 'backend/routes/events.js', 'backend/routes/pruefungen/historie.js', 'backend/routes/pruefungen/protokoll.js'],
+  },
+  {
     version: '3.0.152',
     date: '2026-07-19',
     type: 'improvement',
