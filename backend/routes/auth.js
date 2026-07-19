@@ -1703,6 +1703,122 @@ router.post('/resend-verification', authenticateToken, async (req, res) => {
 });
 
 // ===================================================================
+// ===================================================================
+// 🧑‍💼 MITARBEITER & RECHTE (admin_users, dojo-scoped) — ERP-Rollensystem Phase 2
+// Dojo-Admins verwalten ihre eigenen Staff-Accounts; Super-Admin alle.
+// Priv-Escalation-Schutz: nur Super-Admin darf zu admin/super_admin hoch-/umstufen;
+// super_admin-Accounts werden hier nicht verändert/gelöscht.
+// ===================================================================
+const STAFF_VERWALTBARE_ROLLEN = ['dojoleiter', 'assistenztrainer', 'kassenwart', 'pruefer', 'turnierleiter', 'rezeption', 'trainer', 'checkin', 'mitarbeiter', 'eingeschraenkt'];
+
+function staffAuth(req) {
+  const role = req.user?.rolle || req.user?.role;
+  const istStaffAdmin = role === 'admin' || role === 'super_admin';
+  const isSuper = role === 'super_admin' || (role === 'admin' && !req.user?.dojo_id);
+  return { istStaffAdmin, isSuper, dojoId: req.user?.dojo_id || null };
+}
+
+// GET /api/auth/staff — Staff des eigenen Dojos (Super-Admin: alle oder ?dojo_id)
+router.get('/staff', authenticateToken, async (req, res) => {
+  const { istStaffAdmin, isSuper, dojoId } = staffAuth(req);
+  if (!istStaffAdmin) return res.status(403).json({ error: 'Keine Berechtigung' });
+  const scopeDojo = isSuper ? (req.query.dojo_id ? parseInt(req.query.dojo_id) : null) : dojoId;
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT id, username, email, vorname, nachname, rolle, berechtigungen, aktiv, dojo_id, letzter_login, erstellt_am
+         FROM admin_users ${scopeDojo ? 'WHERE dojo_id = ?' : ''}
+        ORDER BY FIELD(rolle,'super_admin','admin','dojoleiter','kassenwart','pruefer','turnierleiter','trainer','assistenztrainer','rezeption','mitarbeiter','eingeschraenkt','checkin'), username`,
+      scopeDojo ? [scopeDojo] : []
+    );
+    const staff = rows.map(r => {
+      let b = r.berechtigungen;
+      if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = null; } }
+      return { ...r, berechtigungen: b };
+    });
+    res.json(staff);
+  } catch (e) { logger.error('GET /staff Fehler', { error: e.message }); res.status(500).json({ error: 'Serverfehler' }); }
+});
+
+// PUT /api/auth/staff/:id — Rolle (→ Rechte neu aus Default) und/oder aktiv ändern
+router.put('/staff/:id', authenticateToken, async (req, res) => {
+  const { istStaffAdmin, isSuper, dojoId } = staffAuth(req);
+  if (!istStaffAdmin) return res.status(403).json({ error: 'Keine Berechtigung' });
+  const id = parseInt(req.params.id);
+  const { rolle: neueRolle, aktiv } = req.body;
+  try {
+    const [[target]] = await db.promise().query('SELECT id, dojo_id, rolle FROM admin_users WHERE id = ?', [id]);
+    if (!target) return res.status(404).json({ error: 'Mitarbeiter nicht gefunden' });
+    if (!isSuper && target.dojo_id !== dojoId) return res.status(403).json({ error: 'Kein Zugriff auf diesen Mitarbeiter' });
+    if (target.rolle === 'super_admin') return res.status(403).json({ error: 'Super-Admin kann hier nicht geändert werden' });
+
+    const sets = []; const vals = [];
+    if (neueRolle) {
+      const erlaubt = isSuper ? [...STAFF_VERWALTBARE_ROLLEN, 'admin'] : STAFF_VERWALTBARE_ROLLEN;
+      if (!erlaubt.includes(neueRolle)) return res.status(400).json({ error: 'Ungültige oder nicht erlaubte Rolle' });
+      const { getRollenBerechtigungen } = require('./admins');
+      sets.push('rolle = ?', 'berechtigungen = ?');
+      vals.push(neueRolle, JSON.stringify(getRollenBerechtigungen(neueRolle)));
+    }
+    if (aktiv !== undefined) { sets.push('aktiv = ?'); vals.push(aktiv ? 1 : 0); }
+    if (!sets.length) return res.status(400).json({ error: 'Nichts zu ändern' });
+    vals.push(id);
+    await db.promise().query(`UPDATE admin_users SET ${sets.join(', ')} WHERE id = ?`, vals);
+    auditLog.log({
+      req, kategorie: auditLog.KATEGORIE.ADMIN, aktion: auditLog.AKTION.RECHTE_GEAENDERT,
+      entityType: 'admin_users', entityId: id, dojoId: target.dojo_id,
+      beschreibung: `Mitarbeiter geändert${neueRolle ? ' → Rolle ' + neueRolle : ''}${aktiv !== undefined ? ` (aktiv=${aktiv ? 1 : 0})` : ''}`,
+    });
+    res.json({ success: true });
+  } catch (e) { logger.error('PUT /staff Fehler', { error: e.message }); res.status(500).json({ error: 'Serverfehler' }); }
+});
+
+// POST /api/auth/staff/:id/password — Passwort zurücksetzen
+router.post('/staff/:id/password', authenticateToken, async (req, res) => {
+  const { istStaffAdmin, isSuper, dojoId } = staffAuth(req);
+  if (!istStaffAdmin) return res.status(403).json({ error: 'Keine Berechtigung' });
+  const id = parseInt(req.params.id);
+  const { password } = req.body;
+  const validation = validatePasswordPolicy(password || '');
+  if (!validation.valid) return res.status(400).json({ error: validation.errors[0] });
+  try {
+    const [[target]] = await db.promise().query('SELECT id, dojo_id, rolle FROM admin_users WHERE id = ?', [id]);
+    if (!target) return res.status(404).json({ error: 'Mitarbeiter nicht gefunden' });
+    if (!isSuper && target.dojo_id !== dojoId) return res.status(403).json({ error: 'Kein Zugriff' });
+    if (target.rolle === 'super_admin' && !isSuper) return res.status(403).json({ error: 'Nicht erlaubt' });
+    const hashed = await hashPassword(password);
+    await db.promise().query('UPDATE admin_users SET password = ? WHERE id = ?', [hashed, id]);
+    auditLog.log({
+      req, kategorie: auditLog.KATEGORIE.AUTH, aktion: auditLog.AKTION.PASSWORT_GEAENDERT,
+      entityType: 'admin_users', entityId: id, dojoId: target.dojo_id, beschreibung: 'Passwort für Mitarbeiter zurückgesetzt',
+    });
+    res.json({ success: true });
+  } catch (e) { logger.error('POST /staff/:id/password Fehler', { error: e.message }); res.status(500).json({ error: 'Serverfehler' }); }
+});
+
+// DELETE /api/auth/staff/:id — Mitarbeiter löschen
+router.delete('/staff/:id', authenticateToken, async (req, res) => {
+  const { istStaffAdmin, isSuper, dojoId } = staffAuth(req);
+  if (!istStaffAdmin) return res.status(403).json({ error: 'Keine Berechtigung' });
+  const id = parseInt(req.params.id);
+  const selfId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  if (id === selfId) return res.status(400).json({ error: 'Der eigene Account kann nicht gelöscht werden' });
+  try {
+    const [[target]] = await db.promise().query('SELECT id, dojo_id, rolle, username FROM admin_users WHERE id = ?', [id]);
+    if (!target) return res.status(404).json({ error: 'Mitarbeiter nicht gefunden' });
+    if (!isSuper && target.dojo_id !== dojoId) return res.status(403).json({ error: 'Kein Zugriff' });
+    if (target.rolle === 'super_admin') return res.status(403).json({ error: 'Super-Admin kann hier nicht gelöscht werden' });
+    if (target.rolle === 'admin' && !isSuper) return res.status(403).json({ error: 'Admin kann nur durch Super-Admin gelöscht werden' });
+    await db.promise().query('DELETE FROM admin_users WHERE id = ?', [id]);
+    auditLog.log({
+      req, kategorie: auditLog.KATEGORIE.ADMIN, aktion: auditLog.AKTION.USER_GELOESCHT,
+      entityType: 'admin_users', entityId: id, entityName: target.username, dojoId: target.dojo_id,
+      beschreibung: `Mitarbeiter gelöscht: ${target.username} (${target.rolle})`,
+    });
+    res.json({ success: true });
+  } catch (e) { logger.error('DELETE /staff Fehler', { error: e.message }); res.status(500).json({ error: 'Serverfehler' }); }
+});
+
+// ===================================================================
 // ERROR HANDLING
 // ===================================================================
 

@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.148',
+    date: '2026-07-19',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 2: Mitarbeiter-&-Rechte-Verwaltung',
+    description: 'Neue Verwaltungsfläche „Mitarbeiter & Rechte“ unter Dojo → Admin-Accounts. Zeigt alle Mitarbeiter-Accounts mit Rolle und einer Rechte-Kurzfassung. Dojo-Admins können ihre eigenen Mitarbeiter anlegen, die Rolle ändern (setzt automatisch die Standard-Rechte der Rolle), aktiv/inaktiv schalten, das Passwort zurücksetzen und löschen — alles auf das eigene Dojo beschränkt. Damit sind die in Phase 1 eingeführten granularen Rollen erstmals vollständig über die Oberfläche verwaltbar.',
+    highlights: [
+      '🧑‍💼 „Mitarbeiter & Rechte“-Fläche mit Rollen-Badges + Rechte-Chips',
+      '🔁 Rolle ändern setzt Standard-Rechte; aktiv/inaktiv, Passwort-Reset, Löschen',
+      '🏠 Dojo-scoped: jeder Admin verwaltet nur eigene Mitarbeiter',
+      '🛡️ Priv-Escalation-Schutz: Hochstufung zu Admin nur durch Super-Admin, Super-Admin unantastbar',
+    ],
+    details: 'Backend auth.js: neue dojo-scoped Routen GET/PUT/DELETE /api/auth/staff + POST /api/auth/staff/:id/password (admin_users; Guards: eigenes Dojo, kein Self-Delete, super_admin unantastbar, Admin-Hochstufung nur Super-Admin; Audit RECHTE_GEAENDERT/PASSWORT_GEAENDERT/USER_GELOESCHT). Frontend: neue Komponente MitarbeiterRollen.jsx, eingehängt in DojoEdit.jsx (Sektion Admin-Accounts) über der bestehenden AdminVerwaltung; nutzt CreateUserModal fürs Anlegen. OFFEN: Enforcement über Finanzen hinaus ausweiten (weitere Domänen), Zwei-Tabellen-Reconciliation der Alt-UI.',
+    files: ['backend/routes/auth.js', 'frontend/src/components/MitarbeiterRollen.jsx', 'frontend/src/components/DojoEdit.jsx'],
+  },
+  {
     version: '3.0.147',
     date: '2026-07-19',
     type: 'feature',

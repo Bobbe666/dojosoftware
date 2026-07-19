@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, AlertCircle, Palette } from 'lucide-react';
 import BankTabs from './BankTabs';
 import AdminVerwaltung from './AdminVerwaltung';
+import MitarbeiterRollen from './MitarbeiterRollen';
 import MessengerKonfiguration from './MessengerKonfiguration';
 import WhatsAppKonfiguration from './WhatsAppKonfiguration';
 import DojoLogos from './DojoLogos';
@@ -1631,6 +1632,8 @@ const DojoEdit = () => {
 
               {/* Admin-Accounts */}
               <div className="form-section de-btn-reset" id="fs-benutzer" style={{display: subVisible('fs-benutzer') ? 'block' : 'none'}}>
+                <MitarbeiterRollen />
+                <div style={{ height: 24 }} />
                 <AdminVerwaltung />
               </div>
 
