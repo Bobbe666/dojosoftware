@@ -10,6 +10,7 @@ const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
 const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 
 const pool = db.promise();
 const COACH_ROLES = ['trainer', 'supervisor', 'admin', 'super_admin'];
@@ -86,20 +87,59 @@ router.get('/bootstrap', authenticateToken, async (req, res) => {
 // ============================================================================
 const { notifyTrainersNeueAnfrage, notifyUebernahme } = require('../services/vertretungNotify');
 
-function coachCtx(req) {
-  const role = req.user?.role || req.user?.rolle;
-  const id = req.user?.id || req.user?.user_id || req.user?.admin_id || null;
-  const name = `${req.user?.vorname || ''} ${req.user?.nachname || ''}`.trim() || req.user?.username || 'Trainer';
-  let dojoId = req.user?.dojo_id || (req.query.dojo_id ? parseInt(req.query.dojo_id) : null) || 3;
-  return { role, id, name, dojoId };
+// Zentrales Coach-Gate für alle Daten-Routen: prüft Rolle + Enterprise-Feature und
+// ermittelt eine SICHERE dojo_id via getSecureDojoId (kein hartes `|| 3`-Default mehr,
+// das früher fremde Dojos/Super-Admins nach Dojo 3 = Schreiner leiten konnte).
+// Legt den Kontext in req.coach ab. Enterprise-Prüfung identisch zu /bootstrap:
+// Admins/Super-Admins immer erlaubt, Trainer nur bei freigeschaltetem feature_trainer_app.
+async function requireCoachAccess(req, res, next) {
+  try {
+    const role = req.user?.role || req.user?.rolle;
+    if (!COACH_ROLES.includes(role)) {
+      return res.status(403).json({ error: 'Kein Coach-Zugang für diese Rolle.' });
+    }
+    const id = req.user?.id || req.user?.user_id || req.user?.admin_id || null;
+    if (!id) return res.status(400).json({ error: 'Trainer nicht erkannt.' });
+
+    const name = `${req.user?.vorname || ''} ${req.user?.nachname || ''}`.trim()
+      || req.user?.username || 'Trainer';
+
+    const isSuper = isSuperAdmin(req);
+    const isAdmin = ['admin', 'super_admin'].includes(role);
+
+    // Sichere dojo_id: normale User bekommen erzwungen ihr eigenes Dojo (Query wird ignoriert),
+    // Super-Admin nur mit explizitem ?dojo_id — sonst kein Kontext (statt still Dojo 3).
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) {
+      return res.status(400).json({ error: 'Kein Dojo-Kontext. Bitte ein Dojo wählen.' });
+    }
+
+    // Enterprise-Gate (nur Trainer): auch die Daten-Routen absichern, nicht nur /bootstrap.
+    if (!isAdmin && !isSuper) {
+      let enabled = false;
+      try {
+        const [[sub]] = await pool.query(
+          'SELECT feature_trainer_app FROM dojo_subscriptions WHERE dojo_id = ?', [dojoId]
+        );
+        enabled = !!sub && (sub.feature_trainer_app === 1 || sub.feature_trainer_app === true);
+      } catch (_) { enabled = false; }
+      if (!enabled) {
+        return res.status(403).json({ error: 'Die Coach-App ist für dein Dojo nicht freigeschaltet.' });
+      }
+    }
+
+    req.coach = { role, id, name, dojoId, isAdmin, isSuper };
+    next();
+  } catch (e) {
+    logger.error('requireCoachAccess Fehler', { error: e.message });
+    res.status(500).json({ error: 'Zugriffsprüfung fehlgeschlagen.' });
+  }
 }
 
 // POST /api/coach/vertretung — neue Anfrage anlegen + alle Trainer benachrichtigen
-router.post('/vertretung', authenticateToken, async (req, res) => {
+router.post('/vertretung', authenticateToken, requireCoachAccess, async (req, res) => {
   try {
-    const ctx = coachCtx(req);
-    if (!COACH_ROLES.includes(ctx.role)) return res.status(403).json({ error: 'Kein Coach-Zugang.' });
-    if (!ctx.id) return res.status(400).json({ error: 'Trainer nicht erkannt.' });
+    const ctx = req.coach;
 
     const kurs_id  = req.body.kurs_id ? parseInt(req.body.kurs_id) : null;
     const kurs_name = (req.body.kurs_name || '').toString().trim().slice(0, 200) || null;
@@ -130,10 +170,9 @@ router.post('/vertretung', authenticateToken, async (req, res) => {
 });
 
 // GET /api/coach/vertretung — offene Anfragen des Dojos + eigene (zuletzt)
-router.get('/vertretung', authenticateToken, async (req, res) => {
+router.get('/vertretung', authenticateToken, requireCoachAccess, async (req, res) => {
   try {
-    const ctx = coachCtx(req);
-    if (!COACH_ROLES.includes(ctx.role)) return res.status(403).json({ error: 'Kein Coach-Zugang.' });
+    const ctx = req.coach;
 
     const [rows] = await pool.query(
       `SELECT id, anfrage_admin_id, anfrage_name, kurs_name, datum, zeit, notiz, status,
@@ -157,11 +196,9 @@ router.get('/vertretung', authenticateToken, async (req, res) => {
 });
 
 // POST /api/coach/vertretung/:id/uebernehmen — first-come zusagen
-router.post('/vertretung/:id/uebernehmen', authenticateToken, async (req, res) => {
+router.post('/vertretung/:id/uebernehmen', authenticateToken, requireCoachAccess, async (req, res) => {
   try {
-    const ctx = coachCtx(req);
-    if (!COACH_ROLES.includes(ctx.role)) return res.status(403).json({ error: 'Kein Coach-Zugang.' });
-    if (!ctx.id) return res.status(400).json({ error: 'Trainer nicht erkannt.' });
+    const ctx = req.coach;
     const id = parseInt(req.params.id);
 
     const [[anfrage]] = await pool.query(
@@ -198,10 +235,9 @@ router.post('/vertretung/:id/uebernehmen', authenticateToken, async (req, res) =
 });
 
 // POST /api/coach/vertretung/:id/stornieren — eigene offene Anfrage zurückziehen
-router.post('/vertretung/:id/stornieren', authenticateToken, async (req, res) => {
+router.post('/vertretung/:id/stornieren', authenticateToken, requireCoachAccess, async (req, res) => {
   try {
-    const ctx = coachCtx(req);
-    if (!ctx.id) return res.status(400).json({ error: 'Trainer nicht erkannt.' });
+    const ctx = req.coach;
     const id = parseInt(req.params.id);
     const [upd] = await pool.query(
       `UPDATE vertretungs_anfragen SET status = 'storniert'
