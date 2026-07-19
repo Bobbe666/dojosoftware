@@ -64,6 +64,104 @@ const getRollenBerechtigungen = (rolle) => {
         berichte: { lesen: false, exportieren: false }
       };
 
+    // ── ERP-Rollen (Migration 235) ──────────────────────────────────────────
+    case 'dojoleiter':
+      // Volle Dojo-Leitung; nur Admin-Verwaltung (User anlegen) bleibt eingeschränkt.
+      return {
+        mitglieder: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
+        vertraege: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
+        finanzen: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
+        pruefungen: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
+        stundenplan: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
+        einstellungen: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
+        admins: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        dashboard: { lesen: true },
+        berichte: { lesen: true, exportieren: true }
+      };
+
+    case 'kassenwart':
+      return {
+        mitglieder: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        vertraege: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        finanzen: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
+        pruefungen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        stundenplan: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        einstellungen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        dashboard: { lesen: true },
+        berichte: { lesen: true, exportieren: true }
+      };
+
+    case 'pruefer':
+      return {
+        mitglieder: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        vertraege: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        finanzen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        pruefungen: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
+        stundenplan: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        einstellungen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        dashboard: { lesen: true },
+        berichte: { lesen: true, exportieren: false }
+      };
+
+    case 'turnierleiter':
+      // Turniere laufen über Prüfungen/Events + Stundenplan.
+      return {
+        mitglieder: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        vertraege: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        finanzen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        pruefungen: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
+        stundenplan: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
+        einstellungen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        dashboard: { lesen: true },
+        berichte: { lesen: true, exportieren: false }
+      };
+
+    case 'rezeption':
+      return {
+        mitglieder: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
+        vertraege: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        finanzen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        pruefungen: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        stundenplan: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        einstellungen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        dashboard: { lesen: true },
+        berichte: { lesen: false, exportieren: false }
+      };
+
+    case 'trainer':
+    case 'assistenztrainer': {
+      // Trainer = Kurse/Prüfungen/Anwesenheit; Assistenztrainer nur lesend.
+      const voll = rolle === 'trainer';
+      return {
+        mitglieder: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        vertraege: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        finanzen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        pruefungen: { lesen: true, erstellen: voll, bearbeiten: voll, loeschen: false },
+        stundenplan: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        einstellungen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        dashboard: { lesen: true },
+        berichte: { lesen: false, exportieren: false }
+      };
+    }
+
+    case 'checkin':
+      return {
+        mitglieder: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        vertraege: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        finanzen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        pruefungen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        stundenplan: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        einstellungen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        dashboard: { lesen: true },
+        berichte: { lesen: false, exportieren: false }
+      };
+
     default:
       return {
         mitglieder: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },

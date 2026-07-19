@@ -83,9 +83,40 @@ const requireTrainer = (req, res, next) => {
   next();
 };
 
+/**
+ * Middleware: Feingranulare Berechtigungsprüfung (ERP-Rollensystem).
+ * Liest das per-User berechtigungen-JSON aus dem Token (admin_users.berechtigungen)
+ * und lässt nur durch, wenn berechtigungen[bereich][aktion] === true.
+ *
+ * WICHTIG (Phase-1-Semantik, bewusst): super_admin UND admin haben IMMER vollen
+ * Zugriff (Bypass, wie bisher requireAdmin) — so kann das Scharfschalten einer Route
+ * nie den Betreiber aussperren, sondern granulare Rollen (kassenwart, pruefer, …)
+ * gezielt zulassen/sperren.
+ *
+ * @param {string} bereich  z.B. 'finanzen', 'mitglieder', 'pruefungen'
+ * @param {string} aktion   'lesen' | 'erstellen' | 'bearbeiten' | 'loeschen' | 'exportieren'
+ */
+const requirePermission = (bereich, aktion = 'lesen') => (req, res, next) => {
+  const role = req.user?.rolle || req.user?.role;
+  // Betreiber-Rollen: voller Zugriff (kein Lockout)
+  if (role === 'super_admin' || role === 'admin') return next();
+
+  let perms = req.user?.berechtigungen;
+  if (typeof perms === 'string') {
+    try { perms = JSON.parse(perms); } catch { perms = null; }
+  }
+  if (perms && perms[bereich] && perms[bereich][aktion] === true) return next();
+
+  return res.status(403).json({
+    message: `Keine Berechtigung für ${bereich}/${aktion}`,
+    permission_required: `${bereich}.${aktion}`
+  });
+};
+
 module.exports = {
   authenticateToken,
   requireAdmin,
   requireTrainer,
+  requirePermission,
   JWT_SECRET
 };
