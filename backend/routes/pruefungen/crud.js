@@ -10,6 +10,7 @@ const logger = require('../../utils/logger');
 const UrkundePdfGenerator = require('../../utils/urkundePdfGenerator');
 const { ERROR_MESSAGES, SUCCESS_MESSAGES, HTTP_STATUS } = require('../../utils/constants');
 const { getSecureDojoId, buildDojoWhereClause } = require('../../utils/dojo-filter-helper');
+const { requireStaffPermission } = require('../../middleware/auth');
 
 const pdfGenerator = new UrkundePdfGenerator();
 
@@ -544,7 +545,7 @@ router.get('/:id', (req, res) => {
  * POST /
  * Neue Prüfung erstellen
  */
-router.post('/', (req, res) => {
+router.post('/', requireStaffPermission('pruefungen', 'erstellen'), (req, res) => {
   const pruefungData = req.body;
 
   // 🔒 Dojo-ID immer aus Token erzwingen (Super-Admin darf via body wählen)
@@ -643,7 +644,7 @@ router.post('/', (req, res) => {
  * PUT /:id
  * Prüfung aktualisieren
  */
-router.put('/:id', (req, res) => {
+router.put('/:id', requireStaffPermission('pruefungen', 'bearbeiten'), (req, res) => {
   const pruefung_id = parseInt(req.params.id);
   if (!pruefung_id || isNaN(pruefung_id)) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -786,7 +787,7 @@ router.put('/:id', (req, res) => {
  * DELETE /:id
  * Prüfung löschen
  */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireStaffPermission('pruefungen', 'loeschen'), (req, res) => {
   const pruefung_id = parseInt(req.params.id);
   if (!pruefung_id || isNaN(pruefung_id)) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -1009,7 +1010,7 @@ router.post('/:id/graduierung-aktualisieren', (req, res) => {
  * POST /:id/status-aendern
  * Ändert den Status einer Prüfung und setzt die Graduierung zurück/vor
  */
-router.post('/:id/status-aendern', (req, res) => {
+router.post('/:id/status-aendern', requireStaffPermission('pruefungen', 'bearbeiten'), (req, res) => {
   const pruefung_id = parseInt(req.params.id);
   const { bestanden, mitglied_id, stil_id, graduierung_vorher_id, graduierung_nachher_id } = req.body;
 
@@ -1323,7 +1324,7 @@ router.get('/:id/bewertungen', (req, res) => {
  * Erwartet { bewertungen: [{ inhalt_id, bestanden, punktzahl, max_punktzahl, kommentar }] }
  * Gruppiert nach Kategorie (Lookup via pruefungsinhalte) und speichert in einzelbewertungen.
  */
-router.post('/:id/bewertungen', (req, res) => {
+router.post('/:id/bewertungen', requireStaffPermission('pruefungen', 'bearbeiten'), (req, res) => {
   const pruefung_id = parseInt(req.params.id);
   const { bewertungen, mit_gesprungenen } = req.body;
 

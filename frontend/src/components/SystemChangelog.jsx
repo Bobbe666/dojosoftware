@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.151',
+    date: '2026-07-19',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 5: Prüfungs-Management an Rechte gebunden (member-sicher)',
+    description: 'Das Erstellen, Bearbeiten, Löschen, Statusändern und Bewerten von Prüfungen verlangt jetzt das Recht „Prüfungen“. Der Clou: eine member-bewusste Prüfung — Mitglieder (die dieselben Endpunkte für ihre eigenen Prüfungen nutzen) werden unverändert durchgelassen, nur Mitarbeiter-Rollen werden geprüft. Prüfer, Trainer und Dojoleiter dürfen Prüfungen verwalten, Kassenwart/Rezeption nicht. Bestehende Trainer verlieren nichts (Fallback auf die aktuellen Rollen-Standardrechte, kein Datenumzug nötig).',
+    highlights: [
+      '🎓 Prüfungs-Verwaltung (anlegen/ändern/löschen/bewerten) nur mit Prüfungs-Recht',
+      '👥 Member-sicher: Mitglieder-App unberührt (Mitglieder-Zugriff läuft weiter)',
+      '↩️ Keine Regression für bestehende Trainer (Default-Rechte-Fallback, kein Backfill)',
+    ],
+    details: 'middleware/auth.js: neue requireStaffPermission(bereich, aktion) — Mitglieder (users-Tabelle, keine berechtigungen im Token) + super_admin/admin passieren; admin_users-Staff werden gegen gespeicherte berechtigungen ODER aktuelle Rollen-Defaults (getRollenBerechtigungen, lazy) geprüft (deckt veraltete stored-Werte). routes/pruefungen/crud.js: POST / (erstellen), PUT /:id (bearbeiten), DELETE /:id (loeschen), POST /:id/status-aendern + /:id/bewertungen (bearbeiten) damit gegated. OFFEN: weitere Prüfungs-Schreibrouten (kandidaten/termine/protokoll) + Kurse/Events analog; neue Areas events/verkauf.',
+    files: ['backend/middleware/auth.js', 'backend/routes/pruefungen/crud.js'],
+  },
+  {
     version: '3.0.150',
     date: '2026-07-19',
     type: 'improvement',

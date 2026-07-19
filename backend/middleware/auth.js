@@ -118,11 +118,38 @@ const requirePermission = (bereich, aktion = 'lesen') => (req, res, next) => {
   });
 };
 
+/**
+ * Wie requirePermission, aber für MEMBER-SHARED Domänen (Prüfungen/Kurse/Events):
+ * - Mitglieder (users-Tabelle → keine berechtigungen im Token) werden unverändert
+ *   durchgelassen (die Handler scopen auf die eigenen Daten via mitglied_id) — sonst
+ *   würde die Mitglieder-App brechen.
+ * - super_admin/admin: voller Bypass.
+ * - admin_users-Staff (haben berechtigungen): Recht nötig — geprüft gegen die gespeicherten
+ *   berechtigungen ODER die AKTUELLEN Rollen-Defaults (deckt veraltete stored-Werte
+ *   bestehender Mitarbeiter ab → keine Regression, kein Daten-Backfill nötig).
+ */
+const requireStaffPermission = (bereich, aktion = 'lesen') => (req, res, next) => {
+  const role = req.user?.rolle || req.user?.role;
+  if (role === 'super_admin' || role === 'admin') return next();
+  if (!req.user?.berechtigungen) return next(); // Mitglied / Alt-users-Staff → wie bisher
+  if (hasPermission(req, bereich, aktion)) return next();
+  try {
+    const { getRollenBerechtigungen } = require('../routes/admins');
+    const def = getRollenBerechtigungen(role);
+    if (def && def[bereich] && def[bereich][aktion] === true) return next();
+  } catch (_) { /* Fallback unten */ }
+  return res.status(403).json({
+    message: `Keine Berechtigung für ${bereich}/${aktion}`,
+    permission_required: `${bereich}.${aktion}`
+  });
+};
+
 module.exports = {
   authenticateToken,
   requireAdmin,
   requireTrainer,
   requirePermission,
+  requireStaffPermission,
   hasPermission,
   JWT_SECRET
 };
