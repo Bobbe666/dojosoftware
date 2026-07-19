@@ -83,9 +83,18 @@ router.get('/bootstrap', authenticateToken, async (req, res) => {
 
 // ============================================================================
 // VERTRETUNGS-ANFRAGEN — Trainer fragt alle Trainer „kann jemand übernehmen?"
-// first-come: wer zuerst „übernimmt" gewinnt. Anfragender + Admin werden informiert.
+// Pro Anfrage wählbar (zusage_modus):
+//   'einzel'   = first-come: die erste Zusage schließt die Anfrage (wie bisher).
+//   'mehrfach' = mehrere Trainer können für dieselbe Stunde zusagen; Anfrage bleibt offen.
+// Jede einzelne Zusage steht in vertretungs_zusagen. Anfragender + Admin werden informiert.
 // ============================================================================
 const { notifyTrainersNeueAnfrage, notifyUebernahme } = require('../services/vertretungNotify');
+const auditLog = require('../services/auditLogService');
+
+// Kurz-Label für Audit-Beschreibungen
+function vertretungLabel(a) {
+  return [a.kurs_name, a.datum, a.zeit].filter(Boolean).join(' · ') || `Anfrage #${a.id}`;
+}
 
 // Zentrales Coach-Gate für alle Daten-Routen: prüft Rolle + Enterprise-Feature und
 // ermittelt eine SICHERE dojo_id via getSecureDojoId (kein hartes `|| 3`-Default mehr,
@@ -146,23 +155,32 @@ router.post('/vertretung', authenticateToken, requireCoachAccess, async (req, re
     const datum    = (req.body.datum || '').toString().trim().slice(0, 10) || null;
     const zeit     = (req.body.zeit || '').toString().trim().slice(0, 60) || null;
     const notiz    = (req.body.notiz || '').toString().trim().slice(0, 1000) || null;
+    // Modus: 'mehrfach' nur wenn explizit gewählt, sonst 'einzel' (rückwärtskompatibel)
+    const zusage_modus = req.body.zusage_modus === 'mehrfach' ? 'mehrfach' : 'einzel';
 
     if (!kurs_name && !datum && !zeit) {
       return res.status(400).json({ error: 'Bitte Stunde wählen oder Datum/Zeit/Kurs angeben.' });
     }
 
     const [ins] = await pool.query(
-      `INSERT INTO vertretungs_anfragen (dojo_id, anfrage_admin_id, anfrage_name, kurs_id, kurs_name, datum, zeit, notiz, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'offen')`,
-      [ctx.dojoId, ctx.id, ctx.name, kurs_id, kurs_name, datum, zeit, notiz]
+      `INSERT INTO vertretungs_anfragen (dojo_id, anfrage_admin_id, anfrage_name, kurs_id, kurs_name, datum, zeit, notiz, status, zusage_modus)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'offen', ?)`,
+      [ctx.dojoId, ctx.id, ctx.name, kurs_id, kurs_name, datum, zeit, notiz, zusage_modus]
     );
-    const anfrage = { id: ins.insertId, dojo_id: ctx.dojoId, anfrage_admin_id: ctx.id, anfrage_name: ctx.name, kurs_name, datum, zeit, notiz };
+    const anfrage = { id: ins.insertId, dojo_id: ctx.dojoId, anfrage_admin_id: ctx.id, anfrage_name: ctx.name, kurs_name, datum, zeit, notiz, zusage_modus };
 
     // Benachrichtigung best-effort (blockiert die Antwort nicht)
     notifyTrainersNeueAnfrage({ dojoId: ctx.dojoId, anfrage })
       .catch(e => logger.warn('vertretung notify Fehler', { error: e.message }));
 
-    res.json({ success: true, id: ins.insertId });
+    auditLog.log({
+      req, kategorie: auditLog.KATEGORIE.TRAINING, aktion: auditLog.AKTION.VERTRETUNG_ANGEFRAGT,
+      entityType: 'vertretungs_anfragen', entityId: ins.insertId, entityName: vertretungLabel(anfrage),
+      dojoId: ctx.dojoId,
+      beschreibung: `Vertretung gesucht (${zusage_modus === 'mehrfach' ? 'mehrere Zusagen möglich' : 'eine Zusage'}): ${vertretungLabel(anfrage)}`,
+    });
+
+    res.json({ success: true, id: ins.insertId, zusage_modus });
   } catch (e) {
     logger.error('coach/vertretung POST Fehler', { error: e.message });
     res.status(500).json({ error: 'Anfrage konnte nicht angelegt werden.' });
@@ -174,20 +192,51 @@ router.get('/vertretung', authenticateToken, requireCoachAccess, async (req, res
   try {
     const ctx = req.coach;
 
+    // Relevante Anfragen: offene, eigene, sowie alle wo ICH zugesagt habe (auch mehrfach-Modus,
+    // wo uebernommen_admin_id nicht gesetzt wird → über vertretungs_zusagen).
     const [rows] = await pool.query(
-      `SELECT id, anfrage_admin_id, anfrage_name, kurs_name, datum, zeit, notiz, status,
+      `SELECT id, anfrage_admin_id, anfrage_name, kurs_name, datum, zeit, notiz, status, zusage_modus,
               uebernommen_admin_id, uebernommen_name, uebernommen_am, created_at
          FROM vertretungs_anfragen
-        WHERE dojo_id = ? AND (status = 'offen' OR anfrage_admin_id = ? OR uebernommen_admin_id = ?)
+        WHERE dojo_id = ?
+          AND ( status = 'offen'
+                OR anfrage_admin_id = ?
+                OR uebernommen_admin_id = ?
+                OR id IN (SELECT anfrage_id FROM vertretungs_zusagen WHERE dojo_id = ? AND admin_id = ?) )
         ORDER BY (status='offen') DESC, created_at DESC
-        LIMIT 60`,
-      [ctx.dojoId, ctx.id, ctx.id]
+        LIMIT 80`,
+      [ctx.dojoId, ctx.id, ctx.id, ctx.dojoId, ctx.id]
     );
-    const liste = rows.map(r => ({
-      ...r,
-      ist_eigene: r.anfrage_admin_id === ctx.id,
-      uebernehmbar: r.status === 'offen' && r.anfrage_admin_id !== ctx.id,
-    }));
+
+    // Zusagen zu genau diesen Anfragen in EINEM Query laden (kein N+1)
+    const ids = rows.map(r => r.id);
+    let zusagenByAnfrage = {};
+    if (ids.length) {
+      const [zs] = await pool.query(
+        `SELECT anfrage_id, admin_id, name, created_at
+           FROM vertretungs_zusagen
+          WHERE dojo_id = ? AND anfrage_id IN (?)
+          ORDER BY created_at ASC`,
+        [ctx.dojoId, ids]
+      );
+      for (const z of zs) (zusagenByAnfrage[z.anfrage_id] ||= []).push(z);
+    }
+
+    const liste = rows.map(r => {
+      const zusagen = zusagenByAnfrage[r.id] || [];
+      const hat_zugesagt = zusagen.some(z => z.admin_id === ctx.id);
+      const ist_eigene = r.anfrage_admin_id === ctx.id;
+      // einzel: übernehmbar solange offen & nicht eigene. mehrfach: zusätzlich nur wenn noch nicht zugesagt.
+      const uebernehmbar = r.status === 'offen' && !ist_eigene && !(r.zusage_modus === 'mehrfach' && hat_zugesagt);
+      return {
+        ...r,
+        ist_eigene,
+        hat_zugesagt,
+        uebernehmbar,
+        zusagen: zusagen.map(z => ({ admin_id: z.admin_id, name: z.name })),
+        zusagen_anzahl: zusagen.length,
+      };
+    });
     res.json({ success: true, anfragen: liste });
   } catch (e) {
     logger.error('coach/vertretung GET Fehler', { error: e.message });
@@ -206,16 +255,35 @@ router.post('/vertretung/:id/uebernehmen', authenticateToken, requireCoachAccess
     );
     if (!anfrage) return res.status(404).json({ error: 'Anfrage nicht gefunden.' });
     if (anfrage.anfrage_admin_id === ctx.id) return res.status(400).json({ error: 'Du kannst deine eigene Anfrage nicht übernehmen.' });
+    if (anfrage.status === 'storniert') return res.status(409).json({ error: 'Diese Anfrage wurde zurückgezogen.' });
 
-    // Atomar: nur wer zuerst klickt, gewinnt
-    const [upd] = await pool.query(
-      `UPDATE vertretungs_anfragen
-          SET status = 'uebernommen', uebernommen_admin_id = ?, uebernommen_name = ?, uebernommen_am = NOW()
-        WHERE id = ? AND dojo_id = ? AND status = 'offen'`,
-      [ctx.id, ctx.name, id, ctx.dojoId]
-    );
-    if (upd.affectedRows === 0) {
-      return res.status(409).json({ error: 'Diese Vertretung wurde bereits übernommen oder zurückgezogen.', already_taken: true });
+    if (anfrage.zusage_modus === 'mehrfach') {
+      // Mehrfach: Anfrage bleibt offen, mehrere Zusagen möglich. Doppelzusage vom UNIQUE-Key verhindert.
+      try {
+        await pool.query(
+          `INSERT INTO vertretungs_zusagen (anfrage_id, dojo_id, admin_id, name) VALUES (?, ?, ?, ?)`,
+          [id, ctx.dojoId, ctx.id, ctx.name]
+        );
+      } catch (e) {
+        if (e.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Du hast dieser Vertretung bereits zugesagt.', already_taken: true });
+        throw e;
+      }
+    } else {
+      // Einzel (first-come): atomar offen→uebernommen; wer zuerst klickt, gewinnt.
+      const [upd] = await pool.query(
+        `UPDATE vertretungs_anfragen
+            SET status = 'uebernommen', uebernommen_admin_id = ?, uebernommen_name = ?, uebernommen_am = NOW()
+          WHERE id = ? AND dojo_id = ? AND status = 'offen'`,
+        [ctx.id, ctx.name, id, ctx.dojoId]
+      );
+      if (upd.affectedRows === 0) {
+        return res.status(409).json({ error: 'Diese Vertretung wurde bereits übernommen oder zurückgezogen.', already_taken: true });
+      }
+      // Gewinner-Zusage auch in der Zusagen-Tabelle festhalten (einheitliche Grundlage für „Meine Vertretungen")
+      await pool.query(
+        `INSERT IGNORE INTO vertretungs_zusagen (anfrage_id, dojo_id, admin_id, name) VALUES (?, ?, ?, ?)`,
+        [id, ctx.dojoId, ctx.id, ctx.name]
+      ).catch(() => {});
     }
 
     // Anfragenden + Admins informieren (best-effort)
@@ -227,7 +295,13 @@ router.post('/vertretung/:id/uebernehmen', authenticateToken, requireCoachAccess
     notifyUebernahme({ dojoId: ctx.dojoId, anfrage, uebernehmerName: ctx.name, anfrageEmail })
       .catch(e => logger.warn('vertretung übernahme notify Fehler', { error: e.message }));
 
-    res.json({ success: true });
+    auditLog.log({
+      req, kategorie: auditLog.KATEGORIE.TRAINING, aktion: auditLog.AKTION.VERTRETUNG_ZUGESAGT,
+      entityType: 'vertretungs_anfragen', entityId: id, entityName: vertretungLabel(anfrage), dojoId: ctx.dojoId,
+      beschreibung: `${ctx.name} sagt Vertretung zu (${anfrage.zusage_modus}): ${vertretungLabel(anfrage)}`,
+    });
+
+    res.json({ success: true, modus: anfrage.zusage_modus });
   } catch (e) {
     logger.error('coach/vertretung uebernehmen Fehler', { error: e.message });
     res.status(500).json({ error: 'Übernahme fehlgeschlagen.' });
@@ -245,10 +319,45 @@ router.post('/vertretung/:id/stornieren', authenticateToken, requireCoachAccess,
       [id, ctx.dojoId, ctx.id]
     );
     if (upd.affectedRows === 0) return res.status(409).json({ error: 'Anfrage nicht (mehr) stornierbar.' });
+    auditLog.log({
+      req, kategorie: auditLog.KATEGORIE.TRAINING, aktion: auditLog.AKTION.VERTRETUNG_STORNIERT,
+      entityType: 'vertretungs_anfragen', entityId: id, dojoId: ctx.dojoId,
+      beschreibung: `Vertretungs-Anfrage zurückgezogen (#${id})`,
+    });
     res.json({ success: true });
   } catch (e) {
     logger.error('coach/vertretung stornieren Fehler', { error: e.message });
     res.status(500).json({ error: 'Stornieren fehlgeschlagen.' });
+  }
+});
+
+// POST /api/coach/vertretung/:id/zusage-zurueckziehen — eigene Zusage zurücknehmen (Mehrfach-Modus)
+router.post('/vertretung/:id/zusage-zurueckziehen', authenticateToken, requireCoachAccess, async (req, res) => {
+  try {
+    const ctx = req.coach;
+    const id = parseInt(req.params.id);
+    const [[anfrage]] = await pool.query(
+      'SELECT id, zusage_modus, status FROM vertretungs_anfragen WHERE id = ? AND dojo_id = ?', [id, ctx.dojoId]
+    );
+    if (!anfrage) return res.status(404).json({ error: 'Anfrage nicht gefunden.' });
+    // Nur im Mehrfach-Modus zurücknehmbar; im Einzel-Modus wäre die Stunde sonst plötzlich unbesetzt.
+    if (anfrage.zusage_modus !== 'mehrfach') {
+      return res.status(409).json({ error: 'Eine feste Übernahme kann nicht selbst zurückgenommen werden. Bitte an den Admin wenden.' });
+    }
+    const [del] = await pool.query(
+      'DELETE FROM vertretungs_zusagen WHERE anfrage_id = ? AND dojo_id = ? AND admin_id = ?',
+      [id, ctx.dojoId, ctx.id]
+    );
+    if (del.affectedRows === 0) return res.status(409).json({ error: 'Keine Zusage zum Zurückziehen gefunden.' });
+    auditLog.log({
+      req, kategorie: auditLog.KATEGORIE.TRAINING, aktion: auditLog.AKTION.VERTRETUNG_ZUSAGE_ZURUECKGEZOGEN,
+      entityType: 'vertretungs_anfragen', entityId: id, dojoId: ctx.dojoId,
+      beschreibung: `${ctx.name} zieht Vertretungs-Zusage zurück (#${id})`,
+    });
+    res.json({ success: true });
+  } catch (e) {
+    logger.error('coach/vertretung zusage-zurueckziehen Fehler', { error: e.message });
+    res.status(500).json({ error: 'Zurückziehen fehlgeschlagen.' });
   }
 });
 

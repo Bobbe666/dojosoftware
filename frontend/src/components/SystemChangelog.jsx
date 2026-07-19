@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.145',
+    date: '2026-07-19',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Coach-App: Vertretung mit Mehrfach-Zusage, Sicherheits- & Resilienz-Fixes',
+    description: 'Die Trainer-App (coach.tda-intl.org) wurde ausgebaut und abgesichert. Bei der Vertretersuche lässt sich pro Anfrage wählen, ob nur EIN Trainer zusagen darf (first-come, wie bisher) ODER MEHRERE Trainer für dieselbe Stunde. Trainer sehen ihre Zusagen unter „Meine Vertretungen" und können eine Mehrfach-Zusage selbst zurückziehen. Zusätzlich: Tenant-Sicherheitsfix, echtes 401-/Fehler-Handling und Audit-Logging aller Vertretungs-Aktionen.',
+    highlights: [
+      '👥 Mehrfach-Zusage pro Anfrage konfigurierbar (eine vs. mehrere Zusagen)',
+      '🗂️ „Meine Vertretungen“-Übersicht + Zusage zurückziehen',
+      '🔒 Tenant-Leak (hartes Dojo-3-Default) behoben, Enterprise-Gate auf allen Coach-Routen',
+      '🛡️ Audit-Log für Anfrage/Zusage/Storno; 401-Auto-Logout & Fehler-States in der App',
+    ],
+    details: 'Migration 234 (vertretungs_anfragen.zusage_modus ENUM einzel/mehrfach + Tabelle vertretungs_zusagen mit UNIQUE(anfrage_id,admin_id) + Backfill übernommener Anfragen). Backend routes/coach.js: neue requireCoachAccess-Middleware (getSecureDojoId statt || 3, feature_trainer_app auch auf Daten-Routen), uebernehmen verzweigt einzel/mehrfach, neue Route zusage-zurueckziehen, GET liefert zusagen/hat_zugesagt. auditLogService: Kategorie TRAINING + VERTRETUNG_*-Aktionen. Coach-App (dojo-coach): api.js Response-Interceptor (401→Logout-Event), AuthContext sessionExpired, ErrorBoundary, VertretungSuchen Modus-Umschalter + Zusagen-Anzeige + „Meine Vertretungen“, Versions-Fußzeile (v1.1.0).',
+    files: ['backend/routes/coach.js', 'backend/services/auditLogService.js', 'backend/migrations/234_vertretung_mehrfach_zusage.sql', 'dojo-coach/src/api.js', 'dojo-coach/src/context/AuthContext.jsx', 'dojo-coach/src/components/ErrorBoundary.jsx', 'dojo-coach/src/modules/VertretungSuchen.jsx'],
+  },
+  {
     version: '3.0.144',
     date: '2026-07-10',
     type: 'feature',
