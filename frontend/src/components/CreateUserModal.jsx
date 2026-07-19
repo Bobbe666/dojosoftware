@@ -4,10 +4,17 @@ import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 const ROLLEN = [
-  { key: 'admin',      label: '👨‍💼 Admin' },
-  { key: 'supervisor', label: '👔 Supervisor' },
-  { key: 'trainer',    label: '🥋 Trainer' },
-  { key: 'verkauf',    label: '💰 Verkauf' },
+  { key: 'admin',            label: '👨‍💼 Admin' },
+  { key: 'supervisor',       label: '👔 Supervisor' },
+  { key: 'trainer',          label: '🥋 Trainer' },
+  { key: 'verkauf',          label: '💰 Verkauf' },
+  // ERP-Rollen (landen in admin_users mit Standard-Rechten)
+  { key: 'dojoleiter',       label: '🏯 Dojoleiter' },
+  { key: 'assistenztrainer', label: '🥋 Assistenztrainer' },
+  { key: 'kassenwart',       label: '💰 Kassenwart' },
+  { key: 'pruefer',          label: '🎓 Prüfer' },
+  { key: 'turnierleiter',    label: '🏆 Turnierleiter' },
+  { key: 'rezeption',        label: '🛎️ Rezeption' },
 ];
 
 const s = {

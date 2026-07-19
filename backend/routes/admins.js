@@ -1242,3 +1242,5 @@ router.post('/password-management/dojo/:id/reset', async (req, res) => {
 });
 
 module.exports = router;
+// Auch für andere Module nutzbar (z.B. auth.js legt granulare Staff-Accounts an)
+module.exports.getRollenBerechtigungen = getRollenBerechtigungen;

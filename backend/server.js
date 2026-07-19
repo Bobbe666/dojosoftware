@@ -1175,9 +1175,13 @@ try {
 }
 
 // BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
+// 🔐 ERP-Rollensystem: Finanz-Domäne nur mit finanzen.lesen-Recht (super_admin/admin
+// haben vollen Bypass → kein Betreiber-Lockout; granulare Rollen wie Kassenwart mit
+// finanzen.lesen kommen rein, Trainer/Prüfer/Rezeption nicht).
+const { requirePermission } = require('./middleware/auth');
 try {
   const buchhaltungRoutes = require('./routes/buchhaltung');
-  app.use('/api/buchhaltung', authenticateToken, buchhaltungRoutes);
+  app.use('/api/buchhaltung', authenticateToken, requirePermission('finanzen', 'lesen'), buchhaltungRoutes);
   logger.success('Route gemountet', { path: '/api/buchhaltung' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1190,7 +1194,7 @@ try {
 // AfA (Anlagevermögen / Abschreibungen) — Enterprise
 try {
   const afaRoutes = require('./routes/buchhaltung-afa');
-  app.use('/api/buchhaltung/afa', authenticateToken, afaRoutes);
+  app.use('/api/buchhaltung/afa', authenticateToken, requirePermission('finanzen', 'lesen'), afaRoutes);
   logger.success('Route gemountet', { path: '/api/buchhaltung/afa' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', { route: 'buchhaltung-afa', error: error.message });
@@ -1199,7 +1203,7 @@ try {
 // Kassenbuch (Bargeldbuch) — Enterprise
 try {
   const kasseRoutes = require('./routes/buchhaltung-kasse');
-  app.use('/api/buchhaltung/kasse', authenticateToken, kasseRoutes);
+  app.use('/api/buchhaltung/kasse', authenticateToken, requirePermission('finanzen', 'lesen'), kasseRoutes);
   logger.success('Route gemountet', { path: '/api/buchhaltung/kasse' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', { route: 'buchhaltung-kasse', error: error.message });

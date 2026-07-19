@@ -936,12 +936,53 @@ router.post('/users', authenticateToken, async (req, res) => {
   if (!username || !email || !password || !role) {
     return res.status(400).json({ error: 'Username, E-Mail, Passwort und Rolle sind erforderlich' });
   }
-  if (!['admin', 'supervisor', 'trainer', 'verkauf', 'member'].includes(role)) {
+  // Granulare Staff-Rollen (ERP-Rollensystem) → admin_users (mit berechtigungen);
+  // Legacy-/Mitglieder-Rollen → users (unverändert).
+  const STAFF_ROLLEN = ['dojoleiter', 'assistenztrainer', 'kassenwart', 'pruefer', 'turnierleiter', 'rezeption'];
+  if (!['admin', 'supervisor', 'trainer', 'verkauf', 'member', ...STAFF_ROLLEN].includes(role)) {
     return res.status(400).json({ error: 'Ungültige Rolle' });
   }
   const validation = validatePasswordPolicy(password);
   if (!validation.valid) {
     return res.status(400).json({ error: validation.errors[0] });
+  }
+
+  // ─── Granulare Staff-Rolle → in admin_users anlegen (Rechte aus getRollenBerechtigungen) ───
+  if (STAFF_ROLLEN.includes(role)) {
+    try {
+      if (username.toLowerCase() === 'admin') {
+        return res.status(400).json({ error: 'Der Benutzername "admin" ist reserviert.' });
+      }
+      const { getRollenBerechtigungen } = require('./admins');
+      const [dup] = await db.promise().query(
+        'SELECT id FROM admin_users WHERE username = ? OR email = ?', [username, email]
+      );
+      if (dup.length > 0) {
+        return res.status(409).json({ error: 'Benutzername oder E-Mail bereits vergeben' });
+      }
+      const hashedStaff = await hashPassword(password);
+      // dojo_id des anlegenden Admins erzwingen (Mandanten-Zuordnung); Super-Admin darf ?dojo_id
+      const staffDojoId = req.user.dojo_id || req.query.dojo_id || req.body.dojo_id || null;
+      const berechtigungen = getRollenBerechtigungen(role);
+      const [result] = await db.promise().query(
+        `INSERT INTO admin_users (username, email, password, vorname, nachname, rolle, berechtigungen, dojo_id, aktiv, email_verifiziert)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0)`,
+        [username, email, hashedStaff, req.body.vorname || '', req.body.nachname || '', role,
+         JSON.stringify(berechtigungen), staffDojoId]
+      );
+      logger.info(`Staff-Account erstellt: ${username} (${role}) in admin_users, Dojo ${staffDojoId}`);
+      auditLog.log({
+        req, kategorie: auditLog.KATEGORIE.ADMIN, aktion: auditLog.AKTION.USER_ERSTELLT,
+        entityType: 'admin_users', entityId: result.insertId, entityName: `${username} (${role})`,
+        dojoId: staffDojoId, beschreibung: `Mitarbeiter-Account angelegt: ${username} – Rolle ${role}`,
+      });
+      return res.status(201).json({
+        success: true, id: result.insertId, username, email, role, dojo_id: staffDojoId, table: 'admin_users'
+      });
+    } catch (error) {
+      logger.error('Fehler beim Erstellen des Staff-Accounts', { error: error.message });
+      return res.status(500).json({ error: 'Serverfehler beim Erstellen des Mitarbeiters' });
+    }
   }
 
   try {

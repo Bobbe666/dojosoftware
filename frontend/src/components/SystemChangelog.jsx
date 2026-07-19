@@ -31,6 +31,22 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.147',
+    date: '2026-07-19',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 1: ERP-Rollen + serverseitige Rechteprüfung (Finanzen)',
+    description: 'Fundament für ein feingranulares Rollen-/Rechtesystem. Neue Mitarbeiter-Rollen (Dojoleiter, Assistenztrainer, Kassenwart, Prüfer, Turnierleiter, Rezeption) mit je hinterlegten Standard-Rechten. Solche Mitarbeiter werden jetzt korrekt als Staff-Account (admin_users) mit Rechten angelegt und lassen sich im „Mitarbeiter anlegen“-Dialog auswählen. Erstmals werden Rechte auch serverseitig durchgesetzt: die Finanz-/Buchhaltungs-Routen verlangen jetzt das Recht „Finanzen: lesen“ — Inhaber/Admins haben weiterhin vollen Zugriff, ein Kassenwart kommt rein, Trainer/Prüfer/Rezeption nicht.',
+    highlights: [
+      '🧑‍💼 6 neue Mitarbeiter-Rollen mit Standard-Rechten',
+      '🔐 Serverseitige Rechteprüfung (requirePermission) — zuerst auf Finanzen scharf',
+      '🛡️ Betreiber-Bypass: Admin/Super-Admin nie ausgesperrt',
+      '🗂️ Granulare Mitarbeiter landen jetzt in der richtigen Tabelle (admin_users) mit Rechten',
+    ],
+    details: 'Migration 235 (admin_users.rolle ENUM +6 Rollen). admins.js getRollenBerechtigungen um neue Rollen + trainer/checkin erweitert und exportiert. middleware/auth.js requirePermission(bereich, aktion) — liest per-User berechtigungen aus dem Token, super_admin/admin bypass. server.js: /api/buchhaltung (+afa,+kasse) mit requirePermission(finanzen,lesen). auth.js POST /users routet die 6 Staff-Rollen nach admin_users (berechtigungen aus getRollenBerechtigungen, dojo_id des Anlegenden, Audit USER_ERSTELLT); Legacy/member unverändert. CreateUserModal: neue Rollen wählbar. OFFEN Phase 2: volle Staff-Verwaltungs-UI (Liste/Bearbeiten der admin_users-Rollen, Rollen-Tabs), Enforcement auf weitere Domänen, Zwei-Tabellen-Reconciliation.',
+    files: ['backend/migrations/235_admin_users_rolle_erp_rollen.sql', 'backend/routes/admins.js', 'backend/middleware/auth.js', 'backend/server.js', 'backend/routes/auth.js', 'frontend/src/components/CreateUserModal.jsx'],
+  },
+  {
     version: '3.0.146',
     date: '2026-07-19',
     type: 'improvement',
