@@ -10,6 +10,7 @@ const { formatDate } = require('./shared');
 const { sendToTdaEvents } = require('../../utils/tdaSync');
 const { getSecureDojoId } = require('../../utils/dojo-filter-helper');
 const webpush = require('web-push');
+const { requireStaffPermission } = require('../../middleware/auth');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -69,7 +70,7 @@ async function sendTrainingsausfallPush(dojoId, datum, trainingName) {
 }
 
 // POST /termine - Erstellt einen Prüfungstermin
-router.post('/', (req, res) => {
+router.post('/', requireStaffPermission('pruefungen','erstellen'), (req, res) => {
   const { datum, zeit, ort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib, gebuehr_auto_verrechnen, zahlungsart, send_trainingsausfall_push, trainingsausfall_kurs_name } = req.body;
 
   // Dojo-ID IMMER aus Token, nie aus Body (Sicherheit)
@@ -223,7 +224,7 @@ router.get('/', (req, res) => {
 });
 
 // PUT /termine/:id - Aktualisiert einen Prüfungstermin
-router.put('/:id', (req, res) => {
+router.put('/:id', requireStaffPermission('pruefungen','bearbeiten'), (req, res) => {
   const termin_id = parseInt(req.params.id);
   if (!termin_id || isNaN(termin_id)) return res.status(400).json({ error: 'Ungültige Termin-ID' });
 
@@ -453,7 +454,7 @@ router.get('/:id/umfrage', async (req, res) => {
 });
 
 // DELETE /termine/:id - Löscht einen Prüfungstermin
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireStaffPermission('pruefungen','loeschen'), (req, res) => {
   const termin_id = parseInt(req.params.id);
   if (!termin_id || isNaN(termin_id)) return res.status(400).json({ error: 'Ungültige Termin-ID' });
 
@@ -558,7 +559,7 @@ router.get('/:id/anmeldungen', async (req, res) => {
 });
 
 // PUT /termine/:terminId/anmeldungen/:id - Externe Anmeldung bearbeiten
-router.put('/:terminId/anmeldungen/:id', async (req, res) => {
+router.put('/:terminId/anmeldungen/:id', requireStaffPermission('pruefungen','bearbeiten'), async (req, res) => {
   const termin_id = parseInt(req.params.terminId);
   const anmeldung_id = parseInt(req.params.id);
   const { vorname, nachname, email, telefon, verein, stil_id, aktueller_gurt, angestrebter_gurt, status } = req.body;

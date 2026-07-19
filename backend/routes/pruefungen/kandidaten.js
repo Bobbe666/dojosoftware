@@ -9,6 +9,7 @@ const router = express.Router();
 const { getSecureDojoId } = require('../../utils/dojo-filter-helper');
 const { sendPushToMitglied } = require('../../utils/pushNotification');
 const { sendEmailForDojo } = require('../../services/emailService');
+const { requireStaffPermission } = require('../../middleware/auth');
 
 // GET /kandidaten - Ermittelt alle Prüfungskandidaten (mit Tenant-Isolation)
 router.get('/', (req, res) => {
@@ -91,7 +92,7 @@ router.get('/', (req, res) => {
 });
 
 // POST /kandidaten/extern - Externe Person für Prüfung zulassen (kein Mitglied)
-router.post('/extern', (req, res) => {
+router.post('/extern', requireStaffPermission('pruefungen','erstellen'), (req, res) => {
   const { extern_vorname, extern_nachname, extern_verein, stil_id, graduierung_nachher_id, pruefungsdatum, pruefungsort, pruefungszeit, pruefungsgebuehr, dojo_id: bodyDojoId } = req.body;
   const secureDojoId = getSecureDojoId(req);
   const dojo_id = secureDojoId || parseInt(bodyDojoId);
@@ -235,7 +236,7 @@ async function createRechnungBeiZusage(pruefungId) {
 }
 
 // POST /kandidaten/:mitglied_id/zulassen - Mitglied für Prüfung zulassen
-router.post('/:mitglied_id/zulassen', (req, res) => {
+router.post('/:mitglied_id/zulassen', requireStaffPermission('pruefungen','bearbeiten'), (req, res) => {
   const mitglied_id = parseInt(req.params.mitglied_id);
   const secureDojoId = getSecureDojoId(req);
   const { stil_id, graduierung_nachher_id, pruefungsdatum, pruefungsort, pruefungsgebuehr, anmeldefrist, gurtlaenge, bemerkungen, teilnahmebedingungen, pruefungszeit = '10:00', zahlungsart, gebuehr_auto_verrechnen } = req.body;
@@ -348,7 +349,7 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
 // Ohne ?force=true: nur unbewertete (status='geplant') löschbar; bewertete → 409 (already_graded).
 // Mit ?force=true: löscht auch bereits bewertete Prüfungen (Rückfrage im Frontend) + räumt
 // eine evtl. vergebene Urkunde aus dem Verbandsregister mit weg.
-router.delete('/:mitglied_id/zulassung/:pruefung_id', (req, res) => {
+router.delete('/:mitglied_id/zulassung/:pruefung_id', requireStaffPermission('pruefungen','loeschen'), (req, res) => {
   const mitglied_id = parseInt(req.params.mitglied_id);
   const pruefung_id = parseInt(req.params.pruefung_id);
   const force = req.query.force === 'true' || req.query.force === '1';
@@ -413,7 +414,7 @@ router.post('/:pruefung_id/gelesen', (req, res) => {
 });
 
 // PUT /:pruefung_id/admin-status - Admin setzt Anmelde- und Bestätigungsstatus manuell
-router.put('/:pruefung_id/admin-status', (req, res) => {
+router.put('/:pruefung_id/admin-status', requireStaffPermission('pruefungen','bearbeiten'), (req, res) => {
   const pruefung_id = parseInt(req.params.pruefung_id);
   if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
 
@@ -539,7 +540,7 @@ router.post('/antwort', (req, res) => {
 });
 
 // PUT /kandidaten/:pruefung_id/gebuehr-bar - Gebühr als Bar-Zahlung markieren
-router.put('/:pruefung_id/gebuehr-bar', async (req, res) => {
+router.put('/:pruefung_id/gebuehr-bar', requireStaffPermission('pruefungen','bearbeiten'), async (req, res) => {
   const pruefung_id = parseInt(req.params.pruefung_id);
   if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
 
@@ -587,7 +588,7 @@ router.put('/:pruefung_id/gebuehr-bar', async (req, res) => {
 });
 
 // PUT /kandidaten/:pruefung_id/gebuehr-null - Gebühr auf 0 setzen (kostenlos)
-router.put('/:pruefung_id/gebuehr-null', async (req, res) => {
+router.put('/:pruefung_id/gebuehr-null', requireStaffPermission('pruefungen','bearbeiten'), async (req, res) => {
   const pruefung_id = parseInt(req.params.pruefung_id);
   if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
 
@@ -630,7 +631,7 @@ router.put('/:pruefung_id/gebuehr-null', async (req, res) => {
 });
 
 // PUT /kandidaten/:pruefung_id/gebuehr-auto - Individuelle Gebühren-Einstellung überschreiben
-router.put('/:pruefung_id/gebuehr-auto', async (req, res) => {
+router.put('/:pruefung_id/gebuehr-auto', requireStaffPermission('pruefungen','bearbeiten'), async (req, res) => {
   const pruefung_id = parseInt(req.params.pruefung_id);
   if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
 
@@ -677,7 +678,7 @@ router.put('/:pruefung_id/gebuehr-auto', async (req, res) => {
 
 // POST /kandidaten/erinnerung-ohne-antwort
 // Sendet E-Mail + Push an alle Kandidaten eines Termins die noch nicht geantwortet haben
-router.post('/erinnerung-ohne-antwort', async (req, res) => {
+router.post('/erinnerung-ohne-antwort', requireStaffPermission('pruefungen','bearbeiten'), async (req, res) => {
   const { datum, stil_id } = req.body;
   if (!datum || !stil_id) {
     return res.status(400).json({ error: 'datum und stil_id sind erforderlich.' });

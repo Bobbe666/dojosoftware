@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.152',
+    date: '2026-07-19',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 6: Prüfungs-Rechte vollständig (Kandidaten + Termine)',
+    description: 'Die Rechteprüfung für Prüfungen ist jetzt vollständig: auch Kandidaten-Verwaltung (zulassen, externe Teilnehmer, Gebühren, Erinnerungen, Admin-Status) und Prüfungstermine (anlegen/ändern/löschen/Anmeldungen) verlangen das Recht „Prüfungen“. Mitglieder-Aktionen (Zusage, gelesen, Teilnahme bestätigen) bleiben offen. Lokal end-to-end getestet: Kassenwart wird geblockt, Prüfer/Trainer/Admin und Mitglieder kommen durch.',
+    highlights: [
+      '🎓 Kandidaten- & Termin-Verwaltung an das Prüfungs-Recht gebunden (17 Routen gesamt)',
+      '✅ Lokal gegen laufendes Backend verifiziert (member/admin/prüfer durch, kassenwart 🔒)',
+    ],
+    details: 'routes/pruefungen/kandidaten.js: /extern (erstellen), /:mitglied_id/zulassen (bearbeiten), /:mitglied_id/zulassung/:pruefung_id DELETE (loeschen), /admin-status, /gebuehr-bar|null|auto, /erinnerung-ohne-antwort (bearbeiten) mit requireStaffPermission. termine.js: POST/PUT/DELETE + anmeldungen-PUT. Member-Routen (antwort/gelesen/teilnahme-bestaetigen) bewusst offen. OFFEN Phase 7: Kurse (stundenplan) + Events (neue events-Area) für Turnier­leiter; Areas events/verkauf; Alt-UI-Reste.',
+    files: ['backend/routes/pruefungen/kandidaten.js', 'backend/routes/pruefungen/termine.js'],
+  },
+  {
     version: '3.0.151',
     date: '2026-07-19',
     type: 'improvement',
