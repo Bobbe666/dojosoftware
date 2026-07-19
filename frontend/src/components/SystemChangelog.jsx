@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.150',
+    date: '2026-07-19',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 4: Audit-Log-Einsicht für Dojoleiter',
+    description: 'Das Änderungsprotokoll (Audit-Log) ist jetzt an das Recht „Admin-Bereich“ gebunden statt an einen pauschalen Admin-Check: Rollen mit Leserecht auf den Admin-Bereich (z. B. Dojoleiter) können das Protokoll einsehen; Löschen/Bereinigen bleibt Inhaber/Super-Admin vorbehalten. Rein additiv — niemand verliert Zugriff.',
+    highlights: [
+      '🗂️ Dojoleiter dürfen das Audit-Log lesen (Einsicht wer-was-geändert)',
+      '🔒 Löschen/Bereinigen des Protokolls weiterhin nur Admin/Super-Admin',
+    ],
+    details: 'routes/audit-log.js: lokales requireAdmin ersetzt durch requirePermission — Lese-Routen (admins.lesen), Lösch-/Bereinigungs-Routen (admins.loeschen). WICHTIGER BEFUND: Die Kern-Domänen Prüfungen/Kurse/Events sind KEINE reinen Admin-Bereiche — die Mitglieder-App nutzt dieselben Endpunkte (z. B. GET /pruefungen, Prüfungs-Zusagen). Ein pauschales Gate würde die Mitglieder-App brechen. Echtes Enforcement dort erfordert Trennung member-/staff-Endpunkte bzw. Gates pro einzelner Schreibroute (eigene Etappe). verletzungen.js NICHT konvertiert (lokales requireAdmin erlaubt auch eingeschraenkt → wäre Regression).',
+    files: ['backend/routes/audit-log.js'],
+  },
+  {
     version: '3.0.149',
     date: '2026-07-19',
     type: 'improvement',

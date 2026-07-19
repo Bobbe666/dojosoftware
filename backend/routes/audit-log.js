@@ -8,14 +8,11 @@ const router = express.Router();
 const auditLog = require('../services/auditLogService');
 const db = require('../db');
 
-const requireAdmin = (req, res, next) => {
-  if (!req.user) return res.status(401).json({ success: false, error: 'Nicht authentifiziert' });
-  if (req.user.rolle !== 'super_admin' && req.user.role !== 'super_admin' &&
-      req.user.rolle !== 'admin' && req.user.role !== 'admin') {
-    return res.status(403).json({ success: false, error: 'Keine Berechtigung' });
-  }
-  next();
-};
+const { requirePermission } = require('../middleware/auth');
+// Audit-Log = Bereich 'admins': Lesen für Rollen mit admins.lesen (z.B. Dojoleiter),
+// Löschen/Bereinigen nur mit admins.loeschen (super_admin/admin per Bypass).
+const canReadAudit = requirePermission('admins', 'lesen');
+const canManageAudit = requirePermission('admins', 'loeschen');
 
 const isSA = (req) => req.user.rolle === 'super_admin' || req.user.role === 'super_admin';
 
@@ -75,7 +72,7 @@ function buildDeleteWhere(filters, dojoId, superAdmin) {
 // ============================================================================
 // GET /api/audit-log
 // ============================================================================
-router.get('/', requireAdmin, async (req, res) => {
+router.get('/', canReadAudit, async (req, res) => {
   try {
     const { kategorie, aktion, entity_type, entity_id, von_datum, bis_datum, suchbegriff, limit = 100, offset = 0 } = req.query;
     const dojoId = isSA(req) ? req.query.dojo_id : req.user.dojo_id;
@@ -98,7 +95,7 @@ router.get('/', requireAdmin, async (req, res) => {
 // ============================================================================
 // GET /api/audit-log/stats
 // ============================================================================
-router.get('/stats', requireAdmin, async (req, res) => {
+router.get('/stats', canReadAudit, async (req, res) => {
   try {
     const { tage = 30 } = req.query;
     const dojoId = isSA(req) ? req.query.dojo_id : req.user.dojo_id;
@@ -113,7 +110,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
 // ============================================================================
 // GET /api/audit-log/kategorien
 // ============================================================================
-router.get('/kategorien', requireAdmin, (req, res) => {
+router.get('/kategorien', canReadAudit, (req, res) => {
   res.json({
     success: true,
     data: [
@@ -133,7 +130,7 @@ router.get('/kategorien', requireAdmin, (req, res) => {
 // ============================================================================
 // GET /api/audit-log/aktionen
 // ============================================================================
-router.get('/aktionen', requireAdmin, (req, res) => {
+router.get('/aktionen', canReadAudit, (req, res) => {
   res.json({ success: true, data: auditLog.AKTION });
 });
 
@@ -141,7 +138,7 @@ router.get('/aktionen', requireAdmin, (req, res) => {
 // GET /api/audit-log/entity-types
 // Distinct entity_type Werte aus dem Audit-Log
 // ============================================================================
-router.get('/entity-types', requireAdmin, async (req, res) => {
+router.get('/entity-types', canReadAudit, async (req, res) => {
   try {
     const dojoId = isSA(req) ? req.query.dojo_id : req.user.dojo_id;
     let query = `SELECT entity_type, COUNT(*) AS anzahl FROM audit_log
@@ -163,7 +160,7 @@ router.get('/entity-types', requireAdmin, async (req, res) => {
 // Distinct Benutzer aus dem Audit-Log (für Dropdown im Bereinigen-Dialog)
 // Gibt alle eindeutigen user_email-Werte zurück (inkl. Einträge ohne user_id)
 // ============================================================================
-router.get('/users', requireAdmin, async (req, res) => {
+router.get('/users', canReadAudit, async (req, res) => {
   try {
     const dojoId = isSA(req) ? req.query.dojo_id : req.user.dojo_id;
     let query = `SELECT user_email,
@@ -189,7 +186,7 @@ router.get('/users', requireAdmin, async (req, res) => {
 // POST /api/audit-log/bereinigen/vorschau
 // Zählt Einträge die gelöscht werden würden (Dry-Run)
 // ============================================================================
-router.post('/bereinigen/vorschau', requireAdmin, async (req, res) => {
+router.post('/bereinigen/vorschau', canReadAudit, async (req, res) => {
   try {
     const superAdmin = isSA(req);
     const dojoId = superAdmin ? null : req.user.dojo_id;
@@ -209,7 +206,7 @@ router.post('/bereinigen/vorschau', requireAdmin, async (req, res) => {
 // ============================================================================
 // GET /api/audit-log/entity/:type/:id
 // ============================================================================
-router.get('/entity/:type/:id', requireAdmin, async (req, res) => {
+router.get('/entity/:type/:id', canReadAudit, async (req, res) => {
   try {
     const { type, id } = req.params;
     const { limit = 50 } = req.query;
@@ -225,7 +222,7 @@ router.get('/entity/:type/:id', requireAdmin, async (req, res) => {
 // ============================================================================
 // DELETE /api/audit-log/:id  — einzelnen Eintrag löschen
 // ============================================================================
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', canManageAudit, async (req, res) => {
   try {
     const { id } = req.params;
     const superAdmin = isSA(req);
@@ -250,7 +247,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 //          kategorie, aktion, ip_adresse,
 //          von_datum, bis_datum, alter_tage, alle
 // ============================================================================
-router.post('/bereinigen', requireAdmin, async (req, res) => {
+router.post('/bereinigen', canManageAudit, async (req, res) => {
   try {
     const superAdmin = isSA(req);
     const dojoId = superAdmin ? null : req.user.dojo_id;
@@ -270,7 +267,7 @@ router.post('/bereinigen', requireAdmin, async (req, res) => {
 // ============================================================================
 // DELETE /api/audit-log  — Legacy (leere Route zur Sicherheit)
 // ============================================================================
-router.delete('/', requireAdmin, (req, res) => {
+router.delete('/', canManageAudit, (req, res) => {
   res.status(410).json({ success: false, error: 'Bitte POST /bereinigen verwenden' });
 });
 
