@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.159',
+    date: '2026-07-20',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 12: Anwesenheitserfassung an Rechte gebunden (neuer Bereich „Anwesenheit")',
+    description: 'Neuer Rechtebereich „Anwesenheit": das Erfassen und Löschen von Anwesenheit (Trainingsteilnahme, Sondertraining) ist jetzt an ein Recht gebunden. Trainer, Assistenztrainer, Check-in-Rolle, Rezeption und Dojoleiter können Anwesenheit erfassen; Kassenwart/Prüfer nicht. Löschen dürfen nur Admin/Dojoleiter. Der Mitglieder-Selbst-Check-in (Coach-/Mitglieder-App) bleibt selbstverständlich unberührt.',
+    highlights: [
+      '🗓️ Anwesenheit erfassen: Trainer/Assistenz/Check-in/Rezeption/Dojoleiter',
+      '🔒 Anwesenheit löschen: nur Admin/Dojoleiter',
+      '↩️ Bestehende Trainer verlieren nichts (Rollen-Default-Fallback, kein Datenumzug)',
+    ],
+    details: 'admins.js getRollenBerechtigungen: neue anwesenheit-Area in allen 11 Matrizen (trainer/assistenztrainer/checkin/rezeption/mitarbeiter erfassen ohne loeschen; kassenwart/pruefer none; admin/dojoleiter voll). anwesenheit.js: POST / + /batch + /sondertraining (erstellen), DELETE /:id (loeschen) mit requireStaffPermission (member-shared-Muster mit Default-Fallback → keine Trainer-Regression). Mitglieder-Selbst-Check-in läuft über /api/checkin/* (unberührt). Lokal getestet. OFFEN Phase 13: email-settings/dojo IDOR-Tenant-Check, Alt-UI-Reste, Elternzugang/Mitglied, custom Rechte pro User editierbar.',
+    files: ['backend/routes/admins.js', 'backend/routes/anwesenheit.js'],
+  },
+  {
     version: '3.0.158',
     date: '2026-07-20',
     type: 'security',

@@ -23,6 +23,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
         events: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
         verkauf: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
+        anwesenheit: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
         dashboard: { lesen: true },
         berichte: { lesen: true, exportieren: true }
       };
@@ -38,6 +39,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
         events: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
         verkauf: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
+        anwesenheit: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
         dashboard: { lesen: true },
         berichte: { lesen: true, exportieren: true }
       };
@@ -53,6 +55,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         events: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
         verkauf: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
+        anwesenheit: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
         dashboard: { lesen: true },
         berichte: { lesen: true, exportieren: false }
       };
@@ -68,6 +71,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         events: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
         verkauf: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
+        anwesenheit: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
         dashboard: { lesen: true },
         berichte: { lesen: false, exportieren: false }
       };
@@ -85,6 +89,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
         events: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
         verkauf: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
+        anwesenheit: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
         dashboard: { lesen: true },
         berichte: { lesen: true, exportieren: true }
       };
@@ -100,6 +105,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         events: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         verkauf: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
+        anwesenheit: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         dashboard: { lesen: true },
         berichte: { lesen: true, exportieren: true }
       };
@@ -115,6 +121,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         events: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         verkauf: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        anwesenheit: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         dashboard: { lesen: true },
         berichte: { lesen: true, exportieren: false }
       };
@@ -130,6 +137,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         events: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
         verkauf: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
+        anwesenheit: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
         dashboard: { lesen: true },
         berichte: { lesen: false, exportieren: false }
       };
@@ -148,6 +156,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         events: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
         verkauf: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        anwesenheit: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
         dashboard: { lesen: true },
         berichte: { lesen: false, exportieren: false }
       };
@@ -164,6 +173,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         events: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
         verkauf: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        anwesenheit: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
         dashboard: { lesen: true },
         berichte: { lesen: false, exportieren: false }
       };
@@ -179,6 +189,7 @@ const getRollenBerechtigungen = (rolle) => {
         admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         events: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         verkauf: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
+        anwesenheit: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
         dashboard: { lesen: false },
         berichte: { lesen: false, exportieren: false }
       };

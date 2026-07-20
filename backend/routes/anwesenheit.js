@@ -1,4 +1,5 @@
 const express = require("express");
+const { requireStaffPermission } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const db = require("../db");
 const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
@@ -592,7 +593,7 @@ router.get("/kurse/:datum", async (req, res) => {
 });
 
 // ── SONDERTRAINING ANLEGEN ────────────────────────────────────────────────────
-router.post('/sondertraining', async (req, res) => {
+router.post('/sondertraining', requireStaffPermission('anwesenheit','erstellen'), async (req, res) => {
     const { event_name, datum, stil_id } = req.body;
     const secureDojoId = getSecureDojoId(req);
 
@@ -797,7 +798,7 @@ router.get("/:mitglied_id", (req, res) => {
 });
 
 // Anwesenheit eintragen (erweitert für stundenplan_id)
-router.post("/", async (req, res) => {
+router.post("/", requireStaffPermission('anwesenheit','erstellen'), async (req, res) => {
     // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
     // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
     const dojoId = getSecureDojoId(req);
@@ -873,7 +874,7 @@ router.post("/", async (req, res) => {
 });
 
 // 🆕 NEU: Batch-Update für mehrere Anwesenheiten
-router.post("/batch", async (req, res) => {
+router.post("/batch", requireStaffPermission('anwesenheit','erstellen'), async (req, res) => {
     const { eintraege, stundenplan_id, datum } = req.body;
     // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
     const dojoId = getSecureDojoId(req);
@@ -952,7 +953,7 @@ router.post("/batch", async (req, res) => {
 });
 
 // Anwesenheit löschen (unverändert)
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireStaffPermission('anwesenheit','loeschen'), (req, res) => {
     const id = parseInt(req.params.id, 10);
 
     if (isNaN(id)) {
