@@ -9,7 +9,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requirePermission } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 router.use(authenticateToken);
@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
 });
 
 // ── PUT / — Stammdaten speichern ──────────────────────────────────────────────
-router.put('/', async (req, res) => {
+router.put('/', requirePermission('einstellungen','bearbeiten'), async (req, res) => {
   const dojoId = getSecureDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Keine Berechtigung' });
 
@@ -87,7 +87,7 @@ router.get('/banken', async (req, res) => {
 });
 
 // ── POST /banken — Bankverbindung anlegen ─────────────────────────────────────
-router.post('/banken', async (req, res) => {
+router.post('/banken', requirePermission('einstellungen','bearbeiten'), async (req, res) => {
   const dojoId = getSecureDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Keine Berechtigung' });
 
@@ -105,7 +105,7 @@ router.post('/banken', async (req, res) => {
 });
 
 // ── PUT /banken/:id — Bankverbindung bearbeiten ───────────────────────────────
-router.put('/banken/:id', async (req, res) => {
+router.put('/banken/:id', requirePermission('einstellungen','bearbeiten'), async (req, res) => {
   const dojoId = getSecureDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Keine Berechtigung' });
 
@@ -123,7 +123,7 @@ router.put('/banken/:id', async (req, res) => {
 });
 
 // ── DELETE /banken/:id — Bankverbindung löschen ───────────────────────────────
-router.delete('/banken/:id', async (req, res) => {
+router.delete('/banken/:id', requirePermission('einstellungen','bearbeiten'), async (req, res) => {
   const dojoId = getSecureDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Keine Berechtigung' });
 

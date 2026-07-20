@@ -1,5 +1,6 @@
 // routes/einstellungendojo.js
 const express = require('express');
+const { requirePermission } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
@@ -141,7 +142,7 @@ router.get('/', (req, res) => {
 });
 
 // PUT /api/dojo
-router.put('/', (req, res) => {
+router.put('/', requirePermission('einstellungen','bearbeiten'), (req, res) => {
   logger.debug('🟡 PUT /api/dojo aufgerufen');
   const dojoId = getSecureDojoId(req);
   if (!dojoId) {

@@ -13,7 +13,7 @@ const router = express.Router();
 const db = require('../db');
 const path = require('path');
 const fs = require('fs');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requirePermission } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const { buildLetterheadHtml } = require('../utils/vorlagenPdfGenerator');
 
@@ -109,7 +109,7 @@ router.get('/', async (req, res) => {
 });
 
 // ── PUT / — Einstellungen speichern (UPSERT) ──────────────────────────────────
-router.put('/', async (req, res) => {
+router.put('/', requirePermission('einstellungen','bearbeiten'), async (req, res) => {
   const dojoId = getSecureDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Keine Berechtigung' });
 

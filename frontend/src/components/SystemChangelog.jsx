@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.157',
+    date: '2026-07-20',
+    type: 'security',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 10: Dojo-Einstellungen abgesichert (+ Sicherheitslücke geschlossen)',
+    description: 'Die Dojo-Einstellungen (allgemeine Einstellungen, Bankverbindungen/SEPA, Brief-Vorlagen) verlangen jetzt das Recht „Einstellungen". WICHTIG: Diese Schreibrouten waren bisher für JEDEN eingeloggten Nutzer offen (nur Login nötig) — theoretisch hätte ein Mitglied Bankverbindung/SEPA ändern können. Das ist jetzt geschlossen: nur Admin, Super-Admin und Dojoleiter dürfen Einstellungen ändern.',
+    highlights: [
+      '🔒 Sicherheitslücke geschlossen: Einstellungen/Bank/SEPA waren für alle Eingeloggten schreibbar',
+      '⚙️ Dojo-Einstellungen jetzt an das Recht „Einstellungen" gebunden (Admin/Dojoleiter)',
+    ],
+    details: 'requirePermission(einstellungen, bearbeiten) — kein Member-Bypass (Einstellungen sind member-frei) — auf: dojo-einstellungen.js (PUT /, POST/PUT/DELETE /banken), brief-einstellungen.js (PUT /), einstellungendojo.js (PUT /). Lokal getestet: member/trainer/kassenwart 403, admin/dojoleiter durch. GET-Routen (Lesen) unverändert. OFFEN Phase 11: weitere Settings-Dateien (checkin-/email-settings), Anwesenheit (member-shared, eigene Area), Alt-UI-Reste, Elternzugang/Mitglied.',
+    files: ['backend/routes/dojo-einstellungen.js', 'backend/routes/brief-einstellungen.js', 'backend/routes/einstellungendojo.js'],
+  },
+  {
     version: '3.0.156',
     date: '2026-07-20',
     type: 'improvement',
