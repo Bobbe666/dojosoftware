@@ -31,18 +31,19 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
-    version: '3.0.164',
+    version: '3.0.165',
     date: '2026-07-20',
     type: 'feature',
     zielgruppe: 'allgemein',
-    title: '„Wusstest du schon…?" – Tipps zur Bedienung im Dashboard',
-    description: 'Im Dashboard erscheint jetzt ein Tipp-Feld, das dir und deinem Team nach und nach die vielen Funktionen der Software zeigt („Wusstest du schon, dass…"). Jeder Tipp lässt sich als erledigt abhaken, auf später verschieben, überspringen (nächster Tipp) – oder ganz ausschalten. Der Fortschritt wird pro Mitarbeiter gemerkt.',
+    title: '„Wusstest du schon…?" – Tipps zur Bedienung (Dashboard-Feld + täglicher Tipp des Tages)',
+    description: 'Die Software zeigt dir und deinem Team jetzt nach und nach ihre vielen Funktionen („Wusstest du schon, dass…"). Es gibt ein Tipp-Feld im Dashboard UND einmal am Tag ein „Tipp des Tages"-Popup. Jeder Tipp lässt sich als erledigt abhaken, auf später verschieben, überspringen (nächster Tipp) – oder ganz ausschalten. Der Fortschritt wird pro Mitarbeiter gemerkt.',
     highlights: [
       '💡 Feature-Tipps direkt im Dashboard – entdecke Funktionen, die du vielleicht noch nicht kennst',
+      '📅 Zusätzlich einmal pro Tag ein „Tipp des Tages"-Popup',
       '✓ Abhaken · 🕐 Später lesen · → Nächster Tipp · ✕ Keine Tipps mehr (jederzeit wieder einschaltbar)',
       '👤 Lesestatus wird pro Mitarbeiter gespeichert',
     ],
-    details: 'Neu: backend/data/adminTipps.js (kuratierte Tipp-Liste, stabile IDs), routes/tipps.js (GET / , POST /status, POST /einstellung; nur Staff-Rollen, Status pro admin_users.id), gemountet unter /api/admin/tipps VOR den generischen /api/admin-Routen. DB: admin_tipp_status + admin_tipp_einstellung (Migration 239, auf Prod per direktem SQL angelegt). Frontend: TippWidget.jsx/.css in DashboardUebersicht.jsx (nach dem Wetter-Widget). Tages-Rotation des Start-Tipps; ungelesene vor „später"; ausgeschaltet = dezente Reaktivierungs-Zeile. Nur Admin-Bereich, nichts in der Mitglieder-App.',
+    details: 'Neu: backend/data/adminTipps.js (kuratierte Tipp-Liste, stabile IDs), routes/tipps.js (GET / , POST /status, POST /einstellung; nur Staff-Rollen, Status pro admin_users.id), gemountet unter /api/admin/tipps VOR den generischen /api/admin-Routen. DB: admin_tipp_status + admin_tipp_einstellung (Migration 239, auf Prod per direktem SQL angelegt). Frontend: TippWidget.jsx/.css in DashboardUebersicht.jsx (nach Wetter-Widget) + TippTagesPopup.jsx (createPortal, in Dashboard.jsx-Admin-Hülle) — einmal pro Tag via localStorage-Datum, gleicher Tages-Tipp wie das Widget. Tages-Rotation des Start-Tipps; ungelesene vor „später"; ausgeschaltet = dezente Reaktivierungs-Zeile bzw. kein Popup. Nur Admin-Bereich, nichts in der Mitglieder-App.',
     files: [
       'backend/data/adminTipps.js',
       'backend/routes/tipps.js',
@@ -50,7 +51,9 @@ export const CHANGELOG = [
       'backend/migrations/239_admin_tipps_status.sql',
       'frontend/src/components/TippWidget.jsx',
       'frontend/src/components/TippWidget.css',
+      'frontend/src/components/TippTagesPopup.jsx',
       'frontend/src/components/DashboardUebersicht.jsx',
+      'frontend/src/components/Dashboard.jsx',
     ],
   },
   {

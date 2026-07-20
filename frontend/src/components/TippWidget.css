@@ -133,6 +133,54 @@
   color: var(--ds-text-secondary);
 }
 
+/* ── Tages-Popup (Modal) ─────────────────────────────────────────────────── */
+.tw-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 10000;
+}
+
+.tw-modal {
+  background: var(--ds-bg-card, rgba(26, 26, 46, 0.99));
+  border: 1px solid var(--ds-accent-30);
+  border-top: 3px solid var(--ds-accent);
+  border-radius: 12px;
+  padding: 18px 20px 20px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.tw-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.tw-modal-x {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--ds-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.tw-modal-x:hover { color: var(--ds-text); background: var(--ds-bg-card-hover); }
+
+.tw-modal-body { margin-bottom: 4px; }
+.tw-modal .tw-icon { font-size: 2rem; }
+.tw-modal .tw-titel { font-size: 1.05rem; }
+.tw-modal .tw-text { font-size: 0.9rem; }
+
 /* Ausgeblendet-Zustand: dezente Reaktivierungs-Zeile */
 .tw-reenable {
   display: flex;

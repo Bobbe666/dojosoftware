@@ -40,6 +40,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import AgbStatusWidget from './AgbStatusWidget';
 import VisitorChatAlerts from './chat/VisitorChatAlerts';
 import DashboardUebersicht from './DashboardUebersicht';
+import TippTagesPopup from './TippTagesPopup';
 import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
 import FunktionsUebersicht from './FunktionsUebersicht';
@@ -1329,6 +1330,8 @@ function Dashboard() {
   return (
     <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''} ${isFullscreenRoute ? 'dashboard-fullscreen-route' : ''}`}>
       {(role === 'admin' || role === 'super_admin' || role === 'eingeschraenkt') && <VisitorChatAlerts />}
+      {/* Täglicher „Tipp des Tages"-Popup (nur Admin-Bedienung, respektiert Opt-out) */}
+      <TippTagesPopup />
       <header className="dashboard-header">
         <div className="dashboard-header-left">
           <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
