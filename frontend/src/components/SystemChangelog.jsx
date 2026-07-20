@@ -31,6 +31,19 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.160',
+    date: '2026-07-20',
+    type: 'security',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 13: Cross-Dojo-Lücke bei E-Mail-Einstellungen geschlossen (IDOR)',
+    description: 'Sicherheitsfix: Die dojo-eigenen E-Mail-/SMTP-Einstellungen ließen sich über die Dojo-ID in der URL auch für FREMDE Dojos abrufen und ändern (IDOR) — ein Dojo-Admin hätte die SMTP-Zugangsdaten eines anderen Dojos einsehen/überschreiben können. Jetzt sind Lesen und Ändern strikt aufs eigene Dojo beschränkt (Super-Admin darf weiterhin alle). Die Bank-/SEPA-Routen waren bereits korrekt dojo-gescoped.',
+    highlights: [
+      '🔒 E-Mail-/SMTP-Einstellungen: kein Zugriff mehr auf fremde Dojos (IDOR behoben)',
+    ],
+    details: 'email-settings.js GET + PUT /dojo/:id: neuer Mandanten-Check fremdesDojo(req, id) via getSecureDojoId — normaler Admin/Dojoleiter nur eigenes Dojo, Super-Admin alle. Lokal getestet: Admin von Dojo 3 → /dojo/5 GET+PUT 403, /dojo/3 durch, Super-Admin alle. (Bank-Routen dojo-einstellungen bereits sicher via getSecureDojoId + WHERE dojo_id.) OFFEN Phase 14: per-User-Rechte-UI (custom berechtigungen editierbar statt nur Rolle→Default), Alt-/api/permissions-Template-Editor, Elternzugang/Mitglied.',
+    files: ['backend/routes/email-settings.js'],
+  },
+  {
     version: '3.0.159',
     date: '2026-07-20',
     type: 'improvement',

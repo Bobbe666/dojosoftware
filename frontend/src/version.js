@@ -4,5 +4,5 @@
 // Kein React, keine UI-Dependencies - bleibt im main bundle klein!
 // ============================================================================
 
-export const CURRENT_VERSION = '3.0.159';
+export const CURRENT_VERSION = '3.0.160';
 export const CURRENT_BUILD_DATE = '2026-07-20';

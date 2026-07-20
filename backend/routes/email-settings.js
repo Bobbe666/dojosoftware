@@ -11,6 +11,14 @@ const logger = require('../utils/logger');
 const nodemailer = require('nodemailer');
 const { encrypt, decrypt, isEncrypted } = require('../utils/encryption');
 const { requirePermission } = require('../middleware/auth');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
+
+// Mandanten-Schutz: nur das eigene Dojo (Super-Admin darf alle). Verhindert IDOR
+// (fremde SMTP-/E-Mail-Einstellungen über /dojo/:id lesen oder ändern).
+function fremdesDojo(req, id) {
+  const secureDojoId = getSecureDojoId(req);
+  return secureDojoId !== null && String(secureDojoId) !== String(id);
+}
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -312,6 +320,9 @@ router.post('/test', async (req, res) => {
 router.get('/dojo/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    if (fremdesDojo(req, id)) {
+      return res.status(403).json({ success: false, error: 'Kein Zugriff auf ein fremdes Dojo' });
+    }
 
     // Dojo-Basisdaten holen
     const dojos = await queryAsync('SELECT email, dojoname FROM dojo WHERE id = ?', [id]);
@@ -380,6 +391,9 @@ router.get('/dojo/:id', async (req, res) => {
 router.put('/dojo/:id', requirePermission('einstellungen', 'bearbeiten'), async (req, res) => {
   try {
     const { id } = req.params;
+    if (fremdesDojo(req, id)) {
+      return res.status(403).json({ success: false, error: 'Kein Zugriff auf ein fremdes Dojo' });
+    }
     const {
       email_mode,
       smtp_host,
