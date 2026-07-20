@@ -471,18 +471,13 @@ const AdminVerwaltung = () => {
             <span className="tab-count">{getUsersByRole(rolle.key).length}</span>
           </button>
         ))}
-        <button
-          className={`tab-button ${activeTab === 'rechte' ? 'active' : ''}`}
-          onClick={() => setActiveTab('rechte')}
-        >
-          <Settings size={18} className="tab-icon" />
-          Rechtezuweisung
-        </button>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content — der frühere „Rechtezuweisung"-Vorlagen-Editor wurde entfernt
+          (POST /api/permissions existierte nicht, Enforcement nutzt admin_users.berechtigungen).
+          Rechte werden jetzt unter „Mitarbeiter & Rechte" verwaltet. */}
       <div className="tab-content">
-        {activeTab === 'rechte' ? renderRechteTab() : renderUserList(activeTab)}
+        {renderUserList(activeTab)}
       </div>
 
       {/* Edit User Modal */}

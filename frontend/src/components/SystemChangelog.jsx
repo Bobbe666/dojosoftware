@@ -31,6 +31,19 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.163',
+    date: '2026-07-20',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 16: veralteten Rechte-Vorlagen-Editor entfernt (Aufräumen)',
+    description: 'Aufräumen: In der Benutzerverwaltung gab es einen alten „Rechtezuweisung"-Reiter, in dem man Rollen-Vorlagen anklicken und speichern konnte — das lief aber ins Leere (der zugehörige Server-Endpunkt existierte nicht) und hatte keinerlei Wirkung auf die tatsächlichen Rechte. Da die Rechteverwaltung jetzt vollständig unter „Mitarbeiter & Rechte" läuft, ist dieser irreführende Reiter entfernt.',
+    highlights: [
+      '🧹 Toten/irreführenden „Rechtezuweisung"-Reiter entfernt — Rechte laufen über „Mitarbeiter & Rechte"',
+    ],
+    details: 'AdminVerwaltung.jsx: „Rechtezuweisung"-Tab + renderRechteTab-Rendering entfernt (POST /api/permissions existierte nicht; Enforcement nutzt ausschließlich admin_users.berechtigungen). Nur-Frontend, keine Backend-/DB-Änderung. Rollensystem damit auch aufgeräumt-komplett. OFFEN (separat, kein Rollensystem-Kern): Elternzugang/Mitglied-Rollen (users-Seite).',
+    files: ['frontend/src/components/AdminVerwaltung.jsx'],
+  },
+  {
     version: '3.0.162',
     date: '2026-07-20',
     type: 'improvement',
