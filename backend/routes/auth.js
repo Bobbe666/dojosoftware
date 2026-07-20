@@ -1711,6 +1711,23 @@ router.post('/resend-verification', authenticateToken, async (req, res) => {
 // ===================================================================
 const STAFF_VERWALTBARE_ROLLEN = ['dojoleiter', 'assistenztrainer', 'kassenwart', 'pruefer', 'rezeption', 'trainer', 'checkin', 'mitarbeiter', 'eingeschraenkt'];
 
+// Bereinigt ein per-User berechtigungen-Objekt gegen die bekannten Bereiche/Aktionen
+// (verhindert, dass beliebiger/riesiger Müll in admin_users.berechtigungen landet).
+const PERM_AREAS = ['mitglieder', 'vertraege', 'finanzen', 'pruefungen', 'stundenplan', 'events', 'verkauf', 'anwesenheit', 'einstellungen', 'admins', 'berichte', 'dashboard'];
+const PERM_ACTIONS = ['lesen', 'erstellen', 'bearbeiten', 'loeschen', 'exportieren'];
+function sanitizeBerechtigungen(input) {
+  const out = {};
+  for (const area of PERM_AREAS) {
+    if (input[area] && typeof input[area] === 'object') {
+      out[area] = {};
+      for (const act of PERM_ACTIONS) {
+        if (act in input[area]) out[area][act] = input[area][act] === true;
+      }
+    }
+  }
+  return out;
+}
+
 function staffAuth(req) {
   const role = req.user?.rolle || req.user?.role;
   const istStaffAdmin = role === 'admin' || role === 'super_admin';
@@ -1744,7 +1761,7 @@ router.put('/staff/:id', authenticateToken, async (req, res) => {
   const { istStaffAdmin, isSuper, dojoId } = staffAuth(req);
   if (!istStaffAdmin) return res.status(403).json({ error: 'Keine Berechtigung' });
   const id = parseInt(req.params.id);
-  const { rolle: neueRolle, aktiv } = req.body;
+  const { rolle: neueRolle, aktiv, berechtigungen: customPerms } = req.body;
   try {
     const [[target]] = await db.promise().query('SELECT id, dojo_id, rolle FROM admin_users WHERE id = ?', [id]);
     if (!target) return res.status(404).json({ error: 'Mitarbeiter nicht gefunden' });
@@ -1755,9 +1772,17 @@ router.put('/staff/:id', authenticateToken, async (req, res) => {
     if (neueRolle) {
       const erlaubt = isSuper ? [...STAFF_VERWALTBARE_ROLLEN, 'admin'] : STAFF_VERWALTBARE_ROLLEN;
       if (!erlaubt.includes(neueRolle)) return res.status(400).json({ error: 'Ungültige oder nicht erlaubte Rolle' });
-      const { getRollenBerechtigungen } = require('./admins');
-      sets.push('rolle = ?', 'berechtigungen = ?');
-      vals.push(neueRolle, JSON.stringify(getRollenBerechtigungen(neueRolle)));
+      sets.push('rolle = ?'); vals.push(neueRolle);
+      // Rollenwechsel setzt Standard-Rechte — ABER nur, wenn nicht gleichzeitig
+      // individuelle Rechte mitgeschickt werden (die gewinnen dann).
+      if (!customPerms) {
+        const { getRollenBerechtigungen } = require('./admins');
+        sets.push('berechtigungen = ?'); vals.push(JSON.stringify(getRollenBerechtigungen(neueRolle)));
+      }
+    }
+    // Individuelle Rechte pro Mitarbeiter (überschreiben die Rollen-Defaults)
+    if (customPerms && typeof customPerms === 'object' && !Array.isArray(customPerms)) {
+      sets.push('berechtigungen = ?'); vals.push(JSON.stringify(sanitizeBerechtigungen(customPerms)));
     }
     if (aktiv !== undefined) { sets.push('aktiv = ?'); vals.push(aktiv ? 1 : 0); }
     if (!sets.length) return res.status(400).json({ error: 'Nichts zu ändern' });

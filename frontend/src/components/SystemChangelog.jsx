@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.161',
+    date: '2026-07-20',
+    type: 'feature',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 14: Individuelle Rechte pro Mitarbeiter',
+    description: 'Bisher konnte man einem Mitarbeiter nur eine Rolle zuweisen und bekam deren Standard-Rechte. Jetzt lassen sich die Rechte pro Mitarbeiter feinjustieren: Unter „Mitarbeiter & Rechte" gibt es je Person den Button „Rechte anpassen" mit einem Raster (Bereiche × Aktionen), das die Standard-Rechte der Rolle überschreibt. Ein Rollenwechsel setzt die Rechte wieder auf den Standard zurück.',
+    highlights: [
+      '🎛️ Rechte-Raster pro Mitarbeiter (Bereiche × Lesen/Erstellen/Bearbeiten/Löschen)',
+      '🔁 Rollenwechsel setzt auf Standard zurück; individuelle Rechte überschreiben ihn',
+    ],
+    details: 'Backend auth.js PUT /api/auth/staff/:id nimmt jetzt optional berechtigungen (custom) — bereinigt via sanitizeBerechtigungen gegen Whitelist PERM_AREAS × PERM_ACTIONS (verhindert Müll in admin_users.berechtigungen). Custom-Rechte gewinnen gegenüber Rollen-Default. Frontend MitarbeiterRollen.jsx: neuer „Rechte anpassen"-Button + Checkbox-Raster + Speichern. Lokal getestet: Speichern greift, Müll-Bereiche/-Aktionen werden entfernt. OFFEN Phase 15: Alt-/api/permissions-Template-Editor aufräumen, Elternzugang/Mitglied (users-Seite), Rechte per Request frisch aus DB (heute Re-Login nötig).',
+    files: ['backend/routes/auth.js', 'frontend/src/components/MitarbeiterRollen.jsx'],
+  },
+  {
     version: '3.0.160',
     date: '2026-07-20',
     type: 'security',

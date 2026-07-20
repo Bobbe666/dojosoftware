@@ -22,6 +22,21 @@ const ROLLEN = {
 };
 // Rollen, die ein Dojo-Admin zuweisen darf (admin/super_admin bleiben Super-Admin vorbehalten)
 const ZUWEISBAR = ['dojoleiter', 'kassenwart', 'pruefer', 'trainer', 'assistenztrainer', 'rezeption', 'mitarbeiter', 'eingeschraenkt', 'checkin'];
+// Rechte-Raster (individuelle Rechte pro Mitarbeiter) — Bereiche + zutreffende Aktionen
+const PERM_AREAS = [
+  { k: 'mitglieder', l: 'Mitglieder', acts: ['lesen', 'erstellen', 'bearbeiten', 'loeschen'] },
+  { k: 'vertraege', l: 'Verträge', acts: ['lesen', 'erstellen', 'bearbeiten', 'loeschen'] },
+  { k: 'finanzen', l: 'Finanzen', acts: ['lesen', 'erstellen', 'bearbeiten', 'loeschen'] },
+  { k: 'pruefungen', l: 'Prüfungen', acts: ['lesen', 'erstellen', 'bearbeiten', 'loeschen'] },
+  { k: 'stundenplan', l: 'Stundenplan', acts: ['lesen', 'erstellen', 'bearbeiten', 'loeschen'] },
+  { k: 'events', l: 'Events', acts: ['lesen', 'erstellen', 'bearbeiten', 'loeschen'] },
+  { k: 'verkauf', l: 'Verkauf/Shop', acts: ['lesen', 'erstellen', 'bearbeiten', 'loeschen'] },
+  { k: 'anwesenheit', l: 'Anwesenheit', acts: ['lesen', 'erstellen', 'bearbeiten', 'loeschen'] },
+  { k: 'einstellungen', l: 'Einstellungen', acts: ['lesen', 'erstellen', 'bearbeiten', 'loeschen'] },
+  { k: 'admins', l: 'Admin-Bereich', acts: ['lesen', 'erstellen', 'bearbeiten', 'loeschen'] },
+  { k: 'berichte', l: 'Berichte', acts: ['lesen', 'exportieren'] },
+];
+const ACT_LABEL = { lesen: 'Lesen', erstellen: 'Erstellen', bearbeiten: 'Bearbeiten', loeschen: 'Löschen', exportieren: 'Export' };
 const BEREICHE = [
   ['mitglieder', 'Mitglieder'], ['finanzen', 'Finanzen'], ['vertraege', 'Verträge'],
   ['pruefungen', 'Prüfungen'], ['stundenplan', 'Stundenplan'], ['einstellungen', 'Einstellungen'], ['berichte', 'Berichte'],
@@ -43,6 +58,7 @@ export default function MitarbeiterRollen() {
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [permEdit, setPermEdit] = useState(null); // { id, perms } — individuelles Rechte-Raster
 
   const flash = (text, ok = true) => { setMsg({ text, ok }); setTimeout(() => setMsg(null), 4000); };
 
@@ -108,6 +124,25 @@ export default function MitarbeiterRollen() {
     } catch (e) { flash(e.message, false); }
   };
 
+  const openPerm = (u) => setPermEdit(
+    permEdit?.id === u.id ? null : { id: u.id, perms: JSON.parse(JSON.stringify(u.berechtigungen || {})) }
+  );
+  const togglePerm = (area, act) => setPermEdit(pe => {
+    const perms = { ...pe.perms, [area]: { ...(pe.perms[area] || {}) } };
+    perms[area][act] = !perms[area][act];
+    return { ...pe, perms };
+  });
+  const savePerm = async () => {
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/auth/staff/${permEdit.id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ berechtigungen: permEdit.perms }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Fehler');
+      flash('Individuelle Rechte gespeichert.');
+      setPermEdit(null); load();
+    } catch (e) { flash(e.message, false); }
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
@@ -155,8 +190,31 @@ export default function MitarbeiterRollen() {
                     {ZUWEISBAR.map(r => <option key={r} value={r}>{ROLLEN[r].i} {ROLLEN[r].l}</option>)}
                   </select>
                   <button style={st.btn} onClick={() => toggleAktiv(u)}>{u.aktiv ? 'Deaktivieren' : 'Aktivieren'}</button>
+                  <button style={st.btn} onClick={() => openPerm(u)}>{permEdit?.id === u.id ? 'Rechte schließen' : 'Rechte anpassen'}</button>
                   <button style={st.btn} onClick={() => resetPasswort(u)}>Passwort</button>
                   <button style={st.btnDanger} onClick={() => loeschen(u)}>Löschen</button>
+                </div>
+              )}
+              {!geschuetzt && permEdit?.id === u.id && (
+                <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>
+                    Individuelle Rechte (überschreiben die Rollen-Standardrechte). Rollenwechsel setzt sie wieder zurück.
+                  </div>
+                  {PERM_AREAS.map(area => (
+                    <div key={area.k} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <span style={{ width: 130, fontSize: '0.85rem' }}>{area.l}</span>
+                      {area.acts.map(act => (
+                        <label key={act} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}>
+                          <input type="checkbox" checked={!!permEdit.perms[area.k]?.[act]} onChange={() => togglePerm(area.k, act)} />
+                          {ACT_LABEL[act]}
+                        </label>
+                      ))}
+                    </div>
+                  ))}
+                  <div style={{ ...st.row, marginTop: 10, gap: 8 }}>
+                    <button style={{ ...st.btn, background: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.4)', color: '#86efac', fontWeight: 700 }} onClick={savePerm}>Rechte speichern</button>
+                    <button style={st.btn} onClick={() => setPermEdit(null)}>Abbrechen</button>
+                  </div>
                 </div>
               )}
               {geschuetzt && <div style={{ ...st.row, marginTop: 8 }}><span style={{ ...st.chip, color: 'rgba(255,255,255,0.4)' }}>Über die Super-Admin-Verwaltung änderbar</span></div>}
