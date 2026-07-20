@@ -3610,6 +3610,16 @@ router.post("/",
                     return res.status(404).json({ error: "Bestehendes Mitglied nicht gefunden" });
                 }
 
+                // 🔒 FIX (2026-07-20): Familienmitglieder MÜSSEN im selben Dojo wie das Anker-Mitglied liegen.
+                // Nicht dem vom Frontend gesendeten dojo_id vertrauen: ein Super-Admin ohne Subdomain-Kontext hat
+                // kein secureDojoId → der Ownership-Check oben greift nicht, und ein falsches dojo_id würde das
+                // Familienmitglied in ein fremdes Dojo legen (Anker in Dojo 3, Familienmitglied in Dojo 2 = "Geist"
+                // in der Mandantentrennung, taucht nirgends auf). Anker-Mitglied ist die einzige Wahrheit.
+                const familyDojoId = existingMember.dojo_id;
+                if (familyDojoId && Number(familyDojoId) !== Number(dojoId)) {
+                    logger.warn(`⚠️ Familienmitglied-dojo_id korrigiert: Frontend sendete ${dojoId}, Anker-Mitglied ${existingMemberId} liegt in Dojo ${familyDojoId} → verwende ${familyDojoId}`);
+                }
+
                 let familienId = existingMember.familien_id;
 
                 // 2. Falls kein familien_id vorhanden, verwende mitglied_id als familien_id
@@ -3624,7 +3634,7 @@ router.post("/",
                         vertreter_telefon: existingMember.telefon || memberData.telefon
                     };
 
-                    createFamilyMembers(memberData.family_members, enrichedMainData, dojoId, (famErr, createdFamilyMembers) => {
+                    createFamilyMembers(memberData.family_members, enrichedMainData, familyDojoId || dojoId, (famErr, createdFamilyMembers) => {
                         if (famErr) {
                             logger.error('Fehler beim Erstellen der Familienmitglieder:', famErr);
                             return res.status(500).json({ error: "Fehler beim Erstellen der Familienmitglieder" });
