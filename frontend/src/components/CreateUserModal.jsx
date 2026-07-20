@@ -13,7 +13,6 @@ const ROLLEN = [
   { key: 'assistenztrainer', label: '🥋 Assistenztrainer' },
   { key: 'kassenwart',       label: '💰 Kassenwart' },
   { key: 'pruefer',          label: '🎓 Prüfer' },
-  { key: 'turnierleiter',    label: '🏆 Turnierleiter' },
   { key: 'rezeption',        label: '🛎️ Rezeption' },
 ];
 

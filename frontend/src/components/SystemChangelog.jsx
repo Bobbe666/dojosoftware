@@ -31,18 +31,31 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.155',
+    date: '2026-07-20',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Rolle „Turnierleiter" entfernt',
+    description: 'Die Rolle Turnierleiter wurde wieder aus der Software genommen — Turniere gehören nicht in die Dojo-Verwaltung, sondern auf die separate Events-Plattform. Die Rolle war neu und noch keinem Konto zugewiesen; Event-Verwaltung bleibt bei Admin und Dojoleiter.',
+    highlights: [
+      '🗑️ Rolle Turnierleiter aus Auswahl, Rechte-Matrix und Datenbank-Enum entfernt',
+    ],
+    details: 'Migration 237 (ENUM ohne turnierleiter). admins.js getRollenBerechtigungen: case turnierleiter entfernt. auth.js: aus STAFF_ROLLEN + STAFF_VERWALTBARE_ROLLEN + ORDER BY. Frontend: aus CreateUserModal + MitarbeiterRollen (ROLLEN + ZUWEISBAR). events-Area bleibt bestehen (Admin/Dojoleiter verwalten Events).',
+    files: ['backend/migrations/237_admin_users_rolle_turnierleiter_raus.sql', 'backend/routes/admins.js', 'backend/routes/auth.js', 'frontend/src/components/CreateUserModal.jsx', 'frontend/src/components/MitarbeiterRollen.jsx'],
+  },
+  {
     version: '3.0.154',
     date: '2026-07-20',
     type: 'improvement',
     zielgruppe: 'intern',
     title: 'Rollensystem Phase 8: Kurs-/Stundenplan an Rechte gebunden (Trainer nur lesen)',
-    description: 'Das Anlegen, Bearbeiten und Löschen von Kursen und Stundenplan-Einträgen verlangt jetzt das Recht „Stundenplan“. Bewusste Vorgabe: Trainer dürfen den Kursplan NICHT bearbeiten (nur ansehen) — Verwaltung liegt bei Admin, Dojoleiter und Turnierleiter. Mitglieder sehen den Stundenplan wie gewohnt.',
+    description: 'Das Anlegen, Bearbeiten und Löschen von Kursen und Stundenplan-Einträgen verlangt jetzt das Recht „Stundenplan“. Bewusste Vorgabe: Trainer dürfen den Kursplan NICHT bearbeiten (nur ansehen) — Verwaltung liegt bei Admin und Dojoleiter. Mitglieder sehen den Stundenplan wie gewohnt.',
     highlights: [
-      '📅 Kurs-/Stundenplan-Verwaltung nur mit Stundenplan-Recht',
+      '📅 Kurs-/Stundenplan-Verwaltung nur mit Stundenplan-Recht (Admin/Dojoleiter)',
       '🚫 Trainer können den Kursplan nicht mehr bearbeiten (nur lesen) — wie gewünscht',
-      '✅ Lokal verifiziert: admin/dojoleiter/turnierleiter/member durch, trainer/rezeption 🔒',
+      '✅ Lokal verifiziert: admin/dojoleiter/member durch, trainer/rezeption 🔒',
     ],
-    details: 'routes/kurse.js (POST/PUT/DELETE) + routes/stundenplan.js (POST/PUT/DELETE) mit requireStaffPermission(stundenplan, erstellen|bearbeiten|loeschen). Keine Matrix-Änderung nötig — trainer/rezeption haben stundenplan nur lesen. Member-Bypass hält die Stundenplan-Ansicht der Mitglieder-App offen. OFFEN Phase 9: Area verkauf/shop (Rezeption/Kassenwart), Anwesenheit, Einstellungen (Dojoleiter), Alt-UI-Reste, Elternzugang/Mitglied. Offene Frage: soll Turnierleiter den regulären Kursplan bearbeiten dürfen (aktuell ja über stundenplan-Recht)?',
+    details: 'routes/kurse.js (POST/PUT/DELETE) + routes/stundenplan.js (POST/PUT/DELETE) mit requireStaffPermission(stundenplan, erstellen|bearbeiten|loeschen). Keine Matrix-Änderung nötig — trainer/rezeption haben stundenplan nur lesen. Member-Bypass hält die Stundenplan-Ansicht der Mitglieder-App offen.',
     files: ['backend/routes/kurse.js', 'backend/routes/stundenplan.js'],
   },
   {

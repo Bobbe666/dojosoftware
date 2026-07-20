@@ -13,7 +13,6 @@ const ROLLEN = {
   dojoleiter:       { l: 'Dojoleiter',       i: '🏯', c: '#8b5cf6' },
   kassenwart:       { l: 'Kassenwart',       i: '💰', c: '#f59e0b' },
   pruefer:          { l: 'Prüfer',           i: '🎓', c: '#10b981' },
-  turnierleiter:    { l: 'Turnierleiter',    i: '🏆', c: '#ef4444' },
   trainer:          { l: 'Trainer',          i: '🥋', c: '#22c55e' },
   assistenztrainer: { l: 'Assistenztrainer', i: '🥋', c: '#84cc16' },
   rezeption:        { l: 'Rezeption',        i: '🛎️', c: '#06b6d4' },
@@ -22,7 +21,7 @@ const ROLLEN = {
   checkin:          { l: 'Check-in',         i: '✅', c: '#64748b' },
 };
 // Rollen, die ein Dojo-Admin zuweisen darf (admin/super_admin bleiben Super-Admin vorbehalten)
-const ZUWEISBAR = ['dojoleiter', 'kassenwart', 'pruefer', 'turnierleiter', 'trainer', 'assistenztrainer', 'rezeption', 'mitarbeiter', 'eingeschraenkt', 'checkin'];
+const ZUWEISBAR = ['dojoleiter', 'kassenwart', 'pruefer', 'trainer', 'assistenztrainer', 'rezeption', 'mitarbeiter', 'eingeschraenkt', 'checkin'];
 const BEREICHE = [
   ['mitglieder', 'Mitglieder'], ['finanzen', 'Finanzen'], ['vertraege', 'Verträge'],
   ['pruefungen', 'Prüfungen'], ['stundenplan', 'Stundenplan'], ['einstellungen', 'Einstellungen'], ['berichte', 'Berichte'],

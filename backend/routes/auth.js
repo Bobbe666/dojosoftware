@@ -938,7 +938,7 @@ router.post('/users', authenticateToken, async (req, res) => {
   }
   // Granulare Staff-Rollen (ERP-Rollensystem) → admin_users (mit berechtigungen);
   // Legacy-/Mitglieder-Rollen → users (unverändert).
-  const STAFF_ROLLEN = ['dojoleiter', 'assistenztrainer', 'kassenwart', 'pruefer', 'turnierleiter', 'rezeption'];
+  const STAFF_ROLLEN = ['dojoleiter', 'assistenztrainer', 'kassenwart', 'pruefer', 'rezeption'];
   if (!['admin', 'supervisor', 'trainer', 'verkauf', 'member', ...STAFF_ROLLEN].includes(role)) {
     return res.status(400).json({ error: 'Ungültige Rolle' });
   }
@@ -1709,7 +1709,7 @@ router.post('/resend-verification', authenticateToken, async (req, res) => {
 // Priv-Escalation-Schutz: nur Super-Admin darf zu admin/super_admin hoch-/umstufen;
 // super_admin-Accounts werden hier nicht verändert/gelöscht.
 // ===================================================================
-const STAFF_VERWALTBARE_ROLLEN = ['dojoleiter', 'assistenztrainer', 'kassenwart', 'pruefer', 'turnierleiter', 'rezeption', 'trainer', 'checkin', 'mitarbeiter', 'eingeschraenkt'];
+const STAFF_VERWALTBARE_ROLLEN = ['dojoleiter', 'assistenztrainer', 'kassenwart', 'pruefer', 'rezeption', 'trainer', 'checkin', 'mitarbeiter', 'eingeschraenkt'];
 
 function staffAuth(req) {
   const role = req.user?.rolle || req.user?.role;
@@ -1727,7 +1727,7 @@ router.get('/staff', authenticateToken, async (req, res) => {
     const [rows] = await db.promise().query(
       `SELECT id, username, email, vorname, nachname, rolle, berechtigungen, aktiv, dojo_id, letzter_login, erstellt_am
          FROM admin_users ${scopeDojo ? 'WHERE dojo_id = ?' : ''}
-        ORDER BY FIELD(rolle,'super_admin','admin','dojoleiter','kassenwart','pruefer','turnierleiter','trainer','assistenztrainer','rezeption','mitarbeiter','eingeschraenkt','checkin'), username`,
+        ORDER BY FIELD(rolle,'super_admin','admin','dojoleiter','kassenwart','pruefer','trainer','assistenztrainer','rezeption','mitarbeiter','eingeschraenkt','checkin'), username`,
       scopeDojo ? [scopeDojo] : []
     );
     const staff = rows.map(r => {

@@ -112,21 +112,6 @@ const getRollenBerechtigungen = (rolle) => {
         berichte: { lesen: true, exportieren: false }
       };
 
-    case 'turnierleiter':
-      // Turniere laufen über Prüfungen/Events + Stundenplan.
-      return {
-        mitglieder: { lesen: true, erstellen: false, bearbeiten: false, loeschen: false },
-        vertraege: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
-        finanzen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
-        pruefungen: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
-        stundenplan: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
-        einstellungen: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
-        admins: { lesen: false, erstellen: false, bearbeiten: false, loeschen: false },
-        events: { lesen: true, erstellen: true, bearbeiten: true, loeschen: true },
-        dashboard: { lesen: true },
-        berichte: { lesen: true, exportieren: false }
-      };
-
     case 'rezeption':
       return {
         mitglieder: { lesen: true, erstellen: true, bearbeiten: true, loeschen: false },
