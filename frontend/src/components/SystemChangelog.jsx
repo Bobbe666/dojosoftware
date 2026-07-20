@@ -31,6 +31,29 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.164',
+    date: '2026-07-20',
+    type: 'feature',
+    zielgruppe: 'allgemein',
+    title: '„Wusstest du schon…?" – Tipps zur Bedienung im Dashboard',
+    description: 'Im Dashboard erscheint jetzt ein Tipp-Feld, das dir und deinem Team nach und nach die vielen Funktionen der Software zeigt („Wusstest du schon, dass…"). Jeder Tipp lässt sich als erledigt abhaken, auf später verschieben, überspringen (nächster Tipp) – oder ganz ausschalten. Der Fortschritt wird pro Mitarbeiter gemerkt.',
+    highlights: [
+      '💡 Feature-Tipps direkt im Dashboard – entdecke Funktionen, die du vielleicht noch nicht kennst',
+      '✓ Abhaken · 🕐 Später lesen · → Nächster Tipp · ✕ Keine Tipps mehr (jederzeit wieder einschaltbar)',
+      '👤 Lesestatus wird pro Mitarbeiter gespeichert',
+    ],
+    details: 'Neu: backend/data/adminTipps.js (kuratierte Tipp-Liste, stabile IDs), routes/tipps.js (GET / , POST /status, POST /einstellung; nur Staff-Rollen, Status pro admin_users.id), gemountet unter /api/admin/tipps VOR den generischen /api/admin-Routen. DB: admin_tipp_status + admin_tipp_einstellung (Migration 239, auf Prod per direktem SQL angelegt). Frontend: TippWidget.jsx/.css in DashboardUebersicht.jsx (nach dem Wetter-Widget). Tages-Rotation des Start-Tipps; ungelesene vor „später"; ausgeschaltet = dezente Reaktivierungs-Zeile. Nur Admin-Bereich, nichts in der Mitglieder-App.',
+    files: [
+      'backend/data/adminTipps.js',
+      'backend/routes/tipps.js',
+      'backend/server.js',
+      'backend/migrations/239_admin_tipps_status.sql',
+      'frontend/src/components/TippWidget.jsx',
+      'frontend/src/components/TippWidget.css',
+      'frontend/src/components/DashboardUebersicht.jsx',
+    ],
+  },
+  {
     version: '3.0.163',
     date: '2026-07-20',
     type: 'improvement',

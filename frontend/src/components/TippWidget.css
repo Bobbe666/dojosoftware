@@ -1,0 +1,161 @@
+/* ============================================================================
+   TippWidget — „Wusstest du schon…?" Feature-Tipps im Dashboard.
+   Nutzt die --ds-*-Design-Tokens → passt sich Light/Dark automatisch an.
+   ============================================================================ */
+
+.tw-card {
+  background: var(--ds-bg-card);
+  border: 1px solid var(--ds-accent-20);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border-left: 3px solid var(--ds-accent);
+}
+
+/* Kopfzeile: Badge + Kategorie + Zähler */
+.tw-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.tw-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ds-accent);
+  text-transform: uppercase;
+}
+
+.tw-kat {
+  font-size: 0.68rem;
+  color: var(--ds-text-muted);
+  border: 1px solid var(--ds-border);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.tw-count {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--ds-text-muted);
+  white-space: nowrap;
+}
+
+/* Inhalt: Icon + Text */
+.tw-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tw-icon {
+  font-size: 1.6rem;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.tw-textwrap { min-width: 0; }
+
+.tw-titel {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--ds-text);
+  margin-bottom: 3px;
+}
+
+.tw-text {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--ds-text-secondary);
+}
+
+/* Aktionen */
+.tw-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.tw-btn {
+  background: transparent;
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.tw-btn:hover:not(:disabled) {
+  color: var(--ds-text);
+  border-color: var(--ds-border-strong);
+  background: var(--ds-bg-card-hover);
+}
+
+.tw-btn:disabled { opacity: 0.5; cursor: default; }
+
+.tw-btn--primary {
+  border-color: var(--ds-accent-30);
+  color: var(--ds-accent);
+}
+.tw-btn--primary:hover:not(:disabled) {
+  background: var(--ds-accent-10);
+  border-color: var(--ds-accent-50);
+  color: var(--ds-accent);
+}
+
+.tw-btn--mute {
+  margin-left: auto;
+  color: var(--ds-text-muted);
+}
+
+.tw-btn--ghost {
+  border-color: var(--ds-accent-30);
+  color: var(--ds-accent);
+}
+
+/* „Alle gelesen"-Zustand */
+.tw-card--done {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tw-done-emoji { font-size: 1.5rem; }
+.tw-done-text {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--ds-text-secondary);
+}
+
+/* Ausgeblendet-Zustand: dezente Reaktivierungs-Zeile */
+.tw-reenable {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--ds-text-muted);
+  margin-bottom: 16px;
+  padding: 6px 2px;
+}
+.tw-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ds-accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.tw-link:disabled { opacity: 0.5; cursor: default; }
+
+@media (max-width: 560px) {
+  .tw-btn--mute { margin-left: 0; }
+  .tw-actions { gap: 6px; }
+}

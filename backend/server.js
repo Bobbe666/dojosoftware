@@ -707,6 +707,21 @@ try {
     });
 }
 
+// ADMIN-TIPPS ("Wusstest du schon…?" Feature-Tipps im Dashboard)
+// Bewusst VOR den generischen /api/admin-Routen gemountet, damit /api/admin/tipps
+// zuverlässig hier landet (Route-Reihenfolge).
+try {
+  const tippsRoutes = require('./routes/tipps');
+  app.use('/api/admin/tipps', authenticateToken, tippsRoutes);
+  logger.success('Route gemountet', { path: '/api/admin/tipps' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'admin-tipps',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // ADMIN ROUTES (Super-Admin Dashboard für TDA International)
 try {
   const adminRoutes = require('./routes/admin');

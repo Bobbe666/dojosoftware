@@ -8,6 +8,7 @@ import {
 import { useDojoContext } from '../context/DojoContext';
 import StilErinnerungBanner from './StilErinnerungBanner';
 import WeatherWidget from './WeatherWidget';
+import TippWidget from './TippWidget';
 import './DashboardUebersicht.css';
 
 function withDojoParam(url, activeDojo) {
@@ -153,6 +154,9 @@ export default function DashboardUebersicht() {
 
       {/* ── Wetter am Dojo-Standort ── */}
       <WeatherWidget compact />
+
+      {/* ── „Wusstest du schon…?" Feature-Tipp (nur Admin-Bedienung) ── */}
+      <TippWidget />
 
       {/* ── KPI Grid ── */}
       <div>
