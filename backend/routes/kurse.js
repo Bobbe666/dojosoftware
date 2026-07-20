@@ -1,4 +1,5 @@
 const express = require("express");
+const { requireStaffPermission } = require('../middleware/auth');
 const db = require("../db");
 const logger = require("../utils/logger");
 
@@ -217,7 +218,7 @@ router.get("/", cacheGet(120000), (req, res) => {
 });
 
 // Neuen Kurs hinzufügen
-router.post("/", (req, res) => {
+router.post("/", requireStaffPermission('stundenplan','erstellen'), (req, res) => {
     // 🔒 dojo_id aus JWT; Super-Admin darf Ziel-Dojo optional per Body/Query angeben.
     let dojoId = getSecureDojoId(req);
     if (dojoId === null && isSuperAdmin(req) && req.body.dojo_id) {
@@ -305,7 +306,7 @@ router.get('/:id/auslastung', async (req, res) => {
 });
 
 // Kurs löschen
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireStaffPermission('stundenplan','loeschen'), (req, res) => {
     const dojoId = getSecureDojoId(req); // 🔒 JWT-basiert
     const superAdmin = isSuperAdmin(req);
 
@@ -357,7 +358,7 @@ router.delete("/:id", (req, res) => {
 });
 
 // Kurs aktualisieren (PUT)
-router.put("/:id", (req, res) => {
+router.put("/:id", requireStaffPermission('stundenplan','bearbeiten'), (req, res) => {
     const dojoId = getSecureDojoId(req); // 🔒 JWT-basiert
     const superAdmin = isSuperAdmin(req);
 

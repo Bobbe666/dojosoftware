@@ -1,4 +1,5 @@
 const express = require("express");
+const { requireStaffPermission } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const db = require("../db"); // mysql2 pool
 const router = express.Router();
@@ -86,7 +87,7 @@ router.get("/", async (req, res) => {
   }
 });
 // Neuen Stundenplan-Eintrag hinzufügen
-router.post("/", async (req, res) => {
+router.post("/", requireStaffPermission('stundenplan','erstellen'), async (req, res) => {
   const { tag, uhrzeit_start, uhrzeit_ende, kurs_id, raum_id } = req.body;
 
   if (!tag || !uhrzeit_start || !uhrzeit_ende || !kurs_id) {
@@ -154,7 +155,7 @@ router.post("/", async (req, res) => {
 });
 
 // Stundenplan-Eintrag aktualisieren
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireStaffPermission('stundenplan','bearbeiten'), async (req, res) => {
   const { id } = req.params;
   const { tag, uhrzeit_start, uhrzeit_ende, kurs_id, raum_id } = req.body;
 
@@ -226,7 +227,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // Stundenplan-Eintrag löschen
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireStaffPermission('stundenplan','loeschen'), async (req, res) => {
   const { id } = req.params;
 
   // 🔒 Dojo-Scope über kurse.dojo_id
