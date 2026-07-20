@@ -31,6 +31,21 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.156',
+    date: '2026-07-20',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 9: Shop/Verkauf an Rechte gebunden (neuer Bereich „Verkauf")',
+    description: 'Neuer Rechtebereich „Verkauf": die Shop-Verwaltung (Produkte, Kategorien, Bestellungen, Shop-Einstellungen) verlangt jetzt das Verkauf-Recht statt eines pauschalen Admin-Checks. Kassenwart und Rezeption können den Shop nun betreuen, Prüfer/Trainer nicht — und wichtig: Mitglieder haben auf die Shop-Verwaltung weiterhin keinen Zugriff (nur der öffentliche Shop bleibt offen). Rezeption darf verkaufen/bearbeiten, aber keine Produkte löschen.',
+    highlights: [
+      '🛒 Shop-Verwaltung an das Verkauf-Recht gebunden (Kassenwart/Rezeption)',
+      '🆕 Rechtebereich „Verkauf" in allen Rollen hinterlegt',
+      '🔒 Mitglieder bleiben aus der Shop-Verwaltung ausgesperrt (kein Member-Bypass auf Admin-Routen)',
+    ],
+    details: 'admins.js getRollenBerechtigungen: verkauf-Area in allen 11 Rollen-Matrizen (kassenwart/dojoleiter/admin voll, rezeption/mitarbeiter ohne loeschen, eingeschraenkt lesen, trainer/pruefer none). shop.js: 16 /admin/*-Routen von lokalem requireAdmin auf requirePermission(verkauf, lesen|erstellen|bearbeiten|loeschen) je nach Methode. WICHTIG: requirePermission (NICHT requireStaffPermission) — Shop-Admin ist member-frei, daher KEIN Member-Bypass. Öffentliche /public-Shop-Routen unverändert. Lokal getestet: member/trainer 403, kassenwart/rezeption/admin durch, rezeption 403 bei Löschen.',
+    files: ['backend/routes/admins.js', 'backend/routes/shop.js'],
+  },
+  {
     version: '3.0.155',
     date: '2026-07-20',
     type: 'improvement',

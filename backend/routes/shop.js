@@ -18,7 +18,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requirePermission } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
@@ -549,7 +549,7 @@ router.post('/stripe/webhook', async (req, res) => {
 /**
  * GET /api/shop/admin/einstellungen
  */
-router.get('/admin/einstellungen', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/einstellungen', authenticateToken, requirePermission('verkauf', 'lesen'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql, params } = dojoWhere(secureDojoId);
@@ -586,7 +586,7 @@ router.get('/admin/einstellungen', authenticateToken, requireAdmin, async (req, 
 /**
  * PUT /api/shop/admin/einstellungen
  */
-router.put('/admin/einstellungen', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/admin/einstellungen', authenticateToken, requirePermission('verkauf', 'bearbeiten'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const {
@@ -655,7 +655,7 @@ router.put('/admin/einstellungen', authenticateToken, requireAdmin, async (req, 
  * GET /api/shop/admin/produkte
  * Alle Artikel des Dojos — mit shop_aktiv-Status
  */
-router.get('/admin/produkte', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/produkte', authenticateToken, requirePermission('verkauf', 'lesen'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql: dojoSql, params: dojoParams } = dojoWhere(secureDojoId, 'a');
@@ -692,7 +692,7 @@ router.get('/admin/produkte', authenticateToken, requireAdmin, async (req, res) 
  * Neues Produkt anlegen — erstellt einen Artikel mit shop_aktiv=1
  * Nur für das eigene Dojo (getSecureDojoId schützt automatisch)
  */
-router.post('/admin/produkte', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/admin/produkte', authenticateToken, requirePermission('verkauf', 'erstellen'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     if (!secureDojoId) {
@@ -744,7 +744,7 @@ router.post('/admin/produkte', authenticateToken, requireAdmin, async (req, res)
  * PUT /api/shop/admin/produkte/:id
  * Produkt bearbeiten
  */
-router.put('/admin/produkte/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/admin/produkte/:id', authenticateToken, requirePermission('verkauf', 'bearbeiten'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql: dojoSql, params: dojoParams } = dojoWhere(secureDojoId, 'a');
@@ -795,7 +795,7 @@ router.put('/admin/produkte/:id', authenticateToken, requireAdmin, async (req, r
  * DELETE /api/shop/admin/produkte/:id
  * Produkt aus dem Shop entfernen (setzt shop_aktiv=0, löscht nicht aus Artikelverwaltung)
  */
-router.delete('/admin/produkte/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/admin/produkte/:id', authenticateToken, requirePermission('verkauf', 'loeschen'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql: dojoSql, params: dojoParams } = dojoWhere(secureDojoId, 'a');
@@ -815,7 +815,7 @@ router.delete('/admin/produkte/:id', authenticateToken, requireAdmin, async (req
  * PATCH /api/shop/admin/produkte/:id/shop-aktiv
  * Schaltet einen Artikel im Shop an/aus
  */
-router.patch('/admin/produkte/:id/shop-aktiv', authenticateToken, requireAdmin, async (req, res) => {
+router.patch('/admin/produkte/:id/shop-aktiv', authenticateToken, requirePermission('verkauf', 'bearbeiten'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql: dojoSql, params: dojoParams } = dojoWhere(secureDojoId, 'a');
@@ -850,7 +850,7 @@ router.patch('/admin/produkte/:id/shop-aktiv', authenticateToken, requireAdmin, 
  * GET /api/shop/admin/kategorien
  * Artikelgruppen des Dojos — für Kategorien-Übersicht im Shop-Admin
  */
-router.get('/admin/kategorien', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/kategorien', authenticateToken, requirePermission('verkauf', 'lesen'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql: dojoSql, params: dojoParams } = dojoWhere(secureDojoId, 'a');
@@ -888,7 +888,7 @@ router.get('/admin/kategorien', authenticateToken, requireAdmin, async (req, res
  * POST /api/shop/admin/kategorien
  * Neue Artikelgruppe (Kategorie) anlegen
  */
-router.post('/admin/kategorien', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/admin/kategorien', authenticateToken, requirePermission('verkauf', 'erstellen'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     if (!secureDojoId) {
@@ -920,7 +920,7 @@ router.post('/admin/kategorien', authenticateToken, requireAdmin, async (req, re
  * PUT /api/shop/admin/kategorien/:id
  * Kategorie bearbeiten
  */
-router.put('/admin/kategorien/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/admin/kategorien/:id', authenticateToken, requirePermission('verkauf', 'bearbeiten'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql: dojoSql, params: dojoParams } = dojoWhere(secureDojoId, 'ag');
@@ -959,7 +959,7 @@ router.put('/admin/kategorien/:id', authenticateToken, requireAdmin, async (req,
  * DELETE /api/shop/admin/kategorien/:id
  * Kategorie deaktivieren (soft delete — aktiv=0)
  */
-router.delete('/admin/kategorien/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/admin/kategorien/:id', authenticateToken, requirePermission('verkauf', 'loeschen'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql: dojoSql, params: dojoParams } = dojoWhere(secureDojoId, 'ag');
@@ -986,7 +986,7 @@ router.delete('/admin/kategorien/:id', authenticateToken, requireAdmin, async (r
 /**
  * GET /api/shop/admin/bestellungen
  */
-router.get('/admin/bestellungen', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/bestellungen', authenticateToken, requirePermission('verkauf', 'lesen'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { status, page = 1, limit = 50 } = req.query;
@@ -1030,7 +1030,7 @@ router.get('/admin/bestellungen', authenticateToken, requireAdmin, async (req, r
 /**
  * GET /api/shop/admin/bestellungen/:id
  */
-router.get('/admin/bestellungen/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/bestellungen/:id', authenticateToken, requirePermission('verkauf', 'lesen'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql, params } = dojoWhere(secureDojoId);
@@ -1070,7 +1070,7 @@ router.get('/admin/bestellungen/:id', authenticateToken, requireAdmin, async (re
 /**
  * PATCH /api/shop/admin/bestellungen/:id/status
  */
-router.patch('/admin/bestellungen/:id/status', authenticateToken, requireAdmin, async (req, res) => {
+router.patch('/admin/bestellungen/:id/status', authenticateToken, requirePermission('verkauf', 'bearbeiten'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql, params } = dojoWhere(secureDojoId);
@@ -1095,7 +1095,7 @@ router.patch('/admin/bestellungen/:id/status', authenticateToken, requireAdmin, 
 /**
  * PATCH /api/shop/admin/bestellungen/:id/tracking
  */
-router.patch('/admin/bestellungen/:id/tracking', authenticateToken, requireAdmin, async (req, res) => {
+router.patch('/admin/bestellungen/:id/tracking', authenticateToken, requirePermission('verkauf', 'bearbeiten'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql, params } = dojoWhere(secureDojoId);
@@ -1116,7 +1116,7 @@ router.patch('/admin/bestellungen/:id/tracking', authenticateToken, requireAdmin
 /**
  * GET /api/shop/admin/dashboard
  */
-router.get('/admin/dashboard', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/dashboard', authenticateToken, requirePermission('verkauf', 'lesen'), async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     const { sql: dojoSql, params: dojoParams } = dojoWhere(secureDojoId);
