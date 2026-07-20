@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requirePermission } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 const pool = db.promise();
@@ -32,12 +32,8 @@ router.get('/', async (req, res) => {
 });
 
 // PUT — speichern (nur Admin/Super-Admin)
-router.put('/', async (req, res) => {
+router.put('/', requirePermission('einstellungen', 'bearbeiten'), async (req, res) => {
   try {
-    const rolle = req.user?.rolle || req.user?.role;
-    if (!['admin', 'super-admin', 'superadmin'].includes(rolle)) {
-      return res.status(403).json({ error: 'Keine Berechtigung' });
-    }
     const d = dojoIdOf(req);
     if (!d) return res.status(400).json({ error: 'Dojo-ID fehlt' });
     const stil = req.body.stil_filter_aktiv ? 1 : 0;

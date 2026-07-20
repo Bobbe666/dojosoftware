@@ -10,6 +10,7 @@ const db = require('../db');
 const logger = require('../utils/logger');
 const nodemailer = require('nodemailer');
 const { encrypt, decrypt, isEncrypted } = require('../utils/encryption');
+const { requirePermission } = require('../middleware/auth');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -376,7 +377,7 @@ router.get('/dojo/:id', async (req, res) => {
  * PUT /api/email-settings/dojo/:id
  * Dojo-spezifische E-Mail-Einstellungen aktualisieren
  */
-router.put('/dojo/:id', async (req, res) => {
+router.put('/dojo/:id', requirePermission('einstellungen', 'bearbeiten'), async (req, res) => {
   try {
     const { id } = req.params;
     const {

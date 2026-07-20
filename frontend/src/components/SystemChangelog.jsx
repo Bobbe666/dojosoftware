@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.158',
+    date: '2026-07-20',
+    type: 'security',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 11: Check-in- & E-Mail-Einstellungen abgesichert',
+    description: 'Auch die Check-in-Einstellungen und die dojo-eigenen E-Mail-/SMTP-Einstellungen sind jetzt an das Recht „Einstellungen" gebunden (Admin/Dojoleiter). Dabei zwei Altlasten behoben: die SMTP-Zugangsdaten pro Dojo waren bisher für jeden eingeloggten Nutzer schreibbar (jetzt geschlossen), und bei den Check-in-Einstellungen war der Super-Admin durch einen Tippfehler im Rollen-Check fälschlich ausgesperrt (jetzt gefixt).',
+    highlights: [
+      '🔒 SMTP-/E-Mail-Einstellungen pro Dojo waren offen — jetzt nur Admin/Dojoleiter',
+      '🐛 Check-in-Einstellungen: Super-Admin war durch Rollen-Tippfehler gesperrt — behoben',
+    ],
+    details: 'checkin-einstellungen.js PUT /: Inline-Check [admin,super-admin,superadmin] (fehlerhaft, super_admin fehlte) → requirePermission(einstellungen,bearbeiten). email-settings.js PUT /dojo/:id (bisher ungegatet) → requirePermission(einstellungen,bearbeiten); /global bleibt Super-Admin. Member-Reads (GET checkin-einstellungen für MemberCheckin) unberührt. Lokal getestet: member/trainer 403, super_admin/admin/dojoleiter durch. OFFEN Phase 12: Anwesenheit (member-shared, eigene Area), email-settings/dojo/:id zusätzlich Tenant-Check (IDOR-Audit), Alt-UI-Reste, Elternzugang/Mitglied.',
+    files: ['backend/routes/checkin-einstellungen.js', 'backend/routes/email-settings.js'],
+  },
+  {
     version: '3.0.157',
     date: '2026-07-20',
     type: 'security',
