@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const logger = require('../utils/logger');
-const { JWT_SECRET } = require('../middleware/auth');
+const { JWT_SECRET, invalidatePermCache } = require('../middleware/auth');
 const { MAINTENANCE_MODE, MAINTENANCE_MESSAGE, isOurTeam } = require('../middleware/maintenance');
 const auditLog = require('../services/auditLogService');
 const { sanitizeStrings } = require('../middleware/validation');
@@ -1788,6 +1788,7 @@ router.put('/staff/:id', authenticateToken, async (req, res) => {
     if (!sets.length) return res.status(400).json({ error: 'Nichts zu ändern' });
     vals.push(id);
     await db.promise().query(`UPDATE admin_users SET ${sets.join(', ')} WHERE id = ?`, vals);
+    invalidatePermCache(id); // Rechte-/Rollen-/aktiv-Änderung greift sofort (ohne Re-Login)
     auditLog.log({
       req, kategorie: auditLog.KATEGORIE.ADMIN, aktion: auditLog.AKTION.RECHTE_GEAENDERT,
       entityType: 'admin_users', entityId: id, dojoId: target.dojo_id,
@@ -1834,6 +1835,7 @@ router.delete('/staff/:id', authenticateToken, async (req, res) => {
     if (target.rolle === 'super_admin') return res.status(403).json({ error: 'Super-Admin kann hier nicht gelöscht werden' });
     if (target.rolle === 'admin' && !isSuper) return res.status(403).json({ error: 'Admin kann nur durch Super-Admin gelöscht werden' });
     await db.promise().query('DELETE FROM admin_users WHERE id = ?', [id]);
+    invalidatePermCache(id); // gelöschter Staff wird sofort aus gegateten Routen gesperrt
     auditLog.log({
       req, kategorie: auditLog.KATEGORIE.ADMIN, aktion: auditLog.AKTION.USER_GELOESCHT,
       entityType: 'admin_users', entityId: id, entityName: target.username, dojoId: target.dojo_id,

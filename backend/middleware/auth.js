@@ -110,7 +110,41 @@ const hasPermission = (req, bereich, aktion = 'lesen') => {
   return !!(perms && perms[bereich] && perms[bereich][aktion] === true);
 };
 
-const requirePermission = (bereich, aktion = 'lesen') => (req, res, next) => {
+// Rechte-Cache pro admin_users-User (30s TTL). Sorgt dafür, dass Rechte-/Rollen-
+// Änderungen und Deaktivierungen OHNE Re-Login greifen (Rechte stecken sonst im
+// 30-Tage-JWT), ohne dass jeder gegatete Request einen DB-Hit macht. fail-open.
+const _permCache = new Map();
+function invalidatePermCache(uid) {
+  if (uid == null) return;
+  _permCache.delete(Number(uid));
+  _permCache.delete(String(uid));
+}
+async function refreshUserPerms(req) {
+  const role = req.user?.rolle || req.user?.role;
+  const uid = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  // Super/Admin bypassen ohnehin; Mitglieder (keine berechtigungen) brauchen keinen Refresh.
+  if (!uid || role === 'super_admin' || role === 'admin' || !req.user?.berechtigungen) return;
+  try {
+    const now = Date.now();
+    let c = _permCache.get(uid);
+    if (!c || c.exp < now) {
+      const db = require('../db');
+      const [[row]] = await db.promise().query('SELECT berechtigungen, aktiv FROM admin_users WHERE id = ?', [uid]);
+      let perms = row?.berechtigungen;
+      if (typeof perms === 'string') { try { perms = JSON.parse(perms); } catch { perms = null; } }
+      // Keine Zeile = Account gelöscht → sperren (aktiv=0). DB-FEHLER dagegen wirft →
+      // landet im catch (fail-open, JWT-Werte bleiben) und sperrt NICHT.
+      c = { perms, aktiv: row ? row.aktiv : 0, exp: now + 30000 };
+      _permCache.set(uid, c);
+    }
+    if (c.perms) req.user.berechtigungen = c.perms;
+    req.user._aktiv = c.aktiv;
+  } catch (_) { /* fail-open: JWT-Werte behalten */ }
+}
+
+const requirePermission = (bereich, aktion = 'lesen') => async (req, res, next) => {
+  await refreshUserPerms(req);
+  if (req.user?._aktiv === 0) return res.status(403).json({ message: 'Konto deaktiviert' });
   if (hasPermission(req, bereich, aktion)) return next();
   return res.status(403).json({
     message: `Keine Berechtigung für ${bereich}/${aktion}`,
@@ -128,10 +162,12 @@ const requirePermission = (bereich, aktion = 'lesen') => (req, res, next) => {
  *   berechtigungen ODER die AKTUELLEN Rollen-Defaults (deckt veraltete stored-Werte
  *   bestehender Mitarbeiter ab → keine Regression, kein Daten-Backfill nötig).
  */
-const requireStaffPermission = (bereich, aktion = 'lesen') => (req, res, next) => {
+const requireStaffPermission = (bereich, aktion = 'lesen') => async (req, res, next) => {
   const role = req.user?.rolle || req.user?.role;
   if (role === 'super_admin' || role === 'admin') return next();
   if (!req.user?.berechtigungen) return next(); // Mitglied / Alt-users-Staff → wie bisher
+  await refreshUserPerms(req);
+  if (req.user?._aktiv === 0) return res.status(403).json({ message: 'Konto deaktiviert' });
   if (hasPermission(req, bereich, aktion)) return next();
   try {
     const { getRollenBerechtigungen } = require('../routes/admins');
@@ -151,5 +187,6 @@ module.exports = {
   requirePermission,
   requireStaffPermission,
   hasPermission,
+  invalidatePermCache,
   JWT_SECRET
 };

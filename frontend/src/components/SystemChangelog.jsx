@@ -31,6 +31,20 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.162',
+    date: '2026-07-20',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Rollensystem Phase 15: Rechte-Änderungen wirken sofort + Deaktivierung sperrt sofort',
+    description: 'Bisher steckten die Rechte im 30-Tage-Login-Token — eine Rechte-/Rollen-Änderung oder Deaktivierung eines Mitarbeiters wirkte erst nach dessen nächstem Login. Jetzt lesen die Rechteprüfungen die aktuellen Rechte frisch aus der Datenbank (mit kurzem Cache), und Änderungen greifen sofort. Zusätzlich: Wird ein Mitarbeiter deaktiviert oder gelöscht, ist er unmittelbar aus den geschützten Bereichen ausgesperrt (kein 30-Tage-Fenster mehr).',
+    highlights: [
+      '⚡ Rechte-/Rollen-Änderungen greifen sofort (kein Re-Login nötig)',
+      '🔒 Deaktivierte/gelöschte Mitarbeiter sofort ausgesperrt',
+    ],
+    details: 'middleware/auth.js: refreshUserPerms (30s-Cache pro admin_users-User, fail-open bei DB-Fehler) füllt req.user.berechtigungen frisch aus der DB in requirePermission/requireStaffPermission; _aktiv===0 → 403 „Konto deaktiviert"; fehlende Zeile (gelöscht) = gesperrt. invalidatePermCache(id) bei PUT/DELETE /api/auth/staff/:id → Änderung sofort wirksam. hasPermission bleibt synchron. Lokal getestet: leerer Token + DB-Rechte → Gate passiert (fresh-from-DB); nach Entzug sofort 403; nach Deaktivierung 403. OFFEN Phase 16: Alt-/api/permissions-Template-Editor + users-Reste aufräumen, Elternzugang/Mitglied.',
+    files: ['backend/middleware/auth.js', 'backend/routes/auth.js'],
+  },
+  {
     version: '3.0.161',
     date: '2026-07-20',
     type: 'feature',
