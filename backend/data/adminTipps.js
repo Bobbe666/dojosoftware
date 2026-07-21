@@ -179,6 +179,41 @@ const ADMIN_TIPPS = [
     titel: 'Businessplan & Ziele-Board',
     text: 'Wusstest du schon, dass es ein Businessplan-Modul mit Finanzplanung, PDF-Export und einem Ziele-Board gibt? Ideal, um Wachstum zu planen und Ziele zu verfolgen.',
   },
+  {
+    id: 25,
+    kategorie: 'Buchhaltung',
+    icon: '🏦',
+    titel: 'Kontoauszug per Bank-Import einlesen',
+    text: 'Wusstest du schon, dass du deine Kontoumsätze in die Buchhaltung importieren kannst, statt jede Zahlung von Hand zu erfassen? Das System liest den Auszug ein und legt die Umsätze zum Zuordnen bereit.',
+  },
+  {
+    id: 26,
+    kategorie: 'Buchhaltung',
+    icon: '🔗',
+    titel: 'Zahlungen automatisch zuordnen',
+    text: 'Wusstest du schon, dass importierte Bankumsätze automatisch mit offenen Beiträgen und Rechnungen abgeglichen werden? Passende Zahlungen werden vorgeschlagen – du bestätigst nur noch, statt manuell zu suchen.',
+  },
+  {
+    id: 27,
+    kategorie: 'Buchhaltung',
+    icon: '📑',
+    titel: 'EÜR auf Knopfdruck',
+    text: 'Wusstest du schon, dass du dir jederzeit eine Einnahmen-Überschuss-Rechnung (EÜR) erzeugen lassen kannst? Einnahmen und Ausgaben werden nach Kategorien ausgewertet – ideal fürs Finanzamt und den Steuerberater.',
+  },
+  {
+    id: 28,
+    kategorie: 'Buchhaltung',
+    icon: '⏰',
+    titel: 'Offene Posten & Mahnwesen im Blick',
+    text: 'Wusstest du schon, dass dir die Buchhaltung offene Posten anzeigt und beim Mahnwesen unterstützt? So siehst du auf einen Blick, welche Beiträge und Rechnungen noch nicht bezahlt sind.',
+  },
+  {
+    id: 29,
+    kategorie: 'Buchhaltung',
+    icon: '📚',
+    titel: 'Ausgaben, Kreditoren & wiederkehrende Buchungen',
+    text: 'Wusstest du schon, dass du in der Buchführung auch Ausgaben, Kreditoren, Anlagevermögen und wiederkehrende Buchungen erfassen kannst? Damit hast du nicht nur die Einnahmen, sondern deine komplette Finanzlage im Griff.',
+  },
 ];
 
 module.exports = { ADMIN_TIPPS };

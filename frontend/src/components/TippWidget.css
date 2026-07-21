@@ -137,7 +137,7 @@
 .tw-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--ds-bg-overlay, rgba(0, 0, 0, 0.6));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -146,14 +146,17 @@
 }
 
 .tw-modal {
-  background: var(--ds-bg-card, rgba(26, 26, 46, 0.99));
+  /* Opak (theme-sicher): --ds-bg-surface ist in allen Themes deckend
+     (dark #14141f / light #ffffff / washi #f5efe2) — NICHT --ds-bg-card,
+     das im Dark-Theme fast durchsichtig ist (rgba weiß 0.04) → unlesbar. */
+  background: var(--ds-bg-surface, #14141f);
   border: 1px solid var(--ds-accent-30);
   border-top: 3px solid var(--ds-accent);
   border-radius: 12px;
   padding: 18px 20px 20px;
   width: 100%;
   max-width: 480px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
 }
 
 .tw-modal-head {

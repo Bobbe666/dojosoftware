@@ -31,6 +31,23 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.166',
+    date: '2026-07-21',
+    type: 'improvement',
+    zielgruppe: 'intern',
+    title: 'Tipps: 5 Buchhaltungs-Tipps ergänzt + Tipp-des-Tages-Popup besser lesbar',
+    description: 'Fünf neue „Wusstest du schon…?"-Tipps rund um Bank-Import und Buchhaltung ergänzt. Außerdem war das Tipp-des-Tages-Popup im dunklen Design zu durchscheinend/schwer lesbar – jetzt hat es einen deckenden Hintergrund.',
+    highlights: [
+      '🏦 5 neue Tipps: Bank-Import, automatische Zuordnung, EÜR, offene Posten/Mahnwesen, Kreditoren/wiederkehrende Buchungen',
+      '👁️ Popup jetzt blickdicht (deckender Hintergrund) statt durchscheinend',
+    ],
+    details: 'backend/data/adminTipps.js: Tipps id 25–29 (Kategorie „Buchhaltung"). TippWidget.css: .tw-modal Hintergrund von var(--ds-bg-card) (im Dark-Theme rgba weiß 0.04 = fast transparent) auf var(--ds-bg-surface) umgestellt — in allen Themes deckend (dark #14141f / light #ffffff / washi #f5efe2). Overlay auf var(--ds-bg-overlay). Siehe feedback_modal_hintergrund (Modals immer opak).',
+    files: [
+      'backend/data/adminTipps.js',
+      'frontend/src/components/TippWidget.css',
+    ],
+  },
+  {
     version: '3.0.165',
     date: '2026-07-20',
     type: 'feature',
