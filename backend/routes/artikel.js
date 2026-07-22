@@ -117,11 +117,11 @@ router.get('/kategorien', (req, res) => {
   const isSuperAdmin = isSuperAdminReq(req);
 
   // Tenant check (Super-Admin darf ohne dojo_id)
-  if (!isSuperAdmin && !req.tenant?.dojo_id) {
+  if (!isSuperAdmin && !(getSecureDojoId(req) ?? req.tenant?.dojo_id)) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
-  const dojoId = req.tenant?.dojo_id;
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id;
 
   // Datenbank verwenden - Artikel referenzieren artikelgruppen (nicht artikel_kategorien!)
   // Kategorien gehören entweder direkt dem Dojo, oder haben Artikel in diesem Dojo
@@ -184,12 +184,12 @@ router.post('/kategorien', (req, res) => {
   const isSuperAdmin = isSuperAdminReq(req);
 
   // Tenant check (Super-Admin braucht kein dojo_id)
-  if (!isSuperAdmin && !req.tenant?.dojo_id) {
+  if (!isSuperAdmin && !(getSecureDojoId(req) ?? req.tenant?.dojo_id)) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
   // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
-  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id ?? (isSuperAdmin ? 2 : null);
   if (!dojoId) {
     return res.status(403).json({ error: 'No dojo_id available' });
   }
@@ -454,8 +454,8 @@ router.get('/kasse', (req, res) => {
 router.get('/inventur/uebersicht', (req, res) => {
   const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
   const isSuperAdmin = isSuperAdminReq(req);
-  if (!isSuperAdmin && !req.tenant?.dojo_id) return res.status(403).json({ error: 'No tenant' });
-  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!isSuperAdmin && !(getSecureDojoId(req) ?? req.tenant?.dojo_id)) return res.status(403).json({ error: 'No tenant' });
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id ?? (isSuperAdmin ? 2 : null);
   if (!dojoId) return res.status(403).json({ error: 'No dojo_id available' });
 
   const query = `
@@ -538,8 +538,8 @@ router.get('/inventur/uebersicht', (req, res) => {
 router.get('/inventur/bewegungen', (req, res) => {
   const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
   const isSuperAdmin = isSuperAdminReq(req);
-  if (!isSuperAdmin && !req.tenant?.dojo_id) return res.status(403).json({ error: 'No tenant' });
-  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!isSuperAdmin && !(getSecureDojoId(req) ?? req.tenant?.dojo_id)) return res.status(403).json({ error: 'No tenant' });
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id ?? (isSuperAdmin ? 2 : null);
   if (!dojoId) return res.status(403).json({ error: 'No dojo_id available' });
 
   const limit = parseInt(req.query.limit) || 100;
@@ -588,12 +588,12 @@ router.get('/:id', (req, res) => {
   const isSuperAdmin = isSuperAdminReq(req);
 
   // Tenant check (Super-Admin braucht kein dojo_id)
-  if (!isSuperAdmin && !req.tenant?.dojo_id) {
+  if (!isSuperAdmin && !(getSecureDojoId(req) ?? req.tenant?.dojo_id)) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
   // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
-  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id ?? (isSuperAdmin ? 2 : null);
   if (!dojoId) {
     return res.status(403).json({ error: 'No dojo_id available' });
   }
@@ -638,12 +638,12 @@ router.post('/', (req, res) => {
   const isSuperAdmin = isSuperAdminReq(req);
 
   // Tenant check (Super-Admin braucht kein dojo_id)
-  if (!isSuperAdmin && !req.tenant?.dojo_id) {
+  if (!isSuperAdmin && !(getSecureDojoId(req) ?? req.tenant?.dojo_id)) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
   // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
-  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id ?? (isSuperAdmin ? 2 : null);
   if (!dojoId) {
     return res.status(403).json({ error: 'No dojo_id available' });
   }
@@ -802,12 +802,12 @@ router.put('/:id', (req, res) => {
   const isSuperAdmin = isSuperAdminReq(req);
 
   // Tenant check (Super-Admin braucht kein dojo_id)
-  if (!isSuperAdmin && !req.tenant?.dojo_id) {
+  if (!isSuperAdmin && !(getSecureDojoId(req) ?? req.tenant?.dojo_id)) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
   // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
-  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id ?? (isSuperAdmin ? 2 : null);
   if (!dojoId) {
     return res.status(403).json({ error: 'No dojo_id available' });
   }
@@ -1173,12 +1173,12 @@ router.post('/:id/lager', (req, res) => {
   const isSuperAdmin = isSuperAdminReq(req);
 
   // Tenant check (Super-Admin braucht kein dojo_id)
-  if (!isSuperAdmin && !req.tenant?.dojo_id) {
+  if (!isSuperAdmin && !(getSecureDojoId(req) ?? req.tenant?.dojo_id)) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
   // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
-  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id ?? (isSuperAdmin ? 2 : null);
   if (!dojoId) {
     return res.status(403).json({ error: 'No dojo_id available' });
   }
@@ -1288,12 +1288,12 @@ router.get('/:id/lager', (req, res) => {
   const isSuperAdmin = isSuperAdminReq(req);
 
   // Tenant check (Super-Admin braucht kein dojo_id)
-  if (!isSuperAdmin && !req.tenant?.dojo_id) {
+  if (!isSuperAdmin && !(getSecureDojoId(req) ?? req.tenant?.dojo_id)) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
   // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
-  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id ?? (isSuperAdmin ? 2 : null);
   if (!dojoId) {
     return res.status(403).json({ error: 'No dojo_id available' });
   }
@@ -1340,12 +1340,12 @@ router.get('/stats/overview', (req, res) => {
   const isSuperAdmin = isSuperAdminReq(req);
 
   // Tenant check (Super-Admin braucht kein dojo_id)
-  if (!isSuperAdmin && !req.tenant?.dojo_id) {
+  if (!isSuperAdmin && !(getSecureDojoId(req) ?? req.tenant?.dojo_id)) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
   // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
-  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id ?? (isSuperAdmin ? 2 : null);
   if (!dojoId) {
     return res.status(403).json({ error: 'No dojo_id available' });
   }
@@ -1387,7 +1387,7 @@ router.get('/stats/overview', (req, res) => {
 // =====================================================================================
 
 const BESTELL_SPECS_ENTERPRISE_CHECK = async (req, res, next) => {
-  const dojoId = req.tenant?.dojo_id;
+  const dojoId = getSecureDojoId(req) ?? req.tenant?.dojo_id;
   if (!dojoId) return next(); // Super-Admin darf immer
   try {
     const [[sub]] = await db.promise().query(

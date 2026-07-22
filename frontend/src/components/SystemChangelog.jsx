@@ -31,6 +31,24 @@ const istSuperAdminScope = () => {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '3.0.167',
+    date: '2026-07-22',
+    type: 'fix',
+    zielgruppe: 'intern',
+    title: 'Neu registrierte Dojos: Räume & Artikel anlegen funktioniert (Hauptstandort + Haupt-Domain)',
+    description: 'Bei frisch registrierten Dojos scheiterte das Anlegen von Räumen mit „Kein Hauptstandort gefunden" und von Artikeln mit „No tenant", wenn der Inhaber über die Haupt-Domain (dojo.tda-intl.org) statt über seine Subdomain arbeitete. Beides ist jetzt behoben.',
+    highlights: [
+      '🏢 Registrierung legt automatisch einen Hauptstandort an (frei umbenennbar/editierbar, weitere Standorte anlegbar)',
+      '🛒 Artikel/Artikelgruppen lassen sich auch auf der Haupt-Domain anlegen (Dojo-Auflösung über JWT statt nur Subdomain)',
+    ],
+    details: 'dojo-onboarding.js /register-dojo: legt in der Registrierungs-Transaktion einen Hauptstandort in standorte an (name = "<Dojo> - Hauptstandort", ist_hauptstandort=1) — strukturelle Pflicht, kein Inhalts-Seed. artikelgruppen.js + artikel.js: Dojo-Auflösung von reinem req.tenant?.dojo_id (Subdomain, auf Haupt-Domain undefined → 403 "No tenant") auf getSecureDojoId(req) ?? req.tenant?.dojo_id umgestellt (wie raeume.js/kurse.js). Standorte-CRUD (standorte.js) nutzte bereits getSecureDojoId → Standort voll editierbar/frei anlegbar. Backfill: 4 Bestands-Dojos ohne Hauptstandort (10–13) per SQL nachgezogen; jedes Dojo hat jetzt einen.',
+    files: [
+      'backend/routes/dojo-onboarding.js',
+      'backend/routes/artikelgruppen.js',
+      'backend/routes/artikel.js',
+    ],
+  },
+  {
     version: '3.0.166',
     date: '2026-07-21',
     type: 'improvement',

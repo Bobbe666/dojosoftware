@@ -211,6 +211,18 @@ router.post('/register-dojo', async (req, res) => {
 
     logger.info('Admin-User erstellt: ${owner_email}');
 
+    // ===== 3c. HAUPTSTANDORT ANLEGEN =====
+    // Pflicht-STRUKTUR (kein Inhalts-Seed wie Stile/Gürtel/Tarife): Räume und Kurse
+    // brauchen zwingend einen Hauptstandort. Ohne ihn scheitert das allererste Anlegen
+    // eines Raums/Kurses mit "Kein Hauptstandort gefunden" (raeume.js/kurse.js). Jedes
+    // bestehende Dojo hat genau einen — neue bekommen ihn jetzt automatisch bei Registrierung.
+    await connection.query(
+      `INSERT INTO standorte (dojo_id, name, ist_hauptstandort, telefon, email)
+       VALUES (?, ?, TRUE, ?, ?)`,
+      [dojo_id, `${dojo_name} - Hauptstandort`, phone || null, owner_email.toLowerCase()]
+    );
+    logger.info(`Hauptstandort erstellt für Dojo ${dojo_id}`);
+
     // ===== 3b. VERBANDSMITGLIED VERKNÜPFEN (falls vorhanden) =====
     // Prüfen ob ein Verbandsmitglied mit gleicher Email existiert
     const [verbandsMitglieder] = await connection.query(
